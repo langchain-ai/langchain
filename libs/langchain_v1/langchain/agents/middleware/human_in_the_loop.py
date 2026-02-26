@@ -7,13 +7,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import (
-    AgentMiddleware,
-    AgentState,
-    ContextT,
-    ResponseT,
-    StateT,
-)
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, StateT
 
 
 class Action(TypedDict):
@@ -108,9 +102,7 @@ class HITLResponse(TypedDict):
 class _DescriptionFactory(Protocol):
     """Callable that generates a description for a tool call."""
 
-    def __call__(
-        self, tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[ContextT]
-    ) -> str:
+    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime[ContextT]) -> str:
         """Generate a description for a tool call."""
         ...
 
@@ -164,7 +156,7 @@ class InterruptOnConfig(TypedDict):
     """JSON schema for the args associated with the action, if edits are allowed."""
 
 
-class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
+class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT]):
     """Human in the loop middleware."""
 
     def __init__(
@@ -211,7 +203,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-        state: AgentState[Any],
+        state: AgentState,
         runtime: Runtime[ContextT],
     ) -> tuple[ActionRequest, ReviewConfig]:
         """Create an ActionRequest and ReviewConfig for a tool call."""
@@ -243,8 +235,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
         return action_request, review_config
 
-    @staticmethod
     def _process_decision(
+        self,
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
@@ -285,22 +277,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         raise ValueError(msg)
 
-    def after_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | None:
-        """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Updated message with the revised tool calls.
-
-        Raises:
-            ValueError: If the number of human decisions does not match the number of
-                interrupted tool calls.
-        """
+    def after_model(self, state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+        """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         messages = state["messages"]
         if not messages:
             return None
@@ -373,15 +351,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
     async def aafter_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self, state: AgentState, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Updated message with the revised tool calls.
-        """
+        """Async trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         return self.after_model(state, runtime)

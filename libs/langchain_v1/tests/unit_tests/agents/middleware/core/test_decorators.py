@@ -1,19 +1,11 @@
 """Consolidated tests for middleware decorators: before_model, after_model, and wrap_model_call."""
 
-from collections.abc import Awaitable, Callable
-from typing import Any, Generic
+from typing import Any
 
 import pytest
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langgraph.prebuilt.tool_node import ToolCallRequest
 from langgraph.runtime import Runtime
-from langgraph.types import Command
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import NotRequired
 
@@ -21,10 +13,7 @@ from langchain.agents.factory import _get_can_jump_to, create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ModelCallResult,
     ModelRequest,
-    ModelResponse,
-    ResponseT,
     after_model,
     before_model,
     dynamic_prompt,
@@ -35,7 +24,7 @@ from langchain.agents.middleware.types import (
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
-class CustomState(AgentState[ResponseT], Generic[ResponseT]):
+class CustomState(AgentState):
     """Custom state schema for testing."""
 
     custom_field: NotRequired[str]
@@ -53,7 +42,7 @@ def test_before_model_decorator() -> None:
     @before_model(
         state_schema=CustomState, tools=[test_tool], can_jump_to=["end"], name="CustomBeforeModel"
     )
-    def custom_before_model(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    def custom_before_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
         return {"jump_to": "end"}
 
     assert isinstance(custom_before_model, AgentMiddleware)
@@ -62,7 +51,7 @@ def test_before_model_decorator() -> None:
     assert getattr(custom_before_model.__class__.before_model, "__can_jump_to__", []) == ["end"]
     assert custom_before_model.__class__.__name__ == "CustomBeforeModel"
 
-    result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]}, Runtime())
+    result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]}, None)
     assert result == {"jump_to": "end"}
 
 
@@ -75,7 +64,7 @@ def test_after_model_decorator() -> None:
         can_jump_to=["model", "end"],
         name="CustomAfterModel",
     )
-    def custom_after_model(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    def custom_after_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
         return {"jump_to": "model"}
 
     # Verify all options were applied
@@ -90,7 +79,7 @@ def test_after_model_decorator() -> None:
 
     # Verify it works
     result = custom_after_model.after_model(
-        {"messages": [HumanMessage("Hello"), AIMessage("Hi!")]}, Runtime()
+        {"messages": [HumanMessage("Hello"), AIMessage("Hi!")]}, None
     )
     assert result == {"jump_to": "model"}
 
@@ -99,11 +88,8 @@ def test_on_model_call_decorator() -> None:
     """Test wrap_model_call decorator with all configuration options."""
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
-    def custom_on_model_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
-        return handler(request.override(system_message=SystemMessage(content="Modified")))
+    def custom_on_model_call(request, handler):
+        return handler(request.override(system_prompt="Modified"))
 
     # Verify all options were applied
     assert isinstance(custom_on_model_call, AgentMiddleware)
@@ -113,7 +99,7 @@ def test_on_model_call_decorator() -> None:
 
     # Verify it works
     original_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
@@ -123,14 +109,11 @@ def test_on_model_call_decorator() -> None:
         runtime=None,
     )
 
-    def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(
-            result=[AIMessage(content=f"Handled with prompt: {req.system_prompt}")]
-        )
+    def mock_handler(req):
+        return AIMessage(content=f"Handled with prompt: {req.system_prompt}")
 
     result = custom_on_model_call.wrap_model_call(original_request, mock_handler)
-    assert isinstance(result, ModelResponse)
-    assert result.result[0].content == "Handled with prompt: Modified"
+    assert result.content == "Handled with prompt: Modified"
 
 
 def test_all_decorators_integration() -> None:
@@ -138,19 +121,16 @@ def test_all_decorators_integration() -> None:
     call_order = []
 
     @before_model
-    def track_before(*_args: Any, **_kwargs: Any) -> None:
+    def track_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("before")
 
     @wrap_model_call
-    def track_on_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+    def track_on_call(request, handler):
         call_order.append("on_call")
         return handler(request)
 
     @after_model
-    def track_after(*_args: Any, **_kwargs: Any) -> None:
+    def track_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("after")
 
     agent = create_agent(
@@ -166,18 +146,15 @@ def test_decorators_use_function_names_as_default() -> None:
     """Test that decorators use function names as default middleware names."""
 
     @before_model
-    def my_before_hook(*_args: Any, **_kwargs: Any) -> None:
+    def my_before_hook(state: AgentState, runtime: Runtime) -> None:
         return None
 
     @wrap_model_call
-    def my_on_call_hook(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+    def my_on_call_hook(request, handler):
         return handler(request)
 
     @after_model
-    def my_after_hook(*_args: Any, **_kwargs: Any) -> None:
+    def my_after_hook(state: AgentState, runtime: Runtime) -> None:
         return None
 
     # Verify that function names are used as middleware class names
@@ -191,17 +168,13 @@ def test_hook_config_decorator_on_class_method() -> None:
 
     class JumpMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["end", "model"])
-        def before_model(
-            self, state: AgentState[Any], runtime: Runtime[None]
-        ) -> dict[str, Any] | None:
+        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if len(state["messages"]) > 5:
                 return {"jump_to": "end"}
             return None
 
         @hook_config(can_jump_to=["tools"])
-        def after_model(
-            self, state: AgentState[Any], runtime: Runtime[None]
-        ) -> dict[str, Any] | None:
+        def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             return {"jump_to": "tools"}
 
     # Verify can_jump_to metadata is preserved
@@ -213,9 +186,7 @@ def test_can_jump_to_with_before_model_decorator() -> None:
     """Test can_jump_to parameter used with before_model decorator."""
 
     @before_model(can_jump_to=["end"])
-    def conditional_before(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    def conditional_before(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if len(state["messages"]) > 3:
             return {"jump_to": "end"}
         return None
@@ -229,9 +200,7 @@ def test_can_jump_to_with_after_model_decorator() -> None:
     """Test can_jump_to parameter used with after_model decorator."""
 
     @after_model(can_jump_to=["model", "end"])
-    def conditional_after(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    def conditional_after(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if state["messages"][-1].content == "retry":
             return {"jump_to": "model"}
         return None
@@ -249,7 +218,7 @@ def test_can_jump_to_integration() -> None:
     calls = []
 
     @before_model(can_jump_to=["end"])
-    def early_exit(state: AgentState[Any], *_args: Any, **_kwargs: Any) -> dict[str, Any] | None:
+    def early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         calls.append("early_exit")
         if state["messages"][0].content == "exit":
             return {"jump_to": "end"}
@@ -277,7 +246,7 @@ def test_async_before_model_decorator() -> None:
     """Test before_model decorator with async function."""
 
     @before_model(state_schema=CustomState, tools=[test_tool], name="AsyncBeforeModel")
-    async def async_before_model(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    async def async_before_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
         return {"custom_field": "async_value"}
 
     assert isinstance(async_before_model, AgentMiddleware)
@@ -290,7 +259,7 @@ def test_async_after_model_decorator() -> None:
     """Test after_model decorator with async function."""
 
     @after_model(state_schema=CustomState, tools=[test_tool], name="AsyncAfterModel")
-    async def async_after_model(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+    async def async_after_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
         return {"custom_field": "async_value"}
 
     assert isinstance(async_after_model, AgentMiddleware)
@@ -303,13 +272,8 @@ def test_async_on_model_call_decorator() -> None:
     """Test wrap_model_call decorator with async function."""
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="AsyncOnModelCall")
-    async def async_on_model_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
-        return await handler(
-            request.override(system_message=SystemMessage(content="Modified async"))
-        )
+    async def async_on_model_call(request, handler):
+        return await handler(request.override(system_prompt="Modified async"))
 
     assert isinstance(async_on_model_call, AgentMiddleware)
     assert async_on_model_call.state_schema == CustomState
@@ -321,25 +285,19 @@ def test_mixed_sync_async_decorators() -> None:
     """Test decorators with both sync and async functions."""
 
     @before_model(name="MixedBeforeModel")
-    def sync_before(*_args: Any, **_kwargs: Any) -> None:
+    def sync_before(state: AgentState, runtime: Runtime) -> None:
         return None
 
     @before_model(name="MixedBeforeModel")
-    async def async_before(*_args: Any, **_kwargs: Any) -> None:
+    async def async_before(state: AgentState, runtime: Runtime) -> None:
         return None
 
     @wrap_model_call(name="MixedOnModelCall")
-    def sync_on_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+    def sync_on_call(request, handler):
         return handler(request)
 
     @wrap_model_call(name="MixedOnModelCall")
-    async def async_on_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+    async def async_on_call(request, handler):
         return await handler(request)
 
     # Both should create valid middleware instances
@@ -354,19 +312,16 @@ async def test_async_decorators_integration() -> None:
     call_order = []
 
     @before_model
-    async def track_async_before(*_args: Any, **_kwargs: Any) -> None:
+    async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
 
     @wrap_model_call
-    async def track_async_on_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+    async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
         return await handler(request)
 
     @after_model
-    async def track_async_after(*_args: Any, **_kwargs: Any) -> None:
+    async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
 
     agent = create_agent(
@@ -384,35 +339,29 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     call_order = []
 
     @before_model
-    def track_sync_before(*_args: Any, **_kwargs: Any) -> None:
+    def track_sync_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_before")
 
     @before_model
-    async def track_async_before(*_args: Any, **_kwargs: Any) -> None:
+    async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
 
     @wrap_model_call
-    async def track_async_on_call(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+    async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
         return await handler(request)
 
     @wrap_tool_call
-    async def track_sync_on_tool_call(
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> ToolMessage | Command[Any]:
+    async def track_sync_on_tool_call(request, handler):
         call_order.append("async_on_tool_call")
         return await handler(request)
 
     @after_model
-    async def track_async_after(*_args: Any, **_kwargs: Any) -> None:
+    async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
 
     @after_model
-    def track_sync_after(*_args: Any, **_kwargs: Any) -> None:
+    def track_sync_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_after")
 
     agent = create_agent(
@@ -446,7 +395,7 @@ def test_async_before_model_preserves_can_jump_to() -> None:
 
     @before_model(can_jump_to=["end"])
     async def async_conditional_before(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
+        state: AgentState, runtime: Runtime
     ) -> dict[str, Any] | None:
         if len(state["messages"]) > 3:
             return {"jump_to": "end"}
@@ -463,9 +412,7 @@ def test_async_after_model_preserves_can_jump_to() -> None:
     """Test that can_jump_to metadata is preserved for async after_model functions."""
 
     @after_model(can_jump_to=["model", "end"])
-    async def async_conditional_after(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    async def async_conditional_after(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if state["messages"][-1].content == "retry":
             return {"jump_to": "model"}
         return None
@@ -483,9 +430,7 @@ async def test_async_can_jump_to_integration() -> None:
     calls = []
 
     @before_model(can_jump_to=["end"])
-    async def async_early_exit(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    async def async_early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         calls.append("async_early_exit")
         if state["messages"][0].content == "exit":
             return {"jump_to": "end"}
@@ -527,9 +472,7 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
     # Middleware with only sync method overridden
     class SyncOnlyMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
-        def before_model(
-            self, state: AgentState[Any], runtime: Runtime[None]
-        ) -> dict[str, Any] | None:
+        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             return None
 
     sync_middleware = SyncOnlyMiddleware()
@@ -541,9 +484,7 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
     # Middleware with only async method overridden
     class AsyncOnlyMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["model"])
-        async def aafter_model(
-            self, state: AgentState[Any], runtime: Runtime[None]
-        ) -> dict[str, Any] | None:
+        async def aafter_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             return None
 
     async_middleware = AsyncOnlyMiddleware()
@@ -562,9 +503,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
 
     # Test 1: Async before_model with can_jump_to
     @before_model(can_jump_to=["end"])
-    async def async_before_with_jump(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    async def async_before_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if len(state["messages"]) > 5:
             return {"jump_to": "end"}
         return None
@@ -577,9 +516,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
 
     # Test 2: Async after_model with can_jump_to
     @after_model(can_jump_to=["model", "end"])
-    async def async_after_with_jump(
-        state: AgentState[Any], *_args: Any, **_kwargs: Any
-    ) -> dict[str, Any] | None:
+    async def async_after_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if state["messages"][-1].content == "retry":
             return {"jump_to": "model"}
         return None
@@ -592,11 +529,11 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
 
     # Test 3: Multiple async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
-    async def async_before_early_exit(*_args: Any, **_kwargs: Any) -> dict[str, Any] | None:
+    async def async_before_early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         return None
 
     @after_model(can_jump_to=["model"])
-    async def async_after_retry(*_args: Any, **_kwargs: Any) -> dict[str, Any] | None:
+    async def async_after_retry(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         return None
 
     agent_multiple_async = create_agent(
@@ -608,11 +545,11 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
 
     # Test 4: Mixed sync and async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
-    def sync_before_with_jump(*_args: Any, **_kwargs: Any) -> dict[str, Any] | None:
+    def sync_before_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         return None
 
     @after_model(can_jump_to=["model", "end"])
-    async def async_after_with_jumps(*_args: Any, **_kwargs: Any) -> dict[str, Any] | None:
+    async def async_after_with_jumps(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         return None
 
     agent_mixed = create_agent(
@@ -637,7 +574,7 @@ def test_dynamic_prompt_decorator() -> None:
 
     # Verify it modifies the request correctly
     original_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
@@ -647,12 +584,11 @@ def test_dynamic_prompt_decorator() -> None:
         runtime=None,
     )
 
-    def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(result=[AIMessage(content=req.system_prompt)])
+    def mock_handler(req):
+        return AIMessage(content=req.system_prompt)
 
     result = my_prompt.wrap_model_call(original_request, mock_handler)
-    assert isinstance(result, ModelResponse)
-    assert result.result[0].content == "Dynamic test prompt"
+    assert result.content == "Dynamic test prompt"
 
 
 def test_dynamic_prompt_uses_state() -> None:
@@ -665,7 +601,7 @@ def test_dynamic_prompt_uses_state() -> None:
 
     # Verify it uses state correctly
     original_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
@@ -675,12 +611,11 @@ def test_dynamic_prompt_uses_state() -> None:
         runtime=None,
     )
 
-    def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(result=[AIMessage(content=req.system_prompt)])
+    def mock_handler(req):
+        return AIMessage(content=req.system_prompt)
 
     result = custom_prompt.wrap_model_call(original_request, mock_handler)
-    assert isinstance(result, ModelResponse)
-    assert result.result[0].content == "Prompt with 2 messages"
+    assert result.content == "Prompt with 2 messages"
 
 
 def test_dynamic_prompt_integration() -> None:
@@ -702,7 +637,7 @@ def test_dynamic_prompt_integration() -> None:
     assert result["messages"][-1].content == "you are a helpful assistant.-Hello"
 
 
-def test_async_dynamic_prompt_decorator() -> None:
+async def test_async_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with async function."""
 
     @dynamic_prompt

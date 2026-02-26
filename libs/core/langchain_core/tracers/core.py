@@ -56,30 +56,25 @@ class _TracerCore(ABC):
         """Initialize the tracer.
 
         Args:
-            _schema_format: Primarily changes how the inputs and outputs are handled.
+            _schema_format: Primarily changes how the inputs and outputs are
+                handled. For internal use only. This API will change.
 
-                For internal use only. This API will change.
-
-                - `'original'` is the format used by all current tracers.
-
-                    This format is slightly inconsistent with respect to inputs and
-                    outputs.
-                - `'streaming_events'` is used for supporting streaming events, for
-                    internal usage. It will likely change in the future, or be
-                    deprecated entirely in favor of a dedicated async tracer for
-                    streaming events.
-                - `'original+chat'` is a format that is the same as `'original'` except
-                    it does NOT raise an attribute error `on_chat_model_start`
-            **kwargs: Additional keyword arguments that will be passed to the
-                superclass.
+                - 'original' is the format used by all current tracers.
+                  This format is slightly inconsistent with respect to inputs
+                  and outputs.
+                - 'streaming_events' is used for supporting streaming events,
+                  for internal usage. It will likely change in the future, or
+                  be deprecated entirely in favor of a dedicated async tracer
+                  for streaming events.
+                - 'original+chat' is a format that is the same as 'original'
+                  except it does NOT raise an attribute error on_chat_model_start
+            **kwargs: Additional keyword arguments that will be passed to
+                the superclass.
         """
         super().__init__(**kwargs)
-
         self._schema_format = _schema_format  # For internal use only API will change.
-
         self.run_map: dict[str, Run] = {}
         """Map of run ID to run. Cleared on run end."""
-
         self.order_map: dict[UUID, tuple[UUID, str]] = {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
@@ -102,7 +97,7 @@ class _TracerCore(ABC):
         try:
             tb = traceback.format_exception(error)
             return (msg + "\n\n".join(tb)).strip()
-        except Exception:
+        except:  # noqa: E722
             return msg
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
@@ -189,7 +184,7 @@ class _TracerCore(ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
 
     def _create_llm_run(
@@ -218,7 +213,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             run_type="llm",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
 
     def _llm_run_with_token_event(
@@ -226,10 +221,9 @@ class _TracerCore(ABC):
         token: str,
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
-        parent_run_id: UUID | None = None,
+        parent_run_id: UUID | None = None,  # noqa: ARG002
     ) -> Run:
         """Append token event to LLM run and return the run."""
-        _ = parent_run_id
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
@@ -352,7 +346,7 @@ class _TracerCore(ABC):
             start_time=start_time,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,
+            name=name,  # type: ignore[arg-type]
             tags=tags or [],
         )
 
@@ -449,7 +443,7 @@ class _TracerCore(ABC):
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
 
     def _complete_tool_run(
@@ -544,47 +538,43 @@ class _TracerCore(ABC):
         """Return self copied."""
         return self
 
-    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """End a trace for a run.
 
         Args:
             run: The run.
         """
-        _ = run
         return None
 
-    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process a run upon creation.
 
         Args:
             run: The created run.
         """
-        _ = run
         return None
 
-    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process a run upon update.
 
         Args:
             run: The updated run.
         """
-        _ = run
         return None
 
-    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run upon start.
 
         Args:
             run: The LLM run.
         """
-        _ = run
         return None
 
     def _on_llm_new_token(
         self,
-        run: Run,
-        token: str,
-        chunk: GenerationChunk | ChatGenerationChunk | None,
+        run: Run,  # noqa: ARG002
+        token: str,  # noqa: ARG002
+        chunk: GenerationChunk | ChatGenerationChunk | None,  # noqa: ARG002
     ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
@@ -593,113 +583,100 @@ class _TracerCore(ABC):
             token: The new token.
             chunk: Optional chunk.
         """
-        _ = (run, token, chunk)
         return None
 
-    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run.
 
         Args:
             run: The LLM run.
         """
-        _ = run
         return None
 
-    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run upon error.
 
         Args:
             run: The LLM run.
         """
-        _ = run
         return None
 
-    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run upon start.
 
         Args:
             run: The chain run.
         """
-        _ = run
         return None
 
-    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run.
 
         Args:
             run: The chain run.
         """
-        _ = run
         return None
 
-    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run upon error.
 
         Args:
             run: The chain run.
         """
-        _ = run
         return None
 
-    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run upon start.
 
         Args:
             run: The tool run.
         """
-        _ = run
         return None
 
-    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run.
 
         Args:
             run: The tool run.
         """
-        _ = run
         return None
 
-    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run upon error.
 
         Args:
             run: The tool run.
         """
-        _ = run
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chat Model Run upon start.
 
         Args:
             run: The chat model run.
         """
-        _ = run
         return None
 
-    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run upon start.
 
         Args:
             run: The retriever run.
         """
-        _ = run
         return None
 
-    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run.
 
         Args:
             run: The retriever run.
         """
-        _ = run
         return None
 
-    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
+    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run upon error.
 
         Args:
             run: The retriever run.
         """
-        _ = run
         return None

@@ -1,13 +1,12 @@
 """AI message."""
 
-import itertools
 import json
 import logging
 import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import Field, model_validator
+from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -167,10 +166,10 @@ class AIMessage(BaseMessage):
     (e.g., tool calls, usage metadata) added by the LangChain framework.
     """
 
-    tool_calls: list[ToolCall] = Field(default_factory=list)
+    tool_calls: list[ToolCall] = []
     """If present, tool calls associated with the message."""
 
-    invalid_tool_calls: list[InvalidToolCall] = Field(default_factory=list)
+    invalid_tool_calls: list[InvalidToolCall] = []
     """If present, tool calls with parsing errors associated with the message."""
 
     usage_metadata: UsageMetadata | None = None
@@ -355,31 +354,7 @@ class AIMessage(BaseMessage):
         Returns:
             A pretty representation of the message.
 
-        Example:
-            ```python
-            from langchain_core.messages import AIMessage
-
-            msg = AIMessage(
-                content="Let me check the weather.",
-                tool_calls=[
-                    {"name": "get_weather", "args": {"city": "Paris"}, "id": "1"}
-                ],
-            )
-            ```
-
-            Results in:
-            ```python
-            >>> print(msg.pretty_repr())
-            ================================== Ai Message ==================================
-
-            Let me check the weather.
-            Tool Calls:
-              get_weather (1)
-             Call ID: 1
-              Args:
-                city: Paris
-            ```
-        """  # noqa: E501
+        """
         base = super().pretty_repr(html=html)
         lines = []
 
@@ -419,7 +394,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization)."""
 
-    tool_call_chunks: list[ToolCallChunk] = Field(default_factory=list)
+    tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
@@ -430,8 +405,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     """
 
     @property
-    @override
     def lc_attributes(self) -> dict:
+        """Attributes to be serialized, even if they are derived from other initialization args."""  # noqa: E501
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -588,11 +563,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
-        """Initialize server tool calls.
-
-        Parse `server_tool_call_chunks` from
-        [`ServerToolCallChunk`][langchain.messages.ServerToolCallChunk] objects.
-        """
+        """Parse `server_tool_call_chunks` from [`ServerToolCallChunk`][langchain.messages.ServerToolCallChunk] objects."""  # noqa: E501
         if (
             self.chunk_position == "last"
             and self.response_metadata.get("output_version") == "v1"
@@ -680,28 +651,29 @@ def add_ai_message_chunks(
     else:
         usage_metadata = None
 
-    # Ranks are defined by the order of preference. Higher is better:
-    # 2. Provider-assigned IDs (non lc_* and non lc_run-*)
-    # 1. lc_run-* IDs
-    # 0. lc_* and other remaining IDs
-    best_rank = -1
     chunk_id = None
-    candidates = itertools.chain([left.id], (o.id for o in others))
-
+    candidates = [left.id] + [o.id for o in others]
+    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
     for id_ in candidates:
-        if not id_:
-            continue
-
-        if not id_.startswith(LC_ID_PREFIX) and not id_.startswith(LC_AUTO_PREFIX):
+        if (
+            id_
+            and not id_.startswith(LC_ID_PREFIX)
+            and not id_.startswith(LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
-            # Highest rank, return instantly
             break
-
-        rank = 1 if id_.startswith(LC_ID_PREFIX) else 0
-
-        if rank > best_rank:
-            best_rank = rank
-            chunk_id = id_
+    else:
+        # second pass: prefer lc_run-* IDs over lc_* IDs
+        for id_ in candidates:
+            if id_ and id_.startswith(LC_ID_PREFIX):
+                chunk_id = id_
+                break
+        else:
+            # third pass: take any remaining ID (auto-generated lc_* IDs)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
 
     chunk_position: Literal["last"] | None = (
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None

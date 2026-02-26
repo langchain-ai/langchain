@@ -1,40 +1,38 @@
 from __future__ import annotations
 
+import asyncio
 import gc
 import tempfile
 import time
 from pathlib import Path
-from typing import cast
 
 import pytest
 from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import ToolException
-from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
     ShellToolMiddleware,
-    ShellToolState,
     _SessionResources,
     _ShellToolInput,
 )
+from langchain.agents.middleware.types import AgentState
 
 
-def _empty_state() -> ShellToolState:
-    return {"messages": []}
+def _empty_state() -> AgentState:
+    return {"messages": []}  # type: ignore[return-value]
 
 
 def test_executes_command_and_persists_state(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(workspace_root=workspace)
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "cd /"}, tool_call_id=None)
         result = middleware._run_shell_tool(resources, {"command": "pwd"}, tool_call_id=None)
@@ -45,18 +43,19 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
         )
         assert "ready" in echo_result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_restart_resets_session_environment(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         middleware._run_shell_tool(resources, {"command": "export FOO=bar"}, tool_call_id=None)
         restart_message = middleware._run_shell_tool(
@@ -69,42 +68,46 @@ def test_restart_resets_session_environment(tmp_path: Path) -> None:
         )
         assert "unset" in result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_truncation_indicator_present(tmp_path: Path) -> None:
     policy = HostExecutionPolicy(max_output_lines=5, command_timeout=5.0)
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(resources, {"command": "seq 1 20"}, tool_call_id=None)
         assert "Output truncated" in result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_timeout_returns_error(tmp_path: Path) -> None:
     policy = HostExecutionPolicy(command_timeout=0.5)
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         start = time.monotonic()
         result = middleware._run_shell_tool(resources, {"command": "sleep 2"}, tool_call_id=None)
         elapsed = time.monotonic() - start
         assert elapsed < policy.command_timeout + 2.0
         assert "timed out" in result.lower()
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_redaction_policy_applies(tmp_path: Path) -> None:
@@ -112,13 +115,12 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
         workspace_root=tmp_path / "workspace",
         redaction_rules=(RedactionRule(pii_type="email", strategy="redact"),),
     )
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         message = middleware._run_shell_tool(
             resources,
             {"command": "printf 'Contact: user@example.com\\n'"},
@@ -127,7 +129,9 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
         assert "[REDACTED_EMAIL]" in message
         assert "user@example.com" not in message
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_startup_and_shutdown_commands(tmp_path: Path) -> None:
@@ -137,15 +141,16 @@ def test_startup_and_shutdown_commands(tmp_path: Path) -> None:
         startup_commands=("touch startup.txt",),
         shutdown_commands=("touch shutdown.txt",),
     )
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
+            state.update(updates)
         assert (workspace / "startup.txt").exists()
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
     assert (workspace / "shutdown.txt").exists()
 
 
@@ -212,32 +217,32 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace", env={"NUM": 42, "BOOL": True}
     )
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
         result = middleware._run_shell_tool(
             resources, {"command": "echo $NUM $BOOL"}, tool_call_id=None
         )
         assert "42" in result
         assert "True" in result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
     """Test that shell tool raises an error when command is not a string."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         with pytest.raises(ToolException, match="expects a 'command' string"):
             middleware._run_shell_tool(resources, {"command": None}, tool_call_id=None)
@@ -245,23 +250,24 @@ def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
         with pytest.raises(ToolException, match="expects a 'command' string"):
             middleware._run_shell_tool(
                 resources,
-                {"command": 123},
+                {"command": 123},  # type: ignore[dict-item]
                 tool_call_id=None,
             )
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
     """Test that tool messages are properly formatted with tool_call_id."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "echo test"}, tool_call_id="test-id-123"
@@ -273,19 +279,20 @@ def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
         assert result.status == "success"
         assert "test" in result.content
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
     """Test that non-zero exit codes are marked as errors."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources,
@@ -296,22 +303,23 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         assert isinstance(result, ToolMessage)
         assert result.status == "error"
         assert "Exit code: 1" in result.content
-        assert result.artifact["exit_code"] == 1
+        assert result.artifact["exit_code"] == 1  # type: ignore[index]
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_truncation_by_bytes(tmp_path: Path) -> None:
     """Test that output is truncated by bytes when max_output_bytes is exceeded."""
     policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "python3 -c 'print(\"x\" * 100)'"}, tool_call_id=None
@@ -319,7 +327,9 @@ def test_truncation_by_bytes(tmp_path: Path) -> None:
 
         assert "truncated at 50 bytes" in result.lower()
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_startup_command_failure(tmp_path: Path) -> None:
@@ -328,10 +338,9 @@ def test_startup_command_failure(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace", startup_commands=("exit 1",), execution_policy=policy
     )
-    runtime = Runtime()
-    state = _empty_state()
+    state: AgentState = _empty_state()
     with pytest.raises(RuntimeError, match=r"Startup command.*failed"):
-        middleware.before_agent(state, runtime)
+        middleware.before_agent(state, None)
 
 
 def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
@@ -342,15 +351,14 @@ def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
         shutdown_commands=("exit 1",),
         execution_policy=policy,
     )
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
+            state.update(updates)
     finally:
         # Should not raise despite shutdown command failing
-        middleware.after_agent(state, runtime)
+        middleware.after_agent(state, None)
 
 
 def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
@@ -361,27 +369,25 @@ def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
         execution_policy=policy,
         shutdown_commands=("sleep 2",),
     )
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
+            state.update(updates)
     finally:
         # Should not raise despite shutdown command timing out
-        middleware.after_agent(state, runtime)
+        middleware.after_agent(state, None)
 
 
 def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
     """Test that empty command output is replaced with '<no output>'."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources,
@@ -391,19 +397,20 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
 
         assert "<no output>" in result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 def test_stderr_output_labeling(tmp_path: Path) -> None:
     """Test that stderr output is properly labeled."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    runtime = Runtime()
-    state = _empty_state()
     try:
-        updates = middleware.before_agent(state, runtime)
+        state: AgentState = _empty_state()
+        updates = middleware.before_agent(state, None)
         if updates:
-            state.update(cast("ShellToolState", updates))
-        resources = middleware._get_or_create_resources(state)
+            state.update(updates)
+        resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
         result = middleware._run_shell_tool(
             resources, {"command": "echo error >&2"}, tool_call_id=None
@@ -411,7 +418,9 @@ def test_stderr_output_labeling(tmp_path: Path) -> None:
 
         assert "[stderr] error" in result
     finally:
-        middleware.after_agent(state, runtime)
+        updates = middleware.after_agent(state, None)
+        if updates:
+            state.update(updates)
 
 
 @pytest.mark.parametrize(
@@ -432,22 +441,22 @@ def test_normalize_commands_string_tuple_list(
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace", startup_commands=startup_commands
     )
-    assert middleware._startup_commands == expected
+    assert middleware._startup_commands == expected  # type: ignore[attr-defined]
 
 
-async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
+def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
     """Test that async methods properly delegate to sync methods."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
     try:
-        state = _empty_state()
+        state: AgentState = _empty_state()
 
         # Test abefore_agent
-        updates = await middleware.abefore_agent(state, Runtime())
+        updates = asyncio.run(middleware.abefore_agent(state, None))
         if updates:
-            state.update(cast("ShellToolState", updates))
+            state.update(updates)
 
         # Test aafter_agent
-        await middleware.aafter_agent(state, Runtime())
+        asyncio.run(middleware.aafter_agent(state, None))
     finally:
         pass
 
@@ -466,14 +475,13 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(workspace_root=workspace)
 
     # Simulate first execution (before interrupt)
-    runtime = Runtime()
-    state = _empty_state()
-    updates = middleware.before_agent(state, runtime)
+    state: AgentState = _empty_state()
+    updates = middleware.before_agent(state, None)
     if updates:
-        state.update(cast("ShellToolState", updates))
+        state.update(updates)
 
     # Get the resources and verify they exist
-    resources = middleware._get_or_create_resources(state)
+    resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
     initial_session = resources.session
     initial_tempdir = resources.tempdir
 
@@ -485,12 +493,12 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
 
     # Simulate resumption - call before_agent again with same state
     # This should reuse existing resources, not create new ones
-    updates = middleware.before_agent(state, runtime)
+    updates = middleware.before_agent(state, None)
     if updates:
-        state.update(cast("ShellToolState", updates))
+        state.update(updates)
 
     # Get resources again - should be the same session
-    resumed_resources = middleware._get_or_create_resources(state)
+    resumed_resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
     # Verify the session was reused (same object reference)
     assert resumed_resources.session is initial_session
@@ -504,7 +512,7 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
     assert "unset" not in result
 
     # Clean up
-    middleware.after_agent(state, runtime)
+    middleware.after_agent(state, None)
 
 
 def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
@@ -512,13 +520,13 @@ def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(workspace_root=workspace)
 
-    state = _empty_state()
+    state: AgentState = _empty_state()
 
     # State has no resources initially
     assert "shell_session_resources" not in state
 
     # Call _get_or_create_resources - should create new resources
-    resources = middleware._get_or_create_resources(state)
+    resources = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
     assert isinstance(resources, _SessionResources)
     assert resources.session is not None
@@ -533,13 +541,13 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(workspace_root=workspace)
 
-    state = _empty_state()
+    state: AgentState = _empty_state()
 
     # Create resources first time
-    resources1 = middleware._get_or_create_resources(state)
+    resources1 = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
     # Call again - should return the same resources
-    resources2 = middleware._get_or_create_resources(state)
+    resources2 = middleware._get_or_create_resources(state)  # type: ignore[attr-defined]
 
     assert resources1 is resources2
     assert resources1.session is resources2.session

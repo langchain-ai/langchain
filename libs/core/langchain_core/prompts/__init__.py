@@ -1,4 +1,4 @@
-"""A prompt is the input to the model.
+"""**Prompt** is the input to the model.
 
 Prompt is often constructed from multiple components and prompt values. Prompt classes
 and functions make constructing and working with prompts easy.

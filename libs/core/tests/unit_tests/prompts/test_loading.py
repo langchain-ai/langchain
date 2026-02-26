@@ -15,7 +15,7 @@ EXAMPLE_DIR = (Path(__file__).parent.parent / "examples").absolute()
 
 
 @contextmanager
-def change_directory(dir_path: Path) -> Iterator[None]:
+def change_directory(dir_path: Path) -> Iterator:
     """Change the working directory to the right folder."""
     origin = Path().absolute()
     try:

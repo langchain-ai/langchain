@@ -1,33 +1,23 @@
 import sys
-from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, Generic
+from collections.abc import Callable
+from typing import Annotated, Any
 
 import pytest
-from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ModelCallResult,
     ModelRequest,
-    ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
-    ResponseT,
-    after_agent,
-    after_model,
-    before_agent,
-    before_model,
     hook_config,
 )
 from langchain.agents.structured_output import ToolStrategy
@@ -38,38 +28,38 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 
 def test_create_agent_invoke(
     snapshot: SnapshotAssertion,
-    sync_checkpointer: BaseCheckpointSaver[str],
-) -> None:
+    sync_checkpointer: BaseCheckpointSaver,
+):
     calls = []
 
     class NoopSeven(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state, runtime):
             calls.append("NoopEight.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
 
     @tool
@@ -139,40 +129,40 @@ def test_create_agent_invoke(
 
 def test_create_agent_jump(
     snapshot: SnapshotAssertion,
-    sync_checkpointer: BaseCheckpointSaver[str],
-) -> None:
+    sync_checkpointer: BaseCheckpointSaver,
+):
     calls = []
 
     class NoopSeven(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+        def before_model(self, state, runtime) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
 
     @tool
@@ -224,15 +214,15 @@ def test_agent_graph_with_jump_to_end_as_after_agent(snapshot: SnapshotAssertion
 
     class NoopZero(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
-        def before_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_agent(self, state, runtime) -> None:
             return None
 
     class NoopOne(AgentMiddleware):
-        def after_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_agent(self, state, runtime) -> None:
             return None
 
     class NoopTwo(AgentMiddleware):
-        def after_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_agent(self, state, runtime) -> None:
             return None
 
     agent_one = create_agent(
@@ -252,8 +242,8 @@ def test_on_model_call() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             request.messages.append(HumanMessage("remember to be nice!"))
             return handler(request)
 
@@ -272,7 +262,7 @@ def test_on_model_call() -> None:
     )
 
 
-def test_tools_to_model_edge_with_structured_and_regular_tool_calls() -> None:
+def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
     """Test tools to model edge with structured and regular tool calls.
 
     Test that when there are both structured and regular tool calls, we execute regular
@@ -292,7 +282,7 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls() -> None:
 
     # Create a fake model that returns both structured and regular tool calls
     class FakeModelWithBothToolCalls(FakeToolCallingModel):
-        def __init__(self) -> None:
+        def __init__(self):
             super().__init__()
             self.tool_calls = [
                 [
@@ -353,7 +343,7 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls() -> None:
 def test_public_private_state_for_custom_middleware() -> None:
     """Test public and private state for custom middleware."""
 
-    class CustomState(AgentState[Any]):
+    class CustomState(AgentState):
         omit_input: Annotated[str, OmitFromInput]
         omit_output: Annotated[str, OmitFromOutput]
         private_state: Annotated[str, PrivateStateAttr]
@@ -361,8 +351,7 @@ def test_public_private_state_for_custom_middleware() -> None:
     class CustomMiddleware(AgentMiddleware[CustomState]):
         state_schema: type[CustomState] = CustomState
 
-        @override
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+        def before_model(self, state: CustomState) -> dict[str, Any]:
             assert "omit_input" not in state
             assert "omit_output" in state
             assert "private_state" not in state
@@ -384,20 +373,21 @@ def test_public_private_state_for_custom_middleware() -> None:
 
 def test_runtime_injected_into_middleware() -> None:
     """Test that the runtime is injected into the middleware."""
+    from langgraph.runtime import Runtime
 
     class CustomMiddleware(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             assert request.runtime is not None
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
@@ -408,7 +398,7 @@ def test_runtime_injected_into_middleware() -> None:
 # custom state w/in a function
 
 
-class CustomState(AgentState[ResponseT], Generic[ResponseT]):
+class CustomState(AgentState):
     custom_state: str
 
 
@@ -444,10 +434,7 @@ agent = create_agent(
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
     result = agent.invoke(
-        {
-            "custom_state": "I love pizza",
-            "messages": [HumanMessage("Call the test state tool")],
-        }
+        {"custom_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
     )
 
     messages = result["messages"]
@@ -465,11 +452,11 @@ def test_injected_state_in_middleware_agent() -> None:
 
 def test_jump_to_is_ephemeral() -> None:
     class MyMiddleware(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+        def before_model(self, state: AgentState) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+        def after_model(self, state: AgentState) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
 
@@ -480,13 +467,14 @@ def test_jump_to_is_ephemeral() -> None:
 
 def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:
     """Test that sync invoke with only async middleware works via run_in_executor."""
+    from collections.abc import Awaitable
 
     class AsyncOnlyMiddleware(AgentMiddleware):
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             return await handler(request)
 
     agent = create_agent(
@@ -502,28 +490,30 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     """Test that sync invoke works with mixed sync/async middleware when sync versions exist."""
+    from collections.abc import Awaitable
+
     calls = []
 
     class MixedMiddleware(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state, runtime) -> None:
             calls.append("MixedMiddleware.before_model")
 
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("MixedMiddleware.abefore_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("MixedMiddleware.wrap_model_call")
             return handler(request)
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             calls.append("MixedMiddleware.awrap_model_call")
             return await handler(request)
 
@@ -550,22 +540,24 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
 
 async def test_create_agent_async_invoke() -> None:
     """Test async invoke with async middleware hooks."""
+    from collections.abc import Awaitable, Callable
+
     calls = []
 
     class AsyncMiddleware(AgentMiddleware):
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             calls.append("AsyncMiddleware.awrap_model_call")
             request.messages.append(HumanMessage("async middleware message"))
             return await handler(request)
 
-        async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
     @tool
@@ -611,36 +603,38 @@ async def test_create_agent_async_invoke() -> None:
 
 async def test_create_agent_async_invoke_multiple_middleware() -> None:
     """Test async invoke with multiple async middleware hooks."""
+    from collections.abc import Awaitable, Callable
+
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             calls.append("AsyncMiddlewareOne.awrap_model_call")
             return await handler(request)
 
-        async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.aafter_model")
 
     class AsyncMiddlewareTwo(AgentMiddleware):
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.abefore_model")
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             calls.append("AsyncMiddlewareTwo.awrap_model_call")
             return await handler(request)
 
-        async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.aafter_model")
 
     agent = create_agent(
@@ -664,15 +658,17 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
 
 async def test_create_agent_async_jump() -> None:
     """Test async invoke with async middleware using jump_to."""
+    from typing import Any
+
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
     class AsyncMiddlewareTwo(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+        async def abefore_model(self, state, runtime) -> dict[str, Any]:
             calls.append("AsyncMiddlewareTwo.abefore_model")
             return {"jump_to": "end"}
 
@@ -699,17 +695,21 @@ async def test_create_agent_async_jump() -> None:
 
 async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
     """Test async invoke with mixed sync and async middleware."""
+    from collections.abc import Awaitable, Callable
+
+    from langchain.agents.middleware.types import ModelCallResult, ModelResponse
+
     calls = []
 
     class MostlySyncMiddleware(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def before_model(self, state, runtime) -> None:
             calls.append("MostlySyncMiddleware.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             calls.append("MostlySyncMiddleware.wrap_model_call")
             return handler(request)
 
@@ -721,22 +721,22 @@ async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
             calls.append("MostlySyncMiddleware.awrap_model_call")
             return await handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        def after_model(self, state, runtime) -> None:
             calls.append("MostlySyncMiddleware.after_model")
 
     class AsyncMiddleware(AgentMiddleware):
-        async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-        ) -> ModelCallResult:
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
             calls.append("AsyncMiddleware.awrap_model_call")
             return await handler(request)
 
-        async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
+        async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
     agent = create_agent(
@@ -773,48 +773,41 @@ class TestAgentMiddlewareHooks:
     @pytest.mark.parametrize("hook_type", ["before", "after"])
     async def test_hook_execution(self, *, is_async: bool, hook_type: str) -> None:
         """Test that agent hooks are called in both sync and async modes."""
+        from langchain.agents.middleware import after_agent, before_agent
+
         execution_log: list[str] = []
 
         if is_async:
             if hook_type == "before":
 
                 @before_agent
-                async def log_hook(
-                    state: AgentState[Any], *_args: Any, **_kwargs: Any
-                ) -> dict[str, Any] | None:
+                async def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
-
             else:
 
                 @after_agent
-                async def log_hook(
-                    state: AgentState[Any], *_args: Any, **_kwargs: Any
-                ) -> dict[str, Any] | None:
+                async def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
-
         elif hook_type == "before":
 
             @before_agent
-            def log_hook(
-                state: AgentState[Any], *_args: Any, **_kwargs: Any
-            ) -> dict[str, Any] | None:
+            def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
                 execution_log.append(f"{hook_type}_agent_called")
                 execution_log.append(f"message_count: {len(state['messages'])}")
                 return None
-
         else:
 
             @after_agent
-            def log_hook(
-                state: AgentState[Any], *_args: Any, **_kwargs: Any
-            ) -> dict[str, Any] | None:
+            def log_hook(state: AgentState, runtime) -> dict[str, Any] | None:
                 execution_log.append(f"{hook_type}_agent_called")
                 execution_log.append(f"message_count: {len(state['messages'])}")
                 return None
+
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[log_hook])
@@ -833,37 +826,34 @@ class TestAgentMiddlewareHooks:
         """Test agent hooks using class inheritance in both sync and async modes."""
         execution_log: list[str] = []
 
-        class AsyncCustomMiddleware(AgentMiddleware):
-            async def abefore_agent(
-                self, state: AgentState[Any], runtime: Runtime
-            ) -> dict[str, Any] | None:
-                if hook_type == "before":
-                    execution_log.append("hook_called")
-                return None
+        if is_async:
 
-            async def aafter_agent(
-                self, state: AgentState[Any], runtime: Runtime
-            ) -> dict[str, Any] | None:
-                if hook_type == "after":
-                    execution_log.append("hook_called")
-                return None
+            class CustomMiddleware(AgentMiddleware):
+                async def abefore_agent(self, state: AgentState, runtime) -> dict[str, Any] | None:
+                    if hook_type == "before":
+                        execution_log.append("hook_called")
+                    return None
 
-        class CustomMiddleware(AgentMiddleware):
-            def before_agent(
-                self, state: AgentState[Any], runtime: Runtime
-            ) -> dict[str, Any] | None:
-                if hook_type == "before":
-                    execution_log.append("hook_called")
-                return None
+                async def aafter_agent(self, state: AgentState, runtime) -> dict[str, Any] | None:
+                    if hook_type == "after":
+                        execution_log.append("hook_called")
+                    return None
+        else:
 
-            def after_agent(
-                self, state: AgentState[Any], runtime: Runtime
-            ) -> dict[str, Any] | None:
-                if hook_type == "after":
-                    execution_log.append("hook_called")
-                return None
+            class CustomMiddleware(AgentMiddleware):
+                def before_agent(self, state: AgentState, runtime) -> dict[str, Any] | None:
+                    if hook_type == "before":
+                        execution_log.append("hook_called")
+                    return None
 
-        middleware = AsyncCustomMiddleware() if is_async else CustomMiddleware()
+                def after_agent(self, state: AgentState, runtime) -> dict[str, Any] | None:
+                    if hook_type == "after":
+                        execution_log.append("hook_called")
+                    return None
+
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        middleware = CustomMiddleware()
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[middleware])
 
@@ -881,27 +871,30 @@ class TestAgentHooksCombined:
     @pytest.mark.parametrize("is_async", [False, True])
     async def test_execution_order(self, *, is_async: bool) -> None:
         """Test that before_agent executes before after_agent in both sync and async modes."""
+        from langchain.agents.middleware import after_agent, before_agent
+
         execution_log: list[str] = []
 
         if is_async:
 
             @before_agent
-            async def log_before(*_args: Any, **_kwargs: Any) -> None:
+            async def log_before(state: AgentState, runtime) -> None:
                 execution_log.append("before")
 
             @after_agent
-            async def log_after(*_args: Any, **_kwargs: Any) -> None:
+            async def log_after(state: AgentState, runtime) -> None:
                 execution_log.append("after")
-
         else:
 
             @before_agent
-            def log_before(*_args: Any, **_kwargs: Any) -> None:
+            def log_before(state: AgentState, runtime) -> None:
                 execution_log.append("before")
 
             @after_agent
-            def log_after(*_args: Any, **_kwargs: Any) -> None:
+            def log_after(state: AgentState, runtime) -> None:
                 execution_log.append("after")
+
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[log_before, log_after])
@@ -915,9 +908,12 @@ class TestAgentHooksCombined:
 
     def test_state_passthrough(self) -> None:
         """Test that state modifications in before_agent are visible to after_agent."""
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        from langchain.agents.middleware import before_agent
 
         @before_agent
-        def modify_in_before(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        def modify_in_before(state: AgentState, runtime) -> dict[str, Any]:
             return {"messages": [HumanMessage("Added by before_agent")]}
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
@@ -929,22 +925,26 @@ class TestAgentHooksCombined:
 
     def test_multiple_middleware_instances(self) -> None:
         """Test multiple before_agent and after_agent middleware instances."""
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        from langchain.agents.middleware import after_agent, before_agent
+
         execution_log = []
 
         @before_agent
-        def before_one(*_args: Any, **_kwargs: Any) -> None:
+        def before_one(state: AgentState, runtime) -> None:
             execution_log.append("before_1")
 
         @before_agent
-        def before_two(*_args: Any, **_kwargs: Any) -> None:
+        def before_two(state: AgentState, runtime) -> None:
             execution_log.append("before_2")
 
         @after_agent
-        def after_one(*_args: Any, **_kwargs: Any) -> None:
+        def after_one(state: AgentState, runtime) -> None:
             execution_log.append("after_1")
 
         @after_agent
-        def after_two(*_args: Any, **_kwargs: Any) -> None:
+        def after_two(state: AgentState, runtime) -> None:
             execution_log.append("after_2")
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
@@ -963,6 +963,13 @@ class TestAgentHooksCombined:
         This is different from model-level hooks (before_model, after_model) which run
         on every model invocation within the tool calling loop.
         """
+        from langchain.agents.middleware import (
+            after_agent,
+            after_model,
+            before_agent,
+            before_model,
+        )
+
         execution_log = []
 
         @tool
@@ -971,19 +978,19 @@ class TestAgentHooksCombined:
             return f"Result for: {query}"
 
         @before_agent
-        def log_before_agent(*_args: Any, **_kwargs: Any) -> None:
+        def log_before_agent(state: AgentState, runtime) -> None:
             execution_log.append("before_agent")
 
         @before_model
-        def log_before_model(*_args: Any, **_kwargs: Any) -> None:
+        def log_before_model(state: AgentState, runtime) -> None:
             execution_log.append("before_model")
 
         @after_agent
-        def log_after_agent(*_args: Any, **_kwargs: Any) -> None:
+        def log_after_agent(state: AgentState, runtime) -> None:
             execution_log.append("after_agent")
 
         @after_model
-        def log_after_model(*_args: Any, **_kwargs: Any) -> None:
+        def log_after_model(state: AgentState, runtime) -> None:
             execution_log.append("after_model")
 
         # Model will call a tool twice, then respond with final answer

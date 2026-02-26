@@ -5,11 +5,10 @@ from __future__ import annotations
 import functools
 import inspect
 import json
-import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -83,27 +82,25 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "file",
 )
 
-_logger = logging.getLogger(__name__)
-
 
 class SchemaAnnotationError(TypeError):
-    """Raised when `args_schema` is missing or has an incorrect type annotation."""
+    """Raised when args_schema is missing or has an incorrect type annotation."""
 
 
 def _is_annotated_type(typ: type[Any]) -> bool:
-    """Check if a type is an `Annotated` type.
+    """Check if a type is an Annotated type.
 
     Args:
         typ: The type to check.
 
     Returns:
-        `True` if the type is an `Annotated` type, `False` otherwise.
+        `True` if the type is an Annotated type, `False` otherwise.
     """
     return get_origin(typ) in {typing.Annotated, typing_extensions.Annotated}
 
 
 def _get_annotation_description(arg_type: type) -> str | None:
-    """Extract description from an `Annotated` type.
+    """Extract description from an Annotated type.
 
     Checks for string annotations and `FieldInfo` objects with descriptions.
 
@@ -111,7 +108,7 @@ def _get_annotation_description(arg_type: type) -> str | None:
         arg_type: The type to extract description from.
 
     Returns:
-        The description string if found, `None` otherwise.
+        The description string if found, None otherwise.
     """
     if _is_annotated_type(arg_type):
         annotated_args = get_args(arg_type)
@@ -232,7 +229,7 @@ def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bo
 
     Args:
         annotation: The type annotation to check.
-        pydantic_version: The Pydantic version to check against (`'v1'` or `'v2'`).
+        pydantic_version: The Pydantic version to check against ("v1" or "v2").
 
     Returns:
         `True` if the annotation is a Pydantic model, `False` otherwise.
@@ -247,17 +244,17 @@ def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bo
 def _function_annotations_are_pydantic_v1(
     signature: inspect.Signature, func: Callable
 ) -> bool:
-    """Check if all Pydantic annotations in a function are from v1.
+    """Check if all Pydantic annotations in a function are from V1.
 
     Args:
         signature: The function signature to check.
         func: The function being checked.
 
     Returns:
-        True if all Pydantic annotations are from v1, `False` otherwise.
+        True if all Pydantic annotations are from V1, `False` otherwise.
 
     Raises:
-        NotImplementedError: If the function contains mixed v1 and v2 annotations.
+        NotImplementedError: If the function contains mixed V1 and V2 annotations.
     """
     any_v1_annotations = any(
         _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
@@ -281,7 +278,6 @@ class _SchemaConfig:
 
     extra: str = "forbid"
     """Whether to allow extra fields in the model."""
-
     arbitrary_types_allowed: bool = True
     """Whether to allow arbitrary types in the model."""
 
@@ -301,16 +297,14 @@ def create_schema_from_function(
         model_name: Name to assign to the generated Pydantic schema.
         func: Function to generate the schema from.
         filter_args: Optional list of arguments to exclude from the schema.
-
             Defaults to `FILTERED_ARGS`.
         parse_docstring: Whether to parse the function's docstring for descriptions
             for each argument.
-        error_on_invalid_docstring: If `parse_docstring` is provided, configure
+        error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
         include_injected: Whether to include injected arguments in the schema.
-
-            Defaults to `True`, since we want to include them in the schema when
-            *validating* tool inputs.
+            Defaults to `True`, since we want to include them in the schema
+            when *validating* tool inputs.
 
     Returns:
         A Pydantic model with the same arguments as the function.
@@ -391,9 +385,8 @@ class ToolException(Exception):  # noqa: N818
     """Exception thrown when a tool execution error occurs.
 
     This exception allows tools to signal errors without stopping the agent.
-
-    The error is handled according to the tool's `handle_tool_error` setting, and the
-    result is returned as an observation to the agent.
+    The error is handled according to the tool's handle_tool_error setting,
+    and the result is returned as an observation to the agent.
     """
 
 
@@ -445,7 +438,6 @@ class ChildTool(BaseTool):
 
     name: str
     """The unique name of the tool that clearly communicates its purpose."""
-
     description: str
     """Used to tell the model how/when/why to use the tool.
 
@@ -463,14 +455,12 @@ class ChildTool(BaseTool):
     - A subclass of `pydantic.v1.BaseModel` if accessing v1 namespace in pydantic 2
     - A JSON schema dict
     """
-
     return_direct: bool = False
     """Whether to return the tool's output directly.
 
     Setting this to `True` means that after the tool is called, the `AgentExecutor` will
     stop looping.
     """
-
     verbose: bool = False
     """Whether to log the tool's progress."""
 
@@ -486,14 +476,14 @@ class ChildTool(BaseTool):
     You can use these to, e.g., identify a specific instance of a tool with its use
     case.
     """
-
     metadata: dict[str, Any] | None = None
     """Optional metadata associated with the tool.
 
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
 
-    You can use these to, e.g., identify a specific instance of a tool with its usecase.
+    You can use these to, e.g., identify a specific instance of a tool with its use
+    case.
     """
 
     handle_tool_error: bool | str | Callable[[ToolException], str] | None = False
@@ -576,12 +566,9 @@ class ChildTool(BaseTool):
         elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
             json_schema = self.args_schema.schema()
         else:
-            input_schema = self.tool_call_schema
-            if isinstance(input_schema, dict):
-                json_schema = input_schema
-            else:
-                json_schema = input_schema.model_json_schema()
-        return cast("dict", json_schema["properties"])
+            input_schema = self.get_input_schema()
+            json_schema = input_schema.model_json_schema()
+        return json_schema["properties"]
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
@@ -610,7 +597,7 @@ class ChildTool(BaseTool):
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # Base implementation doesn't manage injected args
+        # base implementation doesn't manage injected args
         return _EMPTY_SET
 
     # --- Runnable ---
@@ -741,7 +728,7 @@ class ChildTool(BaseTool):
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
-                elif k in field_info and k not in {"args", "kwargs"}:
+                elif k in field_info and k not in ("args", "kwargs"):
                     # Check if field has an explicit default defined in the schema.
                     # Exclude "args"/"kwargs" as these are synthetic fields for variadic
                     # parameters that should not be passed as keyword arguments.
@@ -815,23 +802,16 @@ class ChildTool(BaseTool):
         # Start with filtered args from the constant
         filtered_keys = set[str](FILTERED_ARGS)
 
-        # Add injected args from function signature (e.g., ToolRuntime parameters)
-        filtered_keys.update(self._injected_args_keys)
-
         # If we have an args_schema, use it to identify injected args
-        # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
-        if self.args_schema is not None and not isinstance(self.args_schema, dict):
+        if self.args_schema is not None:
             try:
                 annotations = get_all_basemodel_annotations(self.args_schema)
                 for field_name, field_type in annotations.items():
                     if _is_injected_arg_type(field_type):
                         filtered_keys.add(field_name)
-            except Exception:
+            except Exception:  # noqa: S110
                 # If we can't get annotations, just use FILTERED_ARGS
-                _logger.debug(
-                    "Failed to get args_schema annotations for filtering.",
-                    exc_info=True,
-                )
+                pass
 
         # Filter out the injected keys from tool_input
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
@@ -997,7 +977,7 @@ class ChildTool(BaseTool):
             error_to_raise = e
 
         if error_to_raise:
-            run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
+            run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
         output = _format_output(content, artifact, tool_call_id, self.name, status)
         run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
@@ -1127,7 +1107,7 @@ class ChildTool(BaseTool):
             error_to_raise = e
 
         if error_to_raise:
-            await run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
+            await run_manager.on_tool_error(error_to_raise)
             raise error_to_raise
 
         output = _format_output(content, artifact, tool_call_id, self.name, status)
@@ -1397,8 +1377,8 @@ class _DirectlyInjectedToolArg:
 class InjectedToolCallId(InjectedToolArg):
     """Annotation for injecting the tool call ID.
 
-    This annotation is used to mark a tool parameter that should receive the tool call
-    ID at runtime.
+    This annotation is used to mark a tool parameter that should receive
+    the tool call ID at runtime.
 
     ```python
     from typing import Annotated
@@ -1416,6 +1396,7 @@ class InjectedToolCallId(InjectedToolArg):
             name="foo",
             tool_call_id=tool_call_id
         )
+
     ```
     """
 
@@ -1424,12 +1405,10 @@ def _is_directly_injected_arg_type(type_: Any) -> bool:
     """Check if a type annotation indicates a directly injected argument.
 
     This is currently only used for `ToolRuntime`.
-
     Checks if either the annotation itself is a subclass of `_DirectlyInjectedToolArg`
     or the origin of the annotation is a subclass of `_DirectlyInjectedToolArg`.
 
-    For example, `ToolRuntime` or `ToolRuntime[ContextT, StateT]` would both return
-    `True`.
+    Ex: `ToolRuntime` or `ToolRuntime[ContextT, StateT]` would both return `True`.
     """
     return (
         isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
@@ -1489,7 +1468,7 @@ def get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if name not in fields and name not in alias_map:
+            if fields and name not in fields and name not in alias_map:
                 continue
             field_name = alias_map.get(name, name)
             annotations[field_name] = param.annotation
@@ -1566,15 +1545,15 @@ def _replace_type_vars(
             _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
             for arg in args
         )
-        return cast("type", _py_38_safe_origin(origin)[new_args])  # type: ignore[index]
+        return _py_38_safe_origin(origin)[new_args]  # type: ignore[index]
     return type_
 
 
 class BaseToolkit(BaseModel, ABC):
     """Base class for toolkits containing related tools.
 
-    A toolkit is a collection of related tools that can be used together to accomplish a
-    specific task or work with a particular system.
+    A toolkit is a collection of related tools that can be used together
+    to accomplish a specific task or work with a particular system.
     """
 
     @abstractmethod

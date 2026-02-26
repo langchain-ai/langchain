@@ -1,7 +1,6 @@
 """Text Splitters are classes for splitting text.
 
 !!! note
-
     `MarkdownHeaderTextSplitter` and `HTMLHeaderTextSplitter` do not derive from
     `TextSplitter`.
 """

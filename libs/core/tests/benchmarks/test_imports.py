@@ -49,6 +49,6 @@ from pytest_benchmark.fixture import BenchmarkFixture
 )
 @pytest.mark.benchmark
 def test_import_time(benchmark: BenchmarkFixture, import_path: str) -> None:
-    @benchmark  # type: ignore[untyped-decorator]
+    @benchmark  # type: ignore[misc]
     def import_in_subprocess() -> None:
         subprocess.run([sys.executable, "-c", import_path], check=True)

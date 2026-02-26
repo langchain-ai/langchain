@@ -1,7 +1,6 @@
 """Tests for ModelRetryMiddleware functionality."""
 
 import time
-from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -14,12 +13,6 @@ from pydantic import Field
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
-from langchain.agents.middleware.types import (
-    ModelCallResult,
-    ModelRequest,
-    ModelResponse,
-    wrap_model_call,
-)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -664,11 +657,10 @@ def test_model_retry_multiple_middleware_composition() -> None:
     call_log = []
 
     # Custom middleware that logs calls
+    from langchain.agents.middleware.types import wrap_model_call
+
     @wrap_model_call
-    def logging_middleware(
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+    def logging_middleware(request, handler):
         call_log.append("before_model")
         response = handler(request)
         call_log.append("after_model")

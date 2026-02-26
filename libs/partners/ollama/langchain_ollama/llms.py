@@ -15,11 +15,7 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
-from langchain_ollama._utils import (
-    merge_auth_headers,
-    parse_url_with_auth,
-    validate_model,
-)
+from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 
 class OllamaLLM(BaseLLM):
@@ -347,16 +343,11 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Mapping[str, Any] | str]:
-        if not self._async_client:
-            msg = (
-                "Ollama async client is not initialized. "
-                "Make sure the model was properly constructed."
-            )
-            raise RuntimeError(msg)
-        async for part in await self._async_client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        ):
-            yield part
+        if self._async_client:
+            async for part in await self._async_client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
+            ):
+                yield part
 
     def _create_generate_stream(
         self,
@@ -364,15 +355,10 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[Mapping[str, Any] | str]:
-        if not self._client:
-            msg = (
-                "Ollama sync client is not initialized. "
-                "Make sure the model was properly constructed."
+        if self._client:
+            yield from self._client.generate(
+                **self._generate_params(prompt, stop=stop, **kwargs)
             )
-            raise RuntimeError(msg)
-        yield from self._client.generate(
-            **self._generate_params(prompt, stop=stop, **kwargs)
-        )
 
     async def _astream_with_aggregation(
         self,

@@ -26,7 +26,7 @@ from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
 def test_ensure_config() -> None:
     run_id = str(uuid.uuid4())
-    arg: dict[str, Any] = {
+    arg: dict = {
         "something": "else",
         "metadata": {"foo": "bar"},
         "configurable": {"baz": "qux"},
@@ -147,7 +147,7 @@ async def test_merge_config_callbacks() -> None:
 def test_config_arbitrary_keys() -> None:
     base: RunnablePassthrough[Any] = RunnablePassthrough()
     bound = base.with_config(my_custom_key="my custom value")
-    config = cast("RunnableBinding[Any, Any]", bound).config
+    config = cast("RunnableBinding", bound).config
 
     assert config.get("my_custom_key") == "my custom value"
 

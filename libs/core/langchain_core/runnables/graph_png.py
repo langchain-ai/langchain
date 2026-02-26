@@ -1,7 +1,7 @@
 """Helper class to draw a state graph into a PNG file."""
 
 from itertools import groupby
-from typing import Any, cast
+from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -149,7 +149,7 @@ class PngDrawer:
 
         # Save the graph as PNG
         try:
-            return cast("bytes | None", viz.draw(output_path, format="png", prog="dot"))
+            return viz.draw(output_path, format="png", prog="dot")
         finally:
             viz.close()
 

@@ -1,7 +1,8 @@
 """Helper functions for marking parts of the LangChain API as beta.
 
-This module was loosely adapted from matplotlib's [`_api/deprecation.py`](https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py)
-module.
+This module was loosely adapted from matplotlibs _api/deprecation.py module:
+
+https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
 !!! warning
 
@@ -38,34 +39,38 @@ def beta(
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as beta.
 
-    When marking a classmethod, a staticmethod, or a property, the `@beta` decorator
-    should go *under* `@classmethod` and `@staticmethod` (i.e., `beta` should directly
-    decorate the underlying callable), but *over* `@property`.
+    When marking a classmethod, a staticmethod, or a property, the
+    `@beta` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `beta` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When marking a class `C` intended to be used as a base class in a multiple
-    inheritance hierarchy, `C` *must* define an `__init__` method (if `C` instead
-    inherited its `__init__` from its own base class, then `@beta` would mess up
-    `__init__` inheritance when installing its own (annotation-emitting) `C.__init__`).
+    When marking a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@beta` would mess up `__init__` inheritance when installing its
+    own (annotation-emitting) `C.__init__`).
 
     Args:
-        message: Override the default beta message.
-
-            The %(since)s, %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s, and
-            %(removal)s format specifiers will be replaced by the values of the
-            respective arguments passed to this function.
-        name: The name of the beta object.
-        obj_type: The object type being beta.
-        addendum: Additional text appended directly to the final message.
+        message:
+            Override the default beta message. The %(since)s,
+            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
+            and %(removal)s format specifiers will be replaced by the
+            values of the respective arguments passed to this function.
+        name:
+            The name of the beta object.
+        obj_type:
+            The object type being beta.
+        addendum:
+            Additional text appended directly to the final message.
 
     Returns:
         A decorator which can be used to mark functions or classes as beta.
 
-    Example:
-        ```python
-        @beta
-        def the_function_to_annotate():
-            pass
-        ```
+    ```python
+    @beta
+    def the_function_to_annotate():
+        pass
+    ```
     """
 
     def beta(
@@ -120,7 +125,7 @@ def beta(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -163,7 +168,7 @@ def beta(
                     emit_warning()
                 obj.fdel(instance)
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> Any:
+            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
                 return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
 
@@ -176,7 +181,7 @@ def beta(
             wrapped = obj
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -204,7 +209,7 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
+    """Context manager to suppress LangChainDeprecationWarning."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", LangChainBetaWarning)
         yield
@@ -220,13 +225,17 @@ def warn_beta(
     """Display a standardized beta annotation.
 
     Args:
-        message: Override the default beta message.
-
-            The %(name)s, %(obj_type)s, %(addendum)s format specifiers will be replaced
-            by the values of the respective arguments passed to this function.
-        name: The name of the annotated object.
-        obj_type: The object type being annotated.
-        addendum: Additional text appended directly to the final message.
+        message:
+            Override the default beta message. The
+            %(name)s, %(obj_type)s, %(addendum)s
+            format specifiers will be replaced by the
+            values of the respective arguments passed to this function.
+        name:
+            The name of the annotated object.
+        obj_type:
+            The object type being annotated.
+        addendum:
+            Additional text appended directly to the final message.
     """
     if not message:
         message = ""

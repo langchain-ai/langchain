@@ -1,102 +1,27 @@
 """Factory functions for embeddings."""
 
 import functools
-import importlib
-from collections.abc import Callable
+from importlib import util
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
 
-
-def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
-    return cls(**kwargs)
-
-
-_BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
-    "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
-    "bedrock": (
-        "langchain_aws",
-        "BedrockEmbeddings",
-        lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
-    ),
-    "cohere": ("langchain_cohere", "CohereEmbeddings", _call),
-    "google_genai": ("langchain_google_genai", "GoogleGenerativeAIEmbeddings", _call),
-    "google_vertexai": ("langchain_google_vertexai", "VertexAIEmbeddings", _call),
-    "huggingface": (
-        "langchain_huggingface",
-        "HuggingFaceEmbeddings",
-        lambda cls, model, **kwargs: cls(model_name=model, **kwargs),
-    ),
-    "mistralai": ("langchain_mistralai", "MistralAIEmbeddings", _call),
-    "ollama": ("langchain_ollama", "OllamaEmbeddings", _call),
-    "openai": ("langchain_openai", "OpenAIEmbeddings", _call),
+_SUPPORTED_PROVIDERS = {
+    "azure_openai": "langchain_openai",
+    "bedrock": "langchain_aws",
+    "cohere": "langchain_cohere",
+    "google_genai": "langchain_google_genai",
+    "google_vertexai": "langchain_google_vertexai",
+    "huggingface": "langchain_huggingface",
+    "mistralai": "langchain_mistralai",
+    "ollama": "langchain_ollama",
+    "openai": "langchain_openai",
 }
-"""Registry mapping provider names to their import configuration.
-
-Each entry maps a provider key to a tuple of:
-
-- `module_path`: The Python module path containing the embeddings class.
-- `class_name`: The name of the embeddings class to import.
-- `creator_func`: A callable that instantiates the class with provided kwargs.
-
-!!! note
-
-    This dict is not exhaustive of all providers supported by LangChain, but is
-    meant to cover the most popular ones and serve as a template for adding more
-    providers in the future. If a provider is not in this dict, it can still be
-    used with `init_chat_model` as long as its integration package is installed,
-    but the provider key will not be inferred from the model name and must be
-    specified explicitly via the `model_provider` parameter.
-
-    Refer to the LangChain [integration documentation](https://docs.langchain.com/oss/python/integrations/providers/overview)
-    for a full list of supported providers and their corresponding packages.
-"""
-
-
-@functools.lru_cache(maxsize=len(_BUILTIN_PROVIDERS))
-def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
-    """Return a factory function that creates an embeddings model for the given provider.
-
-    This function is cached to avoid repeated module imports.
-
-    Args:
-        provider: The name of the model provider (e.g., `'openai'`, `'cohere'`).
-
-            Must be a key in `_BUILTIN_PROVIDERS`.
-
-    Returns:
-        A callable that accepts model kwargs and returns an `Embeddings` instance for
-            the specified provider.
-
-    Raises:
-        ValueError: If the provider is not in `_BUILTIN_PROVIDERS`.
-        ImportError: If the provider's integration package is not installed.
-    """
-    if provider not in _BUILTIN_PROVIDERS:
-        msg = (
-            f"Provider '{provider}' is not supported.\n"
-            f"Supported providers and their required packages:\n"
-            f"{_get_provider_list()}"
-        )
-        raise ValueError(msg)
-
-    module_name, class_name, creator_func = _BUILTIN_PROVIDERS[provider]
-    try:
-        module = importlib.import_module(module_name)
-    except ImportError as e:
-        pkg = module_name.replace("_", "-")
-        msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
-        raise ImportError(msg) from e
-
-    cls = getattr(module, class_name)
-    return functools.partial(creator_func, cls=cls)
 
 
 def _get_provider_list() -> str:
     """Get formatted list of providers and their packages."""
-    return "\n".join(
-        f"  - {p}: {pkg[0].replace('_', '-')}" for p, pkg in _BUILTIN_PROVIDERS.items()
-    )
+    return "\n".join(f"  - {p}: {pkg.replace('_', '-')}" for p, pkg in _SUPPORTED_PROVIDERS.items())
 
 
 def _parse_model_string(model_name: str) -> tuple[str, str]:
@@ -111,14 +36,13 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Returns:
         A tuple of (provider, model_name)
 
-    Example:
-        ```python
-        _parse_model_string("openai:text-embedding-3-small")
-        # Returns: ("openai", "text-embedding-3-small")
+    ```python
+    _parse_model_string("openai:text-embedding-3-small")
+    # Returns: ("openai", "text-embedding-3-small")
 
-        _parse_model_string("bedrock:amazon.titan-embed-text-v1")
-        # Returns: ("bedrock", "amazon.titan-embed-text-v1")
-        ```
+    _parse_model_string("bedrock:amazon.titan-embed-text-v1")
+    # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+    ```
 
     Raises:
         ValueError: If the model string is not in the correct format or
@@ -126,6 +50,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
 
     """
     if ":" not in model_name:
+        providers = _SUPPORTED_PROVIDERS
         msg = (
             f"Invalid model format '{model_name}'.\n"
             f"Model name must be in format 'provider:model-name'\n"
@@ -133,7 +58,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
             f"  - openai:text-embedding-3-small\n"
             f"  - bedrock:amazon.titan-embed-text-v1\n"
             f"  - cohere:embed-english-v3.0\n"
-            f"Supported providers: {_BUILTIN_PROVIDERS.keys()}"
+            f"Supported providers: {providers}"
         )
         raise ValueError(msg)
 
@@ -141,7 +66,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     provider = provider.lower().strip()
     model = model.strip()
 
-    if provider not in _BUILTIN_PROVIDERS:
+    if provider not in _SUPPORTED_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
@@ -168,16 +93,17 @@ def _infer_model_and_provider(
         model_name = model
 
     if not provider:
+        providers = _SUPPORTED_PROVIDERS
         msg = (
             "Must specify either:\n"
             "1. A model string in format 'provider:model-name'\n"
             "   Example: 'openai:text-embedding-3-small'\n"
             "2. Or explicitly set provider from: "
-            f"{_BUILTIN_PROVIDERS.keys()}"
+            f"{providers}"
         )
         raise ValueError(msg)
 
-    if provider not in _BUILTIN_PROVIDERS:
+    if provider not in _SUPPORTED_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
@@ -185,6 +111,14 @@ def _infer_model_and_provider(
         )
         raise ValueError(msg)
     return provider, model_name
+
+
+@functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
+def _check_pkg(pkg: str) -> None:
+    """Check if a package is installed."""
+    if not util.find_spec(pkg):
+        msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
+        raise ImportError(msg)
 
 
 def init_embeddings(
@@ -196,7 +130,6 @@ def init_embeddings(
     """Initialize an embedding model from a model name and optional provider.
 
     !!! note
-
         Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names
@@ -222,7 +155,7 @@ def init_embeddings(
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
             - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
-            - `mistralai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `mistraiai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
@@ -259,12 +192,56 @@ def init_embeddings(
 
     """
     if not model:
-        providers = _BUILTIN_PROVIDERS.keys()
+        providers = _SUPPORTED_PROVIDERS.keys()
         msg = f"Must specify model name. Supported providers are: {', '.join(providers)}"
         raise ValueError(msg)
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)
-    return _get_embeddings_class_creator(provider)(model=model_name, **kwargs)
+    pkg = _SUPPORTED_PROVIDERS[provider]
+    _check_pkg(pkg)
+
+    if provider == "openai":
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "azure_openai":
+        from langchain_openai import AzureOpenAIEmbeddings
+
+        return AzureOpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "google_genai":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        return GoogleGenerativeAIEmbeddings(model=model_name, **kwargs)
+    if provider == "google_vertexai":
+        from langchain_google_vertexai import VertexAIEmbeddings
+
+        return VertexAIEmbeddings(model=model_name, **kwargs)
+    if provider == "bedrock":
+        from langchain_aws import BedrockEmbeddings
+
+        return BedrockEmbeddings(model_id=model_name, **kwargs)
+    if provider == "cohere":
+        from langchain_cohere import CohereEmbeddings
+
+        return CohereEmbeddings(model=model_name, **kwargs)
+    if provider == "mistralai":
+        from langchain_mistralai import MistralAIEmbeddings
+
+        return MistralAIEmbeddings(model=model_name, **kwargs)
+    if provider == "huggingface":
+        from langchain_huggingface import HuggingFaceEmbeddings
+
+        return HuggingFaceEmbeddings(model_name=model_name, **kwargs)
+    if provider == "ollama":
+        from langchain_ollama import OllamaEmbeddings
+
+        return OllamaEmbeddings(model=model_name, **kwargs)
+    msg = (
+        f"Provider '{provider}' is not supported.\n"
+        f"Supported providers and their required packages:\n"
+        f"{_get_provider_list()}"
+    )
+    raise ValueError(msg)
 
 
 __all__ = [

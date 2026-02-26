@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
@@ -33,6 +33,7 @@ from langchain_core.messages import (
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
+from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -40,7 +41,6 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -48,8 +48,6 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
-    "ExtendedModelResponse",
-    "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
@@ -69,7 +67,7 @@ __all__ = [
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
-ResponseT = TypeVar("ResponseT", default=Any)
+ResponseT = TypeVar("ResponseT")
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -79,28 +77,23 @@ class _ModelRequestOverrides(TypedDict, total=False):
     system_message: SystemMessage | None
     messages: list[AnyMessage]
     tool_choice: Any | None
-    tools: list[BaseTool | dict[str, Any]]
-    response_format: ResponseFormat[Any] | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
     model_settings: dict[str, Any]
-    state: AgentState[Any]
 
 
 @dataclass(init=False)
-class ModelRequest(Generic[ContextT]):
-    """Model request information for the agent.
-
-    Type Parameters:
-        ContextT: The type of the runtime context. Defaults to `None` if not specified.
-    """
+class ModelRequest:
+    """Model request information for the agent."""
 
     model: BaseChatModel
     messages: list[AnyMessage]  # excluding system message
     system_message: SystemMessage | None
     tool_choice: Any | None
-    tools: list[BaseTool | dict[str, Any]]
-    response_format: ResponseFormat[Any] | None
-    state: AgentState[Any]
-    runtime: Runtime[ContextT]
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    state: AgentState
+    runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(
@@ -111,9 +104,9 @@ class ModelRequest(Generic[ContextT]):
         system_message: SystemMessage | None = None,
         system_prompt: str | None = None,
         tool_choice: Any | None = None,
-        tools: list[BaseTool | dict[str, Any]] | None = None,
-        response_format: ResponseFormat[Any] | None = None,
-        state: AgentState[Any] | None = None,
+        tools: list[BaseTool | dict] | None = None,
+        response_format: ResponseFormat | None = None,
+        state: AgentState | None = None,
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
     ) -> None:
@@ -130,9 +123,6 @@ class ModelRequest(Generic[ContextT]):
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
             system_prompt: System prompt string (deprecated, converted to SystemMessage).
-
-        Raises:
-            ValueError: If both `system_prompt` and `system_message` are provided.
         """
         # Handle system_prompt/system_message conversion and validation
         if system_prompt is not None and system_message is not None:
@@ -199,7 +189,7 @@ class ModelRequest(Generic[ContextT]):
         )
         object.__setattr__(self, name, value)
 
-    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest[ContextT]:
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
 
         Returns a new `ModelRequest` instance with the specified attributes replaced.
@@ -219,7 +209,6 @@ class ModelRequest(Generic[ContextT]):
                 - `tools`: `list` of available tools
                 - `response_format`: Response format specification
                 - `model_settings`: Additional model settings
-                - `state`: Agent state dictionary
 
         Returns:
             New `ModelRequest` instance with specified overrides applied.
@@ -249,9 +238,6 @@ class ModelRequest(Generic[ContextT]):
                     system_message=SystemMessage(content="New instructions"),
                 )
                 ```
-
-        Raises:
-            ValueError: If both `system_prompt` and `system_message` are provided.
         """
         # Handle system_prompt/system_message conversion
         if "system_prompt" in overrides and "system_message" in overrides:
@@ -259,7 +245,7 @@ class ModelRequest(Generic[ContextT]):
             raise ValueError(msg)
 
         if "system_prompt" in overrides:
-            system_prompt = cast("str | None", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
+            system_prompt = cast("str", overrides.pop("system_prompt"))  # type: ignore[typeddict-item]
             if system_prompt is None:
                 overrides["system_message"] = None
             else:
@@ -269,60 +255,28 @@ class ModelRequest(Generic[ContextT]):
 
 
 @dataclass
-class ModelResponse(Generic[ResponseT]):
+class ModelResponse:
     """Response from model execution including messages and optional structured output.
 
     The result will usually contain a single `AIMessage`, but may include an additional
     `ToolMessage` if the model used a tool for structured output.
-
-    Type Parameters:
-        ResponseT: The type of the structured response. Defaults to `Any` if not specified.
     """
 
     result: list[BaseMessage]
     """List of messages from model execution."""
 
-    structured_response: ResponseT | None = None
+    structured_response: Any = None
     """Parsed structured output if `response_format` was specified, `None` otherwise."""
 
 
-@dataclass
-class ExtendedModelResponse(Generic[ResponseT]):
-    """Model response with an optional 'Command' from 'wrap_model_call' middleware.
-
-    Use this to return a 'Command' alongside the model response from a
-    'wrap_model_call' handler. The command is applied as an additional state
-    update after the model node completes, using the graph's reducers (e.g.
-    'add_messages' for the 'messages' key).
-
-    Because each 'Command' is applied through the reducer, messages in the
-    command are **added alongside** the model response messages rather than
-    replacing them. For non-reducer state fields, later commands overwrite
-    earlier ones (outermost middleware wins over inner).
-
-    Type Parameters:
-        ResponseT: The type of the structured response. Defaults to 'Any' if not specified.
-    """
-
-    model_response: ModelResponse[ResponseT]
-    """The underlying model response."""
-
-    command: Command[Any] | None = None
-    """Optional command to apply as an additional state update."""
-
-
-ModelCallResult: TypeAlias = (
-    "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
-)
+# Type alias for middleware return type - allows returning either full response or just AIMessage
+ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
 """`TypeAlias` for model call handler return value.
 
 Middleware can return either:
 
 - `ModelResponse`: Full response with messages and optional structured output
 - `AIMessage`: Simplified return for simple use cases
-- `ExtendedModelResponse`: Response with an optional `Command` for additional state updates
-    `goto`, `resume`, and `graph` are not yet supported on these commands.
-    A `NotImplementedError` will be raised if you try to use them.
 """
 
 
@@ -358,7 +312,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 class _InputAgentState(TypedDict):  # noqa: PYI049
     """Input state schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage | dict[str, Any]], add_messages]]
+    messages: Required[Annotated[list[AnyMessage | dict], add_messages]]
 
 
 class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
@@ -368,31 +322,22 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
     structured_response: NotRequired[ResponseT]
 
 
-StateT = TypeVar("StateT", bound=AgentState[Any], default=AgentState[Any])
-StateT_co = TypeVar("StateT_co", bound=AgentState[Any], default=AgentState[Any], covariant=True)
-StateT_contra = TypeVar("StateT_contra", bound=AgentState[Any], contravariant=True)
+StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
+StateT_co = TypeVar("StateT_co", bound=AgentState, default=AgentState, covariant=True)
+StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
-class _DefaultAgentState(AgentState[Any]):
-    """AgentMiddleware default state."""
-
-
-class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
+class AgentMiddleware(Generic[StateT, ContextT]):
     """Base middleware class for an agent.
 
     Subclass this and implement any of the defined methods to customize agent behavior
     between steps in the main agent loop.
-
-    Type Parameters:
-        StateT: The type of the agent state. Defaults to `AgentState[Any]`.
-        ContextT: The type of the runtime context. Defaults to `None`.
-        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
-    state_schema: type[StateT] = cast("type[StateT]", _DefaultAgentState)
+    state_schema: type[StateT] = cast("type[StateT]", AgentState)
     """The schema for state passed to the middleware nodes."""
 
-    tools: Sequence[BaseTool]
+    tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
     @property
@@ -406,80 +351,41 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts.
 
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply before agent execution.
+        Async version is `abefore_agent`
         """
 
     async def abefore_agent(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run before the agent execution starts.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply before agent execution.
-        """
+        """Async logic to run before the agent execution starts."""
 
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called.
 
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply before model call.
+        Async version is `abefore_model`
         """
 
     async def abefore_model(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run before the model is called.
-
-        Args:
-            state: The agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply before model call.
-        """
+        """Async logic to run before the model is called."""
 
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called.
 
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply after model call.
+        Async version is `aafter_model`
         """
 
     async def aafter_model(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run after the model is called.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply after model call.
-        """
+        """Async logic to run after the model is called."""
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
         Async version is `awrap_model_call`
@@ -501,7 +407,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
                 Can skip calling it to short-circuit.
 
         Returns:
-            The model call result.
+            `ModelCallResult`
 
         Examples:
             !!! example "Retry on error"
@@ -572,9 +478,9 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
         The handler callback executes the model request and returns a `ModelResponse`.
@@ -595,7 +501,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
                 Can skip calling it to short-circuit.
 
         Returns:
-            The model call result.
+            `ModelCallResult`
 
         Examples:
             !!! example "Retry on error"
@@ -623,34 +529,18 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         raise NotImplementedError(msg)
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
-        """Logic to run after the agent execution completes.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply after agent execution.
-        """
+        """Logic to run after the agent execution completes."""
 
     async def aafter_agent(
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async logic to run after the agent execution completes.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Agent state updates to apply after agent execution.
-        """
+        """Async logic to run after the agent execution completes."""
 
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
         """Intercept tool execution for retries, monitoring, or modification.
 
         Async version is `awrap_tool_call`
@@ -731,8 +621,8 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> ToolMessage | Command[Any]:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
         """Intercept and control async tool execution via handler callback.
 
         The handler callback executes the tool call and returns a `ToolMessage` or
@@ -803,7 +693,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | Command[Any] | None | Awaitable[dict[str, Any] | Command[Any] | None]:
+    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state and runtime."""
         ...
 
@@ -812,13 +702,13 @@ class _CallableReturningSystemMessage(Protocol[StateT_contra, ContextT]):  # typ
     """Callable that returns a prompt string or SystemMessage given `ModelRequest`."""
 
     def __call__(
-        self, request: ModelRequest[ContextT]
+        self, request: ModelRequest
     ) -> str | SystemMessage | Awaitable[str | SystemMessage]:
         """Generate a system prompt string or SystemMessage based on the request."""
         ...
 
 
-class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT, ResponseT]):  # type: ignore[misc]
+class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
     Receives handler callback to execute model and returns `ModelResponse` or
@@ -827,9 +717,9 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT, Response
 
     def __call__(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
 
@@ -844,8 +734,8 @@ class _CallableReturningToolResponse(Protocol):
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
         """Intercept tool execution via handler callback."""
         ...
 
@@ -1027,7 +917,7 @@ def before_model(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command[Any] | None:
+            ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1052,7 +942,7 @@ def before_model(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command[Any] | None:
+        ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1187,7 +1077,7 @@ def after_model(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command[Any] | None:
+            ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1210,7 +1100,7 @@ def after_model(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command[Any] | None:
+        ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1338,10 +1228,7 @@ def before_agent(
             async def notify_start(state: AgentState, runtime: Runtime) -> None:
                 '''Notify user that agent is starting.'''
                 runtime.stream_writer(
-                    {
-                        "type": "status",
-                        "message": "Initializing agent session...",
-                    }
+                    {"type": "status", "message": "Initializing agent session..."}
                 )
                 # Perform prerequisite tasks here
                 runtime.stream_writer({"type": "status", "message": "Agent ready!"})
@@ -1378,7 +1265,7 @@ def before_agent(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command[Any] | None:
+            ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1403,7 +1290,7 @@ def before_agent(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command[Any] | None:
+        ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1539,7 +1426,7 @@ def after_agent(
                 _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command[Any] | None:
+            ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
             # Preserve can_jump_to metadata on the wrapped function
@@ -1562,7 +1449,7 @@ def after_agent(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> dict[str, Any] | Command[Any] | None:
+        ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1668,9 +1555,9 @@ def dynamic_prompt(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest[ContextT],
-                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[Any]]],
-            ) -> ModelResponse[Any] | AIMessage:
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 if isinstance(prompt, SystemMessage):
                     request = request.override(system_message=prompt)
@@ -1692,10 +1579,10 @@ def dynamic_prompt(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest[ContextT],
-            handler: Callable[[ModelRequest[ContextT]], ModelResponse[Any]],
-        ) -> ModelResponse[Any] | AIMessage:
-            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1704,11 +1591,11 @@ def dynamic_prompt(
 
         async def async_wrapped_from_sync(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest[ContextT],
-            handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[Any]]],
-        ) -> ModelResponse[Any] | AIMessage:
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("Callable[[ModelRequest[ContextT]], SystemMessage | str]", func)(request)
+            prompt = cast("Callable[[ModelRequest], SystemMessage | str]", func)(request)
             if isinstance(prompt, SystemMessage):
                 request = request.override(system_message=prompt)
             else:
@@ -1735,7 +1622,7 @@ def dynamic_prompt(
 
 @overload
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT],
+    func: _CallableReturningModelResponse[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
@@ -1747,20 +1634,20 @@ def wrap_model_call(
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
+    [_CallableReturningModelResponse[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT] | None = None,
+    func: _CallableReturningModelResponse[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
-        [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
+        [_CallableReturningModelResponse[StateT, ContextT]],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1841,7 +1728,7 @@ def wrap_model_call(
     """
 
     def decorator(
-        func: _CallableReturningModelResponse[StateT, ContextT, ResponseT],
+        func: _CallableReturningModelResponse[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
@@ -1849,9 +1736,9 @@ def wrap_model_call(
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
-                request: ModelRequest[ContextT],
-                handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-            ) -> ModelResponse[ResponseT] | AIMessage:
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
@@ -1870,9 +1757,9 @@ def wrap_model_call(
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
-            request: ModelRequest[ContextT],
-            handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-        ) -> ModelResponse[ResponseT] | AIMessage:
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
@@ -2010,8 +1897,8 @@ def wrap_tool_call(
             async def async_wrapped(
                 _self: AgentMiddleware,
                 request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+            ) -> ToolMessage | Command:
                 return await func(request, handler)  # type: ignore[arg-type,misc]
 
             middleware_name = name or cast(
@@ -2031,8 +1918,8 @@ def wrap_tool_call(
         def wrapped(
             _self: AgentMiddleware,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-        ) -> ToolMessage | Command[Any]:
+            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        ) -> ToolMessage | Command:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))

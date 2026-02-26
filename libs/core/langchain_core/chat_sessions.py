@@ -14,6 +14,5 @@ class ChatSession(TypedDict, total=False):
 
     messages: Sequence[BaseMessage]
     """A sequence of the LangChain chat messages loaded from the source."""
-
     functions: Sequence[dict]
     """A sequence of the function calling specs for the messages."""

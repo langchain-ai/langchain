@@ -1,8 +1,8 @@
-"""`Runnable` that routes to a set of `Runnable` objects."""
+"""Runnable that routes to a set of Runnables."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,7 +31,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterator
+    from collections.abc import AsyncIterator, Iterator
 
 
 class RouterInput(TypedDict):
@@ -151,7 +151,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
+            runnable: Runnable, input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:
@@ -188,7 +188,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
+            runnable: Runnable, input_: Input, config: RunnableConfig
         ) -> Output | Exception:
             if return_exceptions:
                 try:

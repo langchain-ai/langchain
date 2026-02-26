@@ -1,9 +1,7 @@
 """Test Ollama Chat API wrapper."""
 
 from typing import Any
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from langchain_ollama import OllamaLLM
 
@@ -67,26 +65,3 @@ def test_reasoning_aggregation() -> None:
         result.generations[0][0].generation_info["thinking"]
         == "I am thinking. Still thinking."
     )
-
-
-def test_create_generate_stream_raises_when_client_none() -> None:
-    """Test that _create_generate_stream raises RuntimeError when client is None."""
-    with patch("langchain_ollama.llms.Client") as mock_client_class:
-        mock_client_class.return_value = MagicMock()
-        llm = OllamaLLM(model="test-model")
-        llm._client = None  # type: ignore[assignment]
-
-        with pytest.raises(RuntimeError, match="sync client is not initialized"):
-            list(llm._create_generate_stream("Hello"))
-
-
-async def test_acreate_generate_stream_raises_when_client_none() -> None:
-    """Test that _acreate_generate_stream raises RuntimeError when client is None."""
-    with patch("langchain_ollama.llms.AsyncClient") as mock_client_class:
-        mock_client_class.return_value = MagicMock()
-        llm = OllamaLLM(model="test-model")
-        llm._async_client = None  # type: ignore[assignment]
-
-        with pytest.raises(RuntimeError, match="async client is not initialized"):
-            async for _ in llm._acreate_generate_stream("Hello"):
-                pass

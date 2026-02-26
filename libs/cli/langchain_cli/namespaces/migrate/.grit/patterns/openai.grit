@@ -1,0 +1,23 @@
+
+language python
+
+// This migration is generated automatically - do not manually edit this file
+pattern langchain_migrate_openai() {
+  find_replace_imports(list=[
+    [`langchain_community.embeddings.openai`, `OpenAIEmbeddings`, `langchain_openai`, `OpenAIEmbeddings`],
+    [`langchain_community.embeddings.azure_openai`, `AzureOpenAIEmbeddings`, `langchain_openai`, `AzureOpenAIEmbeddings`],
+    [`langchain_community.chat_models.openai`, `ChatOpenAI`, `langchain_openai`, `ChatOpenAI`],
+    [`langchain_community.chat_models.azure_openai`, `AzureChatOpenAI`, `langchain_openai`, `AzureChatOpenAI`],
+    [`langchain_community.llms.openai`, `OpenAI`, `langchain_openai`, `OpenAI`],
+    [`langchain_community.llms.openai`, `AzureOpenAI`, `langchain_openai`, `AzureOpenAI`],
+    [`langchain_community.embeddings`, `AzureOpenAIEmbeddings`, `langchain_openai`, `AzureOpenAIEmbeddings`],
+    [`langchain_community.embeddings`, `OpenAIEmbeddings`, `langchain_openai`, `OpenAIEmbeddings`],
+    [`langchain_community.chat_models`, `AzureChatOpenAI`, `langchain_openai`, `AzureChatOpenAI`],
+    [`langchain_community.chat_models`, `ChatOpenAI`, `langchain_openai`, `ChatOpenAI`],
+    [`langchain_community.llms`, `AzureOpenAI`, `langchain_openai`, `AzureOpenAI`],
+    [`langchain_community.llms`, `OpenAI`, `langchain_openai`, `OpenAI`]
+  ])
+}
+
+// Add this for invoking directly
+langchain_migrate_openai()

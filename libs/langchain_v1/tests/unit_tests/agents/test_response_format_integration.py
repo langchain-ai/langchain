@@ -44,7 +44,7 @@ print("\n\n")
 """  # noqa: E501
 
 import os
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -53,11 +53,6 @@ from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ProviderStrategy, ToolStrategy
-
-if TYPE_CHECKING:
-    from langchain_openai import ChatOpenAI
-else:
-    ChatOpenAI = pytest.importorskip("langchain_openai").ChatOpenAI
 
 
 class WeatherBaseModel(BaseModel):
@@ -72,11 +67,14 @@ def get_weather(city: str) -> str:
     return f"The weather in {city} is sunny and 75°F."
 
 
+@pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_inference_to_native_output(*, use_responses_api: bool) -> None:
     """Test that native output is inferred when a model supports it."""
-    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    from langchain_openai import ChatOpenAI
+
+    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -107,11 +105,14 @@ def test_inference_to_native_output(*, use_responses_api: bool) -> None:
     ]
 
 
+@pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
     """Test that tool output is inferred when a model supports it."""
-    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    from langchain_openai import ChatOpenAI
+
+    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -143,10 +144,13 @@ def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
     ]
 
 
+@pytest.mark.requires("langchain_openai")
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_strict_mode(*, use_responses_api: bool) -> None:
-    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    from langchain_openai import ChatOpenAI
+
+    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"

@@ -31,7 +31,7 @@ from langchain_core.tools import BaseTool
 
 
 @pytest.fixture
-def llm() -> RunnableWithFallbacks[Any, Any]:
+def llm() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
 
@@ -39,7 +39,7 @@ def llm() -> RunnableWithFallbacks[Any, Any]:
 
 
 @pytest.fixture
-def llm_multi() -> RunnableWithFallbacks[Any, Any]:
+def llm_multi() -> RunnableWithFallbacks:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     error_llm_2 = FakeListLLM(responses=["baz"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
@@ -48,7 +48,7 @@ def llm_multi() -> RunnableWithFallbacks[Any, Any]:
 
 
 @pytest.fixture
-def chain() -> Runnable[Any, str]:
+def chain() -> Runnable:
     error_llm = FakeListLLM(responses=["foo"], i=1)
     pass_llm = FakeListLLM(responses=["bar"])
 
@@ -58,18 +58,18 @@ def chain() -> Runnable[Any, str]:
     )
 
 
-def _raise_error(_: dict[str, Any]) -> str:
+def _raise_error(_: dict) -> str:
     raise ValueError
 
 
-def _dont_raise_error(inputs: dict[str, Any]) -> str:
+def _dont_raise_error(inputs: dict) -> str:
     if "exception" in inputs:
         return "bar"
     raise ValueError
 
 
 @pytest.fixture
-def chain_pass_exceptions() -> Runnable[Any, str]:
+def chain_pass_exceptions() -> Runnable:
     fallback = RunnableLambda(_dont_raise_error)
     return {"text": RunnablePassthrough()} | RunnableLambda(
         _raise_error
@@ -77,13 +77,13 @@ def chain_pass_exceptions() -> Runnable[Any, str]:
 
 
 @pytest.mark.parametrize(
-    "runnable_name",
+    "runnable",
     ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
 )
 def test_fallbacks(
-    runnable_name: str, request: Any, snapshot: SnapshotAssertion
+    runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion
 ) -> None:
-    runnable: Runnable[Any, Any] = request.getfixturevalue(runnable_name)
+    runnable = request.getfixturevalue(runnable)
     assert runnable.invoke("hello") == "bar"
     assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(runnable.stream("hello")) == ["bar"]
@@ -91,17 +91,17 @@ def test_fallbacks(
 
 
 @pytest.mark.parametrize(
-    "runnable_name",
+    "runnable",
     ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
 )
-async def test_fallbacks_async(runnable_name: str, request: Any) -> None:
-    runnable: Runnable[Any, Any] = request.getfixturevalue(runnable_name)
+async def test_fallbacks_async(runnable: RunnableWithFallbacks, request: Any) -> None:
+    runnable = request.getfixturevalue(runnable)
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
 
 
-def _runnable(inputs: dict[str, Any]) -> str:
+def _runnable(inputs: dict) -> str:
     if inputs["text"] == "foo":
         return "first"
     if "exception" not in inputs:
@@ -114,7 +114,7 @@ def _runnable(inputs: dict[str, Any]) -> str:
     return "third"
 
 
-def _assert_potential_error(actual: list[Any], expected: list[Any]) -> None:
+def _assert_potential_error(actual: list, expected: list) -> None:
     for x, y in zip(actual, expected, strict=False):
         if isinstance(x, Exception):
             assert isinstance(y, type(x))
@@ -257,7 +257,7 @@ async def test_abatch() -> None:
     _assert_potential_error(actual, expected)
 
 
-def _generate(_: Iterator[Any]) -> Iterator[str]:
+def _generate(_: Iterator) -> Iterator[str]:
     yield from "foo bar"
 
 
@@ -265,12 +265,12 @@ def _error(msg: str) -> None:
     raise ValueError(msg)
 
 
-def _generate_immediate_error(_: Iterator[Any]) -> Iterator[str]:
+def _generate_immediate_error(_: Iterator) -> Iterator[str]:
     _error("immediate error")
     yield ""
 
 
-def _generate_delayed_error(_: Iterator[Any]) -> Iterator[str]:
+def _generate_delayed_error(_: Iterator) -> Iterator[str]:
     yield ""
     _error("delayed error")
 
@@ -288,17 +288,17 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
-async def _agenerate(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+async def _agenerate(_: AsyncIterator) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
 
 
-async def _agenerate_immediate_error(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+async def _agenerate_immediate_error(_: AsyncIterator) -> AsyncIterator[str]:
     _error("immediate error")
     yield ""
 
 
-async def _agenerate_delayed_error(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+async def _agenerate_delayed_error(_: AsyncIterator) -> AsyncIterator[str]:
     yield ""
     _error("delayed error")
 
@@ -343,7 +343,7 @@ class FakeStructuredOutputModel(BaseChatModel):
     @override
     def with_structured_output(
         self, schema: dict | type[BaseModel], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, dict[str, int] | BaseModel]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         return RunnableLambda(lambda _: {"foo": self.foo})
 
     @property

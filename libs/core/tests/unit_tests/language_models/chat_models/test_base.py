@@ -9,6 +9,7 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -79,7 +80,7 @@ def _content_blocks_equal_ignore_id(
 
 
 @pytest.fixture
-def messages() -> list[BaseMessage]:
+def messages() -> list:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I am a test user."),
@@ -87,14 +88,14 @@ def messages() -> list[BaseMessage]:
 
 
 @pytest.fixture
-def messages_2() -> list[BaseMessage]:
+def messages_2() -> list:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I not a test user."),
     ]
 
 
-def test_batch_size(messages: list[BaseMessage], messages_2: list[BaseMessage]) -> None:
+def test_batch_size(messages: list, messages_2: list) -> None:
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
@@ -118,9 +119,7 @@ def test_batch_size(messages: list[BaseMessage], messages_2: list[BaseMessage]) 
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-async def test_async_batch_size(
-    messages: list[BaseMessage], messages_2: list[BaseMessage]
-) -> None:
+async def test_async_batch_size(messages: list, messages_2: list) -> None:
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
@@ -312,7 +311,7 @@ async def test_astream_implementation_uses_astream() -> None:
 class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.traced_run_ids: list[uuid.UUID] = []
+        self.traced_run_ids: list = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
@@ -474,7 +473,7 @@ async def test_disable_streaming_no_streaming_model_async(
 class FakeChatModelStartTracer(FakeTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.messages: list[list[list[BaseMessage]]] = []
+        self.messages: list = []
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         _, messages = args
@@ -933,30 +932,38 @@ class _AnotherFakeChatModel(BaseChatModel):
 
     def _generate(
         self,
-        *_args: Any,
-        **_kwargs: Any,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     async def _agenerate(
         self,
-        *_args: Any,
-        **_kwargs: Any,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
 
     def _stream(
         self,
-        *_args: Any,
-        **_kwargs: Any,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
 
     async def _astream(
         self,
-        *_args: Any,
-        **_kwargs: Any,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
@@ -1205,13 +1212,6 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(temperature=0.2)
     assert ls_params["ls_temperature"] == 0.2
-
-    # Test integer temperature values (regression test for issue #35300)
-    ls_params = llm._get_ls_params(temperature=0)
-    assert ls_params["ls_temperature"] == 0
-
-    ls_params = llm._get_ls_params(temperature=1)
-    assert ls_params["ls_temperature"] == 1
 
     ls_params = llm._get_ls_params(max_tokens=2048)
     assert ls_params["ls_max_tokens"] == 2048

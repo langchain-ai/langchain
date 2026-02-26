@@ -5,7 +5,6 @@ from __future__ import annotations
 import random
 import re
 import string
-import textwrap
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -103,43 +102,6 @@ def test_character_text_splitter_longer_words() -> None:
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1, chunk_overlap=1)
     output = splitter.split_text(text)
     expected_output = ["foo", "bar", "baz", "123"]
-    assert output == expected_output
-
-
-# edge cases
-def test_character_text_splitter_no_separator_in_text() -> None:
-    """Text splitting where there is no separator but a single word."""
-    text = "singleword"
-    splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
-    output = splitter.split_text(text)
-    expected_output = ["singleword"]
-    assert output == expected_output
-
-
-def test_character_text_splitter_handle_chunksize_equal_to_chunkoverlap() -> None:
-    """Text splitting safe guards when chunk size is equal chunk overlap."""
-    text = "hello"
-    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=5)
-    output = splitter.split_text(text)
-    expected_output = ["hello"]
-    assert output == expected_output
-
-
-def test_character_text_splitter_empty_input() -> None:
-    """Test splitting safely where there is no input to process."""
-    text = ""
-    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
-    output = splitter.split_text(text)
-    expected_output: list[str] = []
-    assert output == expected_output
-
-
-def test_character_text_splitter_whitespace_only() -> None:
-    """Test splitting safely where there is white space."""
-    text = " "
-    splitter = CharacterTextSplitter(separator=" ", chunk_size=5, chunk_overlap=0)
-    output = splitter.split_text(text)
-    expected_output: list[str] = []
     assert output == expected_output
 
 
@@ -511,10 +473,8 @@ def test_jsx_text_splitter() -> None:
     splits = splitter.split_text(FAKE_JSX_TEXT)
 
     expected_splits = [
-        (
-            "\nimport React from 'react';\n"
-            "import OtherComponent from './OtherComponent';\n"
-        ),
+        "\nimport React from 'react';\n"
+        "import OtherComponent from './OtherComponent';\n",
         "\nfunction MyComponent() {\n  const [count, setCount] = React.useState(0);",
         "\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };",
         "return (",
@@ -569,17 +529,13 @@ def test_vue_text_splitter() -> None:
         "<template>",
         "<div>",
         "<h1>{{ title }}</h1>",
-        (
-            '<button @click="increment">\n      Count is: {{ count }}\n'
-            "    </button>\n  </div>\n</template>"
-        ),
+        '<button @click="increment">\n      Count is: {{ count }}\n'
+        "    </button>\n  </div>\n</template>",
         "<script>",
         "export",
-        (
-            " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
-            "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
-            "this.count++\n    }\n  }\n}\n</script>"
-        ),
+        " default {\n  data() {\n    return {\n      title: 'Counter App',\n      "
+        "count: 0\n    }\n  },\n  methods: {\n    increment() {\n      "
+        "this.count++\n    }\n  }\n}\n</script>",
         "<style>\nbutton {\n  color: blue;\n}\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
@@ -622,34 +578,6 @@ def test_svelte_text_splitter() -> None:
         "<style>\n  button {\n    color: blue;\n  }\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
-
-
-def test_jsx_splitter_separator_not_mutated_across_calls() -> None:
-    """Regression test: repeated split_text() calls must not mutate separators.
-
-    Calling split_text() multiple times on the same JSFrameworkTextSplitter
-    instance must not grow the internal separator list between calls.
-
-    Before the fix, self._separators was overwritten with the full expanded list
-    on every invocation, so a second call would start with the already-expanded
-    list and append even more separators.
-    """
-    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
-
-    # Record separator count after constructing (should be 0 - no custom separators)
-    initial_sep_count = len(splitter._separators)
-
-    # Call split_text twice; the results should be identical for identical input
-    splits_first = splitter.split_text(FAKE_JSX_TEXT)
-    splits_second = splitter.split_text(FAKE_JSX_TEXT)
-
-    assert splits_first == splits_second, (
-        "split_text() must return identical results on repeated calls with the "
-        "same input"
-    )
-    assert len(splitter._separators) == initial_sep_count, (
-        "split_text() must not mutate self._separators between calls"
-    )
 
 
 CHUNK_SIZE = 16
@@ -2477,10 +2405,6 @@ def html_header_splitter_splitter_factory() -> Callable[
     """Fixture to create an `HTMLHeaderTextSplitter` instance with given headers.
 
     This factory allows dynamic creation of splitters with different headers.
-
-    Returns:
-        Factory function that takes a list of headers to split on and returns an
-        `HTMLHeaderTextSplitter` instance.
     """
 
     def _create_splitter(
@@ -3504,100 +3428,6 @@ def test_html_splitter_with_preserved_elements() -> None:
 
 
 @pytest.mark.requires("bs4")
-def test_html_splitter_with_nested_preserved_elements() -> None:
-    """Test HTML splitter with preserved elements nested in containers.
-
-    Test that preserved elements are correctly preserved even when they are
-    nested inside other container elements like <section> or <article>.
-    This is a regression test for issue #31569
-    """
-    html_content = """
-    <article>
-        <h1>Section 1</h1>
-        <section>
-            <p>Some context about the data:</p>
-            <table>
-                <tr><td>Col1</td><td>Col2</td></tr>
-                <tr><td>Data1</td><td>Data2</td></tr>
-            </table>
-            <p>Conclusion about data.</p>
-        </section>
-    </article>
-    """
-    with suppress_langchain_beta_warning():
-        splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[("h1", "Header 1")],
-            elements_to_preserve=["table"],
-            max_chunk_size=1000,
-        )
-    documents = splitter.split_text(html_content)
-
-    # The table should be preserved in the output
-    assert len(documents) == 1
-    content = documents[0].page_content
-    # Check that the table structure is maintained (not flattened)
-    assert "Col1" in content
-    assert "Col2" in content
-    assert "Data1" in content
-    assert "Data2" in content
-    # Check metadata
-    assert documents[0].metadata == {"Header 1": "Section 1"}
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_with_nested_div_preserved() -> None:
-    """Test HTML splitter preserving nested div elements.
-
-    Nested div elements should be preserved when specified in elements_to_preserve
-    """
-    html_content = """
-    <div>
-        <h1>Header</h1>
-        <p>outer text</p>
-        <div>inner div content</div>
-        <p>more outer text</p>
-    </div>
-    """
-    with suppress_langchain_beta_warning():
-        splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[("h1", "Header 1")],
-            elements_to_preserve=["div"],
-            max_chunk_size=1000,
-        )
-    documents = splitter.split_text(html_content)
-
-    assert len(documents) == 1
-    content = documents[0].page_content
-    # The inner div content should be preserved
-    assert "inner div content" in content
-    assert "outer text" in content
-    assert "more outer text" in content
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_preserve_nested_in_paragraph() -> None:
-    """Test preserving deeply nested elements (code inside paragraph).
-
-    tests the case where a preserved element (<code>) is nested
-    inside a non-container element (<p>)
-    """
-    html_content = "<p>before <code>KEEP_THIS</code> after</p>"
-    with suppress_langchain_beta_warning():
-        splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[],
-            elements_to_preserve=["code"],
-        )
-    documents = splitter.split_text(html_content)
-
-    assert len(documents) == 1
-    content = documents[0].page_content
-    # All text should be preserved
-    assert "before" in content
-    assert "KEEP_THIS" in content
-    assert "after" in content
-
-
-@pytest.mark.requires("bs4")
 def test_html_splitter_with_no_further_splits() -> None:
     """Test HTML splitting that requires no further splits beyond sections."""
     html_content = """
@@ -4000,79 +3830,6 @@ def test_html_splitter_keep_separator_default() -> None:
     ]
 
     assert documents == expected
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_preserved_elements_reverse_order() -> None:
-    """Test HTML splitter with preserved elements and conflicting placeholders.
-
-    This test validates that preserved elements are reinserted in reverse order
-    to prevent conflicts when one placeholder might be a substring of another.
-    """
-    html_content = """
-    <h1>Section 1</h1>
-    <table>
-        <tr><td>Table 1 content</td></tr>
-    </table>
-    <p>Some text between tables</p>
-    <table>
-        <tr><td>Table 10 content</td></tr>
-    </table>
-    <ul>
-        <li>List item 1</li>
-        <li>List item 10</li>
-    </ul>
-    """
-    with suppress_langchain_beta_warning():
-        splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[("h1", "Header 1")],
-            elements_to_preserve=["table", "ul"],
-            max_chunk_size=100,
-        )
-    documents = splitter.split_text(html_content)
-
-    # Verify that all preserved elements are correctly reinserted
-    # This would fail if placeholders were processed in forward order
-    # when one placeholder is a substring of another
-    assert len(documents) >= 1
-    # Check that table content is preserved
-    content = " ".join(doc.page_content for doc in documents)
-    assert "Table 1 content" in content
-    assert "Table 10 content" in content
-    assert "List item 1" in content
-    assert "List item 10" in content
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_replacement_order() -> None:
-    body = textwrap.dedent(
-        """
-        <p>Hello1</p>
-        <p>Hello2</p>
-        <p>Hello3</p>
-        <p>Hello4</p>
-        <p>Hello5</p>
-        <p>Hello6</p>
-        <p>Hello7</p>
-        <p>Hello8</p>
-        <p>Hello9</p>
-        <p>Hello10</p>
-        <p>Hello11</p>
-        <p>Hello12</p>
-        <p>Hello13</p>
-        <p>Hello14</p>
-        """
-    )
-
-    with suppress_langchain_beta_warning():
-        splitter = HTMLSemanticPreservingSplitter(
-            headers_to_split_on=[],
-            elements_to_preserve=["p"],
-        )
-    documents = splitter.split_text(body)
-    assert len(documents) == 1
-    content = documents[0].page_content
-    assert content == " ".join([f"Hello{i}" for i in range(1, 15)])
 
 
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:

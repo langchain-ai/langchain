@@ -1,5 +1,4 @@
 import inspect
-from typing import cast
 
 
 def is_caller_internal(depth: int = 2) -> bool:
@@ -17,7 +16,7 @@ def is_caller_internal(depth: int = 2) -> bool:
                 return False
         # Directly access the module name from the frame's global variables
         module_globals = frame.f_globals
-        caller_module_name = cast("str", module_globals.get("__name__", ""))
+        caller_module_name = module_globals.get("__name__", "")
         return caller_module_name.startswith("langchain")
     finally:
         del frame

@@ -9,11 +9,7 @@ from ollama import AsyncClient, Client
 from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
-from langchain_ollama._utils import (
-    merge_auth_headers,
-    parse_url_with_auth,
-    validate_model,
-)
+from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -298,10 +294,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._client:
             msg = (
-                "Ollama sync client is not initialized. "
-                "Make sure the model was properly constructed."
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
             )
-            raise RuntimeError(msg)
+            raise ValueError(msg)
         return self._client.embed(
             self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
@@ -314,10 +310,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._async_client:
             msg = (
-                "Ollama async client is not initialized. "
-                "Make sure the model was properly constructed."
+                "Ollama client is not initialized. "
+                "Please ensure Ollama is running and the model is loaded."
             )
-            raise RuntimeError(msg)
+            raise ValueError(msg)
         return (
             await self._async_client.embed(
                 self.model,

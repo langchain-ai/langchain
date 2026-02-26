@@ -46,6 +46,9 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
+    # prompty exhibiting issues with numpy for Python 3.13
+    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
+    "prompty",
 ]
 
 
@@ -53,7 +56,7 @@ def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1]).lstrip("./")
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if "libs/standard-tests" not in path
+        if "libs/cli" not in path and "libs/standard-tests" not in path
     }
 
 
@@ -282,6 +285,10 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/anthropic")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
+
+        elif file.startswith("libs/cli"):
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
 
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]

@@ -10,9 +10,7 @@ from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import openai
 import pytest
-from langchain_core.exceptions import ContextOverflowError
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
     AIMessage,
@@ -66,7 +64,6 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
-    OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -86,10 +83,8 @@ from langchain_openai.chat_models.base import (
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
     assert llm.model_name == "foo"
-    assert llm.model == "foo"
     llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
-    assert llm.model == "foo"
 
     llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
@@ -1266,23 +1261,6 @@ def test__get_request_payload() -> None:
     assert payload == expected
 
 
-def test_sanitize_chat_completions_text_blocks() -> None:
-    messages = [
-        ToolMessage(
-            content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
-            tool_call_id="def456",
-        ),
-    ]
-    payload = ChatOpenAI(model="gpt-5.2")._get_request_payload(messages)
-    assert payload["messages"] == [
-        {
-            "content": [{"type": "text", "text": "foo"}],
-            "role": "tool",
-            "tool_call_id": "def456",
-        }
-    ]
-
-
 def test_init_o1() -> None:
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("error")  # Treat warnings as errors
@@ -1382,29 +1360,9 @@ def test_structured_outputs_parser() -> None:
         partial(_oai_structured_outputs_parser, schema=GenerateUsername)
     )
     serialized = dumps(llm_output)
-    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
+    deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
     result = output_parser.invoke(cast(AIMessage, deserialized.message))
-    assert result == parsed_response
-
-
-def test_structured_outputs_parser_valid_falsy_response() -> None:
-    class LunchBox(BaseModel):
-        sandwiches: list[str]
-
-        def __len__(self) -> int:
-            return len(self.sandwiches)
-
-    # prepare a valid *but falsy* response object, an empty LunchBox
-    parsed_response = LunchBox(sandwiches=[])
-    assert len(parsed_response) == 0
-    llm_output = AIMessage(
-        content='{"sandwiches": []}', additional_kwargs={"parsed": parsed_response}
-    )
-    output_parser = RunnableLambda(
-        partial(_oai_structured_outputs_parser, schema=LunchBox)
-    )
-    result = output_parser.invoke(llm_output)
     assert result == parsed_response
 
 
@@ -3232,202 +3190,4 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 
 def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro")
-    assert _model_prefers_responses_api("gpt-5.2-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex-max")
-    assert _model_prefers_responses_api("gpt-5-codex")
     assert not _model_prefers_responses_api("gpt-5.1")
-    assert not _model_prefers_responses_api("gpt-5")
-
-
-def test_openai_structured_output_refusal_handling_responses_api() -> None:
-    """
-    Test that _oai_structured_outputs_parser raises OpenAIRefusalError
-    when the AIMessage contains a refusal block from OpenAI's Responses API.
-    """
-    ai_msg = AIMessage(
-        content=[
-            {
-                "id": "rs_fake_id",
-                "summary": [],
-                "type": "reasoning",
-                "encrypted_content": "fake_encrypted_content",
-            },
-            {
-                "type": "refusal",
-                "refusal": "refused content in string",
-                "id": "msg_fake_id",
-            },
-        ],
-    )
-
-    # schema does not matter in this issue
-    class MySchema(BaseModel):
-        foo: int
-
-    try:
-        _oai_structured_outputs_parser(ai_msg, MySchema)
-    except OpenAIRefusalError:
-        # OpenAIRefusalError was raised. This is the proper behavior.
-        pass
-    except ValueError as e:
-        pytest.fail(f"This is a wrong behavior. Error details: {e}")
-
-
-# Test fixtures for context overflow error tests
-_CONTEXT_OVERFLOW_ERROR_BODY = {
-    "error": {
-        "message": (
-            "Input tokens exceed the configured limit of 272000 tokens. Your messages "
-            "resulted in 300007 tokens. Please reduce the length of the messages."
-        ),
-        "type": "invalid_request_error",
-        "param": "messages",
-        "code": "context_length_exceeded",
-    }
-}
-_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = openai.BadRequestError(
-    message=_CONTEXT_OVERFLOW_ERROR_BODY["error"]["message"],
-    response=MagicMock(status_code=400),
-    body=_CONTEXT_OVERFLOW_ERROR_BODY,
-)
-_CONTEXT_OVERFLOW_API_ERROR = openai.APIError(
-    message=(
-        "Your input exceeds the context window of this model. Please adjust your input "
-        "and try again."
-    ),
-    request=MagicMock(),
-    body=None,
-)
-
-
-def test_context_overflow_error_invoke_sync() -> None:
-    """Test context overflow error on invoke (sync, chat completions API)."""
-    llm = ChatOpenAI()
-
-    with (  # noqa: PT012
-        patch.object(llm.client, "with_raw_response") as mock_client,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        llm.invoke([HumanMessage(content="test")])
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-def test_context_overflow_error_invoke_sync_responses_api() -> None:
-    """Test context overflow error on invoke (sync, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
-
-    with (  # noqa: PT012
-        patch.object(llm.root_client.responses, "with_raw_response") as mock_client,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        llm.invoke([HumanMessage(content="test")])
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-async def test_context_overflow_error_invoke_async() -> None:
-    """Test context overflow error on invoke (async, chat completions API)."""
-    llm = ChatOpenAI()
-
-    with (  # noqa: PT012
-        patch.object(llm.async_client, "with_raw_response") as mock_client,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        await llm.ainvoke([HumanMessage(content="test")])
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-async def test_context_overflow_error_invoke_async_responses_api() -> None:
-    """Test context overflow error on invoke (async, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
-
-    with (  # noqa: PT012
-        patch.object(
-            llm.root_async_client.responses, "with_raw_response"
-        ) as mock_client,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        await llm.ainvoke([HumanMessage(content="test")])
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-def test_context_overflow_error_stream_sync() -> None:
-    """Test context overflow error on stream (sync, chat completions API)."""
-    llm = ChatOpenAI()
-
-    with (  # noqa: PT012
-        patch.object(llm.client, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        list(llm.stream([HumanMessage(content="test")]))
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-def test_context_overflow_error_stream_sync_responses_api() -> None:
-    """Test context overflow error on stream (sync, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
-
-    with (  # noqa: PT012
-        patch.object(llm.root_client.responses, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_API_ERROR
-        list(llm.stream([HumanMessage(content="test")]))
-
-    assert "exceeds the context window" in str(exc_info.value)
-
-
-async def test_context_overflow_error_stream_async() -> None:
-    """Test context overflow error on stream (async, chat completions API)."""
-    llm = ChatOpenAI()
-
-    with (  # noqa: PT012
-        patch.object(llm.async_client, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        async for _ in llm.astream([HumanMessage(content="test")]):
-            pass
-
-    assert "Input tokens exceed the configured limit" in str(exc_info.value)
-
-
-async def test_context_overflow_error_stream_async_responses_api() -> None:
-    """Test context overflow error on stream (async, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
-
-    with (  # noqa: PT012
-        patch.object(llm.root_async_client.responses, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_API_ERROR
-        async for _ in llm.astream([HumanMessage(content="test")]):
-            pass
-
-    assert "exceeds the context window" in str(exc_info.value)
-
-
-def test_context_overflow_error_backwards_compatibility() -> None:
-    """Test that ContextOverflowError can be caught as BadRequestError."""
-    llm = ChatOpenAI()
-
-    with (  # noqa: PT012
-        patch.object(llm.client, "with_raw_response") as mock_client,
-        pytest.raises(openai.BadRequestError) as exc_info,
-    ):
-        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        llm.invoke([HumanMessage(content="test")])
-
-    # Verify it's both types (multiple inheritance)
-    assert isinstance(exc_info.value, openai.BadRequestError)
-    assert isinstance(exc_info.value, ContextOverflowError)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import ToolMessage
 
@@ -16,7 +16,7 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import AgentMiddleware
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 
-class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class ToolRetryMiddleware(AgentMiddleware):
     """Middleware that automatically retries failed tool calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -189,14 +189,14 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
         # Handle backwards compatibility for deprecated on_failure values
         if on_failure == "raise":  # type: ignore[comparison-overlap]
-            msg = (  # type: ignore[unreachable]
+            msg = (
                 "on_failure='raise' is deprecated and will be removed in a future version. "
                 "Use on_failure='error' instead."
             )
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "error"
         elif on_failure == "return_message":  # type: ignore[comparison-overlap]
-            msg = (  # type: ignore[unreachable]
+            msg = (
                 "on_failure='return_message' is deprecated and will be removed "
                 "in a future version. Use on_failure='continue' instead."
             )
@@ -233,8 +233,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             return True
         return tool_name in self._tool_filter
 
-    @staticmethod
-    def _format_failure_message(tool_name: str, exc: Exception, attempts_made: int) -> str:
+    def _format_failure_message(self, tool_name: str, exc: Exception, attempts_made: int) -> str:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -288,8 +287,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
         """Intercept tool execution and retry on failure.
 
         Args:
@@ -298,9 +297,6 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
         Returns:
             `ToolMessage` or `Command` (the final result).
-
-        Raises:
-            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -346,8 +342,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> ToolMessage | Command[Any]:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
         """Intercept and control async tool execution with retry logic.
 
         Args:
@@ -357,9 +353,6 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
         Returns:
             `ToolMessage` or `Command` (the final result).
-
-        Raises:
-            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 

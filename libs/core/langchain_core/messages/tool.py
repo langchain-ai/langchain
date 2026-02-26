@@ -214,29 +214,20 @@ class ToolCall(TypedDict):
         This represents a request to call the tool named `'foo'` with arguments
         `{"a": 1}` and an identifier of `'123'`.
 
-    !!! note "Factory function"
-
-        `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
-        include:
-
-        * Required arguments strictly validated at creation time
     """
 
     name: str
     """The name of the tool to be called."""
-
     args: dict[str, Any]
-    """The arguments to the tool call as a dictionary."""
-
+    """The arguments to the tool call."""
     id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
-    """
 
+    """
     type: NotRequired[Literal["tool_call"]]
-    """Used for discrimination."""
 
 
 def tool_call(
@@ -249,7 +240,7 @@ def tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call as a dictionary.
+        args: The arguments to the tool call.
         id: An identifier associated with the tool call.
 
     Returns:
@@ -261,9 +252,9 @@ def tool_call(
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (yielded when streaming).
 
-    When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
-    string attributes are concatenated. Chunks are only merged if their values of
-    `index` are equal and not `None`.
+    When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
+    all string attributes are concatenated. Chunks are only merged if their
+    values of `index` are equal and not None.
 
     Example:
     ```python
@@ -279,25 +270,13 @@ class ToolCallChunk(TypedDict):
 
     name: str | None
     """The name of the tool to be called."""
-
     args: str | None
-    """The arguments to the tool call as a JSON-parseable string."""
-
+    """The arguments to the tool call."""
     id: str | None
-    """An identifier associated with the tool call.
-
-    An identifier is needed to associate a tool call request with a tool
-    call result in events when multiple concurrent tool calls are made.
-    """
-
+    """An identifier associated with the tool call."""
     index: int | None
-    """The index of the tool call in a sequence.
-
-    Used for merging chunks.
-    """
-
+    """The index of the tool call in a sequence."""
     type: NotRequired[Literal["tool_call_chunk"]]
-    """Used for discrimination."""
 
 
 def tool_call_chunk(
@@ -311,7 +290,7 @@ def tool_call_chunk(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call as a JSON string.
+        args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
 
@@ -334,7 +313,7 @@ def invalid_tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call as a JSON string.
+        args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
 

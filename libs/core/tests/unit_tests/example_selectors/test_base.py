@@ -11,7 +11,7 @@ class DummyExampleSelector(BaseExampleSelector):
         self.example = example
 
     @override
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return [input_variables]
 
 

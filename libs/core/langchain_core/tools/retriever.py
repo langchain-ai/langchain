@@ -6,10 +6,8 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
-# Cannot move Callbacks and Document to TYPE_CHECKING as StructuredTool's
-# func/coroutine parameter annotations are evaluated at runtime.
-from langchain_core.callbacks import Callbacks  # noqa: TC001
-from langchain_core.documents import Document  # noqa: TC001
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -41,19 +39,16 @@ def create_retriever_tool(
 
     Args:
         retriever: The retriever to use for the retrieval
-        name: The name for the tool.
-
-            This will be passed to the language model, so should be unique and somewhat
-            descriptive.
-        description: The description for the tool.
-
-            This will be passed to the language model, so should be descriptive.
+        name: The name for the tool. This will be passed to the language model,
+            so should be unique and somewhat descriptive.
+        description: The description for the tool. This will be passed to the language
+            model, so should be descriptive.
         document_prompt: The prompt to use for the document.
         document_separator: The separator to use between documents.
         response_format: The tool response format.
 
-            If `'content'` then the output of the tool is interpreted as the contents of
-            a `ToolMessage`. If `'content_and_artifact'` then the output is expected to
+            If `"content"` then the output of the tool is interpreted as the contents of
+            a `ToolMessage`. If `"content_and_artifact"` then the output is expected to
             be a two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`
             (artifact being a list of documents in this case).
 

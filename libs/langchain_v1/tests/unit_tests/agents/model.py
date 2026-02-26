@@ -3,7 +3,9 @@ from collections.abc import Callable, Sequence
 from dataclasses import asdict, is_dataclass
 from typing import (
     Any,
+    Generic,
     Literal,
+    TypeVar,
 )
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -17,12 +19,13 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
-from typing_extensions import override
+
+StructuredResponseT = TypeVar("StructuredResponseT")
 
 
-class FakeToolCallingModel(BaseChatModel):
-    tool_calls: list[list[ToolCall]] | list[list[dict[str, Any]]] | None = None
-    structured_response: Any | None = None
+class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
+    tool_calls: list[list[ToolCall]] | list[list[dict]] | None = None
+    structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
 
@@ -49,9 +52,7 @@ class FakeToolCallingModel(BaseChatModel):
         if is_native and not tool_calls:
             if isinstance(self.structured_response, BaseModel):
                 content_obj = self.structured_response.model_dump()
-            elif is_dataclass(self.structured_response) and not isinstance(
-                self.structured_response, type
-            ):
+            elif is_dataclass(self.structured_response):
                 content_obj = asdict(self.structured_response)
             elif isinstance(self.structured_response, dict):
                 content_obj = self.structured_response
@@ -70,14 +71,11 @@ class FakeToolCallingModel(BaseChatModel):
     def _llm_type(self) -> str:
         return "fake-tool-call-model"
 
-    @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
-        *,
-        tool_choice: str | None = None,
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessage]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)

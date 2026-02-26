@@ -27,22 +27,21 @@ class PromptTemplate(StringPromptTemplate):
     A prompt template consists of a string template. It accepts a set of parameters
     from the user that can be used to generate a prompt for a language model.
 
-    The template can be formatted using either f-strings (default), jinja2, or mustache
-    syntax.
+    The template can be formatted using either f-strings (default), jinja2,
+    or mustache syntax.
 
-    !!! warning "Security"
+    *Security warning*:
+        Prefer using `template_format="f-string"` instead of
+        `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
+        from untrusted sources as they may lead to arbitrary Python code execution.
 
-        Prefer using `template_format='f-string'` instead of `template_format='jinja2'`,
-        or make sure to NEVER accept jinja2 templates from untrusted sources as they may
-        lead to arbitrary Python code execution.
+        As of LangChain 0.0.329, Jinja2 templates will be rendered using
+        Jinja2's SandboxedEnvironment by default. This sand-boxing should
+        be treated as a best-effort approach rather than a guarantee of security,
+        as it is an opt-out rather than opt-in approach.
 
-        As of LangChain 0.0.329, Jinja2 templates will be rendered using Jinja2's
-        SandboxedEnvironment by default. This sand-boxing should be treated as a
-        best-effort approach rather than a guarantee of security, as it is an opt-out
-        rather than opt-in approach.
-
-        Despite the sandboxing, we recommend to never use jinja2 templates from
-        untrusted sources.
+        Despite the sand-boxing, we recommend to never use jinja2 templates
+        from untrusted sources.
 
     Example:
         ```python
@@ -79,9 +78,7 @@ class PromptTemplate(StringPromptTemplate):
 
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-
-    Options are: `'f-string'`, `'mustache'`, `'jinja2'`.
-    """
+    Options are: 'f-string', 'mustache', 'jinja2'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
@@ -140,7 +137,7 @@ class PromptTemplate(StringPromptTemplate):
         return mustache_schema(self.template)
 
     def __add__(self, other: Any) -> PromptTemplate:
-        """Override the `+` operator to allow for combining prompt templates.
+        """Override the + operator to allow for combining prompt templates.
 
         Raises:
             ValueError: If the template formats are not f-string or if there are
@@ -216,15 +213,14 @@ class PromptTemplate(StringPromptTemplate):
 
         Args:
             examples: List of examples to use in the prompt.
-            suffix: String to go after the list of examples.
-
-                Should generally set up the user's input.
-            input_variables: A list of variable names the final prompt template will
-                expect.
-            example_separator: The separator to use in between examples.
-            prefix: String that should go before any examples.
-
-                Generally includes examples.
+            suffix: String to go after the list of examples. Should generally
+                set up the user's input.
+            input_variables: A list of variable names the final prompt template
+                will expect.
+            example_separator: The separator to use in between examples. Defaults
+                to two new line characters.
+            prefix: String that should go before any examples. Generally includes
+                examples.
 
         Returns:
             The final prompt generated.
@@ -244,7 +240,6 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template_file: The path to the file containing the prompt template.
             encoding: The encoding system for opening the template file.
-
                 If not provided, will use the OS default.
 
         Returns:
@@ -264,32 +259,28 @@ class PromptTemplate(StringPromptTemplate):
     ) -> PromptTemplate:
         """Load a prompt template from a template.
 
-        !!! warning "Security"
-
-            Prefer using `template_format='f-string'` instead of
-            `template_format='jinja2'`, or make sure to NEVER accept jinja2 templates
+        *Security warning*:
+            Prefer using `template_format="f-string"` instead of
+            `template_format="jinja2"`, or make sure to NEVER accept jinja2 templates
             from untrusted sources as they may lead to arbitrary Python code execution.
 
-            As of LangChain 0.0.329, Jinja2 templates will be rendered using Jinja2's
-            SandboxedEnvironment by default. This sand-boxing should be treated as a
-            best-effort approach rather than a guarantee of security, as it is an
-            opt-out rather than opt-in approach.
+            As of LangChain 0.0.329, Jinja2 templates will be rendered using
+            Jinja2's SandboxedEnvironment by default. This sand-boxing should
+            be treated as a best-effort approach rather than a guarantee of security,
+            as it is an opt-out rather than opt-in approach.
 
-            Despite the sandboxing, we recommend to never use jinja2 templates from
-            untrusted sources.
+            Despite the sand-boxing, we recommend never using jinja2 templates
+            from untrusted sources.
 
         Args:
             template: The template to load.
-            template_format: The format of the template.
-
-                Use `jinja2` for jinja2, `mustache` for mustache, and `f-string` for
-                f-strings.
+            template_format: The format of the template. Use `jinja2` for jinja2,
+                `mustache` for mustache, and `f-string` for f-strings.
             partial_variables: A dictionary of variables that can be used to partially
-                fill in the template.
-
-                For example, if the template is `'{variable1} {variable2}'`, and
-                `partial_variables` is `{"variable1": "foo"}`, then the final prompt
-                will be `'foo {variable2}'`.
+                fill in the template. For example, if the template is
+                `"{variable1} {variable2}"`, and `partial_variables` is
+                `{"variable1": "foo"}`, then the final prompt will be
+                `"foo {variable2}"`.
             **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:

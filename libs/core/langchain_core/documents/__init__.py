@@ -4,7 +4,6 @@ This module provides core abstractions for handling data in retrieval-augmented
 generation (RAG) pipelines, vector stores, and document processing workflows.
 
 !!! warning "Documents vs. message content"
-
     This module is distinct from `langchain_core.messages.content`, which provides
     multimodal content blocks for **LLM chat I/O** (text, images, audio, etc. within
     messages).
@@ -31,9 +30,9 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.documents.base import Document
-    from langchain_core.documents.compressor import BaseDocumentCompressor
-    from langchain_core.documents.transformers import BaseDocumentTransformer
+    from .base import Document
+    from .compressor import BaseDocumentCompressor
+    from .transformers import BaseDocumentTransformer
 
 __all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Document")
 

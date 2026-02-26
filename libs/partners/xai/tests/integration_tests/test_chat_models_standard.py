@@ -35,6 +35,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
         return {
             "model": MODEL_NAME,
             "rate_limiter": rate_limiter,
+            "stream_usage": True,
         }
 
     @pytest.mark.xfail(

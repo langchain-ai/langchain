@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    AgentState,
-    ContextT,
+    ModelCallResult,
     ModelRequest,
     ModelResponse,
-    ResponseT,
 )
 from langchain.chat_models import init_chat_model
 
@@ -18,10 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langchain_core.language_models.chat_models import BaseChatModel
-    from langchain_core.messages import AIMessage
 
 
-class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class ModelFallbackMiddleware(AgentMiddleware):
     """Automatic fallback to alternative models on errors.
 
     Retries failed model calls with alternative models in sequence until
@@ -71,9 +68,9 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Try fallback models in sequence on errors.
 
         Args:
@@ -105,9 +102,9 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
         """Try fallback models in sequence on errors (async version).
 
         Args:

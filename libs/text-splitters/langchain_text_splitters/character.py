@@ -23,14 +23,7 @@ class CharacterTextSplitter(TextSplitter):
         self._is_separator_regex = is_separator_regex
 
     def split_text(self, text: str) -> list[str]:
-        """Split into chunks without re-inserting lookaround separators.
-
-        Args:
-            text: The text to split.
-
-        Returns:
-            A list of text chunks.
-        """
+        """Split into chunks without re-inserting lookaround separators."""
         # 1. Determine split pattern: raw regex or escaped literal
         sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
@@ -110,13 +103,13 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Get appropriate separator to use
         separator = separators[-1]
         new_separators = []
-        for i, s_ in enumerate(separators):
-            separator_ = s_ if self._is_separator_regex else re.escape(s_)
-            if not s_:
-                separator = s_
+        for i, _s in enumerate(separators):
+            separator_ = _s if self._is_separator_regex else re.escape(_s)
+            if not _s:
+                separator = _s
                 break
             if re.search(separator_, text):
-                separator = s_
+                separator = _s
                 new_separators = separators[i + 1 :]
                 break
 
@@ -184,9 +177,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
         Returns:
             A list of separators appropriate for the specified language.
-
-        Raises:
-            ValueError: If the language is not implemented or supported.
         """
         if language in {Language.C, Language.CPP}:
             return [

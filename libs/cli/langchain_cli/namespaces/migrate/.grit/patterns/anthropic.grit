@@ -1,0 +1,15 @@
+
+language python
+
+// This migration is generated automatically - do not manually edit this file
+pattern langchain_migrate_anthropic() {
+  find_replace_imports(list=[
+    [`langchain_community.chat_models.anthropic`, `ChatAnthropic`, `langchain_anthropic`, `ChatAnthropic`],
+    [`langchain_community.llms.anthropic`, `Anthropic`, `langchain_anthropic`, `Anthropic`],
+    [`langchain_community.chat_models`, `ChatAnthropic`, `langchain_anthropic`, `ChatAnthropic`],
+    [`langchain_community.llms`, `Anthropic`, `langchain_anthropic`, `Anthropic`]
+  ])
+}
+
+// Add this for invoking directly
+langchain_migrate_anthropic()

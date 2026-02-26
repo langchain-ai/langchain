@@ -8,6 +8,7 @@ import logging
 import types
 import typing
 import uuid
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -22,7 +23,6 @@ from typing import (
 
 import typing_extensions
 from pydantic import BaseModel
-from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
@@ -35,7 +35,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable
 
     from langchain_core.tools import BaseTool
 
@@ -48,30 +48,14 @@ PYTHON_TO_JSON_TYPES = {
     "bool": "boolean",
 }
 
-_ORIGIN_MAP: dict[type, Any] = {
-    dict: dict,
-    list: list,
-    tuple: tuple,
-    set: set,
-    collections.abc.Iterable: typing.Iterable,
-    collections.abc.Mapping: typing.Mapping,
-    collections.abc.Sequence: typing.Sequence,
-    collections.abc.MutableMapping: typing.MutableMapping,
-}
-# Add UnionType mapping for Python 3.10+
-if hasattr(types, "UnionType"):
-    _ORIGIN_MAP[types.UnionType] = Union
-
 
 class FunctionDescription(TypedDict):
     """Representation of a callable function to send to an LLM."""
 
     name: str
     """The name of the function."""
-
     description: str
     """A description of the function."""
-
     parameters: dict
     """The parameters of the function."""
 
@@ -81,23 +65,22 @@ class ToolDescription(TypedDict):
 
     type: Literal["function"]
     """The type of the tool."""
-
     function: FunctionDescription
     """The function description."""
 
 
 def _rm_titles(kv: dict, prev_key: str = "") -> dict:
-    """Recursively removes `'title'` fields from a JSON schema dictionary.
+    """Recursively removes "title" fields from a JSON schema dictionary.
 
-    Remove `'title'` fields from the input JSON schema dictionary,
-    except when a `'title'` appears within a property definition under `'properties'`.
+    Remove "title" fields from the input JSON schema dictionary,
+    except when a "title" appears within a property definition under "properties".
 
     Args:
         kv: The input JSON schema as a dictionary.
         prev_key: The key from the parent dictionary, used to identify context.
 
     Returns:
-        A new dictionary with appropriate `'title'` fields removed.
+        A new dictionary with appropriate "title" fields removed.
     """
     new_kv = {}
 
@@ -131,12 +114,10 @@ def _convert_json_schema_to_openai_function(
 
     Args:
         schema: The JSON schema to convert.
-        name: The name of the function.
-
-            If not provided, the title of the schema will be used.
-        description: The description of the function.
-
-            If not provided, the description of the schema will be used.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
         rm_titles: Whether to remove titles from the schema.
 
     Returns:
@@ -167,42 +148,25 @@ def _convert_pydantic_to_openai_function(
 
     Args:
         model: The Pydantic model to convert.
-        name: The name of the function.
-
-            If not provided, the title of the schema will be used.
-        description: The description of the function.
-
-            If not provided, the description of the schema will be used.
+        name: The name of the function. If not provided, the title of the schema will be
+            used.
+        description: The description of the function. If not provided, the description
+            of the schema will be used.
         rm_titles: Whether to remove titles from the schema.
 
     Raises:
         TypeError: If the model is not a Pydantic model.
-        TypeError: If the model contains types that cannot be converted to JSON schema.
 
     Returns:
         The function description.
     """
-    try:
-        if hasattr(model, "model_json_schema"):
-            schema = model.model_json_schema()  # Pydantic 2
-        elif hasattr(model, "schema"):
-            schema = model.schema()  # Pydantic 1
-        else:
-            msg = "Model must be a Pydantic model."
-            raise TypeError(msg)
-    except PydanticInvalidForJsonSchema as e:
-        model_name = getattr(model, "__name__", str(model))
-        msg = (
-            f"Failed to generate JSON schema for '{model_name}': {e}\n\n"
-            "Tool argument schemas must be JSON-serializable. If your schema includes "
-            "custom Python classes, consider:\n"
-            "  1. Converting them to Pydantic models with JSON-compatible fields\n"
-            "  2. Using primitive types (str, int, float, bool, list, dict) instead\n"
-            "  3. Passing the data as serialized JSON strings\n\n"
-            "For more information, see: "
-            "https://python.langchain.com/docs/how_to/custom_tools/"
-        )
-        raise PydanticInvalidForJsonSchema(msg) from e
+    if hasattr(model, "model_json_schema"):
+        schema = model.model_json_schema()  # Pydantic 2
+    elif hasattr(model, "schema"):
+        schema = model.schema()  # Pydantic 1
+    else:
+        msg = "Model must be a Pydantic model."
+        raise TypeError(msg)
     return _convert_json_schema_to_openai_function(
         schema, name=name, description=description, rm_titles=rm_titles
     )
@@ -219,8 +183,8 @@ def _convert_python_function_to_openai_function(
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
-    the docstring has Google Python style argument descriptions, these will be included
-    as well.
+        the docstring has Google Python style argument descriptions, these will be
+        included as well.
 
     Args:
         function: The Python function to convert.
@@ -260,7 +224,7 @@ _MAX_TYPED_DICT_RECURSION = 25
 def _convert_any_typed_dicts_to_pydantic(
     type_: type,
     *,
-    visited: dict[type, type],
+    visited: dict,
     depth: int = 0,
 ) -> type:
     if type_ in visited:
@@ -311,9 +275,7 @@ def _convert_any_typed_dicts_to_pydantic(
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
-        model = cast(
-            "type[BaseModelV1]", create_model_v1(typed_dict.__name__, **fields)
-        )
+        model = create_model_v1(typed_dict.__name__, **fields)
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -323,7 +285,7 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
-        return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
+        return subscriptable_origin[type_args]  # type: ignore[index]
     return type_
 
 
@@ -382,20 +344,20 @@ def convert_to_openai_function(
     """Convert a raw function/class to an OpenAI function.
 
     Args:
-        function: A dictionary, Pydantic `BaseModel` class, `TypedDict` class, a
-            LangChain `Tool` object, or a Python function.
-
-            If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function, a JSON schema with top-level `title` key specified, an Anthropic
-            format tool, or an Amazon Bedrock Converse format tool.
-        strict: If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition.
-
-            If `None`, `strict` argument will not be included in function definition.
+        function:
+            A dictionary, Pydantic `BaseModel` class, `TypedDict` class, a LangChain
+            `Tool` object, or a Python function. If a dictionary is passed in, it is
+            assumed to already be a valid OpenAI function, a JSON schema with
+            top-level `title` key specified, an Anthropic format tool, or an Amazon
+            Bedrock Converse format tool.
+        strict:
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, `strict` argument will not
+            be included in function definition.
 
     Returns:
         A dict version of the passed in function which is compatible with the OpenAI
-            function-calling API.
+        function-calling API.
 
     Raises:
         ValueError: If function is not in a supported format.
@@ -451,20 +413,11 @@ def convert_to_openai_function(
             "dict", _convert_python_function_to_openai_function(function)
         )
     else:
-        if isinstance(function, dict) and (
-            "type" in function or "properties" in function
-        ):
-            msg = (
-                f"Unsupported function\n\n{function}\n\nTo use a JSON schema as a "
-                "function, it must have a top-level 'title' key to be used as the "
-                "function name."
-            )
-            raise ValueError(msg)
         msg = (
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
             " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
             " either be in OpenAI function format or valid JSON schema with top-level"
-            " 'title' key."
+            " 'title' and 'description' keys."
         )
         raise ValueError(msg)
 
@@ -478,6 +431,12 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
+            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
+            # set to False if strict is True.
+            # All properties layer needs 'additionalProperties=False'
+            oai_function["parameters"] = _recursive_set_additional_properties_false(
+                oai_function["parameters"]
+            )
             # All fields must be `required`
             parameters = oai_function.get("parameters")
             if isinstance(parameters, dict):
@@ -486,13 +445,6 @@ def convert_to_openai_function(
                     parameters = dict(parameters)
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
-
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
-            oai_function["parameters"] = _recursive_set_additional_properties_false(
-                oai_function["parameters"]
-            )
     return oai_function
 
 
@@ -521,20 +473,19 @@ def convert_to_openai_tool(
     [OpenAI tool schema reference](https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools)
 
     Args:
-        tool: Either a dictionary, a `pydantic.BaseModel` class, Python function, or
-            `BaseTool`.
-
-            If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function, a JSON schema with top-level `title` key specified, an Anthropic
-            format tool, or an Amazon Bedrock Converse format tool.
-        strict: If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition.
-
-            If `None`, `strict` argument will not be included in tool definition.
+        tool:
+            Either a dictionary, a `pydantic.BaseModel` class, Python function, or
+            `BaseTool`. If a dictionary is passed in, it is assumed to already be a
+            valid OpenAI function, a JSON schema with top-level `title` key specified,
+            an Anthropic format tool, or an Amazon Bedrock Converse format tool.
+        strict:
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, `strict` argument will not
+            be included in tool definition.
 
     Returns:
-        A dict version of the passed in tool which is compatible with the OpenAI
-            tool-calling API.
+        A dict version of the passed in tool which is compatible with the
+        OpenAI tool-calling API.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
 
@@ -583,9 +534,8 @@ def convert_to_json_schema(
     Args:
         schema: The schema to convert.
         strict: If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition.
-
-            If `None`, `strict` argument will not be included in function definition.
+            provided in the function definition. If `None`, `strict` argument will not
+            be included in function definition.
 
     Raises:
         ValueError: If the input is not a valid OpenAI-format tool.
@@ -646,10 +596,8 @@ def tool_example_to_messages(
         input: The user input
         tool_calls: Tool calls represented as Pydantic BaseModels
         tool_outputs: Tool call outputs.
-
-            Does not need to be provided.
-
-            If not provided, a placeholder value will be inserted.
+            Does not need to be provided. If not provided, a placeholder value
+            will be inserted.
         ai_response: If provided, content for a final `AIMessage`.
 
     Returns:
@@ -691,7 +639,6 @@ def tool_example_to_messages(
         ```
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
-
     openai_tool_calls = [
         {
             "id": str(uuid.uuid4()),
@@ -734,22 +681,12 @@ def _parse_google_docstring(
 
     Assumes the function docstring follows Google Python style guide.
 
-    Args:
-        docstring: The docstring to parse.
-        args: The list of argument names to extract descriptions for.
-        error_on_invalid_docstring: Whether to raise an error if the docstring is
-            invalid.
-
-    Returns:
-        A tuple of the function description and a dictionary of argument descriptions.
     """
     if docstring:
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
             filtered_annotations = {
-                arg
-                for arg in args
-                if arg not in {"run_manager", "callbacks", "runtime", "return"}
+                arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
             }
             if filtered_annotations and (
                 len(docstring_blocks) < _MIN_DOCSTRING_BLOCKS
@@ -771,7 +708,7 @@ def _parse_google_docstring(
                 descriptors.append(block)
             else:
                 continue
-        description = " ".join(descriptors).strip()
+        description = " ".join(descriptors)
     else:
         if error_on_invalid_docstring:
             msg = "Found invalid Google-Style docstring."
@@ -795,7 +732,22 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: type) -> type:
-    return cast("type", _ORIGIN_MAP.get(origin, origin))
+    origin_union_type_map: dict[type, Any] = (
+        {types.UnionType: Union} if hasattr(types, "UnionType") else {}
+    )
+
+    origin_map: dict[type, Any] = {
+        dict: dict,
+        list: list,
+        tuple: tuple,
+        set: set,
+        collections.abc.Iterable: typing.Iterable,
+        collections.abc.Mapping: typing.Mapping,
+        collections.abc.Sequence: typing.Sequence,
+        collections.abc.MutableMapping: typing.MutableMapping,
+        **origin_union_type_map,
+    }
+    return cast("type", origin_map.get(origin, origin))
 
 
 def _recursive_set_additional_properties_false(

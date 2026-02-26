@@ -1,4 +1,4 @@
-"""Utility code for `Runnable` objects."""
+"""Utility code for runnables."""
 
 from __future__ import annotations
 
@@ -7,10 +7,7 @@ import asyncio
 import inspect
 import sys
 import textwrap
-
-# Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
-# RunnableConfigurableFields.
-from collections.abc import Mapping, Sequence  # noqa: TC003
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
@@ -132,12 +129,9 @@ def asyncio_accepts_context() -> bool:
     return sys.version_info >= (3, 11)
 
 
-_T = TypeVar("_T")
-
-
 def coro_with_context(
-    coro: Awaitable[_T], context: Context, *, create_task: bool = False
-) -> Awaitable[_T]:
+    coro: Awaitable[Any], context: Context, *, create_task: bool = False
+) -> Awaitable[Any]:
     """Await a coroutine with a context.
 
     Args:

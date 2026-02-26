@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import typing
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
@@ -73,7 +74,6 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
-    import builtins
     import uuid
 
     from langchain_core.output_parsers.base import OutputParserLike
@@ -214,7 +214,7 @@ async def agenerate_from_stream(
     """Async generate from a stream.
 
     Args:
-        stream: AsyncIterator of `ChatGenerationChunk`.
+        stream: Iterator of `ChatGenerationChunk`.
 
     Returns:
         Chat result.
@@ -310,7 +310,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     - If `False` (Default), will always use streaming case if available.
 
     The main reason for this flag is that code might be written using `stream` and
-    a user may want to swap out a given model for another model whose implementation
+    a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
     """
 
@@ -341,7 +341,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """Profile detailing model capabilities.
 
     !!! warning "Beta feature"
-
         This is a beta feature. The format of model profiles is subject to change.
 
     If not specified, automatically loaded from the provider package on initialization
@@ -359,10 +358,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:
-        # self is always a Serializable object in this case, thus the result is
-        # guaranteed to be a dict since dumps uses the default callback, which uses
-        # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return dumpd(self)
 
     # --- Runnable methods ---
 
@@ -465,7 +461,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
-            return bool(kwargs["stream"])
+            return kwargs["stream"]
 
         if "streaming" in self.model_fields_set:
             streaming_value = getattr(self, "streaming", None)
@@ -812,11 +808,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(
-            self.temperature, (int, float)
-        ):
+        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens
@@ -1150,15 +1144,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                normalized_messages = [
-                    (
-                        msg.model_copy(update={"id": None})
-                        if getattr(msg, "id", None) is not None
-                        else msg
-                    )
-                    for msg in messages
-                ]
-                prompt = dumps(normalized_messages)
+                prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1276,15 +1262,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                normalized_messages = [
-                    (
-                        msg.model_copy(update={"id": None})
-                        if getattr(msg, "id", None) is not None
-                        else msg
-                    )
-                    for msg in messages
-                ]
-                prompt = dumps(normalized_messages)
+                prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1522,7 +1500,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
+        tools: Sequence[
+            typing.Dict[str, Any] | type | Callable | BaseTool  # noqa: UP006
+        ],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -1541,11 +1521,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: builtins.dict[str, Any] | type,
+        schema: typing.Dict | type,  # noqa: UP006
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, builtins.dict[str, Any] | BaseModel]:
+    ) -> Runnable[LanguageModelInput, typing.Dict | BaseModel]:  # noqa: UP006
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:

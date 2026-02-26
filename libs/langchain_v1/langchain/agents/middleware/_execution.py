@@ -15,10 +15,8 @@ from pathlib import Path
 
 try:  # pragma: no cover - optional dependency on POSIX platforms
     import resource
-
-    _HAS_RESOURCE = True
 except ImportError:  # pragma: no cover - non-POSIX systems
-    _HAS_RESOURCE = False
+    resource = None  # type: ignore[assignment]
 
 
 SHELL_TEMP_PREFIX = "langchain-shell-"
@@ -121,7 +119,7 @@ class HostExecutionPolicy(BaseExecutionPolicy):
         self._limits_requested = any(
             value is not None for value in (self.cpu_time_seconds, self.memory_bytes)
         )
-        if self._limits_requested and not _HAS_RESOURCE:
+        if self._limits_requested and resource is None:
             msg = (
                 "HostExecutionPolicy cpu/memory limits require the Python 'resource' module. "
                 "Either remove the limits or run on a POSIX platform."
@@ -165,9 +163,11 @@ class HostExecutionPolicy(BaseExecutionPolicy):
     def _apply_post_spawn_limits(self, process: subprocess.Popen[str]) -> None:
         if not self._limits_requested or not self._can_use_prlimit():
             return
-        if not _HAS_RESOURCE:  # pragma: no cover - defensive
+        if resource is None:  # pragma: no cover - defensive
             return
         pid = process.pid
+        if pid is None:
+            return
         try:
             prlimit = typing.cast("typing.Any", resource).prlimit
             if self.cpu_time_seconds is not None:
@@ -184,7 +184,11 @@ class HostExecutionPolicy(BaseExecutionPolicy):
 
     @staticmethod
     def _can_use_prlimit() -> bool:
-        return _HAS_RESOURCE and hasattr(resource, "prlimit") and sys.platform.startswith("linux")
+        return (
+            resource is not None
+            and hasattr(resource, "prlimit")
+            and sys.platform.startswith("linux")
+        )
 
 
 @dataclass
@@ -247,9 +251,9 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
             return self.platform
         if sys.platform.startswith("linux"):
             return "linux"
-        if sys.platform == "darwin":  # type: ignore[unreachable, unused-ignore]
+        if sys.platform == "darwin":
             return "macos"
-        msg = (  # type: ignore[unreachable, unused-ignore]
+        msg = (
             "Codex sandbox policy could not determine a supported platform; "
             "set 'platform' explicitly."
         )

@@ -1,89 +1,87 @@
 from collections.abc import Callable
-from typing import Any
 
-from langgraph.runtime import Runtime
+from langchain_core.messages import AIMessage
 from syrupy.assertion import SnapshotAssertion
 
-from langchain.agents import AgentState
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_create_agent_diagram(
     snapshot: SnapshotAssertion,
-) -> None:
+):
     class NoopOne(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
     class NoopTwo(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
     class NoopThree(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
     class NoopFour(AgentMiddleware):
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopFive(AgentMiddleware):
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopSix(AgentMiddleware):
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopSeven(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopEight(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopNine(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopTen(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     class NoopEleven(AgentMiddleware):
-        def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def before_model(self, state, runtime):
             pass
 
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             return handler(request)
 
-        def after_model(self, state: AgentState[Any], runtime: Runtime[None]) -> None:
+        def after_model(self, state, runtime):
             pass
 
     agent_zero = create_agent(

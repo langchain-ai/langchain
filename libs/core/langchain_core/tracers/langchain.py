@@ -1,4 +1,4 @@
-"""A tracer implementation that records to LangChain endpoint."""
+"""A Tracer implementation that records to LangChain endpoint."""
 
 from __future__ import annotations
 
@@ -22,7 +22,6 @@ from typing_extensions import override
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
-from langchain_core.tracers._compat import run_construct, run_to_dict
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -80,8 +79,9 @@ def _get_usage_metadata_from_generations(
     messages. This is typically present in chat model outputs.
 
     Args:
-        generations: List of generation batches, where each batch is a list of
-            generation dicts that may contain a `'message'` key with `'usage_metadata'`.
+        generations: List of generation batches, where each batch is a list
+            of generation dicts that may contain a `'message'` key with
+            `'usage_metadata'`.
 
     Returns:
         The aggregated `usage_metadata` dict if found, otherwise `None`.
@@ -97,7 +97,7 @@ def _get_usage_metadata_from_generations(
 
 
 class LangChainTracer(BaseTracer):
-    """Implementation of the `SharedTracer` that `POSTS` to the LangChain endpoint."""
+    """Implementation of the SharedTracer that POSTS to the LangChain endpoint."""
 
     run_inline = True
 
@@ -113,15 +113,9 @@ class LangChainTracer(BaseTracer):
 
         Args:
             example_id: The example ID.
-            project_name: The project name.
-
-                Defaults to the tracer project.
-            client: The client.
-
-                Defaults to the global client.
-            tags: The tags.
-
-                Defaults to an empty list.
+            project_name: The project name. Defaults to the tracer project.
+            client: The client. Defaults to the global client.
+            tags: The tags. Defaults to an empty list.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
@@ -189,7 +183,7 @@ class LangChainTracer(BaseTracer):
             start_time=start_time,
             run_type="llm",
             tags=tags,
-            name=name,
+            name=name,  # type: ignore[arg-type]
         )
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
@@ -198,9 +192,8 @@ class LangChainTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the
         # whole nested run tree.
-        run_data = run_to_dict(run, exclude={"child_runs", "inputs", "outputs"})
-        self.latest_run = run_construct(
-            **run_data,
+        self.latest_run = Run.construct(
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
             inputs=run.inputs,
             outputs=run.outputs,
         )

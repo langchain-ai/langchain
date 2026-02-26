@@ -4,27 +4,25 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
-
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
-from pydantic import Field, TypeAdapter
-from typing_extensions import TypedDict
-
-from langchain.agents.middleware.types import (
-    AgentMiddleware,
-    AgentState,
-    ContextT,
-    ModelRequest,
-    ModelResponse,
-    ResponseT,
-)
-from langchain.chat_models.base import init_chat_model
+from typing import TYPE_CHECKING, Annotated, Literal, Union
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langchain.tools import BaseTool
+
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage
+from pydantic import Field, TypeAdapter
+from typing_extensions import TypedDict
+
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
+from langchain.chat_models.base import init_chat_model
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,7 @@ class _SelectionRequest:
     valid_tool_names: list[str]
 
 
-def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
+def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
     """Create a structured output schema for tool selection.
 
     Args:
@@ -53,9 +51,6 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
     Returns:
         `TypeAdapter` for a schema where each tool name is a `Literal` with its
             description.
-
-    Raises:
-        AssertionError: If `tools` is empty.
     """
     if not tools:
         msg = "Invalid usage: tools must be non-empty"
@@ -90,7 +85,7 @@ def _render_tool_list(tools: list[BaseTool]) -> str:
     return "\n".join(f"- {tool.name}: {tool.description}" for tool in tools)
 
 
-class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class LLMToolSelectorMiddleware(AgentMiddleware):
     """Uses an LLM to select relevant tools before calling the main model.
 
     When an agent has many tools available, this middleware filters them down
@@ -155,21 +150,12 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         else:
             self.model = init_chat_model(model)
 
-    def _prepare_selection_request(
-        self, request: ModelRequest[ContextT]
-    ) -> _SelectionRequest | None:
+    def _prepare_selection_request(self, request: ModelRequest) -> _SelectionRequest | None:
         """Prepare inputs for tool selection.
-
-        Args:
-            request: the model request.
 
         Returns:
             `SelectionRequest` with prepared inputs, or `None` if no selection is
-            needed.
-
-        Raises:
-            ValueError: If tools in `always_include` are not found in the request.
-            AssertionError: If no user message is found in the request messages.
+                needed.
         """
         # If no tools available, return None
         if not request.tools or len(request.tools) == 0:
@@ -231,11 +217,11 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
     def _process_selection_response(
         self,
-        response: dict[str, Any],
+        response: dict,
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
-        request: ModelRequest[ContextT],
-    ) -> ModelRequest[ContextT]:
+        request: ModelRequest,
+    ) -> ModelRequest:
         """Process the selection response and return filtered `ModelRequest`."""
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
@@ -273,22 +259,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
-        """Filter tools based on LLM selection before invoking the model via handler.
-
-        Args:
-            request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
-
-        Returns:
-            The model call result.
-
-        Raises:
-            AssertionError: If the selection model response is not a dict.
-        """
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return handler(request)
@@ -316,22 +290,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
-        """Filter tools based on LLM selection before invoking the model via handler.
-
-        Args:
-            request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
-
-        Returns:
-            The model call result.
-
-        Raises:
-            AssertionError: If the selection model response is not a dict.
-        """
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
             return await handler(request)

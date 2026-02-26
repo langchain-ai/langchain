@@ -1,0 +1,160 @@
+@base <https://swapi.co/resource/>.
+@prefix voc:  <https://swapi.co/vocabulary/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+{
+
+<human/11>
+        a                 voc:Character , voc:Human ;
+        rdfs:label        "Anakin Skywalker", "Darth Vader" ;
+        voc:birthYear     "41.9BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "blond" ;
+        voc:height        188.0 ;
+        voc:homeworld     <planet/1> ;
+        voc:mass          84.0 ;
+        voc:skinColor     "fair" ;
+        voc:cybernetics "Cybernetic right arm" .
+
+<human/1>
+        a                 voc:Character , voc:Human ;
+        rdfs:label        "Luke Skywalker" ;
+        voc:birthYear     "19BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "blond" ;
+        voc:height        172.0 ;
+        voc:homeworld     <planet/1> ;
+        voc:mass          77.0 ;
+        voc:skinColor     "fair" .
+
+<human/35>
+        a                 voc:Character , voc:Human ;
+        rdfs:label        "Padmé Amidala" ;
+        voc:birthYear     "46BBY" ;
+        voc:eyeColor      "brown" ;
+        voc:gender        "female" ;
+        voc:hairColor     "brown" ;
+        voc:height        165.0 ;
+        voc:homeworld     <planet/8> ;
+        voc:mass          45.0 ;
+        voc:skinColor     "light" .
+
+<planet/1>
+        a                   voc:Planet ;
+        rdfs:label          "Tatooine" ;
+        voc:climate         "arid" ;
+        voc:diameter        10465 ;
+        voc:gravity         "1 standard" ;
+        voc:orbitalPeriod   304 ;
+        voc:population      200000 ;
+        voc:resident        <human/1> , <human/11> ;
+        voc:rotationPeriod  23 ;
+        voc:surfaceWater    1 ;
+        voc:terrain         "desert" .
+
+<planet/8>
+        a                   voc:Planet ;
+        rdfs:label          "Naboo" ;
+        voc:climate         "temperate" ;
+        voc:diameter        12120 ;
+        voc:gravity         "1 standard" ;
+        voc:orbitalPeriod   312 ;
+        voc:population      4500000000 ;
+        voc:resident        <human/35> ;
+        voc:rotationPeriod  26 ;
+        voc:surfaceWater    12 ;
+        voc:terrain         "grassy hills, swamps, forests, mountains" .
+
+<planet/14>
+        a                   voc:Planet ;
+        rdfs:label          "Kashyyyk" ;
+        voc:climate         "tropical" ;
+        voc:diameter        12765 ;
+        voc:gravity         "1 standard" ;
+        voc:orbitalPeriod   381 ;
+        voc:population      45000000 ;
+        voc:resident        <wookiee/13> , <wookiee/80> ;
+        voc:rotationPeriod  26 ;
+        voc:surfaceWater    60 ;
+        voc:terrain         "jungle, forests, lakes, rivers" .
+
+<wookiee/13>
+        a                 voc:Character , voc:Wookiee ;
+        rdfs:label        "Chewbacca" ;
+        voc:birthYear     "200BBY" ;
+        voc:eyeColor      "blue" ;
+        voc:gender        "male" ;
+        voc:hairColor     "brown" ;
+        voc:height        228.0 ;
+        voc:homeworld     <planet/14> ;
+        voc:mass          112.0 .
+
+<wookiee/80>
+        a              voc:Character , voc:Wookiee ;
+        rdfs:label     "Tarfful" ;
+        voc:eyeColor   "blue" ;
+        voc:gender     "male" ;
+        voc:hairColor  "brown" ;
+        voc:height     234.0 ;
+        voc:homeworld  <planet/14> ;
+        voc:mass       136.0 ;
+        voc:skinColor  "brown" .
+}
+
+<https://swapi.co/ontology/> {
+
+  voc:Character a owl:Class .
+  voc:Species a owl:Class .
+
+  voc:Human a voc:Species;
+    rdfs:label "Human";
+    voc:averageHeight 180.0;
+    voc:averageLifespan "120";
+    voc:character <https://swapi.co/resource/human/1>, <https://swapi.co/resource/human/35>,
+      <https://swapi.co/resource/human/11>;
+    voc:language "Galactic Basic";
+    voc:skinColor "black", "caucasian", "asian", "hispanic";
+    voc:eyeColor "blue", "brown", "hazel", "green", "grey", "amber";
+    voc:hairColor "brown", "red", "black", "blonde" .
+
+  voc:Planet a owl:Class .
+
+  voc:Wookiee a voc:Species;
+    rdfs:label "Wookiee";
+    voc:averageHeight 210.0;
+    voc:averageLifespan "400";
+    voc:character <https://swapi.co/resource/wookiee/13>, <https://swapi.co/resource/wookiee/80>;
+    voc:language "Shyriiwook";
+    voc:planet <https://swapi.co/resource/planet/14>;
+    voc:skinColor "gray";
+    voc:eyeColor "blue", "yellow", "brown", "red", "green", "golden";
+    voc:hairColor "brown", "black" .
+
+  voc:birthYear a owl:DatatypeProperty .
+  voc:eyeColor a owl:DatatypeProperty .
+  voc:gender a owl:DatatypeProperty .
+  voc:hairColor a owl:DatatypeProperty .
+  voc:height a owl:DatatypeProperty .
+  voc:homeworld a owl:ObjectProperty .
+  voc:mass a owl:DatatypeProperty .
+  voc:skinColor a owl:DatatypeProperty .
+  voc:cybernetics a owl:DatatypeProperty .
+  voc:climate a owl:DatatypeProperty .
+  voc:diameter a owl:DatatypeProperty .
+  voc:gravity a owl:DatatypeProperty .
+  voc:orbitalPeriod a owl:DatatypeProperty .
+  voc:population a owl:DatatypeProperty .
+  voc:resident a owl:ObjectProperty .
+  voc:rotationPeriod a owl:DatatypeProperty .
+  voc:surfaceWater a owl:DatatypeProperty .
+  voc:terrain a owl:DatatypeProperty .
+  voc:averageHeight a owl:DatatypeProperty .
+  voc:averageLifespan a owl:DatatypeProperty .
+  voc:character a owl:ObjectProperty .
+  voc:language a owl:DatatypeProperty .
+  voc:planet a owl:ObjectProperty .
+
+}

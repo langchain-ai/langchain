@@ -3,11 +3,14 @@
 import asyncio
 import time
 from threading import Lock
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from langchain_core.runnables import RunnableConfig, RunnableLambda
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.base import Runnable
 
 
 @pytest.mark.asyncio
@@ -30,7 +33,7 @@ async def test_abatch_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable = RunnableLambda(tracked_function)
+    runnable: Runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
@@ -61,7 +64,7 @@ async def test_abatch_as_completed_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable = RunnableLambda(tracked_function)
+    runnable: Runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
@@ -96,7 +99,7 @@ def test_batch_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable = RunnableLambda(tracked_function)
+    runnable: Runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
@@ -127,7 +130,7 @@ def test_batch_as_completed_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable = RunnableLambda(tracked_function)
+    runnable: Runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 

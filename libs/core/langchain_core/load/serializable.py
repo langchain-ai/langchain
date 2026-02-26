@@ -92,25 +92,23 @@ class Serializable(BaseModel, ABC):
 
     It relies on the following methods and properties:
 
-    - [`is_lc_serializable`][langchain_core.load.serializable.Serializable.is_lc_serializable]: Is this class serializable?
-
+    - `is_lc_serializable`: Is this class serializable?
         By design, even if a class inherits from `Serializable`, it is not serializable
         by default. This is to prevent accidental serialization of objects that should
         not be serialized.
-    - [`get_lc_namespace`][langchain_core.load.serializable.Serializable.get_lc_namespace]: Get the namespace of the LangChain object.
+    - `get_lc_namespace`: Get the namespace of the LangChain object.
 
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
 
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
-
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
 
-    - [`lc_secrets`][langchain_core.load.serializable.Serializable.lc_secrets]: A map of constructor argument names to secret ids.
-    - [`lc_attributes`][langchain_core.load.serializable.Serializable.lc_attributes]: List of additional attribute names that should be included
+    - `lc_secrets`: A map of constructor argument names to secret ids.
+    - `lc_attributes`: List of additional attribute names that should be included
         as part of the serialized representation.
-    """  # noqa: E501
+    """
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -134,22 +132,8 @@ class Serializable(BaseModel, ABC):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
 
-        The default implementation splits `cls.__module__` on `'.'`, e.g.
-        `langchain_openai.chat_models` becomes
-        `["langchain_openai", "chat_models"]`. This value is used by `lc_id` to
-        build the serialization identifier.
-
-        New partner packages should **not** override this method. The default
-        behavior is correct for any class whose module path already reflects
-        its package name. Some older packages (e.g. `langchain-openai`,
-        `langchain-anthropic`) override it to return a legacy-style namespace
-        like `["langchain", "chat_models", "openai"]`, matching the module
-        paths that existed before those integrations were split out of the
-        main `langchain` package. Those overrides are kept for
-        backwards-compatible deserialization; new packages should not copy them.
-
-        Deserialization mapping is handled separately by
-        `SERIALIZABLE_MAPPING` in `langchain_core.load.mapping`.
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace.

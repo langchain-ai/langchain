@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
-import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-from unittest.mock import Mock
+from typing import Any
 
 import pytest
 
@@ -16,10 +13,6 @@ from langchain.agents.middleware.shell_tool import (
     DockerExecutionPolicy,
     HostExecutionPolicy,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
-    from pathlib import Path
 
 
 def _make_resource(
@@ -49,24 +42,27 @@ def _make_resource(
             def prlimit(self, pid: int, resource_name: int, limits: tuple[int, int]) -> None:
                 self.prlimit_calls.append((pid, resource_name, limits))
 
-        return _Resource()
+    else:
 
-    return _BaseResource()
+        class _Resource(_BaseResource):
+            pass
+
+    return _Resource()
 
 
 def test_host_policy_validations() -> None:
-    with pytest.raises(ValueError, match="max_output_lines must be positive"):
+    with pytest.raises(ValueError):
         HostExecutionPolicy(max_output_lines=0)
 
-    with pytest.raises(ValueError, match="cpu_time_seconds must be positive if provided"):
+    with pytest.raises(ValueError):
         HostExecutionPolicy(cpu_time_seconds=0)
 
-    with pytest.raises(ValueError, match="memory_bytes must be positive if provided"):
+    with pytest.raises(ValueError):
         HostExecutionPolicy(memory_bytes=-1)
 
 
 def test_host_policy_requires_resource_for_limits(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(_execution, "_HAS_RESOURCE", False, raising=False)
+    monkeypatch.setattr(_execution, "resource", None, raising=False)
     with pytest.raises(RuntimeError):
         HostExecutionPolicy(cpu_time_seconds=1)
 
@@ -74,24 +70,20 @@ def test_host_policy_requires_resource_for_limits(monkeypatch: pytest.MonkeyPatc
 def test_host_policy_applies_prlimit(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake_resource = _make_resource(with_prlimit=True)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
-    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(_execution.sys, "platform", "linux")
 
     recorded: dict[str, Any] = {}
 
-    def fake_launch(
-        command: Sequence[str],
-        *,
-        env: Mapping[str, str],
-        cwd: Path,
-        preexec_fn: Callable[[], None] | None,
-        start_new_session: bool,
-    ) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pid = 1234
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         recorded["env"] = dict(env)
         recorded["cwd"] = cwd
         recorded["preexec_fn"] = preexec_fn
         recorded["start_new_session"] = start_new_session
-        return Mock(spec=subprocess.Popen, pid=1234)
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -112,16 +104,17 @@ def test_host_policy_applies_prlimit(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 def test_host_policy_uses_preexec_on_macos(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake_resource = _make_resource(with_prlimit=False)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
-    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(_execution.sys, "platform", "darwin")
 
     captured: dict[str, Any] = {}
 
-    def fake_launch(
-        *_args: Any, preexec_fn: Callable[[], None] | None, start_new_session: bool, **_kwargs: Any
-    ) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pid = 4321
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         captured["preexec_fn"] = preexec_fn
         captured["start_new_session"] = start_new_session
-        return Mock(spec=subprocess.Popen, pid=4321)
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -146,13 +139,16 @@ def test_host_policy_respects_process_group_flag(
 ) -> None:
     fake_resource = _make_resource(with_prlimit=True)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
-    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(_execution.sys, "platform", "linux")
 
     recorded: dict[str, Any] = {}
 
-    def fake_launch(*_args: Any, start_new_session: bool, **_kwargs: Any) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pid = 1111
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["start_new_session"] = start_new_session
-        return Mock(spec=subprocess.Popen, pid=1111)
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -168,10 +164,13 @@ def test_host_policy_falls_back_to_rlimit_data(
 ) -> None:
     fake_resource = _make_resource(with_prlimit=True, has_rlimit_as=False)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
-    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(_execution.sys, "platform", "linux")
 
-    def fake_launch(*_args: Any, **_kwargs: Any) -> subprocess.Popen[str]:
-        return Mock(spec=subprocess.Popen, pid=2222)
+    class DummyProcess:
+        pid = 2222
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -189,23 +188,19 @@ def test_host_policy_falls_back_to_rlimit_data(
     shutil.which("codex") is None,
     reason="codex CLI not available on PATH",
 )
-def test_codex_policy_spawns_codex_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_codex_policy_spawns_codex_cli(monkeypatch, tmp_path: Path) -> None:
     recorded: dict[str, list[str]] = {}
 
-    def fake_launch(
-        command: Sequence[str],
-        *,
-        env: Mapping[str, str],
-        cwd: Path,
-        preexec_fn: Callable[[], None] | None,
-        start_new_session: bool,
-    ) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pass
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == tmp_path
         assert env["TEST_VAR"] == "1"
         assert preexec_fn is None
         assert not start_new_session
-        return Mock()
+        return DummyProcess()
 
     monkeypatch.setattr(
         "langchain.agents.middleware._execution._launch_subprocess",
@@ -232,26 +227,26 @@ def test_codex_policy_spawns_codex_cli(monkeypatch: pytest.MonkeyPatch, tmp_path
 
 
 def test_codex_policy_auto_platform_linux(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(_execution.sys, "platform", "linux")
     policy = CodexSandboxExecutionPolicy(platform="auto")
     assert policy._determine_platform() == "linux"
 
 
 def test_codex_policy_auto_platform_macos(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(_execution.sys, "platform", "darwin")
     policy = CodexSandboxExecutionPolicy(platform="auto")
     assert policy._determine_platform() == "macos"
 
 
 def test_codex_policy_resolve_missing_binary(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: None)
+    monkeypatch.setattr(_execution.shutil, "which", lambda _: None)
     policy = CodexSandboxExecutionPolicy(binary="codex")
     with pytest.raises(RuntimeError):
         policy._resolve_binary()
 
 
 def test_codex_policy_auto_platform_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "platform", "win32")
+    monkeypatch.setattr(_execution.sys, "platform", "win32")
     policy = CodexSandboxExecutionPolicy(platform="auto")
     with pytest.raises(RuntimeError):
         policy._determine_platform()
@@ -269,7 +264,7 @@ def test_codex_policy_formats_override_values() -> None:
 
 
 def test_codex_policy_sorts_config_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/codex")
+    monkeypatch.setattr(_execution.shutil, "which", lambda _: "/usr/bin/codex")
     policy = CodexSandboxExecutionPolicy(
         config_overrides={"b": 2, "a": 1},
         platform="linux",
@@ -284,22 +279,18 @@ def test_codex_policy_sorts_config_overrides(monkeypatch: pytest.MonkeyPatch) ->
     shutil.which("docker") is None,
     reason="docker CLI not available on PATH",
 )
-def test_docker_policy_spawns_docker_run(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_docker_policy_spawns_docker_run(monkeypatch, tmp_path: Path) -> None:
     recorded: dict[str, list[str]] = {}
 
-    def fake_launch(
-        command: Sequence[str],
-        *,
-        env: Mapping[str, str],
-        cwd: Path,
-        start_new_session: bool,
-        **_kwargs: Any,
-    ) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pass
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == tmp_path
         assert "PATH" in env  # host environment should retain system PATH
         assert not start_new_session
-        return Mock()
+        return DummyProcess()
 
     monkeypatch.setattr(
         "langchain.agents.middleware._execution._launch_subprocess",
@@ -319,13 +310,11 @@ def test_docker_policy_spawns_docker_run(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert command[1:4] == ["run", "-i", "--rm"]
     assert "--memory" in command
     assert "4096" in command
-    assert "-v" in command
-    assert any(str(tmp_path) in part for part in command)
+    assert "-v" in command and any(str(tmp_path) in part for part in command)
     assert "-w" in command
     w_index = command.index("-w")
     assert command[w_index + 1] == str(tmp_path)
-    assert "-e" in command
-    assert "PATH=/bin" in command
+    assert "-e" in command and "PATH=/bin" in command
     assert command[-2:] == ["ubuntu:22.04", "/bin/bash"]
 
 
@@ -335,21 +324,24 @@ def test_docker_policy_rejects_cpu_limit() -> None:
 
 
 def test_docker_policy_validates_memory() -> None:
-    with pytest.raises(ValueError, match="memory_bytes must be positive if provided"):
+    with pytest.raises(ValueError):
         DockerExecutionPolicy(memory_bytes=0)
 
 
 def test_docker_policy_skips_mount_for_temp_workspace(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
+    monkeypatch.setattr(_execution.shutil, "which", lambda _: "/usr/bin/docker")
 
     recorded: dict[str, list[str]] = {}
 
-    def fake_launch(command: Sequence[str], *, cwd: Path, **_kwargs: Any) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pass
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
         assert cwd == workspace
-        return Mock()
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -365,29 +357,31 @@ def test_docker_policy_skips_mount_for_temp_workspace(
     w_index = command.index("-w")
     assert command[w_index + 1] == "/"
     assert "--cpus" in command
-    assert "--network" in command
-    assert "none" in command
+    assert "--network" in command and "none" in command
     assert command[-2:] == [policy.image, "/bin/sh"]
 
 
 def test_docker_policy_validates_cpus() -> None:
-    with pytest.raises(ValueError, match="cpus must be a non-empty string when provided"):
+    with pytest.raises(ValueError):
         DockerExecutionPolicy(cpus="  ")
 
 
 def test_docker_policy_validates_user() -> None:
-    with pytest.raises(ValueError, match="user must be a non-empty string when provided"):
+    with pytest.raises(ValueError):
         DockerExecutionPolicy(user="  ")
 
 
 def test_docker_policy_read_only_and_user(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
+    monkeypatch.setattr(_execution.shutil, "which", lambda _: "/usr/bin/docker")
 
     recorded: dict[str, list[str]] = {}
 
-    def fake_launch(command: Sequence[str], **_kwargs: Any) -> subprocess.Popen[str]:
+    class DummyProcess:
+        pass
+
+    def fake_launch(command, *, env, cwd, preexec_fn, start_new_session):
         recorded["command"] = list(command)
-        return Mock()
+        return DummyProcess()
 
     monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
 
@@ -403,7 +397,7 @@ def test_docker_policy_read_only_and_user(monkeypatch: pytest.MonkeyPatch, tmp_p
 
 
 def test_docker_policy_resolve_missing_binary(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(shutil, "which", lambda _: None)
+    monkeypatch.setattr(_execution.shutil, "which", lambda _: None)
     policy = DockerExecutionPolicy()
     with pytest.raises(RuntimeError):
         policy._resolve_binary()

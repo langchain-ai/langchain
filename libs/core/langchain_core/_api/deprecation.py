@@ -1,7 +1,8 @@
 """Helper functions for deprecating parts of the LangChain API.
 
-This module was adapted from matplotlib's [`_api/deprecation.py`](https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py)
-module.
+This module was adapted from matplotlibs _api/deprecation.py module:
+
+https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
 !!! warning
 
@@ -221,7 +222,7 @@ def deprecated(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -256,7 +257,7 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -277,7 +278,7 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
                     FieldInfo(
@@ -335,7 +336,7 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the property."""
                 prop = _DeprecatedProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
@@ -356,7 +357,7 @@ def deprecated(
             wrapped = obj
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str, /) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:

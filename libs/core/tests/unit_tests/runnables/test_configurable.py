@@ -43,17 +43,15 @@ class MyRunnable(RunnableSerializable[str, str]):
 
     def my_custom_function_w_config(
         self,
-        config: RunnableConfig | None = None,
+        config: RunnableConfig | None = None,  # noqa: ARG002
     ) -> str:
-        _ = config
         return self.my_property
 
     def my_custom_function_w_kw_config(
         self,
         *,
-        config: RunnableConfig | None = None,
+        config: RunnableConfig | None = None,  # noqa: ARG002
     ) -> str:
-        _ = config
         return self.my_property
 
 
@@ -69,8 +67,7 @@ class MyOtherRunnable(RunnableSerializable[str, str]):
     def my_other_custom_function(self) -> str:
         return self.my_other_property
 
-    def my_other_custom_function_w_config(self, config: RunnableConfig) -> str:
-        _ = config
+    def my_other_custom_function_w_config(self, config: RunnableConfig) -> str:  # noqa: ARG002
         return self.my_other_property
 
 

@@ -1,5 +1,3 @@
-"""Hugging Face integration for LangChain."""
-
 from langchain_huggingface.chat_models import (
     ChatHuggingFace,  # type: ignore[import-not-found]
 )

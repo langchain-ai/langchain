@@ -1,16 +1,14 @@
 """Internal utilities for the in memory implementation of `VectorStore`.
 
-!!! warning
-
-    These are part of a private API, and users should not use them directly as they can
-    change without notice.
+These are part of a private API, and users should not use them directly
+as they can change without notice.
 """
 
 from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 try:
     import numpy as np
@@ -36,15 +34,15 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
     """Row-wise cosine similarity between two equal-width matrices.
 
     Args:
-        x: A matrix of shape `(n, m)`.
-        y: A matrix of shape `(k, m)`.
+        x: A matrix of shape (n, m).
+        y: A matrix of shape (k, m).
 
     Returns:
-        A matrix of shape `(n, k)` where each element `(i, j)` is the cosine similarity
-            between the `i`th row of `x` and the `j`th row of `y`.
+        A matrix of shape (n, k) where each element (i, j) is the cosine similarity
+        between the ith row of X and the jth row of Y.
 
     Raises:
-        ValueError: If the number of columns in `x` and `y` are not the same.
+        ValueError: If the number of columns in X and Y are not the same.
         ImportError: If numpy is not installed.
     """
     if not _HAS_NUMPY:
@@ -96,7 +94,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
             msg = "NaN values found, please remove the NaN values and try again"
             raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
-        return cast("np.ndarray", similarity)
+        return similarity
 
     x = np.array(x, dtype=np.float32)
     y = np.array(y, dtype=np.float32)

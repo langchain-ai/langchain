@@ -377,128 +377,123 @@ def _init_chat_model_helper(
 ) -> BaseChatModel:
     model, model_provider = _parse_model(model, model_provider)
     if model_provider == "openai":
-        _check_pkg("langchain_openai", "ChatOpenAI")
+        _check_pkg("langchain_openai")
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(model=model, **kwargs)
     if model_provider == "anthropic":
-        _check_pkg("langchain_anthropic", "ChatAnthropic")
+        _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     if model_provider == "azure_openai":
-        _check_pkg("langchain_openai", "AzureChatOpenAI")
+        _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
 
         return AzureChatOpenAI(model=model, **kwargs)
     if model_provider == "azure_ai":
-        _check_pkg("langchain_azure_ai", "AzureAIChatCompletionsModel")
+        _check_pkg("langchain_azure_ai")
         from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
         return AzureAIChatCompletionsModel(model=model, **kwargs)
     if model_provider == "cohere":
-        _check_pkg("langchain_cohere", "ChatCohere")
+        _check_pkg("langchain_cohere")
         from langchain_cohere import ChatCohere
 
         return ChatCohere(model=model, **kwargs)
     if model_provider == "google_vertexai":
-        _check_pkg("langchain_google_vertexai", "ChatVertexAI")
+        _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai import ChatVertexAI
 
         return ChatVertexAI(model=model, **kwargs)
     if model_provider == "google_genai":
-        _check_pkg("langchain_google_genai", "ChatGoogleGenerativeAI")
+        _check_pkg("langchain_google_genai")
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         return ChatGoogleGenerativeAI(model=model, **kwargs)
     if model_provider == "fireworks":
-        _check_pkg("langchain_fireworks", "ChatFireworks")
+        _check_pkg("langchain_fireworks")
         from langchain_fireworks import ChatFireworks
 
         return ChatFireworks(model=model, **kwargs)
     if model_provider == "ollama":
         try:
-            _check_pkg("langchain_ollama", "ChatOllama")
+            _check_pkg("langchain_ollama")
             from langchain_ollama import ChatOllama
         except ImportError:
             # For backwards compatibility
             try:
-                _check_pkg("langchain_community", "ChatOllama")
+                _check_pkg("langchain_community")
                 from langchain_community.chat_models import ChatOllama
             except ImportError:
                 # If both langchain-ollama and langchain-community aren't available,
                 # raise an error related to langchain-ollama
-                _check_pkg("langchain_ollama", "ChatOllama")
+                _check_pkg("langchain_ollama")
 
         return ChatOllama(model=model, **kwargs)
     if model_provider == "together":
-        _check_pkg("langchain_together", "ChatTogether")
+        _check_pkg("langchain_together")
         from langchain_together import ChatTogether
 
         return ChatTogether(model=model, **kwargs)
     if model_provider == "mistralai":
-        _check_pkg("langchain_mistralai", "ChatMistralAI")
+        _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
 
     if model_provider == "huggingface":
-        _check_pkg("langchain_huggingface", "ChatHuggingFace")
+        _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
 
         return ChatHuggingFace.from_model_id(model_id=model, **kwargs)
 
     if model_provider == "groq":
-        _check_pkg("langchain_groq", "ChatGroq")
+        _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
 
         return ChatGroq(model=model, **kwargs)
     if model_provider == "bedrock":
-        _check_pkg("langchain_aws", "ChatBedrock")
+        _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrock
 
         # TODO: update to use model= once ChatBedrock supports
         return ChatBedrock(model_id=model, **kwargs)
     if model_provider == "bedrock_converse":
-        _check_pkg("langchain_aws", "ChatBedrockConverse")
+        _check_pkg("langchain_aws")
         from langchain_aws import ChatBedrockConverse
 
         return ChatBedrockConverse(model=model, **kwargs)
     if model_provider == "google_anthropic_vertex":
-        _check_pkg("langchain_google_vertexai", "ChatAnthropicVertex")
+        _check_pkg("langchain_google_vertexai")
         from langchain_google_vertexai.model_garden import ChatAnthropicVertex
 
         return ChatAnthropicVertex(model=model, **kwargs)
     if model_provider == "deepseek":
-        _check_pkg("langchain_deepseek", "ChatDeepSeek", pkg_kebab="langchain-deepseek")
+        _check_pkg("langchain_deepseek", pkg_kebab="langchain-deepseek")
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
     if model_provider == "nvidia":
-        _check_pkg("langchain_nvidia_ai_endpoints", "ChatNVIDIA")
+        _check_pkg("langchain_nvidia_ai_endpoints")
         from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
         return ChatNVIDIA(model=model, **kwargs)
     if model_provider == "ibm":
-        _check_pkg("langchain_ibm", "ChatWatsonx")
+        _check_pkg("langchain_ibm")
         from langchain_ibm import ChatWatsonx
 
         return ChatWatsonx(model_id=model, **kwargs)
     if model_provider == "xai":
-        _check_pkg("langchain_xai", "ChatXAI")
+        _check_pkg("langchain_xai")
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
     if model_provider == "perplexity":
-        _check_pkg("langchain_perplexity", "ChatPerplexity")
+        _check_pkg("langchain_perplexity")
         from langchain_perplexity import ChatPerplexity
 
         return ChatPerplexity(model=model, **kwargs)
-    if model_provider == "upstage":
-        _check_pkg("langchain_upstage", "ChatUpstage")
-        from langchain_upstage import ChatUpstage
-
-        return ChatUpstage(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
     msg = (
         f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
@@ -527,84 +522,34 @@ _SUPPORTED_PROVIDERS = {
     "ibm",
     "xai",
     "perplexity",
-    "upstage",
 }
 
 
 def _attempt_infer_model_provider(model_name: str) -> str | None:
-    """Attempt to infer model provider from model name.
-
-    Args:
-        model_name: The name of the model to infer provider for.
-
-    Returns:
-        The inferred provider name, or `None` if no provider could be inferred.
-    """
-    model_lower = model_name.lower()
-
-    # OpenAI models (including newer models and aliases)
-    if any(
-        model_lower.startswith(pre)
-        for pre in (
-            "gpt-",
-            "o1",
-            "o3",
-            "chatgpt",
-            "text-davinci",
-        )
-    ):
+    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
-
-    # Anthropic models
-    if model_lower.startswith("claude"):
+    if model_name.startswith("claude"):
         return "anthropic"
-
-    # Cohere models
-    if model_lower.startswith("command"):
+    if model_name.startswith("command"):
         return "cohere"
-
-    # Fireworks models
     if model_name.startswith("accounts/fireworks"):
         return "fireworks"
-
-    # Google models
-    if model_lower.startswith("gemini"):
+    if model_name.startswith("gemini"):
         return "google_vertexai"
-
-    # AWS Bedrock models
-    if model_name.startswith("amazon.") or model_lower.startswith(
-        (
-            "anthropic.",
-            "meta.",
-        )
-    ):
+    if model_name.startswith("amazon."):
         return "bedrock"
-
-    # Mistral models
-    if model_lower.startswith(("mistral", "mixtral")):
+    if model_name.startswith("mistral"):
         return "mistralai"
-
-    # DeepSeek models
-    if model_lower.startswith("deepseek"):
+    if model_name.startswith("deepseek"):
         return "deepseek"
-
-    # xAI models
-    if model_lower.startswith("grok"):
+    if model_name.startswith("grok"):
         return "xai"
-
-    # Perplexity models
-    if model_lower.startswith("sonar"):
+    if model_name.startswith("sonar"):
         return "perplexity"
-
-    # Upstage models
-    if model_lower.startswith("solar"):
-        return "upstage"
-
     return None
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    """Parse model name and provider, inferring provider if necessary."""
     if not model_provider and ":" in model:
         prefix, suffix = model.split(":", 1)
         if prefix in _SUPPORTED_PROVIDERS:
@@ -618,27 +563,20 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
 
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
-        supported_list = ", ".join(sorted(_SUPPORTED_PROVIDERS))
         msg = (
-            f"Unable to infer model provider for {model=}. "
-            f"Please specify 'model_provider' directly.\n\n"
-            f"Supported providers: {supported_list}\n\n"
-            f"For help with specific providers, see: "
-            f"https://docs.langchain.com/oss/python/integrations/providers"
+            f"Unable to infer model provider for {model=}, please specify "
+            f"model_provider directly."
         )
         raise ValueError(msg)
-
-    # Normalize provider name
     model_provider = model_provider.replace("-", "_").lower()
     return model, model_provider
 
 
-def _check_pkg(pkg: str, class_name: str, *, pkg_kebab: str | None = None) -> None:
+def _check_pkg(pkg: str, *, pkg_kebab: str | None = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
         msg = (
-            f"Initializing {class_name} requires the {pkg_kebab} package. "
-            f"Please install it with `pip install {pkg_kebab}`"
+            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
         raise ImportError(msg)
 

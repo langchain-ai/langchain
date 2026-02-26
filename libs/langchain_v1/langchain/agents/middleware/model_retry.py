@@ -15,20 +15,15 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import (
-    AgentMiddleware,
-    AgentState,
-    ContextT,
-    ModelRequest,
-    ModelResponse,
-    ResponseT,
-)
+from langchain.agents.middleware.types import AgentMiddleware, ModelResponse
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from langchain.agents.middleware.types import ModelRequest
 
-class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+
+class ModelRetryMiddleware(AgentMiddleware):
     """Middleware that automatically retries failed model calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -168,8 +163,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         self.max_delay = max_delay
         self.jitter = jitter
 
-    @staticmethod
-    def _format_failure_message(exc: Exception, attempts_made: int) -> AIMessage:
+    def _format_failure_message(self, exc: Exception, attempts_made: int) -> AIMessage:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -187,7 +181,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         )
         return AIMessage(content=content)
 
-    def _handle_failure(self, exc: Exception, attempts_made: int) -> ModelResponse[ResponseT]:
+    def _handle_failure(self, exc: Exception, attempts_made: int) -> ModelResponse:
         """Handle failure when all retries are exhausted.
 
         Args:
@@ -213,9 +207,9 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse | AIMessage:
         """Intercept model execution and retry on failure.
 
         Args:
@@ -224,9 +218,6 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
         Returns:
             `ModelResponse` or `AIMessage` (the final result).
-
-        Raises:
-            RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
@@ -263,9 +254,9 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse | AIMessage:
         """Intercept and control async model execution with retry logic.
 
         Args:
@@ -274,9 +265,6 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
         Returns:
             `ModelResponse` or `AIMessage` (the final result).
-
-        Raises:
-            RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):

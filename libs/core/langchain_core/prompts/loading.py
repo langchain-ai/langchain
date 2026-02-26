@@ -18,13 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 def load_prompt_from_config(config: dict) -> BasePromptTemplate:
-    """Load prompt from config dict.
+    """Load prompt from Config Dict.
 
     Args:
         config: Dict containing the prompt configuration.
 
     Returns:
-        A `PromptTemplate` object.
+        A PromptTemplate object.
 
     Raises:
         ValueError: If the prompt type is not supported.
@@ -84,11 +84,11 @@ def _load_examples(config: dict) -> dict:
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if config_ := config.get("output_parser"):
-        if output_parser_type := config_.get("_type") != "default":
+    if _config := config.get("output_parser"):
+        if output_parser_type := _config.get("_type") != "default":
             msg = f"Unsupported output parser {output_parser_type}"
             raise ValueError(msg)
-        config["output_parser"] = StrOutputParser(**config_)
+        config["output_parser"] = StrOutputParser(**_config)
     return config
 
 
@@ -135,17 +135,17 @@ def _load_prompt(config: dict) -> PromptTemplate:
 
 
 def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemplate:
-    """Unified method for loading a prompt from LangChainHub or local filesystem.
+    """Unified method for loading a prompt from LangChainHub or local fs.
 
     Args:
         path: Path to the prompt file.
         encoding: Encoding of the file.
 
     Returns:
-        A `PromptTemplate` object.
+        A PromptTemplate object.
 
     Raises:
-        RuntimeError: If the path is a LangChainHub path.
+        RuntimeError: If the path is a Lang Chain Hub path.
     """
     if isinstance(path, str) and path.startswith("lc://"):
         msg = (

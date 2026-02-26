@@ -6,14 +6,10 @@ These tests verify the desired behavior:
 3. If middleware defines only async -> use on async path, raise NotImplementedError on sync path
 """
 
-from collections.abc import Awaitable, Callable
-from typing import Any
-
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, ToolCallRequest, wrap_tool_call
@@ -40,11 +36,7 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         class SyncOnlyMiddleware(AgentMiddleware):
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 call_log.append("sync_called")
                 return handler(request)
 
@@ -76,11 +68,7 @@ class TestSyncAsyncMiddlewareComposition:
         """Middleware with only sync wrap_tool_call raises NotImplementedError on async path."""
 
         class SyncOnlyMiddleware(AgentMiddleware):
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 return handler(request)
 
         model = FakeToolCallingModel(
@@ -109,11 +97,7 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         class AsyncOnlyMiddleware(AgentMiddleware):
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 call_log.append("async_called")
                 return await handler(request)
 
@@ -145,11 +129,7 @@ class TestSyncAsyncMiddlewareComposition:
         """Middleware with only async awrap_tool_call raises NotImplementedError on sync path."""
 
         class AsyncOnlyMiddleware(AgentMiddleware):
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 return await handler(request)
 
         model = FakeToolCallingModel(
@@ -177,19 +157,11 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         class BothSyncAsyncMiddleware(AgentMiddleware):
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 call_log.append("sync_called")
                 return handler(request)
 
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 call_log.append("async_called")
                 return await handler(request)
 
@@ -223,19 +195,11 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         class BothSyncAsyncMiddleware(AgentMiddleware):
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 call_log.append("sync_called")
                 return handler(request)
 
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 call_log.append("async_called")
                 return await handler(request)
 
@@ -270,21 +234,13 @@ class TestSyncAsyncMiddlewareComposition:
         class SyncOnlyMiddleware(AgentMiddleware):
             name = "SyncOnly"
 
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 return handler(request)
 
         class AsyncOnlyMiddleware(AgentMiddleware):
             name = "AsyncOnly"
 
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 return await handler(request)
 
         model = FakeToolCallingModel(
@@ -317,21 +273,13 @@ class TestSyncAsyncMiddlewareComposition:
         class SyncOnlyMiddleware(AgentMiddleware):
             name = "SyncOnly"
 
-            def wrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-            ) -> ToolMessage | Command[Any]:
+            def wrap_tool_call(self, request, handler):
                 return handler(request)
 
         class AsyncOnlyMiddleware(AgentMiddleware):
             name = "AsyncOnly"
 
-            async def awrap_tool_call(
-                self,
-                request: ToolCallRequest,
-                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-            ) -> ToolMessage | Command[Any]:
+            async def awrap_tool_call(self, request, handler):
                 return await handler(request)
 
         model = FakeToolCallingModel(
@@ -363,10 +311,7 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         @wrap_tool_call
-        def my_wrapper(
-            request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-        ) -> ToolMessage | Command[Any]:
+        def my_wrapper(request: ToolCallRequest, handler):
             call_log.append("decorator_sync")
             return handler(request)
 
@@ -398,10 +343,7 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         @wrap_tool_call
-        def my_wrapper(
-            request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-        ) -> ToolMessage | Command[Any]:
+        def my_wrapper(request: ToolCallRequest, handler):
             call_log.append("decorator_sync")
             return handler(request)
 
@@ -431,10 +373,7 @@ class TestSyncAsyncMiddlewareComposition:
         call_log = []
 
         @wrap_tool_call
-        async def my_async_wrapper(
-            request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-        ) -> ToolMessage | Command[Any]:
+        async def my_async_wrapper(request: ToolCallRequest, handler):
             call_log.append("decorator_async")
             return await handler(request)
 
@@ -463,10 +402,7 @@ class TestSyncAsyncMiddlewareComposition:
         """Decorator-created async-only middleware raises on sync path."""
 
         @wrap_tool_call
-        async def my_async_wrapper(
-            request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-        ) -> ToolMessage | Command[Any]:
+        async def my_async_wrapper(request: ToolCallRequest, handler):
             return await handler(request)
 
         model = FakeToolCallingModel(

@@ -7,7 +7,6 @@ This module contains core abstractions for **data retrieval and processing workf
 - `Document`: Text content for retrieval (RAG, vector stores, semantic search)
 
 !!! note "Not for LLM chat messages"
-
     These classes are for data processing pipelines, not LLM I/O. For multimodal
     content in chat messages (images, audio in conversations), see
     `langchain.messages` content blocks instead.
@@ -37,7 +36,6 @@ class BaseMedia(Serializable):
     Provides common fields for content that needs to be stored, indexed, or searched.
 
     !!! note
-
         For multimodal content in **chat messages** (images, audio sent to/from LLMs),
         use `langchain.messages` content blocks instead.
     """
@@ -115,16 +113,13 @@ class Blob(BaseMedia):
 
     data: bytes | str | None = None
     """Raw data associated with the `Blob`."""
-
     mimetype: str | None = None
     """MIME type, not to be confused with a file extension."""
-
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
     Uses `utf-8` as default encoding if decoding to string.
     """
-
     path: PathLike | None = None
     """Location where the original content was found."""
 
@@ -234,7 +229,7 @@ class Blob(BaseMedia):
             `Blob` instance
         """
         if mime_type is None and guess_type:
-            mimetype = mimetypes.guess_type(path)[0]
+            mimetype = mimetypes.guess_type(path)[0] if guess_type else None
         else:
             mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
@@ -289,7 +284,6 @@ class Document(BaseMedia):
     """Class for storing a piece of text and associated metadata.
 
     !!! note
-
         `Document` is for **retrieval workflows**, not chat I/O. For sending text
         to an LLM in a conversation, use message types from `langchain.messages`.
 
@@ -305,14 +299,13 @@ class Document(BaseMedia):
 
     page_content: str
     """String text."""
-
     type: Literal["Document"] = "Document"
 
     def __init__(self, page_content: str, **kwargs: Any) -> None:
         """Pass page_content in as positional or named arg."""
         # my-py is complaining that page_content is not defined on the base class.
         # Here, we're relying on pydantic base class to handle the validation.
-        super().__init__(page_content=page_content, **kwargs)  # type: ignore[call-arg,unused-ignore]
+        super().__init__(page_content=page_content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -324,7 +317,7 @@ class Document(BaseMedia):
         """Get the namespace of the LangChain object.
 
         Returns:
-            `["langchain", "schema", "document"]`
+            ["langchain", "schema", "document"]
         """
         return ["langchain", "schema", "document"]
 
@@ -336,12 +329,12 @@ class Document(BaseMedia):
         """
         # The format matches pydantic format for __str__.
         #
-        # The purpose of this change is to make sure that user code that feeds
-        # Document objects directly into prompts remains unchanged due to the addition
-        # of the id field (or any other fields in the future).
+        # The purpose of this change is to make sure that user code that
+        # feeds Document objects directly into prompts remains unchanged
+        # due to the addition of the id field (or any other fields in the future).
         #
-        # This override will likely be removed in the future in favor of a more general
-        # solution of formatting content directly inside the prompts.
+        # This override will likely be removed in the future in favor of
+        # a more general solution of formatting content directly inside the prompts.
         if self.metadata:
             return f"page_content='{self.page_content}' metadata={self.metadata}"
         return f"page_content='{self.page_content}'"

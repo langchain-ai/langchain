@@ -3,7 +3,6 @@
 Distinct from provider-based [prompt caching](https://docs.langchain.com/oss/python/langchain/models#prompt-caching).
 
 !!! warning "Beta feature"
-
     This is a beta feature. Please be wary of deploying experimental code to production
     unless you've taken appropriate precautions.
 
@@ -54,7 +53,6 @@ class BaseCache(ABC):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -66,19 +64,18 @@ class BaseCache(ABC):
 
         Returns:
             On a cache miss, return `None`. On a cache hit, return the cached value.
-                The cached value is a list of `Generation` (or subclasses).
+            The cached value is a list of `Generation` (or subclasses).
         """
 
     @abstractmethod
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on `prompt` and `llm_string`.
 
-        The `prompt` and `llm_string` are used to generate a key for the cache. The key
-        should match that of the lookup method.
+        The prompt and llm_string are used to generate a key for the cache.
+        The key should match that of the lookup method.
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -88,9 +85,8 @@ class BaseCache(ABC):
 
                 These invocation parameters are serialized into a string
                 representation.
-            return_val: The value to be cached.
-
-                The value is a list of `Generation` (or subclasses).
+            return_val: The value to be cached. The value is a list of `Generation`
+                (or subclasses).
         """
 
     @abstractmethod
@@ -105,7 +101,6 @@ class BaseCache(ABC):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -118,7 +113,7 @@ class BaseCache(ABC):
 
         Returns:
             On a cache miss, return `None`. On a cache hit, return the cached value.
-                The cached value is a list of `Generation` (or subclasses).
+            The cached value is a list of `Generation` (or subclasses).
         """
         return await run_in_executor(None, self.lookup, prompt, llm_string)
 
@@ -132,7 +127,6 @@ class BaseCache(ABC):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -153,40 +147,14 @@ class BaseCache(ABC):
 
 
 class InMemoryCache(BaseCache):
-    """Cache that stores things in memory.
-
-    Example:
-        ```python
-        from langchain_core.caches import InMemoryCache
-        from langchain_core.outputs import Generation
-
-        # Initialize cache
-        cache = InMemoryCache()
-
-        # Update cache
-        cache.update(
-            prompt="What is the capital of France?",
-            llm_string="model='gpt-3.5-turbo', temperature=0.1",
-            return_val=[Generation(text="Paris")],
-        )
-
-        # Lookup cache
-        result = cache.lookup(
-            prompt="What is the capital of France?",
-            llm_string="model='gpt-3.5-turbo', temperature=0.1",
-        )
-        # result is [Generation(text="Paris")]
-        ```
-    """
+    """Cache that stores things in memory."""
 
     def __init__(self, *, maxsize: int | None = None) -> None:
         """Initialize with empty cache.
 
         Args:
             maxsize: The maximum number of items to store in the cache.
-
                 If `None`, the cache has no maximum size.
-
                 If the cache exceeds the maximum size, the oldest items are removed.
 
         Raises:
@@ -203,7 +171,6 @@ class InMemoryCache(BaseCache):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -218,13 +185,11 @@ class InMemoryCache(BaseCache):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
-            return_val: The value to be cached.
-
-                The value is a list of `Generation` (or subclasses).
+            return_val: The value to be cached. The value is a list of `Generation`
+                (or subclasses).
         """
         if self._maxsize is not None and len(self._cache) == self._maxsize:
             del self._cache[next(iter(self._cache))]
@@ -240,7 +205,6 @@ class InMemoryCache(BaseCache):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
@@ -257,7 +221,6 @@ class InMemoryCache(BaseCache):
 
         Args:
             prompt: A string representation of the prompt.
-
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.

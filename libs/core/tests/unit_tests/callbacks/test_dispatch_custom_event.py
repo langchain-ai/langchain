@@ -70,7 +70,9 @@ async def test_async_custom_event_implicit_config() -> None:
 
     run_id = uuid.UUID(int=7)
 
-    @RunnableLambda
+    # Typing not working well with RunnableLambda when used as
+    # a decorator for async functions
+    @RunnableLambda  # type: ignore[arg-type]
     async def foo(x: int, config: RunnableConfig) -> int:
         assert "callbacks" in config
         await adispatch_custom_event("event1", {"x": x})
@@ -78,7 +80,7 @@ async def test_async_custom_event_implicit_config() -> None:
         return x
 
     await foo.ainvoke(
-        1,
+        1,  # type: ignore[arg-type]
         {"callbacks": [callback], "run_id": run_id},
     )
 
@@ -94,14 +96,16 @@ async def test_async_callback_manager() -> None:
 
     run_id = uuid.UUID(int=7)
 
-    @RunnableLambda
+    # Typing not working well with RunnableLambda when used as
+    # a decorator for async functions
+    @RunnableLambda  # type: ignore[arg-type]
     async def foo(x: int, config: RunnableConfig) -> int:
         await adispatch_custom_event("event1", {"x": x}, config=config)
         await adispatch_custom_event("event2", {"x": x}, config=config)
         return x
 
     await foo.ainvoke(
-        1,
+        1,  # type: ignore[arg-type]
         {"callbacks": [callback], "run_id": run_id},
     )
 

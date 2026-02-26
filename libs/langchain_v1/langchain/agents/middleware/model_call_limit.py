@@ -11,9 +11,7 @@ from typing_extensions import NotRequired, override
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ContextT,
     PrivateStateAttr,
-    ResponseT,
     hook_config,
 )
 
@@ -21,13 +19,10 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class ModelCallLimitState(AgentState[ResponseT]):
+class ModelCallLimitState(AgentState):
     """State schema for `ModelCallLimitMiddleware`.
 
     Extends `AgentState` with model call tracking fields.
-
-    Type Parameters:
-        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
@@ -91,9 +86,7 @@ class ModelCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ModelCallLimitMiddleware(
-    AgentMiddleware[ModelCallLimitState[ResponseT], ContextT, ResponseT]
-):
+class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
     """Tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution
@@ -121,7 +114,7 @@ class ModelCallLimitMiddleware(
         ```
     """
 
-    state_schema = ModelCallLimitState  # type: ignore[assignment]
+    state_schema = ModelCallLimitState
 
     def __init__(
         self,
@@ -155,7 +148,7 @@ class ModelCallLimitMiddleware(
             msg = "At least one limit must be specified (thread_limit or run_limit)"
             raise ValueError(msg)
 
-        if exit_behavior not in {"end", "error"}:
+        if exit_behavior not in ("end", "error"):
             msg = f"Invalid exit_behavior: {exit_behavior}. Must be 'end' or 'error'"
             raise ValueError(msg)
 
@@ -165,9 +158,7 @@ class ModelCallLimitMiddleware(
 
     @hook_config(can_jump_to=["end"])
     @override
-    def before_model(
-        self, state: ModelCallLimitState[ResponseT], runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | None:
+    def before_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
         """Check model call limits before making a model call.
 
         Args:
@@ -212,8 +203,8 @@ class ModelCallLimitMiddleware(
     @hook_config(can_jump_to=["end"])
     async def abefore_model(
         self,
-        state: ModelCallLimitState[ResponseT],
-        runtime: Runtime[ContextT],
+        state: ModelCallLimitState,
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async check model call limits before making a model call.
 
@@ -233,9 +224,7 @@ class ModelCallLimitMiddleware(
         return self.before_model(state, runtime)
 
     @override
-    def after_model(
-        self, state: ModelCallLimitState[ResponseT], runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | None:
+    def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
         """Increment model call counts after a model call.
 
         Args:
@@ -252,8 +241,8 @@ class ModelCallLimitMiddleware(
 
     async def aafter_model(
         self,
-        state: ModelCallLimitState[ResponseT],
-        runtime: Runtime[ContextT],
+        state: ModelCallLimitState,
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Async increment model call counts after a model call.
 

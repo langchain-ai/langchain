@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import os
 from collections.abc import Callable
 from typing import Any, Literal, cast
@@ -12,7 +11,6 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
-from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -51,15 +49,6 @@ def test_initialization() -> None:
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
-
-
-def test_user_agent_header_in_client_params() -> None:
-    """Test that _client_params includes a User-Agent header."""
-    llm = ChatAnthropic(model=MODEL_NAME, api_key="test-key")  # type: ignore[arg-type]
-    params = llm._client_params
-    assert "default_headers" in params
-    assert "User-Agent" in params["default_headers"]
-    assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
 
 
 @pytest.mark.parametrize("async_api", [True, False])
@@ -420,91 +409,6 @@ def test__merge_messages_mutation() -> None:
     actual = _merge_messages(messages)
     assert expected == actual
     assert messages == original_messages
-
-
-def test__merge_messages_tool_message_cache_control() -> None:
-    """Test that cache_control is hoisted from content blocks to tool_result level."""
-    # Test with cache_control in content block
-    messages = [
-        ToolMessage(
-            content=[
-                {
-                    "type": "text",
-                    "text": "tool output",
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            tool_call_id="1",
-        )
-    ]
-    original_messages = [copy.deepcopy(m) for m in messages]
-    expected = [
-        HumanMessage(
-            [
-                {
-                    "type": "tool_result",
-                    "content": [{"type": "text", "text": "tool output"}],
-                    "tool_use_id": "1",
-                    "is_error": False,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ]
-        )
-    ]
-    actual = _merge_messages(messages)
-    assert expected == actual
-    # Verify no mutation
-    assert messages == original_messages
-
-    # Test with multiple content blocks, cache_control on last one
-    messages = [
-        ToolMessage(
-            content=[
-                {"type": "text", "text": "first output"},
-                {
-                    "type": "text",
-                    "text": "second output",
-                    "cache_control": {"type": "ephemeral"},
-                },
-            ],
-            tool_call_id="2",
-        )
-    ]
-    expected = [
-        HumanMessage(
-            [
-                {
-                    "type": "tool_result",
-                    "content": [
-                        {"type": "text", "text": "first output"},
-                        {"type": "text", "text": "second output"},
-                    ],
-                    "tool_use_id": "2",
-                    "is_error": False,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ]
-        )
-    ]
-    actual = _merge_messages(messages)
-    assert expected == actual
-
-    # Test without cache_control
-    messages = [ToolMessage(content="simple output", tool_call_id="3")]
-    expected = [
-        HumanMessage(
-            [
-                {
-                    "type": "tool_result",
-                    "content": "simple output",
-                    "tool_use_id": "3",
-                    "is_error": False,
-                }
-            ]
-        )
-    ]
-    actual = _merge_messages(messages)
-    assert expected == actual
 
 
 def test__format_image() -> None:
@@ -1660,13 +1564,6 @@ def test_context_management_in_payload() -> None:
     }
 
 
-def test_inference_geo_in_payload() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME, inference_geo="us")
-    input_message = HumanMessage("Hello, world!")
-    payload = llm._get_request_payload([input_message])
-    assert payload["inference_geo"] == "us"
-
-
 def test_anthropic_model_params() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
@@ -1759,6 +1656,7 @@ def test_streaming_cache_token_reporting() -> None:
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
+        betas=["structured-outputs-2025-11-13"],
     )
 
     def get_weather(location: str, unit: Literal["C", "F"]) -> str:
@@ -1771,8 +1669,8 @@ def test_strict_tool_use() -> None:
     assert tool_definition["strict"] is True
 
 
-def test_response_format_with_output_config() -> None:
-    """Test that response_format is converted to output_config.format."""
+def test_beta_merging_with_response_format() -> None:
+    """Test that structured-outputs beta is merged with existing betas."""
 
     class Person(BaseModel):
         """Person data."""
@@ -1780,47 +1678,114 @@ def test_response_format_with_output_config() -> None:
         name: str
         age: int
 
-    # Test that response_format converts to output_config.format
+    # Auto-inject structured-outputs beta with no others specified
     model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload(
         "Test query",
         response_format=Person.model_json_schema(),
     )
-    assert "output_config" in payload
-    assert "format" in payload["output_config"]
-    assert payload["output_config"]["format"]["type"] == "json_schema"
-    assert "schema" in payload["output_config"]["format"]
+    assert payload["betas"] == ["structured-outputs-2025-11-13"]
 
-    # No response_format - output_config should not have format
-    model = ChatAnthropic(model=MODEL_NAME)
+    # Merge structured-outputs beta if other betas are present
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["mcp-client-2025-04-04"],
+    )
+    payload = model._get_request_payload(
+        "Test query",
+        response_format=Person.model_json_schema(),
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "structured-outputs-2025-11-13",
+    ]
+
+    # Structured-outputs beta already present - don't duplicate
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=[
+            "mcp-client-2025-04-04",
+            "structured-outputs-2025-11-13",
+        ],
+    )
+    payload = model._get_request_payload(
+        "Test query",
+        response_format=Person.model_json_schema(),
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "structured-outputs-2025-11-13",
+    ]
+
+    # No response_format - betas should not be modified
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["mcp-client-2025-04-04"],
+    )
     payload = model._get_request_payload("Test query")
-    if "output_config" in payload:
-        assert "format" not in payload["output_config"]
+    assert payload["betas"] == ["mcp-client-2025-04-04"]
 
 
-def test_strict_tool_use_payload() -> None:
-    """Test that strict tool use property is correctly passed through to payload."""
+def test_beta_merging_with_strict_tool_use() -> None:
+    """Test beta merging for strict tools."""
 
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "Sunny"
 
-    # Test that strict=True is correctly passed to payload
+    # Auto-inject structured-outputs beta with no others specified
     model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     model_with_tools = model.bind_tools([get_weather], strict=True)
     payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
         "What's the weather?",
         **model_with_tools.kwargs,  # type: ignore[attr-defined]
     )
-    assert payload["tools"][0]["strict"] is True
+    assert payload["betas"] == ["structured-outputs-2025-11-13"]
 
-    # Test that strict=False is correctly passed to payload
-    model_without_strict = model.bind_tools([get_weather], strict=False)
-    payload = model_without_strict._get_request_payload(  # type: ignore[attr-defined]
-        "What's the weather?",
-        **model_without_strict.kwargs,  # type: ignore[attr-defined]
+    # Merge structured-outputs beta if other betas are present
+    model = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        betas=["mcp-client-2025-04-04"],
     )
-    assert payload["tools"][0].get("strict") is False
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "structured-outputs-2025-11-13",
+    ]
+
+    # Structured-outputs beta already present - don't duplicate
+    model = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        betas=[
+            "mcp-client-2025-04-04",
+            "structured-outputs-2025-11-13",
+        ],
+    )
+    model_with_tools = model.bind_tools([get_weather], strict=True)
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == [
+        "mcp-client-2025-04-04",
+        "structured-outputs-2025-11-13",
+    ]
+
+    # No strict tools - betas should not be modified
+    model = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        betas=["mcp-client-2025-04-04"],
+    )
+    model_with_tools = model.bind_tools([get_weather], strict=False)
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "What's the weather?",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["betas"] == ["mcp-client-2025-04-04"]
 
 
 def test_auto_append_betas_for_tool_types() -> None:
@@ -2171,23 +2136,6 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
-def test_profile_1m_context_beta() -> None:
-    model = ChatAnthropic(model="claude-sonnet-4-5")
-    assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
-
-    model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
-    assert model.profile
-    assert model.profile["max_input_tokens"] == 1000000
-
-    model = ChatAnthropic(
-        model="claude-sonnet-4-5",
-        betas=["token-efficient-tools-2025-02-19"],
-    )
-    assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
-
-
 async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
@@ -2197,7 +2145,7 @@ async def test_model_profile_not_blocking() -> None:
 def test_effort_parameter_validation() -> None:
     """Test that effort parameter is validated correctly.
 
-    The effort parameter is generally available on Claude Opus 4.6 and Opus 4.5.
+    The effort parameter is currently in beta and only supported by Claude Opus 4.5.
     """
     # Valid effort values should work
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
@@ -2209,22 +2157,20 @@ def test_effort_parameter_validation() -> None:
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="low")
     assert model.effort == "low"
 
-    model = ChatAnthropic(model="claude-opus-4-6", effort="max")
-    assert model.effort == "max"
-
     # Invalid effort values should raise ValidationError
     with pytest.raises(ValidationError, match="Input should be"):
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
-def test_effort_in_output_config_payload() -> None:
-    """Test that effort parameter is properly added to output_config in payload."""
+def test_effort_populates_betas() -> None:
+    """Test that effort parameter auto-populates required betas."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
     assert model.effort == "medium"
 
-    # Test that effort is added to output_config
+    # Test that effort works with dated API ID
     payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "medium"
+    assert "effort-2025-11-24" in payload["betas"]
 
 
 def test_effort_in_output_config() -> None:
@@ -2250,6 +2196,43 @@ def test_effort_priority() -> None:
     assert payload["output_config"]["effort"] == "high"
 
 
+def test_effort_beta_header_auto_append() -> None:
+    """Test that effort beta header is automatically appended."""
+    # Test with top-level effort parameter
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test with output_config
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "effort-2025-11-24" in payload["betas"]
+
+    # Test that beta is not duplicated if already present
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        betas=["effort-2025-11-24"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("effort-2025-11-24") == 1
+
+    # Test combining effort with other betas
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="medium",
+        betas=["context-1m-2025-08-07"],
+    )
+    payload = model._get_request_payload("Test query")
+    assert set(payload["betas"]) == {
+        "context-1m-2025-08-07",
+        "effort-2025-11-24",
+    }
+
+
 def test_output_config_without_effort() -> None:
     """Test that output_config can be used without effort."""
     # output_config might have other fields in the future
@@ -2259,6 +2242,10 @@ def test_output_config_without_effort() -> None:
     )
     payload = model._get_request_payload("Test query")
     assert payload["output_config"] == {"some_future_param": "value"}
+    # No effort beta should be added
+    assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
+        "betas", []
+    )
 
 
 def test_extras_with_defer_loading() -> None:
@@ -2395,128 +2382,148 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
-@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
-def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
-    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
-    block = {"type": block_type, "other": "foo"}
-    human = HumanMessage("hi")  # type: ignore[misc]
-    ai = AIMessage(  # type: ignore[misc]
-        content=[block, {"type": "text", "text": "hello"}],
-        response_metadata={"model_provider": "openai"},
+def test_message_start_with_pre_completed_tool_use() -> None:
+    """Test that message_start events with pre-completed tool_use blocks are handled.
+
+    This tests the fix for GitHub issue #34406 where streaming with programmatic
+    tool calling (e.g., code_execution_20250825) returns empty AIMessage because
+    tool_use blocks are pre-completed in message_start instead of streamed.
+    """
+    from unittest.mock import MagicMock
+
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    # Create a mock tool_use content block (pre-completed)
+    mock_tool_use_block = MagicMock()
+    mock_tool_use_block.type = "tool_use"
+    mock_tool_use_block.id = "toolu_01ABC123"
+    mock_tool_use_block.name = "get_weather"
+    mock_tool_use_block.input = {"location": "San Francisco"}
+    mock_tool_use_block.model_dump.return_value = {
+        "type": "tool_use",
+        "id": "toolu_01ABC123",
+        "name": "get_weather",
+        "input": {"location": "San Francisco"},
+    }
+
+    # Create mock message with pre-completed content
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = [mock_tool_use_block]
+
+    # Create message_start event with pre-completed tool_use
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    # Test with coerce_content_to_string=False (tool calling scenario)
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
     )
-    _, msgs = _format_messages([human, ai])
-    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
 
-    ai_anthropic = AIMessage(  # type: ignore[misc]
-        content=[block, {"type": "text", "text": "hello"}],
-        response_metadata={"model_provider": "anthropic"},
+    # Verify the chunk is not empty and contains the tool use
+    assert chunk is not None, (
+        "message_start with pre-completed content should produce chunk"
     )
-    _, msgs = _format_messages([human, ai_anthropic])
-    assert any(b["type"] == block_type for b in msgs[1]["content"])
+    assert chunk.content, "Chunk content should not be empty"
+    assert isinstance(chunk.content, list), "Content should be a list"
+    assert len(chunk.content) == 1, "Should have one content block"
+    content_block = chunk.content[0]
+    assert isinstance(content_block, dict), "Content block should be a dict"
+    assert content_block["type"] == "tool_use"
+    assert content_block["id"] == "toolu_01ABC123"
+    assert content_block["name"] == "get_weather"
+
+    # Verify tool_call_chunks are populated
+    assert chunk.tool_call_chunks, "Tool call chunks should be populated"
+    assert len(chunk.tool_call_chunks) == 1
+    assert chunk.tool_call_chunks[0]["name"] == "get_weather"
+    assert chunk.tool_call_chunks[0]["id"] == "toolu_01ABC123"
+    args = chunk.tool_call_chunks[0]["args"]
+    assert args is not None
+    assert '"location": "San Francisco"' in args
 
 
-def test__format_messages_trailing_whitespace() -> None:
-    """Test that trailing whitespace is trimmed from the final assistant message."""
-    human = HumanMessage("foo")  # type: ignore[misc]
+def test_message_start_with_multiple_pre_completed_blocks() -> None:
+    """Test message_start with multiple pre-completed content blocks."""
+    from unittest.mock import MagicMock
 
-    # Test string content
-    ai_string = AIMessage("thought ")  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_string])
-    assert anthropic_messages[-1]["content"] == "thought"
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
 
-    # Test list content
-    ai_list = AIMessage([{"type": "text", "text": "thought "}])  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_list])
-    assert anthropic_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
+    # Create mock text block
+    mock_text_block = MagicMock()
+    mock_text_block.type = "text"
+    mock_text_block.text = "Let me check the weather."
+    mock_text_block.model_dump.return_value = {
+        "type": "text",
+        "text": "Let me check the weather.",
+    }
 
-    # Test that intermediate messages are NOT trimmed
-    ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_intermediate, human])
-    assert anthropic_messages[1]["content"] == "thought "
+    # Create mock tool_use block
+    mock_tool_use_block = MagicMock()
+    mock_tool_use_block.type = "tool_use"
+    mock_tool_use_block.id = "toolu_02XYZ789"
+    mock_tool_use_block.name = "search"
+    mock_tool_use_block.input = {"query": "weather"}
+    mock_tool_use_block.model_dump.return_value = {
+        "type": "tool_use",
+        "id": "toolu_02XYZ789",
+        "name": "search",
+        "input": {"query": "weather"},
+    }
 
+    # Create mock message with multiple pre-completed content blocks
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = [mock_text_block, mock_tool_use_block]
 
-# Test fixtures for context overflow error tests
-_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
-    message="prompt is too long: 209752 tokens > 200000 maximum",
-    response=MagicMock(status_code=400),
-    body={
-        "type": "error",
-        "error": {
-            "type": "invalid_request_error",
-            "message": "prompt is too long: 209752 tokens > 200000 maximum",
-        },
-    },
-)
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
 
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
 
-def test_context_overflow_error_invoke_sync() -> None:
-    """Test context overflow error on invoke (sync)."""
-    llm = ChatAnthropic(model=MODEL_NAME)
-
-    with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        llm.invoke([HumanMessage(content="test")])
-
-    assert "prompt is too long" in str(exc_info.value)
-
-
-async def test_context_overflow_error_invoke_async() -> None:
-    """Test context overflow error on invoke (async)."""
-    llm = ChatAnthropic(model=MODEL_NAME)
-
-    with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        await llm.ainvoke([HumanMessage(content="test")])
-
-    assert "prompt is too long" in str(exc_info.value)
+    assert chunk is not None
+    assert isinstance(chunk.content, list), "Content should be a list"
+    assert len(chunk.content) == 2
+    text_block = chunk.content[0]
+    tool_block = chunk.content[1]
+    assert isinstance(text_block, dict)
+    assert text_block["type"] == "text"
+    assert isinstance(tool_block, dict)
+    assert tool_block["type"] == "tool_use"
+    assert len(chunk.tool_call_chunks) == 1
+    assert chunk.tool_call_chunks[0]["name"] == "search"
 
 
-def test_context_overflow_error_stream_sync() -> None:
-    """Test context overflow error on stream (sync)."""
-    llm = ChatAnthropic(model=MODEL_NAME)
+def test_message_start_empty_content_still_works() -> None:
+    """Test that message_start with empty content still produces a chunk."""
+    from unittest.mock import MagicMock
 
-    with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        list(llm.stream([HumanMessage(content="test")]))
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
 
-    assert "prompt is too long" in str(exc_info.value)
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.content = []
 
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
 
-async def test_context_overflow_error_stream_async() -> None:
-    """Test context overflow error on stream (async)."""
-    llm = ChatAnthropic(model=MODEL_NAME)
+    chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
 
-    with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
-        pytest.raises(ContextOverflowError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        async for _ in llm.astream([HumanMessage(content="test")]):
-            pass
-
-    assert "prompt is too long" in str(exc_info.value)
-
-
-def test_context_overflow_error_backwards_compatibility() -> None:
-    """Test that ContextOverflowError can be caught as BadRequestError."""
-    llm = ChatAnthropic(model=MODEL_NAME)
-
-    with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
-        pytest.raises(anthropic.BadRequestError) as exc_info,
-    ):
-        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
-        llm.invoke([HumanMessage(content="test")])
-
-    # Verify it's both types (multiple inheritance)
-    assert isinstance(exc_info.value, anthropic.BadRequestError)
-    assert isinstance(exc_info.value, ContextOverflowError)
+    assert chunk is not None
+    assert chunk.content == []

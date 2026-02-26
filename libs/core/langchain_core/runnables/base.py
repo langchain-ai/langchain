@@ -1,4 +1,4 @@
-"""Base classes and utilities for `Runnable` objects."""
+"""Base classes and utilities for `Runnable`s."""
 
 from __future__ import annotations
 
@@ -138,7 +138,7 @@ class Runnable(ABC, Generic[Input, Output]):
     - **Batch**: By default, batch runs invoke() in parallel using a thread pool
         executor. Override to optimize batching.
 
-    - **Async**: Methods with `'a'` prefix are asynchronous. By default, they execute
+    - **Async**: Methods with `'a'` suffix are asynchronous. By default, they execute
         the sync counterpart using asyncio's thread pool.
         Override for native async.
 
@@ -315,7 +315,7 @@ class Runnable(ABC, Generic[Input, Output]):
                     "args" in metadata
                     and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
                 ):
-                    return cast("type[Input]", metadata["args"][0])
+                    return metadata["args"][0]
 
         # If we didn't find a Pydantic model in the parent classes,
         # then loop through __orig_bases__. This corresponds to
@@ -323,7 +323,7 @@ class Runnable(ABC, Generic[Input, Output]):
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
-                return cast("type[Input]", type_args[0])
+                return type_args[0]
 
         msg = (
             f"Runnable {self.get_name()} doesn't have an inferable InputType. "
@@ -349,12 +349,12 @@ class Runnable(ABC, Generic[Input, Output]):
                     "args" in metadata
                     and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
                 ):
-                    return cast("type[Output]", metadata["args"][1])
+                    return metadata["args"][1]
 
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
             if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
-                return cast("type[Output]", type_args[1])
+                return type_args[1]
 
         msg = (
             f"Runnable {self.get_name()} doesn't have an inferable OutputType. "
@@ -369,7 +369,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_input_schema(
         self,
-        config: RunnableConfig | None = None,
+        config: RunnableConfig | None = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a Pydantic model that can be used to validate input to the `Runnable`.
 
@@ -385,7 +385,6 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A Pydantic model that can be used to validate input.
         """
-        _ = config
         root_type = self.InputType
 
         if (
@@ -448,7 +447,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_output_schema(
         self,
-        config: RunnableConfig | None = None,
+        config: RunnableConfig | None = None,  # noqa: ARG002
     ) -> type[BaseModel]:
         """Get a Pydantic model that can be used to validate output to the `Runnable`.
 
@@ -464,7 +463,6 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A Pydantic model that can be used to validate output.
         """
-        _ = config
         root_type = self.OutputType
 
         if (
@@ -2587,10 +2585,6 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
     """Runnable that can be serialized to JSON."""
 
     name: str | None = None
-    """The name of the `Runnable`.
-
-    Used for debugging and tracing.
-    """
 
     model_config = ConfigDict(
         # Suppress warnings from pydantic protected namespaces
@@ -4443,138 +4437,6 @@ class RunnableLambda(Runnable[Input, Output]):
         await runnable.ainvoke(1)  # Uses add_one_async
         ```
     """
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input, RunnableConfig], Awaitable[Output]],
-        afunc: None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input], Awaitable[Output]],
-        afunc: None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input], AsyncIterator[Output]],
-        afunc: None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-        afunc: None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ],
-        afunc: None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input, RunnableConfig], Output],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input], Iterator[Output]],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input], Runnable[Input, Output]],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input, CallbackManagerForChainRun], Output],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self,
-        func: Callable[[Input], Output],
-        afunc: Callable[[Input], Awaitable[Output]]
-        | Callable[[Input], AsyncIterator[Output]]
-        | Callable[[Input, RunnableConfig], Awaitable[Output]]
-        | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
-        | Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
-        ]
-        | None = None,
-        name: str | None = None,
-    ) -> None: ...
 
     def __init__(
         self,

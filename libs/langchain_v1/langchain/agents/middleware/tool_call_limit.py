@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -32,7 +32,7 @@ ExitBehavior = Literal["continue", "error", "end"]
 """
 
 
-class ToolCallLimitState(AgentState[ResponseT]):
+class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
     """State schema for `ToolCallLimitMiddleware`.
 
     Extends `AgentState` with tool call tracking fields.
@@ -40,9 +40,6 @@ class ToolCallLimitState(AgentState[ResponseT]):
     The count fields are dictionaries mapping tool names to execution counts. This
     allows multiple middleware instances to track different tools independently. The
     special key `'__all__'` is used for tracking all tool calls globally.
-
-    Type Parameters:
-        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
@@ -137,7 +134,10 @@ class ToolCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], ContextT, ResponseT]):
+class ToolCallLimitMiddleware(
+    AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
+    Generic[ResponseT, ContextT],
+):
     """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
@@ -361,7 +361,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             return None
 
         # Get the count key for this middleware instance
-        count_key = self.tool_name or "__all__"
+        count_key = self.tool_name if self.tool_name else "__all__"
 
         # Get current counts
         thread_counts = state.get("thread_tool_call_count", {}).copy()

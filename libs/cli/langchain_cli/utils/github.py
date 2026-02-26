@@ -1,0 +1,43 @@
+"""GitHub utilities."""
+
+from __future__ import annotations
+
+import http.client
+import json
+
+
+def list_packages(*, contains: str | None = None) -> list[str]:
+    """List all packages in the langchain repository templates directory.
+
+    Args:
+        contains: Optional substring that the package name must contain.
+
+    Returns:
+        A list of package names.
+    """
+    conn = http.client.HTTPSConnection("api.github.com")
+    try:
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "langchain-cli",
+        }
+
+        conn.request(
+            "GET",
+            "/repos/langchain-ai/langchain/contents/templates",
+            headers=headers,
+        )
+        res = conn.getresponse()
+
+        res_str = res.read()
+
+        data = json.loads(res_str)
+        package_names = [
+            p["name"] for p in data if p["type"] == "dir" and p["name"] != "docs"
+        ]
+        return (
+            [p for p in package_names if contains in p] if contains else package_names
+        )
+    finally:
+        conn.close()

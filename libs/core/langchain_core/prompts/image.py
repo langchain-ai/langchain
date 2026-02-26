@@ -1,6 +1,6 @@
 """Image prompt template for a multimodal model."""
 
-from typing import Any, Literal, cast
+from typing import Any
 
 from pydantic import Field
 
@@ -18,12 +18,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
-
     template_format: PromptTemplateFormat = "f-string"
     """The format of the prompt template.
-
-    Options are: `'f-string'`, `'mustache'`, `'jinja2'`.
-    """
+    Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
         """Create an image prompt template.
@@ -128,7 +125,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = cast("Literal['auto', 'low', 'high']", detail)
+            output["detail"] = detail
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:

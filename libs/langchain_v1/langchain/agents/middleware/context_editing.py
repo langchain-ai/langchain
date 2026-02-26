@@ -25,11 +25,9 @@ from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    AgentState,
-    ContextT,
+    ModelCallResult,
     ModelRequest,
     ModelResponse,
-    ResponseT,
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
@@ -154,8 +152,8 @@ class ClearToolUsesEdit(ContextEdit):
 
         return
 
-    @staticmethod
     def _build_cleared_tool_input_message(
+        self,
         message: AIMessage,
         tool_call_id: str,
     ) -> AIMessage:
@@ -184,7 +182,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class ContextEditingMiddleware(AgentMiddleware):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
@@ -219,19 +217,10 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
     def wrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
-        """Apply context edits before invoking the model via handler.
-
-        Args:
-            request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
-
-        Returns:
-            The result of invoking the handler with potentially edited messages.
-        """
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        """Apply context edits before invoking the model via handler."""
         if not request.messages:
             return handler(request)
 
@@ -256,19 +245,10 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
     async def awrap_model_call(
         self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
-        """Apply context edits before invoking the model via handler.
-
-        Args:
-            request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
-
-        Returns:
-            The result of invoking the handler with potentially edited messages.
-        """
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Apply context edits before invoking the model via handler (async version)."""
         if not request.messages:
             return await handler(request)
 

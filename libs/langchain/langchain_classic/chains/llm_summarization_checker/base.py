@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import warnings
 from pathlib import Path
 from typing import Any
@@ -18,7 +17,6 @@ from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.sequential import SequentialChain
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-logger = logging.getLogger(__name__)
 
 CREATE_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "create_facts.txt")
 CHECK_ASSERTIONS_PROMPT = PromptTemplate.from_file(PROMPTS_DIR / "check_facts.txt")
@@ -73,7 +71,7 @@ def _load_sequential_chain(
     message=(
         "See LangGraph guides for a variety of self-reflection and corrective "
         "strategies for question-answering and other tasks: "
-        "https://docs.langchain.com/oss/python/langgraph/agentic-rag"
+        "https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_self_rag/"
     ),
     removal="1.0",
 )
@@ -166,7 +164,7 @@ class LLMSummarizationCheckerChain(Chain):
                 break
 
             if self.verbose:
-                logger.info(output["revised_summary"])
+                print(output["revised_summary"])  # noqa: T201
 
             chain_input = output["revised_summary"]
 
