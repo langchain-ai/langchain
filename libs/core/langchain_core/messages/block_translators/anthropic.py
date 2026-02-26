@@ -299,10 +299,15 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
             ):
                 if len(message.tool_call_chunks) == 1:
                     chunk = message.tool_call_chunks[0]
+                    chunk_args = chunk.get("args")
+                    # Some providers emit empty chunk args while carrying the
+                    # real incremental JSON in content.partial_json.
+                    if not chunk_args:
+                        chunk_args = block.get("partial_json", "")
                     tool_call_chunk = types.ToolCallChunk(
                         name=chunk.get("name"),
                         id=chunk.get("id"),
-                        args=chunk.get("args"),
+                        args=chunk_args,
                         type="tool_call_chunk",
                     )
                     index = chunk.get("index")
