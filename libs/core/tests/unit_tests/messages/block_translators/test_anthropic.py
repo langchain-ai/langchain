@@ -507,3 +507,51 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_convert_to_v1_from_anthropic_chunk_uses_partial_json_when_chunk_args_empty() -> None:
+    # Reproduces providers that emit empty tool_call_chunks args while
+    # carrying actual incremental args in input_json_delta.partial_json.
+    chunk = AIMessageChunk(
+        content=[
+            {
+                "type": "web_search_tool_result",
+                "tool_use_id": "toolu_123",
+                "content": [{"type": "web_search_result", "title": "t", "url": "u"}],
+                "index": 0,
+            },
+            {
+                "type": "input_json_delta",
+                "partial_json": '{"search_term":"ai"}',
+                "index": 1,
+            },
+        ],
+        tool_call_chunks=[
+            {
+                "name": None,
+                "args": "",
+                "id": "toolu_123",
+                "index": 1,
+                "type": "tool_call_chunk",
+            }
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    assert chunk.content_blocks == [
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "toolu_123",
+            "status": "success",
+            "extras": {"block_type": "web_search_tool_result"},
+            "output": [{"type": "web_search_result", "title": "t", "url": "u"}],
+            "index": 0,
+        },
+        {
+            "type": "tool_call_chunk",
+            "name": None,
+            "id": "toolu_123",
+            "args": '{"search_term":"ai"}',
+            "index": 1,
+        },
+    ]
