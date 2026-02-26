@@ -20,3 +20,13 @@ def test_invoke_accepts_messages_state_input() -> None:
     result = agent.invoke(input_state)
     assert "messages" in result
     assert len(result["messages"]) >= 1
+
+
+def test_invoke_accepts_message_dict_input() -> None:
+    """`agent.invoke` accepts message dict entries in input state."""
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
+    agent = create_agent(model=model)
+
+    result = agent.invoke({"messages": [{"role": "user", "content": "hi"}]})
+    assert "messages" in result
+    assert len(result["messages"]) >= 1

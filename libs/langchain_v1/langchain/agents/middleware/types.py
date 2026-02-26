@@ -27,6 +27,7 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    MessageLikeRepresentation,
     SystemMessage,
     ToolMessage,
 )
@@ -358,7 +359,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 class _InputAgentState(TypedDict):  # noqa: PYI049
     """Input state schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage], add_messages]]
+    messages: Required[Annotated[Sequence[MessageLikeRepresentation], add_messages]]
 
 
 class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
