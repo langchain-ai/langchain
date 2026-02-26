@@ -6,6 +6,7 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AnyMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
 _UNSET = object()
@@ -62,7 +63,7 @@ class AgentSession:
 
     def __init__(
         self,
-        agent: CompiledStateGraph,
+        agent: CompiledStateGraph[Any, Any, Any, Any],
         *,
         thread_id: str | None = None,
     ) -> None:
@@ -82,14 +83,14 @@ class AgentSession:
         return self._thread_id
 
     @property
-    def agent(self) -> CompiledStateGraph:
+    def agent(self) -> CompiledStateGraph[Any, Any, Any, Any]:
         """The underlying compiled agent graph."""
         return self._agent
 
     @property
-    def config(self) -> dict[str, Any]:
+    def config(self) -> RunnableConfig:
         """The LangGraph config dict for this session thread."""
-        return {"configurable": {"thread_id": self._thread_id}}
+        return RunnableConfig(configurable={"thread_id": self._thread_id})
 
     def run(
         self,
@@ -281,14 +282,13 @@ class AgentSession:
             ```
         """
         branch_thread_id = new_thread_id or uuid.uuid4().hex
-        source_state = self._agent.get_state(
-            {
-                "configurable": {
-                    "thread_id": self._thread_id,
-                    "checkpoint_id": checkpoint_id,
-                }
+        source_config = RunnableConfig(
+            configurable={
+                "thread_id": self._thread_id,
+                "checkpoint_id": checkpoint_id,
             }
         )
+        source_state = self._agent.get_state(source_config)
 
         new_session = AgentSession(
             self._agent,

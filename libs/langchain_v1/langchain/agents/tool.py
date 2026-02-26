@@ -81,7 +81,7 @@ def _extract_response(result: dict[str, Any]) -> str:
 
 
 def create_agent_tool(
-    agent: CompiledStateGraph,
+    agent: CompiledStateGraph[Any, Any, Any, Any],
     *,
     name: str,
     description: str,
