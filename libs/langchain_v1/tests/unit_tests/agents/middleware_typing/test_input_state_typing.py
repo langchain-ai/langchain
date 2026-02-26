@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import MessagesState
@@ -27,6 +29,7 @@ def test_invoke_accepts_message_dict_input() -> None:
     model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
     agent = create_agent(model=model)
 
-    result = agent.invoke({"messages": [{"role": "user", "content": "hi"}]})
+    input_state: Any = {"messages": [{"role": "user", "content": "hi"}]}
+    result = agent.invoke(input_state)
     assert "messages" in result
     assert len(result["messages"]) >= 1
