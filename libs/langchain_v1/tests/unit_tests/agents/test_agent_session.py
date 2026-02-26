@@ -3,7 +3,7 @@
 import sys
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -241,13 +241,6 @@ async def test_session_aresume() -> None:
 
     result = await session.aresume()
     assert "messages" in result
-
-
-def test_session_is_exported() -> None:
-    """AgentSession is importable from the agents package."""
-    from langchain.agents import AgentSession as imported
-
-    assert imported is not None
 
 
 def test_session_agent_property() -> None:

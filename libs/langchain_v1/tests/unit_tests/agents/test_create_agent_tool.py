@@ -3,10 +3,10 @@
 import sys
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolCall
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
-from langchain.agents import AgentSession, AgentState, create_agent, create_agent_tool
+from langchain.agents import create_agent, create_agent_tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 pytestmark = pytest.mark.skipif(
@@ -145,11 +145,3 @@ def test_create_agent_tool_thread_id_prefix() -> None:
 
     result = agent_tool.invoke("hello")
     assert isinstance(result, str)
-
-
-def test_create_agent_tool_is_exported() -> None:
-    """create_agent_tool is importable from the agents package."""
-    from langchain.agents import create_agent_tool as imported
-
-    assert imported is not None
-    assert callable(imported)
