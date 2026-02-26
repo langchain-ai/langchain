@@ -1206,7 +1206,9 @@ def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> 
 def test_csv_input() -> None:
     """Test CSV file input with both LangChain standard and OpenAI native formats."""
     # Create sample CSV content
-    csv_content = "name,age,city\nAlice,30,New York\nBob,25,Los Angeles\nCarol,35,Chicago"
+    csv_content = (
+        "name,age,city\nAlice,30,New York\nBob,25,Los Angeles\nCarol,35,Chicago"
+    )
     csv_bytes = csv_content.encode("utf-8")
     base64_string = base64.b64encode(csv_bytes).decode("utf-8")
 
@@ -1235,7 +1237,9 @@ def test_csv_input() -> None:
     response = llm.invoke([langchain_message])
     assert isinstance(response, AIMessage)
     assert response.content
-    assert "3" in str(response.content).lower() or "three" in str(response.content).lower()
+    assert (
+        "3" in str(response.content).lower() or "three" in str(response.content).lower()
+    )
 
     # Test OpenAI native format
     openai_message = {
@@ -1259,4 +1263,7 @@ def test_csv_input() -> None:
     response2 = llm.invoke([openai_message])
     assert isinstance(response2, AIMessage)
     assert response2.content
-    assert "3" in str(response2.content).lower() or "three" in str(response2.content).lower()
+    assert (
+        "3" in str(response2.content).lower()
+        or "three" in str(response2.content).lower()
+    )
