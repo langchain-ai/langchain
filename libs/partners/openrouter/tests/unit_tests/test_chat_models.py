@@ -1261,6 +1261,40 @@ class TestCreateChatResult:
         assert isinstance(msg, AIMessage)
         assert msg.response_metadata["native_finish_reason"] == "end_turn"
 
+    def test_cost_in_response_metadata(self) -> None:
+        """Test that OpenRouter cost data is surfaced in response_metadata."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            **_SIMPLE_RESPONSE_DICT,
+            "usage": {
+                **_SIMPLE_RESPONSE_DICT["usage"],
+                "cost": 7.5e-05,
+                "cost_details": {
+                    "upstream_inference_cost": 7.745e-05,
+                    "upstream_inference_prompt_cost": 8.95e-06,
+                    "upstream_inference_completions_cost": 6.85e-05,
+                },
+            },
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["cost"] == 7.5e-05
+        assert msg.response_metadata["cost_details"] == {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+
+    def test_cost_absent_when_not_in_usage(self) -> None:
+        """Test that cost fields are not added when not present in usage."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "cost" not in msg.response_metadata
+        assert "cost_details" not in msg.response_metadata
+
     def test_missing_optional_metadata_excluded(self) -> None:
         """Test that absent optional fields are not added to response_metadata."""
         model = _make_model()
