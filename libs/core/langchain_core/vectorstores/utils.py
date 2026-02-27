@@ -8,25 +8,17 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import warnings
 from typing import TYPE_CHECKING
 
-try:
-    import numpy as np
+_HAS_NUMPY = importlib.util.find_spec("numpy") is not None
+_HAS_SIMSIMD = importlib.util.find_spec("simsimd") is not None
 
-    _HAS_NUMPY = True
-except ImportError:
-    _HAS_NUMPY = False
-
-try:
-    import simsimd as simd  # type: ignore[import-not-found]
-
-    _HAS_SIMSIMD = True
-except ImportError:
-    _HAS_SIMSIMD = False
 
 if TYPE_CHECKING:
+    import numpy as np
     import numpy.typing as npt
 
     Matrix = (
@@ -57,6 +49,8 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> npt.NDArray[np.floating]:
             "Please install numpy with `pip install numpy`."
         )
         raise ImportError(msg)
+
+    import numpy as np  # noqa: PLC0415
 
     if len(x) == 0 or len(y) == 0:
         return np.array([[]])
@@ -104,6 +98,8 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> npt.NDArray[np.floating]:
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
 
+    import simsimd as simd  # type: ignore[import-not-found]  # noqa: PLC0415
+
     x = np.array(x, dtype=np.float32)
     y = np.array(y, dtype=np.float32)
     return 1 - np.array(simd.cdist(x, y, metric="cosine"))
@@ -135,6 +131,8 @@ def maximal_marginal_relevance(
             "Please install numpy with `pip install numpy`."
         )
         raise ImportError(msg)
+
+    import numpy as np  # noqa: PLC0415
 
     if min(k, len(embedding_list)) <= 0:
         return []
