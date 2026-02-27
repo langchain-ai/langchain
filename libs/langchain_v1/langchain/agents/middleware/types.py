@@ -2050,3 +2050,134 @@ def wrap_tool_call(
     if func is not None:
         return decorator(func)
     return decorator
+
+
+def awrap_tool_call(
+        func: _CallableReturningToolResponse | None = None,
+        *,
+        tools: list[BaseTool] | None = None,
+        name: str | None = None,
+) -> (
+        Callable[
+            [_CallableReturningToolResponse],
+            AgentMiddleware,
+        ]
+        | AgentMiddleware
+):
+    """Async version of `wrap_tool_call`.
+
+    Converts a function with handler callback into middleware that can intercept
+    tool calls, implement retry logic, monitor execution, and modify responses.
+
+    Args:
+        func: Async function accepting (request, handler) that calls
+            handler(request) to execute the tool and returns final `ToolMessage` or
+            `Command`.
+
+        tools: Additional tools to register with this middleware.
+        name: Middleware class name.
+
+            Defaults to function name.
+
+    Returns:
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
+
+    Examples:
+        !!! example "Async retry logic"
+
+            ```python
+            @wrap_tool_call
+            async def async_retry(request, handler):
+                for attempt in range(3):
+                    try:
+                        return await handler(request)
+                    except Exception:
+                        if attempt == 2:
+                            raise
+            ```
+
+        !!! example "Sync Retry logic"
+
+            ```python
+            @wrap_tool_call
+            def retry_on_error(request, handler):
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        return handler(request)
+                    except Exception:
+                        if attempt == max_retries - 1:
+                            raise
+            ```
+
+        !!! example "Modify request"
+
+            ```python
+            @wrap_tool_call
+            def modify_args(request, handler):
+                modified_call = {
+                    **request.tool_call,
+                    "args": {
+                        **request.tool_call["args"],
+                        "value": request.tool_call["args"]["value"] * 2,
+                    },
+                }
+                request = request.override(tool_call=modified_call)
+                return handler(request)
+            ```
+
+        !!! example "Short-circuit with cached result"
+
+            ```python
+            @wrap_tool_call
+            def with_cache(request, handler):
+                if cached := get_cache(request):
+                    return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+                result = handler(request)
+                save_cache(request, result)
+                return result
+            ```
+    """
+
+    def decorator(
+            func: _CallableReturningToolResponse,
+    ) -> AgentMiddleware:
+
+        if not iscoroutinefunction(func):
+            raise TypeError(
+                f"@awrap_tool_call requires an async function, but '{func.__name__}' "
+                f"is a regular function. Use 'async def {func.__name__}(...)' instead and await the handler"
+            )
+
+        async def async_wrapped(
+                _self: AgentMiddleware,
+                request: ToolCallRequest,
+                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+        ) -> ToolMessage | Command[Any]:
+            result = await func(request, handler)  # type: ignore[arg-type,misc]
+            import inspect
+            if inspect.iscoroutine(result):
+                raise TypeError(
+                    f"'{func.__name__}' returned a coroutine object instead of an awaited result. "
+                    f"Did you forget to await the handler?"
+                )
+            return result
+
+        middleware_name = name or cast(
+            "str", getattr(func, "__name__", "WrapToolCallMiddleware")
+        )
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": AgentState,
+                "tools": tools or [],
+                "awrap_tool_call": async_wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
