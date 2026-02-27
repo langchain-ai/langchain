@@ -1554,16 +1554,31 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
-            # when the response format differs or an error occurs without
-            # populating the error field. Provide a more helpful error message.
-            msg = (
-                "Received response with null value for 'choices'. "
-                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
-                "that return a response in an unexpected format. "
-                f"Full response keys: {list(response_dict.keys())}"
-            )
-            raise TypeError(msg)
+            # Attempt recovery: Some OpenAI-compatible APIs (e.g., vLLM, RunPod)
+            # return valid JSON with `choices`, but Pydantic deserialization may
+            # set it to None. Try extracting from the raw dict before failing.
+            if hasattr(response, "model_dump"):
+                raw = response.model_dump()
+                choices = raw.get("choices")
+
+            if choices is None:
+                # when the response format differs or an error occurs without
+                # populating the error field. Provide a more helpful error message.
+                endpoint_hint = ""
+                _req = getattr(response, "_request", None)
+                if _req is not None and hasattr(_req, "url"):
+                    endpoint_hint = f" (endpoint: {_req.url})"
+                msg = (
+                    "Received response with null value for"
+                    f" `choices`{endpoint_hint}. "
+                    "This commonly occurs with OpenAI-compatible APIs "
+                    "(e.g., vLLM, LM Studio, RunPod) where the response "
+                    "format may slightly differ from the OpenAI spec. "
+                    "Check that your endpoint returns a valid `choices` "
+                    "array in its response. "
+                    f"Full response keys: {list(response_dict.keys())}"
+                )
+                raise ValueError(msg)
 
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
