@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
@@ -38,12 +39,7 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
-try:
-    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
-
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
+_HAS_TRANSFORMERS = importlib.util.find_spec("transformers") is not None
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -93,6 +89,11 @@ def get_tokenizer() -> Any:
             "Please install it with `pip install transformers`."
         )
         raise ImportError(msg)
+
+    from transformers import (  # type: ignore[import-not-found]  # noqa: PLC0415
+        GPT2TokenizerFast,
+    )
+
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
