@@ -175,7 +175,8 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 ]
 
 "scripts/*" = [
-    "INP", # Scripts are not in a package
+    "INP",  # Scripts are not in a package
+    "T201", # Scripts can print to the console
 ]
 
 [tool.coverage.run]
