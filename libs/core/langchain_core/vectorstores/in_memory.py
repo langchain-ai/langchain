@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import uuid
 from pathlib import Path
@@ -23,12 +24,7 @@ if TYPE_CHECKING:
 
     from langchain_core.embeddings import Embeddings
 
-try:
-    import numpy as np
-
-    _HAS_NUMPY = True
-except ImportError:
-    _HAS_NUMPY = False
+_HAS_NUMPY = importlib.util.find_spec("numpy") is not None
 
 
 class InMemoryVectorStore(VectorStore):
@@ -438,6 +434,8 @@ class InMemoryVectorStore(VectorStore):
                 "pip install numpy"
             )
             raise ImportError(msg)
+
+        import numpy as np  # noqa: PLC0415
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
