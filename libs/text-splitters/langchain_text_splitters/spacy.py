@@ -55,8 +55,8 @@ def _make_spacy_pipeline_for_splitting(
     try:
         # Type ignores needed as long as spacy doesn't support Python 3.14.
         import spacy  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
-        from spacy.lang.en import (  # noqa: PLC0415
-            English,  # type: ignore[import-not-found, unused-ignore]
+        from spacy.lang.en import (  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
+            English,
         )
     except ImportError:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
