@@ -23,12 +23,14 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    ModelRequest,
+    ModelResponse,
     ResponseT,
     hook_config,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langgraph.runtime import Runtime
 
@@ -143,6 +145,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         self.apply_to_input = apply_to_input
         self.apply_to_output = apply_to_output
         self.apply_to_tool_results = apply_to_tool_results
+        self.guards_output = apply_to_output
 
         self._resolved_rule: ResolvedRedactionRule = RedactionRule(
             pii_type=pii_type,
@@ -165,6 +168,68 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             return content, []
         sanitized = apply_strategy(content, matches, self.strategy)
         return sanitized, matches
+
+    def _process_model_response(
+        self, response: ModelResponse[ResponseT]
+    ) -> ModelResponse[ResponseT]:
+        """Check model response messages for PII and return a sanitized response.
+
+        This runs inside the model node (via ``wrap_model_call``) so that the
+        sanitized content is what gets emitted to the stream, preventing PII
+        from leaking through ``stream_mode="messages"``.
+        """
+        if not self.apply_to_output:
+            return response
+
+        any_modified = False
+        new_result = list(response.result)
+
+        for idx, msg in enumerate(new_result):
+            if not isinstance(msg, AIMessage) or not msg.content:
+                continue
+            content = str(msg.content)
+            new_content, matches = self._process_content(content)
+            if matches:
+                new_result[idx] = AIMessage(
+                    content=new_content,
+                    id=msg.id,
+                    name=msg.name,
+                    tool_calls=msg.tool_calls,
+                )
+                any_modified = True
+
+        if any_modified:
+            return ModelResponse(
+                result=new_result,
+                structured_response=response.structured_response,
+            )
+        return response
+
+    @override
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        """Intercept model output to check for PII before it reaches the stream.
+
+        This ensures PII is caught inside the model node, preventing raw tokens
+        from leaking through ``stream_mode="messages"``.
+        """
+        response = handler(request)
+        return self._process_model_response(response)
+
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[
+            [ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]
+        ],
+    ) -> ModelResponse[ResponseT]:
+        """Async intercept model output to check for PII before it reaches the stream."""
+        response = await handler(request)
+        return self._process_model_response(response)
 
     @hook_config(can_jump_to=["end"])
     @override

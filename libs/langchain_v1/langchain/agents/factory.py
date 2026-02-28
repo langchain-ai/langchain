@@ -19,7 +19,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
-from langgraph.constants import END, START
+from langgraph.constants import END, START, TAG_NOSTREAM
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
@@ -1317,8 +1317,20 @@ def create_agent(
         result = await awrap_model_call_handler(request, _execute_model_async)
         return _build_commands(result.model_response, result.commands)
 
+    # Detect if any middleware guards model output (e.g. PII detection with
+    # apply_to_output=True).  When present, suppress token-level streaming from
+    # the model node so that the middleware's wrap_model_call can sanitize the
+    # response before it is emitted via on_chain_end.  Without this, raw LLM
+    # tokens would leak to the user through stream_mode="messages" before any
+    # after_model middleware has a chance to inspect them (see issue #35011).
+    has_output_guard = any(getattr(m, "guards_output", False) for m in middleware)
+    model_tags: list[str] | None = [TAG_NOSTREAM] if has_output_guard else None
+
     # Use sync or async based on model capabilities
-    graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
+    graph.add_node(
+        "model",
+        RunnableCallable(model_node, amodel_node, trace=False, tags=model_tags),
+    )
 
     # Only add tools node if we have tools
     if tool_node is not None:

@@ -395,6 +395,19 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
+    guards_output: bool = False
+    """Whether this middleware guards model output and should block raw token streaming.
+
+    When ``True``, ``create_agent`` will suppress token-level streaming from the
+    model node (via ``TAG_NOSTREAM``) so that the model response can be inspected
+    by this middleware before any content reaches the user.  Middleware that checks
+    or transforms model output (e.g. PII detection with ``apply_to_output=True``)
+    should set this to ``True`` and also implement ``wrap_model_call`` /
+    ``awrap_model_call`` so that the check runs inside the model node rather than
+    in a separate ``after_model`` node that executes after tokens have already been
+    streamed.
+    """
+
     @property
     def name(self) -> str:
         """The name of the middleware instance.
