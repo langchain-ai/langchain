@@ -3980,8 +3980,10 @@ async def test_async_retry_batch_preserves_order() -> None:
 
 
 def test_retry_batch_mixed_success_and_permanent_failure() -> None:
-    """Regression test: batch outputs should not be corrupted when some items
-    succeed on retry while others still fail after all attempts.
+    """Regression test: batch outputs must not be corrupted on partial retry.
+
+    When some items succeed on retry while others still fail after all attempts,
+    batch outputs should not be corrupted.
 
     Previously, the output assembly used ``result.pop(0)`` on the raw last-batch
     result which still contained successful outputs alongside exceptions,
