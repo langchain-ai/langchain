@@ -2042,10 +2042,12 @@ def _group_tool_chains(
             group: list[BaseMessage] = [msg]
             tool_call_ids = {tc["id"] for tc in msg.tool_calls if "id" in tc}
             j = i + 1
-            while j < len(messages) and isinstance(messages[j], ToolMessage):
+            while j < len(messages):
                 tool_msg = messages[j]
+                if not isinstance(tool_msg, ToolMessage):
+                    break
                 if tool_msg.tool_call_id in tool_call_ids:
-                    group.append(messages[j])
+                    group.append(tool_msg)
                     j += 1
                 else:
                     break
