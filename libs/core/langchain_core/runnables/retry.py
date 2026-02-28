@@ -279,13 +279,19 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Output | Exception] = []
-        for idx in range(len(inputs)):
-            if idx in results_map:
-                outputs.append(results_map[idx])
-            else:
-                outputs.append(result.pop(0))
-        return outputs
+        # Map remaining (failed) results back to their original indices.
+        # After retries, `result` corresponds 1-to-1 with `remaining_indices`
+        # (the indices still pending in the last retry attempt).  Using
+        # `result.pop(0)` is wrong because `result` contains *all* outputs
+        # from the last attempt—including items that succeeded on retry and
+        # were already placed into `results_map`.  Popping sequentially for
+        # positions not in `results_map` skips those successes and pulls the
+        # wrong element for each position.
+        for offset, orig_idx in enumerate(remaining_indices):
+            if orig_idx not in results_map:
+                results_map[orig_idx] = result[offset]
+
+        return [results_map[i] for i in range(len(inputs))]
 
     @override
     def batch(
@@ -354,13 +360,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Output | Exception] = []
-        for idx in range(len(inputs)):
-            if idx in results_map:
-                outputs.append(results_map[idx])
-            else:
-                outputs.append(result.pop(0))
-        return outputs
+        # Map remaining (failed) results back to their original indices.
+        # See the sync _batch_with_config for a detailed explanation.
+        for offset, orig_idx in enumerate(remaining_indices):
+            if orig_idx not in results_map:
+                results_map[orig_idx] = result[offset]
+
+        return [results_map[i] for i in range(len(inputs))]
 
     @override
     async def abatch(

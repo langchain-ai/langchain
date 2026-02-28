@@ -3979,6 +3979,76 @@ async def test_async_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+def test_retry_batch_return_exceptions_position_integrity() -> None:
+    """Regression test for issue #35475.
+
+    When batch() is called with return_exceptions=True and one item succeeds on
+    retry while another permanently fails, the exception must remain at its
+    original position.  The old code used ``result.pop(0)`` during output
+    reconstruction which pulled the wrong element because ``result`` contained
+    the full last-attempt output (both successes and exceptions), not just the
+    exceptions for permanently-failed items.
+    """
+    failed_once = False
+
+    def process_item(name: str) -> str:
+        nonlocal failed_once
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if not failed_once:
+                failed_once = True
+                raise ValueError("transient")
+            return "retry-result"
+        raise ValueError("permanent")
+
+    runnable = RunnableLambda(process_item).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = runnable.batch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+
+
+async def test_async_retry_batch_return_exceptions_position_integrity() -> None:
+    """Async variant of issue #35475 regression test."""
+    failed_once = False
+
+    def process_item(name: str) -> str:
+        nonlocal failed_once
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if not failed_once:
+                failed_once = True
+                raise ValueError("transient")
+            return "retry-result"
+        raise ValueError("permanent")
+
+    runnable = RunnableLambda(process_item).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = await runnable.abatch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> int:
         if x == 1:
