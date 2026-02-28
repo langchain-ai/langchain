@@ -41,6 +41,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
+    override,
 )
 from urllib.parse import urlparse
 
@@ -100,9 +101,11 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableConfig,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
+    RunnableSerializable,
 )
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
@@ -2279,8 +2282,19 @@ class BaseChatOpenAI(BaseChatModel):
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
-            return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+            chain = RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            chain = llm | output_parser
+
+        return _RunnableWithStructuredOutput(
+            chain=chain,
+            llm=self,
+            target_schema=schema,
+            method=method,
+            include_raw=include_raw,
+            strict=strict,
+            kwargs=kwargs,
+        )
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
@@ -3803,6 +3817,94 @@ class OpenAIRefusalError(Exception):
     See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """
 
+
+class _RunnableWithStructuredOutput(RunnableSerializable[LanguageModelInput, Any]):
+    """Wrapper for structured output chains that preserves bind_tools capability."""
+
+    chain: Runnable
+    llm: Any
+    target_schema: Any
+    method: str
+    include_raw: bool
+    strict: Any
+    kwargs: dict
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @override
+    @property
+    def InputType(self) -> type[LanguageModelInput]:
+        return self.chain.InputType
+
+    @override
+    @property
+    def OutputType(self) -> type:
+        return self.chain.OutputType
+
+    def invoke(
+        self,
+        input_: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return self.chain.invoke(input_, config, **kwargs)
+
+    async def ainvoke(
+        self,
+        input_: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return await self.chain.ainvoke(input_, config, **kwargs)
+
+    def stream(
+        self,
+        input_: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Iterator[Any]:
+        yield from self.chain.stream(input_, config, **kwargs)
+
+    async def astream(
+        self,
+        input_: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Any]:
+        async for chunk in self.chain.astream(input_, config, **kwargs):
+            yield chunk
+
+    def batch(
+        self,
+        inputs: list[LanguageModelInput],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        **kwargs: Any,
+    ) -> list[Any]:
+        return self.chain.batch(inputs, config, **kwargs)
+
+    async def abatch(
+        self,
+        inputs: list[LanguageModelInput],
+        config: RunnableConfig | list[RunnableConfig] | None = None,
+        **kwargs: Any,
+    ) -> list[Any]:
+        return await self.chain.abatch(inputs, config, **kwargs)
+
+    def bind_tools(
+        self,
+        tools: Sequence[Any],
+        **kwargs: Any,
+    ) -> _RunnableWithStructuredOutput:
+        """Bind tools to the structured output chain."""
+        merged_kwargs = {**self.kwargs, **kwargs}
+        return self.llm.with_structured_output(
+            self.target_schema,
+            method=self.method,
+            include_raw=True,
+            strict=self.strict if self.strict is not None else True,
+            tools=list(tools),
+            **merged_kwargs,
+        )
 
 def _create_usage_metadata(
     oai_token_usage: dict, service_tier: str | None = None

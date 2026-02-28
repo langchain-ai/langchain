@@ -938,6 +938,68 @@ def test_with_structured_output(
     )
 
 
+def test_with_structured_output_bind_tools_available() -> None:
+    """Test that bind_tools is available after with_structured_output."""
+    from pydantic import BaseModel, Field
+
+    class ResponseSchema(BaseModel):
+        answer: str = Field(description="The answer")
+
+    def dummy_tool(x: int) -> int:
+        """A dummy tool."""
+        return x * 2
+
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key="fake-key")
+    structured_llm = llm.with_structured_output(ResponseSchema)
+
+    # bind_tools should be callable
+    assert hasattr(structured_llm, "bind_tools")
+    assert callable(structured_llm.bind_tools)
+
+    # calling bind_tools should return a new chain
+    llm_with_tools = structured_llm.bind_tools([dummy_tool])
+    assert llm_with_tools is not None
+    assert hasattr(llm_with_tools, "invoke")
+
+
+def test_with_structured_output_preserves_runnable_interface() -> None:
+    """Test that structured output wrapper preserves Runnable interface."""
+    from pydantic import BaseModel
+
+    class SimpleSchema(BaseModel):
+        value: str
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="fake-key")
+    structured_llm = llm.with_structured_output(SimpleSchema)
+
+    # should have standard Runnable methods
+    assert hasattr(structured_llm, "invoke")
+    assert hasattr(structured_llm, "ainvoke")
+    assert hasattr(structured_llm, "stream")
+    assert hasattr(structured_llm, "astream")
+    assert hasattr(structured_llm, "batch")
+    assert hasattr(structured_llm, "abatch")
+
+
+def test_with_structured_output_bind_tools_sets_include_raw() -> None:
+    """Test that bind_tools on structured output sets include_raw=True."""
+    from pydantic import BaseModel
+
+    class Schema(BaseModel):
+        result: str
+
+    def tool_func(x: str) -> str:
+        """Tool function."""
+        return x
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="fake-key")
+    structured_llm = llm.with_structured_output(Schema, include_raw=False)
+
+    # binding tools should force include_raw=True
+    with_tools = structured_llm.bind_tools([tool_func])
+    assert with_tools.include_raw is True
+
+
 def test_get_num_tokens_from_messages() -> None:
     llm = ChatOpenAI(model="gpt-4o")
     messages = [
