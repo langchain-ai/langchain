@@ -41,7 +41,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
-    override,
 )
 from urllib.parse import urlparse
 
@@ -129,7 +128,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
