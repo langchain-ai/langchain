@@ -120,23 +120,27 @@ class RunnableConfig(TypedDict, total=False):
     """
 
 
-CONFIG_KEYS = [
-    "tags",
-    "metadata",
-    "callbacks",
-    "run_name",
-    "max_concurrency",
-    "recursion_limit",
-    "configurable",
-    "run_id",
-]
+CONFIG_KEYS = frozenset(
+    {
+        "tags",
+        "metadata",
+        "callbacks",
+        "run_name",
+        "max_concurrency",
+        "recursion_limit",
+        "configurable",
+        "run_id",
+    }
+)
 
-COPIABLE_KEYS = [
-    "tags",
-    "metadata",
-    "callbacks",
-    "configurable",
-]
+COPIABLE_KEYS = frozenset(
+    {
+        "tags",
+        "metadata",
+        "callbacks",
+        "configurable",
+    }
+)
 
 DEFAULT_RECURSION_LIMIT = 25
 
