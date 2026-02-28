@@ -140,3 +140,56 @@ def test_batch_as_completed_concurrency() -> None:
 
     assert len(results) == num_tasks
     assert max_running_tasks <= max_concurrency
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_cancels_on_exception() -> None:
+    """Test that abatch_as_completed cancels pending tasks when one raises."""
+    completed_tasks: list[str] = []
+
+    async def llm_call(prompt: str) -> str:
+        if prompt == "bad":
+            await asyncio.sleep(0.05)
+            raise RuntimeError("rate limit")
+        await asyncio.sleep(0.3)
+        completed_tasks.append(prompt)
+        return f"ok:{prompt}"
+
+    runnable = RunnableLambda(llm_call)
+    with pytest.raises(RuntimeError, match="rate limit"):
+        async for _, _out in runnable.abatch_as_completed(
+            ["bad", "a", "b"],
+            config=RunnableConfig(max_concurrency=3),
+        ):
+            pass
+
+    await asyncio.sleep(0.5)
+    assert completed_tasks == [], (
+        f"Expected no tasks to complete after exception, but got: {completed_tasks}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_cancels_on_break() -> None:
+    """Test that abatch_as_completed cancels remaining tasks on early exit."""
+    completed_tasks: list[str] = []
+
+    async def llm_call(prompt: str) -> str:
+        if prompt == "fast":
+            await asyncio.sleep(0.05)
+            return "done"
+        await asyncio.sleep(0.3)
+        completed_tasks.append(prompt)
+        return f"ok:{prompt}"
+
+    runnable = RunnableLambda(llm_call)
+    async for _idx, _out in runnable.abatch_as_completed(
+        ["fast", "slow1", "slow2"],
+        config=RunnableConfig(max_concurrency=3),
+    ):
+        break
+
+    await asyncio.sleep(0.5)
+    assert completed_tasks == [], (
+        f"Expected no tasks to complete after break, but got: {completed_tasks}"
+    )
