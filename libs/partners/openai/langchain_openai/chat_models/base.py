@@ -1441,7 +1441,7 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = None
         try:
             if "response_format" in payload:
-                payload.pop("stream")
+                payload.pop("stream", None)
                 raw_response = (
                     self.root_client.chat.completions.with_raw_response.parse(**payload)
                 )
@@ -1696,7 +1696,7 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = None
         try:
             if "response_format" in payload:
-                payload.pop("stream")
+                payload.pop("stream", None)
                 raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
                     **payload
                 )
