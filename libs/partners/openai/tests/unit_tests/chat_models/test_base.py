@@ -61,6 +61,7 @@ from typing_extensions import Self, TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
+    _consolidate_calls,
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
@@ -3599,3 +3600,46 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+def test_consolidate_calls_unknown_tool_name() -> None:
+    """Unrecognized server tool names should pass through without error."""
+    items: list[dict[str, Any]] = [
+        {
+            "type": "server_tool_call",
+            "name": "some_future_tool",
+            "id": "call_abc",
+            "args": {"query": "test"},
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "call_abc",
+            "status": "success",
+            "output": "result",
+        },
+    ]
+    result = list(_consolidate_calls(items))
+    # both items should be emitted unchanged
+    assert len(result) == 2
+    assert result[0]["type"] == "server_tool_call"
+    assert result[1]["type"] == "server_tool_result"
+
+
+def test_consolidate_calls_web_search() -> None:
+    """web_search call+result pair should be collapsed into web_search_call."""
+    items: list[dict[str, Any]] = [
+        {
+            "type": "server_tool_call",
+            "name": "web_search",
+            "id": "ws_123",
+            "args": {"query": "langchain"},
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "ws_123",
+            "status": "success",
+        },
+    ]
+    result = list(_consolidate_calls(items))
+    assert len(result) == 1
+    assert result[0]["type"] == "web_search_call"
+    assert result[0]["id"] == "ws_123"
+    assert result[0]["status"] == "completed"

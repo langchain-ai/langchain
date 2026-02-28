@@ -311,7 +311,7 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     pass
                 collapsed["type"] = "web_search_call"
 
-            if current.get("name") == "file_search":
+            elif current.get("name") == "file_search":
                 collapsed = {"id": current["id"]}
                 if "args" in current and "queries" in current["args"]:
                     collapsed["queries"] = current["args"]["queries"]
@@ -392,7 +392,10 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     if k not in ("server_label", "error"):
                         collapsed[k] = v
             else:
-                pass
+                # unrecognized server tool - emit both items unchanged
+                yield current
+                yield nxt
+                continue
 
             yield collapsed
 
