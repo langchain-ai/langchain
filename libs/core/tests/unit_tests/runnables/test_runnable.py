@@ -3979,6 +3979,80 @@ async def test_async_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+def test_retry_batch_mixed_success_and_permanent_failure() -> None:
+    """Regression test: batch outputs should not be corrupted when some items
+    succeed on retry while others still fail after all attempts.
+
+    Previously, the output assembly used ``result.pop(0)`` on the raw last-batch
+    result which still contained successful outputs alongside exceptions,
+    causing a successful result to be returned in place of a permanently-failed
+    item.
+
+    See https://github.com/langchain-ai/langchain/issues/35475
+    """
+    failed_once = False
+
+    def process_item(name: str) -> str:
+        nonlocal failed_once
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if not failed_once:
+                failed_once = True
+                raise ValueError
+            return "retry-result"
+        raise ValueError
+
+    runnable = RunnableLambda(process_item).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = runnable.batch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+
+
+async def test_async_retry_batch_mixed_success_and_permanent_failure() -> None:
+    """Async variant of mixed success / permanent failure regression test.
+
+    See https://github.com/langchain-ai/langchain/issues/35475
+    """
+    failed_once = False
+
+    def process_item(name: str) -> str:
+        nonlocal failed_once
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if not failed_once:
+                failed_once = True
+                raise ValueError
+            return "retry-result"
+        raise ValueError
+
+    runnable = RunnableLambda(process_item).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = await runnable.abatch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> int:
         if x == 1:

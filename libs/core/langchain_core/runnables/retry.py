@@ -279,12 +279,15 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Filter out successful results already recorded in results_map;
+        # only exceptions should remain for indices that never succeeded.
+        exceptions = [r for r in result if isinstance(r, BaseException)]
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(exceptions.pop(0))
         return outputs
 
     @override
@@ -354,12 +357,15 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Filter out successful results already recorded in results_map;
+        # only exceptions should remain for indices that never succeeded.
+        exceptions = [r for r in result if isinstance(r, BaseException)]
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(exceptions.pop(0))
         return outputs
 
     @override
