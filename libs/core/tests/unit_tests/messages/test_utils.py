@@ -2958,3 +2958,108 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+def test_trim_messages_preserves_tool_pairs_last_strategy() -> None:
+    """Test that trim_messages with 'last' strategy keeps tool_use/tool_result pairs.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/29637
+    When trimming from the end, AIMessage with tool_calls and their ToolMessages
+    should be kept together to avoid invalid message sequences.
+    """
+    messages = [
+        HumanMessage(content="hi"),
+        AIMessage(content="hello"),
+        HumanMessage(content="what's the weather in florida?"),
+        AIMessage(
+            content="let's check the weather in florida",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "florida"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(
+            content="It's sunny.",
+            name="get_weather",
+            tool_call_id="abc123",
+        ),
+    ]
+
+    def token_counter(msgs: list) -> int:
+        return sum(10 for _ in msgs)
+
+    # Trim to fit 3 messages — should keep the tool pair together
+    result = trim_messages(
+        messages,
+        max_tokens=30,
+        token_counter=token_counter,
+        strategy="last",
+    )
+
+    # Verify no orphaned ToolMessages
+    ai_tool_call_ids = set()
+    for msg in result:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                ai_tool_call_ids.add(tc["id"])
+
+    for msg in result:
+        if isinstance(msg, ToolMessage):
+            assert msg.tool_call_id in ai_tool_call_ids, (
+                f"ToolMessage with tool_call_id={msg.tool_call_id} has no "
+                f"matching AIMessage in trimmed result"
+            )
+
+
+def test_trim_messages_reversed_order_valid_for_token_counter() -> None:
+    """Test that the reversed message list maintains valid tool chain ordering.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/29637
+    When using 'last' strategy, the internal message reversal should keep
+    AIMessage(tool_calls) before its ToolMessages so that strict token counters
+    (like Anthropic's API) don't receive invalid sequences.
+    """
+    call_sequences: list[list[type]] = []
+
+    def tracking_counter(msgs: list) -> int:
+        call_sequences.append([type(m) for m in msgs])
+        return sum(10 for _ in msgs)
+
+    messages = [
+        HumanMessage(content="hi"),
+        AIMessage(
+            content="checking",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {"q": "test"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(content="result", name="search", tool_call_id="call_1"),
+        HumanMessage(content="thanks"),
+    ]
+
+    trim_messages(
+        messages,
+        max_tokens=30,
+        token_counter=tracking_counter,
+        strategy="last",
+    )
+
+    # Verify that in all token counter calls, ToolMessage never appears
+    # before its corresponding AIMessage (tool chain order is preserved)
+    for seq in call_sequences:
+        for i, msg_type in enumerate(seq):
+            if msg_type == ToolMessage:
+                # There must be an AIMessage before this ToolMessage
+                assert AIMessage in seq[:i], (
+                    f"ToolMessage at position {i} has no preceding AIMessage "
+                    f"in sequence: {seq}"
+                )

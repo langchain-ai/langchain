@@ -2025,6 +2025,72 @@ def _first_max_tokens(
     return messages[:idx]
 
 
+def _group_tool_chains(
+    messages: list[BaseMessage],
+) -> list[list[BaseMessage]]:
+    """Group AIMessages with tool_calls and their following ToolMessages.
+
+    This ensures tool-call chains are treated as atomic units during trimming,
+    preventing invalid message sequences where ToolMessages appear without
+    their corresponding AIMessage.
+    """
+    groups: list[list[BaseMessage]] = []
+    i = 0
+    while i < len(messages):
+        msg = messages[i]
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            group: list[BaseMessage] = [msg]
+            tool_call_ids = {tc["id"] for tc in msg.tool_calls if "id" in tc}
+            j = i + 1
+            while j < len(messages) and isinstance(messages[j], ToolMessage):
+                if (
+                    hasattr(messages[j], "tool_call_id")
+                    and messages[j].tool_call_id in tool_call_ids
+                ):
+                    group.append(messages[j])
+                    j += 1
+                else:
+                    break
+            groups.append(group)
+            i = j
+        else:
+            groups.append([msg])
+            i += 1
+    return groups
+
+
+def _ensure_valid_tool_pairs(
+    messages: list[BaseMessage],
+) -> list[BaseMessage]:
+    """Remove orphaned ToolMessages without a matching AIMessage.
+
+    After trimming, some ToolMessages may lack a preceding AIMessage with
+    the corresponding tool_call_id. This function removes those orphans
+    to maintain a valid message sequence.
+    """
+    if not messages:
+        return messages
+
+    available_tool_call_ids: set[str] = set()
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                if "id" in tc:
+                    available_tool_call_ids.add(tc["id"])
+
+    result: list[BaseMessage] = []
+    for msg in messages:
+        if isinstance(msg, ToolMessage):
+            if (
+                hasattr(msg, "tool_call_id")
+                and msg.tool_call_id in available_tool_call_ids
+            ):
+                result.append(msg)
+        else:
+            result.append(msg)
+    return result
+
+
 def _last_max_tokens(
     messages: Sequence[BaseMessage],
     *,
@@ -2054,8 +2120,13 @@ def _last_max_tokens(
         system_message = messages[0]
         messages = messages[1:]
 
-    # Reverse messages to use _first_max_tokens with reversed logic
-    reversed_messages = messages[::-1]
+    # Group tool-call chains (AIMessage + ToolMessages) as atomic units
+    # to prevent invalid sequences when reversing for the "last" strategy.
+    groups = _group_tool_chains(messages)
+
+    # Reverse at group level (not message level) to maintain tool chain ordering
+    reversed_groups = list(reversed(groups))
+    reversed_messages = [msg for group in reversed_groups for msg in group]
 
     # Calculate remaining tokens after accounting for system message if present
     remaining_tokens = max_tokens
@@ -2074,6 +2145,10 @@ def _last_max_tokens(
 
     # Re-reverse the messages and add back the system message if needed
     result = reversed_result[::-1]
+
+    # Ensure no orphaned ToolMessages remain after trimming
+    result = _ensure_valid_tool_pairs(result)
+
     if system_message:
         result = [system_message, *result]
 
