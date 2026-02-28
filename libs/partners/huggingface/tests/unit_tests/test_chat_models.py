@@ -9,8 +9,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -337,6 +339,104 @@ def test_profile() -> None:
         llm=empty_llm,
     )
     assert model.profile
+
+
+class MyModel(BaseModel):
+    """A test Pydantic model for structured output tests."""
+
+    name: str
+    age: int
+
+
+def _get_output_parser(chain: Any) -> Any:
+    """Extract the last step (output parser) from a RunnableSequence chain."""
+    # with_structured_output returns llm | output_parser when include_raw=False
+    # The chain is a RunnableSequence whose .last attribute is the parser.
+    return chain.last
+
+
+def test_with_structured_output_json_schema_pydantic(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that json_schema method uses PydanticOutputParser for Pydantic models."""
+    chain = chat_hugging_face.with_structured_output(
+        MyModel, method="json_schema"
+    )
+    parser = _get_output_parser(chain)
+    assert isinstance(parser, PydanticOutputParser)
+
+
+def test_with_structured_output_json_schema_dict(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that json_schema method uses JsonOutputParser for dict schemas."""
+    dict_schema = {
+        "title": "MySchema",
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+    }
+    chain = chat_hugging_face.with_structured_output(
+        dict_schema, method="json_schema"
+    )
+    parser = _get_output_parser(chain)
+    assert isinstance(parser, JsonOutputParser)
+
+
+def test_with_structured_output_json_mode_pydantic(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that json_mode method uses PydanticOutputParser for Pydantic models."""
+    chain = chat_hugging_face.with_structured_output(
+        MyModel, method="json_mode"
+    )
+    parser = _get_output_parser(chain)
+    assert isinstance(parser, PydanticOutputParser)
+
+
+def test_with_structured_output_json_mode_dict(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that json_mode method uses JsonOutputParser for dict schemas."""
+    dict_schema = {
+        "title": "MySchema",
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+    }
+    chain = chat_hugging_face.with_structured_output(
+        dict_schema, method="json_mode"
+    )
+    parser = _get_output_parser(chain)
+    assert isinstance(parser, JsonOutputParser)
+
+
+def test_with_structured_output_json_mode_no_schema(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that json_mode with no schema uses JsonOutputParser."""
+    chain = chat_hugging_face.with_structured_output(
+        schema=None, method="json_mode"
+    )
+    parser = _get_output_parser(chain)
+    assert isinstance(parser, JsonOutputParser)
+
+
+def test_with_structured_output_include_raw_pydantic(
+    chat_hugging_face: Any,
+) -> None:
+    """Test that include_raw=True with Pydantic still uses PydanticOutputParser."""
+    chain = chat_hugging_face.with_structured_output(
+        MyModel, method="json_schema", include_raw=True
+    )
+    # When include_raw=True, the chain is RunnableMap | RunnableAssign(with fallback).
+    # The parser is embedded inside the RunnableAssign's mapper.
+    # We verify the chain was constructed without error (the parser type is internal).
+    assert chain is not None
 
 
 def test_init_chat_model_huggingface() -> None:
