@@ -223,9 +223,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
-        handler: Callable[
-            [ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]
-        ],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
     ) -> ModelResponse[ResponseT]:
         """Async intercept model output to check for PII before it reaches the stream."""
         response = await handler(request)
