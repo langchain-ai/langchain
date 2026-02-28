@@ -1114,7 +1114,7 @@ def test_custom_tool(output_version: Literal["responses/v1", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
 def test_compaction(output_version: Literal["responses/v1", "v1"]) -> None:
-    """Test the compation beta feature."""
+    """Test the compaction beta feature."""
     llm = ChatOpenAI(
         model="gpt-5.2",
         context_management=[{"type": "compaction", "compact_threshold": 10_000}],
@@ -1160,7 +1160,7 @@ def test_compaction(output_version: Literal["responses/v1", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
 def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> None:
-    """Test the compation beta feature."""
+    """Test the compaction beta feature."""
     llm = ChatOpenAI(
         model="gpt-5.2",
         context_management=[{"type": "compaction", "compact_threshold": 10_000}],
