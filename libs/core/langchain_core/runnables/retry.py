@@ -1,5 +1,6 @@
 """`Runnable` that retries a `Runnable` if it fails."""
 
+from collections import deque
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -280,11 +281,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Output | Exception] = []
+        result_queue = deque(result)
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(result_queue.popleft())
         return outputs
 
     @override
@@ -355,11 +357,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 result = cast("list[Output]", [e] * len(inputs))
 
         outputs: list[Output | Exception] = []
+        result_queue = deque(result)
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(result_queue.popleft())
         return outputs
 
     @override
