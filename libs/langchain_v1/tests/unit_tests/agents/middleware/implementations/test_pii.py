@@ -673,9 +673,7 @@ class TestStreamingGuard:
 
     def test_wrap_model_call_sanitizes_response(self) -> None:
         """wrap_model_call should sanitize PII in model response messages."""
-        m = PIIMiddleware(
-            "email", strategy="redact", apply_to_input=False, apply_to_output=True
-        )
+        m = PIIMiddleware("email", strategy="redact", apply_to_input=False, apply_to_output=True)
 
         response = ModelResponse(
             result=[AIMessage(content="Contact john@example.com for help", id="msg1")],
@@ -697,9 +695,7 @@ class TestStreamingGuard:
 
     def test_wrap_model_call_passes_through_clean_response(self) -> None:
         """wrap_model_call should pass through responses without PII unchanged."""
-        m = PIIMiddleware(
-            "email", strategy="redact", apply_to_input=False, apply_to_output=True
-        )
+        m = PIIMiddleware("email", strategy="redact", apply_to_input=False, apply_to_output=True)
 
         original_msg = AIMessage(content="Hello, how can I help?", id="msg2")
         response = ModelResponse(result=[original_msg], structured_response=None)
@@ -716,9 +712,7 @@ class TestStreamingGuard:
 
     def test_wrap_model_call_block_strategy_raises(self) -> None:
         """wrap_model_call with block strategy should raise PIIDetectionError."""
-        m = PIIMiddleware(
-            "email", strategy="block", apply_to_input=False, apply_to_output=True
-        )
+        m = PIIMiddleware("email", strategy="block", apply_to_input=False, apply_to_output=True)
 
         response = ModelResponse(
             result=[AIMessage(content="Your email is test@example.com", id="msg3")],
