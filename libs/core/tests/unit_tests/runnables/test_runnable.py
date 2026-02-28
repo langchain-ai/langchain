@@ -3998,9 +3998,11 @@ def test_retry_batch_return_exceptions_position_integrity() -> None:
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("transient")
+                msg = "transient"
+                raise ValueError(msg)
             return "retry-result"
-        raise ValueError("permanent")
+        msg = "permanent"
+        raise ValueError(msg)
 
     runnable = RunnableLambda(process_item).with_retry(
         stop_after_attempt=2,
@@ -4029,9 +4031,11 @@ async def test_async_retry_batch_return_exceptions_position_integrity() -> None:
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("transient")
+                msg = "transient"
+                raise ValueError(msg)
             return "retry-result"
-        raise ValueError("permanent")
+        msg = "permanent"
+        raise ValueError(msg)
 
     runnable = RunnableLambda(process_item).with_retry(
         stop_after_attempt=2,
