@@ -147,10 +147,12 @@ async def test_abatch_as_completed_cancels_on_exception() -> None:
     """Test that abatch_as_completed cancels pending tasks when one raises."""
     completed_tasks: list[str] = []
 
+    _msg = "rate limit"
+
     async def llm_call(prompt: str) -> str:
         if prompt == "bad":
             await asyncio.sleep(0.05)
-            raise RuntimeError("rate limit")
+            raise RuntimeError(_msg)
         await asyncio.sleep(0.3)
         completed_tasks.append(prompt)
         return f"ok:{prompt}"
