@@ -3980,8 +3980,10 @@ async def test_async_retry_batch_preserves_order() -> None:
 
 
 def test_retry_batch_no_corrupted_outputs_on_partial_failure() -> None:
-    """Regression test: batch with retry must not replace a permanently-failed
-    item's exception with a successful result from a different item.
+    """Regression test: batch with retry must not corrupt outputs.
+
+    Batch with retry must not replace a permanently-failed item's exception
+    with a successful result from a different item.
 
     When some items succeed on a retry while others still fail, the output list
     should contain the successful result at its original position and an
@@ -3998,7 +4000,8 @@ def test_retry_batch_no_corrupted_outputs_on_partial_failure() -> None:
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("transient")
+                _msg = "transient"
+                raise ValueError(_msg)
             return "retry-result"
         msg = "permanent"
         raise ValueError(msg)
@@ -4030,7 +4033,8 @@ async def test_async_retry_batch_no_corrupted_outputs_on_partial_failure() -> No
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("transient")
+                _msg = "transient"
+                raise ValueError(_msg)
             return "retry-result"
         msg = "permanent"
         raise ValueError(msg)
