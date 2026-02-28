@@ -8,13 +8,6 @@ from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter
 
-try:
-    import nltk
-
-    _HAS_NLTK = True
-except ImportError:
-    _HAS_NLTK = False
-
 
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
@@ -46,9 +39,11 @@ class NLTKTextSplitter(TextSplitter):
         if self._use_span_tokenize and self._separator:
             msg = "When use_span_tokenize is True, separator should be ''"
             raise ValueError(msg)
-        if not _HAS_NLTK:
+        try:
+            import nltk  # noqa: PLC0415
+        except ImportError:
             msg = "NLTK is not installed, please install it with `pip install nltk`."
-            raise ImportError(msg)
+            raise ImportError(msg) from None
         if self._use_span_tokenize:
             self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)  # noqa: SLF001
         else:
