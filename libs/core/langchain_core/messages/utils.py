@@ -2043,10 +2043,8 @@ def _group_tool_chains(
             tool_call_ids = {tc["id"] for tc in msg.tool_calls if "id" in tc}
             j = i + 1
             while j < len(messages) and isinstance(messages[j], ToolMessage):
-                if (
-                    hasattr(messages[j], "tool_call_id")
-                    and messages[j].tool_call_id in tool_call_ids
-                ):
+                tool_msg = messages[j]
+                if tool_msg.tool_call_id in tool_call_ids:
                     group.append(messages[j])
                     j += 1
                 else:
@@ -2075,16 +2073,14 @@ def _ensure_valid_tool_pairs(
     for msg in messages:
         if isinstance(msg, AIMessage) and msg.tool_calls:
             for tc in msg.tool_calls:
-                if "id" in tc:
-                    available_tool_call_ids.add(tc["id"])
+                tc_id = tc.get("id")
+                if tc_id is not None:
+                    available_tool_call_ids.add(tc_id)
 
     result: list[BaseMessage] = []
     for msg in messages:
         if isinstance(msg, ToolMessage):
-            if (
-                hasattr(msg, "tool_call_id")
-                and msg.tool_call_id in available_tool_call_ids
-            ):
+            if msg.tool_call_id in available_tool_call_ids:
                 result.append(msg)
         else:
             result.append(msg)
