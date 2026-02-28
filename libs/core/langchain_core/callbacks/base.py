@@ -1109,12 +1109,20 @@ class BaseCallbackManager(CallbackManagerMixin):
             tags: The tags to add.
             inherit: Whether to inherit the tags.
         """
-        for tag in tags:
-            if tag in self.tags:
-                self.remove_tags([tag])
-        self.tags.extend(tags)
+        if not self.tags:
+            self.tags.extend(tags)
+            if inherit:
+                self.inheritable_tags.extend(tags)
+            return
+        # Deduplicate: tag order is not meaningful across the codebase
+        # (merge_configs sorts, tracers deduplicate via sets).
+        existing = set(self.tags)
+        new_tags = [t for t in tags if t not in existing]
+        self.tags.extend(new_tags)
         if inherit:
-            self.inheritable_tags.extend(tags)
+            existing_inh = set(self.inheritable_tags)
+            new_inh = [t for t in tags if t not in existing_inh]
+            self.inheritable_tags.extend(new_inh)
 
     def remove_tags(self, tags: list[str]) -> None:
         """Remove tags from the callback manager.

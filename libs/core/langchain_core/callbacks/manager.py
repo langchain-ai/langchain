@@ -269,6 +269,9 @@ def handle_event(
         **kwargs: The keyword arguments to pass to the event handler
 
     """
+    if not handlers:
+        return
+
     coros: list[Coroutine[Any, Any, Any]] = []
 
     try:
@@ -433,6 +436,9 @@ async def ahandle_event(
         **kwargs: The keyword arguments to pass to the event handler.
 
     """
+    if not handlers:
+        return
+
     for handler in [h for h in handlers if h.run_inline]:
         await _ahandle_event_for_handler(
             handler, event_name, ignore_condition_name, *args, **kwargs
@@ -574,13 +580,18 @@ class ParentRunManager(RunManager):
             The child callback manager.
 
         """
-        manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        manager.add_metadata(self.inheritable_metadata)
+        tags = list(self.inheritable_tags)
         if tag is not None:
-            manager.add_tags([tag], inherit=False)
-        return manager
+            tags.append(tag)
+        return CallbackManager(
+            handlers=list(self.inheritable_handlers),
+            inheritable_handlers=list(self.inheritable_handlers),
+            parent_run_id=self.run_id,
+            tags=tags,
+            inheritable_tags=list(self.inheritable_tags),
+            metadata=dict(self.inheritable_metadata),
+            inheritable_metadata=dict(self.inheritable_metadata),
+        )
 
 
 class AsyncRunManager(BaseRunManager, ABC):
@@ -658,13 +669,18 @@ class AsyncParentRunManager(AsyncRunManager):
             The child callback manager.
 
         """
-        manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
-        manager.set_handlers(self.inheritable_handlers)
-        manager.add_tags(self.inheritable_tags)
-        manager.add_metadata(self.inheritable_metadata)
+        tags = list(self.inheritable_tags)
         if tag is not None:
-            manager.add_tags([tag], inherit=False)
-        return manager
+            tags.append(tag)
+        return AsyncCallbackManager(
+            handlers=list(self.inheritable_handlers),
+            inheritable_handlers=list(self.inheritable_handlers),
+            parent_run_id=self.run_id,
+            tags=tags,
+            inheritable_tags=list(self.inheritable_tags),
+            metadata=dict(self.inheritable_metadata),
+            inheritable_metadata=dict(self.inheritable_metadata),
+        )
 
 
 class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
@@ -2340,10 +2356,6 @@ def _configure(
     tracing_tags = tracing_context["tags"]
     run_tree: Run | None = tracing_context["parent"]
     parent_run_id = None if run_tree is None else run_tree.id
-    callback_manager = callback_manager_cls(
-        handlers=[],
-        parent_run_id=parent_run_id,
-    )
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
             inheritable_callbacks_ = inheritable_callbacks or []
@@ -2381,6 +2393,11 @@ def _configure(
         )
         for handler in local_handlers_:
             callback_manager.add_handler(handler, inherit=False)
+    else:
+        callback_manager = callback_manager_cls(
+            handlers=[],
+            parent_run_id=parent_run_id,
+        )
     if inheritable_tags or local_tags:
         callback_manager.add_tags(inheritable_tags or [])
         callback_manager.add_tags(local_tags or [], inherit=False)
