@@ -1436,6 +1436,10 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatResult:
         self._ensure_sync_client_available()
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        # _generate is the non-streaming path; ensure stream is False so that
+        # the API returns a complete response even when self.streaming is True
+        # (e.g. when disable_streaming routes here instead of _stream).
+        payload["stream"] = False
         generation_info = None
         raw_response = None
         try:
@@ -1690,6 +1694,10 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        # _agenerate is the non-streaming path; ensure stream is False so that
+        # the API returns a complete response even when self.streaming is True
+        # (e.g. when disable_streaming routes here instead of _astream).
+        payload["stream"] = False
         generation_info = None
         raw_response = None
         try:

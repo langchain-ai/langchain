@@ -103,6 +103,49 @@ def test_streaming_attribute_should_stream(async_api: bool) -> None:
     assert llm._should_stream(async_api=async_api)
 
 
+def test_disable_streaming_payload_stream_false(
+    mock_client: MagicMock,
+) -> None:
+    """When disable_streaming routes through _generate, the API payload must
+    have stream=False even if self.streaming is True.  Regression test for
+    https://github.com/langchain-ai/langchain/issues/35436
+    """
+    llm = ChatOpenAI(
+        model="gpt-4",
+        api_key="test",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    tools = [{"type": "function", "function": {"name": "noop", "parameters": {}}}]
+    with patch.object(llm, "client", mock_client):
+        llm.invoke("hi", tools=tools)
+    call_kwargs = mock_client.with_raw_response.create.call_args[1]
+    assert call_kwargs["stream"] is False, (
+        "Expected stream=False in payload when disable_streaming is active"
+    )
+
+
+async def test_disable_streaming_payload_stream_false_async(
+    mock_async_client: AsyncMock,
+) -> None:
+    """Async variant: payload must have stream=False when disable_streaming
+    routes through _agenerate.
+    """
+    llm = ChatOpenAI(
+        model="gpt-4",
+        api_key="test",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    tools = [{"type": "function", "function": {"name": "noop", "parameters": {}}}]
+    with patch.object(llm, "async_client", mock_async_client):
+        await llm.ainvoke("hi", tools=tools)
+    call_kwargs = mock_async_client.with_raw_response.create.call_args[1]
+    assert call_kwargs["stream"] is False, (
+        "Expected stream=False in payload when disable_streaming is active"
+    )
+
+
 def test_openai_client_caching() -> None:
     """Test that the OpenAI client is cached."""
     llm1 = ChatOpenAI(model="gpt-4.1-mini")
