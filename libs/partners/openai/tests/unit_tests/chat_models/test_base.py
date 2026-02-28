@@ -112,7 +112,7 @@ def test_disable_streaming_payload_stream_false(
     """
     llm = ChatOpenAI(
         model="gpt-4",
-        api_key="test",
+        api_key=SecretStr("test"),
         streaming=True,
         disable_streaming="tool_calling",
     )
@@ -133,7 +133,7 @@ async def test_disable_streaming_payload_stream_false_async(
     """
     llm = ChatOpenAI(
         model="gpt-4",
-        api_key="test",
+        api_key=SecretStr("test"),
         streaming=True,
         disable_streaming="tool_calling",
     )
