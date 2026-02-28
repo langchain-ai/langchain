@@ -3290,13 +3290,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         break
 
                 # Reassemble the outputs, inserting Exceptions for failed inputs
-                inputs_copy = inputs.copy()
+                inputs_copy = collections.deque(inputs)
                 inputs = []
                 for i in range(len(configs)):
                     if i in failed_inputs_map:
                         inputs.append(cast("Input", failed_inputs_map[i]))
                     else:
-                        inputs.append(inputs_copy.pop(0))
+                        inputs.append(inputs_copy.popleft())
             else:
                 for i, step in enumerate(self.steps):
                     inputs = step.batch(
@@ -3421,13 +3421,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         break
 
                 # Reassemble the outputs, inserting Exceptions for failed inputs
-                inputs_copy = inputs.copy()
+                inputs_copy = collections.deque(inputs)
                 inputs = []
                 for i in range(len(configs)):
                     if i in failed_inputs_map:
                         inputs.append(cast("Input", failed_inputs_map[i]))
                     else:
-                        inputs.append(inputs_copy.pop(0))
+                        inputs.append(inputs_copy.popleft())
             else:
                 for i, step in enumerate(self.steps):
                     inputs = await step.abatch(
