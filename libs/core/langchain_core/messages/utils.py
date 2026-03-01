@@ -1425,10 +1425,7 @@ def trim_messages(
                 sig = inspect.signature(_base_method)
                 if "tools" in sig.parameters:
                     _extra["tools"] = _bound_tools
-        if _extra:
-            list_token_counter = partial(_base_method, **_extra)
-        else:
-            list_token_counter = _base_method
+        list_token_counter = partial(_base_method, **_extra) if _extra else _base_method
     elif callable(actual_token_counter):
         if (
             next(
