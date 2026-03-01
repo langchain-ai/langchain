@@ -235,12 +235,25 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
         request: ModelRequest[ContextT],
-    ) -> ModelRequest[ContextT]:
-        """Process the selection response and return filtered `ModelRequest`."""
+    ) -> ModelRequest[ContextT] | None:
+        """Process the selection response and return filtered `ModelRequest`.
+
+        Returns:
+            Filtered `ModelRequest` with only the selected tools, or `None` if the
+            response is missing the `tools` key.
+        """
+        tools_from_response = response.get("tools")
+        if tools_from_response is None:
+            logger.warning(
+                "Tool selection model returned a response missing the 'tools' key. "
+                "Falling back to all available tools."
+            )
+            return None
+
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        for tool_name in tools_from_response:
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
@@ -312,7 +325,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
-        return handler(modified_request)
+        return handler(modified_request if modified_request is not None else request)
 
     async def awrap_model_call(
         self,
@@ -355,4 +368,4 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
-        return await handler(modified_request)
+        return await handler(modified_request if modified_request is not None else request)
