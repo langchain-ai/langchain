@@ -1996,9 +1996,14 @@ def _first_max_tokens(
     idx = boundaries[left]
 
     if partial_strategy and idx < len(messages):
+        # Never partially include an AIMessage with tool_calls — doing so would
+        # produce an orphaned tool-call without its ToolMessage(s).
+        _skip_partial = isinstance(messages[idx], AIMessage) and bool(
+            getattr(messages[idx], "tool_calls", None)
+        )
         included_partial = False
         copied = False
-        if isinstance(messages[idx].content, list):
+        if not _skip_partial and isinstance(messages[idx].content, list):
             excluded = messages[idx].model_copy(deep=True)
             copied = True
             num_block = len(excluded.content)
@@ -2013,7 +2018,7 @@ def _first_max_tokens(
                     break
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
-        if not included_partial:
+        if not _skip_partial and not included_partial:
             if not copied:
                 excluded = messages[idx].model_copy(deep=True)
                 copied = True

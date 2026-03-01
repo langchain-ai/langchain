@@ -3274,3 +3274,35 @@ def test_trim_messages_tool_group_first_allow_partial() -> None:
     assert isinstance(result[0], HumanMessage)
     assert isinstance(result[1], AIMessage) and not result[1].tool_calls
     assert isinstance(result[2], HumanMessage)
+
+
+def test_trim_messages_tool_group_partial_boundary_first_allow_partial() -> None:
+    """strategy='first', allow_partial=True with budget that fits AI_tc but not TM.
+
+    This is the critical edge case where the token boundary falls *inside* the
+    tool-call group: the AIMessage(tool_calls) alone fits (30+14=44 ≤ 45) but the
+    full group (44+10=54) exceeds the budget. The trimmer must not produce an
+    orphaned AIMessage(tool_calls) without its ToolMessage.
+    """
+    # _TOOL_CALL_MESSAGES: [H(10), AI(10), H(10), AI_tc(14), TM(10)]
+    # max_tokens=45 → first 3 msgs = 30, AI_tc alone = 44 fits, but full group = 54.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=45,
+        token_counter=dummy_token_counter,
+        strategy="first",
+        allow_partial=True,
+    )
+    # The tool-call group partially crosses the boundary — AI_tc fits but TM
+    # does not. The entire group must be excluded to avoid an invalid sequence.
+    assert len(result) == 3
+    assert isinstance(result[0], HumanMessage)
+    assert isinstance(result[1], AIMessage)
+    assert not result[1].tool_calls
+    assert isinstance(result[2], HumanMessage)
+    # Verify no orphaned AIMessage(tool_calls) exists in the output
+    for msg in result:
+        if isinstance(msg, AIMessage):
+            assert not msg.tool_calls, (
+                "AIMessage with tool_calls must not appear without its ToolMessage"
+            )
