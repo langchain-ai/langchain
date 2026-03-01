@@ -3840,6 +3840,18 @@ class _RunnableWithStructuredOutput(RunnableSerializable[LanguageModelInput, Any
     def OutputType(self) -> type:
         return self.chain.OutputType
 
+    @property
+    def first(self) -> Runnable:
+        """Get the first runnable in the chain."""
+        return self.chain.first
+
+    @property
+    def steps(self) -> list[Runnable]:
+        """Get all steps in the chain."""
+        if hasattr(self.chain, "steps"):
+            return self.chain.steps
+        return [self.chain]
+
     def invoke(
         self,
         input_: LanguageModelInput,
@@ -3904,6 +3916,7 @@ class _RunnableWithStructuredOutput(RunnableSerializable[LanguageModelInput, Any
             tools=list(tools),
             **merged_kwargs,
         )
+
 
 def _create_usage_metadata(
     oai_token_usage: dict, service_tier: str | None = None
