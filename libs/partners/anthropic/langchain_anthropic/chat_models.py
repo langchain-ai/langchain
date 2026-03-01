@@ -944,6 +944,25 @@ class ChatAnthropic(BaseChatModel):
     docs for more information.
     """
 
+    bedrock_compat: bool = False
+    """Enable compatibility mode for Bedrock proxy and similar proxies that send
+    SSE events without the 'event:' field.
+
+    When set to True, the chat model will handle streaming responses from proxies
+    that send only 'data:' lines without 'event:' type prefixes (e.g., AWS Bedrock).
+
+    Example:
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="anthropic.claude-4-5-opus-20250129",
+                bedrock_compat=True,
+                base_url="https://my-bedrock-proxy.example.com",
+            )
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -1285,6 +1304,45 @@ class ChatAnthropic(BaseChatModel):
             return self._client.beta.messages.create(**payload)
         return self._client.messages.create(**payload)
 
+    def _wrap_stream_for_bedrock(self, stream: Any) -> Iterator:
+        """Wrap streaming response to handle Bedrock proxy SSE format.
+
+        Bedrock proxies often send SSE events without the 'event:' field:
+            data: {"type": "content_block_delta", ...}
+
+        While Anthropic SDK expects:
+            event: content_block_delta
+            data: {"type": "content_block_delta", ...}
+
+        This wrapper infers the event type from the data payload when missing.
+        """
+        import json
+
+        for event in stream:
+            # If event type is already set, yield as-is
+            if event.event is not None:
+                yield event
+                continue
+
+            # Try to infer event type from data payload
+            if event.event is None and event.data:
+                try:
+                    data = json.loads(event.data)
+                    if isinstance(data, dict) and "type" in data:
+                        # Create a new event with inferred type
+                        # We need to reconstruct the event with the proper type
+                        event_type = data["type"]
+                        # The SDK checks event type, so we need to set it
+                        # Access the internal _event attribute if possible
+                        if hasattr(event, "_event"):
+                            object.__setattr__(event, "_event", event_type)
+                        elif hasattr(event, "event"):
+                            object.__setattr__(event, "event", event_type)
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    pass
+
+            yield event
+
     async def _acreate(self, payload: dict) -> Any:
         if "betas" in payload:
             return await self._async_client.beta.messages.create(**payload)
@@ -1305,6 +1363,9 @@ class ChatAnthropic(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             stream = self._create(payload)
+            # Apply Bedrock compatibility wrapper if enabled
+            if self.bedrock_compat:
+                stream = self._wrap_stream_for_bedrock(stream)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1342,6 +1403,9 @@ class ChatAnthropic(BaseChatModel):
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             stream = await self._acreate(payload)
+            # Apply Bedrock compatibility wrapper if enabled
+            if self.bedrock_compat:
+                stream = self._wrap_stream_for_bedrock(stream)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
