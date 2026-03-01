@@ -233,18 +233,29 @@ def draw_mermaid(
         add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
 
-    # Add empty subgraphs (subgraphs with no internal edges)
+    # Add empty subgraphs recursively, supporting arbitrary nesting depth
+
+    def add_nested_empty_subgraph(prefix: str, indent: str = "\t") -> None:
+        nonlocal mermaid_graph
+        parts = prefix.split(":")
+        current_indent = indent
+        for part in parts:
+            safe_part = _to_safe_id(part)
+            mermaid_graph += f"{current_indent}subgraph {safe_part}\n"
+            current_indent += "\t"
+        # Add nodes that belong to this subgraph
+        if prefix in subgraph_nodes:
+            for key, node in subgraph_nodes[prefix].items():
+                mermaid_graph += render_node(key, node, current_indent)
+        # Close nested subgraphs
+        for _ in parts:
+            current_indent = current_indent[:-1]
+            mermaid_graph += f"{current_indent}end\n"
+
     if with_styles:
-        for prefix, subgraph_node in subgraph_nodes.items():
-            if ":" not in prefix and prefix not in seen_subgraphs:
-                mermaid_graph += f"\tsubgraph {prefix}\n"
-
-                # Add nodes that belong to this subgraph
-                for key, node in subgraph_node.items():
-                    mermaid_graph += render_node(key, node)
-
-                mermaid_graph += "\tend\n"
-                seen_subgraphs.add(prefix)
+        empty_prefixes = [p for p in subgraph_nodes if p not in seen_subgraphs]
+        for prefix in sorted(empty_prefixes, key=lambda p: p.count(":")):
+            add_nested_empty_subgraph(prefix)
 
     # Add custom styles for nodes
     if with_styles:
