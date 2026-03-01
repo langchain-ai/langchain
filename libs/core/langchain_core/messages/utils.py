@@ -1415,7 +1415,20 @@ def trim_messages(
         actual_token_counter = token_counter  # type: ignore[assignment]
 
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = actual_token_counter.get_num_tokens_from_messages
+        _base_method = actual_token_counter.get_num_tokens_from_messages
+        # Forward bound tools (e.g., from bind_tools()) to the token counter
+        # if the counter method accepts a ``tools`` parameter.
+        _extra: dict[str, Any] = {}
+        if hasattr(actual_token_counter, "kwargs"):
+            _bound_tools = actual_token_counter.kwargs.get("tools")
+            if _bound_tools is not None:
+                sig = inspect.signature(_base_method)
+                if "tools" in sig.parameters:
+                    _extra["tools"] = _bound_tools
+        if _extra:
+            list_token_counter = partial(_base_method, **_extra)
+        else:
+            list_token_counter = _base_method
     elif callable(actual_token_counter):
         if (
             next(
@@ -1909,6 +1922,37 @@ def convert_to_openai_messages(
     return oai_messages
 
 
+def _get_message_group_boundaries(
+    messages: Sequence[BaseMessage],
+) -> list[int]:
+    """Return valid split-point indices that never break tool-call groups.
+
+    A tool-call group is an ``AIMessage`` with ``tool_calls`` followed by one or
+    more ``ToolMessage`` instances.  Splitting inside such a group produces an
+    invalid message sequence for providers that validate ordering (e.g. Anthropic).
+
+    The returned list contains every index *i* such that ``messages[:i]`` is a
+    structurally valid prefix – i.e. every ``AIMessage`` with tool calls is
+    followed by all of its ``ToolMessage`` replies.
+
+    Index ``0`` (empty prefix) and ``len(messages)`` (full list) are always
+    included.
+    """
+    boundaries: list[int] = [0]
+    i = 0
+    n = len(messages)
+    while i < n:
+        if isinstance(messages[i], AIMessage) and messages[i].tool_calls:
+            # Consume the AIMessage and all following ToolMessages as one group.
+            i += 1
+            while i < n and isinstance(messages[i], ToolMessage):
+                i += 1
+        else:
+            i += 1
+        boundaries.append(i)
+    return boundaries
+
+
 def _first_max_tokens(
     messages: Sequence[BaseMessage],
     *,
@@ -1933,21 +1977,23 @@ def _first_max_tokens(
                     break
         return messages
 
-    # Use binary search to find the maximum number of messages within token limit
-    left, right = 0, len(messages)
-    max_iterations = len(messages).bit_length()
+    # Build group boundaries so the binary search never splits a tool-call
+    # exchange (AIMessage with tool_calls + following ToolMessages).
+    boundaries = _get_message_group_boundaries(messages)
+
+    # Binary search on group boundaries to find maximum valid prefix.
+    left, right = 0, len(boundaries) - 1
+    max_iterations = len(boundaries).bit_length()
     for _ in range(max_iterations):
         if left >= right:
             break
         mid = (left + right + 1) // 2
-        if token_counter(messages[:mid]) <= max_tokens:
+        if token_counter(messages[: boundaries[mid]]) <= max_tokens:
             left = mid
-            idx = mid
         else:
             right = mid - 1
 
-    # idx now contains the maximum number of complete messages we can include
-    idx = left
+    idx = boundaries[left]
 
     if partial_strategy and idx < len(messages):
         included_partial = False
@@ -2054,26 +2100,119 @@ def _last_max_tokens(
         system_message = messages[0]
         messages = messages[1:]
 
-    # Reverse messages to use _first_max_tokens with reversed logic
-    reversed_messages = messages[::-1]
-
     # Calculate remaining tokens after accounting for system message if present
     remaining_tokens = max_tokens
     if system_message:
         system_tokens = token_counter([system_message])
         remaining_tokens = max(0, max_tokens - system_tokens)
 
-    reversed_result = _first_max_tokens(
-        reversed_messages,
-        max_tokens=remaining_tokens,
-        token_counter=token_counter,
-        text_splitter=text_splitter,
-        partial_strategy="last" if allow_partial else None,
-        end_on=start_on,
-    )
+    # Build group boundaries so we never split tool-call exchanges.
+    # boundaries[i] are valid split-points where messages[boundary:] is
+    # a structurally correct suffix.
+    boundaries = _get_message_group_boundaries(messages)
 
-    # Re-reverse the messages and add back the system message if needed
-    result = reversed_result[::-1]
+    if not messages or remaining_tokens <= 0:
+        result = []
+    else:
+        # Binary search on group boundaries to find the earliest start
+        # such that messages[start:] fits within remaining_tokens.
+        # boundaries is sorted ascending; we want the smallest boundary
+        # whose suffix fits.
+        lo, hi = 0, len(boundaries) - 1
+        # Start assuming we can include nothing (idx = len(messages))
+        best = len(boundaries) - 1
+        max_iterations = len(boundaries).bit_length()
+        for _ in range(max_iterations):
+            if lo > hi:
+                break
+            mid = (lo + hi) // 2
+            if token_counter(messages[boundaries[mid] :]) <= remaining_tokens:
+                best = mid
+                hi = mid - 1  # try starting even earlier
+            else:
+                lo = mid + 1  # need to start later
+        start_idx = boundaries[best]
+        result = messages[start_idx:]
+
+        # Handle allow_partial: try to include a partial first message
+        if allow_partial and start_idx > 0:
+            candidate_idx = start_idx - 1
+            # Only attempt partial on the message just before start_idx,
+            # but never try to partially include a ToolMessage (that would
+            # break the tool-call group invariant).
+            if not isinstance(messages[candidate_idx], ToolMessage):
+                partial_msg = messages[candidate_idx].model_copy(deep=True)
+                # Try including partial content blocks
+                included_partial = False
+                if isinstance(partial_msg.content, list) and len(
+                    partial_msg.content
+                ) > 1:
+                    original_blocks = list(partial_msg.content)
+                    # Keep last N blocks (since we want the tail of the
+                    # conversation).
+                    for keep in range(len(original_blocks) - 1, 0, -1):
+                        partial_msg.content = original_blocks[-keep:]
+                        if (
+                            token_counter([partial_msg, *result])
+                            <= remaining_tokens
+                        ):
+                            result = [partial_msg, *result]
+                            included_partial = True
+                            break
+                if not included_partial:
+                    text = None
+                    if isinstance(partial_msg.content, str):
+                        text = partial_msg.content
+                    elif isinstance(partial_msg.content, list):
+                        for block in partial_msg.content:
+                            if isinstance(block, str):
+                                text = block
+                                break
+                            if (
+                                isinstance(block, dict)
+                                and block.get("type") == "text"
+                            ):
+                                text = block.get("text")
+                                break
+                    if text:
+                        split_texts = text_splitter(text)
+                        # Keep last N splits
+                        lo2, hi2 = 0, len(split_texts)
+                        max_iter2 = len(split_texts).bit_length()
+                        for _ in range(max_iter2):
+                            if lo2 >= hi2:
+                                break
+                            mid2 = (lo2 + hi2 + 1) // 2
+                            partial_msg.content = "".join(split_texts[-mid2:])
+                            if (
+                                token_counter([partial_msg, *result])
+                                <= remaining_tokens
+                            ):
+                                lo2 = mid2
+                            else:
+                                hi2 = mid2 - 1
+                        if lo2 > 0:
+                            partial_msg.content = "".join(split_texts[-lo2:])
+                            result = [partial_msg, *result]
+
+        # Apply start_on filter (skip leading messages that don't match)
+        if start_on:
+            while result and not _is_message_type(result[0], start_on):
+                # Don't orphan ToolMessages: if removing the first message
+                # would leave a ToolMessage at the front, skip the whole
+                # tool-call group.
+                if (
+                    len(result) > 1
+                    and isinstance(result[0], AIMessage)
+                    and result[0].tool_calls
+                ):
+                    # Remove the AIMessage and all its ToolMessages
+                    result.pop(0)
+                    while result and isinstance(result[0], ToolMessage):
+                        result.pop(0)
+                else:
+                    result.pop(0)
+
     if system_message:
         result = [system_message, *result]
 

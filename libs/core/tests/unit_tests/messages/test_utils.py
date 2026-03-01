@@ -2958,3 +2958,280 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+# ---------- Tests for tool-call group-aware trim_messages (issue #29637) ----------
+
+# Shared fixture: a conversation that includes a tool-call exchange.
+_TOOL_CALL_MESSAGES = [
+    HumanMessage("hi"),
+    AIMessage("hello"),
+    HumanMessage("what's the weather in florida?"),
+    AIMessage(
+        [
+            {"type": "text", "text": "let's check the weather in florida"},
+            {
+                "type": "tool_use",
+                "id": "abc123",
+                "name": "get_weather",
+                "input": {"location": "florida"},
+            },
+        ],
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "args": {"location": "florida"},
+                "id": "abc123",
+                "type": "tool_call",
+            },
+        ],
+    ),
+    ToolMessage(
+        "It's sunny.",
+        name="get_weather",
+        tool_call_id="abc123",
+    ),
+]
+
+
+def test_trim_messages_tool_group_never_split_first() -> None:
+    """strategy='first': must not include AIMessage(tool_calls) without ToolMessage."""
+    # 10 tokens per message → 3 messages = 30 tokens.
+    # The 4th message is an AIMessage with tool_calls. Including it alone (40 tokens)
+    # would leave the ToolMessage out and create an invalid sequence. The trimmer
+    # must stop at 3 messages.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=35,
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    # Should include first 3 messages (30 tokens) but NOT the AIMessage(tool_calls)
+    # alone because the ToolMessage wouldn't fit.
+    assert len(result) == 3
+    assert isinstance(result[0], HumanMessage)
+    assert isinstance(result[2], HumanMessage)
+    # No orphaned tool-call messages
+    for msg in result:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            # If an AIMessage with tool_calls is present, the following messages
+            # must include the ToolMessage(s).
+            idx = result.index(msg)
+            assert idx + 1 < len(result)
+            assert isinstance(result[idx + 1], ToolMessage)
+
+
+def test_trim_messages_tool_group_never_split_last() -> None:
+    """strategy='last': must not orphan a ToolMessage without its AIMessage."""
+    # With max_tokens=15 (1.5 messages worth), only the last message (ToolMessage)
+    # fits. But a ToolMessage without its AIMessage is invalid. The trimmer should
+    # either include nothing or skip to an earlier valid group.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=15,
+        token_counter=dummy_token_counter,
+        strategy="last",
+    )
+    # Result must not start with an orphaned ToolMessage
+    if result:
+        assert not isinstance(result[0], ToolMessage)
+
+
+def test_trim_messages_tool_group_included_together_last() -> None:
+    """strategy='last': tool-call group (AIMessage + ToolMessage) is atomic."""
+    # AIMessage(tool_calls, list content 2 blocks) = 14 tokens, ToolMessage = 10.
+    # Group total = 24. With max_tokens=25, the group fits from the end.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=25,
+        token_counter=dummy_token_counter,
+        strategy="last",
+    )
+    # Should include the tool call group = 24 tokens
+    assert len(result) == 2
+    assert isinstance(result[0], AIMessage)
+    assert result[0].tool_calls
+    assert isinstance(result[1], ToolMessage)
+
+
+def test_trim_messages_tool_group_included_together_first() -> None:
+    """strategy='first': tool-call group fits entirely within budget."""
+    # dummy_token_counter: str content = 10, list content with 2 blocks = 14
+    # Total: 10 + 10 + 10 + 14 + 10 = 54 tokens.
+    # With max_tokens=55, all 5 messages fit.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=55,
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result) == 5
+    # The AIMessage(tool_calls) at index 3 must be followed by ToolMessage at 4
+    assert isinstance(result[3], AIMessage)
+    assert result[3].tool_calls
+    assert isinstance(result[4], ToolMessage)
+
+
+def test_trim_messages_no_reversed_messages_sent_to_counter() -> None:
+    """strategy='last': token counter must never receive reversed messages.
+
+    Providers like Anthropic validate message ordering and reject reversed
+    sequences (ToolMessage before AIMessage). Verify that the token counter
+    always receives messages in their natural (forward) order.
+    """
+    call_log: list[list[BaseMessage]] = []
+
+    def tracking_counter(messages: list[BaseMessage]) -> int:
+        call_log.append(list(messages))
+        return len(messages) * 10
+
+    trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=30,
+        token_counter=tracking_counter,
+        strategy="last",
+    )
+
+    for call_msgs in call_log:
+        for i, msg in enumerate(call_msgs):
+            if isinstance(msg, ToolMessage):
+                # A ToolMessage must be preceded by an AIMessage with tool_calls
+                assert i > 0, "ToolMessage at index 0 — reversed sequence detected"
+                prev = call_msgs[i - 1]
+                assert isinstance(prev, AIMessage) and prev.tool_calls, (
+                    f"ToolMessage at index {i} not preceded by AIMessage(tool_calls)"
+                )
+
+
+def test_trim_messages_tool_group_with_include_system() -> None:
+    """strategy='last' with include_system preserves system + tool groups."""
+    messages = [
+        SystemMessage("You are a helpful assistant."),
+        *_TOOL_CALL_MESSAGES,
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=35,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        include_system=True,
+    )
+    # System message (10 tokens) + remaining budget = 25 tokens → fits the
+    # tool-call group (AIMessage 14 + ToolMessage 10 = 24 tokens).
+    assert isinstance(result[0], SystemMessage)
+    # The rest should form a valid sequence
+    non_system = result[1:]
+    for i, msg in enumerate(non_system):
+        if isinstance(msg, ToolMessage):
+            assert i > 0
+            assert isinstance(non_system[i - 1], AIMessage)
+
+
+def test_trim_messages_tool_group_start_on_human() -> None:
+    """strategy='last' + start_on='human': skip tool group if it starts sequence."""
+    # If the only messages that fit are the tool-call group, but start_on='human'
+    # requires starting with a HumanMessage, the group should be skipped.
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=25,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        start_on="human",
+    )
+    # Result should either be empty or start with a HumanMessage
+    if result:
+        assert isinstance(result[0], HumanMessage)
+
+
+def test_trim_messages_multiple_tool_groups() -> None:
+    """Multiple tool-call groups should each be treated atomically."""
+    messages = [
+        HumanMessage("query 1"),
+        AIMessage(
+            "calling tool A",
+            tool_calls=[
+                {"name": "A", "args": {}, "id": "a1", "type": "tool_call"},
+            ],
+        ),
+        ToolMessage("result A", tool_call_id="a1"),
+        HumanMessage("query 2"),
+        AIMessage(
+            "calling tool B",
+            tool_calls=[
+                {"name": "B", "args": {}, "id": "b1", "type": "tool_call"},
+            ],
+        ),
+        ToolMessage("result B", tool_call_id="b1"),
+    ]
+    # 6 messages × 10 tokens = 60. Budget = 35 → fits 3 messages.
+    # From the end: group [AIMessage+ToolMessage] = 20, + HumanMessage = 30 → fits.
+    result = trim_messages(
+        messages,
+        max_tokens=35,
+        token_counter=dummy_token_counter,
+        strategy="last",
+    )
+    # Should include the second tool group + the preceding HumanMessage
+    assert len(result) == 3
+    assert isinstance(result[0], HumanMessage)
+    assert result[0].content == "query 2"
+    assert isinstance(result[1], AIMessage) and result[1].tool_calls
+    assert isinstance(result[2], ToolMessage)
+
+
+def test_trim_messages_tool_group_boundary_exact_fit() -> None:
+    """Tool-call group that exactly fills the token budget is included."""
+    # AIMessage(tool_calls, list 2 blocks) = 14 + ToolMessage = 10 → 24 tokens
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=24,
+        token_counter=dummy_token_counter,
+        strategy="last",
+    )
+    assert len(result) == 2
+    assert isinstance(result[0], AIMessage) and result[0].tool_calls
+    assert isinstance(result[1], ToolMessage)
+
+
+def test_get_message_group_boundaries() -> None:
+    """Directly test the _get_message_group_boundaries helper."""
+    from langchain_core.messages.utils import _get_message_group_boundaries
+
+    boundaries = _get_message_group_boundaries(_TOOL_CALL_MESSAGES)
+    # 5 messages: [H, AI, H, AI(tc)+TM] → groups at indices [0,1,2,3-4]
+    # boundaries = [0, 1, 2, 3, 5]
+    assert boundaries == [0, 1, 2, 3, 5]
+
+    # Empty
+    assert _get_message_group_boundaries([]) == [0]
+
+    # No tool calls
+    simple = [HumanMessage("a"), AIMessage("b"), HumanMessage("c")]
+    assert _get_message_group_boundaries(simple) == [0, 1, 2, 3]
+
+
+def test_trim_messages_tool_forward_bound_tools() -> None:
+    """Bound tools from bind_tools() are forwarded to get_num_tokens_from_messages."""
+    received_kwargs: dict[str, Any] = {}
+
+    class _MockLLM:
+        """Mock LLM that records kwargs passed to get_num_tokens_from_messages."""
+
+        # Simulates RunnableBinding.kwargs from bind_tools()
+        kwargs: dict[str, Any] = {"tools": ["tool_a", "tool_b"]}
+
+        def get_num_tokens_from_messages(
+            self,
+            messages: list[BaseMessage],
+            tools: list[str] | None = None,
+        ) -> int:
+            received_kwargs["tools"] = tools
+            return len(messages) * 10
+
+    mock_llm = _MockLLM()
+    trim_messages(
+        [HumanMessage("hi")],
+        max_tokens=100,
+        token_counter=mock_llm,  # type: ignore[arg-type]
+    )
+    assert received_kwargs.get("tools") == ["tool_a", "tool_b"]
