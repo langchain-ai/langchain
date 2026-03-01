@@ -489,7 +489,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
@@ -558,7 +563,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
