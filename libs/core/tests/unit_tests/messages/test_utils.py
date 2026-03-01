@@ -3257,7 +3257,7 @@ def test_trim_messages_tool_forward_bound_tools() -> None:
     trim_messages(
         [HumanMessage("hi")],
         max_tokens=100,
-        token_counter=mock_llm,  # type: ignore[arg-type]
+        token_counter=mock_llm,  # type: ignore[call-overload]
     )
     assert received_kwargs.get("tools") == ["tool_a", "tool_b"]
 
