@@ -3,7 +3,7 @@ import json
 import math
 import re
 from collections.abc import Callable, Sequence
-from typing import Any, TypedDict
+from typing import Any, ClassVar, TypedDict
 
 import pytest
 from typing_extensions import NotRequired, override
@@ -21,6 +21,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.utils import (
     MessageLikeRepresentation,
+    _get_message_group_boundaries,
     convert_to_messages,
     convert_to_openai_messages,
     count_tokens_approximately,
@@ -3119,7 +3120,10 @@ def test_trim_messages_no_reversed_messages_sent_to_counter() -> None:
                 # A ToolMessage must be preceded by an AIMessage with tool_calls
                 assert i > 0, "ToolMessage at index 0 — reversed sequence detected"
                 prev = call_msgs[i - 1]
-                assert isinstance(prev, AIMessage) and prev.tool_calls, (
+                assert isinstance(prev, AIMessage), (
+                    f"ToolMessage at index {i} not preceded by AIMessage"
+                )
+                assert prev.tool_calls, (
                     f"ToolMessage at index {i} not preceded by AIMessage(tool_calls)"
                 )
 
@@ -3184,7 +3188,7 @@ def test_trim_messages_multiple_tool_groups() -> None:
         ),
         ToolMessage("result B", tool_call_id="b1"),
     ]
-    # 6 messages × 10 tokens = 60. Budget = 35 → fits 3 messages.
+    # 6 messages x 10 tokens = 60. Budget = 35 -> fits 3 messages.
     # From the end: group [AIMessage+ToolMessage] = 20, + HumanMessage = 30 → fits.
     result = trim_messages(
         messages,
@@ -3196,7 +3200,8 @@ def test_trim_messages_multiple_tool_groups() -> None:
     assert len(result) == 3
     assert isinstance(result[0], HumanMessage)
     assert result[0].content == "query 2"
-    assert isinstance(result[1], AIMessage) and result[1].tool_calls
+    assert isinstance(result[1], AIMessage)
+    assert result[1].tool_calls
     assert isinstance(result[2], ToolMessage)
 
 
@@ -3210,14 +3215,13 @@ def test_trim_messages_tool_group_boundary_exact_fit() -> None:
         strategy="last",
     )
     assert len(result) == 2
-    assert isinstance(result[0], AIMessage) and result[0].tool_calls
+    assert isinstance(result[0], AIMessage)
+    assert result[0].tool_calls
     assert isinstance(result[1], ToolMessage)
 
 
 def test_get_message_group_boundaries() -> None:
     """Directly test the _get_message_group_boundaries helper."""
-    from langchain_core.messages.utils import _get_message_group_boundaries
-
     boundaries = _get_message_group_boundaries(_TOOL_CALL_MESSAGES)
     # 5 messages: [H, AI, H, AI(tc)+TM] → groups at indices [0,1,2,3-4]
     # boundaries = [0, 1, 2, 3, 5]
@@ -3239,7 +3243,7 @@ def test_trim_messages_tool_forward_bound_tools() -> None:
         """Mock LLM that records kwargs passed to get_num_tokens_from_messages."""
 
         # Simulates RunnableBinding.kwargs from bind_tools()
-        kwargs: dict[str, Any] = {"tools": ["tool_a", "tool_b"]}
+        kwargs: ClassVar[dict[str, Any]] = {"tools": ["tool_a", "tool_b"]}
 
         def get_num_tokens_from_messages(
             self,
@@ -3259,7 +3263,7 @@ def test_trim_messages_tool_forward_bound_tools() -> None:
 
 
 def test_trim_messages_tool_group_first_allow_partial() -> None:
-    """strategy='first' + allow_partial: tool group that doesn't fit is excluded whole."""
+    """strategy='first' + allow_partial: tool group doesn't fit is excluded."""
     # _TOOL_CALL_MESSAGES: [H(10), AI(10), H(10), AI_tc(14), TM(10)]
     # max_tokens=35 → H(10)+AI(10)+H(10)=30 fits, adding AI_tc(14)=44 exceeds.
     # With allow_partial, the AI_tc+TM group is dropped entirely (not split).
@@ -3272,7 +3276,8 @@ def test_trim_messages_tool_group_first_allow_partial() -> None:
     )
     assert len(result) == 3
     assert isinstance(result[0], HumanMessage)
-    assert isinstance(result[1], AIMessage) and not result[1].tool_calls
+    assert isinstance(result[1], AIMessage)
+    assert not result[1].tool_calls
     assert isinstance(result[2], HumanMessage)
 
 
