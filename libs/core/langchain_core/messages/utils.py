@@ -2146,18 +2146,16 @@ def _last_max_tokens(
                 partial_msg = messages[candidate_idx].model_copy(deep=True)
                 # Try including partial content blocks
                 included_partial = False
-                if isinstance(partial_msg.content, list) and len(
-                    partial_msg.content
-                ) > 1:
+                if (
+                    isinstance(partial_msg.content, list)
+                    and len(partial_msg.content) > 1
+                ):
                     original_blocks = list(partial_msg.content)
                     # Keep last N blocks (since we want the tail of the
                     # conversation).
                     for keep in range(len(original_blocks) - 1, 0, -1):
                         partial_msg.content = original_blocks[-keep:]
-                        if (
-                            token_counter([partial_msg, *result])
-                            <= remaining_tokens
-                        ):
+                        if token_counter([partial_msg, *result]) <= remaining_tokens:
                             result = [partial_msg, *result]
                             included_partial = True
                             break
@@ -2170,10 +2168,7 @@ def _last_max_tokens(
                             if isinstance(block, str):
                                 text = block
                                 break
-                            if (
-                                isinstance(block, dict)
-                                and block.get("type") == "text"
-                            ):
+                            if isinstance(block, dict) and block.get("type") == "text":
                                 text = block.get("text")
                                 break
                     if text:
