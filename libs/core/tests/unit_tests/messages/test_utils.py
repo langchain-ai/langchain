@@ -3021,6 +3021,27 @@ def test_trim_messages_tool_group_never_split_first() -> None:
             assert isinstance(result[idx + 1], ToolMessage)
 
 
+def test_trim_messages_tool_group_never_split_first_allow_partial() -> None:
+    """strategy='first', allow_partial=True: still must not orphan tool_calls."""
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=35,
+        token_counter=dummy_token_counter,
+        strategy="first",
+        allow_partial=True,
+    )
+    # First 3 non-tool messages fit (~30 tokens), but the tool-call group
+    # does not fit entirely.  Result must not contain an orphaned AIMessage.
+    assert len(result) == 3
+    assert isinstance(result[0], HumanMessage)
+    assert isinstance(result[2], HumanMessage)
+    for msg in result:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            idx = result.index(msg)
+            assert idx + 1 < len(result)
+            assert isinstance(result[idx + 1], ToolMessage)
+
+
 def test_trim_messages_tool_group_never_split_last() -> None:
     """strategy='last': must not orphan a ToolMessage without its AIMessage."""
     # With max_tokens=15 (1.5 messages worth), only the last message (ToolMessage)
