@@ -982,6 +982,7 @@ def test_with_structured_output_bind_tools_sets_include_raw() -> None:
     with_tools = structured_llm.bind_tools([dummy_tool])  # type: ignore[attr-defined]
     assert with_tools.include_raw is True
 
+
 def test_get_num_tokens_from_messages() -> None:
     llm = ChatOpenAI(model="gpt-4o")
     messages = [

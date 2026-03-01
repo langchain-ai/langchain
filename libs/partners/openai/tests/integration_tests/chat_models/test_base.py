@@ -737,7 +737,10 @@ def test_image_token_counting_jpeg() -> None:
 
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
+    image_url = (
+        "https://raw.githubusercontent.com/langchain-ai/docs/"
+        "4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
+    )
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
