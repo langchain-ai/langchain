@@ -639,3 +639,83 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+    def test_missing_tools_key_falls_back_to_all_tools(self) -> None:
+        """Test that a missing 'tools' key in the LLM response falls back gracefully."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        # Selector returns a response missing the 'tools' key
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {},  # missing 'tools' key
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        # Should not raise, falls back to all tools
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [t.name for t in request.tools if isinstance(t, BaseTool)]
+            assert set(tool_names) == {"get_weather", "search_web", "calculate"}
+
+    async def test_missing_tools_key_async_falls_back_to_all_tools(self) -> None:
+        """Test async path: missing 'tools' key falls back to all tools gracefully."""
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {},  # missing 'tools' key
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector],
+        )
+
+        # Should not raise; missing 'tools' key is handled gracefully
+        result = await agent.ainvoke({"messages": [HumanMessage("test")]})
+        assert isinstance(result["messages"][-1], AIMessage)
