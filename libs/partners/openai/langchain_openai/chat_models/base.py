@@ -1553,6 +1553,23 @@ class BaseChatOpenAI(BaseChatModel):
             msg = f"Response missing 'choices' key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
+        if choices is None and not isinstance(response, dict):
+            # Some OpenAI-compatible APIs (e.g., vLLM) return responses where
+            # model_dump() serializes choices as null, even though the response
+            # object has valid choices accessible via direct attribute access.
+            # Fall back to extracting choices from the response object.
+            raw_choices = getattr(response, "choices", None)
+            if raw_choices is not None:
+                choices = [
+                    c.model_dump() if hasattr(c, "model_dump") else c
+                    for c in raw_choices
+                ]
+                response_dict["choices"] = choices
+                logger.debug(
+                    "choices was null in model_dump() but present on response "
+                    "object; using direct attribute access as fallback."
+                )
+
         if choices is None:
             # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
             # when the response format differs or an error occurs without

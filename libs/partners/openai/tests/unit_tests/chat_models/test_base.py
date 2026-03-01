@@ -3431,3 +3431,79 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_create_chat_result_null_choices_fallback_to_response_object() -> None:
+    """Test _create_chat_result falls back to direct attribute access when
+    model_dump() returns null for choices.
+
+    Some OpenAI-compatible APIs (e.g., vLLM) return response objects where
+    model_dump() serializes choices as null, even though the response object
+    itself has valid choices via direct attribute access. The fix should
+    recover gracefully instead of raising TypeError.
+
+    Regression test for: https://github.com/langchain-ai/langchain/issues/32252
+    """
+
+    # Create a mock choice that behaves like an openai Choice object
+    mock_choice = MagicMock()
+    mock_choice.model_dump.return_value = {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": None,
+        "message": {
+            "content": "Hello! How can I help you?",
+            "role": "assistant",
+            "tool_calls": None,
+        },
+    }
+
+    # Create a response that simulates the vLLM bug: model_dump() returns
+    # choices as None, but the object's .choices attribute has valid data.
+    mock_response = MagicMock(spec=openai.BaseModel)
+    mock_response.model_dump.return_value = {
+        "choices": None,
+        "created": 1234567890,
+        "id": "chatcmpl-test-vllm",
+        "model": "test-vllm-model",
+        "object": "chat.completion",
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+            "total_tokens": 30,
+        },
+    }
+    mock_response.choices = [mock_choice]
+
+    llm = ChatOpenAI(model="test-model", api_key="test-key")  # type: ignore[arg-type]
+    result = llm._create_chat_result(mock_response)
+
+    assert len(result.generations) == 1
+    assert result.generations[0].message.content == "Hello! How can I help you?"
+    assert result.llm_output is not None
+    assert result.llm_output["token_usage"] == {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30,
+    }
+
+
+def test_create_chat_result_null_choices_still_raises_when_truly_null() -> None:
+    """Test that TypeError is still raised when choices is genuinely null
+    (i.e., not recoverable from the response object either)."""
+
+    mock_response = MagicMock(spec=openai.BaseModel)
+    mock_response.model_dump.return_value = {
+        "choices": None,
+        "created": 1234567890,
+        "id": "chatcmpl-test",
+        "model": "test-model",
+        "object": "chat.completion",
+    }
+    # choices is also None on the response object itself
+    mock_response.choices = None
+
+    llm = ChatOpenAI(model="test-model", api_key="test-key")  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="null value for 'choices'"):
+        llm._create_chat_result(mock_response)
