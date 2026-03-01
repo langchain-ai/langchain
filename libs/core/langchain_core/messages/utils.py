@@ -1939,7 +1939,8 @@ def _get_message_group_boundaries(
     i = 0
     n = len(messages)
     while i < n:
-        if isinstance(messages[i], AIMessage) and messages[i].tool_calls:
+        msg = messages[i]
+        if isinstance(msg, AIMessage) and msg.tool_calls:
             # Consume the AIMessage and all following ToolMessages as one group.
             i += 1
             while i < n and isinstance(messages[i], ToolMessage):
