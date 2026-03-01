@@ -3843,46 +3843,44 @@ class _RunnableWithStructuredOutput(RunnableSerializable[LanguageModelInput, Any
     @property
     def first(self) -> Runnable:
         """Get the first runnable in the chain."""
-        return self.chain.first
+        return getattr(self.chain, "first", self.chain)
 
     @property
     def steps(self) -> list[Runnable]:
         """Get all steps in the chain."""
-        if hasattr(self.chain, "steps"):
-            return self.chain.steps
-        return [self.chain]
+        return getattr(self.chain, "steps", [self.chain])
 
     def invoke(
         self,
-        input_: LanguageModelInput,
+        input: LanguageModelInput,  # noqa: A002
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
-        return self.chain.invoke(input_, config, **kwargs)
+        return self.chain.invoke(input, config, **kwargs)
 
     async def ainvoke(
         self,
-        input_: LanguageModelInput,
+        input: LanguageModelInput,  # noqa: A002
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
-        return await self.chain.ainvoke(input_, config, **kwargs)
+        return await self.chain.ainvoke(input, config, **kwargs)
 
     def stream(
         self,
-        input_: LanguageModelInput,
+        input: LanguageModelInput,  # noqa: A002
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[Any]:
-        yield from self.chain.stream(input_, config, **kwargs)
+        yield from self.chain.stream(input, config, **kwargs)
 
     async def astream(
         self,
-        input_: LanguageModelInput,
+        input: LanguageModelInput,  # noqa: A002
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Any]:
-        async for chunk in self.chain.astream(input_, config, **kwargs):
+        async for chunk in self.chain.astream(input, config, **kwargs):
             yield chunk
 
     def batch(
