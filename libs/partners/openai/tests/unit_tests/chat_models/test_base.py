@@ -3431,3 +3431,28 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_bind_tools_after_with_structured_output() -> None:
+    """bind_tools should work on the RunnableSequence from with_structured_output."""
+    from langchain_core.runnables import RunnableSequence
+    from langchain_core.tools import tool
+    from pydantic import BaseModel, SecretStr
+
+    class ResponseModel(BaseModel):
+        answer: str
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather at a location."""
+        return f"Sunny in {location}"
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=SecretStr("test-api-key"))
+    structured_llm = llm.with_structured_output(ResponseModel)
+
+    agent = structured_llm.bind_tools([get_weather])
+
+    assert isinstance(agent, RunnableSequence)
+    bound_kwargs = agent.first.kwargs
+    assert "tools" in bound_kwargs
+    assert any(t["function"]["name"] == "get_weather" for t in bound_kwargs["tools"])
