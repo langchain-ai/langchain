@@ -1932,7 +1932,7 @@ def _get_message_group_boundaries(
     invalid message sequence for providers that validate ordering (e.g. Anthropic).
 
     The returned list contains every index *i* such that ``messages[:i]`` is a
-    structurally valid prefix – i.e. every ``AIMessage`` with tool calls is
+    structurally valid prefix - i.e. every ``AIMessage`` with tool calls is
     followed by all of its ``ToolMessage`` replies.
 
     Index ``0`` (empty prefix) and ``len(messages)`` (full list) are always
