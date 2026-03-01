@@ -255,7 +255,9 @@ class VectorStore(ABC):
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return self.add_texts(texts, metadatas, **kwargs)
+            # Extract ids from kwargs to pass explicitly and avoid duplicate keyword arg
+            ids = kwargs.pop("ids", None)
+            return self.add_texts(texts, metadatas, ids=ids, **kwargs)
         msg = (
             f"`add_documents` and `add_texts` has not been implemented "
             f"for {self.__class__.__name__} "
@@ -286,7 +288,9 @@ class VectorStore(ABC):
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return await self.aadd_texts(texts, metadatas, **kwargs)
+            # Extract ids from kwargs to pass explicitly and avoid duplicate keyword arg
+            ids = kwargs.pop("ids", None)
+            return await self.aadd_texts(texts, metadatas, ids=ids, **kwargs)
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 

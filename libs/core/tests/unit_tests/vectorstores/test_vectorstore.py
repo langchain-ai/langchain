@@ -265,6 +265,139 @@ def test_default_from_documents(vs_class: type[VectorStore]) -> None:
     assert store.get_by_ids(["6"]) == [Document(id="6", page_content="baz")]
 
 
+class CustomAsyncAddTextsVectorstore(VectorStore):
+    """A VectorStore that implements async aadd_texts.
+
+    Used to test that aadd_documents correctly passes ids without causing
+    'got multiple values for keyword argument' errors.
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+
+    @override
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not isinstance(texts, list):
+            texts = list(texts)
+        ids_iter = iter(ids or [])
+
+        ids_ = []
+
+        metadatas_ = metadatas or [{} for _ in texts]
+
+        for text, metadata in zip(texts, metadatas_ or [], strict=False):
+            next_id = next(ids_iter, None)
+            id_ = next_id or str(uuid.uuid4())
+            self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
+            ids_.append(id_)
+        return ids_
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict] | None = None,
+        **kwargs: Any,
+    ) -> CustomAsyncAddTextsVectorstore:
+        raise NotImplementedError
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
+def test_add_documents_with_explicit_ids_no_duplicate_error() -> None:
+    """Test that passing ids to add_documents doesn't cause duplicate param error.
+
+    This is a regression test for issue #32283 where calling:
+        vector_store.add_documents(documents, ids=["id1", "id2"])
+
+    Would raise:
+        TypeError: add_texts() got multiple values for keyword argument 'ids'
+
+    The fix extracts 'ids' from kwargs before passing to add_texts to avoid
+    the parameter being passed both explicitly and via **kwargs.
+    """
+    store = CustomAddTextsVectorstore()
+
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+
+    # This should NOT raise:
+    # TypeError: add_texts() got multiple values for keyword argument 'ids'
+    result_ids = store.add_documents(documents, ids=["doc_1", "doc_2"])
+
+    assert result_ids == ["doc_1", "doc_2"]
+    assert store.get_by_ids(["doc_1", "doc_2"]) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
+
+
+async def test_aadd_documents_with_explicit_ids_no_duplicate_error() -> None:
+    """Test that passing ids to aadd_documents doesn't cause duplicate param error.
+
+    This is a regression test for issue #32283 where calling:
+        await vector_store.aadd_documents(documents, ids=["id1", "id2"])
+
+    Would raise:
+        TypeError: aadd_texts() got multiple values for keyword argument 'ids'
+
+    The fix extracts 'ids' from kwargs before passing to aadd_texts to avoid
+    the parameter being passed both explicitly and via **kwargs.
+    """
+    store = CustomAsyncAddTextsVectorstore()
+
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+
+    # This should NOT raise:
+    # TypeError: aadd_texts() got multiple values for keyword argument 'ids'
+    result_ids = await store.aadd_documents(documents, ids=["doc_1", "doc_2"])
+
+    assert result_ids == ["doc_1", "doc_2"]
+    assert store.get_by_ids(["doc_1", "doc_2"]) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
+
+
+async def test_aadd_documents_without_ids_still_works() -> None:
+    """Test that aadd_documents still works when ids is not provided."""
+    store = CustomAsyncAddTextsVectorstore()
+
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+
+    # Should work and generate UUIDs
+    result_ids = await store.aadd_documents(documents)
+
+    assert len(result_ids) == 2
+    docs = store.get_by_ids(result_ids)
+    assert len(docs) == 2
+    assert docs[0].page_content == "Hello world"
+    assert docs[1].page_content == "Goodbye world"
+
+
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
