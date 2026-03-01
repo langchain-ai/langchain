@@ -3256,3 +3256,21 @@ def test_trim_messages_tool_forward_bound_tools() -> None:
         token_counter=mock_llm,  # type: ignore[arg-type]
     )
     assert received_kwargs.get("tools") == ["tool_a", "tool_b"]
+
+
+def test_trim_messages_tool_group_first_allow_partial() -> None:
+    """strategy='first' + allow_partial: tool group that doesn't fit is excluded whole."""
+    # _TOOL_CALL_MESSAGES: [H(10), AI(10), H(10), AI_tc(14), TM(10)]
+    # max_tokens=35 → H(10)+AI(10)+H(10)=30 fits, adding AI_tc(14)=44 exceeds.
+    # With allow_partial, the AI_tc+TM group is dropped entirely (not split).
+    result = trim_messages(
+        _TOOL_CALL_MESSAGES,
+        max_tokens=35,
+        token_counter=dummy_token_counter,
+        strategy="first",
+        allow_partial=True,
+    )
+    assert len(result) == 3
+    assert isinstance(result[0], HumanMessage)
+    assert isinstance(result[1], AIMessage) and not result[1].tool_calls
+    assert isinstance(result[2], HumanMessage)
