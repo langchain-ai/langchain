@@ -37,6 +37,7 @@ from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
@@ -83,6 +84,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
     response_format: ResponseFormat[Any] | None
     model_settings: dict[str, Any]
     state: AgentState[Any]
+    config: RunnableConfig
 
 
 @dataclass(init=False)
@@ -102,6 +104,7 @@ class ModelRequest(Generic[ContextT]):
     state: AgentState[Any]
     runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
+    config: RunnableConfig | None
 
     def __init__(
         self,
@@ -116,6 +119,7 @@ class ModelRequest(Generic[ContextT]):
         state: AgentState[Any] | None = None,
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
+        config: RunnableConfig | None = None,
     ) -> None:
         """Initialize ModelRequest with backward compatibility for system_prompt.
 
@@ -153,6 +157,7 @@ class ModelRequest(Generic[ContextT]):
             self.state = state if state is not None else {"messages": []}
             self.runtime = runtime  # type: ignore[assignment]
             self.model_settings = model_settings if model_settings is not None else {}
+            self.config = config
 
     @property
     def system_prompt(self) -> str | None:

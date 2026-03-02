@@ -1235,7 +1235,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        output = model_.invoke(messages, config=request.config)
         if name:
             output.name = name
 
@@ -1249,7 +1249,9 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
+    def model_node(
+        state: AgentState[Any], runtime: Runtime[ContextT], config: RunnableConfig
+    ) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1260,6 +1262,7 @@ def create_agent(
             tool_choice=None,
             state=state,
             runtime=runtime,
+            config=config,
         )
 
         if wrap_model_call_handler is None:
@@ -1283,7 +1286,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        output = await model_.ainvoke(messages, config=request.config)
         if name:
             output.name = name
 
@@ -1297,7 +1300,9 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
+    async def amodel_node(
+        state: AgentState[Any], runtime: Runtime[ContextT], config: RunnableConfig
+    ) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1308,6 +1313,7 @@ def create_agent(
             tool_choice=None,
             state=state,
             runtime=runtime,
+            config=config,
         )
 
         if awrap_model_call_handler is None:
