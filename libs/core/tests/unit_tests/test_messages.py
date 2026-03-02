@@ -188,7 +188,11 @@ def test_message_chunks() -> None:
             create_tool_call_chunk(name="tool1", args="", id="1", index=0)
         ],
     )
-    assert ai_msg_chunk.tool_calls == [create_tool_call(name="tool1", args={}, id="1")]
+    # Empty args should be treated as invalid, not as empty dict
+    assert ai_msg_chunk.tool_calls == []
+    assert ai_msg_chunk.invalid_tool_calls == [
+        create_invalid_tool_call(name="tool1", args="", id="1", error=None)
+    ]
 
     # Test token usage
     left = AIMessageChunk(

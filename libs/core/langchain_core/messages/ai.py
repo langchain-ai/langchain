@@ -540,7 +540,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                # Only use empty dict when args is None, not when it's an empty string.
+                # Empty strings should be parsed and fail, creating invalid tool calls.
+                if chunk["args"] is not None:
+                    args_ = parse_partial_json(chunk["args"])
+                else:
+                    args_ = {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
