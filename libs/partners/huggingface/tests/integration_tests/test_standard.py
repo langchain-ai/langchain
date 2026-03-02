@@ -20,7 +20,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
             repo_id="meta-llama/Llama-3.3-70B-Instruct",
             task="conversational",
-            provider="sambanova",
+            provider="together",
             temperature=0,
         )
         return {"llm": llm}
