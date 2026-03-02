@@ -439,16 +439,19 @@ def _format_messages(
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
             if isinstance(message.content, list):
-                system = [
-                    (
-                        block
-                        if isinstance(block, dict)
-                        else {"type": "text", "text": block}
-                    )
-                    for block in message.content
-                ]
+                system = []
+                for block in message.content:
+                    if isinstance(block, dict):
+                        if block.get("type") == "text" and block.get("text") == "":
+                            system.append({**block, "text": " "})
+                        else:
+                            system.append(block)
+                    else:
+                        system.append(
+                            {"type": "text", "text": " " if block == "" else block},
+                        )
             else:
-                system = message.content
+                system = " " if message.content == "" else message.content
             continue
 
         role = _message_type_lookups[message.type]
@@ -608,9 +611,12 @@ def _format_messages(
                         )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
-                        tool_content = _format_messages(
-                            [HumanMessage(block["content"])],
-                        )[1][0]["content"]
+                        if isinstance(block.get("content"), str):
+                            tool_content = block["content"]
+                        else:
+                            tool_content = _format_messages(
+                                [HumanMessage(block["content"])],
+                            )[1][0]["content"]
                         content.append({**block, "content": tool_content})
                     elif block["type"] in (
                         "code_execution_tool_result",
@@ -647,6 +653,8 @@ def _format_messages(
                     )
         else:
             content = message.content
+            if role == "user" and content == "":
+                content = " "
 
         # Ensure all tool_calls have a tool_use content block
         if isinstance(message, AIMessage) and message.tool_calls:

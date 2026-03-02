@@ -1309,6 +1309,14 @@ def test__format_messages_with_multiple_system() -> None:
     assert expected_messages == actual_messages
 
 
+def test__format_messages_with_empty_system_and_human_content() -> None:
+    actual_system, actual_messages = _format_messages(
+        [SystemMessage(""), HumanMessage("")],
+    )
+    assert actual_system == " "
+    assert actual_messages == [{"role": "user", "content": " "}]
+
+
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
