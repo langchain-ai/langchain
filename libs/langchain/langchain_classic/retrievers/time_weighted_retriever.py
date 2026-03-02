@@ -54,11 +54,46 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     )
 
     def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
-        """Return the value of the date field of a document."""
-        if field in document.metadata:
-            if isinstance(document.metadata[field], float):
-                return datetime.datetime.fromtimestamp(document.metadata[field])
-            return document.metadata[field]
+        """Return the value of the date field of a document as a ``datetime``.
+
+        This helper is intentionally defensive because metadata is often
+        user-supplied and may be stored in different but common formats:
+
+        - ``datetime`` instances (the canonical representation)
+        - POSIX timestamps as ``float`` or ``int``
+        - ISO 8601 strings (for example, produced by ``datetime.isoformat()``)
+
+        Any unrecognised or invalid value falls back to ``datetime.now()`` so
+        that downstream scoring logic does not raise type errors.
+        """
+        if field not in document.metadata:
+            return datetime.datetime.now()
+
+        value = document.metadata[field]
+
+        # Native datetime - happy path.
+        if isinstance(value, datetime.datetime):
+            return value
+
+        # Common numeric timestamp formats.
+        if isinstance(value, (float, int)):
+            return datetime.datetime.fromtimestamp(float(value))
+
+        # ISO 8601 or other string representations.
+        if isinstance(value, str):
+            # Try ISO 8601 first.
+            try:
+                return datetime.datetime.fromisoformat(value)
+            except ValueError:
+                # As a best-effort fallback, handle purely numeric strings
+                # that represent POSIX timestamps.
+                try:
+                    return datetime.datetime.fromtimestamp(float(value))
+                except (ValueError, OSError):
+                    # Fall through to the generic fallback below.
+                    pass
+
+        # Fallback: avoid propagating unexpected types into datetime arithmetic.
         return datetime.datetime.now()
 
     def _get_combined_score(
