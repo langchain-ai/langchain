@@ -9,7 +9,7 @@
 </div>
 
 <div align="center">
-  <h3>The platform for reliable agents.</h3>
+  <h3>The agent engineering platform.</h3>
 </div>
 
 <div align="center">
