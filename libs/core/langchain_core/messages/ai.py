@@ -525,6 +525,16 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = tool_call_chunks
 
             return self
+
+        # Group tool call chunks by id and concatenate args
+        # to handle fragmented tool call arguments from SSE streaming (issue #35514)
+        grouped_chunks: dict[str, list[ToolCallChunk]] = {}
+        for chunk in self.tool_call_chunks:
+            chunk_id = chunk.get("id") or ""
+            if chunk_id not in grouped_chunks:
+                grouped_chunks[chunk_id] = []
+            grouped_chunks[chunk_id].append(chunk)
+
         tool_calls = []
         invalid_tool_calls = []
 
@@ -538,21 +548,38 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 )
             )
 
-        for chunk in self.tool_call_chunks:
+        # Parse concatenated args for each group of chunks
+        for chunk_id, chunks in grouped_chunks.items():
+            # Concatenate args from all chunks for this tool call
+            concatenated_args = ""
+            tool_name = ""
+            for chunk in chunks:
+                args = chunk.get("args")
+                if args:
+                    concatenated_args += args
+                name = chunk.get("name")
+                if name:
+                    tool_name = name
+
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                args_ = (
+                    parse_partial_json(concatenated_args) if concatenated_args else {}
+                )
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
-                            name=chunk["name"] or "",
+                            name=tool_name,
                             args=args_,
-                            id=chunk["id"],
+                            id=chunk_id or None,
                         )
                     )
                 else:
-                    add_chunk_to_invalid_tool_calls(chunk)
+                    # Use first chunk for invalid tool call info
+                    add_chunk_to_invalid_tool_calls(chunks[0])
             except Exception:
-                add_chunk_to_invalid_tool_calls(chunk)
+                # Use first chunk for invalid tool call info
+                add_chunk_to_invalid_tool_calls(chunks[0])
+
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
 
@@ -656,19 +683,43 @@ def add_ai_message_chunks(
         left.response_metadata, *(o.response_metadata for o in others)
     )
 
-    # Merge tool call chunks
-    if raw_tool_calls := merge_lists(
-        left.tool_call_chunks, *(o.tool_call_chunks for o in others)
-    ):
-        tool_call_chunks = [
-            create_tool_call_chunk(
-                name=rtc.get("name"),
-                args=rtc.get("args"),
-                index=rtc.get("index"),
-                id=rtc.get("id"),
+    # Merge tool call chunks - group by id and concatenate args
+    # This handles fragmented tool calls from SSE streaming (issue #35514)
+    all_tool_call_chunks = list(
+        itertools.chain(left.tool_call_chunks, *(o.tool_call_chunks for o in others))
+    )
+    if all_tool_call_chunks:
+        # Group chunks by id
+        grouped_chunks: dict[str, list[ToolCallChunk]] = {}
+        for chunk in all_tool_call_chunks:
+            chunk_id = chunk.get("id") or ""
+            if chunk_id not in grouped_chunks:
+                grouped_chunks[chunk_id] = []
+            grouped_chunks[chunk_id].append(chunk)
+
+        # Merge chunks within each group
+        tool_call_chunks = []
+        for chunk_id, chunks in grouped_chunks.items():
+            # Concatenate all args and get the first non-empty name
+            merged_args = ""
+            merged_name = None
+            merged_index = None
+            for chunk in chunks:
+                if chunk.get("args"):
+                    merged_args += chunk["args"] or ""
+                if chunk.get("name") and merged_name is None:
+                    merged_name = chunk["name"]
+                if chunk.get("index") is not None and merged_index is None:
+                    merged_index = chunk["index"]
+
+            tool_call_chunks.append(
+                create_tool_call_chunk(
+                    name=merged_name,
+                    args=merged_args,
+                    index=merged_index,
+                    id=chunk_id or None,
+                )
             )
-            for rtc in raw_tool_calls
-        ]
     else:
         tool_call_chunks = []
 
