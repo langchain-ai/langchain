@@ -1996,16 +1996,21 @@ def _make_message_chunk_from_anthropic_event(
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
-        # Capture model name, but don't include usage_metadata yet
-        # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
             response_metadata: dict[str, Any] = {"model_name": event.message.model}
         else:
             response_metadata = {}
 
+        # Include input_tokens from message_start, as message_delta
+        # only contains output_tokens.
+        usage_metadata = None
+        if hasattr(event.message, "usage") and event.message.usage is not None:
+            usage_metadata = _create_usage_metadata(event.message.usage)
+
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             response_metadata=response_metadata,
+            **({"usage_metadata": usage_metadata} if usage_metadata else {}),
         )
 
     elif (
