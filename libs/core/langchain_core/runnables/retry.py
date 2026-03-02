@@ -279,12 +279,20 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Build output list by mapping indices to results
         outputs: list[Output | Exception] = []
+        # Track which results are from the final failed batch (exceptions)
+        remaining_results = list(result) if result != not_set else []
+        
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif remaining_results:
+                # Use pop(0) to get exceptions in order
+                outputs.append(remaining_results.pop(0))
             else:
-                outputs.append(result.pop(0))
+                # Should not happen, but handle gracefully
+                outputs.append(None)
         return outputs
 
     @override
@@ -354,12 +362,20 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Build output list by mapping indices to results
         outputs: list[Output | Exception] = []
+        # Track which results are from the final failed batch (exceptions)
+        remaining_results = list(result) if result != not_set else []
+        
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif remaining_results:
+                # Use pop(0) to get exceptions in order
+                outputs.append(remaining_results.pop(0))
             else:
-                outputs.append(result.pop(0))
+                # Should not happen, but handle gracefully
+                outputs.append(None)
         return outputs
 
     @override
