@@ -97,7 +97,8 @@ def test_create_agent_invoke(
     thread1 = {"configurable": {"thread_id": "1"}}
     result = agent_one.invoke({"messages": ["hello"]}, thread1)
     # v2 stream format returns GraphOutput; unwrap to get the dict
-    result_dict = result.value if isinstance(result, GraphOutput) else result
+    assert isinstance(result, GraphOutput)
+    result_dict = result.value
     assert result_dict == {
         "messages": [
             _AnyIdHumanMessage(content="hello"),
@@ -200,7 +201,8 @@ def test_create_agent_jump(
 
     thread1 = {"configurable": {"thread_id": "1"}}
     result = agent_one.invoke({"messages": []}, thread1)
-    result_dict = result.value if isinstance(result, GraphOutput) else result
+    assert isinstance(result, GraphOutput)
+    result_dict = result.value
     assert result_dict == {"messages": []}
     assert calls == ["NoopSeven.before_model", "NoopEight.before_model"]
 
@@ -699,7 +701,8 @@ async def test_create_agent_async_jump() -> None:
 
     result = await agent.ainvoke({"messages": []})
 
-    result_dict = result.value if isinstance(result, GraphOutput) else result
+    assert isinstance(result, GraphOutput)
+    result_dict = result.value
     assert result_dict == {"messages": []}
     assert calls == ["AsyncMiddlewareOne.abefore_model", "AsyncMiddlewareTwo.abefore_model"]
 
