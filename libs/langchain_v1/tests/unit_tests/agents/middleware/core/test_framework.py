@@ -9,7 +9,6 @@ from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.runtime import Runtime
-from langgraph.types import GraphOutput
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
@@ -96,10 +95,7 @@ def test_create_agent_invoke(
 
     thread1 = {"configurable": {"thread_id": "1"}}
     result = agent_one.invoke({"messages": ["hello"]}, thread1)
-    # v2 stream format returns GraphOutput; unwrap to get the dict
-    assert isinstance(result, GraphOutput)
-    result_dict = result.value
-    assert result_dict == {
+    assert result.value == {
         "messages": [
             _AnyIdHumanMessage(content="hello"),
             AIMessage(
@@ -201,9 +197,7 @@ def test_create_agent_jump(
 
     thread1 = {"configurable": {"thread_id": "1"}}
     result = agent_one.invoke({"messages": []}, thread1)
-    assert isinstance(result, GraphOutput)
-    result_dict = result.value
-    assert result_dict == {"messages": []}
+    assert result.value == {"messages": []}
     assert calls == ["NoopSeven.before_model", "NoopEight.before_model"]
 
 
@@ -701,9 +695,7 @@ async def test_create_agent_async_jump() -> None:
 
     result = await agent.ainvoke({"messages": []})
 
-    assert isinstance(result, GraphOutput)
-    result_dict = result.value
-    assert result_dict == {"messages": []}
+    assert result.value == {"messages": []}
     assert calls == ["AsyncMiddlewareOne.abefore_model", "AsyncMiddlewareTwo.abefore_model"]
 
 

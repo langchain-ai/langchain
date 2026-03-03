@@ -11,7 +11,7 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.errors import InvalidUpdateError
-from langgraph.types import Command, GraphOutput
+from langgraph.types import Command
 
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
@@ -630,10 +630,8 @@ class TestComposition:
 
         result = agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        assert isinstance(result, GraphOutput)
-        result_dict = result.value
-        assert result_dict.get("structured_response") == {"key": "value"}
-        messages = result_dict["messages"]
+        assert result.value.get("structured_response") == {"key": "value"}
+        messages = result.value["messages"]
         assert len(messages) == 2
         assert messages[1].content == "Hello"
 
