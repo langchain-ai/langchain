@@ -59,7 +59,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         """Test that the model can process PDF inputs."""
         super().test_openai_pdf_inputs(model)
         # Responses API additionally supports files via URL
-        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        url = "https://www.berkshirehathaway.com/letters/2024ltr.pdf"
 
         message = HumanMessage(
             [

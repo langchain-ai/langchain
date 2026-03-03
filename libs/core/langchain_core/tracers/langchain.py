@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from langsmith import Client, get_tracing_context
@@ -77,11 +77,15 @@ def _get_usage_metadata_from_generations(
     """Extract and aggregate `usage_metadata` from generations.
 
     Iterates through generations to find and aggregate all `usage_metadata` found in
-    messages. This is typically present in chat model outputs.
+    messages. This expects the serialized message payload shape produced by tracer
+    internals:
+
+        `{"message": {"kwargs": {"usage_metadata": {...}}}}`
 
     Args:
         generations: List of generation batches, where each batch is a list of
-            generation dicts that may contain a `'message'` key with `'usage_metadata'`.
+            generation dicts that may contain a `'message'` key with
+            usage metadata.
 
     Returns:
         The aggregated `usage_metadata` dict if found, otherwise `None`.
@@ -91,9 +95,22 @@ def _get_usage_metadata_from_generations(
         for generation in generation_batch:
             if isinstance(generation, dict) and "message" in generation:
                 message = generation["message"]
-                if isinstance(message, dict) and "usage_metadata" in message:
-                    output = add_usage(output, message["usage_metadata"])
+                usage_metadata = _get_usage_metadata_from_message(message)
+                if usage_metadata is not None:
+                    output = add_usage(output, usage_metadata)
     return output
+
+
+def _get_usage_metadata_from_message(message: Any) -> UsageMetadata | None:
+    """Extract usage metadata from a generation's message payload."""
+    if not isinstance(message, dict):
+        return None
+
+    kwargs = message.get("kwargs")
+    if isinstance(kwargs, dict) and isinstance(kwargs.get("usage_metadata"), dict):
+        return cast("UsageMetadata", kwargs["usage_metadata"])
+
+    return None
 
 
 class LangChainTracer(BaseTracer):
@@ -294,13 +311,19 @@ class LangChainTracer(BaseTracer):
         )
 
     def _on_chat_model_start(self, run: Run) -> None:
-        """Persist an LLM run."""
+        """Persist a chat model run.
+
+        Note:
+            Naming is historical: there is no `_on_chat_model_end` hook. Chat
+            model completion is handled by `_on_llm_end`, shared with text
+            LLM runs.
+        """
         if run.parent_run_id is None:
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
 
     def _on_llm_end(self, run: Run) -> None:
-        """Process the LLM Run."""
+        """Process LLM/chat model run completion."""
         # Extract usage_metadata from outputs and store in extra.metadata
         if run.outputs and "generations" in run.outputs:
             usage_metadata = _get_usage_metadata_from_generations(

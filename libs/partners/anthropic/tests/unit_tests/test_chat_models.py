@@ -2395,6 +2395,26 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
+@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
+def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
+    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
+    block = {"type": block_type, "other": "foo"}
+    human = HumanMessage("hi")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "openai"},
+    )
+    _, msgs = _format_messages([human, ai])
+    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
+
+    ai_anthropic = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    _, msgs = _format_messages([human, ai_anthropic])
+    assert any(b["type"] == block_type for b in msgs[1]["content"])
+
+
 def test__format_messages_trailing_whitespace() -> None:
     """Test that trailing whitespace is trimmed from the final assistant message."""
     human = HumanMessage("foo")  # type: ignore[misc]
