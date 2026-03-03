@@ -489,7 +489,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
@@ -558,7 +563,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
@@ -623,7 +633,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901
+    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901, PLR0912
         """Create a `ChatResult` from an OpenRouter SDK response."""
         if not isinstance(response, dict):
             response = response.model_dump(by_alias=True)
@@ -655,6 +665,13 @@ class ChatOpenRouter(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
+                # Surface OpenRouter cost data in response_metadata
+                if "cost" in token_usage:
+                    message.response_metadata["cost"] = token_usage["cost"]
+                if "cost_details" in token_usage:
+                    message.response_metadata["cost_details"] = token_usage[
+                        "cost_details"
+                    ]
             if isinstance(message, AIMessage):
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
@@ -1160,7 +1177,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: 
     return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
-def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911
+def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Convert a streaming chunk dict to a LangChain message chunk.
@@ -1205,14 +1222,20 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911
         if reasoning_details := _dict.get("reasoning_details"):
             additional_kwargs["reasoning_details"] = reasoning_details
         usage_metadata = None
+        response_metadata: dict[str, Any] = {"model_provider": "openrouter"}
         if usage := chunk.get("usage"):
             usage_metadata = _create_usage_metadata(usage)
+            # Surface OpenRouter cost data in response_metadata
+            if "cost" in usage:
+                response_metadata["cost"] = usage["cost"]
+            if "cost_details" in usage:
+                response_metadata["cost_details"] = usage["cost_details"]
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "openrouter"},
+            response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
