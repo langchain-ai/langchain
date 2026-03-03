@@ -114,10 +114,12 @@ def test_lc_agent_name_in_stream_metadata() -> None:
     )
 
     metadata_with_agent_name = []
-    for _chunk, metadata in agent.stream(
+    for event in agent.stream(
         {"messages": [HumanMessage("Hello")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -132,10 +134,12 @@ def test_lc_agent_name_not_in_stream_metadata_when_name_not_provided() -> None:
         model=FakeToolCallingModel(tool_calls=tool_calls),
     )
 
-    for _chunk, metadata in agent.stream(
+    for event in agent.stream(
         {"messages": [HumanMessage("Hello")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         assert "lc_agent_name" not in metadata
 
 
@@ -150,10 +154,12 @@ def test_lc_agent_name_in_stream_metadata_multiple_iterations() -> None:
     )
 
     metadata_with_agent_name = []
-    for _chunk, metadata in agent.stream(
+    for event in agent.stream(
         {"messages": [HumanMessage("Call a tool")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -171,10 +177,12 @@ async def test_lc_agent_name_in_astream_metadata() -> None:
     )
 
     metadata_with_agent_name = []
-    async for _chunk, metadata in agent.astream(
+    async for event in agent.astream(
         {"messages": [HumanMessage("Hello async")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -189,10 +197,12 @@ async def test_lc_agent_name_not_in_astream_metadata_when_name_not_provided() ->
         model=FakeToolCallingModel(tool_calls=tool_calls),
     )
 
-    async for _chunk, metadata in agent.astream(
+    async for event in agent.astream(
         {"messages": [HumanMessage("Hello async")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         assert "lc_agent_name" not in metadata
 
 
@@ -207,10 +217,12 @@ async def test_lc_agent_name_in_astream_metadata_multiple_iterations() -> None:
     )
 
     metadata_with_agent_name = []
-    async for _chunk, metadata in agent.astream(
+    async for event in agent.astream(
         {"messages": [HumanMessage("Call tool async")]},
         stream_mode="messages",
     ):
+        assert event["type"] == "messages"
+        _chunk, metadata = event["data"]
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 

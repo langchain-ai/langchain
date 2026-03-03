@@ -25,7 +25,7 @@ version = "1.2.10"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.10,<2.0.0",
-    "langgraph>=1.0.8,<1.1.0",
+    "langgraph>=1.0.8,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -100,6 +100,7 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "1.1", subdirectory = "libs/langgraph" }
 
 [tool.ruff]
 line-length = 100
