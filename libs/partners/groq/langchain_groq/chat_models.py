@@ -40,11 +40,15 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
@@ -1263,6 +1267,29 @@ def _is_pydantic_class(obj: Any) -> bool:
 #
 # Type conversion helpers
 #
+def _format_message_content(content: Any) -> Any:
+    """Format message content for Groq API.
+
+    Converts LangChain image content blocks to Groq's expected image_url format.
+
+    Args:
+        content: The message content (string or list of content blocks).
+
+    Returns:
+        Formatted content suitable for Groq API.
+    """
+    if content and isinstance(content, list):
+        formatted: list = []
+        for block in content:
+            # Handle LangChain standard data content blocks (image, audio, file)
+            if isinstance(block, dict) and is_data_content_block(block):
+                formatted.append(convert_to_openai_data_block(block))
+            else:
+                formatted.append(block)
+        return formatted
+    return content
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -1277,7 +1304,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":

@@ -36,7 +36,7 @@ def test_init_time_with_client(benchmark: BenchmarkFixture) -> None:
 
     def _init_in_loop_with_clients() -> None:
         for _ in range(10):
-            llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
+            llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
             _ = llm._client
             _ = llm._async_client
 

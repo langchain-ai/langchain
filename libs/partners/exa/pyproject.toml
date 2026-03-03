@@ -3,22 +3,34 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-exa"
+version = "1.0.0"
+description = "An integration package connecting Exa and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
     "exa-py>=1.0.8,<2.0.0"
 ]
-name = "langchain-exa"
-version = "1.0.0"
-description = "An integration package connecting Exa and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/exa_search"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_exa/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/exa"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-exa%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"

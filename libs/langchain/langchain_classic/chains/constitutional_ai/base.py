@@ -326,7 +326,7 @@ class ConstitutionalChain(Chain):
     def _parse_critique(output_string: str) -> str:
         if "Revision request:" not in output_string:
             return output_string
-        output_string = output_string.split("Revision request:")[0]
+        output_string = output_string.split("Revision request:", maxsplit=1)[0]
         if "\n\n" in output_string:
             output_string = output_string.split("\n\n")[0]
         return output_string

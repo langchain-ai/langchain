@@ -23,8 +23,10 @@ from langchain_core._api.deprecation import (
                 "pending": True,
                 "obj_type": "class",
             },
-            "The class `OldClass` will be deprecated in a future version. Use NewClass "
-            "instead.",
+            (
+                "The class `OldClass` will be deprecated in a future version. "
+                "Use NewClass instead."
+            ),
         ),
         (
             {
@@ -50,8 +52,10 @@ from langchain_core._api.deprecation import (
                 "addendum": "Please migrate your code.",
                 "removal": "2.5.0",
             },
-            "`SomeFunction` was deprecated in LangChain 1.5.0 and will be "
-            "removed in 2.5.0 Please migrate your code.",
+            (
+                "`SomeFunction` was deprecated in LangChain 1.5.0 and will be "
+                "removed in 2.5.0 Please migrate your code."
+            ),
         ),
     ],
 )

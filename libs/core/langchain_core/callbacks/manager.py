@@ -13,7 +13,6 @@ from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from langsmith.run_helpers import get_tracing_context
 from typing_extensions import Self, override
 
 from langchain_core.callbacks.base import (
@@ -29,15 +28,6 @@ from langchain_core.callbacks.base import (
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.globals import get_debug
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.tracers.context import (
-    _configure_hooks,
-    _get_trace_callbacks,
-    _get_tracer_project,
-    _tracing_v2_is_enabled,
-    tracing_v2_callback_var,
-)
-from langchain_core.tracers.langchain import LangChainTracer
-from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
 from langchain_core.utils.uuid import uuid7
 
@@ -74,8 +64,8 @@ def trace_as_chain_group(
 ) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
 
-    Useful for grouping different calls together as a single run even if
-    they aren't composed in a single chain.
+    Useful for grouping different calls together as a single run even if they aren't
+    composed in a single chain.
 
     Args:
         group_name: The name of the chain group.
@@ -88,6 +78,7 @@ def trace_as_chain_group(
         metadata: The metadata to apply to all runs.
 
     !!! note
+
         Must have `LANGCHAIN_TRACING_V2` env var set to true to see the trace in
         LangSmith.
 
@@ -103,6 +94,10 @@ def trace_as_chain_group(
             manager.on_chain_end({"output": res})
         ```
     """
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
+
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -149,13 +144,13 @@ async def atrace_as_chain_group(
 ) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
 
-    Useful for grouping different async calls together as a single run even if
-    they aren't composed in a single chain.
+    Useful for grouping different async calls together as a single run even if they
+    aren't composed in a single chain.
 
     Args:
         group_name: The name of the chain group.
-        callback_manager: The async callback manager to use,
-            which manages tracing and other callback behavior.
+        callback_manager: The async callback manager to use, which manages tracing and
+            other callback behavior.
         inputs: The inputs to the chain group.
         project_name: The name of the project.
         example_id: The ID of the example.
@@ -167,6 +162,7 @@ async def atrace_as_chain_group(
         The async callback manager for the chain group.
 
     !!! note
+
         Must have `LANGCHAIN_TRACING_V2` env var set to true to see the trace in
         LangSmith.
 
@@ -181,6 +177,10 @@ async def atrace_as_chain_group(
             await manager.on_chain_end({"output": res})
         ```
     """
+    from langchain_core.tracers.context import (  # noqa: PLC0415 -- deferred to avoid importing langsmith at module level
+        _get_trace_callbacks,
+    )
+
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -258,16 +258,13 @@ def handle_event(
     *args: Any,
     **kwargs: Any,
 ) -> None:
-    """Generic event handler for CallbackManager.
-
-    !!! note
-        This function is used by `LangServe` to handle events.
+    """Generic event handler for `CallbackManager`.
 
     Args:
         handlers: The list of handlers that will handle the event.
         event_name: The name of the event (e.g., `'on_llm_start'`).
-        ignore_condition_name: Name of the attribute defined on handler
-            that if True will cause the handler to be skipped for the given event.
+        ignore_condition_name: Name of the attribute defined on handler that if `True`
+            will cause the handler to be skipped for the given event.
         *args: The arguments to pass to the event handler.
         **kwargs: The keyword arguments to pass to the event handler
 
@@ -427,14 +424,11 @@ async def ahandle_event(
 ) -> None:
     """Async generic event handler for `AsyncCallbackManager`.
 
-    !!! note
-        This function is used by `LangServe` to handle events.
-
     Args:
         handlers: The list of handlers that will handle the event.
         event_name: The name of the event (e.g., `'on_llm_start'`).
-        ignore_condition_name: Name of the attribute defined on handler
-            that if True will cause the handler to be skipped for the given event.
+        ignore_condition_name: Name of the attribute defined on handler that if `True`
+            will cause the handler to be skipped for the given event.
         *args: The arguments to pass to the event handler.
         **kwargs: The keyword arguments to pass to the event handler.
 
@@ -515,7 +509,7 @@ class BaseRunManager(RunManagerMixin):
 
 
 class RunManager(BaseRunManager):
-    """Sync Run Manager."""
+    """Synchronous run manager."""
 
     def on_text(
         self,
@@ -568,7 +562,7 @@ class RunManager(BaseRunManager):
 
 
 class ParentRunManager(RunManager):
-    """Sync Parent Run Manager."""
+    """Synchronous parent run manager."""
 
     def get_child(self, tag: str | None = None) -> CallbackManager:
         """Get a child callback manager.
@@ -590,14 +584,14 @@ class ParentRunManager(RunManager):
 
 
 class AsyncRunManager(BaseRunManager, ABC):
-    """Async Run Manager."""
+    """Async run manager."""
 
     @abstractmethod
     def get_sync(self) -> RunManager:
-        """Get the equivalent sync RunManager.
+        """Get the equivalent sync `RunManager`.
 
         Returns:
-            The sync RunManager.
+            The sync `RunManager`.
 
         """
 
@@ -652,7 +646,7 @@ class AsyncRunManager(BaseRunManager, ABC):
 
 
 class AsyncParentRunManager(AsyncRunManager):
-    """Async Parent Run Manager."""
+    """Async parent run manager."""
 
     def get_child(self, tag: str | None = None) -> AsyncCallbackManager:
         """Get a child callback manager.
@@ -736,6 +730,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         Args:
             error: The error.
             **kwargs: Additional keyword arguments.
+
                 - response (LLMResult): The response which was generated before
                     the error occurred.
         """
@@ -757,10 +752,10 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
 
     def get_sync(self) -> CallbackManagerForLLMRun:
-        """Get the equivalent sync RunManager.
+        """Get the equivalent sync `RunManager`.
 
         Returns:
-            The sync RunManager.
+            The sync `RunManager`.
 
         """
         return CallbackManagerForLLMRun(
@@ -836,10 +831,9 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         Args:
             error: The error.
             **kwargs: Additional keyword arguments.
+
                 - response (LLMResult): The response which was generated before
                     the error occurred.
-
-
 
         """
         if not self.handlers:
@@ -950,10 +944,10 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     """Async callback manager for chain run."""
 
     def get_sync(self) -> CallbackManagerForChainRun:
-        """Get the equivalent sync RunManager.
+        """Get the equivalent sync `RunManager`.
 
         Returns:
-            The sync RunManager.
+            The sync `RunManager`.
         """
         return CallbackManagerForChainRun(
             run_id=self.run_id,
@@ -1113,10 +1107,10 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
     """Async callback manager for tool run."""
 
     def get_sync(self) -> CallbackManagerForToolRun:
-        """Get the equivalent sync RunManager.
+        """Get the equivalent sync `RunManager`.
 
         Returns:
-            The sync RunManager.
+            The sync `RunManager`.
         """
         return CallbackManagerForToolRun(
             run_id=self.run_id,
@@ -1237,10 +1231,10 @@ class AsyncCallbackManagerForRetrieverRun(
     """Async callback manager for retriever run."""
 
     def get_sync(self) -> CallbackManagerForRetrieverRun:
-        """Get the equivalent sync RunManager.
+        """Get the equivalent sync `RunManager`.
 
         Returns:
-            The sync RunManager.
+            The sync `RunManager`.
 
         """
         return CallbackManagerForRetrieverRun(
@@ -1473,14 +1467,17 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: Serialized representation of the tool.
             input_str: The  input to the tool as a string.
+
                 Non-string inputs are cast to strings.
             run_id: ID for the run.
             parent_run_id: The ID of the parent run.
             inputs: The original input to the tool if provided.
-                Recommended for usage instead of input_str when the original
-                input is needed.
-                If provided, the inputs are expected to be formatted as a dict.
-                The keys will correspond to the named-arguments in the tool.
+
+                Recommended for usage instead of input_str when the original input is
+                needed.
+
+                If provided, the inputs are expected to be formatted as a dict. The keys
+                will correspond to the named-arguments in the tool.
             **kwargs: The keyword arguments to pass to the event handler
 
         Returns:
@@ -1572,9 +1569,9 @@ class CallbackManager(BaseCallbackManager):
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
 
-        This event should NOT be used in any internal LangChain code. The event
-        is meant specifically for users of the library to dispatch custom
-        events that are tailored to their application.
+        This event should NOT be used in any internal LangChain code. The event is meant
+        specifically for users of the library to dispatch custom events that are
+        tailored to their application.
 
         Args:
             name: The name of the adhoc event.
@@ -1693,17 +1690,16 @@ class CallbackManagerForChainGroup(CallbackManager):
     ) -> CallbackManagerForChainGroup:
         """Merge the group callback manager with another callback manager.
 
-        Overwrites the merge method in the base class to ensure that the
-        parent run manager is preserved. Keeps the parent_run_manager
-        from the current object.
+        Overwrites the merge method in the base class to ensure that the parent run
+        manager is preserved. Keeps the `parent_run_manager` from the current object.
 
         Returns:
             A copy of the current object with the handlers, tags, and other attributes
             merged from the other object.
 
-        Example: Merging two callback managers.
-
+        Example:
             ```python
+            # Merging two callback managers
             from langchain_core.callbacks.manager import (
                 CallbackManager,
                 trace_as_chain_group,
@@ -1800,7 +1796,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            The list of async callback managers, one for each LLM Run corresponding to
+            The list of async callback managers, one for each LLM run corresponding to
             each prompt.
         """
         inline_tasks = []
@@ -1888,8 +1884,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            The list of async callback managers, one for each LLM Run corresponding to
-            each inner  message list.
+            The list of async callback managers, one for each LLM run corresponding to
+            each inner message list.
         """
         inline_tasks = []
         non_inline_tasks = []
@@ -2045,9 +2041,9 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
 
-        This event should NOT be used in any internal LangChain code. The event
-        is meant specifically for users of the library to dispatch custom
-        events that are tailored to their application.
+        This event should NOT be used in any internal LangChain code. The event is meant
+        specifically for users of the library to dispatch custom events that are
+        tailored to their application.
 
         Args:
             name: The name of the adhoc event.
@@ -2213,17 +2209,16 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     ) -> AsyncCallbackManagerForChainGroup:
         """Merge the group callback manager with another callback manager.
 
-        Overwrites the merge method in the base class to ensure that the
-        parent run manager is preserved. Keeps the parent_run_manager
-        from the current object.
+        Overwrites the merge method in the base class to ensure that the parent run
+        manager is preserved. Keeps the `parent_run_manager` from the current object.
 
         Returns:
-            A copy of the current AsyncCallbackManagerForChainGroup
-            with the handlers, tags, etc. of the other callback manager merged in.
+            A copy of the current `AsyncCallbackManagerForChainGroup` with the handlers,
+                tags, etc. of the other callback manager merged in.
 
-        Example: Merging two callback managers.
-
+        Example:
             ```python
+            # Merging two callback managers
             from langchain_core.callbacks.manager import (
                 CallbackManager,
                 atrace_as_chain_group,
@@ -2328,6 +2323,18 @@ def _configure(
     Returns:
         The configured callback manager.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import get_tracing_context  # noqa: PLC0415
+
+    from langchain_core.tracers.context import (  # noqa: PLC0415
+        _configure_hooks,
+        _get_tracer_project,
+        _tracing_v2_is_enabled,
+        tracing_v2_callback_var,
+    )
+    from langchain_core.tracers.langchain import LangChainTracer  # noqa: PLC0415
+    from langchain_core.tracers.stdout import ConsoleCallbackHandler  # noqa: PLC0415
+
     tracing_context = get_tracing_context()
     tracing_metadata = tracing_context["metadata"]
     tracing_tags = tracing_context["tags"]
@@ -2482,14 +2489,17 @@ async def adispatch_custom_event(
 
     Args:
         name: The name of the adhoc event.
-        data: The data for the adhoc event. Free form data. Ideally should be
-            JSON serializable to avoid serialization issues downstream, but
-            this is not enforced.
-        config: Optional config object. Mirrors the async API but not strictly needed.
+        data: The data for the adhoc event.
+
+            Free form data. Ideally should be JSON serializable to avoid serialization
+            issues downstream, but this is not enforced.
+        config: Optional config object.
+
+            Mirrors the async API but not strictly needed.
 
     Raises:
-        RuntimeError: If there is no parent run ID available to associate
-            the event with.
+        RuntimeError: If there is no parent run ID available to associate the event
+            with.
 
     Example:
         ```python
@@ -2562,11 +2572,11 @@ async def adispatch_custom_event(
         ```
 
     !!! warning
-        If using python <= 3.10 and async, you MUST
-        specify the `config` parameter or the function will raise an error.
-        This is due to a limitation in asyncio for python <= 3.10 that prevents
-        LangChain from automatically propagating the config object on the user's
-        behalf.
+
+        If using python 3.10 and async, you MUST specify the `config` parameter or the
+        function will raise an error. This is due to a limitation in asyncio for python
+        3.10 that prevents LangChain from automatically propagating the config object on
+        the user's behalf.
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415
@@ -2604,14 +2614,17 @@ def dispatch_custom_event(
 
     Args:
         name: The name of the adhoc event.
-        data: The data for the adhoc event. Free form data. Ideally should be
-            JSON serializable to avoid serialization issues downstream, but
-            this is not enforced.
-        config: Optional config object. Mirrors the async API but not strictly needed.
+        data: The data for the adhoc event.
+
+            Free form data. Ideally should be JSON serializable to avoid serialization
+            issues downstream, but this is not enforced.
+        config: Optional config object.
+
+            Mirrors the async API but not strictly needed.
 
     Raises:
-        RuntimeError: If there is no parent run ID available to associate
-            the event with.
+        RuntimeError: If there is no parent run ID available to associate the event
+            with.
 
     Example:
         ```python
