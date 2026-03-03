@@ -348,6 +348,9 @@ class TestChatDeepSeekAzureToolChoice:
             DEFAULT_API_BASE,
             "https://api.openai.com/v1",
             "https://custom-endpoint.com/api",
+            "https://evil-azure.com/v1",  # hostname bypass attempt
+            "https://notazure.com.evil.com/",  # subdomain bypass attempt
+            "https://example.com/azure.com",  # path bypass attempt
         ]
         for endpoint in non_azure_endpoints:
             llm = ChatDeepSeek(
