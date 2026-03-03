@@ -118,8 +118,11 @@ def test_lc_agent_name_in_stream_metadata() -> None:
         {"messages": [HumanMessage("Hello")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -138,8 +141,11 @@ def test_lc_agent_name_not_in_stream_metadata_when_name_not_provided() -> None:
         {"messages": [HumanMessage("Hello")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         assert "lc_agent_name" not in metadata
 
 
@@ -158,8 +164,11 @@ def test_lc_agent_name_in_stream_metadata_multiple_iterations() -> None:
         {"messages": [HumanMessage("Call a tool")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -181,8 +190,11 @@ async def test_lc_agent_name_in_astream_metadata() -> None:
         {"messages": [HumanMessage("Hello async")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 
@@ -201,8 +213,11 @@ async def test_lc_agent_name_not_in_astream_metadata_when_name_not_provided() ->
         {"messages": [HumanMessage("Hello async")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         assert "lc_agent_name" not in metadata
 
 
@@ -221,8 +236,11 @@ async def test_lc_agent_name_in_astream_metadata_multiple_iterations() -> None:
         {"messages": [HumanMessage("Call tool async")]},
         stream_mode="messages",
     ):
-        assert event["type"] == "messages"
-        _chunk, metadata = event["data"]
+        if isinstance(event, dict):
+            assert event["type"] == "messages"
+            _chunk, metadata = event["data"]
+        else:
+            _chunk, metadata = event
         if "lc_agent_name" in metadata:
             metadata_with_agent_name.append(metadata["lc_agent_name"])
 

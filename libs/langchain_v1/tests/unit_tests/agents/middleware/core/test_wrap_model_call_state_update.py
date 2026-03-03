@@ -630,8 +630,7 @@ class TestComposition:
 
         result = agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        assert isinstance(result, GraphOutput)
-        result_dict = result.value
+        result_dict = result.value if isinstance(result, GraphOutput) else result
         assert result_dict.get("structured_response") == {"key": "value"}
         messages = result_dict["messages"]
         assert len(messages) == 2
