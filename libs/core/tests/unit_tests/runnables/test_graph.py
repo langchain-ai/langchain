@@ -472,6 +472,39 @@ def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+def test_nested_empty_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    """Test 3+ level nested subgraphs with no internal edges render correctly."""
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "parent:child:grandchild": Node(
+            id="parent:child:grandchild",
+            name="grandchild",
+            data=empty_data,
+            metadata=None,
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="__start__",
+            target="parent:child:grandchild",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="parent:child:grandchild",
+            target="__end__",
+            data=None,
+            conditional=False,
+        ),
+    ]
+    graph = Graph(nodes, edges)
+    assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
 def test_runnable_get_graph_with_invalid_input_type() -> None:
     """Test that error isn't raised when getting graph with invalid input type."""
 
