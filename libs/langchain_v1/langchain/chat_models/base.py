@@ -245,7 +245,7 @@ def init_chat_model(
             - `gpt-...` | `o1...` | `o3...`       -> `openai`
             - `claude...`                         -> `anthropic`
             - `amazon...`                         -> `bedrock`
-            - `gemini...`                         -> `google_vertexai`
+            - `gemini...`                         -> `google_genai`
             - `command...`                        -> `cohere`
             - `accounts/fireworks...`             -> `fireworks`
             - `mistral...`                        -> `mistralai`
@@ -537,7 +537,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
     # Google models
     if model_lower.startswith("gemini"):
-        return "google_vertexai"
+        return "google_genai"
 
     # AWS Bedrock models
     if model_lower.startswith(("amazon.", "anthropic.", "meta.")):
