@@ -90,7 +90,7 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
                             "allowed_patterns": ["--dry-run", ...],
                         },
                     },
-                    ...
+                    ...,
                 ],
             }
 
@@ -258,13 +258,15 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
         verdict = self._decide(intent, self.policy)
 
         # PROMOTE
-        self._record_witness({
-            "phase": "promote",
-            "verdict": verdict,
-            "tool": intent["tool"],
-            "content_hash": intent["content_hash"],
-            "run_id": str(run_id),
-        })
+        self._record_witness(
+            {
+                "phase": "promote",
+                "verdict": verdict,
+                "tool": intent["tool"],
+                "content_hash": intent["content_hash"],
+                "run_id": str(run_id),
+            }
+        )
 
         if verdict == "deny":
             raise ToolExecutionDeniedError(
@@ -290,11 +292,13 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
             **kwargs: Additional keyword arguments.
         """
         output_str = str(output) if output is not None else ""
-        self._record_witness({
-            "phase": "audit",
-            "run_id": str(run_id),
-            "result_hash": hashlib.sha256(output_str.encode()).hexdigest(),
-        })
+        self._record_witness(
+            {
+                "phase": "audit",
+                "run_id": str(run_id),
+                "result_hash": hashlib.sha256(output_str.encode()).hexdigest(),
+            }
+        )
 
     @override
     def on_tool_error(
@@ -313,11 +317,13 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
             parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
         """
-        self._record_witness({
-            "phase": "error",
-            "run_id": str(run_id),
-            "error_type": type(error).__name__,
-        })
+        self._record_witness(
+            {
+                "phase": "error",
+                "run_id": str(run_id),
+                "error_type": type(error).__name__,
+            }
+        )
 
 
 def verify_witness_log(log_path: str | Path) -> bool:
