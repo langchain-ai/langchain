@@ -1261,6 +1261,143 @@ class TestCreateChatResult:
         assert isinstance(msg, AIMessage)
         assert msg.response_metadata["native_finish_reason"] == "end_turn"
 
+    def test_cost_in_response_metadata(self) -> None:
+        """Test that OpenRouter cost data is surfaced in response_metadata."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            **_SIMPLE_RESPONSE_DICT,
+            "usage": {
+                **_SIMPLE_RESPONSE_DICT["usage"],
+                "cost": 7.5e-05,
+                "cost_details": {
+                    "upstream_inference_cost": 7.745e-05,
+                    "upstream_inference_prompt_cost": 8.95e-06,
+                    "upstream_inference_completions_cost": 6.85e-05,
+                },
+            },
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["cost"] == 7.5e-05
+        assert msg.response_metadata["cost_details"] == {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+
+    def test_cost_absent_when_not_in_usage(self) -> None:
+        """Test that cost fields are not added when not present in usage."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "cost" not in msg.response_metadata
+        assert "cost_details" not in msg.response_metadata
+
+    def test_stream_cost_survives_final_chunk(self) -> None:
+        """Test that cost fields are preserved on the final streaming chunk.
+
+        The final chunk carries both finish_reason metadata and usage/cost data.
+        Regression test: generation_info must merge into response_metadata, not
+        replace it, so cost fields set by _convert_chunk_to_message_chunk are
+        not lost.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        cost_details = {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+                "model": "openai/gpt-4o-mini",
+                "id": "gen-cost-stream",
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cost": 7.5e-05,
+                    "cost_details": cost_details,
+                },
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(stream_chunks)
+
+        chunks = list(model.stream("Hello"))
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["cost"] == 7.5e-05
+        assert meta["cost_details"] == cost_details
+        assert meta["finish_reason"] == "stop"
+
+    async def test_astream_cost_survives_final_chunk(self) -> None:
+        """Test that cost fields are preserved on the final async streaming chunk.
+
+        Same regression coverage as the sync test above, for the _astream path.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        cost_details = {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+                "model": "openai/gpt-4o-mini",
+                "id": "gen-cost-astream",
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cost": 7.5e-05,
+                    "cost_details": cost_details,
+                },
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(stream_chunks)
+        )
+
+        chunks = [c async for c in model.astream("Hello")]
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["cost"] == 7.5e-05
+        assert meta["cost_details"] == cost_details
+        assert meta["finish_reason"] == "stop"
+
     def test_missing_optional_metadata_excluded(self) -> None:
         """Test that absent optional fields are not added to response_metadata."""
         model = _make_model()
