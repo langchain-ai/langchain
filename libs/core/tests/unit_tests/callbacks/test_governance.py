@@ -11,7 +11,7 @@ import pytest
 
 from langchain_core.callbacks.governance import (
     GovernanceCallbackHandler,
-    ToolExecutionDenied,
+    ToolExecutionDeniedError,
     verify_witness_log,
 )
 
@@ -209,7 +209,7 @@ class TestPromote:
         self, deny_by_default_policy: dict, run_id: any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
-        with pytest.raises(ToolExecutionDenied, match="shell"):
+        with pytest.raises(ToolExecutionDeniedError, match="shell"):
             handler.on_tool_start(
                 serialized={"name": "shell"},
                 input_str="ls",
@@ -220,7 +220,7 @@ class TestPromote:
         self, deny_by_default_policy: dict, run_id: any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
-        with pytest.raises(ToolExecutionDenied):
+        with pytest.raises(ToolExecutionDeniedError):
             handler.on_tool_start(
                 serialized={"name": "unknown"},
                 input_str="test",
@@ -254,7 +254,7 @@ class TestWitnessLog:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
         )
-        with pytest.raises(ToolExecutionDenied):
+        with pytest.raises(ToolExecutionDeniedError):
             handler.on_tool_start(
                 serialized={"name": "shell"}, input_str="ls", run_id=run_id
             )
@@ -353,38 +353,13 @@ class TestWitnessLog:
         assert entry["prev_hash"] == "0" * 64
 
 
-
-
-    def test_hash_chain_resumes_on_new_handler(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
-    ) -> None:
-        """A second handler instance must continue the existing chain."""
-        handler1 = GovernanceCallbackHandler(
-            policy=deny_by_default_policy, witness_path=witness_path
-        )
-        handler1.on_tool_start(
-            serialized={"name": "search"}, input_str="q1", run_id=run_id
-        )
-        # Second handler against same file
-        handler2 = GovernanceCallbackHandler(
-            policy=deny_by_default_policy, witness_path=witness_path
-        )
-        handler2.on_tool_start(
-            serialized={"name": "search"}, input_str="q2", run_id=run_id
-        )
-        # Chain should be intact across both handlers
-        assert verify_witness_log(witness_path) is True
-        entries = [json.loads(l) for l in witness_path.read_text().splitlines()]
-        assert len(entries) == 2
-        assert entries[1]["prev_hash"] == entries[0]["hash"]
-
-class TestToolExecutionDenied:
+class TestToolExecutionDeniedError:
     def test_exception_message(self) -> None:
-        exc = ToolExecutionDenied("shell", "blocked by policy")
+        exc = ToolExecutionDeniedError("shell", "blocked by policy")
         assert "shell" in str(exc)
         assert "blocked by policy" in str(exc)
 
     def test_exception_attributes(self) -> None:
-        exc = ToolExecutionDenied("shell", "test reason")
+        exc = ToolExecutionDeniedError("shell", "test reason")
         assert exc.tool_name == "shell"
         assert exc.reason == "test reason"

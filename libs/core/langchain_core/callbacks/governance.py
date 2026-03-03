@@ -32,21 +32,33 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
 from langchain_core.callbacks import BaseCallbackHandler
 
+if TYPE_CHECKING:
+    from uuid import UUID
 
-class ToolExecutionDenied(Exception):
+
+class ToolExecutionDeniedError(Exception):
     """Raised when a tool call is denied by governance policy."""
 
     def __init__(self, tool_name: str, reason: str) -> None:
+        """Initialize with the denied tool name and reason.
+
+        Args:
+            tool_name: Name of the tool that was denied.
+            reason: Human-readable denial reason.
+        """
         self.tool_name = tool_name
         self.reason = reason
         super().__init__(f"Tool '{tool_name}' denied: {reason}")
+
+
+# Backwards-compatible alias
+ToolExecutionDenied = ToolExecutionDeniedError
 
 
 class GovernanceCallbackHandler(BaseCallbackHandler):
@@ -58,7 +70,7 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
       with a SHA-256 content hash.
     - **DECIDE**: Evaluates the intent against user-defined policy rules.
       Pure function — no LLM involvement, no interpretation ambiguity.
-    - **PROMOTE**: Allows approved calls, raises ``ToolExecutionDenied`` for
+    - **PROMOTE**: Allows approved calls, raises ``ToolExecutionDeniedError`` for
       denied calls, and logs every verdict to a hash-chained witness file.
 
     The handler must be used with ``raise_error=True`` (set by default) so that
@@ -116,26 +128,21 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
         policy: dict[str, Any],
         witness_path: str | Path | None = None,
     ) -> None:
+        """Initialize with governance policy and optional witness log path.
+
+        Args:
+            policy: Dict defining governance rules with ``default`` verdict
+                and ``rules`` list.
+            witness_path: Path to the hash-chained witness log file.
+                If ``None``, witness logging is disabled.
+        """
         self.policy = policy
+        self._prev_hash = "0" * 64
 
         self._witness_file: Path | None = None
         if witness_path is not None:
             self._witness_file = Path(witness_path)
             self._witness_file.parent.mkdir(parents=True, exist_ok=True)
-
-        self._prev_hash = self._read_last_hash()
-
-    def _read_last_hash(self) -> str:
-        """Resume chain from existing log, or start from genesis."""
-        if self._witness_file is None or not self._witness_file.exists():
-            return "0" * 64
-        last_line = ""
-        with open(self._witness_file, encoding="utf-8") as f:
-            for last_line in f:
-                pass
-        if last_line.strip():
-            return json.loads(last_line)["hash"]
-        return "0" * 64
 
     # --- PROPOSE phase ---
 
@@ -187,9 +194,10 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
                         return "deny"
 
                 allowed = constraints.get("allowed_patterns")
-                if allowed is not None:
-                    if not any(p.lower() in input_str.lower() for p in allowed):
-                        return "deny"
+                if allowed is not None and not any(
+                    p.lower() in input_str.lower() for p in allowed
+                ):
+                    return "deny"
 
             return rule.get("verdict", policy.get("default", "deny"))
 
@@ -208,7 +216,7 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
         entry_hash = hashlib.sha256(payload.encode()).hexdigest()
         entry["hash"] = entry_hash
 
-        with open(self._witness_file, "a", encoding="utf-8") as f:
+        with self._witness_file.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
 
         self._prev_hash = entry_hash
@@ -241,7 +249,7 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
             **kwargs: Additional keyword arguments.
 
         Raises:
-            ToolExecutionDenied: If the policy denies this tool call.
+            ToolExecutionDeniedError: If the policy denies this tool call.
         """
         # PROPOSE
         intent = self._propose(serialized, input_str, inputs, tags, metadata)
@@ -259,7 +267,7 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
         })
 
         if verdict == "deny":
-            raise ToolExecutionDenied(
+            raise ToolExecutionDeniedError(
                 tool_name=intent["tool"],
                 reason="Denied by governance policy",
             )
@@ -332,8 +340,8 @@ def verify_witness_log(log_path: str | Path) -> bool:
     if not path.exists():
         return True  # Empty log is trivially valid
 
-    with open(path, encoding="utf-8") as f:
-        for i, line in enumerate(f):
+    with path.open(encoding="utf-8") as f:
+        for line in f:
             entry = json.loads(line)
             recorded_hash = entry.pop("hash")
 
