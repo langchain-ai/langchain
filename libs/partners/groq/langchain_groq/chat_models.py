@@ -192,9 +192,8 @@ class ChatGroq(BaseChatModel):
         print(response.content)
         ```
 
-        Vision-capable models:
-        - meta-llama/llama-4-scout-17b-16e-instruct
-        - meta-llama/llama-4-maverick-17b-128e-instruct
+        See [Groq model docs](https://console.groq.com/docs/vision#supported-models)
+        for the latest available vision models.
 
         Maximum image size: 20MB per request.
 
@@ -1330,7 +1329,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 for block in message.content
                 if isinstance(block, dict) and block.get("type") == "text"
             ]
-            message_dict["content"] = text_blocks if text_blocks else ""
+            message_dict["content"] = text_blocks or ""
 
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
