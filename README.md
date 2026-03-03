@@ -1,15 +1,15 @@
 <div align="center">
   <a href="https://www.langchain.com/">
     <picture>
-      <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-dark.svg">
-      <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-light.svg">
-      <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="80%">
+      <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-light.svg">
+      <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-dark.svg">
+      <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="50%">
     </picture>
   </a>
 </div>
 
 <div align="center">
-  <h3>The platform for reliable agents.</h3>
+  <h3>The agent engineering platform.</h3>
 </div>
 
 <div align="center">
