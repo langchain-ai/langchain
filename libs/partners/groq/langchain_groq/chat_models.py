@@ -351,6 +351,11 @@ class ChatGroq(BaseChatModel):
     model_name: str = Field(alias="model")
     """Model name to use."""
 
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
+
     temperature: float = 0.7
     """What sampling temperature to use."""
 
