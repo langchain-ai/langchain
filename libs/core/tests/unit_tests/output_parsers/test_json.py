@@ -244,6 +244,35 @@ def test_parse_json_with_python_dict() -> None:
     }
 
 
+THINK_TAG_BEFORE_JSON = '<think>Let me think about this...</think>{"foo": "bar"}'
+
+THINK_TAG_BEFORE_MARKDOWN = """<think>Reasoning here</think>
+```json
+{
+    "foo": "bar"
+}
+```"""
+
+THINK_TAG_MULTILINE = """<think>
+Step 1: Consider the options
+Step 2: Choose the best one
+</think>
+{"foo": "bar"}"""
+
+THINK_TAG_CASES = [
+    THINK_TAG_BEFORE_JSON,
+    THINK_TAG_BEFORE_MARKDOWN,
+    THINK_TAG_MULTILINE,
+]
+
+
+@pytest.mark.parametrize("json_string", THINK_TAG_CASES)
+def test_parse_json_strips_think_tags(json_string: str) -> None:
+    """Test that <think> tags from reasoning models are stripped."""
+    parsed = parse_json_markdown(json_string)
+    assert parsed == {"foo": "bar"}
+
+
 TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar": "foo"}', '{"foo": "bar", "bar": "foo"}'),
     ('{"foo": "bar", "bar": "foo', '{"foo": "bar", "bar": "foo"}'),

@@ -140,7 +140,9 @@ _json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
 
 
 def parse_json_markdown(
-    json_string: str, *, parser: Callable[[str], Any] = parse_partial_json
+    json_string: str,
+    *,
+    parser: Callable[[str], Any] = parse_partial_json,
 ) -> Any:
     """Parse a JSON string from a Markdown string.
 
@@ -151,6 +153,8 @@ def parse_json_markdown(
     Returns:
         The parsed JSON object as a Python dictionary.
     """
+    # Strip <think> tags if present
+    json_string = re.sub(r"<think>.*?</think>", "", json_string, flags=re.DOTALL)
     try:
         return _parse_json(json_string, parser=parser)
     except json.JSONDecodeError:
@@ -160,6 +164,8 @@ def parse_json_markdown(
         # If no match found, assume the entire string is a JSON string
         # Else, use the content within the backticks
         json_str = json_string if match is None else match.group(2)
+    # Strip <think> tags again if they were inside backticks
+    json_str = re.sub(r"<think>.*?</think>", "", json_str, flags=re.DOTALL)
     return _parse_json(json_str, parser=parser)
 
 
