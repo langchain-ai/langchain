@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import TYPE_CHECKING
 
 from langchain_text_splitters.base import (
@@ -88,8 +89,6 @@ _LAZY_IMPORTS: dict[str, str] = {
 def __getattr__(attr_name: str) -> object:
     module_name = _LAZY_IMPORTS.get(attr_name)
     if module_name is not None:
-        from importlib import import_module
-
         module = import_module(f".{module_name}", __spec__.parent)
         result = getattr(module, attr_name)
         globals()[attr_name] = result
