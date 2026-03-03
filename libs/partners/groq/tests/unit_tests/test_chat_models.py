@@ -32,8 +32,10 @@ if "GROQ_API_KEY" not in os.environ:
 def test_groq_model_param() -> None:
     llm = ChatGroq(model="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
     llm = ChatGroq(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
 
 def test_function_message_dict_to_function_message() -> None:
