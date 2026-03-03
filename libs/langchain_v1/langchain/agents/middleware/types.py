@@ -37,8 +37,8 @@ from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
-    from langchain_core.runnables import RunnableConfig
     from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
     from langgraph.types import Command
@@ -103,8 +103,8 @@ class ModelRequest(Generic[ContextT]):
     response_format: ResponseFormat[Any] | None
     state: AgentState[Any]
     runtime: Runtime[ContextT]
-    model_settings: dict[str, Any] = field(default_factory=dict)
     config: RunnableConfig | None
+    model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(
         self,
@@ -134,6 +134,7 @@ class ModelRequest(Generic[ContextT]):
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
             system_prompt: System prompt string (deprecated, converted to SystemMessage).
+            config: RunnableConfig object.
 
         Raises:
             ValueError: If both `system_prompt` and `system_message` are provided.
