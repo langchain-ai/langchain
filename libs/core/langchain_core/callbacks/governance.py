@@ -117,12 +117,25 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
         witness_path: str | Path | None = None,
     ) -> None:
         self.policy = policy
-        self._prev_hash = "0" * 64
 
         self._witness_file: Path | None = None
         if witness_path is not None:
             self._witness_file = Path(witness_path)
             self._witness_file.parent.mkdir(parents=True, exist_ok=True)
+
+        self._prev_hash = self._read_last_hash()
+
+    def _read_last_hash(self) -> str:
+        """Resume chain from existing log, or start from genesis."""
+        if self._witness_file is None or not self._witness_file.exists():
+            return "0" * 64
+        last_line = ""
+        with open(self._witness_file, encoding="utf-8") as f:
+            for last_line in f:
+                pass
+        if last_line.strip():
+            return json.loads(last_line)["hash"]
+        return "0" * 64
 
     # --- PROPOSE phase ---
 

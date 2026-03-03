@@ -353,6 +353,31 @@ class TestWitnessLog:
         assert entry["prev_hash"] == "0" * 64
 
 
+
+
+    def test_hash_chain_resumes_on_new_handler(
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+    ) -> None:
+        """A second handler instance must continue the existing chain."""
+        handler1 = GovernanceCallbackHandler(
+            policy=deny_by_default_policy, witness_path=witness_path
+        )
+        handler1.on_tool_start(
+            serialized={"name": "search"}, input_str="q1", run_id=run_id
+        )
+        # Second handler against same file
+        handler2 = GovernanceCallbackHandler(
+            policy=deny_by_default_policy, witness_path=witness_path
+        )
+        handler2.on_tool_start(
+            serialized={"name": "search"}, input_str="q2", run_id=run_id
+        )
+        # Chain should be intact across both handlers
+        assert verify_witness_log(witness_path) is True
+        entries = [json.loads(l) for l in witness_path.read_text().splitlines()]
+        assert len(entries) == 2
+        assert entries[1]["prev_hash"] == entries[0]["hash"]
+
 class TestToolExecutionDenied:
     def test_exception_message(self) -> None:
         exc = ToolExecutionDenied("shell", "blocked by policy")
