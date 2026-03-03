@@ -245,17 +245,21 @@ class VectorStore(ABC):
             List of IDs of the added texts.
         """
         if type(self).add_texts != VectorStore.add_texts:
-            if "ids" not in kwargs:
+            # Extract ids from kwargs to pass it explicitly and avoid
+            # "got multiple values for keyword argument 'ids'" errors
+            # when subclasses define ids as a regular parameter.
+            ids = kwargs.pop("ids", None)
+            if ids is None:
                 ids = [doc.id for doc in documents]
 
                 # If there's at least one valid ID, we'll assume that IDs
                 # should be used.
-                if any(ids):
-                    kwargs["ids"] = ids
+                if not any(ids):
+                    ids = None
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return self.add_texts(texts, metadatas, **kwargs)
+            return self.add_texts(texts, metadatas, ids=ids, **kwargs)
         msg = (
             f"`add_documents` and `add_texts` has not been implemented "
             f"for {self.__class__.__name__} "
@@ -276,17 +280,21 @@ class VectorStore(ABC):
         """
         # If the async method has been overridden, we'll use that.
         if type(self).aadd_texts != VectorStore.aadd_texts:
-            if "ids" not in kwargs:
+            # Extract ids from kwargs to pass it explicitly and avoid
+            # "got multiple values for keyword argument 'ids'" errors
+            # when subclasses define ids as a regular parameter.
+            ids = kwargs.pop("ids", None)
+            if ids is None:
                 ids = [doc.id for doc in documents]
 
                 # If there's at least one valid ID, we'll assume that IDs
                 # should be used.
-                if any(ids):
-                    kwargs["ids"] = ids
+                if not any(ids):
+                    ids = None
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return await self.aadd_texts(texts, metadatas, **kwargs)
+            return await self.aadd_texts(texts, metadatas, ids=ids, **kwargs)
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
