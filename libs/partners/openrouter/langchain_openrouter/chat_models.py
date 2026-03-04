@@ -969,8 +969,7 @@ def _wrap_messages_for_sdk(
             # Unknown role — pass dict through and hope for the best.
             wrapped.append(msg)
             continue
-        fields = {k: v for k, v in msg.items() if k != "role"}
-        wrapped.append(model_cls.model_construct(**fields))
+        wrapped.append(model_cls.model_construct(**msg))
     return wrapped
 
 
