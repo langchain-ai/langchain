@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING
-
 from uuid import uuid4
 
 if TYPE_CHECKING:
