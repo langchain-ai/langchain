@@ -151,8 +151,8 @@ def test_with_default_factory() -> None:
 
     # Verify defaults actually work at runtime
     instance = subset_model(required_field="hello")
-    assert instance.optional_with_default == "hi"
-    assert instance.optional_with_factory == []
+    assert instance.optional_with_default == "hi"  # type: ignore[attr-defined]
+    assert instance.optional_with_factory == []  # type: ignore[attr-defined]
 
 
 def test_fields_pydantic_v2_proper() -> None:
