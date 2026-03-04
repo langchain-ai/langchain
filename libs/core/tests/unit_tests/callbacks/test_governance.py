@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
+from typing import TYPE_CHECKING
+
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from uuid import UUID
 
 import pytest
 
@@ -17,7 +21,7 @@ from langchain_core.callbacks.governance import (
 
 
 @pytest.fixture
-def run_id():
+def run_id() -> UUID:
     return uuid4()
 
 
