@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -65,15 +65,20 @@ class TestPropose:
         assert len(intent["content_hash"]) == 64  # SHA-256 hex
 
     def test_deterministic_hash(self) -> None:
-        kwargs = {
-            "serialized": {"name": "search"},
-            "input_str": "test",
-            "inputs": None,
-            "tags": None,
-            "metadata": None,
-        }
-        h1 = GovernanceCallbackHandler._propose(**kwargs)["content_hash"]
-        h2 = GovernanceCallbackHandler._propose(**kwargs)["content_hash"]
+        h1 = GovernanceCallbackHandler._propose(
+            serialized={"name": "search"},
+            input_str="test",
+            inputs=None,
+            tags=None,
+            metadata=None,
+        )["content_hash"]
+        h2 = GovernanceCallbackHandler._propose(
+            serialized={"name": "search"},
+            input_str="test",
+            inputs=None,
+            tags=None,
+            metadata=None,
+        )["content_hash"]
         assert h1 == h2
 
     def test_different_inputs_different_hash(self) -> None:
@@ -198,7 +203,7 @@ class TestDecide:
 
 class TestPromote:
     def test_approved_tool_does_not_raise(
-        self, deny_by_default_policy: dict, run_id: any
+        self, deny_by_default_policy: dict, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
         # Should not raise
@@ -209,7 +214,7 @@ class TestPromote:
         )
 
     def test_denied_tool_raises(
-        self, deny_by_default_policy: dict, run_id: any
+        self, deny_by_default_policy: dict, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
         with pytest.raises(ToolExecutionDeniedError, match="shell"):
@@ -220,7 +225,7 @@ class TestPromote:
             )
 
     def test_unknown_tool_denied_by_default(
-        self, deny_by_default_policy: dict, run_id: any
+        self, deny_by_default_policy: dict, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
         with pytest.raises(ToolExecutionDeniedError):
@@ -237,7 +242,7 @@ class TestPromote:
 
 class TestWitnessLog:
     def test_witness_log_created(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -252,7 +257,7 @@ class TestWitnessLog:
         assert entries[0]["phase"] == "promote"
 
     def test_denied_tool_logged_before_raise(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -266,7 +271,7 @@ class TestWitnessLog:
         assert entries[0]["verdict"] == "deny"
 
     def test_hash_chain_integrity(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -282,7 +287,7 @@ class TestWitnessLog:
         assert verify_witness_log(witness_path) is True
 
     def test_tampered_log_detected(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -304,7 +309,7 @@ class TestWitnessLog:
         assert verify_witness_log(witness_path) is False
 
     def test_on_tool_end_logs_result_hash(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -318,7 +323,7 @@ class TestWitnessLog:
         assert "result_hash" in entries[1]
 
     def test_on_tool_error_logs(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
@@ -332,7 +337,7 @@ class TestWitnessLog:
         assert entries[1]["error_type"] == "ValueError"
 
     def test_no_witness_path_does_not_error(
-        self, deny_by_default_policy: dict, run_id: any
+        self, deny_by_default_policy: dict, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(policy=deny_by_default_policy)
         handler.on_tool_start(
@@ -344,7 +349,7 @@ class TestWitnessLog:
         assert verify_witness_log(tmp_path / "nonexistent.jsonl") is True
 
     def test_genesis_hash(
-        self, deny_by_default_policy: dict, witness_path: Path, run_id: any
+        self, deny_by_default_policy: dict, witness_path: Path, run_id: Any
     ) -> None:
         handler = GovernanceCallbackHandler(
             policy=deny_by_default_policy, witness_path=witness_path
