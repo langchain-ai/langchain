@@ -23,6 +23,7 @@ from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
+from langchain.agents.middleware.tool_timeout import ToolTimeoutMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -70,6 +71,7 @@ __all__ = [
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolRetryMiddleware",
+    "ToolTimeoutMiddleware",
     "after_agent",
     "after_model",
     "before_agent",
