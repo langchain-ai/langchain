@@ -21,6 +21,33 @@ This package contains the LangChain integrations for OpenAI through their `opena
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_openai/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/openai).
 
+### High concurrency - optional OpenAI aiohttp backend
+
+For improved throughput in high-concurrency scenarios (parallel chains, graphs, and agents), you can enable the OpenAI aiohttp backend which removes concurrency limits seen with the default httpx client.
+
+**Installation:**
+```bash
+pip install "openai[aiohttp]"
+```
+
+**Usage:**
+```python
+from openai import DefaultAioHttpClient
+from langchain_openai import ChatOpenAI
+
+# Option 1: Pass explicitly
+llm = ChatOpenAI(
+    http_client=DefaultAioHttpClient(),
+    http_async_client=DefaultAioHttpClient()
+)
+
+# Option 2: Use environment variable
+# Set LC_OPENAI_USE_AIOHTTP=1 in your environment
+llm = ChatOpenAI()  # Will automatically use aiohttp if available
+```
+
+For more details, see the [OpenAI Python library documentation](https://github.com/openai/openai-python#httpx-client).
+
 ## 📕 Releases & Versioning
 
 See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
