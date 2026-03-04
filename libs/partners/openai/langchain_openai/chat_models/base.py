@@ -577,8 +577,8 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """API key to use.
 
-    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
-    string, or sync or async callable that returns a string.
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified
+    as a string, or sync or async callable that returns a string.
 
     ??? example "Specify with environment variable"
 
@@ -600,6 +600,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with a sync callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -611,6 +612,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with an async callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -636,16 +638,20 @@ class BaseChatOpenAI(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
-    `None`."""
+    """Timeout for requests to OpenAI completion API.
+
+    Can be float, `httpx.Timeout` or `None`.
+    """
 
     stream_usage: bool | None = None
-    """Whether to include usage metadata in streaming output. If enabled, an additional
-    message chunk will be generated during the stream including usage metadata.
+    """Whether to include usage metadata in streaming output.
+
+    If enabled, an additional message chunk will be generated during the stream
+    including usage metadata.
 
     This parameter is enabled unless `openai_api_base` is set or the model is
-    initialized with a custom client, as many chat completions APIs do not support
-    streaming token usage.
+    initialized with a custom client, as many chat completions APIs do not
+    support streaming token usage.
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
@@ -671,8 +677,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with an
-    associated log probability. `logprobs` must be set to true if this parameter is
-    used."""
+    associated log probability.
+
+    `logprobs` must be set to true if this parameter is used.
+    """
 
     logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -690,10 +698,9 @@ class BaseChatOpenAI(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     reasoning_effort: str | None = None
-    """Constrains effort on reasoning for reasoning models. For use with the Chat
-    Completions API.
+    """Constrains effort on reasoning for reasoning models.
 
-    Reasoning models only.
+    For use with the Chat Completions API. Reasoning models only.
 
     Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
@@ -701,7 +708,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     reasoning: dict[str, Any] | None = None
-    """Reasoning parameters for reasoning models. For use with the Responses API.
+    """Reasoning parameters for reasoning models.
+
+    For use with the Responses API.
 
     ```python
     reasoning={
@@ -714,8 +723,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     verbosity: str | None = None
-    """Controls the verbosity level of responses for reasoning models. For use with the
-    Responses API.
+    """Controls the verbosity level of responses for reasoning models.
+
+    For use with the Responses API.
 
     Currently supported values are `'low'`, `'medium'`, and `'high'`.
 
@@ -745,35 +755,36 @@ class BaseChatOpenAI(BaseChatModel):
     http_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.Client`.
 
-    Only used for sync invocations. Must specify `http_async_client` as well if you'd
-    like a custom client for async invocations.
+    Only used for sync invocations. Must specify `http_async_client` as well if
+    you'd like a custom client for async invocations.
     """
 
     http_async_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.AsyncClient`.
 
-    Only used for async invocations. Must specify `http_client` as well if you'd like a
-    custom client for sync invocations.
+    Only used for async invocations. Must specify `http_client` as well if you'd
+    like a custom client for sync invocations.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
 
     extra_body: Mapping[str, Any] | None = None
-    """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
-    providers.
+    """Optional additional JSON properties to include in the request parameters
+    when making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or
+    other providers.
 
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
 
     Examples:
-        - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
-        - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
-            `extra_body={"use_beam_search": True}`
-        - Any other provider-specific parameters
+    - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
+    - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
+        `extra_body={"use_beam_search": True}`
+    - Any other provider-specific parameters
 
     !!! warning
+
         Do not use `model_kwargs` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
         `extra_body` instead.
