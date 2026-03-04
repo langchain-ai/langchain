@@ -9,6 +9,7 @@ from langchain_core.messages.ai import (
     UsageMetadata,
     add_ai_message_chunks,
     add_usage,
+    merge_usage,
     subtract_usage,
 )
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
@@ -168,7 +169,53 @@ def test_subtract_usage_with_negative_result() -> None:
     assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
 
 
+def test_merge_usage_both_none() -> None:
+    result = merge_usage(None, None)
+    assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+
+
+def test_merge_usage_one_none() -> None:
+    usage = UsageMetadata(input_tokens=10, output_tokens=20, total_tokens=30)
+    result = merge_usage(usage, None)
+    assert result == usage
+
+
+def test_merge_usage_takes_max() -> None:
+    usage1 = UsageMetadata(input_tokens=35, output_tokens=1, total_tokens=36)
+    usage2 = UsageMetadata(input_tokens=35, output_tokens=11, total_tokens=46)
+    result = merge_usage(usage1, usage2)
+    assert result == UsageMetadata(input_tokens=35, output_tokens=11, total_tokens=46)
+
+
+def test_merge_usage_with_details() -> None:
+    usage1 = UsageMetadata(
+        input_tokens=10,
+        output_tokens=5,
+        total_tokens=15,
+        input_token_details=InputTokenDetails(audio=2, cache_read=3),
+        output_token_details=OutputTokenDetails(reasoning=4),
+    )
+    usage2 = UsageMetadata(
+        input_tokens=10,
+        output_tokens=8,
+        total_tokens=18,
+        input_token_details=InputTokenDetails(audio=2, cache_read=3),
+        output_token_details=OutputTokenDetails(reasoning=7),
+    )
+    result = merge_usage(usage1, usage2)
+    assert result["input_tokens"] == 10
+    assert result["output_tokens"] == 8
+    assert result["total_tokens"] == 18
+    assert result["input_token_details"]["audio"] == 2
+    assert result["input_token_details"]["cache_read"] == 3
+    assert result["output_token_details"]["reasoning"] == 7
+
+
 def test_add_ai_message_chunks_usage() -> None:
+    """Chunk aggregation uses max to handle cumulative usage providers.
+
+    Providers like vLLM report cumulative usage per chunk.  See #30429.
+    """
     chunks = [
         AIMessageChunk(content="", usage_metadata=None),
         AIMessageChunk(
@@ -192,12 +239,75 @@ def test_add_ai_message_chunks_usage() -> None:
     assert combined == AIMessageChunk(
         content="",
         usage_metadata=UsageMetadata(
-            input_tokens=4,
-            output_tokens=6,
-            total_tokens=10,
+            input_tokens=2,
+            output_tokens=3,
+            total_tokens=5,
             input_token_details=InputTokenDetails(audio=1, cache_read=1),
             output_token_details=OutputTokenDetails(audio=1, reasoning=2),
         ),
+    )
+
+
+def test_add_ai_message_chunks_usage_openai_pattern() -> None:
+    """OpenAI sends usage only in the final chunk; all others have None."""
+    chunks = [
+        AIMessageChunk(content="Hello", usage_metadata=None),
+        AIMessageChunk(content=" world", usage_metadata=None),
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=32, output_tokens=11, total_tokens=43
+            ),
+        ),
+    ]
+    combined = add_ai_message_chunks(*chunks)
+    assert combined.usage_metadata == UsageMetadata(
+        input_tokens=32, output_tokens=11, total_tokens=43
+    )
+
+
+def test_add_ai_message_chunks_usage_vllm_pattern() -> None:
+    """VLLM sends cumulative usage in every chunk.
+
+    Aggregation must not inflate counts by summing repeated
+    input_tokens values (#30429).
+    """
+    chunks = [
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=35, output_tokens=0, total_tokens=35
+            ),
+        ),
+        AIMessageChunk(
+            content="TEST",
+            usage_metadata=UsageMetadata(
+                input_tokens=35, output_tokens=1, total_tokens=36
+            ),
+        ),
+        AIMessageChunk(
+            content=" TEST",
+            usage_metadata=UsageMetadata(
+                input_tokens=35, output_tokens=1, total_tokens=36
+            ),
+        ),
+        AIMessageChunk(
+            content=" TEST",
+            usage_metadata=UsageMetadata(
+                input_tokens=35, output_tokens=1, total_tokens=36
+            ),
+        ),
+        # Final summary chunk with cumulative totals
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=35, output_tokens=11, total_tokens=46
+            ),
+        ),
+    ]
+    combined = add_ai_message_chunks(*chunks)
+    assert combined.usage_metadata == UsageMetadata(
+        input_tokens=35, output_tokens=11, total_tokens=46
     )
 
 

@@ -201,7 +201,7 @@ def test_message_chunks() -> None:
     )
     assert left + right == AIMessageChunk(
         content="",
-        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
     )
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right

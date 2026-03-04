@@ -672,11 +672,12 @@ def add_ai_message_chunks(
     else:
         tool_call_chunks = []
 
-    # Token usage
+    # Token usage — use max (not sum) to handle providers that report
+    # cumulative usage per chunk, not just in the final chunk (#30429).
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
         usage_metadata: UsageMetadata | None = left.usage_metadata
         for other in others:
-            usage_metadata = add_usage(usage_metadata, other.usage_metadata)
+            usage_metadata = merge_usage(usage_metadata, other.usage_metadata)
     else:
         usage_metadata = None
 
@@ -835,6 +836,70 @@ def subtract_usage(
                 cast("dict", left),
                 cast("dict", right),
                 (lambda le, ri: max(le - ri, 0)),
+            ),
+        )
+    )
+
+
+def merge_usage(
+    left: UsageMetadata | None, right: UsageMetadata | None
+) -> UsageMetadata:
+    """Merge two ``UsageMetadata`` objects, taking the max of each field.
+
+    Unlike :func:`add_usage` which sums values, this takes the element-wise
+    maximum.  This is appropriate for aggregating streaming chunks because
+    some providers (e.g. vLLM, Ollama) report **cumulative** usage in every
+    chunk rather than only in the final one.  Using ``max`` produces correct
+    totals regardless of whether the provider sends usage once (OpenAI) or
+    cumulatively (vLLM).
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.messages.ai import merge_usage
+
+            left = UsageMetadata(
+                input_tokens=35,
+                output_tokens=1,
+                total_tokens=36,
+            )
+            right = UsageMetadata(
+                input_tokens=35,
+                output_tokens=11,
+                total_tokens=46,
+            )
+
+            merge_usage(left, right)
+
+        results in
+
+        .. code-block:: python
+
+            UsageMetadata(
+                input_tokens=35,
+                output_tokens=11,
+                total_tokens=46,
+            )
+
+    Args:
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
+
+    Returns:
+        A ``UsageMetadata`` whose fields are the element-wise maxima.
+    """
+    if not (left or right):
+        return UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
+    if not (left and right):
+        return cast("UsageMetadata", left or right)
+
+    return UsageMetadata(
+        **cast(
+            "UsageMetadata",
+            _dict_int_op(
+                cast("dict", left),
+                cast("dict", right),
+                max,
             ),
         )
     )
