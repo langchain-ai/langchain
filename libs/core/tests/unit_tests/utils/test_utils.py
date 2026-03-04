@@ -459,6 +459,22 @@ def test_merge_lists_all_none() -> None:
     assert result is None
 
 
+def test_merge_lists_mixed_strings_and_dicts() -> None:
+    """Test merge_lists with mixed string and dict elements (Mistral citations)."""
+    merged = [
+        "start answer...",
+        {"type": "reference", "index": 0, "reference_ids": ["iKcb2CAQ7"]},
+        "other answer...",
+    ]
+    other = [{"type": "reference", "index": 0, "reference_ids": ["DGqzzmqc3"]}]
+    result = merge_lists(merged, other)
+    assert result is not None
+    assert result[0] == "start answer..."
+    assert result[2] == "other answer..."
+    assert isinstance(result[1], dict)
+    assert result[1]["index"] == 0
+
+
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
     [
