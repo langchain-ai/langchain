@@ -683,43 +683,19 @@ def add_ai_message_chunks(
         left.response_metadata, *(o.response_metadata for o in others)
     )
 
-    # Merge tool call chunks - group by id and concatenate args
-    # This handles fragmented tool calls from SSE streaming (issue #35514)
-    all_tool_call_chunks = list(
-        itertools.chain(left.tool_call_chunks, *(o.tool_call_chunks for o in others))
-    )
-    if all_tool_call_chunks:
-        # Group chunks by id
-        grouped_chunks: dict[str, list[ToolCallChunk]] = {}
-        for chunk in all_tool_call_chunks:
-            chunk_id = chunk.get("id") or ""
-            if chunk_id not in grouped_chunks:
-                grouped_chunks[chunk_id] = []
-            grouped_chunks[chunk_id].append(chunk)
-
-        # Merge chunks within each group
-        tool_call_chunks = []
-        for chunk_id, chunks in grouped_chunks.items():
-            # Concatenate all args and get the first non-empty name
-            merged_args = ""
-            merged_name = None
-            merged_index = None
-            for chunk in chunks:
-                if chunk.get("args"):
-                    merged_args += chunk["args"] or ""
-                if chunk.get("name") and merged_name is None:
-                    merged_name = chunk["name"]
-                if chunk.get("index") is not None and merged_index is None:
-                    merged_index = chunk["index"]
-
-            tool_call_chunks.append(
-                create_tool_call_chunk(
-                    name=merged_name,
-                    args=merged_args,
-                    index=merged_index,
-                    id=chunk_id or None,
-                )
+    # Merge tool call chunks
+    if raw_tool_calls := merge_lists(
+        left.tool_call_chunks, *(o.tool_call_chunks for o in others)
+    ):
+        tool_call_chunks = [
+            create_tool_call_chunk(
+                name=rtc.get("name"),
+                args=rtc.get("args"),
+                index=rtc.get("index"),
+                id=rtc.get("id"),
             )
+            for rtc in raw_tool_calls
+        ]
     else:
         tool_call_chunks = []
 
