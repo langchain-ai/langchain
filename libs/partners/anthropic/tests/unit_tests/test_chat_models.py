@@ -1396,6 +1396,62 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_bind_tools_tool_choice_downgraded_when_thinking_enabled() -> None:
+    """Anthropic rejects forced tool use with thinking enabled.
+    bind_tools should downgrade tool_choice to 'auto' and warn."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+    import warnings
+
+    # "any" should be downgraded to "auto" with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        bound = chat_model.bind_tools([GetWeather], tool_choice="any")
+        assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {"type": "auto"}
+        assert len(w) == 1
+        assert "Downgrading tool_choice" in str(w[0].message)
+
+    # Named tool choice should also be downgraded with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        bound = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+        assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {"type": "auto"}
+        assert len(w) == 1
+
+    # "auto" should stay "auto" — no warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        bound = chat_model.bind_tools([GetWeather], tool_choice="auto")
+        assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {"type": "auto"}
+        assert len(w) == 0
+
+    # No tool_choice should remain unset — no warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        bound = chat_model.bind_tools([GetWeather])
+        assert "tool_choice" not in cast("RunnableBinding", bound).kwargs
+        assert len(w) == 0
+
+
+def test_bind_tools_tool_choice_not_downgraded_without_thinking() -> None:
+    """Without thinking enabled, tool_choice should be passed through as-is."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    bound = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {"type": "any"}
+
+    bound = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+    assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+    }
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization

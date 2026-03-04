@@ -1567,6 +1567,22 @@ class ChatAnthropic(BaseChatModel):
                 msg,
             )
 
+        # Anthropic rejects forced tool use when thinking is enabled.
+        # Downgrade to "auto" so the model can still choose voluntarily.
+        if (
+            self.thinking is not None
+            and self.thinking.get("type") == "enabled"
+            and "tool_choice" in kwargs
+            and kwargs["tool_choice"].get("type") in ("any", "tool")
+        ):
+            warnings.warn(
+                "tool_choice is forced but thinking is enabled. "
+                "Downgrading tool_choice to 'auto' because Anthropic "
+                "does not support forced tool use with thinking.",
+                stacklevel=2,
+            )
+            kwargs["tool_choice"] = {"type": "auto"}
+
         if parallel_tool_calls is not None:
             disable_parallel_tool_use = not parallel_tool_calls
             if "tool_choice" in kwargs:
