@@ -3642,7 +3642,7 @@ def test_tool_default_factory_not_required() -> None:
     """Fields with default_factory should not appear in required."""
 
     class Args(BaseModel):
-        """Hello"""
+        """Hello."""
 
         names: list[str] = Field(default_factory=list, description="Some names")
 
