@@ -133,6 +133,28 @@ def test_with_field_metadata() -> None:
     }
 
 
+def test_with_default_factory() -> None:
+    """Fields with default_factory should not be required."""
+
+    class Foo(BaseModel):
+        required_field: str = Field(description="Required")
+        optional_with_default: str = Field(default="hi", description="Has default")
+        optional_with_factory: list[int] = Field(
+            default_factory=list, description="Has default_factory"
+        )
+
+    subset_model = _create_subset_model_v2(
+        "Foo", Foo, ["required_field", "optional_with_default", "optional_with_factory"]
+    )
+    schema = subset_model.model_json_schema()
+    assert schema["required"] == ["required_field"]
+
+    # Verify defaults actually work at runtime
+    instance = subset_model(required_field="hello")
+    assert instance.optional_with_default == "hi"
+    assert instance.optional_with_factory == []
+
+
 def test_fields_pydantic_v2_proper() -> None:
     class Foo(BaseModel):
         x: int
