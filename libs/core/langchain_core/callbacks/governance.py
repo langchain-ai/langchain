@@ -199,9 +199,11 @@ class GovernanceCallbackHandler(BaseCallbackHandler):
                 ):
                     return "deny"
 
-            return rule.get("verdict", policy.get("default", "deny"))
+            verdict: str = rule.get("verdict", policy.get("default", "deny"))
+            return verdict
 
-        return policy.get("default", "deny")
+        default: str = policy.get("default", "deny")
+        return default
 
     # --- Witness log ---
 
