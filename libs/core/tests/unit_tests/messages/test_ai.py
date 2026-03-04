@@ -1,5 +1,3 @@
-from typing import cast
-
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -442,15 +440,15 @@ def test_aimessagechunk_fragmented_tool_call_chunks() -> None:
 
 def test_fragmented_tool_call_chunks() -> None:
     """Test that fragmented tool call arguments are properly accumulated.
-    
+
     This tests the fix for issue #35514 where SSE fragmentation causes
     tool calls to be executed with empty args because each chunk is parsed
     individually instead of accumulating args first.
-    
+
     Example from the issue:
     - Chunk 1: name="my_tool", args="", id="call_123"
     - Chunk 2: name="", args='{"url": "http://mywebsite.com"}', id=""
-    
+
     The fix ensures args are accumulated by id before parsing.
     """
     # Simulate fragmented tool call chunks from OpenRouter/deepseek
@@ -555,6 +553,6 @@ def test_fragmented_tool_call_chunks() -> None:
     assert len(merged_fragments.tool_calls) == 1
     assert merged_fragments.tool_calls[0]["name"] == "my_tool"
     assert merged_fragments.tool_calls[0]["args"] == {
-        "url": "http://mysite.com", 
+        "url": "http://mysite.com",
         "timeout": 30
     }
