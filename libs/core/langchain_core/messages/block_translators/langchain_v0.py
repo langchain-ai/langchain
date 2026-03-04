@@ -5,6 +5,21 @@ from typing import Any, cast
 from langchain_core.messages import content as types
 
 
+def _get_mime_type(block: dict) -> str | None:
+    """Get MIME type from block, handling both snake_case and camelCase keys.
+
+    LangGraph JS SDK uses camelCase (mimeType) while Python uses snake_case (mime_type).
+    This function checks for both keys to ensure compatibility.
+
+    Args:
+        block: The content block dictionary.
+
+    Returns:
+        The MIME type if found, None otherwise.
+    """
+    return block.get("mime_type") or block.get("mimeType")
+
+
 def _convert_v0_multimodal_input_to_v1(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
@@ -75,20 +90,21 @@ def _convert_legacy_v0_content_block_to_v1(
         source_type = block.get("source_type")
         if source_type == "url":
             # image-url
-            known_keys = {"mime_type", "type", "source_type", "url"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_image_block(
                     url=block["url"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
 
             # Don't construct with an ID if not present in original block
             v1_image_url = types.ImageContentBlock(type="image", url=block["url"])
-            if block.get("mime_type"):
-                v1_image_url["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_image_url["mime_type"] = mime_type
 
             v1_image_url["extras"] = {}
             for key, value in extras.items():
@@ -100,12 +116,13 @@ def _convert_legacy_v0_content_block_to_v1(
             return v1_image_url
         if source_type == "base64":
             # image-base64
-            known_keys = {"mime_type", "type", "source_type", "data"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_image_block(
                     base64=block["data"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
@@ -113,8 +130,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_image_base64 = types.ImageContentBlock(
                 type="image", base64=block["data"]
             )
-            if block.get("mime_type"):
-                v1_image_base64["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_image_base64["mime_type"] = mime_type
 
             v1_image_base64["extras"] = {}
             for key, value in extras.items():
@@ -143,12 +160,13 @@ def _convert_legacy_v0_content_block_to_v1(
         source_type = block.get("source_type")
         if source_type == "url":
             # audio-url
-            known_keys = {"mime_type", "type", "source_type", "url"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_audio_block(
                     url=block["url"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
@@ -157,8 +175,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_audio_url: types.AudioContentBlock = types.AudioContentBlock(
                 type="audio", url=block["url"]
             )
-            if block.get("mime_type"):
-                v1_audio_url["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_audio_url["mime_type"] = mime_type
 
             v1_audio_url["extras"] = {}
             for key, value in extras.items():
@@ -170,12 +188,13 @@ def _convert_legacy_v0_content_block_to_v1(
             return v1_audio_url
         if source_type == "base64":
             # audio-base64
-            known_keys = {"mime_type", "type", "source_type", "data"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_audio_block(
                     base64=block["data"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
@@ -183,8 +202,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_audio_base64: types.AudioContentBlock = types.AudioContentBlock(
                 type="audio", base64=block["data"]
             )
-            if block.get("mime_type"):
-                v1_audio_base64["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_audio_base64["mime_type"] = mime_type
 
             v1_audio_base64["extras"] = {}
             for key, value in extras.items():
@@ -214,12 +233,13 @@ def _convert_legacy_v0_content_block_to_v1(
         source_type = block.get("source_type")
         if source_type == "url":
             # file-url
-            known_keys = {"mime_type", "type", "source_type", "url"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_file_block(
                     url=block["url"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
@@ -227,8 +247,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_file_url: types.FileContentBlock = types.FileContentBlock(
                 type="file", url=block["url"]
             )
-            if block.get("mime_type"):
-                v1_file_url["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_file_url["mime_type"] = mime_type
 
             v1_file_url["extras"] = {}
             for key, value in extras.items():
@@ -240,12 +260,13 @@ def _convert_legacy_v0_content_block_to_v1(
             return v1_file_url
         if source_type == "base64":
             # file-base64
-            known_keys = {"mime_type", "type", "source_type", "data"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_file_block(
                     base64=block["data"],
-                    mime_type=block.get("mime_type"),
+                    mime_type=mime_type,
                     id=block["id"],
                     **extras,
                 )
@@ -253,8 +274,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_file_base64: types.FileContentBlock = types.FileContentBlock(
                 type="file", base64=block["data"]
             )
-            if block.get("mime_type"):
-                v1_file_base64["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_file_base64["mime_type"] = mime_type
 
             v1_file_base64["extras"] = {}
             for key, value in extras.items():
@@ -271,8 +292,9 @@ def _convert_legacy_v0_content_block_to_v1(
             return types.create_file_block(file_id=block["id"], **extras)
         if source_type == "text":
             # file-text
-            known_keys = {"mime_type", "type", "source_type", "url"}
+            known_keys = {"mime_type", "mimeType", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
+            mime_type = _get_mime_type(block)
             if "id" in block:
                 return types.create_plaintext_block(
                     # In v0, URL points to the text file content
@@ -285,8 +307,8 @@ def _convert_legacy_v0_content_block_to_v1(
             v1_file_text: types.PlainTextContentBlock = types.PlainTextContentBlock(
                 type="text-plain", text=block["url"], mime_type="text/plain"
             )
-            if block.get("mime_type"):
-                v1_file_text["mime_type"] = block["mime_type"]
+            if mime_type:
+                v1_file_text["mime_type"] = mime_type
 
             v1_file_text["extras"] = {}
             for key, value in extras.items():
