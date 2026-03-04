@@ -450,7 +450,7 @@ class ChatOpenRouter(BaseChatModel):
         response = await self.client.chat.send_async(messages=sdk_messages, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901
+    def _stream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -536,7 +536,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901
+    async def _astream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
