@@ -233,6 +233,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
+        remaining_indices: list[int] = list(range(len(inputs)))
         not_set: list[Output] = []
         result = not_set
         try:
@@ -279,12 +280,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Map last attempt's results back to their original indices
+        last_results: dict[int, Output | Exception] = dict(
+            zip(remaining_indices, result, strict=True)
+        )
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(last_results[idx])
         return outputs
 
     @override
@@ -309,6 +314,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
+        remaining_indices: list[int] = list(range(len(inputs)))
         not_set: list[Output] = []
         result = not_set
         try:
@@ -354,12 +360,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Map last attempt's results back to their original indices
+        last_results: dict[int, Output | Exception] = dict(
+            zip(remaining_indices, result, strict=True)
+        )
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(last_results[idx])
         return outputs
 
     @override
