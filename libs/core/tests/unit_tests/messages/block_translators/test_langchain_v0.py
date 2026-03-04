@@ -111,3 +111,60 @@ def test_convert_with_extras_on_v0_block() -> None:
     }
 
     assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+
+
+def test_convert_camelCase_to_snake_case() -> None:
+    """Test that camelCase keys from JS SDK are normalized to snake_case.
+
+    Issue: LangGraph JS SDK generates camelCase (mimeType, sourceType),
+    but Python expects snake_case (mime_type, source_type).
+    """
+    # Test mimeType -> mime_type conversion
+    block_image = {
+        "type": "image",
+        "sourceType": "base64",  # camelCase
+        "data": "<base64 data>",
+        "mimeType": "image/png",  # camelCase
+    }
+    result_image = _convert_legacy_v0_content_block_to_v1(block_image)
+    assert result_image["type"] == "image"
+    assert result_image["base64"] == "<base64 data>"
+    assert result_image["mime_type"] == "image/png"
+
+    # Test audio with camelCase
+    block_audio = {
+        "type": "audio",
+        "sourceType": "url",  # camelCase
+        "url": "https://example.com/audio.mp3",
+        "mimeType": "audio/mpeg",  # camelCase
+    }
+    result_audio = _convert_legacy_v0_content_block_to_v1(block_audio)
+    assert result_audio["type"] == "audio"
+    assert result_audio["url"] == "https://example.com/audio.mp3"
+    assert result_audio["mime_type"] == "audio/mpeg"
+
+    # Test file with camelCase
+    block_file = {
+        "type": "file",
+        "sourceType": "base64",  # camelCase
+        "data": "<base64 data>",
+        "mimeType": "application/pdf",  # camelCase
+    }
+    result_file = _convert_legacy_v0_content_block_to_v1(block_file)
+    assert result_file["type"] == "file"
+    assert result_file["base64"] == "<base64 data>"
+    assert result_file["mime_type"] == "application/pdf"
+
+
+def test_convert_snake_case_unchanged() -> None:
+    """Test that existing snake_case blocks still work correctly."""
+    block = {
+        "type": "image",
+        "source_type": "base64",
+        "data": "<base64 data>",
+        "mime_type": "image/png",
+    }
+    result = _convert_legacy_v0_content_block_to_v1(block)
+    assert result["type"] == "image"
+    assert result["base64"] == "<base64 data>"
+    assert result["mime_type"] == "image/png"

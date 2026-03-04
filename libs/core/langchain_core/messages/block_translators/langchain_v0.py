@@ -65,6 +65,13 @@ def _convert_legacy_v0_content_block_to_v1(
         """
         return {k: v for k, v in block_dict.items() if k not in known_keys}
 
+    # Normalize camelCase to snake_case for cross-SDK compatibility
+    # JS LangGraph SDK uses camelCase (mimeType), Python expects snake_case (mime_type)
+    if "mimeType" in block and "mime_type" not in block:
+        block = {**block, "mime_type": block["mimeType"]}
+    if "sourceType" in block and "source_type" not in block:
+        block = {**block, "source_type": block["sourceType"]}
+
     # Check if this is actually a v0 format block
     block_type = block.get("type")
     if block_type not in {"image", "audio", "file"} or "source_type" not in block:
