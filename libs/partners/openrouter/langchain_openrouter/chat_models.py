@@ -188,6 +188,11 @@ class ChatOpenRouter(BaseChatModel):
     model_name: str = Field(alias="model")
     """The name of the model, e.g. `'anthropic/claude-sonnet-4-5'`."""
 
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
+
     temperature: float | None = None
     """Sampling temperature."""
 
