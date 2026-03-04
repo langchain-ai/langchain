@@ -223,6 +223,13 @@ class ChatOpenRouter(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output.
+
+    If `True`, additional message chunks will be generated during the stream including
+    usage metadata.
+    """
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
 
@@ -452,6 +459,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -466,6 +475,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = default_chunk_class(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -524,6 +545,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -540,6 +563,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = default_chunk_class(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token=generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(

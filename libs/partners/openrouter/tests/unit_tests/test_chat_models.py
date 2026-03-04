@@ -2831,3 +2831,133 @@ class TestStreamingErrors:
             assert any(
                 "malformed tool call chunk" in str(warning.message) for warning in w
             )
+
+
+class TestStreamUsage:
+    """Tests for stream_usage and usage-only chunk handling."""
+
+    def test_stream_options_passed_by_default(self) -> None:
+        """Test that stream_options with include_usage is sent by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    def test_stream_options_not_passed_when_disabled(self) -> None:
+        """Test that stream_options is omitted when stream_usage=False."""
+        model = _make_model(stream_usage=False)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "stream_options" not in call_kwargs
+
+    def test_usage_only_chunk_emitted(self) -> None:
+        """Test that a usage-only chunk (no choices) emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        # Content chunks followed by a usage-only chunk (no choices key)
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            # Usage-only final chunk — no choices
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(
+            chunks_with_separate_usage
+        )
+        chunks = list(model.stream("Hello"))
+
+        # Last chunk should carry usage_metadata
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
+
+    async def test_astream_options_passed_by_default(self) -> None:
+        """Test that async stream sends stream_options by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream([dict(c) for c in _STREAM_CHUNKS])
+        )
+        chunks = [c async for c in model.astream("Hello")]  # noqa: F841
+        call_kwargs = model.client.chat.send_async.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    async def test_astream_usage_only_chunk_emitted(self) -> None:
+        """Test that an async usage-only chunk emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(chunks_with_separate_usage)
+        )
+        chunks = [c async for c in model.astream("Hello")]
+
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
