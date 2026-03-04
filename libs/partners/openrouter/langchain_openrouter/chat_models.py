@@ -478,7 +478,7 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
-                    usage_chunk = default_chunk_class(
+                    usage_chunk = AIMessageChunk(
                         content="", usage_metadata=usage_metadata
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)
@@ -566,7 +566,7 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
-                    usage_chunk = default_chunk_class(
+                    usage_chunk = AIMessageChunk(
                         content="", usage_metadata=usage_metadata
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)

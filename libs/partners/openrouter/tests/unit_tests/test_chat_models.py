@@ -2902,6 +2902,7 @@ class TestStreamUsage:
         usage_chunks = [c for c in chunks if c.usage_metadata]
         assert len(usage_chunks) >= 1
         usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
@@ -2958,6 +2959,7 @@ class TestStreamUsage:
         usage_chunks = [c for c in chunks if c.usage_metadata]
         assert len(usage_chunks) >= 1
         usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
