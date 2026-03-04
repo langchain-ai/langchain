@@ -279,12 +279,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Create final outputs by mapping failed results to their original indices
         outputs: list[Output | Exception] = []
+        failed_indices = [i for i in range(len(inputs)) if i not in results_map]
+        failed_results_map = dict(zip(failed_indices, result, strict=True))
+
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(failed_results_map[idx])
         return outputs
 
     @override
@@ -354,12 +358,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Create final outputs by mapping failed results to their original indices
         outputs: list[Output | Exception] = []
+        failed_indices = [i for i in range(len(inputs)) if i not in results_map]
+        failed_results_map = dict(zip(failed_indices, result, strict=True))
+
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(failed_results_map[idx])
         return outputs
 
     @override
