@@ -40,11 +40,15 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
@@ -188,9 +192,8 @@ class ChatGroq(BaseChatModel):
         print(response.content)
         ```
 
-        Vision-capable models:
-        - meta-llama/llama-4-scout-17b-16e-instruct
-        - meta-llama/llama-4-maverick-17b-128e-instruct
+        See [Groq model docs](https://console.groq.com/docs/vision#supported-models)
+        for the latest available vision models.
 
         Maximum image size: 20MB per request.
 
@@ -347,6 +350,11 @@ class ChatGroq(BaseChatModel):
 
     model_name: str = Field(alias="model")
     """Model name to use."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -1263,6 +1271,29 @@ def _is_pydantic_class(obj: Any) -> bool:
 #
 # Type conversion helpers
 #
+def _format_message_content(content: Any) -> Any:
+    """Format message content for Groq API.
+
+    Converts LangChain image content blocks to Groq's expected image_url format.
+
+    Args:
+        content: The message content (string or list of content blocks).
+
+    Returns:
+        Formatted content suitable for Groq API.
+    """
+    if content and isinstance(content, list):
+        formatted: list = []
+        for block in content:
+            # Handle LangChain standard data content blocks (image, audio, file)
+            if isinstance(block, dict) and is_data_content_block(block):
+                formatted.append(convert_to_openai_data_block(block))
+            else:
+                formatted.append(block)
+        return formatted
+    return content
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -1277,7 +1308,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
@@ -1300,7 +1334,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 for block in message.content
                 if isinstance(block, dict) and block.get("type") == "text"
             ]
-            message_dict["content"] = text_blocks if text_blocks else ""
+            message_dict["content"] = text_blocks or ""
 
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]

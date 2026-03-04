@@ -7,6 +7,7 @@ from langchain_core._api.deprecation import (
     warn_deprecated,
 )
 
+# TODO: this is old, fix
 AGENT_DEPRECATION_WARNING = (
     "LangChain agents will continue to be supported, but it is recommended for new "
     "use cases to be built with LangGraph. LangGraph offers a more flexible and "

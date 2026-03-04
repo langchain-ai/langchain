@@ -40,7 +40,7 @@ async def test_mistralai_embedding_documents_tenacity_error_async() -> None:
     documents = ["foo bar", "test document"]
     embedding = MistralAIEmbeddings(max_retries=0)
     mock_response = httpx.Response(
-        status_code=400,
+        status_code=429,
         request=httpx.Request("POST", url=embedding.async_client.base_url),
     )
     with (
