@@ -1414,8 +1414,30 @@ def trim_messages(
         # Type narrowing: at this point token_counter is not a str
         actual_token_counter = token_counter  # type: ignore[assignment]
 
+    list_token_counter: Callable[[Sequence[BaseMessage]], int]
+
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
-        list_token_counter = actual_token_counter.get_num_tokens_from_messages
+        # If the token counter is a model with bound tools (e.g. from bind_tools()),
+        # extract tools from kwargs and pass them to get_num_tokens_from_messages.
+        # This ensures token counters like ChatAnthropic's, which use an API that
+        # requires tool schemas when messages contain tool_use/tool_result blocks,
+        # receive the necessary tools parameter.
+        _bound_tools = None
+        if hasattr(actual_token_counter, "kwargs"):
+            _bound_tools = actual_token_counter.kwargs.get("tools")
+        if _bound_tools is not None:
+            _counter_method = actual_token_counter.get_num_tokens_from_messages
+
+            def _token_counter_with_tools(
+                messages: Sequence[BaseMessage],
+                _method: Any = _counter_method,
+                _tools: Any = _bound_tools,
+            ) -> int:
+                return int(_method(messages, tools=_tools))
+
+            list_token_counter = _token_counter_with_tools
+        else:
+            list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
         if (
             next(
@@ -1424,9 +1446,10 @@ def trim_messages(
             is BaseMessage
         ):
 
-            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+            def _single_msg_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
+            list_token_counter = _single_msg_counter
         else:
             list_token_counter = actual_token_counter
     else:

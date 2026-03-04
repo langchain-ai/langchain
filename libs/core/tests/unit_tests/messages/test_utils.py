@@ -3,7 +3,7 @@ import json
 import math
 import re
 from collections.abc import Callable, Sequence
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import pytest
 from typing_extensions import NotRequired, override
@@ -761,6 +761,137 @@ class FakeTokenCountingModel(FakeChatModel):
         tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
     ) -> int:
         return dummy_token_counter(messages)
+
+
+class FakeToolAwareTokenCountingModel(FakeChatModel):
+    """A model whose token counter requires tools when messages contain tool calls."""
+
+    @override
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+    ) -> int:
+        has_tool_messages = any(
+            isinstance(m, (ToolMessage,)) or getattr(m, "tool_calls", None)
+            for m in messages
+        )
+        if has_tool_messages and not tools:
+            msg = "Messages contain tool_use/tool_result blocks but no tools provided."
+            raise ValueError(msg)
+        base = dummy_token_counter(messages)
+        # Add tokens for tool definitions so WITH tools differs from WITHOUT
+        if tools:
+            base += 10 * len(tools)
+        return base
+
+
+def test_trim_messages_bound_model_tools_passed_to_token_counter() -> None:
+    """Test that tools from bind_tools are passed to get_num_tokens_from_messages.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/29637.
+    """
+    fake_tools = [{"type": "function", "function": {"name": "get_weather"}}]
+    model = FakeToolAwareTokenCountingModel()
+    bound_model = cast("Any", model.bind(tools=fake_tools))
+
+    messages = [
+        HumanMessage("what's the weather?"),
+        AIMessage(
+            content="let me check",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="abc123"),
+    ]
+
+    # This should not raise because tools should be forwarded to the token counter
+    result = trim_messages(
+        messages,
+        max_tokens=100,
+        token_counter=bound_model,
+        strategy="first",
+    )
+    assert len(result) > 0
+
+
+def test_trim_messages_bound_model_without_tools_still_works() -> None:
+    """Bound model without tools should still work as before."""
+    model = FakeTokenCountingModel()
+    bound_model = cast("Any", model.bind(foo="bar"))
+
+    messages = [HumanMessage("hello")]
+    result = trim_messages(
+        messages,
+        max_tokens=100,
+        token_counter=bound_model,
+    )
+    assert result == messages
+
+
+def test_trim_messages_bound_model_tools_forwarded_with_strategy_last() -> None:
+    """Test that tools from bind_tools are passed with strategy='last'.
+
+    This complements test_trim_messages_bound_model_tools_passed_to_token_counter by
+    ensuring the same tool-forwarding behavior when strategy='last'.
+    """
+    fake_tools = [{"type": "function", "function": {"name": "get_weather"}}]
+    model = FakeToolAwareTokenCountingModel()
+
+    messages = [
+        HumanMessage("hi"),
+        AIMessage("hello"),
+        HumanMessage("what's the weather?"),
+        AIMessage(
+            content="let me check",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "SF"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="abc123"),
+    ]
+
+    # Without tools bound, the model raises because messages contain tool blocks
+    unbound_model = cast("Any", model.bind())
+    with pytest.raises(ValueError, match="no tools provided"):
+        trim_messages(
+            messages,
+            max_tokens=100,
+            token_counter=unbound_model,
+            strategy="last",
+        )
+
+    # With tools bound, strategy="last" should forward them and succeed
+    bound_model = cast("Any", model.bind(tools=fake_tools))
+    result = trim_messages(
+        messages,
+        max_tokens=100,
+        token_counter=bound_model,
+        strategy="last",
+    )
+    assert len(result) > 0
+
+    # Verify token counting WITH tools differs from WITHOUT tools
+    count_with_tools = model.get_num_tokens_from_messages(messages, tools=fake_tools)
+    # Use only plain messages (no tool blocks) so no ValueError is raised
+    plain_messages = [
+        m
+        for m in messages
+        if not isinstance(m, ToolMessage) and not getattr(m, "tool_calls", None)
+    ]
+    count_without_tools = model.get_num_tokens_from_messages(plain_messages)
+    assert count_with_tools > count_without_tools
 
 
 def test_convert_to_messages() -> None:
