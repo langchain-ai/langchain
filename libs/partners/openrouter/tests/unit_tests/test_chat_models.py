@@ -202,6 +202,7 @@ class TestChatOpenRouterInstantiation:
         """Test basic model instantiation with required params."""
         model = _make_model()
         assert model.model_name == MODEL_NAME
+        assert model.model == MODEL_NAME
         assert model.openrouter_api_base is None
 
     def test_api_key_from_field(self) -> None:
