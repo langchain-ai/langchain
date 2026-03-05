@@ -2276,6 +2276,18 @@ def count_tokens_approximately(
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
+                    # Count tool_use blocks using compact JSON
+                    elif block_type == "tool_use":
+                        # Use json.dumps for accurate size estimation
+                        # instead of repr() which inflates the count
+                        message_chars += len(
+                            json.dumps(block, separators=(",", ":"))
+                        )
+                    # Count tool_result blocks using compact JSON
+                    elif block_type == "tool_result":
+                        message_chars += len(
+                            json.dumps(block, separators=(",", ":"))
+                        )
                     # Conservative estimate for unknown block types
                     else:
                         message_chars += len(repr(block))

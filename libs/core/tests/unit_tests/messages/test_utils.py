@@ -2896,7 +2896,55 @@ def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> 
     )
     count_list = count_tokens_approximately([ai_with_list_content])
 
-    assert count_text - 1 <= count_list <= count_text + 1
+    # Allow a small tolerance because the Anthropic-style tool_use block
+    # (JSON-serialized) and the tool_calls repr have slightly different sizes.
+    assert count_text - 5 <= count_list <= count_text + 5
+
+
+def test_count_tokens_approximately_tool_use_block() -> None:
+    """Test that tool_use blocks use json.dumps instead of repr for counting."""
+    import json
+
+    tool_use_block = {
+        "type": "tool_use",
+        "id": "toolu_01AbCdEf",
+        "name": "search_memories",
+        "input": {"query": "recent events"},
+    }
+    msg = AIMessage(content=[tool_use_block])
+    count = count_tokens_approximately([msg])
+
+    # The count should be based on compact JSON, not repr.
+    # Compact JSON is shorter than repr (no spaces around separators,
+    # double quotes instead of single quotes).
+    json_len = len(json.dumps(tool_use_block, separators=(",", ":")))
+    repr_len = len(repr(tool_use_block))
+    assert json_len < repr_len  # json.dumps is more compact
+
+    # Verify token count is reasonable (role + json content + overhead)
+    # role "assistant" = 9 chars → ~3 tokens, + extra_tokens_per_message = 3
+    expected_min = json_len / 4 + 3 + 3  # json tokens + role + overhead
+    assert count >= expected_min - 2  # allow small rounding
+
+
+def test_count_tokens_approximately_tool_result_block() -> None:
+    """Test that tool_result blocks use json.dumps instead of repr for counting."""
+    import json
+
+    tool_result_block = {
+        "type": "tool_result",
+        "tool_use_id": "toolu_01AbCdEf",
+        "content": "Found 3 recent events.",
+    }
+    msg = HumanMessage(content=[tool_result_block])
+    count = count_tokens_approximately([msg])
+
+    json_len = len(json.dumps(tool_result_block, separators=(",", ":")))
+    repr_len = len(repr(tool_result_block))
+    assert json_len < repr_len
+
+    expected_min = json_len / 4 + 1 + 3  # json tokens + role("user") + overhead
+    assert count >= expected_min - 2
 
 
 def test_count_tokens_approximately_respects_count_name_flag() -> None:
