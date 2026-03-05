@@ -2270,6 +2270,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     assert result[0]["arguments"] == '{"location": "San Francisco"}'
     assert result[0]["call_id"] == "call_123"
     assert result[0]["id"] == "fc_456"
+    assert result[0]["status"] is None
 
     # Message with only tool calls attribute provided
     ai_message = AIMessage(content="", tool_calls=tool_calls)
@@ -2282,6 +2283,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     assert result[0]["arguments"] == '{"location": "San Francisco"}'
     assert result[0]["call_id"] == "call_123"
     assert "id" not in result[0]
+    assert result[0]["status"] is None
 
 
 def test__construct_responses_api_input_ai_message_with_tool_calls_and_content() -> (
@@ -2330,6 +2332,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[1]["arguments"] == '{"location": "San Francisco"}'
     assert result[1]["call_id"] == "call_123"
     assert result[1]["id"] == "fc_456"
+    assert result[1]["status"] is None
 
     # String content
     ai_message = AIMessage(
@@ -2354,6 +2357,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[1]["arguments"] == '{"location": "San Francisco"}'
     assert result[1]["call_id"] == "call_123"
     assert "id" not in result[1]
+    assert result[1]["status"] is None
 
 
 def test__construct_responses_api_input_tool_message_conversion() -> None:
@@ -2371,6 +2375,7 @@ def test__construct_responses_api_input_tool_message_conversion() -> None:
     assert result[0]["type"] == "function_call_output"
     assert result[0]["output"] == '{"temperature": 72, "conditions": "sunny"}'
     assert result[0]["call_id"] == "call_123"
+    assert result[0]["status"] is None
 
 
 def test__construct_responses_api_input_multiple_message_types() -> None:
@@ -2437,11 +2442,13 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert result[4]["name"] == "get_weather"
     assert result[4]["arguments"] == '{"location": "San Francisco"}'
     assert result[4]["call_id"] == "call_123"
+    assert result[4]["status"] is None
 
     # Check function call output
     assert result[5]["type"] == "function_call_output"
     assert result[5]["output"] == '{"temperature": 72, "conditions": "sunny"}'
     assert result[5]["call_id"] == "call_123"
+    assert result[5]["status"] is None
 
     assert result[6]["role"] == "assistant"
     assert result[6]["content"] == [

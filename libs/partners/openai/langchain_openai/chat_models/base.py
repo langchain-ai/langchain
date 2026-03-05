@@ -4245,6 +4245,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     "type": "function_call_output",
                     "output": tool_output,
                     "call_id": msg["tool_call_id"],
+                    # Keep explicit null for compatibility with servers expecting the
+                    # field to be present on responses API function output items.
+                    "status": None,
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
@@ -4303,7 +4306,15 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_list_tools",
                             "mcp_approval_request",
                         ):
-                            input_.append(_pop_index_and_sub_index(block))
+                            converted_block = _pop_index_and_sub_index(block)
+                            if (
+                                block_type == "function_call"
+                                and "status" not in converted_block
+                            ):
+                                # Preserve explicit null status for maximum responses
+                                # API compatibility with function call flows.
+                                converted_block["status"] = None
+                            input_.append(converted_block)
                         elif block_type == "image_generation_call":
                             # A previous image generation call can be referenced by ID
                             input_.append(
@@ -4341,6 +4352,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "name": tool_call["function"]["name"],
                             "arguments": tool_call["function"]["arguments"],
                             "call_id": tool_call["id"],
+                            # Preserve explicit null status for compatibility with
+                            # providers that reject items missing this field.
+                            "status": None,
                         }
                         input_.append(function_call)
 
