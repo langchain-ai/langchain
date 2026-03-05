@@ -353,8 +353,8 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
         model=ProfileChatModel(),
         trigger=("fraction", 0.1),
         keep=("fraction", 0.5),
+        token_counter=token_counter,
     )
-    middleware.token_counter = token_counter
 
     # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
     # Target keep: 500 tokens (50% of 1000)
@@ -1026,6 +1026,32 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     # Cutoff at index 0, 1 (before tool messages) stays the same
     assert middleware._find_safe_cutoff_point(messages, 0) == 0
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
+
+
+def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
+    calls: list[dict[str, Any]] = []
+
+    def fake_counter(_: Iterable[MessageLikeRepresentation], **kwargs: Any) -> int:
+        calls.append(kwargs)
+        return 100
+
+    with patch(
+        "langchain.agents.middleware.summarization.count_tokens_approximately",
+        side_effect=fake_counter,
+    ) as mock_counter:
+        middleware = SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger=("tokens", 1),
+            keep=("tokens", 1),
+            token_counter=mock_counter,
+        )
+        state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
+        assert middleware.before_model(state, Runtime()) is not None
+
+    # Test we support partial token counting (which for default token counter does not
+    # use use_usage_metadata_scaling)
+    assert any(call.get("use_usage_metadata_scaling") is False for call in calls)
+    assert any(call.get("use_usage_metadata_scaling") is True for call in calls)
 
 
 def test_summarization_middleware_find_safe_cutoff_preserves_ai_tool_pair() -> None:

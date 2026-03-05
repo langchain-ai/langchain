@@ -111,7 +111,7 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -181,7 +181,9 @@ jobs:
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}

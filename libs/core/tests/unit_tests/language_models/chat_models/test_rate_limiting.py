@@ -214,9 +214,11 @@ def test_rate_limit_skips_cache() -> None:
     # cache key
     assert list(cache._cache) == [
         (
-            '[{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
-            '"messages", "HumanMessage"], "kwargs": {"content": "foo", '
-            '"type": "human"}}]',
+            (
+                '[{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
+                '"messages", "HumanMessage"], "kwargs": {"content": "foo", '
+                '"type": "human"}}]'
+            ),
             "[('_type', 'generic-fake-chat-model'), ('stop', None)]",
         )
     ]
