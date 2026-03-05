@@ -513,6 +513,30 @@ def _supports_provider_strategy(
     )
 
 
+def _has_thinking_enabled(model: BaseChatModel) -> bool:
+    """Check if a model has thinking/reasoning actively enabled.
+
+    Some providers (e.g. Anthropic) do not allow ``tool_choice="any"`` when
+    thinking/extended-reasoning mode is turned on.  This helper inspects
+    common provider attributes so that callers can fall back to
+    ``tool_choice="auto"`` instead of forcing tool use.
+
+    Args:
+        model: A ``BaseChatModel`` instance.
+
+    Returns:
+        ``True`` if the model has thinking/reasoning enabled, ``False`` otherwise.
+    """
+    # Anthropic: thinking={"type": "enabled"} or {"type": "adaptive"}
+    thinking = getattr(model, "thinking", None)
+    if isinstance(thinking, dict) and thinking.get("type") in ("enabled", "adaptive"):
+        return True
+    # OpenAI / DeepSeek: reasoning_effort is set (e.g. "high", "medium", "low")
+    if getattr(model, "reasoning_effort", None) is not None:
+        return True
+    return False
+
+
 def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat[Any],
@@ -1203,8 +1227,19 @@ def create_agent(
                     )
                     raise ValueError(msg)
 
-            # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            # Force tool use if we have structured output tools, but fall
+            # back to "auto" when the model has thinking/reasoning enabled
+            # because some providers (e.g. Anthropic) reject tool_choice="any"
+            # when thinking mode is active.
+            if structured_output_tools:
+                if isinstance(request.model, BaseChatModel) and _has_thinking_enabled(
+                    request.model
+                ):
+                    tool_choice = "auto"
+                else:
+                    tool_choice = "any"
+            else:
+                tool_choice = request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings

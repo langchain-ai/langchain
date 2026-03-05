@@ -939,3 +939,141 @@ class TestSupportsProviderStrategy:
         """Latest aliases stay blocked until they point to Gemini 3."""
         model = self._make_structured_model(alias)
         assert not _supports_provider_strategy(model, tools=[get_weather])
+
+
+class FakeThinkingModel(FakeToolCallingModel):
+    """Fake model with a thinking attribute (like ChatAnthropic)."""
+
+    thinking: dict[str, Any] | None = None
+
+
+class FakeReasoningModel(FakeToolCallingModel):
+    """Fake model with a reasoning_effort attribute (like ChatOpenAI)."""
+
+    reasoning_effort: str | None = None
+
+
+class TestHasThinkingEnabled:
+    """Unit tests for `_has_thinking_enabled`."""
+
+    def test_anthropic_thinking_enabled(self) -> None:
+        """Model with thinking={"type": "enabled"} should be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeThinkingModel(thinking={"type": "enabled", "budget_tokens": 5000})
+        assert _has_thinking_enabled(model) is True
+
+    def test_anthropic_thinking_adaptive(self) -> None:
+        """Model with thinking={"type": "adaptive"} should be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeThinkingModel(thinking={"type": "adaptive"})
+        assert _has_thinking_enabled(model) is True
+
+    def test_anthropic_thinking_disabled(self) -> None:
+        """Model with thinking={"type": "disabled"} should not be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeThinkingModel(thinking={"type": "disabled"})
+        assert _has_thinking_enabled(model) is False
+
+    def test_anthropic_thinking_none(self) -> None:
+        """Model with thinking=None should not be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeThinkingModel(thinking=None)
+        assert _has_thinking_enabled(model) is False
+
+    def test_no_thinking_attribute(self) -> None:
+        """Model without thinking attribute should not be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeToolCallingModel()
+        assert _has_thinking_enabled(model) is False
+
+    def test_reasoning_effort_set(self) -> None:
+        """Model with reasoning_effort set should be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeReasoningModel(reasoning_effort="high")
+        assert _has_thinking_enabled(model) is True
+
+    def test_reasoning_effort_none(self) -> None:
+        """Model with reasoning_effort=None should not be detected."""
+        from langchain.agents.factory import _has_thinking_enabled
+
+        model = FakeReasoningModel(reasoning_effort=None)
+        assert _has_thinking_enabled(model) is False
+
+
+class TestToolChoiceWithThinking:
+    """Verify that tool_choice falls back to 'auto' when thinking is enabled.
+
+    Regression tests for https://github.com/langchain-ai/langchain/issues/35539
+    """
+
+    def test_tool_choice_auto_when_thinking_enabled(self) -> None:
+        """When model has thinking enabled, tool_choice should be 'auto' not 'any'."""
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+
+        model = FakeThinkingModel(
+            tool_calls=tool_calls,
+            thinking={"type": "enabled", "budget_tokens": 5000},
+        )
+
+        # Patch bind_tools to capture tool_choice argument
+        original_bind_tools = FakeThinkingModel.bind_tools
+        captured_kwargs: dict[str, Any] = {}
+
+        def patched_bind_tools(self_inner, tools, *, tool_choice=None, **kwargs):
+            captured_kwargs["tool_choice"] = tool_choice
+            return original_bind_tools(self_inner, tools, tool_choice=tool_choice, **kwargs)
+
+        with patch.object(FakeThinkingModel, "bind_tools", patched_bind_tools):
+            with patch(
+                "langchain.agents.factory._supports_provider_strategy",
+                return_value=False,
+            ):
+                agent = create_agent(model, [], response_format=WeatherBaseModel)
+                agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert captured_kwargs["tool_choice"] == "auto"
+
+    def test_tool_choice_any_when_no_thinking(self) -> None:
+        """When model has no thinking, tool_choice should remain 'any'."""
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        original_bind_tools = FakeToolCallingModel.bind_tools
+        captured_kwargs: dict[str, Any] = {}
+
+        def patched_bind_tools(self_inner, tools, *, tool_choice=None, **kwargs):
+            captured_kwargs["tool_choice"] = tool_choice
+            return original_bind_tools(self_inner, tools, tool_choice=tool_choice, **kwargs)
+
+        with patch.object(FakeToolCallingModel, "bind_tools", patched_bind_tools):
+            with patch(
+                "langchain.agents.factory._supports_provider_strategy",
+                return_value=False,
+            ):
+                agent = create_agent(model, [], response_format=WeatherBaseModel)
+                agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert captured_kwargs["tool_choice"] == "any"
