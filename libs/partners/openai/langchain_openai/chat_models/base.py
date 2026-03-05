@@ -166,7 +166,14 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
+    "namespace",
 )
+
+_OPENAI_EXTRA_FIELDS: set[str] = {
+    "defer_loading",
+}
+"""Valid OpenAI-specific extra fields that are promoted from BaseTool.extras."""
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -1981,9 +1988,18 @@ class BaseChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
-        formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
-        ]
+        formatted_tools = []
+        for tool in tools:
+            formatted = convert_to_openai_tool(tool, strict=strict)
+            if (
+                isinstance(tool, BaseTool)
+                and hasattr(tool, "extras")
+                and isinstance(tool.extras, dict)
+            ):
+                for key, value in tool.extras.items():
+                    if key in _OPENAI_EXTRA_FIELDS:
+                        formatted[key] = value
+            formatted_tools.append(formatted)
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -3981,7 +3997,11 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                flattened = {"type": "function", **tool["function"]}
+                for key in _OPENAI_EXTRA_FIELDS:
+                    if key in tool:
+                        flattened[key] = tool[key]
+                new_tools.append(flattened)
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)

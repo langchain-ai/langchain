@@ -1267,3 +1267,60 @@ def test_csv_input() -> None:
         "3" in str(response2.content).lower()
         or "three" in str(response2.content).lower()
     )
+
+
+def test_tool_search() -> None:
+    """Test tool search with defer_loading via extras on BaseTool."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        return f"Sunny in {location}"
+
+    @tool(extras={"defer_loading": True})
+    def get_population(city: str) -> str:
+        """Get the population of a city."""
+        return f"Population of {city}: 1,000,000"
+
+    llm = ChatOpenAI(model="gpt-4.1-mini")
+    bound = llm.bind_tools(
+        [get_weather, get_population, {"type": "tool_search"}],
+        parallel_tool_calls=False,
+    )
+    response = cast(AIMessage, bound.invoke("What's the weather in San Francisco?"))
+    assert response.tool_calls
+    assert response.tool_calls[0]["name"] == "get_weather"
+
+
+def test_tool_search_with_namespace() -> None:
+    """Test tool search with namespace and defer_loading."""
+    weather_ns = {
+        "type": "namespace",
+        "name": "weather",
+        "description": "Weather tools for looking up current conditions.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "get_weather",
+                "description": "Get the current weather for a location.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string"},
+                    },
+                    "required": ["location"],
+                    "additionalProperties": False,
+                },
+            }
+        ],
+    }
+    llm = ChatOpenAI(model="gpt-4.1-mini")
+    bound = llm.bind_tools(
+        [weather_ns, {"type": "tool_search"}],
+        parallel_tool_calls=False,
+    )
+    response = cast(AIMessage, bound.invoke("What's the weather in San Francisco?"))
+    assert response.tool_calls
+    assert response.tool_calls[0]["name"] == "get_weather"

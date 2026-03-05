@@ -1,5 +1,5 @@
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.tools import Tool
+from langchain_core.tools import Tool, tool
 
 from langchain_openai import ChatOpenAI, custom_tool
 
@@ -94,6 +94,70 @@ def test_custom_tool() -> None:
         {"type": "custom_tool_call_output", "call_id": "abc", "output": "ab"},
     ]
     assert payload["input"] == expected_input
+
+
+def test_extras_with_defer_loading() -> None:
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        return f"Sunny in {location}"
+
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    bound = llm.bind_tools(
+        [get_weather, {"type": "tool_search"}],
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    func_tool = next(t for t in tools if t["type"] == "function")
+    assert func_tool["defer_loading"] is True
+    assert func_tool["function"]["name"] == "get_weather"
+    assert any(t["type"] == "tool_search" for t in tools)
+
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload(
+        [HumanMessage("hello")],
+        {"model": "gpt-4.1", "stream": False, "tools": list(tools)},
+    )
+    resp_tools = payload["tools"]
+    resp_func = next(t for t in resp_tools if t["type"] == "function")
+    assert resp_func["defer_loading"] is True
+    assert resp_func["name"] == "get_weather"
+    assert any(t["type"] == "tool_search" for t in resp_tools)
+
+
+def test_tool_search_dict_passthrough() -> None:
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    tool_search = {"type": "tool_search"}
+    bound = llm.bind_tools([tool_search])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert any(t["type"] == "tool_search" for t in tools)
+
+
+def test_namespace_dict_passthrough() -> None:
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    ns = {
+        "type": "namespace",
+        "name": "crm",
+        "description": "CRM tools.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "list_orders",
+                "description": "List orders.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                    "additionalProperties": False,
+                },
+            }
+        ],
+    }
+    bound = llm.bind_tools([ns, {"type": "tool_search"}])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert any(t["type"] == "namespace" for t in tools)
+    assert any(t["type"] == "tool_search" for t in tools)
 
 
 async def test_async_custom_tool() -> None:
