@@ -3474,3 +3474,33 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_tool_search_payload() -> None:
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(city: str) -> str:
+        """Get the weather for a city."""
+        return "sunny"
+
+    @tool
+    def get_time(city: str) -> str:
+        """Get the time for a city."""
+        return "12:00"
+
+    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test"), use_responses_api=True)
+    bound = llm.bind_tools(
+        [get_weather, get_time, {"type": "tool_search"}],
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("What's the weather in NYC?")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools = payload["tools"]
+    weather_tool = next(t for t in tools if t.get("name") == "get_weather")
+    assert weather_tool["defer_loading"] is True
+    time_tool = next(t for t in tools if t.get("name") == "get_time")
+    assert "defer_loading" not in time_tool
+    tool_search = next(t for t in tools if t.get("type") == "tool_search")
+    assert tool_search == {"type": "tool_search"}

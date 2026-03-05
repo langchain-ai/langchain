@@ -1267,3 +1267,120 @@ def test_csv_input() -> None:
         "3" in str(response2.content).lower()
         or "three" in str(response2.content).lower()
     )
+
+
+def test_tool_search() -> None:
+    """Test tool search with deferred loading via extras."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def list_open_orders(customer_id: str) -> str:
+        """List open orders for a customer ID."""
+        return f"Orders for {customer_id}: [order_1, order_2]"
+
+    @tool(extras={"defer_loading": True})
+    def get_customer_profile(customer_id: str) -> str:
+        """Fetch a customer profile by customer ID."""
+        return f"Profile for {customer_id}"
+
+    llm = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+    bound = llm.bind_tools(
+        [list_open_orders, get_customer_profile, {"type": "tool_search"}],
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("List open orders for customer CUST-12345.")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools = payload["tools"]
+    orders_tool = next(t for t in tools if t.get("name") == "list_open_orders")
+    assert orders_tool["defer_loading"] is True
+    assert orders_tool["type"] == "function"
+    profile_tool = next(t for t in tools if t.get("name") == "get_customer_profile")
+    assert profile_tool["defer_loading"] is True
+    tool_search = next(t for t in tools if t.get("type") == "tool_search")
+    assert tool_search == {"type": "tool_search"}
+
+    response = bound.invoke("List open orders for customer CUST-12345.")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+
+def test_tool_search_dict_tools() -> None:
+    """Test tool search with raw dict tools (Responses API format)."""
+    llm = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+    bound = llm.bind_tools(
+        [
+            {
+                "type": "function",
+                "name": "list_open_orders",
+                "description": "List open orders for a customer ID.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                    "additionalProperties": False,
+                },
+            },
+            {"type": "tool_search"},
+        ],
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("List open orders for customer CUST-12345.")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools = payload["tools"]
+    orders_tool = next(t for t in tools if t.get("name") == "list_open_orders")
+    assert orders_tool["defer_loading"] is True
+    tool_search = next(t for t in tools if t.get("type") == "tool_search")
+    assert tool_search == {"type": "tool_search"}
+
+    response = bound.invoke("List open orders for customer CUST-12345.")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+
+def test_tool_search_with_namespace() -> None:
+    """Test tool search with namespace tools."""
+    llm = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+    bound = llm.bind_tools(
+        [
+            {
+                "type": "namespace",
+                "name": "crm",
+                "description": "CRM tools for customer lookup and order management.",
+                "tools": [
+                    {
+                        "type": "function",
+                        "name": "list_open_orders",
+                        "description": "List open orders for a customer ID.",
+                        "defer_loading": True,
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"customer_id": {"type": "string"}},
+                            "required": ["customer_id"],
+                            "additionalProperties": False,
+                        },
+                    },
+                ],
+            },
+            {"type": "tool_search"},
+        ],
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("List open orders for customer CUST-12345.")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools = payload["tools"]
+    ns_tool = next(t for t in tools if t.get("type") == "namespace")
+    assert ns_tool["name"] == "crm"
+    assert ns_tool["tools"][0]["defer_loading"] is True
+    tool_search = next(t for t in tools if t.get("type") == "tool_search")
+    assert tool_search == {"type": "tool_search"}
+
+    response = bound.invoke("List open orders for customer CUST-12345.")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls

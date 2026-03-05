@@ -166,6 +166,7 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
 )
 
 
@@ -3981,7 +3982,10 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                new_tool = {"type": "function", **tool["function"]}
+                if tool.get("defer_loading"):
+                    new_tool["defer_loading"] = tool["defer_loading"]
+                new_tools.append(new_tool)
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)

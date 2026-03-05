@@ -508,6 +508,8 @@ _WellKnownOpenAITools = (
     "image_generation",
     "web_search_preview",
     "web_search",
+    "tool_search",
+    "namespace",
 )
 
 
@@ -570,7 +572,16 @@ def convert_to_openai_tool(
             oai_tool["format"] = tool.metadata["format"]
         return oai_tool
     oai_function = convert_to_openai_function(tool, strict=strict)
-    return {"type": "function", "function": oai_function}
+    result: dict[str, Any] = {"type": "function", "function": oai_function}
+    if (
+        isinstance(tool, langchain_core.tools.base.BaseTool)
+        and hasattr(tool, "extras")
+        and isinstance(tool.extras, dict)
+    ):
+        for key in ("defer_loading",):
+            if key in tool.extras:
+                result[key] = tool.extras[key]
+    return result
 
 
 def convert_to_json_schema(
