@@ -97,6 +97,8 @@ jobs:
               f.write(f"pkg-name={pkg_name}\n")
               f.write(f"version={version}\n")
   release-notes:
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
     needs:
       - build
     runs-on: ubuntu-latest
@@ -193,6 +195,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
     needs:
       - build
       - release-notes
