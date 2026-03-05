@@ -2896,7 +2896,71 @@ def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> 
     )
     count_list = count_tokens_approximately([ai_with_list_content])
 
-    assert count_text - 1 <= count_list <= count_text + 1
+    # Anthropic-style content should include the tool block once.
+    list_text_only = count_tokens_approximately(
+        [AIMessage(content=[{"type": "text", "text": "do something"}])]
+    )
+    assert count_list > list_text_only
+
+    # And it should be cheaper than the string-content path that serializes
+    # `tool_calls` metadata with Python repr formatting.
+    assert count_list < count_text
+
+
+def test_count_tokens_approximately_tool_use_block_uses_compact_json() -> None:
+    """Test that tool_use block counting avoids inflated Python repr formatting."""
+    tool_use_block = {
+        "type": "tool_use",
+        "id": "toolu_01AbCdEf",
+        "name": "search_memories",
+        "input": {
+            "query": "recent events",
+            "filters": {
+                "source": ["crm", "email", "calendar"],
+                "include_archived": False,
+                "limit": 25,
+            },
+            "window": {"start": "2025-01-01", "end": "2025-12-31"},
+        },
+    }
+    message = AIMessage(content=[tool_use_block])
+
+    compact_chars = len(
+        json.dumps(tool_use_block, ensure_ascii=False, separators=(",", ":"))
+    )
+    expected = math.ceil((compact_chars + len("assistant")) / 4) + 3
+
+    assert count_tokens_approximately([message]) == expected
+
+
+def test_count_tokens_approximately_tool_result_block_uses_compact_json() -> None:
+    """Test that tool_result block counting avoids inflated Python repr formatting."""
+    tool_result_block = {
+        "type": "tool_result",
+        "tool_use_id": "toolu_01AbCdEf",
+        "is_error": False,
+        "content": [
+            {
+                "type": "text",
+                "text": (
+                    "Recent events:\n- planning meeting\n- budget review\n"
+                    "- release prep"
+                ),
+            },
+            {
+                "type": "text",
+                "text": "Follow-up: send minutes to leadership and product.",
+            },
+        ],
+    }
+    message = HumanMessage(content=[tool_result_block])
+
+    compact_chars = len(
+        json.dumps(tool_result_block, ensure_ascii=False, separators=(",", ":"))
+    )
+    expected = math.ceil((compact_chars + len("user")) / 4) + 3
+
+    assert count_tokens_approximately([message]) == expected
 
 
 def test_count_tokens_approximately_respects_count_name_flag() -> None:

@@ -2183,6 +2183,14 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
     ]
 
 
+def _compact_json_len(value: Any) -> int:
+    """Return compact JSON length for counting, falling back to `repr`."""
+    try:
+        return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
+    except (TypeError, ValueError):
+        return len(repr(value))
+
+
 def count_tokens_approximately(
     messages: Iterable[MessageLikeRepresentation],
     *,
@@ -2276,6 +2284,10 @@ def count_tokens_approximately(
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
+                    # Normalize Anthropic tool blocks to compact JSON instead of
+                    # Python `repr`, which inflates token estimates.
+                    elif block_type in {"tool_use", "tool_result"}:
+                        message_chars += _compact_json_len(block)
                     # Conservative estimate for unknown block types
                     else:
                         message_chars += len(repr(block))
