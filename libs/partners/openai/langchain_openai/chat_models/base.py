@@ -1548,7 +1548,13 @@ class BaseChatOpenAI(BaseChatModel):
         generations = []
 
         response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
+            response
+            if isinstance(response, dict)
+            # `parsed` may hold arbitrary Pydantic models from structured output.
+            # Exclude it from this dump and copy it from the typed response below.
+            else response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         )
         # Sometimes the AI Model calling will get error, we should raise it (this is
         # typically followed by a null value for `choices`, which we raise for
