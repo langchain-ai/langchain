@@ -800,14 +800,16 @@ def test_responses_stream_defaults_to_http() -> None:
     llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     mock_client = MagicMock()
     mock_client.responses.create = MagicMock(
-        side_effect=lambda *a, **kw: MockSyncContextManager(responses_stream)
+        side_effect=lambda *_args, **_kwargs: MockSyncContextManager(responses_stream)
     )
 
     mock_ws = MagicMock()
 
-    with patch.object(llm, "root_client", mock_client):
-        with patch.object(llm, "_stream_responses_websocket", mock_ws):
-            _ = list(llm.stream("test"))
+    with (
+        patch.object(llm, "root_client", mock_client),
+        patch.object(llm, "_stream_responses_websocket", mock_ws),
+    ):
+        _ = list(llm.stream("test"))
 
     mock_ws.assert_not_called()
     mock_client.responses.create.assert_called()
@@ -827,9 +829,11 @@ def test_responses_stream_uses_websocket_when_enabled() -> None:
         ]
     )
 
-    with patch.object(llm, "root_client", mock_client):
-        with patch.object(llm, "_stream_responses_websocket", mock_ws):
-            chunks = list(llm.stream("test"))
+    with (
+        patch.object(llm, "root_client", mock_client),
+        patch.object(llm, "_stream_responses_websocket", mock_ws),
+    ):
+        chunks = list(llm.stream("test"))
 
     mock_ws.assert_called_once()
     mock_client.responses.create.assert_not_called()
@@ -851,12 +855,14 @@ def test_responses_stream_websocket_custom_base_url() -> None:
     mock_connection = MagicMock()
     mock_connection.recv.side_effect = ws_messages
 
-    with patch.object(llm, "root_client", mock_client):
-        with patch(
+    with (
+        patch.object(llm, "root_client", mock_client),
+        patch(
             "websocket.create_connection",
             return_value=mock_connection,
-        ) as mock_create_conn:
-            chunks = list(llm.stream("test"))
+        ) as mock_create_conn,
+    ):
+        chunks = list(llm.stream("test"))
 
     assert len(chunks) > 0
     mock_create_conn.assert_called_once()
@@ -878,13 +884,15 @@ def test_responses_stream_websocket_error_event() -> None:
     mock_connection = MagicMock()
     mock_connection.recv.side_effect = [json.dumps(error_event)]
 
-    with patch.object(llm, "root_client", mock_client):
-        with patch(
+    with (
+        patch.object(llm, "root_client", mock_client),
+        patch(
             "websocket.create_connection",
             return_value=mock_connection,
-        ):
-            with pytest.raises(ValueError, match="Test error"):
-                _ = list(llm.stream("test"))
+        ),
+        pytest.raises(ValueError, match="Test error"),
+    ):
+        _ = list(llm.stream("test"))
 
 
 def test_responses_stream_websocket_missing_api_key() -> None:
