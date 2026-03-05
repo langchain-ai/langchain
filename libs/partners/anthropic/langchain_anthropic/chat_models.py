@@ -1126,10 +1126,14 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
-        # If cache_control is provided in kwargs, add it to the last eligible message
-        # block (Anthropic requires cache_control to be nested within a message block).
-        # Skip blocks related to code_execution as they cannot have cache_control.
+        # If cache_control is provided in kwargs or model_kwargs, add it to
+        # the last eligible message block and the system prompt.
+        # Supports both invocation-time kwargs (e.g. .invoke(cache_control=...))
+        # and model_kwargs (e.g. ChatAnthropic(model_kwargs={"cache_control": ...}))
+        # which survives bind_tools() calls in agent frameworks.
         cache_control = kwargs.pop("cache_control", None)
+        if cache_control is None:
+            cache_control = self.model_kwargs.get("cache_control")
         if cache_control and formatted_messages:
             # Collect tool IDs called by code_execution
             code_execution_tool_ids = _collect_code_execution_tool_ids(
@@ -1297,6 +1301,12 @@ class ChatAnthropic(BaseChatModel):
                     payload["betas"] = [*payload["betas"], required_beta]
             else:
                 payload["betas"] = [required_beta]
+
+        # Remove cache_control from the top-level payload — it was already
+        # applied to message blocks and the system prompt above.  Leaving it
+        # would send an unsupported top-level parameter to the API when it
+        # originates from model_kwargs.
+        payload.pop("cache_control", None)
 
         return {k: v for k, v in payload.items() if v is not None}
 

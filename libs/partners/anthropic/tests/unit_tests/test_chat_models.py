@@ -1716,6 +1716,53 @@ def test_cache_control_kwarg_no_system_no_error() -> None:
     assert payload.get("system") is None
 
 
+def test_cache_control_via_model_kwargs() -> None:
+    """cache_control in model_kwargs should stamp system and messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        model_kwargs={"cache_control": {"type": "ephemeral"}},
+    )
+
+    messages = [SystemMessage("You are helpful."), HumanMessage("Hi")]
+    payload = llm._get_request_payload(messages)
+
+    # System prompt should be stamped
+    assert payload["system"] == [
+        {
+            "type": "text",
+            "text": "You are helpful.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+    # Last message should be stamped
+    assert payload["messages"][-1]["content"][-1]["cache_control"] == {
+        "type": "ephemeral"
+    }
+    # cache_control should NOT leak as a top-level payload key
+    assert "cache_control" not in payload
+
+
+def test_cache_control_via_model_kwargs_survives_bind_tools() -> None:
+    """model_kwargs cache_control should work after bind_tools()."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        model_kwargs={"cache_control": {"type": "ephemeral"}},
+    )
+    bound = llm.bind_tools([])
+
+    messages = [SystemMessage("You are helpful."), HumanMessage("Hi")]
+    payload = bound.bound._get_request_payload(messages)
+
+    assert payload["system"] == [
+        {
+            "type": "text",
+            "text": "You are helpful.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+    assert "cache_control" not in payload
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
