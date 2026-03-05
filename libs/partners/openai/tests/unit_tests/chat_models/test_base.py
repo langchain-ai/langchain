@@ -3590,9 +3590,7 @@ def test_generate_stream_false_with_tools() -> None:
     When disable_streaming='tool_calling' and tools are bound, _should_stream
     returns False and routes to _generate. The payload must have stream=False.
     """
-    llm = ChatOpenAI(
-        model="gpt-4o", streaming=True, disable_streaming="tool_calling"
-    )
+    llm = ChatOpenAI(model="gpt-4o", streaming=True, disable_streaming="tool_calling")
     tools = [{"type": "function", "function": {"name": "get_weather"}}]
 
     with patch.object(llm.client, "with_raw_response") as mock_client:
@@ -3609,9 +3607,7 @@ def test_generate_stream_false_with_tools() -> None:
 
 async def test_agenerate_stream_false_with_tools() -> None:
     """_agenerate sends stream=False even with tools kwarg (async #35436 scenario)."""
-    llm = ChatOpenAI(
-        model="gpt-4o", streaming=True, disable_streaming="tool_calling"
-    )
+    llm = ChatOpenAI(model="gpt-4o", streaming=True, disable_streaming="tool_calling")
     tools = [{"type": "function", "function": {"name": "get_weather"}}]
 
     with patch.object(llm.async_client, "with_raw_response") as mock_client:
