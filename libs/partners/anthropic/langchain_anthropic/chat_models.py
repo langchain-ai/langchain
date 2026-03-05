@@ -1164,6 +1164,26 @@ class ChatAnthropic(BaseChatModel):
             # If we didn't find an eligible block we silently drop the control.
             # Anthropic would reject a payload with cache_control on
             # code_execution blocks.
+
+        # Also stamp cache_control on the system prompt if present.
+        # The system prompt is typically the most stable part of the request
+        # and benefits greatly from its own cache breakpoint — see
+        # https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+        # Skip if the last block already has cache_control (respect user's
+        # manual breakpoints).
+        if cache_control and system is not None:
+            if isinstance(system, str):
+                system = [
+                    {
+                        "type": "text",
+                        "text": system,
+                        "cache_control": cache_control,
+                    }
+                ]
+            elif isinstance(system, list) and system:
+                last_block = system[-1]
+                if isinstance(last_block, dict) and "cache_control" not in last_block:
+                    system[-1] = {**last_block, "cache_control": cache_control}
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,

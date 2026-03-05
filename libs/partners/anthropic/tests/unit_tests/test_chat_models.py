@@ -1645,6 +1645,77 @@ def test_cache_control_kwarg_skips_empty_messages() -> None:
     ]
 
 
+def test_cache_control_kwarg_stamps_system_prompt_string() -> None:
+    """cache_control should also stamp the system prompt (string content)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [SystemMessage("You are helpful."), HumanMessage("Hi")]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["system"] == [
+        {
+            "type": "text",
+            "text": "You are helpful.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
+def test_cache_control_kwarg_stamps_system_prompt_list() -> None:
+    """cache_control should stamp the last block of a list system prompt."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [
+        SystemMessage(
+            content=[
+                {"type": "text", "text": "Section 1"},
+                {"type": "text", "text": "Section 2"},
+            ]
+        ),
+        HumanMessage("Hi"),
+    ]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["system"] == [
+        {"type": "text", "text": "Section 1"},
+        {"type": "text", "text": "Section 2", "cache_control": {"type": "ephemeral"}},
+    ]
+
+
+def test_cache_control_kwarg_respects_existing_system_cache_control() -> None:
+    """Don't overwrite user-set cache_control on the system prompt."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [
+        SystemMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Cached section",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ]
+        ),
+        HumanMessage("Hi"),
+    ]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    # Should NOT overwrite the existing cache_control
+    assert payload["system"] == [
+        {
+            "type": "text",
+            "text": "Cached section",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
+def test_cache_control_kwarg_no_system_no_error() -> None:
+    """No system prompt should not cause an error."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("Hi")]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload.get("system") is None
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
