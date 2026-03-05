@@ -1298,9 +1298,7 @@ class BaseChatOpenAI(BaseChatModel):
 
                 data = json.loads(raw)
                 if data.get("type") == "error":
-                    error_msg = (data.get("error") or {}).get(
-                        "message", str(raw)
-                    )
+                    error_msg = (data.get("error") or {}).get("message", str(raw))
                     msg = f"WebSocket error from OpenAI: {error_msg}"
                     raise ValueError(msg)
 
