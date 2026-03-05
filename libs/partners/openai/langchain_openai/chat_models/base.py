@@ -1446,6 +1446,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         self._ensure_sync_client_available()
+        kwargs["stream"] = False
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None
@@ -1706,6 +1707,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        kwargs["stream"] = False
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None

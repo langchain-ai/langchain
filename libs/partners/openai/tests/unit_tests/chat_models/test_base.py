@@ -3474,3 +3474,153 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+# --- Tests for _generate / _agenerate stream=False in payload ---
+# Regression tests for https://github.com/langchain-ai/langchain/issues/35436
+# When _generate/_agenerate are called (e.g. via disable_streaming="tool_calling"),
+# the payload must contain stream=False to prevent the OpenAI client from returning
+# a Stream/AsyncStream instead of a ChatCompletion.
+
+
+def _chat_completion_response() -> MagicMock:
+    """Create a mock ChatCompletion response for testing."""
+    mock = MagicMock()
+    mock.model_dump.return_value = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion",
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "hi"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 1,
+            "completion_tokens": 1,
+            "total_tokens": 2,
+        },
+    }
+    return mock
+
+
+@pytest.mark.parametrize(
+    "streaming,disable_streaming",
+    [
+        (True, None),
+        (True, "tool_calling"),
+        (True, True),
+        (False, None),
+        (False, "tool_calling"),
+        (False, True),
+    ],
+    ids=[
+        "streaming=True,disable_streaming=None",
+        "streaming=True,disable_streaming=tool_calling",
+        "streaming=True,disable_streaming=True",
+        "streaming=False,disable_streaming=None",
+        "streaming=False,disable_streaming=tool_calling",
+        "streaming=False,disable_streaming=True",
+    ],
+)
+def test_generate_always_sets_stream_false(
+    streaming: bool, disable_streaming: bool | str | None
+) -> None:
+    """_generate must always send stream=False to the OpenAI API."""
+    kwargs: dict = {"model": "gpt-4o", "streaming": streaming}
+    if disable_streaming is not None:
+        kwargs["disable_streaming"] = disable_streaming
+    llm = ChatOpenAI(**kwargs)
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_raw = MagicMock()
+        mock_raw.parse.return_value = _chat_completion_response()
+        mock_raw.headers = {}
+        mock_client.create.return_value = mock_raw
+        llm._generate([HumanMessage(content="test")])
+
+        call_kwargs = mock_client.create.call_args.kwargs
+        assert call_kwargs["stream"] is False
+
+
+@pytest.mark.parametrize(
+    "streaming,disable_streaming",
+    [
+        (True, None),
+        (True, "tool_calling"),
+        (True, True),
+        (False, None),
+        (False, "tool_calling"),
+        (False, True),
+    ],
+    ids=[
+        "streaming=True,disable_streaming=None",
+        "streaming=True,disable_streaming=tool_calling",
+        "streaming=True,disable_streaming=True",
+        "streaming=False,disable_streaming=None",
+        "streaming=False,disable_streaming=tool_calling",
+        "streaming=False,disable_streaming=True",
+    ],
+)
+async def test_agenerate_always_sets_stream_false(
+    streaming: bool, disable_streaming: bool | str | None
+) -> None:
+    """_agenerate must always send stream=False to the OpenAI API."""
+    kwargs: dict = {"model": "gpt-4o", "streaming": streaming}
+    if disable_streaming is not None:
+        kwargs["disable_streaming"] = disable_streaming
+    llm = ChatOpenAI(**kwargs)
+
+    with patch.object(llm.async_client, "with_raw_response") as mock_client:
+        mock_raw = MagicMock()
+        mock_raw.parse.return_value = _chat_completion_response()
+        mock_raw.headers = {}
+        mock_client.create = AsyncMock(return_value=mock_raw)
+        await llm._agenerate([HumanMessage(content="test")])
+
+        call_kwargs = mock_client.create.call_args.kwargs
+        assert call_kwargs["stream"] is False
+
+
+def test_generate_stream_false_with_tools() -> None:
+    """_generate sends stream=False even with tools kwarg (issue #35436 scenario).
+
+    When disable_streaming='tool_calling' and tools are bound, _should_stream
+    returns False and routes to _generate. The payload must have stream=False.
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o", streaming=True, disable_streaming="tool_calling"
+    )
+    tools = [{"type": "function", "function": {"name": "get_weather"}}]
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_raw = MagicMock()
+        mock_raw.parse.return_value = _chat_completion_response()
+        mock_raw.headers = {}
+        mock_client.create.return_value = mock_raw
+        llm._generate([HumanMessage(content="test")], tools=tools)
+
+        call_kwargs = mock_client.create.call_args.kwargs
+        assert call_kwargs["stream"] is False
+        assert "tools" in call_kwargs
+
+
+async def test_agenerate_stream_false_with_tools() -> None:
+    """_agenerate sends stream=False even with tools kwarg (async #35436 scenario)."""
+    llm = ChatOpenAI(
+        model="gpt-4o", streaming=True, disable_streaming="tool_calling"
+    )
+    tools = [{"type": "function", "function": {"name": "get_weather"}}]
+
+    with patch.object(llm.async_client, "with_raw_response") as mock_client:
+        mock_raw = MagicMock()
+        mock_raw.parse.return_value = _chat_completion_response()
+        mock_raw.headers = {}
+        mock_client.create = AsyncMock(return_value=mock_raw)
+        await llm._agenerate([HumanMessage(content="test")], tools=tools)
+
+        call_kwargs = mock_client.create.call_args.kwargs
+        assert call_kwargs["stream"] is False
+        assert "tools" in call_kwargs
