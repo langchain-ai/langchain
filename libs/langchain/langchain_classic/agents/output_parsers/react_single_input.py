@@ -69,7 +69,7 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
         if includes_answer:
             return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()},
+                {"output": text.rsplit(FINAL_ANSWER_ACTION, maxsplit=1)[-1].strip()},
                 text,
             )
 

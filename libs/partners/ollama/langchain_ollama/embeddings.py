@@ -298,10 +298,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._client:
             msg = (
-                "Ollama client is not initialized. "
-                "Please ensure Ollama is running and the model is loaded."
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
             )
-            raise ValueError(msg)
+            raise RuntimeError(msg)
         return self._client.embed(
             self.model, texts, options=self._default_params, keep_alive=self.keep_alive
         )["embeddings"]
@@ -314,10 +314,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._async_client:
             msg = (
-                "Ollama client is not initialized. "
-                "Please ensure Ollama is running and the model is loaded."
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
             )
-            raise ValueError(msg)
+            raise RuntimeError(msg)
         return (
             await self._async_client.embed(
                 self.model,

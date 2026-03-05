@@ -7,19 +7,31 @@ name = "langchain-groq"
 description = "An integration package connecting Groq and LangChain"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 
-version = "1.1.1"
+version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.1.0,<2.0.0",
+    "langchain-core>=1.2.8,<2.0.0",
     "groq>=0.30.0,<1.0.0"
 ]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/groq"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_groq/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-groq%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"

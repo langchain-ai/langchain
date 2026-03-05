@@ -7,16 +7,28 @@ name = "langchain-tests"
 description = "Standard tests for LangChain implementations"
 license = { text = "MIT" }
 readme = "README.md"
-authors = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
-version = "1.1.3"
+version = "1.1.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.7,<2.0.0",
-    "pytest>=7.0.0,<9.0.0",
+    "pytest>=7.0.0,<10.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
-    "syrupy>=4.0.0,<5.0.0",
+    "syrupy>=4.0.0,<6.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-benchmark",
     "pytest-codspeed",
@@ -29,7 +41,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://docs.langchain.com/"
 Documentation = "https://docs.langchain.com/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
 Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
@@ -38,7 +51,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff>=0.14.11,<0.15.0"]
+lint = ["ruff>=0.15.0,<0.16.0"]
 typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
@@ -60,6 +73,14 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = ["vcr.*",]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["deepagents", "deepagents.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.unit_tests.test_in_memory_sandbox_provider"]
+ignore_errors = true
 
 [tool.ruff.format]
 docstring-code-format = true
