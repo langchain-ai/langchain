@@ -169,6 +169,7 @@ def test_configurable() -> None:
             "stream_usage": True,
             "use_previous_response_id": False,
             "use_responses_api": None,
+            "use_websocket": None,
         },
         "kwargs": {
             "tools": [
