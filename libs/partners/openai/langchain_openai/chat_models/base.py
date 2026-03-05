@@ -41,6 +41,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
+    get_args,
 )
 from urllib.parse import urlparse
 
@@ -895,6 +896,13 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
 
+    use_websocket: bool | None = None
+    """Whether to use WebSocket for streaming responses.
+
+    WebSocket streaming is opt-in only. If `use_websocket` is `None` or `False`,
+    HTTP streaming is used instead.
+    """
+
     output_version: str | None = Field(
         default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
@@ -1223,6 +1231,121 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
 
+    def _stream_responses_websocket(
+        self,
+        payload: dict,
+        run_manager: CallbackManagerForLLMRun | None = None,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Stream responses using a WebSocket connection to /v1/responses."""
+        try:
+            from websocket import create_connection
+        except ImportError as e:
+            msg = (
+                "Could not import websocket-client python package. "
+                "Please install it with `pip install langchain-openai[websocket]` "
+                "or `pip install websocket-client`."
+            )
+            raise ImportError(msg) from e
+
+        if self.openai_api_key is None:
+            msg = (
+                "API key is required for WebSocket streaming. "
+                "Set `api_key` or `OPENAI_API_KEY`."
+            )
+            raise ValueError(msg)
+
+        sync_api_key_value, _ = _resolve_sync_and_async_api_keys(self.openai_api_key)
+        if sync_api_key_value is None:
+            msg = (
+                "WebSocket streaming requires a sync API key. An async callable was "
+                "provided. Use a string or sync callable instead."
+            )
+            raise ValueError(msg)
+        api_key = (
+            sync_api_key_value() if callable(sync_api_key_value) else sync_api_key_value
+        )
+
+        # Derive WebSocket URL from the client's configured base_url
+        base = str(self.root_client.base_url).rstrip("/")
+        ws_base = base.replace("https://", "wss://").replace("http://", "ws://")
+        ws_url = f"{ws_base}/responses"
+
+        ws = create_connection(
+            ws_url,
+            header=[f"Authorization: Bearer {api_key}"],
+        )
+
+        try:
+            # Strip HTTP-only fields that are invalid over WebSocket
+            ws_payload = {
+                k: v for k, v in payload.items() if k not in ("stream", "background")
+            }
+            ws.send(json.dumps({"type": "response.create", **ws_payload}))
+
+            original_schema_obj = payload.get("response_format")
+            current_index = -1
+            current_output_index = -1
+            current_sub_index = -1
+            has_reasoning = False
+            from openai.types.responses import ResponseStreamEvent
+
+            event_types = get_args(get_args(ResponseStreamEvent)[0])
+
+            while True:
+                raw = ws.recv()
+                if not raw:
+                    break
+
+                data = json.loads(raw)
+                if data.get("type") == "error":
+                    error_msg = (data.get("error") or {}).get(
+                        "message", str(raw)
+                    )
+                    msg = f"WebSocket error from OpenAI: {error_msg}"
+                    raise ValueError(msg)
+
+                # Convert raw dict to typed event model
+                for event_cls in event_types:
+                    try:
+                        chunk = event_cls.model_validate(data)
+                        break
+                    except Exception:  # noqa: S112
+                        continue
+                else:
+                    continue
+
+                (
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    generation_chunk,
+                ) = _convert_responses_chunk_to_generation_chunk(
+                    chunk,
+                    current_index,
+                    current_output_index,
+                    current_sub_index,
+                    schema=original_schema_obj,
+                    has_reasoning=has_reasoning,
+                    output_version=self.output_version,
+                )
+                if generation_chunk:
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    if "reasoning" in generation_chunk.message.additional_kwargs:
+                        has_reasoning = True
+                    yield generation_chunk
+
+                if chunk.type in ("response.completed", "response.incomplete"):
+                    break
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
+        finally:
+            ws.close()
+
     def _stream_responses(
         self,
         messages: list[BaseMessage],
@@ -1234,7 +1357,12 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            if self.include_response_headers:
+            if self.use_websocket:
+                yield from self._stream_responses_websocket(
+                    payload, run_manager=run_manager
+                )
+                return
+            elif self.include_response_headers:
                 raw_context_manager = (
                     self.root_client.with_raw_response.responses.create(**payload)
                 )

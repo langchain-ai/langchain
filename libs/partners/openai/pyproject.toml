@@ -28,6 +28,9 @@ dependencies = [
     "tiktoken>=0.7.0,<1.0.0",
 ]
 
+[project.optional-dependencies]
+websocket = ["websocket-client>=1.9.0"]
+
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_openai/"
@@ -53,6 +56,7 @@ test = [
     "vcrpy>=8.0.0,<9.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "websocket-client>=1.9.0",
     "langchain",
     "langchain-core",
     "langchain-tests",

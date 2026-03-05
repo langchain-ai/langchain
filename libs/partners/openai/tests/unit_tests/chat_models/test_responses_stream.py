@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.outputs import ChatGenerationChunk
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -791,3 +793,110 @@ def test_responses_stream_with_image_generation_multiple_calls() -> None:
     with patch.object(llm, "root_client", mock_client):
         chunks = list(llm_with_tools.stream("test again"))
         assert len(chunks) > 0
+
+
+def test_responses_stream_defaults_to_http() -> None:
+    """Test that HTTP is used by default instead of WebSocket."""
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    mock_client = MagicMock()
+    mock_client.responses.create = MagicMock(
+        side_effect=lambda *a, **kw: MockSyncContextManager(responses_stream)
+    )
+
+    mock_ws = MagicMock()
+
+    with patch.object(llm, "root_client", mock_client):
+        with patch.object(llm, "_stream_responses_websocket", mock_ws):
+            _ = list(llm.stream("test"))
+
+    mock_ws.assert_not_called()
+    mock_client.responses.create.assert_called()
+
+
+def test_responses_stream_uses_websocket_when_enabled() -> None:
+    """Test that WebSocket is used when explicitly enabled."""
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        use_websocket=True,
+    )
+    mock_client = MagicMock()
+    mock_ws = MagicMock(
+        return_value=[
+            ChatGenerationChunk(message=AIMessageChunk(content="hi")),
+        ]
+    )
+
+    with patch.object(llm, "root_client", mock_client):
+        with patch.object(llm, "_stream_responses_websocket", mock_ws):
+            chunks = list(llm.stream("test"))
+
+    mock_ws.assert_called_once()
+    mock_client.responses.create.assert_not_called()
+    assert chunks[0].content == "hi"
+
+
+def test_responses_stream_websocket_custom_base_url() -> None:
+    """Test that WebSocket URL is derived from custom base_url."""
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        use_websocket=True,
+    )
+    mock_client = MagicMock()
+    mock_client.base_url = "https://custom.api.com/v1/"
+
+    # Feed real stream events as JSON, then signal connection closed
+    ws_messages = [e.model_dump_json() for e in responses_stream] + [None]
+    mock_connection = MagicMock()
+    mock_connection.recv.side_effect = ws_messages
+
+    with patch.object(llm, "root_client", mock_client):
+        with patch(
+            "websocket.create_connection",
+            return_value=mock_connection,
+        ) as mock_create_conn:
+            chunks = list(llm.stream("test"))
+
+    assert len(chunks) > 0
+    mock_create_conn.assert_called_once()
+    ws_url = mock_create_conn.call_args[0][0]
+    assert ws_url == "wss://custom.api.com/v1/responses"
+
+
+def test_responses_stream_websocket_error_event() -> None:
+    """Test that error events raise ValueError."""
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        use_websocket=True,
+    )
+    mock_client = MagicMock()
+    mock_client.base_url = "https://api.openai.com/v1/"
+
+    error_event = {"type": "error", "error": {"message": "Test error"}}
+    mock_connection = MagicMock()
+    mock_connection.recv.side_effect = [json.dumps(error_event)]
+
+    with patch.object(llm, "root_client", mock_client):
+        with patch(
+            "websocket.create_connection",
+            return_value=mock_connection,
+        ):
+            with pytest.raises(ValueError, match="Test error"):
+                _ = list(llm.stream("test"))
+
+
+def test_responses_stream_websocket_missing_api_key() -> None:
+    """Test that ValueError is raised if API key is missing."""
+    llm = ChatOpenAI(
+        model="o4-mini",
+        use_responses_api=True,
+        use_websocket=True,
+    )
+    mock_client = MagicMock()
+
+    with patch.object(llm, "root_client", mock_client):
+        llm.openai_api_key = None
+        with pytest.raises(ValueError, match="API key is required"):
+            _ = list(llm.stream("test"))
