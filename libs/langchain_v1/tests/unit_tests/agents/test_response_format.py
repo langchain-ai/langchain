@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
-from langchain.agents.factory import _supports_provider_strategy
+from langchain.agents.factory import _has_thinking_enabled, _supports_provider_strategy
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -958,50 +958,36 @@ class TestHasThinkingEnabled:
 
     def test_anthropic_thinking_enabled(self) -> None:
         """Model with thinking={"type": "enabled"} should be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeThinkingModel(thinking={"type": "enabled", "budget_tokens": 5000})
         assert _has_thinking_enabled(model) is True
 
     def test_anthropic_thinking_adaptive(self) -> None:
         """Model with thinking={"type": "adaptive"} should be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeThinkingModel(thinking={"type": "adaptive"})
         assert _has_thinking_enabled(model) is True
 
     def test_anthropic_thinking_disabled(self) -> None:
         """Model with thinking={"type": "disabled"} should not be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeThinkingModel(thinking={"type": "disabled"})
         assert _has_thinking_enabled(model) is False
 
     def test_anthropic_thinking_none(self) -> None:
         """Model with thinking=None should not be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeThinkingModel(thinking=None)
         assert _has_thinking_enabled(model) is False
 
     def test_no_thinking_attribute(self) -> None:
         """Model without thinking attribute should not be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeToolCallingModel()
         assert _has_thinking_enabled(model) is False
 
     def test_reasoning_effort_set(self) -> None:
         """Model with reasoning_effort set should be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeReasoningModel(reasoning_effort="high")
         assert _has_thinking_enabled(model) is True
 
     def test_reasoning_effort_none(self) -> None:
         """Model with reasoning_effort=None should not be detected."""
-        from langchain.agents.factory import _has_thinking_enabled
-
         model = FakeReasoningModel(reasoning_effort=None)
         assert _has_thinking_enabled(model) is False
 
@@ -1037,13 +1023,15 @@ class TestToolChoiceWithThinking:
             captured_kwargs["tool_choice"] = tool_choice
             return original_bind_tools(self_inner, tools, tool_choice=tool_choice, **kwargs)
 
-        with patch.object(FakeThinkingModel, "bind_tools", patched_bind_tools):
-            with patch(
+        with (
+            patch.object(FakeThinkingModel, "bind_tools", patched_bind_tools),
+            patch(
                 "langchain.agents.factory._supports_provider_strategy",
                 return_value=False,
-            ):
-                agent = create_agent(model, [], response_format=WeatherBaseModel)
-                agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+            ),
+        ):
+            agent = create_agent(model, [], response_format=WeatherBaseModel)
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert captured_kwargs["tool_choice"] == "auto"
 
@@ -1068,12 +1056,14 @@ class TestToolChoiceWithThinking:
             captured_kwargs["tool_choice"] = tool_choice
             return original_bind_tools(self_inner, tools, tool_choice=tool_choice, **kwargs)
 
-        with patch.object(FakeToolCallingModel, "bind_tools", patched_bind_tools):
-            with patch(
+        with (
+            patch.object(FakeToolCallingModel, "bind_tools", patched_bind_tools),
+            patch(
                 "langchain.agents.factory._supports_provider_strategy",
                 return_value=False,
-            ):
-                agent = create_agent(model, [], response_format=WeatherBaseModel)
-                agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+            ),
+        ):
+            agent = create_agent(model, [], response_format=WeatherBaseModel)
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert captured_kwargs["tool_choice"] == "any"

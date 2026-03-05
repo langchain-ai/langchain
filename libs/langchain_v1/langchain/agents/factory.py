@@ -527,14 +527,10 @@ def _has_thinking_enabled(model: BaseChatModel) -> bool:
     Returns:
         ``True`` if the model has thinking/reasoning enabled, ``False`` otherwise.
     """
-    # Anthropic: thinking={"type": "enabled"} or {"type": "adaptive"}
     thinking = getattr(model, "thinking", None)
     if isinstance(thinking, dict) and thinking.get("type") in ("enabled", "adaptive"):
         return True
-    # OpenAI / DeepSeek: reasoning_effort is set (e.g. "high", "medium", "low")
-    if getattr(model, "reasoning_effort", None) is not None:
-        return True
-    return False
+    return getattr(model, "reasoning_effort", None) is not None
 
 
 def _handle_structured_output_error(
@@ -1231,6 +1227,7 @@ def create_agent(
             # back to "auto" when the model has thinking/reasoning enabled
             # because some providers (e.g. Anthropic) reject tool_choice="any"
             # when thinking mode is active.
+            tool_choice: str | None
             if structured_output_tools:
                 if isinstance(request.model, BaseChatModel) and _has_thinking_enabled(
                     request.model
