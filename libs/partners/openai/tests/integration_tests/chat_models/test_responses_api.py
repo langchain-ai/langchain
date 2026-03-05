@@ -1267,3 +1267,69 @@ def test_csv_input() -> None:
         "3" in str(response2.content).lower()
         or "three" in str(response2.content).lower()
     )
+
+
+def test_tool_search() -> None:
+    """Test tool search with deferred loading via extras."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get the current weather for a location."""
+        return f"The weather in {location} is sunny and 72°F"
+
+    @tool(extras={"defer_loading": True})
+    def search_files(query: str) -> str:
+        """Search through files in the workspace."""
+        return f"Found 3 files matching '{query}'"
+
+    llm = ChatOpenAI(model="gpt-4o")
+    bound = llm.bind_tools(
+        [get_weather, search_files, {"type": "tool_search"}],
+        parallel_tool_calls=False,
+    )
+    response = bound.invoke("What's the weather in San Francisco?")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+
+
+def test_tool_search_with_namespace() -> None:
+    """Test tool search with namespace and deferred loading."""
+    llm = ChatOpenAI(model="gpt-4o")
+    namespace_tool = {
+        "type": "namespace",
+        "name": "crm",
+        "description": "CRM tools for customer lookup and order management.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "get_customer_profile",
+                "description": "Fetch a customer profile by customer ID.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                    "additionalProperties": False,
+                },
+            },
+            {
+                "type": "function",
+                "name": "list_open_orders",
+                "description": "List open orders for a customer ID.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                    "additionalProperties": False,
+                },
+            },
+        ],
+    }
+    bound = llm.bind_tools(
+        [namespace_tool, {"type": "tool_search"}],
+        parallel_tool_calls=False,
+    )
+    response = bound.invoke("List open orders for customer CUST-12345.")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls

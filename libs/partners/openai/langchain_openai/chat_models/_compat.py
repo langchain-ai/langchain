@@ -103,6 +103,8 @@ def _convert_to_v03_ai_message(
                     "mcp_list_tools",
                     "mcp_approval_request",
                     "image_generation_call",
+                    "tool_search_call",
+                    "tool_search_output",
                 ):
                     # Store built-in tool calls in additional_kwargs
                     if "tool_outputs" not in message.additional_kwargs:
