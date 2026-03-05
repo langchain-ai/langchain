@@ -3507,7 +3507,7 @@ def _chat_completion_response() -> MagicMock:
 
 
 @pytest.mark.parametrize(
-    "streaming,disable_streaming",
+    ("streaming", "disable_streaming"),
     [
         (True, None),
         (True, "tool_calling"),
@@ -3546,7 +3546,7 @@ def test_generate_always_sets_stream_false(
 
 
 @pytest.mark.parametrize(
-    "streaming,disable_streaming",
+    ("streaming", "disable_streaming"),
     [
         (True, None),
         (True, "tool_calling"),
