@@ -3636,3 +3636,43 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_arg_named_config_no_collision() -> None:
+    @tool
+    def my_tool(config: str) -> str:
+        """A tool with an arg named config."""
+        return f"got {config}"
+
+    result = my_tool.invoke({"config": "my_value"})
+    assert result == "got my_value"
+
+
+async def test_async_tool_arg_named_config_no_collision() -> None:
+    @tool
+    async def my_tool(config: str) -> str:
+        """A tool with an arg named config."""
+        return f"got {config}"
+
+    result = await my_tool.ainvoke({"config": "my_value"})
+    assert result == "got my_value"
+
+
+def test_tool_arg_named_config_with_other_args() -> None:
+    @tool
+    def my_tool(config: str, name: str) -> str:
+        """A tool with config arg and other args."""
+        return f"{name}: {config}"
+
+    result = my_tool.invoke({"config": "settings.yaml", "name": "app"})
+    assert result == "app: settings.yaml"
+
+
+def test_structured_tool_arg_named_config_no_collision() -> None:
+    def my_func(config: str) -> str:
+        """A function with an arg named config."""
+        return f"got {config}"
+
+    st = StructuredTool.from_function(my_func)
+    result = st.invoke({"config": "my_value"})
+    assert result == "got my_value"

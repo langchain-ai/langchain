@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
+_DISPLACED_ARG_PREFIX = "__lc_displaced_arg__"
 TOOL_MESSAGE_BLOCK_TYPES = (
     "text",
     "image_url",
@@ -961,9 +962,17 @@ class ChildTool(BaseTool):
                     tool_input, tool_call_id
                 )
                 if signature(self._run).parameters.get("run_manager"):
-                    tool_kwargs |= {"run_manager": run_manager}
+                    if "run_manager" in tool_kwargs:
+                        tool_kwargs[f"{_DISPLACED_ARG_PREFIX}run_manager"] = (
+                            tool_kwargs["run_manager"]
+                        )
+                    tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
+                    if config_param in tool_kwargs:
+                        tool_kwargs[f"{_DISPLACED_ARG_PREFIX}{config_param}"] = (
+                            tool_kwargs[config_param]
+                        )
+                    tool_kwargs[config_param] = config
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 msg = (
@@ -1089,8 +1098,16 @@ class ChildTool(BaseTool):
                     self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
                 if signature(func_to_check).parameters.get("run_manager"):
+                    if "run_manager" in tool_kwargs:
+                        tool_kwargs[f"{_DISPLACED_ARG_PREFIX}run_manager"] = (
+                            tool_kwargs["run_manager"]
+                        )
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
+                    if config_param in tool_kwargs:
+                        tool_kwargs[f"{_DISPLACED_ARG_PREFIX}{config_param}"] = (
+                            tool_kwargs[config_param]
+                        )
                     tool_kwargs[config_param] = config
 
                 coro = self._arun(*tool_args, **tool_kwargs)

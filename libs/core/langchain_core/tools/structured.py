@@ -23,6 +23,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    _DISPLACED_ARG_PREFIX,
     _EMPTY_SET,
     FILTERED_ARGS,
     ArgsSchema,
@@ -94,6 +95,9 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
+            for key in list(kwargs):
+                if key.startswith(_DISPLACED_ARG_PREFIX):
+                    kwargs[key[len(_DISPLACED_ARG_PREFIX) :]] = kwargs.pop(key)
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -121,6 +125,9 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+            for key in list(kwargs):
+                if key.startswith(_DISPLACED_ARG_PREFIX):
+                    kwargs[key[len(_DISPLACED_ARG_PREFIX) :]] = kwargs.pop(key)
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default
