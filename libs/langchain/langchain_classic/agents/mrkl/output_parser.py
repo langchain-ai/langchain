@@ -42,7 +42,7 @@ class MRKLOutputParser(AgentOutputParser):
         """
         includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
-            r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
+            r"Action\s*\d*\s*:[\s]*(.*?)Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         )
         action_match = re.search(regex, text, re.DOTALL)
         if action_match and includes_answer:
