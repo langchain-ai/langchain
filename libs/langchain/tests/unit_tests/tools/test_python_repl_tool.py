@@ -1,4 +1,3 @@
-
 from langchain.tools.python.tool import PythonAstREPLTool, PythonREPLTool
 from langchain.utilities.python import PythonREPL
 
@@ -23,6 +22,4 @@ def test_python_ast_repl_tool() -> None:
     tool = PythonAstREPLTool()
     # Given an AST-based tool, evaluating an expression returns the actual value
     result = tool.run("5 * 5")
-    # Result should either be 25 or a string containing 25 depending on exact handler,
-    # but the test standard dictates execution success.
     assert str(25) in str(result)
