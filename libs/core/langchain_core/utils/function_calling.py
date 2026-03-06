@@ -22,6 +22,7 @@ from typing import (
 
 import typing_extensions
 from pydantic import BaseModel
+from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
@@ -176,17 +177,32 @@ def _convert_pydantic_to_openai_function(
 
     Raises:
         TypeError: If the model is not a Pydantic model.
+        TypeError: If the model contains types that cannot be converted to JSON schema.
 
     Returns:
         The function description.
     """
-    if hasattr(model, "model_json_schema"):
-        schema = model.model_json_schema()  # Pydantic 2
-    elif hasattr(model, "schema"):
-        schema = model.schema()  # Pydantic 1
-    else:
-        msg = "Model must be a Pydantic model."
-        raise TypeError(msg)
+    try:
+        if hasattr(model, "model_json_schema"):
+            schema = model.model_json_schema()  # Pydantic 2
+        elif hasattr(model, "schema"):
+            schema = model.schema()  # Pydantic 1
+        else:
+            msg = "Model must be a Pydantic model."
+            raise TypeError(msg)
+    except PydanticInvalidForJsonSchema as e:
+        model_name = getattr(model, "__name__", str(model))
+        msg = (
+            f"Failed to generate JSON schema for '{model_name}': {e}\n\n"
+            "Tool argument schemas must be JSON-serializable. If your schema includes "
+            "custom Python classes, consider:\n"
+            "  1. Converting them to Pydantic models with JSON-compatible fields\n"
+            "  2. Using primitive types (str, int, float, bool, list, dict) instead\n"
+            "  3. Passing the data as serialized JSON strings\n\n"
+            "For more information, see: "
+            "https://python.langchain.com/docs/how_to/custom_tools/"
+        )
+        raise PydanticInvalidForJsonSchema(msg) from e
     return _convert_json_schema_to_openai_function(
         schema, name=name, description=description, rm_titles=rm_titles
     )
@@ -718,12 +734,22 @@ def _parse_google_docstring(
 
     Assumes the function docstring follows Google Python style guide.
 
+    Args:
+        docstring: The docstring to parse.
+        args: The list of argument names to extract descriptions for.
+        error_on_invalid_docstring: Whether to raise an error if the docstring is
+            invalid.
+
+    Returns:
+        A tuple of the function description and a dictionary of argument descriptions.
     """
     if docstring:
         docstring_blocks = docstring.split("\n\n")
         if error_on_invalid_docstring:
             filtered_annotations = {
-                arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
+                arg
+                for arg in args
+                if arg not in {"run_manager", "callbacks", "runtime", "return"}
             }
             if filtered_annotations and (
                 len(docstring_blocks) < _MIN_DOCSTRING_BLOCKS
@@ -745,7 +771,7 @@ def _parse_google_docstring(
                 descriptors.append(block)
             else:
                 continue
-        description = " ".join(descriptors)
+        description = " ".join(descriptors).strip()
     else:
         if error_on_invalid_docstring:
             msg = "Found invalid Google-Style docstring."

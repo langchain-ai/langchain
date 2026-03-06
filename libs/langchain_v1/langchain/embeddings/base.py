@@ -12,7 +12,7 @@ def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
     return cls(**kwargs)
 
 
-_SUPPORTED_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
+_BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
     "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
     "bedrock": (
         "langchain_aws",
@@ -38,10 +38,22 @@ Each entry maps a provider key to a tuple of:
 - `module_path`: The Python module path containing the embeddings class.
 - `class_name`: The name of the embeddings class to import.
 - `creator_func`: A callable that instantiates the class with provided kwargs.
+
+!!! note
+
+    This dict is not exhaustive of all providers supported by LangChain, but is
+    meant to cover the most popular ones and serve as a template for adding more
+    providers in the future. If a provider is not in this dict, it can still be
+    used with `init_chat_model` as long as its integration package is installed,
+    but the provider key will not be inferred from the model name and must be
+    specified explicitly via the `model_provider` parameter.
+
+    Refer to the LangChain [integration documentation](https://docs.langchain.com/oss/python/integrations/providers/overview)
+    for a full list of supported providers and their corresponding packages.
 """
 
 
-@functools.lru_cache(maxsize=len(_SUPPORTED_PROVIDERS))
+@functools.lru_cache(maxsize=len(_BUILTIN_PROVIDERS))
 def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
     """Return a factory function that creates an embeddings model for the given provider.
 
@@ -50,17 +62,17 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
     Args:
         provider: The name of the model provider (e.g., `'openai'`, `'cohere'`).
 
-            Must be a key in `_SUPPORTED_PROVIDERS`.
+            Must be a key in `_BUILTIN_PROVIDERS`.
 
     Returns:
         A callable that accepts model kwargs and returns an `Embeddings` instance for
             the specified provider.
 
     Raises:
-        ValueError: If the provider is not in `_SUPPORTED_PROVIDERS`.
+        ValueError: If the provider is not in `_BUILTIN_PROVIDERS`.
         ImportError: If the provider's integration package is not installed.
     """
-    if provider not in _SUPPORTED_PROVIDERS:
+    if provider not in _BUILTIN_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
@@ -68,7 +80,7 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
         )
         raise ValueError(msg)
 
-    module_name, class_name, creator_func = _SUPPORTED_PROVIDERS[provider]
+    module_name, class_name, creator_func = _BUILTIN_PROVIDERS[provider]
     try:
         module = importlib.import_module(module_name)
     except ImportError as e:
@@ -83,7 +95,7 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
 def _get_provider_list() -> str:
     """Get formatted list of providers and their packages."""
     return "\n".join(
-        f"  - {p}: {pkg[0].replace('_', '-')}" for p, pkg in _SUPPORTED_PROVIDERS.items()
+        f"  - {p}: {pkg[0].replace('_', '-')}" for p, pkg in _BUILTIN_PROVIDERS.items()
     )
 
 
@@ -121,7 +133,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
             f"  - openai:text-embedding-3-small\n"
             f"  - bedrock:amazon.titan-embed-text-v1\n"
             f"  - cohere:embed-english-v3.0\n"
-            f"Supported providers: {_SUPPORTED_PROVIDERS.keys()}"
+            f"Supported providers: {_BUILTIN_PROVIDERS.keys()}"
         )
         raise ValueError(msg)
 
@@ -129,7 +141,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     provider = provider.lower().strip()
     model = model.strip()
 
-    if provider not in _SUPPORTED_PROVIDERS:
+    if provider not in _BUILTIN_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
@@ -161,11 +173,11 @@ def _infer_model_and_provider(
             "1. A model string in format 'provider:model-name'\n"
             "   Example: 'openai:text-embedding-3-small'\n"
             "2. Or explicitly set provider from: "
-            f"{_SUPPORTED_PROVIDERS.keys()}"
+            f"{_BUILTIN_PROVIDERS.keys()}"
         )
         raise ValueError(msg)
 
-    if provider not in _SUPPORTED_PROVIDERS:
+    if provider not in _BUILTIN_PROVIDERS:
         msg = (
             f"Provider '{provider}' is not supported.\n"
             f"Supported providers and their required packages:\n"
@@ -247,7 +259,7 @@ def init_embeddings(
 
     """
     if not model:
-        providers = _SUPPORTED_PROVIDERS.keys()
+        providers = _BUILTIN_PROVIDERS.keys()
         msg = f"Must specify model name. Supported providers are: {', '.join(providers)}"
         raise ValueError(msg)
 

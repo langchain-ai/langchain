@@ -93,15 +93,15 @@ openai:
       - any-glob-to-any-file:
           - "libs/partners/openai/**/*"
 
+openrouter:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/openrouter/**/*"
+
 perplexity:
   - changed-files:
       - any-glob-to-any-file:
           - "libs/partners/perplexity/**/*"
-
-prompty:
-  - changed-files:
-      - any-glob-to-any-file:
-          - "libs/partners/prompty/**/*"
 
 qdrant:
   - changed-files:

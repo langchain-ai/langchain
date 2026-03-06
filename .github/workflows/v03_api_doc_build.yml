@@ -13,6 +13,9 @@ run-name: "Build & Deploy API Reference (v0.3)"
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PYTHON_VERSION: "3.11"
 
@@ -36,7 +39,7 @@ jobs:
 
       - name: "📋 Extract Repository List with yq"
         id: get-unsorted-repos
-        uses: mikefarah/yq@master
+        uses: mikefarah/yq@88a31ae8c6b34aad77d2efdecc146113cb3315d0 # master
         with:
           cmd: |
             # Extract repos from packages.yml that are in the langchain-ai org
@@ -158,7 +161,7 @@ jobs:
           rm -rf ../langchain-api-docs-html/_build/
 
       # Commit and push changes to langchain-api-docs-html repo
-      - uses: EndBug/add-and-commit@v9
+      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:
           cwd: langchain-api-docs-html
           message: "Update API docs build from v0.3 branch"

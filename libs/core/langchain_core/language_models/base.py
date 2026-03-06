@@ -51,14 +51,22 @@ class LangSmithParams(TypedDict, total=False):
 
     ls_provider: str
     """Provider of the model."""
+
     ls_model_name: str
     """Name of the model."""
+
     ls_model_type: Literal["chat", "llm"]
-    """Type of the model. Should be 'chat' or 'llm'."""
+    """Type of the model.
+
+    Should be `'chat'` or `'llm'`.
+    """
+
     ls_temperature: float | None
     """Temperature for generation."""
+
     ls_max_tokens: int | None
     """Max tokens for generation."""
+
     ls_stop: list[str] | None
     """Stop words for generation."""
 

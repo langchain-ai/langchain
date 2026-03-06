@@ -481,14 +481,6 @@ def render(
     Args:
         template: A file-like object or a string containing the template.
         data: A python dictionary with your data scope.
-        partials_path: The path to where your partials are stored.
-
-            If set to None, then partials won't be loaded from the file system
-
-            Defaults to `'.'`.
-        partials_ext: The extension that you want the parser to look for
-
-            Defaults to `'mustache'`.
         partials_dict: A python dictionary which will be search for partials
             before the filesystem is.
 
