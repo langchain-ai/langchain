@@ -469,10 +469,15 @@ def test_merge_lists_mixed_strings_and_dicts() -> None:
     other = [{"type": "reference", "index": 0, "reference_ids": ["DGqzzmqc3"]}]
     result = merge_lists(merged, other)
     assert result is not None
+    assert len(result) == 3
     assert result[0] == "start answer..."
     assert result[2] == "other answer..."
     assert isinstance(result[1], dict)
     assert result[1]["index"] == 0
+    assert result[1]["type"] == "reference"
+    reference_ids = result[1].get("reference_ids")
+    assert isinstance(reference_ids, list)
+    assert set(reference_ids) == {"iKcb2CAQ7", "DGqzzmqc3"}
 
 
 @pytest.mark.parametrize(
