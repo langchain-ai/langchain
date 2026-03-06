@@ -306,7 +306,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     - If `'tool_calling'`, will bypass streaming case only when the model is called
         with a `tools` keyword argument. In other words, LangChain will automatically
         switch to non-streaming behavior (`invoke`) only when the tools argument is
-        provided. This offers the best of both worlds.
+        provided. Note that this disables streaming for *all* turns when tools are
+        bound (e.g., via ``bind_tools``), not only for turns that actually produce
+        tool calls, since the response content is unknown before the API call.
     - If `False` (Default), will always use streaming case if available.
 
     The main reason for this flag is that code might be written using `stream` and
@@ -460,6 +462,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.disable_streaming is True:
             return False
         # We assume tools are passed in via "tools" kwarg in all models.
+        # Note: this checks whether tools are *bound* to the model, not whether the
+        # current response will contain tool calls. Since we cannot know the response
+        # content before making the API call, setting disable_streaming="tool_calling"
+        # will disable streaming for ALL turns when tools are bound (e.g., via
+        # bind_tools), not only for turns that actually produce tool calls.
         if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
             return False
 

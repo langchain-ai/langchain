@@ -3474,3 +3474,77 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_disable_streaming_tool_calling_forces_stream_false(
+    mock_completion: dict,
+) -> None:
+    """Test that _generate sets stream=False when disable_streaming is active.
+
+    When streaming=True and disable_streaming="tool_calling", the _should_stream
+    check routes execution to _generate instead of _stream. But _default_params
+    includes stream=True from self.streaming. _generate must override this to
+    stream=False, otherwise the OpenAI client returns a Stream object and
+    _create_chat_result crashes calling .model_dump() on it.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35436
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    # Verify _default_params has stream=True (the root cause of the bug).
+    assert llm._default_params["stream"] is True
+
+    call_payloads: list[dict] = []
+
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = {"content-type": "application/json"}
+    mock_resp.parse.return_value = mock_completion
+    mock_client.with_raw_response.create = MagicMock(
+        side_effect=lambda **kw: (call_payloads.append(kw), mock_resp)[1]
+    )
+
+    with patch.object(llm, "client", mock_client):
+        tools = [{"type": "function", "function": {"name": "t", "parameters": {}}}]
+        result = llm.invoke("hello", tools=tools)
+
+    assert result.content == "Bar Baz"
+    # The critical assertion: stream must be False in the actual API call payload.
+    assert call_payloads[-1]["stream"] is False
+
+
+async def test_disable_streaming_tool_calling_forces_stream_false_async(
+    mock_completion: dict,
+) -> None:
+    """Async version: _agenerate sets stream=False when disable_streaming is active.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35436
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    assert llm._default_params["stream"] is True
+
+    call_payloads: list[dict] = []
+
+    mock_client = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.parse.return_value = mock_completion
+
+    async def mock_create(**kwargs: Any) -> MagicMock:
+        call_payloads.append(kwargs)
+        return mock_resp
+
+    mock_client.with_raw_response.create = mock_create
+
+    with patch.object(llm, "async_client", mock_client):
+        tools = [{"type": "function", "function": {"name": "t", "parameters": {}}}]
+        result = await llm.ainvoke("hello", tools=tools)
+
+    assert result.content == "Bar Baz"
+    assert call_payloads[-1]["stream"] is False

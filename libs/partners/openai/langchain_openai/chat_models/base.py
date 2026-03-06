@@ -1447,6 +1447,10 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatResult:
         self._ensure_sync_client_available()
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        # Ensure stream is False. _default_params may set stream=True based on
+        # self.streaming, but when disable_streaming (e.g., "tool_calling") routes
+        # execution here instead of _stream, we must override it.
+        payload["stream"] = False
         generation_info = None
         raw_response = None
         try:
@@ -1707,6 +1711,10 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        # Ensure stream is False. _default_params may set stream=True based on
+        # self.streaming, but when disable_streaming (e.g., "tool_calling") routes
+        # execution here instead of _astream, we must override it.
+        payload["stream"] = False
         generation_info = None
         raw_response = None
         try:
