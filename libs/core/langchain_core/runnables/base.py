@@ -3127,6 +3127,72 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name=self.name,
         )
 
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        **kwargs: Any,
+    ) -> RunnableSequence:
+        """Bind tools to the LLM step of this sequence, if applicable.
+
+        This enables the pattern::
+
+            structured_llm = llm.with_structured_output(MySchema)
+            agent = structured_llm.bind_tools([tool1, tool2])
+
+        The tools are bound to the first element of the sequence (or its
+        underlying chat model if that element is a `RunnableBinding`). An
+        `AttributeError` is raised when no `BaseChatModel` can be found.
+
+        Args:
+            tools: A list of tools to bind. Accepts the same types as
+                `BaseChatModel.bind_tools`.
+            **kwargs: Additional keyword arguments forwarded to
+                `BaseChatModel.bind_tools` (e.g. `tool_choice`, `strict`).
+
+        Returns:
+            A new `RunnableSequence` with the tools bound to the first step.
+
+        Raises:
+            AttributeError: If the first step in this sequence is not a
+                `BaseChatModel` (or a `RunnableBinding` wrapping one), and
+                therefore does not support tool binding.
+        """
+        from langchain_core.language_models import BaseChatModel  # noqa: PLC0415
+
+        first = self.first
+
+        if isinstance(first, BaseChatModel):
+            bound_first = first.bind_tools(tools, **kwargs)
+        elif isinstance(first, RunnableBindingBase) and isinstance(
+            first.bound, BaseChatModel
+        ):
+            # `with_structured_output` typically wraps the LLM in a
+            # RunnableBinding (e.g. to attach `response_format` or existing
+            # tools).  Call bind_tools on the underlying model to get the
+            # properly formatted tool kwargs, then merge them with the
+            # existing binding so that previously set kwargs are preserved.
+            new_binding = first.bound.bind_tools(tools, **kwargs)
+            if isinstance(new_binding, RunnableBindingBase):
+                merged_kwargs = {**first.kwargs, **new_binding.kwargs}
+                bound_first = first.model_copy(update={"kwargs": merged_kwargs})
+            else:
+                bound_first = first.model_copy(update={"bound": new_binding})
+        else:
+            first_type = type(self.first).__name__
+            msg = (
+                f"'bind_tools' is not supported on this RunnableSequence because "
+                f"its first step ({first_type!r}) is not a BaseChatModel. "
+                f"Tool binding requires the sequence to start with a chat model."
+            )
+            raise AttributeError(msg)  # noqa: TRY004
+
+        return RunnableSequence(
+            first=bound_first,
+            middle=self.middle,
+            last=self.last,
+            name=self.name,
+        )
+
     @override
     def invoke(
         self, input: Input, config: RunnableConfig | None = None, **kwargs: Any

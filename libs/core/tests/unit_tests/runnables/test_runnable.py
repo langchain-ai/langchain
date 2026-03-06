@@ -27,12 +27,14 @@ from typing_extensions import TypedDict, override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -40,13 +42,19 @@ from langchain_core.language_models import (
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
-from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.outputs import ChatResult
 from langchain_core.outputs.chat_generation import ChatGeneration
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
@@ -5767,3 +5775,68 @@ def test_runnable_typed_dict_schema() -> None:
         repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
+
+
+class _FakeChatModelWithBindTools(BaseChatModel):
+    """Minimal fake chat model that tracks bound tools, for testing."""
+
+    bound_tools: list = Field(default_factory=list)
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-with-bind-tools"
+
+    @override
+    def _generate(
+        self,
+        _messages: list[BaseMessage],
+        _stop: list[str] | None = None,
+        _run_manager: CallbackManagerForLLMRun | None = None,
+        **_kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="ok"))])
+
+    def bind_tools(  # type: ignore[override]
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        **_kwargs: Any,
+    ) -> "_FakeChatModelWithBindTools":
+        return self.model_copy(update={"bound_tools": list(tools)})
+
+
+def test_runnable_sequence_bind_tools_after_with_structured_output() -> None:
+    """bind_tools on a RunnableSequence starting with a BaseChatModel."""
+
+    class OutputSchema(BaseModel):
+        answer: str
+
+    @tool
+    def search(_query: str) -> str:
+        """Search the web."""
+        return "results"
+
+    llm = _FakeChatModelWithBindTools()
+    parser = RunnableLambda(lambda x: OutputSchema(answer=str(x)))
+    sequence = RunnableSequence(first=llm, last=parser)
+
+    bound_sequence = sequence.bind_tools([search])
+    assert isinstance(bound_sequence, RunnableSequence)
+    assert isinstance(bound_sequence.first, _FakeChatModelWithBindTools)
+    assert search in bound_sequence.first.bound_tools
+
+
+def test_runnable_sequence_bind_tools_raises_when_first_not_chat_model() -> None:
+    """bind_tools should raise when first step is not a BaseChatModel."""
+
+    @tool
+    def dummy_tool(_x: str) -> str:
+        """A dummy tool."""
+        return _x
+
+    step_a = RunnableLambda(lambda x: x)
+    step_b = RunnableLambda(lambda x: x)
+    sequence = RunnableSequence(first=step_a, last=step_b)
+
+    with pytest.raises(AttributeError, match=r"bind_tools.*not supported"):
+        sequence.bind_tools([dummy_tool])
