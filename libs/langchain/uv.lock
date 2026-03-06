@@ -2379,7 +2379,7 @@ wheels = [
 
 [[package]]
 name = "langchain-classic"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2589,7 +2589,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.16"
+version = "1.2.17"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
