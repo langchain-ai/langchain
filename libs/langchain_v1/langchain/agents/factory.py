@@ -21,7 +21,9 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
+from langgraph.prebuilt.tool_node import ToolCallWithContext
+
+from langchain.tools.tool_node import ToolNode
 from langgraph.types import Command, Send
 from typing_extensions import NotRequired, Required, TypedDict
 
@@ -892,11 +894,15 @@ def create_agent(
 
     # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
     # (which may handle dynamically registered tools)
+    # Pass state_schema to ToolNode so it can detect NotRequired fields
+    # and safely handle InjectedState annotations that reference them.
+    _tool_node_schema = state_schema if state_schema is not None else AgentState
     tool_node = (
         ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
+            state_schema=_tool_node_schema,
         )
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
