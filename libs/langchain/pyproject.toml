@@ -79,7 +79,6 @@ test_integration = [
     "urllib3<2.0.0; python_version < \"3.10\"",
     "wrapt>=1.15.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "cassio>=0.1.0,<1.0.0",
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
