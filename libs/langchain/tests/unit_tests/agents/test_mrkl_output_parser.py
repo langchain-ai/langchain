@@ -84,7 +84,7 @@ def test_final_answer_after_parsable_action() -> None:
     )
 
 
-def _timeout_handler(signum: int, frame: object) -> None:
+def _timeout_handler(_signum: int, _frame: object) -> None:
     msg = "ReDoS: regex took too long"
     raise TimeoutError(msg)
 
@@ -93,7 +93,7 @@ def _timeout_handler(signum: int, frame: object) -> None:
     sys.platform == "win32", reason="SIGALRM is not available on Windows"
 )
 def test_mrkl_output_parser_no_redos() -> None:
-    """Regression: (.*?)[\\s]*Action caused catastrophic backtracking."""
+    """Regression test for ReDoS caused by catastrophic backtracking."""
     malicious = "Action: " + " \t" * 1000 + "Action "
     old = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.alarm(2)
