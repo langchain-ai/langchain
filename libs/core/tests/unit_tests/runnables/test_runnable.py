@@ -3980,13 +3980,13 @@ async def test_async_retry_batch_preserves_order() -> None:
 
 
 def test_retry_batch_partial_success_with_persistent_failure() -> None:
-    """Regression test: batch retry must correctly map results when some inputs
-    succeed on a later retry while others exhaust all retries and still fail.
+    """Regression test: batch retry must correctly map results for partial success.
 
-    Previously, result.pop(0) was used to assign failed outputs, but result
+    When some inputs succeed on a later retry while others exhaust all retries
+    and still fail, result.pop(0) was used to assign failed outputs. But result
     contains entries indexed by position in remaining_indices (not by original
-    index). This caused succeeded-on-last-attempt values to be assigned to
-    wrong positions (corrupted outputs) instead of the actual exceptions.
+    index), causing succeeded-on-last-attempt values to be assigned to wrong
+    positions (corrupted outputs) instead of the actual exceptions.
     """
     first_attempt: set[str] = set()
 
@@ -4021,8 +4021,9 @@ def test_retry_batch_partial_success_with_persistent_failure() -> None:
 
 
 def test_retry_batch_failure_at_first_position() -> None:
-    """Regression test: failed item at index 0 should receive the exception,
-    not a successful result from a later-index item that retried successfully.
+    """Regression test: failed item at index 0 should receive the exception.
+
+    Not a successful result from a later-index item that retried successfully.
     """
     first_attempt: set[str] = set()
 
