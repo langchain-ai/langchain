@@ -386,3 +386,4 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     # stream() and transform() are not retried because retrying a stream
     # is not very intuitive.
+
