@@ -42,9 +42,7 @@ class MRKLOutputParser(AgentOutputParser):
             OutputParserException: If the output could not be parsed.
         """
         includes_answer = FINAL_ANSWER_ACTION in text
-        regex = (
-            r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
-        )
+        regex = r"Action\s*\d*\s*:[\s]*(.*?)Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         action_match = re.search(regex, text, re.DOTALL)
         if action_match and includes_answer:
             if text.find(FINAL_ANSWER_ACTION) < text.find(action_match.group(0)):

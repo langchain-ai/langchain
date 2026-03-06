@@ -53,9 +53,7 @@ class ReActSingleInputOutputParser(AgentOutputParser):
     @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text
-        regex = (
-            r"Action\s*\d*\s*:[\s]*(.*?)[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
-        )
+        regex = r"Action\s*\d*\s*:[\s]*(.*?)Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
         action_match = re.search(regex, text, re.DOTALL)
         if action_match:
             if includes_answer:
