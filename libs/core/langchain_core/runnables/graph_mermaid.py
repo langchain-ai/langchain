@@ -180,6 +180,7 @@ def draw_mermaid(
                 raise ValueError(msg)
 
             seen_subgraphs.add(subgraph)
+            seen_subgraphs.add(prefix)
             mermaid_graph += f"\tsubgraph {subgraph}\n"
 
             # Add nodes that belong to this subgraph
@@ -235,16 +236,36 @@ def draw_mermaid(
 
     # Add empty subgraphs (subgraphs with no internal edges)
     if with_styles:
-        for prefix, subgraph_node in subgraph_nodes.items():
-            if ":" not in prefix and prefix not in seen_subgraphs:
-                mermaid_graph += f"\tsubgraph {prefix}\n"
+        sorted_prefixes = sorted(
+            subgraph_nodes.keys(), key=lambda p: p.count(":")
+        )
+        open_stack: list[str] = []
+        for prefix in sorted_prefixes:
+            subgraph_node = subgraph_nodes[prefix]
+            if prefix not in seen_subgraphs:
+                while open_stack and not prefix.startswith(open_stack[-1] + ":"):
+                    mermaid_graph += "\tend\n"
+                    open_stack.pop()
 
-                # Add nodes that belong to this subgraph
+                parts = prefix.split(":")
+                for i in range(len(parts)):
+                    ancestor = ":".join(parts[: i + 1])
+                    ancestor_name = parts[i]
+                    if (
+                        ancestor not in seen_subgraphs
+                        and ancestor_name not in seen_subgraphs
+                    ):
+                        mermaid_graph += f"\tsubgraph {ancestor_name}\n"
+                        seen_subgraphs.add(ancestor)
+                        seen_subgraphs.add(ancestor_name)
+                        open_stack.append(ancestor)
+
                 for key, node in subgraph_node.items():
                     mermaid_graph += render_node(key, node)
 
-                mermaid_graph += "\tend\n"
-                seen_subgraphs.add(prefix)
+        while open_stack:
+            mermaid_graph += "\tend\n"
+            open_stack.pop()
 
     # Add custom styles for nodes
     if with_styles:

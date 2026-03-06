@@ -2002,6 +2002,29 @@
   
   '''
 # ---
+# name: test_nested_single_node_subgraph_mermaid[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent\3achild\3agrandchild;
+  	parent\3achild\3agrandchild --> __end__;
+  	subgraph parent
+  	subgraph child
+  	parent\3achild\3agrandchild(grandchild)
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
 # name: test_parallel_subgraph_mermaid[mermaid]
   '''
   ---
