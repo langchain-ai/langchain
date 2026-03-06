@@ -2589,7 +2589,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.17"
+version = "1.2.16"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
