@@ -22,6 +22,9 @@ on:
   pull_request_target:
     types: [opened]
 
+permissions:
+  contents: read
+
 jobs:
   tag-external:
     runs-on: ubuntu-latest
