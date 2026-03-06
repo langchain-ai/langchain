@@ -8,12 +8,19 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
     groups:
-      github-actions:
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "uv"
     directories:
@@ -21,12 +28,19 @@ updates:
       - "/libs/langchain/"
       - "/libs/langchain_v1/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
     groups:
-      langchain-deps:
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "uv"
     directories:
@@ -46,12 +60,19 @@ updates:
       - "/libs/partners/qdrant/"
       - "/libs/partners/xai/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
     groups:
-      partner-deps:
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "uv"
     directories:
@@ -59,9 +80,16 @@ updates:
       - "/libs/standard-tests/"
       - "/libs/model-profiles/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
     groups:
-      other-deps:
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
