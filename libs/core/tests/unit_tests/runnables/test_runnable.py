@@ -3979,6 +3979,151 @@ async def test_async_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+def test_retry_batch_partial_success_with_persistent_failure() -> None:
+    """Regression test: batch retry must correctly map results when some inputs
+    succeed on a later retry while others exhaust all retries and still fail.
+
+    Previously, result.pop(0) was used to assign failed outputs, but result
+    contains entries indexed by position in remaining_indices (not by original
+    index). This caused succeeded-on-last-attempt values to be assigned to
+    wrong positions (corrupted outputs) instead of the actual exceptions.
+    """
+    first_attempt: set[str] = set()
+
+    def process(name: str) -> str:
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if name not in first_attempt:
+                first_attempt.add(name)
+                msg = f"{name} failed once"
+                raise ValueError(msg)
+            return "retry-result"
+        msg = f"{name} always fails"
+        raise ValueError(msg)
+
+    runnable = RunnableLambda(process).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = runnable.batch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert len(result) == 3
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+    assert "always fails" in str(result[2])
+
+
+def test_retry_batch_failure_at_first_position() -> None:
+    """Regression test: failed item at index 0 should receive the exception,
+    not a successful result from a later-index item that retried successfully.
+    """
+    first_attempt: set[str] = set()
+
+    def process(name: str) -> str:
+        if name == "always_fail":
+            msg = f"{name} always fails"
+            raise ValueError(msg)
+        if name == "retry_then_ok":
+            if name not in first_attempt:
+                first_attempt.add(name)
+                msg = f"{name} failed once"
+                raise ValueError(msg)
+            return "retry-result"
+        return f"{name}-result"
+
+    runnable = RunnableLambda(process).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = runnable.batch(
+        ["always_fail", "retry_then_ok", "ok"],
+        return_exceptions=True,
+    )
+
+    assert len(result) == 3
+    assert isinstance(result[0], Exception)
+    assert "always fails" in str(result[0])
+    assert result[1] == "retry-result"
+    assert result[2] == "ok-result"
+
+
+async def test_async_retry_batch_partial_success_with_persistent_failure() -> None:
+    """Async version of the partial-success regression test."""
+    first_attempt: set[str] = set()
+
+    def process(name: str) -> str:
+        if name == "ok":
+            return "ok-result"
+        if name == "retry_then_ok":
+            if name not in first_attempt:
+                first_attempt.add(name)
+                msg = f"{name} failed once"
+                raise ValueError(msg)
+            return "retry-result"
+        msg = f"{name} always fails"
+        raise ValueError(msg)
+
+    runnable = RunnableLambda(process).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = await runnable.abatch(
+        ["ok", "retry_then_ok", "always_fail"],
+        return_exceptions=True,
+    )
+
+    assert len(result) == 3
+    assert result[0] == "ok-result"
+    assert result[1] == "retry-result"
+    assert isinstance(result[2], Exception)
+    assert "always fails" in str(result[2])
+
+
+async def test_async_retry_batch_failure_at_first_position() -> None:
+    """Async version: failed item at index 0 must not receive a success value."""
+    first_attempt: set[str] = set()
+
+    def process(name: str) -> str:
+        if name == "always_fail":
+            msg = f"{name} always fails"
+            raise ValueError(msg)
+        if name == "retry_then_ok":
+            if name not in first_attempt:
+                first_attempt.add(name)
+                msg = f"{name} failed once"
+                raise ValueError(msg)
+            return "retry-result"
+        return f"{name}-result"
+
+    runnable = RunnableLambda(process).with_retry(
+        stop_after_attempt=2,
+        retry_if_exception_type=(ValueError,),
+        wait_exponential_jitter=False,
+    )
+
+    result = await runnable.abatch(
+        ["always_fail", "retry_then_ok", "ok"],
+        return_exceptions=True,
+    )
+
+    assert len(result) == 3
+    assert isinstance(result[0], Exception)
+    assert "always fails" in str(result[0])
+    assert result[1] == "retry-result"
+    assert result[2] == "ok-result"
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> int:
         if x == 1:

@@ -235,6 +235,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         not_set: list[Output] = []
         result = not_set
+        remaining_indices: list[int] = list(range(len(inputs)))
         try:
             for attempt in self._sync_retrying():
                 with attempt:
@@ -284,7 +285,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                # result contains results for remaining_indices from the last attempt.
+                # Use the position within remaining_indices to get the correct result.
+                outputs.append(result[remaining_indices.index(idx)])
         return outputs
 
     @override
@@ -311,6 +314,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         not_set: list[Output] = []
         result = not_set
+        remaining_indices: list[int] = list(range(len(inputs)))
         try:
             async for attempt in self._async_retrying():
                 with attempt:
@@ -359,7 +363,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                # result contains results for remaining_indices from the last attempt.
+                # Use the position within remaining_indices to get the correct result.
+                outputs.append(result[remaining_indices.index(idx)])
         return outputs
 
     @override
