@@ -40,16 +40,7 @@ class TestSeltzSearchRetrieverStandard(RetrieversIntegrationTests):
         """Return an example query string."""
         return "best time to visit japan"
 
-    @pytest.mark.xfail(
-        reason="Seltz API does not currently honor the max_documents parameter."
-    )
-    def test_k_constructor_param(self) -> None:
-        """Test k constructor parameter."""
-        super().test_k_constructor_param()
-
-    @pytest.mark.xfail(
-        reason="Seltz API does not currently honor the max_documents parameter."
-    )
+    @pytest.mark.xfail(reason="Seltz API does not support overriding k at invoke time.")
     def test_invoke_with_k_kwarg(self, retriever: BaseRetriever) -> None:
         """Test invoke with k kwarg."""
         super().test_invoke_with_k_kwarg(retriever)

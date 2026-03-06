@@ -8,7 +8,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from pydantic import Field, SecretStr, model_validator
-from seltz import Seltz  # type: ignore[import-untyped]
+from seltz import Includes, Seltz  # type: ignore[import-untyped]
 
 from langchain_seltz._utilities import initialize_client
 
@@ -66,7 +66,9 @@ class SeltzSearchRetriever(BaseRetriever):
         Returns:
             A list of Documents with page_content and metadata.
         """
-        response = self.client.search(text=query, max_documents=self.k)
+        response = self.client.search(
+            query=query, includes=Includes(max_documents=self.k)
+        )
 
         return [
             Document(

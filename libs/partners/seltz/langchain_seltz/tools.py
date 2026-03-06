@@ -7,7 +7,7 @@ from typing import Any
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import Field, SecretStr, model_validator
-from seltz import Seltz  # type: ignore[import-untyped]
+from seltz import Includes, Seltz  # type: ignore[import-untyped]
 
 from langchain_seltz._utilities import initialize_client
 
@@ -95,7 +95,9 @@ class SeltzSearchResults(BaseTool):  # type: ignore[override]
             A list of dictionaries with url and content keys, or an error string.
         """
         try:
-            response = self.client.search(text=query, max_documents=max_documents)
+            response = self.client.search(
+                query=query, includes=Includes(max_documents=max_documents)
+            )
             return [
                 {"url": doc.url, "content": doc.content} for doc in response.documents
             ]
