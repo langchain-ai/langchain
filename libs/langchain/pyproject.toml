@@ -20,10 +20,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.0.1"
+version = "1.0.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.5,<2.0.0",
+    "langchain-core>=1.2.17,<2.0.0",
     "langchain-text-splitters>=1.1.0,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
