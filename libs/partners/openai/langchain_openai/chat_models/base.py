@@ -536,9 +536,7 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
     return (
-        "gpt-5.4" in model_name
-        or "gpt-5.2-pro" in model_name
-        or "codex" in model_name
+        "gpt-5.4" in model_name or "gpt-5.2-pro" in model_name or "codex" in model_name
     )
 
 
