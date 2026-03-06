@@ -698,6 +698,34 @@ def create_agent(
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
 
+            !!! warning "MCP tools: stateful vs. stateless"
+
+                When using MCP tools via `langchain-mcp-adapters`, tools obtained from
+                `MultiServerMCPClient.get_tools()` are **stateless** — each tool
+                invocation creates a new MCP session and tears it down afterward. This
+                means any server-side state (e.g., a browser page opened by Playwright)
+                is lost between calls.
+
+                If the MCP server is **stateful** (e.g., Playwright, database sessions),
+                use `client.session()` to create a persistent session and load tools from
+                it:
+
+                ```python
+                from langchain_mcp_adapters.client import MultiServerMCPClient
+                from langchain_mcp_adapters.tools import load_mcp_tools
+
+                client = MultiServerMCPClient({...})
+
+                async with client.session("server_name") as session:
+                    tools = await load_mcp_tools(session)
+                    agent = create_agent("openai:gpt-4o", tools)
+                    response = await agent.ainvoke(
+                        {"messages": [{"role": "user", "content": "..."}]}
+                    )
+                ```
+
+                See the [MCP](https://docs.langchain.com/oss/python/langchain/mcp#stateful-tool-usage)
+                docs for more details.
 
             !!! tip ""
 
@@ -799,6 +827,48 @@ def create_agent(
         inputs = {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
         for chunk in graph.stream(inputs, stream_mode="updates"):
             print(chunk)
+        ```
+
+        Using MCP tools with a stateful session (e.g., Playwright browser automation):
+
+        ```python
+        import asyncio
+
+        from langchain.agents import create_agent
+        from langchain_mcp_adapters.client import MultiServerMCPClient
+        from langchain_mcp_adapters.tools import load_mcp_tools
+
+
+        async def main():
+            client = MultiServerMCPClient(
+                {
+                    "playwright": {
+                        "command": "npx",
+                        "args": ["@playwright/mcp@latest"],
+                        "transport": "stdio",
+                    }
+                }
+            )
+
+            # Use client.session() instead of client.get_tools() to keep
+            # the MCP session alive across tool calls.
+            async with client.session("playwright") as session:
+                tools = await load_mcp_tools(session)
+                agent = create_agent("openai:gpt-4o", tools)
+                response = await agent.ainvoke(
+                    {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": "Navigate to example.com and take a snapshot",
+                            }
+                        ]
+                    }
+                )
+                print(response["messages"][-1].content)
+
+
+        asyncio.run(main())
         ```
     """
     # init chat model
