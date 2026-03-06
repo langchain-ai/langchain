@@ -712,7 +712,7 @@ class BaseOpenAI(BaseLLM):
 
         # handling finetuned models
         if "ft-" in modelname:
-            modelname = modelname.split(":")[0]
+            modelname = modelname.split(":", maxsplit=1)[0]
 
         context_size = model_token_mapping.get(modelname)
 
