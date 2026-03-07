@@ -685,7 +685,8 @@ def add_ai_message_chunks(
         inputs = [u.get("input_tokens", 0) for u in usages]
         totals = [u.get("total_tokens", 0) for u in usages]
 
-        # Detect cumulative pattern: constant input_tokens and monotonic increasing totals
+        # Detect cumulative pattern:
+        # constant input_tokens and monotonic increasing totals
         if len(set(inputs)) == 1 and totals == sorted(totals) and len(set(totals)) > 1:
             usage_metadata = usages[-1].copy()
         else:
