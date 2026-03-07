@@ -495,9 +495,7 @@ def test_sse_fragmented_tool_calls_no_premature_parse() -> None:
     chunk1 = AIMessageChunk(
         content="",
         tool_call_chunks=[
-            create_tool_call_chunk(
-                name="my_tool", args="", index=0, id="call_34db"
-            )
+            create_tool_call_chunk(name="my_tool", args="", index=0, id="call_34db")
         ],
     )
     assert chunk1.tool_calls == [], (
@@ -539,9 +537,7 @@ def test_no_arg_tool_call_still_works() -> None:
     chunk = AIMessageChunk(
         content="",
         tool_call_chunks=[
-            create_tool_call_chunk(
-                name="ping", args="{}", index=0, id="call_ping"
-            )
+            create_tool_call_chunk(name="ping", args="{}", index=0, id="call_ping")
         ],
     )
     assert len(chunk.tool_calls) == 1
