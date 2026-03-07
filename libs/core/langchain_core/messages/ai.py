@@ -540,6 +540,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
+                if chunk["args"] is not None and not chunk["args"]:
+                    # Empty string args = arguments not yet received during
+                    # streaming.  Do NOT treat as valid empty-dict tool call.
+                    # The final accumulated chunk will carry the full args
+                    # string after merge_lists concatenation.
+                    continue
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
                     tool_calls.append(

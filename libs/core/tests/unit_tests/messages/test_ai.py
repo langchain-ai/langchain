@@ -482,6 +482,74 @@ def test_content_blocks() -> None:
     ]
 
 
+def test_sse_fragmented_tool_calls_no_premature_parse() -> None:
+    """Regression test for #35514.
+
+    OpenRouter/DeepSeek split tool_call arguments across multiple SSE chunks.
+    The first chunk carries name + id but empty args ("").  Previously this was
+    parsed as a valid tool call with ``args={}``, causing premature execution.
+    After the fix, empty-args chunks do NOT produce ``tool_calls`` entries;
+    only the final accumulated message carries the correctly parsed args.
+    """
+    # Chunk 1: name + id + empty args (first SSE fragment)
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="my_tool", args="", index=0, id="call_34db"
+            )
+        ],
+    )
+    assert chunk1.tool_calls == [], (
+        "Empty args should NOT produce a premature tool_call"
+    )
+
+    # Chunk 2-4: args fragments
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args="{", index=0, id=None)
+        ],
+    )
+    chunk3 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name=None, args='"url": "http://example.com"', index=0, id=None
+            )
+        ],
+    )
+    chunk4 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args="}", index=0, id=None)
+        ],
+    )
+
+    # Accumulated message must have the full, correctly parsed args
+    accumulated = chunk1 + chunk2 + chunk3 + chunk4
+    assert len(accumulated.tool_calls) == 1
+    assert accumulated.tool_calls[0]["name"] == "my_tool"
+    assert accumulated.tool_calls[0]["args"] == {"url": "http://example.com"}
+    assert accumulated.tool_calls[0]["id"] == "call_34db"
+
+
+def test_no_arg_tool_call_still_works() -> None:
+    """Ensure a tool with no required params (args='{}') is still valid."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="ping", args="{}", index=0, id="call_ping"
+            )
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["name"] == "ping"
+    assert chunk.tool_calls[0]["args"] == {}
+    assert chunk.tool_calls[0]["id"] == "call_ping"
+
+
 def test_content_blocks_reasoning_extraction() -> None:
     """Test best-effort reasoning extraction from `additional_kwargs`."""
     message = AIMessage(
