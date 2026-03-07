@@ -3253,6 +3253,40 @@ def test_split_json_many_calls() -> None:
     assert chunk1 == chunk1_output
 
 
+def test_split_json_no_data_loss_at_chunk_boundary() -> None:
+    """Regression test for off-by-one bug at chunk boundaries.
+
+    When a key-value pair doesn't fit in the current chunk but fits in a
+    fresh one, the item must be added directly rather than recursed into.
+    Previously, recursing into an empty-dict value (``{}``) did nothing,
+    silently dropping the key.
+
+    See: https://github.com/langchain-ai/langchain/issues/29153
+    """
+    input_data = {
+        "projects": {
+            "GTMS": {f"GTMS-{i}": {} for i in range(22, 0, -1)},
+            "ITSAMPLE": {f"ITSAMPLE-{i}": {} for i in range(12, 0, -1)},
+        }
+    }
+
+    splitter = RecursiveJsonSplitter(max_chunk_size=216)
+    chunks = splitter.split_json(json_data=input_data)
+
+    # Collect every leaf key from the chunks
+    chunk_keys: set[str] = set()
+    for chunk in chunks:
+        for items in chunk.get("projects", {}).values():
+            chunk_keys.update(items.keys())
+
+    # Collect every leaf key from the original input
+    input_keys: set[str] = set()
+    for items in input_data["projects"].values():
+        input_keys.update(items.keys())
+
+    assert chunk_keys == input_keys, f"Data loss: missing {input_keys - chunk_keys}"
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
