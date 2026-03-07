@@ -112,8 +112,11 @@ def test_openai_client_caching() -> None:
     llm3 = ChatOpenAI(model="gpt-4.1-mini", base_url="foo")
     assert llm1.root_client._client is not llm3.root_client._client
 
-    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=600.0)
     assert llm1.root_client._client is llm4.root_client._client
+
+    llm4b = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    assert llm1.root_client._client is not llm4b.root_client._client
 
     llm5 = ChatOpenAI(model="gpt-4.1-mini", timeout=3)
     assert llm1.root_client._client is not llm5.root_client._client
