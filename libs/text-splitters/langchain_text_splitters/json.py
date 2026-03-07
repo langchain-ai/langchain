@@ -109,9 +109,7 @@ class RecursiveJsonSplitter:
                     # If the item now fits in the (potentially fresh) chunk,
                     # add it directly.  Only recurse when the value itself
                     # is too large and must be split further.
-                    new_remaining = self.max_chunk_size - self._json_size(
-                        chunks[-1]
-                    )
+                    new_remaining = self.max_chunk_size - self._json_size(chunks[-1])
                     if size <= new_remaining:
                         self._set_nested_dict(chunks[-1], new_path, value)
                     else:
