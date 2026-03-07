@@ -636,11 +636,12 @@ class BaseChatOpenAI(BaseChatModel):
     )
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
-        default=None, alias="timeout"
+        default=600.0, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API.
 
-    Can be float, `httpx.Timeout` or `None`.
+    Defaults to 600 seconds, matching the OpenAI SDK default read/write/pool timeout.
+    Can be a float, `httpx.Timeout`, or `None` (no timeout).
     """
 
     stream_usage: bool | None = None
