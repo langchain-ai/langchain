@@ -5767,3 +5767,35 @@ def test_runnable_typed_dict_schema() -> None:
         repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
+
+
+async def test_abatch_as_completed_cancels_pending_on_exception() -> None:
+    """Regression test: abatch_as_completed must cancel pending tasks on error.
+
+    Previously, when one task raised and the consumer stopped iterating,
+    remaining tasks continued to run in the background, wasting resources.
+
+    See: https://github.com/langchain-ai/langchain/issues/35419
+    """
+    started: list[int] = []
+    finished: list[int] = []
+
+    async def slow_invoke(x: int) -> int:
+        started.append(x)
+        if x == 0:
+            msg = "fail fast"
+            raise ValueError(msg)
+        await asyncio.sleep(5)
+        finished.append(x)
+        return x
+
+    runnable = RunnableLambda(slow_invoke)
+
+    with pytest.raises(ValueError, match="fail fast"):
+        async for _idx, _result in runnable.abatch_as_completed([0, 1, 2]):
+            pass
+
+    await asyncio.sleep(0.1)
+
+    assert 0 in started
+    assert finished == [], "Pending tasks should have been cancelled"
