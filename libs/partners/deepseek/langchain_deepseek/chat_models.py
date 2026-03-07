@@ -267,20 +267,39 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
+
+        # Resolve original messages so we can extract reasoning_content from
+        # additional_kwargs.  The parent's payload builder does not propagate
+        # this DeepSeek-specific field.
+        messages = self._convert_input(input_).to_messages()
+
+        for i, message in enumerate(payload["messages"]):
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+            elif message["role"] == "assistant":
+                if isinstance(message["content"], list):
+                    # DeepSeek API expects assistant content to be a string,
+                    # not a list. Extract text blocks and join them, or use
+                    # empty string if none exist.
+                    text_parts = [
+                        block.get("text", "")
+                        for block in message["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    message["content"] = "".join(text_parts) if text_parts else ""
+
+                # DeepSeek reasoning models require every assistant message to
+                # carry a reasoning_content field (even when empty).  The value
+                # is stored in AIMessage.additional_kwargs by
+                # _create_chat_result(); re-inject it into the API payload.
+                if (
+                    "reasoning_content" not in message
+                    and i < len(messages)
+                    and isinstance(messages[i], AIMessage)
+                ):
+                    message["reasoning_content"] = messages[i].additional_kwargs.get(
+                        "reasoning_content", ""
+                    )
 
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).

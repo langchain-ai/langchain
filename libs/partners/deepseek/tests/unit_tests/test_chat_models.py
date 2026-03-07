@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -243,6 +243,55 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_reasoning_content(self) -> None:
+        """Test that reasoning_content is preserved in assistant messages.
+
+        The DeepSeek reasoner API requires every assistant message to carry
+        a reasoning_content field (even when empty).  This verifies the
+        round-trip: _create_chat_result stores it in additional_kwargs, and
+        _get_request_payload re-injects it into the API payload.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        # Multi-turn conversation with reasoning_content in the assistant msg
+        messages = [
+            HumanMessage(content="What is 1 + 2?"),
+            AIMessage(
+                content="",
+                additional_kwargs={
+                    "reasoning_content": "Let me think... 1 + 2 = 3."
+                },
+                tool_calls=[
+                    {
+                        "id": "call_123",
+                        "name": "calculator",
+                        "args": {"a": 1, "b": 2},
+                    }
+                ],
+            ),
+            ToolMessage(content="3", tool_call_id="call_123"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+        assistant_msg = payload["messages"][1]
+        assert assistant_msg["role"] == "assistant"
+        assert assistant_msg["reasoning_content"] == "Let me think... 1 + 2 = 3."
+
+    def test_get_request_payload_reasoning_content_empty(self) -> None:
+        """Test that a missing reasoning_content defaults to empty string."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hi"),
+            AIMessage(content="Hello!"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+        assistant_msg = payload["messages"][1]
+        assert assistant_msg["role"] == "assistant"
+        # When no reasoning_content was stored, default to empty string
+        assert assistant_msg["reasoning_content"] == ""
 
 
 class SampleTool(PydanticBaseModel):
