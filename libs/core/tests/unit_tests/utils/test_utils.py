@@ -459,6 +459,30 @@ def test_merge_lists_all_none() -> None:
     assert result is None
 
 
+def test_merge_lists_mixed_str_and_dict_with_index() -> None:
+    """Regression test: merge_lists must not treat strings as dicts.
+
+    When a merged list contains a mix of plain strings and dicts with
+    ``"index"`` keys, the ``"index" in e_left`` check performed substring
+    containment on strings instead of dict key lookup, causing a
+    ``TypeError: string indices must be integers, not 'str'``.
+
+    See: https://github.com/langchain-ai/langchain/issues/35259
+    """
+    merged = [
+        "start answer...",
+        {"type": "reference", "index": 0, "reference_ids": ["id1"]},
+        "other answer...",
+    ]
+    other = [{"type": "reference", "index": 0, "reference_ids": ["id2"]}]
+
+    result = merge_lists(merged, other)
+
+    assert result[0] == "start answer..."
+    assert result[2] == "other answer..."
+    assert result[1]["reference_ids"] == ["id1", "id2"]
+
+
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
     [
