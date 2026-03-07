@@ -188,7 +188,8 @@ def test_message_chunks() -> None:
             create_tool_call_chunk(name="tool1", args="", id="1", index=0)
         ],
     )
-    assert ai_msg_chunk.tool_calls == []  # empty-string args = not yet received (#35514)
+    # empty-string args = not yet received (#35514)
+    assert ai_msg_chunk.tool_calls == []
 
     # Test token usage
     left = AIMessageChunk(
