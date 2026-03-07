@@ -2134,6 +2134,7 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (invalid_tool_result_blocks, False),
+        ([], False),
     ],
 )
 def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
@@ -2718,7 +2719,33 @@ def test_empty_string_tool_call_id() -> None:
     )
 
 
-def test_tool_decorator_description() -> None:
+def test_tool_returning_empty_list_is_stringified() -> None:
+    """Empty list from tool should be JSON-stringified, not passed as content blocks.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/30578
+    """
+
+    class ListTool(BaseTool):
+        name: str = "list_tool"
+        description: str = "Returns a list"
+
+        def _run(self, n: int) -> list:
+            return [{"item": str(i)} for i in range(n)]
+
+    list_tool = ListTool()
+
+    result_one = list_tool.invoke(
+        {"type": "tool_call", "args": {"n": 1}, "id": "1", "name": "list_tool"}
+    )
+    assert isinstance(result_one, ToolMessage)
+    assert result_one.content == '[{"item": "0"}]'
+
+    result_zero = list_tool.invoke(
+        {"type": "tool_call", "args": {"n": 0}, "id": "2", "name": "list_tool"}
+    )
+    assert isinstance(result_zero, ToolMessage)
+    assert result_zero.content == "[]"
+
     # test basic tool
     @tool
     def foo(x: int) -> str:
