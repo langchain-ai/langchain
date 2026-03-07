@@ -4658,6 +4658,17 @@ def _convert_responses_chunk_to_generation_chunk(
         )
         if parsed := msg.additional_kwargs.get("parsed"):
             additional_kwargs["parsed"] = parsed
+        if msg.tool_calls:
+            tool_call_chunks = [
+                {
+                    "type": "tool_call_chunk",
+                    "name": tc["name"],
+                    "args": json.dumps(tc["args"]),
+                    "id": tc.get("id"),
+                    "index": i,
+                }
+                for i, tc in enumerate(msg.tool_calls)
+            ]
         usage_metadata = msg.usage_metadata
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"

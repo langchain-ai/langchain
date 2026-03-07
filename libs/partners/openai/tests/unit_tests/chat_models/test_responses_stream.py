@@ -791,3 +791,235 @@ def test_responses_stream_with_image_generation_multiple_calls() -> None:
     with patch.object(llm, "root_client", mock_client):
         chunks = list(llm_with_tools.stream("test again"))
         assert len(chunks) > 0
+
+
+def test_responses_stream_completed_chunk_includes_tool_calls() -> None:
+    """Test that the response.completed chunk includes tool_calls.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34660:
+    When streaming with the Responses API and tool calls, the response.completed
+    chunk should include tool_call_chunks so that the aggregated message has
+    tool_calls populated. Previously, the code only extracted parsed/usage/metadata
+    from the completed message but never extracted tool_calls.
+    """
+    from openai.types.responses import (
+        ResponseFunctionCallArgumentsDeltaEvent,
+        ResponseFunctionCallArgumentsDoneEvent,
+        ResponseFunctionToolCall,
+    )
+
+    tool_call_stream = [
+        ResponseCreatedEvent(
+            response=Response(
+                id="resp_tool_123",
+                created_at=1749734255.0,
+                model="gpt-4o-mini",
+                object="response",
+                output=[],
+                tool_choice="auto",
+                tools=[
+                    {
+                        "type": "function",
+                        "name": "get_weather",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {"type": "string"},
+                            },
+                            "required": ["location"],
+                        },
+                    }
+                ],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="default",
+                status="in_progress",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=0,
+            type="response.created",
+        ),
+        ResponseInProgressEvent(
+            response=Response(
+                id="resp_tool_123",
+                created_at=1749734255.0,
+                model="gpt-4o-mini",
+                object="response",
+                output=[],
+                tool_choice="auto",
+                tools=[],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="default",
+                status="in_progress",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=1,
+            type="response.in_progress",
+        ),
+        # Tool call item added
+        ResponseOutputItemAddedEvent(
+            item=ResponseFunctionToolCall(
+                id="fc_item_123",
+                call_id="call_abc123",
+                name="get_weather",
+                arguments="",
+                type="function_call",
+                status="in_progress",
+            ),
+            output_index=0,
+            sequence_number=2,
+            type="response.output_item.added",
+        ),
+        # Arguments streamed in chunks
+        ResponseFunctionCallArgumentsDeltaEvent(
+            delta='{"locat',
+            item_id="fc_item_123",
+            output_index=0,
+            sequence_number=3,
+            type="response.function_call_arguments.delta",
+        ),
+        ResponseFunctionCallArgumentsDeltaEvent(
+            delta='ion": "San ',
+            item_id="fc_item_123",
+            output_index=0,
+            sequence_number=4,
+            type="response.function_call_arguments.delta",
+        ),
+        ResponseFunctionCallArgumentsDeltaEvent(
+            delta='Francisco"}',
+            item_id="fc_item_123",
+            output_index=0,
+            sequence_number=5,
+            type="response.function_call_arguments.delta",
+        ),
+        ResponseFunctionCallArgumentsDoneEvent(
+            arguments='{"location": "San Francisco"}',
+            item_id="fc_item_123",
+            name="get_weather",
+            output_index=0,
+            sequence_number=6,
+            type="response.function_call_arguments.done",
+        ),
+        # Item done
+        ResponseOutputItemDoneEvent(
+            item=ResponseFunctionToolCall(
+                id="fc_item_123",
+                call_id="call_abc123",
+                name="get_weather",
+                arguments='{"location": "San Francisco"}',
+                type="function_call",
+                status="completed",
+            ),
+            output_index=0,
+            sequence_number=7,
+            type="response.output_item.done",
+        ),
+        # Response completed
+        ResponseCompletedEvent(
+            response=Response(
+                id="resp_tool_123",
+                created_at=1749734255.0,
+                model="gpt-4o-mini",
+                object="response",
+                output=[
+                    ResponseFunctionToolCall(
+                        id="fc_item_123",
+                        call_id="call_abc123",
+                        name="get_weather",
+                        arguments='{"location": "San Francisco"}',
+                        type="function_call",
+                        status="completed",
+                    ),
+                ],
+                tool_choice="auto",
+                tools=[
+                    {
+                        "type": "function",
+                        "name": "get_weather",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {"type": "string"},
+                            },
+                            "required": ["location"],
+                        },
+                    }
+                ],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="default",
+                status="completed",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=ResponseUsage(
+                    input_tokens=50,
+                    input_tokens_details=InputTokensDetails(cached_tokens=0),
+                    output_tokens=20,
+                    output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+                    total_tokens=70,
+                ),
+                user=None,
+            ),
+            sequence_number=8,
+            type="response.completed",
+        ),
+    ]
+
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key="test-key",
+        use_responses_api=True,
+        output_version="responses/v1",
+    )
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(tool_call_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    last_chunk: AIMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("What's the weather in San Francisco?"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+            last_chunk = chunk
+
+    assert isinstance(full, AIMessageChunk)
+
+    # The last chunk (response.completed) should have tool_call_chunks
+    assert last_chunk is not None
+    assert last_chunk.chunk_position == "last"
+    assert len(last_chunk.tool_call_chunks) > 0, (
+        "response.completed chunk should contain tool_call_chunks "
+        "(regression: https://github.com/langchain-ai/langchain/issues/34660)"
+    )
+    assert last_chunk.tool_call_chunks[0]["name"] == "get_weather"
+
+    # The completed chunk by itself should provide full tool_calls
+    assert len(last_chunk.tool_calls) > 0
+    assert last_chunk.tool_calls[0]["name"] == "get_weather"
+    assert last_chunk.tool_calls[0]["args"] == {"location": "San Francisco"}
