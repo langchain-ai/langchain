@@ -1616,6 +1616,9 @@ def test_incremental_indexing_with_batch_size(
     }
     assert doc_texts == {"1", "2", "3", "4"}
 
+    # Re-indexing the same documents should skip all of them without
+    # redundant deletes and re-adds, even when batch_size < total docs
+    # and all docs share the same source_id. (Fixes #32612)
     with patch.object(
         record_manager,
         "get_time",
@@ -1630,9 +1633,9 @@ def test_incremental_indexing_with_batch_size(
             batch_size=2,
             key_encoder="sha256",
         ) == {
-            "num_added": 2,
-            "num_deleted": 2,
-            "num_skipped": 2,
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 4,
             "num_updated": 0,
         }
 
@@ -1642,6 +1645,239 @@ def test_incremental_indexing_with_batch_size(
         for uid in vector_store.store
     }
     assert doc_texts == {"1", "2", "3", "4"}
+
+
+def test_incremental_indexing_with_batch_size_no_redundant_work(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Regression test for #32612.
+
+    Re-indexing unchanged docs with batch_size < total docs and same
+    source_id should not cause redundant deletes and re-adds.
+    """
+    docs = [
+        Document(page_content=str(i), metadata={"source": "same_source"})
+        for i in range(10)
+    ]
+
+    # First run: index all 10 docs with batch_size=3
+    with patch.object(
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 10,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    # Second run: all docs unchanged, should all be skipped
+    with patch.object(
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 10,
+            "num_updated": 0,
+        }
+
+    # Third run: verify stability (no drift over repeated runs)
+    with patch.object(
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = index(
+            docs,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 10,
+            "num_updated": 0,
+        }
+
+    # All original docs still present in the vector store
+    doc_texts = {
+        vector_store.get_by_ids([uid])[0].page_content for uid in vector_store.store
+    }
+    assert doc_texts == {str(i) for i in range(10)}
+
+
+async def test_aincremental_indexing_with_batch_size_no_redundant_work(
+    arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Async regression test for #32612.
+
+    Re-indexing unchanged docs with batch_size < total docs and same
+    source_id should not cause redundant deletes and re-adds.
+    """
+    docs = [
+        Document(page_content=str(i), metadata={"source": "same_source"})
+        for i in range(10)
+    ]
+
+    # First run: index all 10 docs with batch_size=3
+    with patch.object(
+        arecord_manager,
+        "aget_time",
+        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = await aindex(
+            docs,
+            arecord_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 10,
+            "num_deleted": 0,
+            "num_skipped": 0,
+            "num_updated": 0,
+        }
+
+    # Second run: all docs unchanged, should all be skipped
+    with patch.object(
+        arecord_manager,
+        "aget_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = await aindex(
+            docs,
+            arecord_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 10,
+            "num_updated": 0,
+        }
+
+    # Third run: verify stability
+    with patch.object(
+        arecord_manager,
+        "aget_time",
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = await aindex(
+            docs,
+            arecord_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=3,
+            key_encoder="sha256",
+        )
+        assert result == {
+            "num_added": 0,
+            "num_deleted": 0,
+            "num_skipped": 10,
+            "num_updated": 0,
+        }
+
+    doc_texts = {
+        vector_store.get_by_ids([uid])[0].page_content for uid in vector_store.store
+    }
+    assert doc_texts == {str(i) for i in range(10)}
+
+
+def test_incremental_indexing_stale_docs_still_cleaned_up(
+    record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
+) -> None:
+    """Verify that truly stale docs are still deleted after the fix.
+
+    When a document is updated (content changes), the old version should be
+    cleaned up even with batch_size < total docs.
+    """
+    docs_v1 = [
+        Document(page_content="a", metadata={"source": "s1"}),
+        Document(page_content="b", metadata={"source": "s1"}),
+        Document(page_content="c", metadata={"source": "s1"}),
+        Document(page_content="d", metadata={"source": "s1"}),
+    ]
+
+    with patch.object(
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+    ):
+        index(
+            docs_v1,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=2,
+            key_encoder="sha256",
+        )
+
+    # Update: replace "c" and "d" with "e" and "f"
+    docs_v2 = [
+        Document(page_content="a", metadata={"source": "s1"}),
+        Document(page_content="b", metadata={"source": "s1"}),
+        Document(page_content="e", metadata={"source": "s1"}),
+        Document(page_content="f", metadata={"source": "s1"}),
+    ]
+
+    with patch.object(
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+    ):
+        result = index(
+            docs_v2,
+            record_manager,
+            vector_store,
+            cleanup="incremental",
+            source_id_key="source",
+            batch_size=2,
+            key_encoder="sha256",
+        )
+        assert result["num_added"] == 2  # "e" and "f"
+        assert result["num_deleted"] == 2  # "c" and "d"
+        assert result["num_skipped"] == 2  # "a" and "b"
+
+    doc_texts = {
+        vector_store.get_by_ids([uid])[0].page_content for uid in vector_store.store
+    }
+    assert doc_texts == {"a", "b", "e", "f"}
 
 
 def test_incremental_delete_with_batch_size(
