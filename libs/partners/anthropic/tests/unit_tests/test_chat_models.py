@@ -78,8 +78,11 @@ def test_anthropic_client_caching() -> None:
     llm3 = ChatAnthropic(model=MODEL_NAME, base_url="foo")
     assert llm1._client._client is not llm3._client._client
 
-    llm4 = ChatAnthropic(model=MODEL_NAME, timeout=None)
+    llm4 = ChatAnthropic(model=MODEL_NAME, timeout=600.0)
     assert llm1._client._client is llm4._client._client
+
+    llm4b = ChatAnthropic(model=MODEL_NAME, timeout=None)
+    assert llm1._client._client is not llm4b._client._client
 
     llm5 = ChatAnthropic(model=MODEL_NAME, timeout=3)
     assert llm1._client._client is not llm5._client._client
