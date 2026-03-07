@@ -26,8 +26,6 @@ class ModelProfile(TypedDict, total=False):
     """Whether image inputs are supported.
     Typically, these inputs can be provided as base64-encoded strings or raw bytes.
     """
-
-
     image_url_inputs: bool
     """Whether [image URL inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
     are supported."""
