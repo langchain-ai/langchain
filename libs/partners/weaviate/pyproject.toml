@@ -1,0 +1,107 @@
+[tool.poetry]
+name = "langchain-weaviate"
+version = "0.0.6"
+description = "An integration package connecting Weaviate and LangChain"
+authors = []
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain-weaviate"
+license = "MIT"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain-weaviate/tree/main/libs/weaviate"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+langchain-core = ">=0.1.33,<2.0"
+weaviate-client = "^4.0.0"
+numpy = ">=1.26.2,<3.0"
+# simsimd marked optional for fallback support
+simsimd = { version = ">=6.2.1,<7.0.0", optional = true }
+
+[tool.poetry.extras]
+simsimd = ["simsimd"]
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=7.3,<9.0"
+freezegun = "^1.2.2"
+pytest-mock = "^3.10.0"
+syrupy = "^4.0.2"
+pytest-watcher = ">=0.3.4,<0.5.0"
+pytest-asyncio = ">=0.21.1,<0.24.0"
+langchain-classic = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/langchain"}
+langchain-text-splitters = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/text-splitters"}
+pytest-docker = ">=2.0.1,<4.0.0"
+pytest-xdist = "^3.5.0"
+openai = "^1.6.0"
+tiktoken = ">=0.7,<1"
+pytest-cov = ">=4.1,<6.0"
+scipy = "^1.11.0"
+langchain-core = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/core"}
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.codespell.dependencies]
+codespell = "^2.2.0"
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.lint.dependencies]
+ruff = ">=0.1.5,<0.4.0"
+
+[tool.poetry.group.typing.dependencies]
+mypy = ">=0.991,<1.10"
+types-requests = "^2.31.0.20240403"
+langchain-core = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/core"}
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.27.1"
+langchain-core = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/core"}
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.test_integration.dependencies]
+langchain-openai = {git = "https://github.com/langchain-ai/langchain.git", subdirectory = "libs/partners/openai"}
+
+[tool.ruff]
+lint.select = [
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
+]
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# --strict-markers will raise errors on unknown marks.
+# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
+#
+# https://docs.pytest.org/en/7.1.x/reference/reference.html
+# --strict-config       any warnings encountered while parsing the `pytest`
+#                       section of the configuration file raise errors.
+#
+# https://github.com/tophat/syrupy
+# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
+addopts = "--strict-markers --strict-config --durations=5 -vv -s"
+# Registering custom markers.
+# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
+markers = [
+  "compile: mark placeholder test used to compile integration tests without running them",
+]
+#asyncio_mode = "auto"
