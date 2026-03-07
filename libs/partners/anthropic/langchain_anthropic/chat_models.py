@@ -822,8 +822,12 @@ class ChatAnthropic(BaseChatModel):
     top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: float | None = Field(None, alias="timeout")
-    """Timeout for requests to Claude API."""
+    default_request_timeout: float | None = Field(600.0, alias="timeout")
+    """Timeout for requests to Claude API.
+
+    Defaults to 600 seconds, matching the Anthropic SDK default read/write/pool timeout.
+    Can be a float or `None` (no timeout).
+    """
 
     # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
     max_retries: int = 2
