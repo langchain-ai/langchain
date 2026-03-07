@@ -1575,6 +1575,26 @@ class ChatAnthropic(BaseChatModel):
                 msg,
             )
 
+        # Anthropic API rejects forced tool use when thinking is enabled:
+        # "Thinking may not be enabled when tool_choice forces tool use."
+        # Drop forced tool_choice and warn, matching the behavior in
+        # _get_llm_for_structured_output_when_thinking_is_enabled.
+        if (
+            self.thinking is not None
+            and self.thinking.get("type") == "enabled"
+            and "tool_choice" in kwargs
+            and kwargs["tool_choice"].get("type") in ("any", "tool")
+        ):
+            warnings.warn(
+                "tool_choice is forced but thinking is enabled. The Anthropic "
+                "API does not support forced tool use with thinking. "
+                "Dropping tool_choice to avoid an API error. Tool calls are "
+                "not guaranteed. Consider disabling thinking or adjusting "
+                "your prompt to ensure the tool is called.",
+                stacklevel=2,
+            )
+            del kwargs["tool_choice"]
+
         if parallel_tool_calls is not None:
             disable_parallel_tool_use = not parallel_tool_calls
             if "tool_choice" in kwargs:
