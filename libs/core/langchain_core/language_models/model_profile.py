@@ -34,17 +34,20 @@ class ModelProfile(TypedDict, total=False):
 
     pdf_inputs: bool
     """Whether [PDF inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported.Typically, these inputs can be provided as base64-encoded strings or raw bytes.
+    are supported.
+    Typically, these inputs can be provided as base64-encoded strings or raw bytes.
     """
 
     audio_inputs: bool
     """Whether [audio inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported.Typically, these inputs can be provided as base64-encoded strings or raw bytes.
+    are supported.
+    Typically, these inputs can be provided as base64-encoded strings or raw bytes.
     """
 
     video_inputs: bool
     """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported.Typically, these inputs can be provided as base64-encoded strings or raw bytes.
+    are supported.
+    Typically, these inputs can be provided as base64-encoded strings or raw bytes.
     """
 
     image_tool_message: bool
