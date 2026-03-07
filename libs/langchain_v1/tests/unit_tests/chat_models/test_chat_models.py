@@ -185,7 +185,7 @@ def test_configurable() -> None:
             "openai_organization": None,
             "openai_proxy": None,
             "output_version": None,
-            "request_timeout": None,
+            "request_timeout": 600.0,
             "max_retries": None,
             "presence_penalty": None,
             "reasoning": None,
