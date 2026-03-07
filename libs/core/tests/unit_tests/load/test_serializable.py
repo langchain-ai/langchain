@@ -1,4 +1,6 @@
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
@@ -898,9 +900,6 @@ def test_to_json_thread_safety() -> None:
 
     Regression test for https://github.com/langchain-ai/langchain/issues/34887.
     """
-    import threading
-    from concurrent.futures import ThreadPoolExecutor
-
     prompt = ChatPromptTemplate.from_messages(
         [("system", "You are helpful."), ("human", "{q}")]
     )
