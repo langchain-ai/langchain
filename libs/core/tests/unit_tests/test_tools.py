@@ -14,8 +14,10 @@ from functools import partial
 from typing import (
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
+    Protocol,
     TypeVar,
     cast,
     get_type_hints,
@@ -3636,3 +3638,98 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_injected_arg_with_protocol_union_type() -> None:
+    """Test that InjectedToolArg with a Protocol/Union type doesn't break schema.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/32067.
+    When a tool parameter is annotated with InjectedToolArg and typed as a Union
+    of Protocol types (like StateLike), Pydantic cannot build a validator for it.
+    The fix ensures such parameters are excluded from the Pydantic schema entirely.
+    """
+
+    class TypedDictLike(Protocol):
+        __required_keys__: ClassVar[frozenset[str]]
+        __optional_keys__: ClassVar[frozenset[str]]
+
+    class DataclassLike(Protocol):
+        __dataclass_fields__: ClassVar[dict[str, Any]]
+
+    # A union of Protocol types — not valid for Pydantic isinstance checks
+    state_like_type = TypedDictLike | DataclassLike | BaseModel
+
+    @tool
+    def tool_with_protocol_state(
+        query: str,
+        state: Annotated[state_like_type, InjectedToolArg],
+    ) -> str:
+        """Search with injected state.
+
+        Args:
+            query: The search query.
+            state: The injected state.
+        """
+        return f"query={query}"
+
+    # get_input_schema includes injected args (used for runtime validation)
+    schema = _schema(tool_with_protocol_state.get_input_schema())
+    assert "query" in schema["properties"]
+    assert "state" in schema["properties"]
+
+    # tool_call_schema excludes injected args (sent to LLM)
+    tc_schema = _schema(tool_with_protocol_state.tool_call_schema)
+    assert "state" not in tc_schema.get("properties", {})
+
+    # Tool should be invokable with injected state value
+    result = tool_with_protocol_state.invoke(
+        {"query": "hello", "state": {"messages": []}}
+    )
+    assert result == "query=hello"
+
+
+def test_injected_arg_filtered_from_schema_at_creation() -> None:
+    """Test that all injected arg types are excluded from the generated schema.
+
+    Verifies that _filter_schema_args filters InjectedToolArg-annotated params,
+    _DirectlyInjectedToolArg subclass params, and regular params correctly.
+    """
+
+    @dataclass
+    class CustomRuntime(_DirectlyInjectedToolArg):
+        data: dict[str, Any]
+
+    @tool
+    def multi_injected_tool(
+        query: str,
+        injected_ann: Annotated[Any, InjectedToolArg],
+        injected_direct: CustomRuntime,
+    ) -> str:
+        """Tool with multiple injected args.
+
+        Args:
+            query: The search query.
+            injected_ann: Annotated injected arg.
+            injected_direct: Directly injected arg.
+        """
+        return query
+
+    # get_input_schema includes injected args (used for runtime validation)
+    schema = _schema(multi_injected_tool.get_input_schema())
+    assert "query" in schema["properties"]
+    assert "injected_ann" in schema["properties"]
+    assert "injected_direct" in schema["properties"]
+
+    # tool_call_schema excludes injected args (sent to LLM)
+    tc_schema = _schema(multi_injected_tool.tool_call_schema)
+    assert list(tc_schema["properties"].keys()) == ["query"]
+
+    # Invocation should work
+    result = multi_injected_tool.invoke(
+        {
+            "query": "test",
+            "injected_ann": "some_value",
+            "injected_direct": CustomRuntime(data={"key": "val"}),
+        }
+    )
+    assert result == "test"

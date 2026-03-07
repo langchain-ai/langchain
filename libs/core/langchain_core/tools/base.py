@@ -37,6 +37,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
+from pydantic_core import SchemaError as PydanticSchemaError
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -326,7 +327,27 @@ def create_schema_from_function(
             # This code should be re-written to simply construct a Pydantic model
             # using inspect.signature and create_model.
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+            try:
+                validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+            except PydanticSchemaError:
+                # Injected arg types (e.g. Protocol unions like StateLike) may
+                # not be valid for Pydantic schema creation. Replace them with
+                # Any and retry, since they are filtered from the final schema.
+                _saved: dict[str, Any] = {}
+                for param_name, param in sig.parameters.items():
+                    if _is_injected_arg_type(param.annotation):
+                        _saved[param_name] = func.__annotations__.get(param_name)
+                        func.__annotations__[param_name] = Annotated[
+                            Any, InjectedToolArg()
+                        ]
+                try:
+                    validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+                finally:
+                    for param_name, original in _saved.items():
+                        if original is not None:
+                            func.__annotations__[param_name] = original
+                        else:
+                            func.__annotations__.pop(param_name, None)
 
     # Let's ignore `self` and `cls` arguments for class and instance methods
     # If qualified name has a ".", then it likely belongs in a class namespace
