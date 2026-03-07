@@ -502,3 +502,89 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_init_tool_calls_fragmented_chunks_by_id() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="my_tool", args="", id="call_abc123", index=0
+            ),
+            create_tool_call_chunk(
+                name=None, args='{"url":', id="call_abc123", index=0
+            ),
+            create_tool_call_chunk(
+                name=None, args=' "http://example.com"}', id="call_abc123", index=0
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["name"] == "my_tool"
+    assert chunk.tool_calls[0]["args"] == {"url": "http://example.com"}
+    assert chunk.tool_calls[0]["id"] == "call_abc123"
+    assert len(chunk.invalid_tool_calls) == 0
+
+
+def test_init_tool_calls_fragmented_chunks_by_index() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="my_tool", args="", id=None, index=0),
+            create_tool_call_chunk(
+                name=None, args='{"key": "value"}', id=None, index=0
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["name"] == "my_tool"
+    assert chunk.tool_calls[0]["args"] == {"key": "value"}
+
+
+def test_init_tool_calls_single_chunk_empty_args() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="no_arg_tool", args="", id="call_abc123", index=0
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["args"] == {}
+
+
+def test_init_tool_calls_single_chunk_complete_args() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="my_tool",
+                args='{"url": "http://example.com"}',
+                id="call_abc123",
+                index=0,
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["args"] == {"url": "http://example.com"}
+
+
+def test_init_tool_calls_multiple_parallel_tools_fragmented() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool_a", args="", id="call_1", index=0),
+            create_tool_call_chunk(name="tool_b", args="", id="call_2", index=1),
+            create_tool_call_chunk(
+                name=None, args='{"a": 1}', id="call_1", index=0
+            ),
+            create_tool_call_chunk(
+                name=None, args='{"b": 2}', id="call_2", index=1
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 2
+    calls_by_name = {tc["name"]: tc for tc in chunk.tool_calls}
+    assert calls_by_name["tool_a"]["args"] == {"a": 1}
+    assert calls_by_name["tool_b"]["args"] == {"b": 2}

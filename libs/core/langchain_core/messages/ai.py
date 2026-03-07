@@ -528,31 +528,55 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         tool_calls = []
         invalid_tool_calls = []
 
-        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
-            invalid_tool_calls.append(
-                create_invalid_tool_call(
-                    name=chunk["name"],
-                    args=chunk["args"],
-                    id=chunk["id"],
-                    error=None,
-                )
-            )
-
+        grouped: dict[str | int, list[ToolCallChunk]] = {}
+        ungrouped: list[ToolCallChunk] = []
         for chunk in self.tool_call_chunks:
+            key: str | int | None = None
+            if chunk.get("id"):
+                key = chunk["id"]
+            elif chunk.get("index") is not None:
+                key = chunk["index"]
+            if key is not None:
+                grouped.setdefault(key, []).append(chunk)
+            else:
+                ungrouped.append(chunk)
+
+        all_groups: list[list[ToolCallChunk]] = list(grouped.values()) + [
+            [c] for c in ungrouped
+        ]
+
+        for chunks in all_groups:
+            name = next((c["name"] for c in chunks if c.get("name")), None)
+            call_id = next((c["id"] for c in chunks if c.get("id")), None)
+            args_str = "".join(c["args"] or "" for c in chunks)
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                args_ = parse_partial_json(args_str) if args_str else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
-                            name=chunk["name"] or "",
+                            name=name or "",
                             args=args_,
-                            id=chunk["id"],
+                            id=call_id,
                         )
                     )
                 else:
-                    add_chunk_to_invalid_tool_calls(chunk)
+                    invalid_tool_calls.append(
+                        create_invalid_tool_call(
+                            name=name,
+                            args=args_str,
+                            id=call_id,
+                            error=None,
+                        )
+                    )
             except Exception:
-                add_chunk_to_invalid_tool_calls(chunk)
+                invalid_tool_calls.append(
+                    create_invalid_tool_call(
+                        name=name,
+                        args=args_str,
+                        id=call_id,
+                        error=None,
+                    )
+                )
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
 
