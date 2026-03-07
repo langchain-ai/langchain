@@ -635,36 +635,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return super().__add__(other)
 
 
-def _is_cumulative_usage(usages: list[UsageMetadata]) -> bool:
-    """Detect if usage_metadata values represent cumulative streaming counts.
-
-    Streaming providers (e.g. OpenAI with ``stream_usage=True``) send running
-    totals in each chunk: ``input_tokens`` stays constant (same prompt) and
-    ``total_tokens`` is monotonically non-decreasing.  In contrast, independent
-    invocations produce varying ``input_tokens`` that should be summed.
-
-    Args:
-        usages: Non-null usage_metadata values from the chunks being merged.
-
-    Returns:
-        ``True`` if the pattern matches cumulative streaming counts.
-    """
-    if len(usages) < 2:  # noqa: PLR2004
-        return False
-    first_input = usages[0].get("input_tokens", -1)
-    prev_total = usages[0].get("total_tokens", 0)
-    for u in usages[1:]:
-        # Different input_tokens → independent invocations, not cumulative.
-        if u.get("input_tokens", -1) != first_input:
-            return False
-        cur_total = u.get("total_tokens", 0)
-        # Totals going down → not a running total.
-        if cur_total < prev_total:
-            return False
-        prev_total = cur_total
-    return True
-
-
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
@@ -707,19 +677,21 @@ def add_ai_message_chunks(
     # counts (e.g. OpenAI with stream_usage=True sends running totals in
     # every chunk) vs. independent invocations that should be summed.
     # See: https://github.com/langchain-ai/langchain/issues/31351
-    usages = [c.usage_metadata for c in (left, *others) if c.usage_metadata is not None]
+    usages = [m.usage_metadata for m in (left, *others) if m.usage_metadata is not None]
+
     if not usages:
         usage_metadata = None
-    elif len(usages) == 1:
-        usage_metadata = usages[0]
-    elif _is_cumulative_usage(usages):
-        # Streaming: provider already sent cumulative totals → last is final
-        usage_metadata = usages[-1]
     else:
-        # Independent invocations → sum
-        usage_metadata = usages[0]
-        for u in usages[1:]:
-            usage_metadata = add_usage(usage_metadata, u)
+        inputs = [u.get("input_tokens", 0) for u in usages]
+        totals = [u.get("total_tokens", 0) for u in usages]
+
+        # Detect cumulative pattern: constant input_tokens and monotonic increasing totals
+        if len(set(inputs)) == 1 and totals == sorted(totals) and len(set(totals)) > 1:
+            usage_metadata = usages[-1].copy()
+        else:
+            usage_metadata = usages[0].copy()
+            for u in usages[1:]:
+                usage_metadata = add_usage(usage_metadata, u)
 
     # Ranks are defined by the order of preference. Higher is better:
     # 2. Provider-assigned IDs (non lc_* and non lc_run-*)
