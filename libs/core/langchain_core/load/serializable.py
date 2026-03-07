@@ -222,7 +222,13 @@ class Serializable(BaseModel, ABC):
         secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
-        for k, v in self:
+        # Take a snapshot of __dict__ to avoid RuntimeError from concurrent
+        # mutation (e.g., cached_property writes from another thread).
+        # This replicates Pydantic's __iter__ behavior without holding a
+        # live reference to the dict's items view.
+        for k, v in list(self.__dict__.items()):
+            if k.startswith("_"):
+                continue
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded

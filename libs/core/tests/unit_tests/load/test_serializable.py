@@ -891,3 +891,50 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+def test_to_json_thread_safety() -> None:
+    """Test that to_json does not crash under concurrent __dict__ mutation.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34887.
+    """
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are helpful."), ("human", "{q}")]
+    )
+
+    stop = threading.Event()
+    errors: list[BaseException] = []
+    iters = 500
+
+    def serialize_worker() -> None:
+        try:
+            for _ in range(iters):
+                if stop.is_set():
+                    return
+                dumpd(prompt)
+        except BaseException as e:
+            errors.append(e)
+            stop.set()
+
+    def mutate_worker() -> None:
+        try:
+            for _ in range(iters):
+                if stop.is_set():
+                    return
+                # Force cached_property re-computation to trigger __dict__ writes
+                prompt.__dict__.pop("_serialized", None)
+                prompt.invoke({"q": "hi"})
+        except BaseException as e:
+            errors.append(e)
+            stop.set()
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(serialize_worker) for _ in range(2)]
+        futures += [pool.submit(mutate_worker) for _ in range(2)]
+        for f in futures:
+            f.result()
+
+    assert not errors, f"Thread-safety error: {errors[0]}"
