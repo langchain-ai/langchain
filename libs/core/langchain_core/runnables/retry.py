@@ -235,6 +235,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         not_set: list[Output] = []
         result = not_set
+        last_remaining_indices: list[int] = list(range(len(inputs)))
         try:
             for attempt in self._sync_retrying():
                 with attempt:
@@ -245,6 +246,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     ]
                     if not remaining_indices:
                         break
+                    last_remaining_indices = remaining_indices
                     pending_inputs = [inputs[i] for i in remaining_indices]
                     pending_configs = [config[i] for i in remaining_indices]
                     pending_run_managers = [run_manager[i] for i in remaining_indices]
@@ -279,12 +281,21 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Map remaining results back to their original indices so that
+        # successfully-retried items (already in results_map) don't
+        # corrupt the output positions of still-failed items.
+        remaining_results: dict[int, Output | Exception] = {}
+        if result is not not_set:
+            for offset, orig_idx in enumerate(last_remaining_indices):
+                if orig_idx not in results_map:
+                    remaining_results[orig_idx] = result[offset]
+
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
-            else:
-                outputs.append(result.pop(0))
+            elif idx in remaining_results:
+                outputs.append(remaining_results[idx])
         return outputs
 
     @override
@@ -311,6 +322,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         not_set: list[Output] = []
         result = not_set
+        last_remaining_indices: list[int] = list(range(len(inputs)))
         try:
             async for attempt in self._async_retrying():
                 with attempt:
@@ -321,6 +333,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     ]
                     if not remaining_indices:
                         break
+                    last_remaining_indices = remaining_indices
                     pending_inputs = [inputs[i] for i in remaining_indices]
                     pending_configs = [config[i] for i in remaining_indices]
                     pending_run_managers = [run_manager[i] for i in remaining_indices]
@@ -354,12 +367,21 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Map remaining results back to their original indices so that
+        # successfully-retried items (already in results_map) don't
+        # corrupt the output positions of still-failed items.
+        remaining_results: dict[int, Output | Exception] = {}
+        if result is not not_set:
+            for offset, orig_idx in enumerate(last_remaining_indices):
+                if orig_idx not in results_map:
+                    remaining_results[orig_idx] = result[offset]
+
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
-            else:
-                outputs.append(result.pop(0))
+            elif idx in remaining_results:
+                outputs.append(remaining_results[idx])
         return outputs
 
     @override
