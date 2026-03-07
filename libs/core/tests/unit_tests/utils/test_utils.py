@@ -477,6 +477,7 @@ def test_merge_lists_mixed_str_and_dict_with_index() -> None:
     other = [{"type": "reference", "index": 0, "reference_ids": ["id2"]}]
 
     result = merge_lists(merged, other)
+    assert result is not None
 
     assert result[0] == "start answer..."
     assert result[2] == "other answer..."
