@@ -15,6 +15,9 @@ from langchain_core.messages import (
     HumanMessage,
     MessageLikeRepresentation,
 )
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import tool
+from langchain.agents import create_agent
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
@@ -191,6 +194,39 @@ def test_function_calling(output_version: Literal["v0", "responses/v1", "v1"]) -
 
     response = bound_llm.invoke("What was a positive news story from today?")
     _check_response(response)
+
+
+@pytest.mark.default_cassette("test_agent_loop.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_agent_loop(output_version: Literal["responses/v1", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatOpenAI(
+        model="gpt-5.4",
+        use_responses_api=True,
+        output_version=output_version,
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = llm_with_tools.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
 
 
 class Foo(BaseModel):
@@ -1269,9 +1305,10 @@ def test_csv_input() -> None:
     )
 
 
-def test_tool_search() -> None:
-    """Test tool search with deferred loading via extras."""
-    from langchain_core.tools import tool
+@pytest.mark.default_cassette("test_tool_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_tool_search(output_version: str) -> None:
 
     @tool(extras={"defer_loading": True})
     def get_weather(location: str) -> str:
@@ -1283,14 +1320,26 @@ def test_tool_search() -> None:
         """Search through files in the workspace."""
         return f"Found 3 files matching '{query}'"
 
-    llm = ChatOpenAI(model="gpt-4o")
-    bound = llm.bind_tools(
-        [get_weather, search_files, {"type": "tool_search"}],
-        parallel_tool_calls=False,
+    model = ChatOpenAI(model="gpt-5.4", output_version=output_version)
+
+    agent = create_agent(
+        model=model,
+        tools=[get_weather, search_files, {"type": "tool_search"}],
     )
-    response = bound.invoke("What's the weather in San Francisco?")
-    assert isinstance(response, AIMessage)
-    assert response.tool_calls
+    input_message = {"role": "user", "content": "What's the weather in San Francisco?"}
+    result = agent.invoke({"messages": [input_message]})
+    assert len(result["messages"]) == 4
+    tool_call_message = result["messages"][1]
+    assert isinstance(tool_call_message, AIMessage)
+    assert tool_call_message.tool_calls
+    if output_version == "v1":
+        assert [block["type"] for block in tool_call_message.content] == [
+            "server_tool_call", "server_tool_result", "tool_call"
+        ]
+    else:
+        assert [block["type"] for block in tool_call_message.content] == [
+            "tool_search_call", "tool_search_output", "function_call"
+        ]
 
 
 def test_tool_search_with_namespace() -> None:

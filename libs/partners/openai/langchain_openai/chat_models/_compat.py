@@ -415,24 +415,68 @@ def _convert_from_v1_to_responses(
             ]
             new_content.append(new_block)
         elif block["type"] == "tool_call":
-            new_block = {"type": "function_call", "call_id": block["id"]}
-            if "extras" in block and "item_id" in block["extras"]:
-                new_block["id"] = block["extras"]["item_id"]
-            if "name" in block:
-                new_block["name"] = block["name"]
-            if "extras" in block and "arguments" in block["extras"]:
-                new_block["arguments"] = block["extras"]["arguments"]
-            if any(key not in block for key in ("name", "arguments")):
+            extras = block.get("extras", {})
+            arguments: str | None = extras.get("arguments")
+            name: str | None = block.get("name")
+            if arguments is None or name is None:
                 matching_tool_calls = [
                     call for call in tool_calls if call["id"] == block["id"]
                 ]
                 if matching_tool_calls:
-                    tool_call = matching_tool_calls[0]
-                    if "name" not in block:
-                        new_block["name"] = tool_call["name"]
-                    if "arguments" not in block:
-                        new_block["arguments"] = json.dumps(tool_call["args"])
+                    tc = matching_tool_calls[0]
+                    if name is None:
+                        name = tc["name"]
+                    if arguments is None:
+                        arguments = json.dumps(
+                            tc["args"], separators=(",", ":")
+                        )
+            new_block: dict[str, Any] = {}
+            if arguments is not None:
+                new_block["arguments"] = arguments
+            new_block["call_id"] = block["id"]
+            if name is not None:
+                new_block["name"] = name
+            new_block["type"] = "function_call"
+            if "item_id" in extras:
+                new_block["id"] = extras["item_id"]
+            for extra_key in ("status", "namespace"):
+                if extra_key in extras:
+                    new_block[extra_key] = extras[extra_key]
             new_content.append(new_block)
+
+        elif block["type"] == "server_tool_call" and block.get("name") == "tool_search":
+            extras = block.get("extras", {})
+            new_block = {"id": block["id"]}
+            status = extras.get("status")
+            if status:
+                new_block["status"] = status
+            new_block["type"] = "tool_search_call"
+            if "args" in block:
+                new_block["arguments"] = block["args"]
+            execution = extras.get("execution")
+            if execution:
+                new_block["execution"] = execution
+            new_content.append(new_block)
+
+        elif block["type"] == "server_tool_result" and block.get("extras", {}).get(
+            "name"
+        ) == "tool_search":
+            extras = block.get("extras", {})
+            new_block = {"id": block.get("tool_call_id", "")}
+            status = block.get("status")
+            if status == "success":
+                new_block["status"] = "completed"
+            elif status == "error":
+                new_block["status"] = "failed"
+            elif status:
+                new_block["status"] = status
+            new_block["type"] = "tool_search_output"
+            new_block["execution"] = "server"
+            output = block.get("output", {})
+            if isinstance(output, dict) and "tools" in output:
+                new_block["tools"] = output["tools"]
+            new_content.append(new_block)
+
         elif (
             is_data_content_block(cast(dict, block))
             and block["type"] == "image"
