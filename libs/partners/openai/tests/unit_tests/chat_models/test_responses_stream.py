@@ -39,6 +39,7 @@ from openai.types.responses.response_usage import (
 )
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
+from pydantic import SecretStr
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
@@ -803,9 +804,22 @@ def test_responses_stream_completed_chunk_includes_tool_calls() -> None:
     from the completed message but never extracted tool_calls.
     """
     from openai.types.responses import (
+        FunctionTool,
         ResponseFunctionCallArgumentsDeltaEvent,
         ResponseFunctionCallArgumentsDoneEvent,
         ResponseFunctionToolCall,
+    )
+
+    weather_tool = FunctionTool(
+        type="function",
+        name="get_weather",
+        parameters={
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"},
+            },
+            "required": ["location"],
+        },
     )
 
     tool_call_stream = [
@@ -817,19 +831,7 @@ def test_responses_stream_completed_chunk_includes_tool_calls() -> None:
                 object="response",
                 output=[],
                 tool_choice="auto",
-                tools=[
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "location": {"type": "string"},
-                            },
-                            "required": ["location"],
-                        },
-                    }
-                ],
+                tools=[weather_tool],
                 parallel_tool_calls=True,
                 temperature=1.0,
                 top_p=1.0,
@@ -949,19 +951,7 @@ def test_responses_stream_completed_chunk_includes_tool_calls() -> None:
                     ),
                 ],
                 tool_choice="auto",
-                tools=[
-                    {
-                        "type": "function",
-                        "name": "get_weather",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "location": {"type": "string"},
-                            },
-                            "required": ["location"],
-                        },
-                    }
-                ],
+                tools=[weather_tool],
                 parallel_tool_calls=True,
                 temperature=1.0,
                 top_p=1.0,
@@ -989,7 +979,7 @@ def test_responses_stream_completed_chunk_includes_tool_calls() -> None:
 
     llm = ChatOpenAI(
         model="gpt-4o-mini",
-        api_key="test-key",
+        api_key=SecretStr("test-key"),
         use_responses_api=True,
         output_version="responses/v1",
     )
