@@ -1723,6 +1723,7 @@ def test__construct_lc_result_from_responses_api_function_call_preserves_status(
     assert isinstance(msg.content, list)
     assert len(msg.content) == 1
     block = msg.content[0]
+    assert isinstance(block, dict)
     assert "status" in block, "status field must be present in function_call block"
     assert block["status"] is None
 
