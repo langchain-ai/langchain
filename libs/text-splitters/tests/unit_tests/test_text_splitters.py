@@ -3263,7 +3263,7 @@ def test_split_json_no_data_loss_at_chunk_boundary() -> None:
 
     See: https://github.com/langchain-ai/langchain/issues/29153
     """
-    input_data = {
+    input_data: dict[str, dict[str, dict[str, dict[str, str]]]] = {
         "projects": {
             "GTMS": {f"GTMS-{i}": {} for i in range(22, 0, -1)},
             "ITSAMPLE": {f"ITSAMPLE-{i}": {} for i in range(12, 0, -1)},
