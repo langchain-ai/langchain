@@ -1720,7 +1720,8 @@ def test__construct_lc_result_from_responses_api_function_call_preserves_status(
     )
     result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
-    assert isinstance(msg.content, list) and len(msg.content) == 1
+    assert isinstance(msg.content, list)
+    assert len(msg.content) == 1
     block = msg.content[0]
     assert "status" in block, "status field must be present in function_call block"
     assert block["status"] is None
