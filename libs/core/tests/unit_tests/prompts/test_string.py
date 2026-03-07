@@ -1,7 +1,7 @@
 import pytest
 from packaging import version
 
-from langchain_core.prompts.string import mustache_schema
+from langchain_core.prompts.string import get_template_variables, mustache_schema
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
@@ -30,3 +30,12 @@ def test_mustache_schema_parent_child() -> None:
     }
     actual = mustache_schema(template).model_json_schema()
     assert expected == actual
+
+
+def test_get_template_variables_mustache_nested() -> None:
+    template = "Hello {{user.name}}, your role is {{user.role}}"
+    template_format = "mustache"
+    # Returns only the top-level key for mustache templates
+    expected = ["user"]
+    actual = get_template_variables(template, template_format)
+    assert actual == expected

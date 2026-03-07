@@ -6,6 +6,7 @@ import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
+from urllib.parse import urlparse
 
 import openai
 from langchain_core.callbacks import (
@@ -195,6 +196,12 @@ class ChatDeepSeek(BaseChatOpenAI):
     model_config = ConfigDict(populate_by_name=True)
 
     @property
+    def _is_azure_endpoint(self) -> bool:
+        """Check if the configured endpoint is an Azure deployment."""
+        hostname = urlparse(self.api_base or "").hostname or ""
+        return hostname == "azure.com" or hostname.endswith(".azure.com")
+
+    @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-deepseek"
@@ -276,6 +283,17 @@ class ChatDeepSeek(BaseChatOpenAI):
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
                 message["content"] = "".join(text_parts) if text_parts else ""
+
+        # Azure-hosted DeepSeek does not support the dict/object form of
+        # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
+        # It only accepts string values: "none", "auto", or "required".
+        # Convert the unsupported dict form to "required", which is the closest
+        # string equivalent — it forces the model to call a tool without
+        # constraining which one. In the common with_structured_output() case
+        # only a single tool is bound, so the behavior is effectively identical.
+        if self._is_azure_endpoint and isinstance(payload.get("tool_choice"), dict):
+            payload["tool_choice"] = "required"
+
         return payload
 
     def _create_chat_result(

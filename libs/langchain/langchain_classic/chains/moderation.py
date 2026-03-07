@@ -69,7 +69,7 @@ class OpenAIModerationChain(Chain):
             except ValueError:
                 values["openai_pre_1_0"] = True
             if values["openai_pre_1_0"]:
-                values["client"] = openai.Moderation  # type: ignore[attr-defined]
+                values["client"] = openai.Moderation
             else:
                 values["client"] = openai.OpenAI(api_key=openai_api_key)
                 values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)

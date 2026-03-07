@@ -67,6 +67,7 @@ def print_text(
     """Print text with highlighting and no end characters.
 
     If a color is provided, the text will be printed in that color.
+
     If a file is provided, the text will be written to that file.
 
     Args:

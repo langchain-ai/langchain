@@ -22,7 +22,6 @@ langchain/
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
 │   ├── model-profiles/   # Model configuration profiles
-│   └── cli/              # Command-line interface tools
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
 └── README.md             # Information about LangChain
@@ -33,7 +32,7 @@ langchain/
 - **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
 - **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
-### Development tools & commands**
+### Development tools & commands
 
 - `uv` – Fast Python package installer and resolver (replaces pip/poetry)
 - `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
@@ -44,6 +43,16 @@ langchain/
 This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
+
+Before running your tests, setup all packages by running:
+
+```bash
+# For all groups
+uv sync --all-groups
+
+# or, to install a specific group only:
+uv sync --group test
+```
 
 ```bash
 # Run unit tests (no network)
@@ -72,7 +81,15 @@ uv run --group lint mypy .
 
 #### Commit standards
 
-Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes.
+Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes. Note that all commit/PR titles should be in lowercase with the exception of proper nouns/named entities. All PR titles should include a scope with no exceptions. For example:
+
+```txt
+feat(langchain): add new chat completion feature
+fix(core): resolve type hinting issue in vector store
+chore(anthropic): update infrastructure dependencies
+```
+
+Note how `feat(langchain)` includes a scope even though it is the main package and name of the repo.
 
 #### Pull request guidelines
 
@@ -85,6 +102,7 @@ Suggest PR titles that follow Conventional Commits format. Refer to .github/work
 ### Maintain stable public interfaces
 
 CRITICAL: Always attempt to preserve function signatures, argument positions, and names for exported/public methods. Do not make breaking changes.
+You should warn the developer for any function signature changes, regardless of whether they look breaking or not.
 
 **Before making ANY changes to public APIs:**
 
@@ -110,7 +128,7 @@ def filter_unknown_users(users: list[str], known_users: set[str]) -> list[str]:
         known_users: Set of known/valid user identifiers.
 
     Returns:
-        List of users that are not in the known_users set.
+        List of users that are not in the `known_users` set.
     """
 ```
 
@@ -174,8 +192,62 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
+- Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
+
+## Model profiles
+
+Model profiles are generated using the `langchain-profiles` CLI in `libs/model-profiles`. The `--data-dir` must point to the directory containing `profile_augmentations.toml`, not the top-level package directory.
+
+```bash
+# Run from libs/model-profiles
+cd libs/model-profiles
+
+# Refresh profiles for a partner in this repo
+uv run langchain-profiles refresh --provider openai --data-dir ../partners/openai/langchain_openai/data
+
+# Refresh profiles for a partner in an external repo (requires echo y to confirm)
+echo y | uv run langchain-profiles refresh --provider google --data-dir /path/to/langchain-google/libs/genai/langchain_google_genai/data
+```
+
+Example partners with profiles in this repo:
+
+- `libs/partners/openai/langchain_openai/data/` (provider: `openai`)
+- `libs/partners/anthropic/langchain_anthropic/data/` (provider: `anthropic`)
+- `libs/partners/perplexity/langchain_perplexity/data/` (provider: `perplexity`)
+
+The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-profiles` working directory.
+
+## CI/CD infrastructure
+
+### Release process
+
+Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+
+### PR labeling and linting
+
+**Title linting** (`.github/workflows/pr_lint.yml`)
+
+**Auto-labeling:**
+
+- `.github/workflows/pr_labeler_file.yml`
+- `.github/workflows/pr_labeler_title.yml`
+- `.github/workflows/auto-label-by-package.yml`
+- `.github/workflows/tag-external-contributions.yml`
+
+### Adding a new partner to CI
+
+When adding a new partner package, update these files:
+
+- `.github/ISSUE_TEMPLATE/*.yml` – Add to package dropdown
+- `.github/dependabot.yml` – Add dependency update entry
+- `.github/pr-file-labeler.yml` – Add file-to-label mapping
+- `.github/workflows/_release.yml` – Add API key secrets if needed
+- `.github/workflows/auto-label-by-package.yml` – Add package label
+- `.github/workflows/check_diffs.yml` – Add to change detection
+- `.github/workflows/integration_tests.yml` – Add integration test config
+- `.github/workflows/pr_lint.yml` – Add to allowed scopes
 
 ## Additional resources
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
-- **Contributing Guide:** [`.github/CONTRIBUTING.md`](https://docs.langchain.com/oss/python/contributing/overview)
+- **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)

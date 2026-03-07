@@ -38,21 +38,23 @@ _no_default = object()
 def py_anext(
     iterator: AsyncIterator[T], default: T | Any = _no_default
 ) -> Awaitable[T | Any | None]:
-    """Pure-Python implementation of anext() for testing purposes.
+    """Pure-Python implementation of `anext()` for testing purposes.
 
-    Closely matches the builtin anext() C implementation.
-    Can be used to compare the built-in implementation of the inner
-    coroutines machinery to C-implementation of __anext__() and send()
-    or throw() on the returned generator.
+    Closely matches the builtin `anext()` C implementation.
+
+    Can be used to compare the built-in implementation of the inner coroutines machinery
+    to C-implementation of `__anext__()` and `send()` or `throw()` on the returned
+    generator.
 
     Args:
         iterator: The async iterator to advance.
         default: The value to return if the iterator is exhausted.
-            If not provided, a StopAsyncIteration exception is raised.
+
+            If not provided, a `StopAsyncIteration` exception is raised.
 
     Returns:
-        The next value from the iterator, or the default value
-        if the iterator is exhausted.
+        The next value from the iterator, or the default value if the iterator is
+            exhausted.
 
     Raises:
         TypeError: If the iterator is not an async iterator.
@@ -109,8 +111,10 @@ async def tee_peer(
     """An individual iterator of a `tee`.
 
     This function is a generator that yields items from the shared iterator
-    `iterator`. It buffers items until the least advanced iterator has
-    yielded them as well. The buffer is shared with all other peers.
+    `iterator`. It buffers items until the least advanced iterator has yielded them as
+    well.
+
+    The buffer is shared with all other peers.
 
     Args:
         iterator: The shared iterator.
@@ -159,9 +163,11 @@ class Tee(Generic[T]):
 
     This splits a single `iterable` into multiple iterators, each providing
     the same items in the same order.
-    All child iterators may advance separately but share the same items
-    from `iterable` -- when the most advanced iterator retrieves an item,
-    it is buffered until the least advanced iterator has yielded it as well.
+
+    All child iterators may advance separately but share the same items from `iterable`
+    -- when the most advanced iterator retrieves an item, it is buffered until the least
+    advanced iterator has yielded it as well.
+
     A `tee` works lazily and can handle an infinite `iterable`, provided
     that all iterators advance.
 
@@ -172,23 +178,24 @@ class Tee(Generic[T]):
         return a.map(operator.sub, previous, current)
     ```
 
-    Unlike `itertools.tee`, `.tee` returns a custom type instead
-    of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
-    to get the child iterators. In addition, its `.tee.aclose` method
-    immediately closes all children, and it can be used in an `async with` context
-    for the same effect.
+    Unlike `itertools.tee`, `.tee` returns a custom type instead of a `tuple`. Like a
+    tuple, it can be indexed, iterated and unpacked to get the child iterators. In
+    addition, its `.tee.aclose` method immediately closes all children, and it can be
+    used in an `async with` context for the same effect.
 
-    If `iterable` is an iterator and read elsewhere, `tee` will *not*
-    provide these items. Also, `tee` must internally buffer each item until the
-    last iterator has yielded it; if the most and least advanced iterator differ
-    by most data, using a :py`list` is more efficient (but not lazy).
+    If `iterable` is an iterator and read elsewhere, `tee` will *not* provide these
+    items. Also, `tee` must internally buffer each item until the last iterator has
+    yielded it; if the most and least advanced iterator differ by most data, using a
+    `list` is more efficient (but not lazy).
 
-    If the underlying iterable is concurrency safe (`anext` may be awaited
-    concurrently) the resulting iterators are concurrency safe as well. Otherwise,
-    the iterators are safe if there is only ever one single "most advanced" iterator.
+    If the underlying iterable is concurrency safe (`anext` may be awaited concurrently)
+    the resulting iterators are concurrency safe as well. Otherwise, the iterators are
+    safe if there is only ever one single "most advanced" iterator.
+
     To enforce sequential use of `anext`, provide a `lock`
-    - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
-    and access is automatically synchronised.
+
+    - e.g. an `asyncio.Lock` instance in an `asyncio` application - and access is
+        automatically synchronised.
 
     """
 
@@ -256,7 +263,7 @@ class Tee(Generic[T]):
         """Close all child iterators.
 
         Returns:
-            False, exceptions not suppressed.
+            `False`, exceptions not suppressed.
         """
         await self.aclose()
         return False
@@ -271,7 +278,7 @@ atee = Tee
 
 
 class aclosing(AbstractAsyncContextManager):  # noqa: N801
-    """Async context manager to wrap an AsyncGenerator that has a `aclose()` method.
+    """Async context manager to wrap an `AsyncGenerator` that has a `aclose()` method.
 
     Code like this:
 
@@ -280,7 +287,7 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
         <block>
     ```
 
-    is equivalent to this:
+    ...is equivalent to this:
 
     ```python
     agen = <module>.fetch(<arguments>)

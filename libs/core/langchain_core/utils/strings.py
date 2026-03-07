@@ -49,16 +49,16 @@ def comma_list(items: Iterable[Any]) -> str:
 def sanitize_for_postgres(text: str, replacement: str = "") -> str:
     r"""Sanitize text by removing NUL bytes that are incompatible with PostgreSQL.
 
-    PostgreSQL text fields cannot contain NUL (0x00) bytes, which can cause
-    psycopg.DataError when inserting documents. This function removes or replaces
+    PostgreSQL text fields cannot contain `NUL (0x00)` bytes, which can cause
+    `psycopg.DataError` when inserting documents. This function removes or replaces
     such characters to ensure compatibility.
 
     Args:
         text: The text to sanitize.
-        replacement: String to replace NUL bytes with.
+        replacement: String to replace `NUL` bytes with.
 
     Returns:
-        The sanitized text with NUL bytes removed or replaced.
+        The sanitized text with `NUL` bytes removed or replaced.
 
     Example:
         >>> sanitize_for_postgres("Hello\\x00world")

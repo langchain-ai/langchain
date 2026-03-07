@@ -24,10 +24,10 @@ except ImportError:
 
 
 class BaseLoader(ABC):  # noqa: B024
-    """Interface for Document Loader.
+    """Interface for document loader.
 
-    Implementations should implement the lazy-loading method using generators
-    to avoid loading all documents into memory at once.
+    Implementations should implement the lazy-loading method using generators to avoid
+    loading all documents into memory at once.
 
     `load` is provided just for user convenience and should not be overridden.
     """
@@ -61,14 +61,15 @@ class BaseLoader(ABC):  # noqa: B024
 
         Args:
             text_splitter: `TextSplitter` instance to use for splitting documents.
+
                 Defaults to `RecursiveCharacterTextSplitter`.
 
         Raises:
-            ImportError: If `langchain-text-splitters` is not installed
-                and no `text_splitter` is provided.
+            ImportError: If `langchain-text-splitters` is not installed and no
+                `text_splitter` is provided.
 
         Returns:
-            List of `Document`.
+            List of `Document` objects.
         """
         if text_splitter is None:
             if not _HAS_TEXT_SPLITTERS:
@@ -116,11 +117,11 @@ class BaseLoader(ABC):  # noqa: B024
 class BaseBlobParser(ABC):
     """Abstract interface for blob parsers.
 
-    A blob parser provides a way to parse raw data stored in a blob into one
-    or more `Document` objects.
+    A blob parser provides a way to parse raw data stored in a blob into one or more
+    `Document` objects.
 
-    The parser can be composed with blob loaders, making it easy to reuse
-    a parser independent of how the blob was originally loaded.
+    The parser can be composed with blob loaders, making it easy to reuse a parser
+    independent of how the blob was originally loaded.
     """
 
     @abstractmethod
