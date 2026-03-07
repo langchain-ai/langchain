@@ -3980,8 +3980,10 @@ async def test_async_retry_batch_preserves_order() -> None:
 
 
 def test_retry_batch_return_exceptions_no_corruption() -> None:
-    """Regression test: items that succeed on retry must not overwrite
-    positions of items that still fail when ``return_exceptions=True``.
+    """Regression test for retry batch output corruption.
+
+    Items that succeed on retry must not overwrite positions of items
+    that still fail when ``return_exceptions=True``.
 
     Previously, ``_batch`` used ``result.pop(0)`` to fill non-succeeded
     positions but ``result`` still contained the successful retries,
@@ -3998,9 +4000,11 @@ def test_retry_batch_return_exceptions_no_corruption() -> None:
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("retry me")
+                msg = "retry me"
+                raise ValueError(msg)
             return "retry-result"
-        raise ValueError("always fail")
+        msg = "always fail"
+        raise ValueError(msg)
 
     runnable = RunnableLambda(process_item).with_retry(
         stop_after_attempt=2,
@@ -4029,9 +4033,11 @@ async def test_async_retry_batch_return_exceptions_no_corruption() -> None:
         if name == "retry_then_ok":
             if not failed_once:
                 failed_once = True
-                raise ValueError("retry me")
+                msg = "retry me"
+                raise ValueError(msg)
             return "retry-result"
-        raise ValueError("always fail")
+        msg = "always fail"
+        raise ValueError(msg)
 
     runnable = RunnableLambda(process_item).with_retry(
         stop_after_attempt=2,
