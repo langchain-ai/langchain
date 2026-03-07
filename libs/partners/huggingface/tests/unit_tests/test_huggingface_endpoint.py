@@ -43,7 +43,7 @@ def test_local_endpoint_does_not_pass_api_key(
     mock_inference_client.return_value = MagicMock()
     mock_async_client.return_value = MagicMock()
 
-    HuggingFaceEndpoint(
+    HuggingFaceEndpoint(  # type: ignore[call-arg]
         endpoint_url="http://localhost:8010/",
         max_new_tokens=64,
     )
@@ -68,7 +68,7 @@ def test_huggingface_hosted_endpoint_keeps_api_key(
     mock_inference_client.return_value = MagicMock()
     mock_async_client.return_value = MagicMock()
 
-    HuggingFaceEndpoint(
+    HuggingFaceEndpoint(  # type: ignore[call-arg]
         endpoint_url="https://abc.huggingface.co/inference",
         max_new_tokens=64,
         huggingfacehub_api_token="hf_xxx",  # noqa: S106
