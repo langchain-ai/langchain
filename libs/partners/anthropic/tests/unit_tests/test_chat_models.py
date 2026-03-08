@@ -1684,32 +1684,32 @@ def test_anthropic_model_params() -> None:
 
 
 def test_streaming_cache_token_reporting() -> None:
-    """Test that cache tokens are properly reported in streaming events."""
+    """Test that cache tokens are properly reported in streaming events.
+
+    Anthropic streaming sends input_tokens in message_start and
+    output_tokens in message_delta. Both must be captured so that
+    the aggregated result contains the full usage information.
+    """
     from unittest.mock import MagicMock
 
-    from anthropic.types import MessageDeltaUsage
+    from anthropic.types import MessageDeltaUsage, Usage
 
     from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
 
-    # Create a mock message_start event
     mock_message = MagicMock()
     mock_message.model = MODEL_NAME
-    mock_message.usage.input_tokens = 100
-    mock_message.usage.output_tokens = 0
-    mock_message.usage.cache_read_input_tokens = 25
-    mock_message.usage.cache_creation_input_tokens = 10
+    mock_message.usage = Usage(
+        input_tokens=100,
+        output_tokens=0,
+        cache_read_input_tokens=25,
+        cache_creation_input_tokens=10,
+    )
 
     message_start_event = MagicMock()
     message_start_event.type = "message_start"
     message_start_event.message = mock_message
 
-    # Create a mock message_delta event with complete usage info
-    mock_delta_usage = MessageDeltaUsage(
-        output_tokens=50,
-        input_tokens=100,
-        cache_read_input_tokens=25,
-        cache_creation_input_tokens=10,
-    )
+    mock_delta_usage = MessageDeltaUsage(output_tokens=50)
 
     mock_delta = MagicMock()
     mock_delta.stop_reason = "end_turn"
@@ -1720,7 +1720,6 @@ def test_streaming_cache_token_reporting() -> None:
     message_delta_event.usage = mock_delta_usage
     message_delta_event.delta = mock_delta
 
-    # Test message_start event
     start_chunk, _ = _make_message_chunk_from_anthropic_event(
         message_start_event,
         stream_usage=True,
@@ -1728,7 +1727,6 @@ def test_streaming_cache_token_reporting() -> None:
         block_start_event=None,
     )
 
-    # Test message_delta event - should contain complete usage metadata (w/ cache)
     delta_chunk, _ = _make_message_chunk_from_anthropic_event(
         message_delta_event,
         stream_usage=True,
@@ -1736,24 +1734,26 @@ def test_streaming_cache_token_reporting() -> None:
         block_start_event=None,
     )
 
-    # Verify message_delta has complete usage_metadata including cache tokens
     assert start_chunk is not None, "message_start should produce a chunk"
-    assert getattr(start_chunk, "usage_metadata", None) is None, (
-        "message_start should not have usage_metadata"
+    assert start_chunk.usage_metadata is not None, (
+        "message_start should have usage_metadata with input_tokens"
     )
+    assert start_chunk.usage_metadata["input_tokens"] == 135
+    assert start_chunk.usage_metadata["output_tokens"] == 0
+    input_details = start_chunk.usage_metadata["input_token_details"]
+    assert input_details.get("cache_read") == 25
+    assert input_details.get("cache_creation") == 10
+
     assert delta_chunk is not None, "message_delta should produce a chunk"
     assert delta_chunk.usage_metadata is not None, (
         "message_delta should have usage_metadata"
     )
-    assert "input_token_details" in delta_chunk.usage_metadata
-    input_details = delta_chunk.usage_metadata["input_token_details"]
-    assert input_details.get("cache_read") == 25
-    assert input_details.get("cache_creation") == 10
-
-    # Verify totals are correct: 100 base + 25 cache_read + 10 cache_creation = 135
-    assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
-    assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+    combined = start_chunk + delta_chunk
+    assert combined.usage_metadata["input_tokens"] == 135
+    assert combined.usage_metadata["output_tokens"] == 50
+    assert combined.usage_metadata["total_tokens"] == 185
 
 
 def test_strict_tool_use() -> None:
