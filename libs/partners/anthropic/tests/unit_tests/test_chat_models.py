@@ -85,6 +85,18 @@ def test_anthropic_client_caching() -> None:
     assert llm1._client._client is not llm5._client._client
 
 
+def test_timeout_omitted_from_client_params_when_none() -> None:
+    """Timeout should be omitted from client_params when None (default),
+    letting the SDK's built-in default apply."""
+    llm_default = ChatAnthropic(model=MODEL_NAME)
+    assert llm_default.default_request_timeout is None
+    assert "timeout" not in llm_default._client_params
+
+    llm_explicit = ChatAnthropic(model=MODEL_NAME, timeout=30)
+    assert "timeout" in llm_explicit._client_params
+    assert llm_explicit._client_params["timeout"] == 30
+
+
 def test_anthropic_proxy_support() -> None:
     """Test that both sync and async clients support proxy configuration."""
     proxy_url = "http://proxy.example.com:8080"
