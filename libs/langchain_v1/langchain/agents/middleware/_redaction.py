@@ -373,7 +373,19 @@ def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector
             ]
 
         return regex_detector
-    return detector
+    def wrapped_detector(content: str) -> list[PIIMatch]:
+        raw_matches = detector(content)
+        return [
+            PIIMatch(
+                type=match.get("type", pii_type),
+                value=match.get("value", match.get("text", "")),
+                start=match["start"],
+                end=match["end"],
+            )
+            for match in raw_matches
+        ]
+
+    return wrapped_detector
 
 
 @dataclass(frozen=True)
