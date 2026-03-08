@@ -98,7 +98,7 @@ class RecursiveJsonSplitter:
                 size = self._json_size({key: value})
                 remaining = self.max_chunk_size - chunk_size
 
-                if size < remaining:
+                if size <= remaining:
                     # Add item to current chunk
                     self._set_nested_dict(chunks[-1], new_path, value)
                 else:
@@ -106,8 +106,13 @@ class RecursiveJsonSplitter:
                         # Chunk is big enough, start a new chunk
                         chunks.append({})
 
-                    # Iterate
-                    self._json_split(value, new_path, chunks)
+                    # Only recurse into non-empty dicts; for leaf values
+                    # and empty dicts, add them directly to the current chunk
+                    # so they are not silently dropped.
+                    if isinstance(value, dict) and value:
+                        self._json_split(value, new_path, chunks)
+                    else:
+                        self._set_nested_dict(chunks[-1], new_path, value)
         else:
             # handle single item
             self._set_nested_dict(chunks[-1], current_path, data)
