@@ -1359,7 +1359,6 @@ def test_tool_search(output_version: str) -> None:
     @tool(extras={"defer_loading": True})
     def get_recipe(query: str) -> None:
         """Get a recipe for chicken soup."""
-        pass
 
     model = ChatOpenAI(
         model="gpt-5.4",
@@ -1407,7 +1406,6 @@ def test_tool_search_streaming(output_version: str) -> None:
     @tool(extras={"defer_loading": True})
     def get_recipe(query: str) -> None:
         """Get a recipe for chicken soup."""
-        pass
 
     model = ChatOpenAI(
         model="gpt-5.4",
