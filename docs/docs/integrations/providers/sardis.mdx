@@ -1,0 +1,96 @@
+# Sardis
+
+> [Sardis](https://sardis.sh) is the Payment OS for the Agent Economy — infrastructure enabling AI agents to make real financial transactions safely through non-custodial MPC wallets with natural language spending policies.
+
+## Installation and Setup
+
+Install the Sardis LangChain integration:
+
+```bash
+pip install sardis-langchain
+```
+
+You'll need a Sardis API key. Set it as an environment variable:
+
+```bash
+export SARDIS_API_KEY="sk_..."
+export SARDIS_WALLET_ID="wal_..."
+```
+
+## Tools
+
+### SardisPaymentTool
+
+Execute policy-controlled payments from an AI agent's wallet.
+
+```python
+from langchain_sardis import SardisPaymentTool
+
+tool = SardisPaymentTool()
+result = tool.invoke({
+    "amount": 25.00,
+    "merchant": "openai",
+    "purpose": "API credits"
+})
+```
+
+### SardisBalanceTool
+
+Check wallet balance and remaining spending limits.
+
+```python
+from langchain_sardis import SardisBalanceTool
+
+tool = SardisBalanceTool()
+result = tool.invoke({"token": "USDC"})
+```
+
+### SardisPolicyCheckTool
+
+Pre-check if a payment would be allowed by spending policy.
+
+```python
+from langchain_sardis import SardisPolicyCheckTool
+
+tool = SardisPolicyCheckTool()
+result = tool.invoke({
+    "amount": 500.00,
+    "merchant": "aws"
+})
+```
+
+### Using all tools with an agent
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain_sardis import SardisPaymentTool, SardisBalanceTool, SardisPolicyCheckTool
+
+llm = ChatOpenAI(model="gpt-4o")
+tools = [
+    SardisPaymentTool(),
+    SardisBalanceTool(),
+    SardisPolicyCheckTool(),
+]
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+result = agent_executor.invoke({
+    "input": "Check my balance and pay $50 to Vercel for hosting"
+})
+```
+
+## Key features
+
+- **Policy guardrails**: Every payment is checked against configurable spending policies before execution
+- **Non-custodial**: Uses MPC wallets — private keys are never stored
+- **Multi-chain**: Supports Base, Polygon, Ethereum, Arbitrum, and Optimism
+- **Stablecoin native**: USDC, USDT, EURC, and PYUSD
+- **Audit trail**: Full append-only ledger for all transactions
+
+## More information
+
+- [Sardis Documentation](https://sardis.sh/docs)
+- [sardis-langchain on PyPI](https://pypi.org/project/sardis-langchain/)
+- [GitHub Repository](https://github.com/EfeDurmaz16/sardis)
