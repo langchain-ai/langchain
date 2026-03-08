@@ -1076,6 +1076,57 @@ def merge_message_runs(
     return merged
 
 
+def _is_per_message_counter(fn: Callable) -> bool:
+    """Detect whether *fn* is a per-message ``(BaseMessage) -> int`` counter.
+
+    The previous heuristic used ``annotation is BaseMessage`` (identity check),
+    which fails for lambdas, un-annotated functions, string annotations,
+    subclass annotations, and postponed annotations
+    (``from __future__ import annotations``).
+
+    This implementation resolves annotations via :func:`typing.get_type_hints`
+    and falls back to inspecting the raw annotation when that is not possible
+    (e.g. for lambdas).  If the first parameter's resolved type is
+    ``BaseMessage`` or a subclass thereof the function is treated as a
+    per-message counter.
+    """
+    try:
+        params = list(inspect.signature(fn).parameters.values())
+    except (ValueError, TypeError):
+        return False
+    if not params:
+        return False
+    first = params[0]
+
+    # Try to resolve annotations (handles string annotations and
+    # ``from __future__ import annotations``).
+    try:
+        from typing import get_type_hints  # noqa: PLC0415
+
+        hints = get_type_hints(fn)
+        if hints:
+            first_type = next(iter(hints.values()))
+            return isinstance(first_type, type) and issubclass(
+                first_type, BaseMessage
+            )
+    except Exception:
+        pass
+
+    # Fall back to raw annotation for cases where get_type_hints fails
+    # (e.g. lambdas, some built-ins).
+    ann = first.annotation
+    if ann is inspect.Parameter.empty:
+        # No annotation at all — probe by calling with a dummy message.
+        # A per-message counter will return an int; a list counter will
+        # typically raise (e.g. ``len`` receives a BaseMessage).
+        try:
+            probe = fn(HumanMessage(content="x"))
+            return isinstance(probe, (int, float))
+        except Exception:
+            return False
+    return isinstance(ann, type) and issubclass(ann, BaseMessage)
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support
@@ -1417,12 +1468,7 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
-        ):
+        if _is_per_message_counter(actual_token_counter):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
