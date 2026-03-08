@@ -683,6 +683,12 @@ def _format_messages(
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
             continue
+
+        if not content and role != "assistant":
+            # anthropic.BadRequestError: Error code: 400: all messages must have
+            # non-empty content except for the optional final assistant message
+            continue
+
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
