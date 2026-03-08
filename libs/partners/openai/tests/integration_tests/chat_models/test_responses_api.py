@@ -1357,9 +1357,9 @@ def test_tool_search(output_version: str) -> None:
         return f"The weather in {location} is sunny and 72°F"
 
     @tool(extras={"defer_loading": True})
-    def search_files(query: str) -> str:
-        """Search through files in the workspace."""
-        return f"Found 3 files matching '{query}'"
+    def get_recipe(query: str) -> None:
+        """Get a recipe for chicken soup."""
+        pass
 
     model = ChatOpenAI(
         model="gpt-5.4",
@@ -1369,7 +1369,7 @@ def test_tool_search(output_version: str) -> None:
 
     agent = create_agent(
         model=model,
-        tools=[get_weather, search_files, {"type": "tool_search"}],
+        tools=[get_weather, get_recipe, {"type": "tool_search"}],
     )
     input_message = {"role": "user", "content": "What's the weather in San Francisco?"}
     result = agent.invoke({"messages": [input_message]})
@@ -1389,6 +1389,10 @@ def test_tool_search(output_version: str) -> None:
             "tool_search_output",
             "function_call",
         ]
+
+    assert isinstance(result["messages"][2], ToolMessage)
+
+    assert result["messages"][3].text
 
 
 @pytest.mark.default_cassette("test_tool_search_streaming.yaml.gz")
@@ -1401,9 +1405,9 @@ def test_tool_search_streaming(output_version: str) -> None:
         return f"The weather in {location} is sunny and 72°F"
 
     @tool(extras={"defer_loading": True})
-    def search_files(query: str) -> str:
-        """Search through files in the workspace."""
-        return f"Found 3 files matching '{query}'"
+    def get_recipe(query: str) -> None:
+        """Get a recipe for chicken soup."""
+        pass
 
     model = ChatOpenAI(
         model="gpt-5.4",
@@ -1414,7 +1418,7 @@ def test_tool_search_streaming(output_version: str) -> None:
 
     agent = create_agent(
         model=model,
-        tools=[get_weather, search_files, {"type": "tool_search"}],
+        tools=[get_weather, get_recipe, {"type": "tool_search"}],
     )
     input_message = {"role": "user", "content": "What's the weather in San Francisco?"}
     result = agent.invoke({"messages": [input_message]})
@@ -1434,6 +1438,10 @@ def test_tool_search_streaming(output_version: str) -> None:
             "tool_search_output",
             "function_call",
         ]
+
+    assert isinstance(result["messages"][2], ToolMessage)
+
+    assert result["messages"][3].text
 
 
 @pytest.mark.vcr
