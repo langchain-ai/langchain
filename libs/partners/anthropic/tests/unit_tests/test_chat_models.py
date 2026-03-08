@@ -1739,9 +1739,11 @@ def test_streaming_cache_token_reporting() -> None:
 
     # Verify message_delta has complete usage_metadata including cache tokens
     assert start_chunk is not None, "message_start should produce a chunk"
-    assert getattr(start_chunk, "usage_metadata", None) is None, (
-        "message_start should not have usage_metadata"
+    assert getattr(start_chunk, "usage_metadata", None) is not None, (
+        "message_start should have usage_metadata"
     )
+    assert start_chunk.usage_metadata["input_tokens"] == 135
+    assert start_chunk.usage_metadata["output_tokens"] == 0
     assert delta_chunk is not None, "message_delta should produce a chunk"
     assert delta_chunk.usage_metadata is not None, (
         "message_delta should have usage_metadata"
