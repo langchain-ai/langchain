@@ -26,6 +26,7 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
+    get_type_hints,
     overload,
 )
 from xml.sax.saxutils import escape, quoteattr
@@ -1076,6 +1077,52 @@ def merge_message_runs(
     return merged
 
 
+def _is_per_message_token_counter(fn: Callable) -> bool:
+    try:
+        sig = inspect.signature(fn)
+    except (ValueError, TypeError):
+        return False
+
+    _positional_kinds = {
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.POSITIONAL_ONLY,
+    }
+    first_param = next(
+        (p for p in sig.parameters.values() if p.kind in _positional_kinds), None
+    )
+    if first_param is None:
+        return False
+
+    try:
+        hints = get_type_hints(fn)
+        annotation = hints.get(first_param.name, inspect.Parameter.empty)
+    except (NameError, AttributeError, TypeError):
+        annotation = first_param.annotation
+
+    if annotation is inspect.Parameter.empty:
+        return False
+
+    if isinstance(annotation, type) and issubclass(annotation, BaseMessage):
+        return True
+
+    if isinstance(annotation, str):
+        resolved = annotation.strip("'\"")
+        msg_classes = {
+            "BaseMessage",
+            "HumanMessage",
+            "AIMessage",
+            "SystemMessage",
+            "ChatMessage",
+            "ToolMessage",
+            "FunctionMessage",
+        }
+        base = resolved.rsplit(".", 1)[-1]
+        if base in msg_classes:
+            return True
+
+    return False
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support
@@ -1093,6 +1140,7 @@ def trim_messages(
     start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
     text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+    token_counter_is_per_message: bool = False,
 ) -> list[BaseMessage]:
     r"""Trim messages to be below a token count.
 
@@ -1183,6 +1231,11 @@ def trim_messages(
             splitter assumes that separators are kept, so that split contents can be
             directly concatenated to recreate the original text. Defaults to splitting
             on newlines.
+        token_counter_is_per_message: If `True`, `token_counter` is treated as a
+            per-message callable `(msg: BaseMessage) -> int`. Auto-detection works
+            for annotated callables whose first positional parameter is typed as
+            `BaseMessage` or a subclass. Use this flag for lambdas or unannotated
+            callables, which cannot be reliably auto-detected.
 
     Returns:
         List of trimmed `BaseMessage`.
@@ -1417,11 +1470,8 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
+        if token_counter_is_per_message or _is_per_message_token_counter(
+            actual_token_counter
         ):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
