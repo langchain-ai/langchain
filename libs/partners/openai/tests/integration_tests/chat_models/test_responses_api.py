@@ -8,6 +8,12 @@ from typing import Annotated, Any, Literal, cast
 import openai
 import pytest
 from langchain.agents import create_agent
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ToolCallRequest,
+    hook_config,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1397,79 +1403,84 @@ def test_tool_search_streaming(output_version: str) -> None:
 
 @pytest.mark.vcr
 def test_client_executed_tool_search() -> None:
-    """Test client-executed tool search (execution='client')."""
-
     @tool
     def get_weather(location: str) -> str:
         """Get the current weather for a location."""
         return f"The weather in {location} is sunny and 72°F"
 
-    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=True)
-    llm_with_tools = llm.bind_tools(
-        [
-            {
-                "type": "tool_search",
-                "execution": "client",
-                "description": "Search for available tools to help answer the question.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "goal": {"type": "string"},
-                    },
-                    "required": ["goal"],
-                    "additionalProperties": False,
-                },
-            },
-        ]
-    )
-
-    # Turn 1: model emits a tool_search_call (execution=client)
-    input_message = HumanMessage("What's the weather in San Francisco?")
-    response_1 = llm_with_tools.invoke([input_message])
-    assert isinstance(response_1, AIMessage)
-    tool_search_calls = [
-        block
-        for block in response_1.content
-        if isinstance(block, dict) and block.get("type") == "tool_search_call"
-    ]
-    assert len(tool_search_calls) == 1
-    tsc = tool_search_calls[0]
-    assert tsc.get("execution") == "client"
-    call_id = tsc["call_id"]
-    assert call_id is not None
-
-    # Turn 2: return tool_search_output with loaded tools, model makes function_call
-    retrieved_tool_schema = {
-        "type": "function",
-        "defer_loading": True,
-        **convert_to_openai_tool(get_weather)["function"],
-    }
-    tool_search_output = {
-        "type": "tool_search_output",
+    tool_search_config: dict = {
+        "type": "tool_search",
         "execution": "client",
-        "call_id": call_id,
-        "status": "completed",
-        "tools": [retrieved_tool_schema],
+        "description": "Search for available tools to help answer the question.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "goal": {"type": "string"},
+            },
+            "required": ["goal"],
+            "additionalProperties": False,
+        },
     }
-    response_2 = llm_with_tools.invoke(
-        [input_message, response_1, HumanMessage(content=[tool_search_output])],
-    )
-    assert isinstance(response_2, AIMessage)
-    assert response_2.tool_calls
-    tc = response_2.tool_calls[0]
-    assert tc["name"] == "get_weather"
 
-    # Turn 3: return function result, model responds with text
-    tool_result = get_weather.invoke(tc)
-    assert isinstance(tool_result, ToolMessage)
-    response_3 = llm_with_tools.invoke(
-        [
-            input_message,
-            response_1,
-            HumanMessage(content=[tool_search_output]),
-            response_2,
-            tool_result,
-        ],
+    class ClientToolSearchMiddleware(AgentMiddleware):
+        @hook_config(can_jump_to=["model"])
+        def after_model(self, state: AgentState, runtime: Any) -> dict[str, Any] | None:
+            last_message = state["messages"][-1]
+            if not isinstance(last_message, AIMessage):
+                return None
+            for block in last_message.content:
+                if isinstance(block, dict) and block.get("type") == "tool_search_call":
+                    call_id = block.get("call_id")
+                    tool_search_output = {
+                        "type": "tool_search_output",
+                        "execution": "client",
+                        "call_id": call_id,
+                        "status": "completed",
+                        "tools": [
+                            # Add arbitrary tool selection logic
+                            {
+                                "type": "function",
+                                "defer_loading": True,
+                                **convert_to_openai_tool(get_weather)["function"],
+                            }
+                        ],
+                    }
+                    return {
+                        "messages": [HumanMessage(content=[tool_search_output])],
+                        "jump_to": "model",
+                    }
+            return None
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Any,
+        ) -> Any:
+            if request.tool_call["name"] == "get_weather":
+                return handler(request.override(tool=get_weather))
+            return handler(request)
+
+    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=True)
+
+    agent = create_agent(
+        model=llm,
+        tools=[tool_search_config],
+        middleware=[ClientToolSearchMiddleware()],
     )
-    assert isinstance(response_3, AIMessage)
-    assert response_3.content
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("What's the weather in San Francisco?")]}
+    )
+    messages = result["messages"]
+    search_tool_call = messages[1]
+    assert search_tool_call.content[0]["type"] == "tool_search_call"
+
+    search_tool_output = messages[2]
+    assert search_tool_output.content[0]["type"] == "tool_search_output"
+
+    tool_call = messages[3]
+    assert tool_call.tool_calls
+
+    assert isinstance(messages[4], ToolMessage)
+
+    assert messages[5].text
