@@ -2958,3 +2958,81 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+# --- Tests for per-message token_counter detection (issue #35629) ---
+
+_PER_MSG_TRIM_INPUT = [
+    HumanMessage("What is 2 + 2?"),
+    AIMessage("It is 4."),
+    HumanMessage("What about 3 + 3?"),
+]
+
+
+def test_trim_messages_lambda_token_counter() -> None:
+    """Lambda per-message counters have no annotation and should be detected."""
+    result = trim_messages(
+        _PER_MSG_TRIM_INPUT,
+        max_tokens=5,
+        token_counter=lambda msg: len(msg.content.split()),
+        strategy="last",
+    )
+    # "What about 3 + 3?" = 5 tokens, fits exactly
+    assert result == [HumanMessage("What about 3 + 3?")]
+
+
+def test_trim_messages_unannotated_token_counter() -> None:
+    """Un-annotated per-message counters should be detected via probing."""
+
+    def counter_no_annotation(msg):  # noqa: ANN001
+        return len(msg.content.split())
+
+    result = trim_messages(
+        _PER_MSG_TRIM_INPUT,
+        max_tokens=5,
+        token_counter=counter_no_annotation,
+        strategy="last",
+    )
+    assert result == [HumanMessage("What about 3 + 3?")]
+
+
+def test_trim_messages_string_annotation_token_counter() -> None:
+    """String-annotated per-message counters should be detected."""
+
+    def counter_string(msg: "BaseMessage") -> int:  # noqa: UP037
+        return len(msg.content.split())
+
+    result = trim_messages(
+        _PER_MSG_TRIM_INPUT,
+        max_tokens=5,
+        token_counter=counter_string,
+        strategy="last",
+    )
+    assert result == [HumanMessage("What about 3 + 3?")]
+
+
+def test_trim_messages_subclass_annotation_token_counter() -> None:
+    """Counters annotated with a BaseMessage subclass should be detected."""
+
+    def counter_subclass(msg: HumanMessage) -> int:
+        return len(msg.content.split())
+
+    result = trim_messages(
+        _PER_MSG_TRIM_INPUT,
+        max_tokens=5,
+        token_counter=counter_subclass,
+        strategy="last",
+    )
+    assert result == [HumanMessage("What about 3 + 3?")]
+
+
+def test_trim_messages_list_counter_len_still_works() -> None:
+    """Built-in ``len`` (per-list counter) must not be misclassified."""
+    result = trim_messages(
+        _PER_MSG_TRIM_INPUT,
+        max_tokens=2,
+        token_counter=len,
+        strategy="last",
+    )
+    # len counts messages, not tokens — last 2 messages
+    assert result == [AIMessage("It is 4."), HumanMessage("What about 3 + 3?")]

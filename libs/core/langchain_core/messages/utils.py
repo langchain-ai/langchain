@@ -1076,6 +1076,72 @@ def merge_message_runs(
     return merged
 
 
+def _is_per_message_token_counter(fn: Callable) -> bool:
+    """Detect whether a callable token counter operates on individual messages.
+
+    Returns ``True`` if *fn* is a **per-message** counter (takes a single
+    :class:`BaseMessage`), ``False`` if it is a **per-list** counter (takes a
+    list of messages).
+
+    The previous implementation used an identity check
+    (``annotation is BaseMessage``) which failed for lambdas, un-annotated
+    functions, string annotations, ``BaseMessage`` sub-class annotations, and
+    postponed annotations (``from __future__ import annotations``).
+
+    The new implementation handles these cases with a three-tier strategy:
+
+    1. **Class annotation** – ``issubclass`` instead of ``is``.
+    2. **String annotation** – match against known message class names.
+    3. **No annotation** – probe by calling the function with a single dummy
+       message and catching ``TypeError`` / ``AttributeError``.
+    """
+    try:
+        sig = inspect.signature(fn)
+    except (ValueError, TypeError):
+        return False
+
+    params = list(sig.parameters.values())
+    if not params:
+        return False
+
+    annotation = params[0].annotation
+
+    # 1. Class annotation: use issubclass to handle BaseMessage sub-classes.
+    if isinstance(annotation, type) and issubclass(annotation, BaseMessage):
+        return True
+
+    # 2. String annotation: covers `from __future__ import annotations` and
+    #    explicit `"BaseMessage"` / `"HumanMessage"` etc.
+    if isinstance(annotation, str):
+        _message_class_names = {
+            cls.__name__
+            for cls in (
+                BaseMessage,
+                HumanMessage,
+                AIMessage,
+                SystemMessage,
+                ChatMessage,
+                FunctionMessage,
+                ToolMessage,
+            )
+        }
+        return annotation in _message_class_names
+
+    # 3. No annotation (lambdas, un-annotated functions): probe by calling with
+    #    a single dummy message.  Built-in list-level callables like ``len``
+    #    will raise ``TypeError`` here because ``BaseMessage`` has no
+    #    ``__len__``; list-iterating counters will raise ``TypeError`` because
+    #    ``BaseMessage`` is not iterable.
+    if annotation is inspect.Parameter.empty:
+        try:
+            fn(HumanMessage(content="a"))
+            return True
+        except (TypeError, AttributeError):
+            return False
+
+    return False
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support
@@ -1417,12 +1483,7 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
-        ):
+        if _is_per_message_token_counter(actual_token_counter):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
