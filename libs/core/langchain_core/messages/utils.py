@@ -14,7 +14,7 @@ import inspect
 import json
 import logging
 import math
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, MutableSequence, Sequence
 from functools import partial, wraps
 from typing import (
     TYPE_CHECKING,
@@ -26,6 +26,8 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
+    get_origin,
+    get_type_hints,
     overload,
 )
 from xml.sax.saxutils import escape, quoteattr
@@ -1076,6 +1078,72 @@ def merge_message_runs(
     return merged
 
 
+def _is_per_message_token_counter(fn: Callable) -> bool:  # type: ignore[type-arg]
+    """Determine if a callable token counter operates per-message or per-list.
+
+    Uses ``typing.get_type_hints`` to robustly resolve the first parameter's
+    annotation (handles ``from __future__ import annotations``, string
+    annotations, and subclasses of ``BaseMessage``).  Falls back to raw
+    ``inspect.signature`` when ``get_type_hints`` fails.
+
+    Returns ``True`` when the callable should be called once *per message*
+    (i.e. its first parameter is annotated as a ``BaseMessage`` or subclass).
+    Unannotated callables (lambdas, bare ``def``) are treated as per-list for
+    backward compatibility.
+    """
+    annotation = None
+
+    # 1. Try to get the resolved type hint (handles string / postponed annotations)
+    try:
+        hints = get_type_hints(fn)
+        if hints:
+            annotation = next(iter(hints.values()))
+    except Exception:  # noqa: BLE001
+        logger.debug("get_type_hints failed for %s", fn)
+
+    # 2. Fall back to raw annotation from inspect.signature
+    if annotation is None:
+        try:
+            param = next(iter(inspect.signature(fn).parameters.values()))
+            if param.annotation is not inspect.Parameter.empty:
+                annotation = param.annotation
+        except (StopIteration, ValueError, TypeError):
+            pass
+
+    # 3. No annotation at all (lambdas, bare functions) → per-list (backward compat)
+    if annotation is None:
+        return False
+
+    # 4. If the annotation is a string we couldn't resolve, check for message-like
+    if isinstance(annotation, str):
+        lowered = annotation.lower()
+        if any(kw in lowered for kw in ("list", "sequence", "iterable")):
+            return False
+        return any(kw in lowered for kw in ("message", "basemessage"))
+
+    # 5. Check if annotation is a generic collection type (list[...], Sequence[...])
+    origin = get_origin(annotation)
+    if origin is not None and origin in (
+        list,
+        tuple,
+        set,
+        frozenset,
+        Sequence,
+        MutableSequence,
+        Iterable,
+    ):
+        return False
+
+    # 6. Check if annotation is a concrete collection class
+    if isinstance(annotation, type) and issubclass(
+        annotation, (list, tuple, set, frozenset, Sequence)
+    ):
+        return False
+
+    # 7. Check if annotation is BaseMessage or a subclass → per-message
+    return isinstance(annotation, type) and issubclass(annotation, BaseMessage)
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support
@@ -1417,12 +1485,7 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
-        ):
+        if _is_per_message_token_counter(actual_token_counter):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]

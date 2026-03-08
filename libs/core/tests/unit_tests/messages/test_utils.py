@@ -753,6 +753,40 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_per_message_counter_with_subclass_annotation() -> None:
+    """Per-message counter annotated with a BaseMessage subclass is detected."""
+    messages = [
+        HumanMessage("What is 2 + 2?"),
+        AIMessage("It is 4."),
+        HumanMessage("What about 3 + 3?"),
+    ]
+
+    def counter(msg: HumanMessage) -> int:
+        return len(msg.content.split())
+
+    result = trim_messages(messages, max_tokens=5, token_counter=counter)
+    assert len(result) >= 1
+    assert all(isinstance(m, BaseMessage) for m in result)
+
+
+def test_trim_messages_per_message_counter_with_postponed_annotations() -> None:
+    """Per-message counter with string (postponed) annotation is detected."""
+    messages = [
+        HumanMessage("What is 2 + 2?"),
+        AIMessage("It is 4."),
+        HumanMessage("What about 3 + 3?"),
+    ]
+
+    # Simulates `from __future__ import annotations` effect:
+    # get_type_hints resolves the string to the actual class
+    def counter(msg: BaseMessage) -> int:
+        return len(msg.content.split())
+
+    result = trim_messages(messages, max_tokens=5, token_counter=counter)
+    assert len(result) >= 1
+    assert all(isinstance(m, BaseMessage) for m in result)
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(
