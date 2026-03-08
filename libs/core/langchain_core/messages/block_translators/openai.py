@@ -984,9 +984,9 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     mcp_list_tools_result["index"] = f"lc_mltr_{block['index'] + 1}"
                 yield cast("types.ServerToolResult", mcp_list_tools_result)
 
-            elif block_type == "tool_search_call" and block.get(
-                "execution"
-            ) == "server":
+            elif (
+                block_type == "tool_search_call" and block.get("execution") == "server"
+            ):
                 tool_search_call: dict[str, Any] = {
                     "type": "server_tool_call",
                     "name": "tool_search",
@@ -1004,9 +1004,10 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     tool_search_call["extras"] = extras
                 yield cast("types.ServerToolCall", tool_search_call)
 
-            elif block_type == "tool_search_output" and block.get(
-                "execution"
-            ) == "server":
+            elif (
+                block_type == "tool_search_output"
+                and block.get("execution") == "server"
+            ):
                 tool_search_output: dict[str, Any] = {
                     "type": "server_tool_result",
                     "tool_call_id": block["id"],
