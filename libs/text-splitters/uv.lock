@@ -1262,6 +1262,8 @@ lint = [
 test = [
     { name = "freezegun" },
     { name = "langchain-core" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
@@ -1272,6 +1274,8 @@ test = [
 test-integration = [
     { name = "en-core-web-sm" },
     { name = "nltk" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "scipy", version = "1.16.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "sentence-transformers" },
     { name = "spacy", marker = "python_full_version < '3.14'" },
@@ -1302,6 +1306,7 @@ lint = [
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "../core" },
+    { name = "numpy", specifier = ">=1.24.0,<3.0.0" },
     { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<2.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -1312,6 +1317,7 @@ test = [
 test-integration = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
+    { name = "numpy", specifier = ">=1.24.0,<3.0.0" },
     { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
     { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
     { name = "sentence-transformers", specifier = ">=3.0.1,<6.0.0" },

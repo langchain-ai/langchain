@@ -36,6 +36,7 @@ from langchain_text_splitters.markdown import (
 )
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
+from langchain_text_splitters.semantic import SemanticChunker
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
@@ -60,6 +61,7 @@ __all__ = [
     "PythonCodeTextSplitter",
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
+    "SemanticChunker",
     "SentenceTransformersTokenTextSplitter",
     "SpacyTextSplitter",
     "TextSplitter",
