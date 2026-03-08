@@ -336,6 +336,21 @@ def apply_strategy(
     raise ValueError(msg)
 
 
+def _normalize_match(match: dict, pii_type: str) -> PIIMatch:  # type: ignore[type-arg]
+    """Normalize a detector match dict into a PIIMatch.
+
+    Custom detectors may return dicts with ``text`` instead of ``value``
+    and may omit ``type``.  This helper ensures all required keys are
+    present so downstream strategy functions don't raise ``KeyError``.
+    """
+    return PIIMatch(
+        type=match.get("type", pii_type),
+        value=match.get("value") or match.get("text", ""),
+        start=match["start"],
+        end=match["end"],
+    )
+
+
 def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector:
     """Return a callable detector for the given configuration.
 
@@ -373,7 +388,17 @@ def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector
             ]
 
         return regex_detector
-    return detector
+
+    # Wrap custom callable detectors so their output is normalized.
+    # This allows detectors that return dicts with "text" instead of
+    # "value" (or that omit "type") to work without raising KeyError.
+    raw_detector = detector
+
+    def normalizing_detector(content: str) -> list[PIIMatch]:
+        raw_matches = raw_detector(content)
+        return [_normalize_match(m, pii_type) for m in raw_matches]
+
+    return normalizing_detector
 
 
 @dataclass(frozen=True)
