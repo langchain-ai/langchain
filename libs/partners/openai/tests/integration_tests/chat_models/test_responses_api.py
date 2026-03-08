@@ -236,6 +236,41 @@ def test_agent_loop(output_version: Literal["responses/v1", "v1"]) -> None:
     assert isinstance(response, AIMessage)
 
 
+@pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_agent_loop_streaming(output_version: Literal["responses/v1", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatOpenAI(
+        model="gpt-5.2",
+        use_responses_api=True,
+        reasoning={"effort": "medium", "summary": "auto"},
+        streaming=True,
+        output_version=output_version,
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = llm_with_tools.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
+
+
 class Foo(BaseModel):
     response: str
 
