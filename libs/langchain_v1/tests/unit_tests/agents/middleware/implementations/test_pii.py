@@ -1,5 +1,6 @@
 """Tests for PII detection middleware."""
 
+import re
 from typing import Any
 
 import pytest
@@ -564,7 +565,6 @@ class TestCustomDetector:
         Custom detectors documented to return {"text", "start", "end"} caused
         KeyError: 'value' when used with hash or mask strategies.
         """
-        import re
 
         def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
             return [
@@ -588,7 +588,6 @@ class TestCustomDetector:
 
     def test_custom_callable_detector_with_text_key_mask(self) -> None:
         """Custom detectors returning 'text' instead of 'value' must work with mask strategy."""
-        import re
 
         def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
             return [
