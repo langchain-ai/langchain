@@ -296,6 +296,55 @@ class TestPathTraversalSecurity:
         assert result == "No matches found"
         assert "secret" not in result
 
+    def test_path_with_dots_in_filename_not_blocked(self, tmp_path: Path) -> None:
+        """Test that filenames containing '..' (like [...nextauth].ts) are not blocked."""
+        # Create a Next.js-style catch-all route file
+        pages_dir = tmp_path / "pages" / "api" / "auth"
+        pages_dir.mkdir(parents=True)
+        nextauth_file = pages_dir / "[...nextauth].ts"
+        nextauth_file.write_text("export default handler\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(
+            pattern="*.ts", path="/pages/api/auth"
+        )
+
+        assert "[...nextauth].ts" in result
+
+    def test_path_with_dots_in_directory_name_not_blocked(self, tmp_path: Path) -> None:
+        """Test that directory names containing '..' are allowed when not a traversal."""
+        dotdir = tmp_path / "my..folder"
+        dotdir.mkdir()
+        (dotdir / "file.txt").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.txt", path="/my..folder")
+
+        assert "/my..folder/file.txt" in result
+
+    def test_grep_path_with_dots_in_filename(self, tmp_path: Path) -> None:
+        """Test that grep works on paths with '..' in filenames."""
+        pages_dir = tmp_path / "pages"
+        pages_dir.mkdir()
+        nextauth_file = pages_dir / "[...nextauth].ts"
+        nextauth_file.write_text("export default handler\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(
+            root_path=str(tmp_path), use_ripgrep=False
+        )
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="handler", path="/pages")
+
+        assert "[...nextauth].ts" in result
+
 
 class TestExpandIncludePatterns:
     """Tests for _expand_include_patterns helper function."""

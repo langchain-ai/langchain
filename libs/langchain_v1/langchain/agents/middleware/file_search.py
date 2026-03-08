@@ -238,8 +238,10 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not path.startswith("/"):
             path = "/" + path
 
-        # Check for path traversal
-        if ".." in path or "~" in path:
+        # Check for path traversal -- reject ".." or "~" as discrete path
+        # segments but allow them inside filenames (e.g. "[...nextauth].ts").
+        segments = Path(path).parts
+        if ".." in segments or "~" in segments:
             msg = "Path traversal not allowed"
             raise ValueError(msg)
 
