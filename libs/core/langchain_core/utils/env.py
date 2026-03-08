@@ -27,8 +27,8 @@ def get_from_dict_or_env(
     data: dict[str, Any],
     key: str | list[str],
     env_key: str,
-    default: str | None = None,
-) -> str:
+    default: Any = None,
+) -> Any:
     """Get a value from a dictionary or an environment variable.
 
     Args:
@@ -46,18 +46,18 @@ def get_from_dict_or_env(
     """
     if isinstance(key, (list, tuple)):
         for k in key:
-            if value := data.get(k):
-                return str(value)
+            if k in data and data[k] is not None:
+                return data[k]
 
-    if isinstance(key, str) and key in data and data[key]:
-        return str(data[key])
+    if isinstance(key, str) and key in data and data[key] is not None:
+        return data[key]
 
     key_for_err = key[0] if isinstance(key, (list, tuple)) else key
 
     return get_from_env(key_for_err, env_key, default=default)
 
 
-def get_from_env(key: str, env_key: str, default: str | None = None) -> str:
+def get_from_env(key: str, env_key: str, default: Any = None) -> Any:
     """Get a value from a dictionary or an environment variable.
 
     Args:
