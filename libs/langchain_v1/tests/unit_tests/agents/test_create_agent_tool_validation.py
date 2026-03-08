@@ -2,10 +2,11 @@ import sys
 from typing import Annotated, Any
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langgraph.prebuilt import InjectedStore, ToolRuntime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
+from typing_extensions import NotRequired
 
 from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState
@@ -376,3 +377,94 @@ def test_create_agent_error_only_model_controllable_params() -> None:
     assert "super_secret_password" not in content, (
         "Error should NOT contain password value (from system-injected state)"
     )
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
+)
+def test_injected_state_not_required_field_absent() -> None:
+    """Test InjectedState with a NotRequired field that is absent from state.
+
+    When a tool parameter is annotated with InjectedState("field") and the
+    referenced field is declared as NotRequired in the custom state schema,
+    the ToolNode should not raise a KeyError if that field was never populated
+    in the state. Instead, it should inject None.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35585
+    """
+
+    class CustomAgentState(AgentState[Any]):
+        city: NotRequired[str]
+
+    @dec_tool
+    def get_weather(
+        city: Annotated[str | None, InjectedState("city")],
+    ) -> str:
+        """Get weather for a given city."""
+        return f"Weather in {city}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {}, "id": "call_1", "name": "get_weather"}],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[get_weather],
+        state_schema=CustomAgentState,
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "Weather in None"
+    assert tool_messages[0].status != "error"
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
+)
+def test_injected_state_not_required_field_present() -> None:
+    """Test InjectedState with a NotRequired field that IS present in state.
+
+    When the NotRequired field is populated, InjectedState should inject
+    the actual value, not None.
+    """
+
+    class CustomAgentState(AgentState[Any]):
+        city: NotRequired[str]
+
+    @dec_tool
+    def get_weather(
+        city: Annotated[str | None, InjectedState("city")],
+    ) -> str:
+        """Get weather for a given city."""
+        return f"Weather in {city}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {}, "id": "call_1", "name": "get_weather"}],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[get_weather],
+        state_schema=CustomAgentState,
+    )
+
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("What's the weather?")],
+            "city": "Philadelphia",
+        }
+    )
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "Weather in Philadelphia"
+    assert tool_messages[0].status != "error"
