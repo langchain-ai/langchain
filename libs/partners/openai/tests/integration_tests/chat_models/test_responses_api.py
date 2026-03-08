@@ -1408,18 +1408,22 @@ def test_client_executed_tool_search() -> None:
         """Get the current weather for a location."""
         return f"The weather in {location} is sunny and 72°F"
 
+    def search_tools(goal: str) -> list[dict]:
+        """Search for available tools to help answer the question."""
+        return [
+            {
+                "type": "function",
+                "defer_loading": True,
+                **convert_to_openai_tool(get_weather)["function"],
+            }
+        ]
+
+    tool_search_schema = convert_to_openai_tool(search_tools, strict=True)
     tool_search_config: dict = {
         "type": "tool_search",
         "execution": "client",
-        "description": "Search for available tools to help answer the question.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "goal": {"type": "string"},
-            },
-            "required": ["goal"],
-            "additionalProperties": False,
-        },
+        "description": tool_search_schema["function"]["description"],
+        "parameters": tool_search_schema["function"]["parameters"],
     }
 
     class ClientToolSearchMiddleware(AgentMiddleware):
@@ -1431,19 +1435,15 @@ def test_client_executed_tool_search() -> None:
             for block in last_message.content:
                 if isinstance(block, dict) and block.get("type") == "tool_search_call":
                     call_id = block.get("call_id")
+                    args = block.get("arguments", {})
+                    goal = args.get("goal", "") if isinstance(args, dict) else ""
+                    loaded_tools = search_tools(goal)
                     tool_search_output = {
                         "type": "tool_search_output",
                         "execution": "client",
                         "call_id": call_id,
                         "status": "completed",
-                        "tools": [
-                            # Add arbitrary tool selection logic
-                            {
-                                "type": "function",
-                                "defer_loading": True,
-                                **convert_to_openai_tool(get_weather)["function"],
-                            }
-                        ],
+                        "tools": loaded_tools,
                     }
                     return {
                         "messages": [HumanMessage(content=[tool_search_output])],
