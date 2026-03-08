@@ -232,6 +232,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        exceptions_map: dict[int, Exception] = {}
 
         not_set: list[Output] = []
         result = not_set
@@ -258,15 +259,18 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                         **kwargs,
                     )
                     # Register the results of the inputs that have succeeded, mapping
-                    # back to their original indices.
+                    # back to their original indices.  Track failures in exceptions_map
+                    # so the fallback path can reconstruct the output list correctly.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
+                            exceptions_map[orig_idx] = r
                             if not first_exception:
                                 first_exception = r
-                            continue
-                        orig_idx = remaining_indices[offset]
-                        results_map[orig_idx] = r
+                        else:
+                            results_map[orig_idx] = r
+                            exceptions_map.pop(orig_idx, None)
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -283,7 +287,11 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exceptions_map:
+                outputs.append(exceptions_map[idx])
             else:
+                # Should only be reached when all items failed before any attempt
+                # (result is the initial sentinel), fall back to popping from result.
                 outputs.append(result.pop(0))
         return outputs
 
@@ -308,6 +316,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        exceptions_map: dict[int, Exception] = {}
 
         not_set: list[Output] = []
         result = not_set
@@ -333,15 +342,18 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                         **kwargs,
                     )
                     # Register the results of the inputs that have succeeded, mapping
-                    # back to their original indices.
+                    # back to their original indices.  Track failures in exceptions_map
+                    # so the fallback path can reconstruct the output list correctly.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
+                            exceptions_map[orig_idx] = r
                             if not first_exception:
                                 first_exception = r
-                            continue
-                        orig_idx = remaining_indices[offset]
-                        results_map[orig_idx] = r
+                        else:
+                            results_map[orig_idx] = r
+                            exceptions_map.pop(orig_idx, None)
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -358,6 +370,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exceptions_map:
+                outputs.append(exceptions_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
