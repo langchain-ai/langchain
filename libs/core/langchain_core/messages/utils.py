@@ -1098,7 +1098,7 @@ def _is_per_message_token_counter(fn: Callable) -> bool:  # type: ignore[type-ar
         hints = get_type_hints(fn)
         if hints:
             annotation = next(iter(hints.values()))
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.debug("get_type_hints failed for %s", fn)
 
     # 2. Fall back to raw annotation from inspect.signature
