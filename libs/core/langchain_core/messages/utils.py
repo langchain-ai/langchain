@@ -1078,7 +1078,7 @@ def merge_message_runs(
     return merged
 
 
-def _is_per_message_token_counter(fn: Callable) -> bool:  # type: ignore[type-arg]
+def _is_per_message_token_counter(fn: Callable) -> bool:
     """Determine if a callable token counter operates per-message or per-list.
 
     Uses ``typing.get_type_hints`` to robustly resolve the first parameter's
