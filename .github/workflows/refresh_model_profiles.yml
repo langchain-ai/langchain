@@ -68,7 +68,7 @@ jobs:
 
       - name: "🔀 Create pull request"
         id: create-pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: bot/refresh-model-profiles

@@ -1,6 +1,9 @@
 (Replace this entire block of text)
 
 Read the full contributing guidelines: https://docs.langchain.com/oss/python/contributing/overview
+
+All contributions must be in English. See our [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
+
 If you paste a large clearly AI generated description here your PR may be IGNORED or CLOSED!
 
 Thank you for contributing to LangChain! Follow these steps to have your pull request considered as ready for review.
