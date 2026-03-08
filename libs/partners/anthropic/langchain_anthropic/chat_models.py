@@ -822,12 +822,8 @@ class ChatAnthropic(BaseChatModel):
     top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: float | None = Field(600.0, alias="timeout")
-    """Timeout for requests to Claude API.
-
-    Defaults to 600 seconds, matching the Anthropic SDK default read/write/pool timeout.
-    Can be a float or `None` (no timeout).
-    """
+    default_request_timeout: float | None = Field(None, alias="timeout")
+    """Timeout for requests to Claude API."""
 
     # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
     max_retries: int = 2
@@ -1055,10 +1051,12 @@ class ChatAnthropic(BaseChatModel):
             "max_retries": self.max_retries,
             "default_headers": default_headers,
         }
-        # value <= 0 indicates the param should be ignored. None is a meaningful value
-        # for Anthropic client and treated differently than not specifying the param at
-        # all.
-        if self.default_request_timeout is None or self.default_request_timeout > 0:
+        # When None, omit timeout so the SDK's built-in default applies.
+        # Values <= 0 are also omitted.
+        if (
+            self.default_request_timeout is not None
+            and self.default_request_timeout > 0
+        ):
             client_params["timeout"] = self.default_request_timeout
 
         return client_params
