@@ -496,6 +496,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     stream = context.run(
                         runnable.stream,
                         input,
+                        child_config,
                         **kwargs,
                     )
                     chunk: Output = context.run(next, stream)
