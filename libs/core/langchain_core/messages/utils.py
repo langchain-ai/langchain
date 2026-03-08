@@ -1417,11 +1417,18 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
+        params = list(inspect.signature(actual_token_counter).parameters.values())
+        if len(params) == 1 and (
+            params[0].annotation is BaseMessage
+            or (
+                isinstance(params[0].annotation, str)
+                and params[0].annotation in ("BaseMessage", "langchain_core.messages.BaseMessage")
+            )
+            or (
+                inspect.isclass(params[0].annotation)
+                and issubclass(params[0].annotation, BaseMessage)
+            )
+            or params[0].annotation is inspect.Parameter.empty
         ):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
