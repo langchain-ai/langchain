@@ -127,6 +127,20 @@ def test_openai_client_caching() -> None:
     assert llm1.root_client._client is not llm7.root_client._client
 
 
+def test_timeout_omitted_from_client_params_when_none() -> None:
+    """Timeout should be omitted from client_params when None (default),
+    letting the SDK's built-in default apply."""
+    with patch("openai.OpenAI") as mock_sync:
+        ChatOpenAI(model="gpt-4.1-mini", api_key=SecretStr("test"))
+        sync_kwargs = mock_sync.call_args
+        assert "timeout" not in sync_kwargs.kwargs
+
+    with patch("openai.OpenAI") as mock_sync:
+        ChatOpenAI(model="gpt-4.1-mini", api_key=SecretStr("test"), timeout=30)
+        sync_kwargs = mock_sync.call_args
+        assert sync_kwargs.kwargs.get("timeout") == 30
+
+
 def test_profile() -> None:
     model = ChatOpenAI(model="gpt-4")
     assert model.profile
