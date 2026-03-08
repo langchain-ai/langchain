@@ -232,6 +232,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        remaining_indices: list[int] = list(range(len(inputs)))
 
         not_set: list[Output] = []
         result = not_set
@@ -279,12 +280,27 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Build a map of remaining (failed) indices to their exceptions from
+        # the last attempt's result list.  ``remaining_indices`` still reflects
+        # the indices that had not yet succeeded when the last attempt ran.
+        remaining_exceptions: dict[int, Output | Exception] = {}
+        remaining_idx = 0
+        for orig_idx in remaining_indices:
+            if orig_idx not in results_map:
+                remaining_exceptions[orig_idx] = result[remaining_idx]
+            remaining_idx += 1
+
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in remaining_exceptions:
+                outputs.append(remaining_exceptions[idx])
             else:
-                outputs.append(result.pop(0))
+                # Fallback – should not happen in practice.
+                outputs.append(
+                    cast("Output", RuntimeError("Unexpected missing result"))
+                )
         return outputs
 
     @override
@@ -308,6 +324,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        remaining_indices: list[int] = list(range(len(inputs)))
 
         not_set: list[Output] = []
         result = not_set
@@ -354,12 +371,27 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
+        # Build a map of remaining (failed) indices to their exceptions from
+        # the last attempt's result list.  ``remaining_indices`` still reflects
+        # the indices that had not yet succeeded when the last attempt ran.
+        remaining_exceptions: dict[int, Output | Exception] = {}
+        remaining_idx = 0
+        for orig_idx in remaining_indices:
+            if orig_idx not in results_map:
+                remaining_exceptions[orig_idx] = result[remaining_idx]
+            remaining_idx += 1
+
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in remaining_exceptions:
+                outputs.append(remaining_exceptions[idx])
             else:
-                outputs.append(result.pop(0))
+                # Fallback – should not happen in practice.
+                outputs.append(
+                    cast("Output", RuntimeError("Unexpected missing result"))
+                )
         return outputs
 
     @override
