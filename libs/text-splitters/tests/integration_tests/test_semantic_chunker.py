@@ -291,12 +291,10 @@ class TestSemanticChunkerStress:
         assert len(chunks) >= 1
         joined = "".join(chunks)
         assert (
-            "Retrieval-augmented generation systems depend on chunk quality."
-            in joined
+            "Retrieval-augmented generation systems depend on chunk quality." in joined
         )
         assert (
-            "Structure-aware segmentation helps preserve context integrity."
-            in joined
+            "Structure-aware segmentation helps preserve context integrity." in joined
         )
         if len(chunks) > 1:
             assert all(len(chunk) >= 180 for chunk in chunks[:-1])
