@@ -283,7 +283,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         # Map last retry results back to original indices so that
         # successfully-retried values don't overwrite unrelated positions.
-        last_result_map = dict(zip(last_remaining_indices, result))
+        last_result_map = dict(zip(last_remaining_indices, result, strict=True))
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
@@ -364,7 +364,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         # Map last retry results back to original indices so that
         # successfully-retried values don't overwrite unrelated positions.
-        last_result_map = dict(zip(last_remaining_indices, result))
+        last_result_map = dict(zip(last_remaining_indices, result, strict=True))
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
