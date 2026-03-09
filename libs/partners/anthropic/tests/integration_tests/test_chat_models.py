@@ -8,10 +8,10 @@ import os
 from base64 import b64encode
 from typing import Literal, cast
 
+import anthropic
 import httpx
 import pytest
 import requests
-from anthropic import BadRequestError
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.callbacks import CallbackManager
@@ -1163,16 +1163,33 @@ def test_structured_output_thinking_force_tool_use() -> None:
     # Structured output currently relies on forced tool use, which is not supported
     # when `thinking` is enabled. When this test fails, it means that the feature
     # is supported and the workarounds in `with_structured_output` should be removed.
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        max_tokens=5_000,  # type: ignore[call-arg]
-        thinking={"type": "enabled", "budget_tokens": 2_000},
-    ).bind_tools(
-        [GenerateUsername],
-        tool_choice="GenerateUsername",
-    )
-    with pytest.raises(BadRequestError):
-        llm.invoke("Generate a username for Sally with green hair")
+    client = anthropic.Anthropic()
+    with pytest.raises(anthropic.BadRequestError):
+        _ = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=5_000,
+            thinking={"type": "enabled", "budget_tokens": 2_000},
+            tool_choice={"type": "tool", "name": "get_weather"},
+            tools=[
+                {
+                    "name": "get_weather",
+                    "description": "Get the weather at a location.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": {"type": "string"},
+                        },
+                        "required": ["location"],
+                    },
+                }
+            ],
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What's the weather in San Francisco?",
+                }
+            ],
+        )
 
 
 def test_effort_parameter() -> None:

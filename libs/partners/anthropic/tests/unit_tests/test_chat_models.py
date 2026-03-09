@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import os
+import warnings
 from collections.abc import Callable
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
@@ -1689,8 +1690,6 @@ def test_streaming_cache_token_reporting() -> None:
 
     from anthropic.types import MessageDeltaUsage
 
-    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
-
     # Create a mock message_start event
     mock_message = MagicMock()
     mock_message.model = MODEL_NAME
@@ -1720,8 +1719,10 @@ def test_streaming_cache_token_reporting() -> None:
     message_delta_event.usage = mock_delta_usage
     message_delta_event.delta = mock_delta
 
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
     # Test message_start event
-    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_start_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -1729,7 +1730,7 @@ def test_streaming_cache_token_reporting() -> None:
     )
 
     # Test message_delta event - should contain complete usage metadata (w/ cache)
-    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_delta_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -2395,6 +2396,26 @@ def test_extras_with_multiple_fields() -> None:
     assert "input_examples" in tool_def
 
 
+@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
+def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
+    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
+    block = {"type": block_type, "other": "foo"}
+    human = HumanMessage("hi")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "openai"},
+    )
+    _, msgs = _format_messages([human, ai])
+    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
+
+    ai_anthropic = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    _, msgs = _format_messages([human, ai_anthropic])
+    assert any(b["type"] == block_type for b in msgs[1]["content"])
+
+
 def test__format_messages_trailing_whitespace() -> None:
     """Test that trailing whitespace is trimmed from the final assistant message."""
     human = HumanMessage("foo")  # type: ignore[misc]
@@ -2500,3 +2521,89 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, anthropic.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/35539.
+
+    Anthropic API rejects forced tool_choice when thinking is enabled:
+    "Thinking may not be enabled when tool_choice forces tool use."
+    bind_tools should drop forced tool_choice and warn.
+    """
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+
+    # tool_choice="any" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+    assert "thinking is enabled" in str(w[0].message)
+
+    # tool_choice="auto" should NOT be dropped (auto is allowed)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "auto"}
+    assert len(w) == 0
+
+    # tool_choice=specific tool name should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "tool" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "tool", "name": "GetWeather"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "any" should also be dropped
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "any"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+
+def test_bind_tools_keeps_forced_tool_choice_when_thinking_disabled() -> None:
+    """When thinking is not enabled, forced tool_choice should pass through."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    # No thinking — tool_choice="any" should pass through
+    result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly None
+    chat_model_none = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=None,
+    )
+    result = chat_model_none.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly disabled — should NOT drop tool_choice
+    chat_model_disabled = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "disabled"},
+    )
+    result = chat_model_disabled.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}

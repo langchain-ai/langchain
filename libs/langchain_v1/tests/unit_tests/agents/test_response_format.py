@@ -926,7 +926,7 @@ class TestSupportsProviderStrategy:
 
     def test_allows_gemini_v3_with_tools(self) -> None:
         """Gemini 3 series models support structured output alongside tools."""
-        model = self._make_structured_model("gemini-3-pro-preview")
+        model = self._make_structured_model("gemini-3.1-pro-preview")
         assert _supports_provider_strategy(model, tools=[get_weather])
 
     @pytest.mark.parametrize(

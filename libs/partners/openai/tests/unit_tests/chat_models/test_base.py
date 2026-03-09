@@ -1388,6 +1388,49 @@ def test_structured_outputs_parser() -> None:
     assert result == parsed_response
 
 
+def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    class ModelOutput(BaseModel):
+        output: str
+
+    class MockParsedMessage(openai.BaseModel):
+        role: Literal["assistant"] = "assistant"
+        content: str = '{"output": "Paris"}'
+        parsed: None = None
+        refusal: str | None = None
+
+    class MockChoice(openai.BaseModel):
+        index: int = 0
+        finish_reason: Literal["stop"] = "stop"
+        message: MockParsedMessage
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-1"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "gpt-4o-mini"
+        choices: list[MockChoice]
+        usage: dict[str, int] | None = None
+
+    parsed_response = ModelOutput(output="Paris")
+    response = MockChatCompletion.model_construct(
+        choices=[
+            MockChoice.model_construct(
+                message=MockParsedMessage.model_construct(parsed=parsed_response)
+            )
+        ],
+        usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    )
+
+    llm = ChatOpenAI(model="gpt-4o-mini")
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = llm._create_chat_result(response)
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any("field_name='parsed'" in message for message in warning_messages)
+    assert result.generations[0].message.additional_kwargs["parsed"] == parsed_response
+
+
 def test_structured_outputs_parser_valid_falsy_response() -> None:
     class LunchBox(BaseModel):
         sandwiches: list[str]
@@ -2744,13 +2787,13 @@ def test_convert_from_v1_to_chat_completions(
                     "type": "function_call",
                     "call_id": "call_123",
                     "name": "get_weather",
-                    "arguments": '{"location": "San Francisco"}',
+                    "arguments": '{"location":"San Francisco"}',
                 },
                 {
                     "type": "function_call",
                     "call_id": "call_234",
                     "name": "get_weather_2",
-                    "arguments": '{"location": "New York"}',
+                    "arguments": '{"location":"New York"}',
                     "id": "fc_123",
                 },
                 {"type": "text", "text": "Hello "},
@@ -3431,3 +3474,113 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_tool_search_passthrough() -> None:
+    """Test that tool_search dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model="gpt-4o")
+    tool_search = {"type": "tool_search"}
+    bound = llm.bind_tools([tool_search])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "tool_search"} in payload["tools"]
+    assert "input" in payload
+
+
+def test_tool_search_with_defer_loading_extras() -> None:
+    """Test that defer_loading from BaseTool extras is merged into tool defs."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    llm = ChatOpenAI(model="gpt-4o")
+    bound = llm.bind_tools([get_weather, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    weather_tool = None
+    for t in payload["tools"]:
+        if t.get("type") == "function" and t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_namespace_passthrough() -> None:
+    """Test that namespace tool dicts are passed through unchanged."""
+    llm = ChatOpenAI(model="gpt-4o")
+    namespace_tool = {
+        "type": "namespace",
+        "name": "crm",
+        "description": "CRM tools.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "list_orders",
+                "description": "List orders.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                },
+            }
+        ],
+    }
+    bound = llm.bind_tools([namespace_tool, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    ns = None
+    for t in payload["tools"]:
+        if t.get("type") == "namespace":
+            ns = t
+            break
+    assert ns is not None
+    assert ns["name"] == "crm"
+    assert ns["tools"][0]["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_defer_loading_in_responses_api_payload() -> None:
+    """Test that defer_loading is preserved in Responses API tool format."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+    payload = {
+        "model": "gpt-4o",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                    },
+                },
+                "defer_loading": True,
+            },
+            {"type": "tool_search"},
+        ],
+    }
+    result = _construct_responses_api_payload(messages, payload)
+    weather_tool = None
+    for t in result["tools"]:
+        if t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert weather_tool["type"] == "function"
+    assert {"type": "tool_search"} in result["tools"]
