@@ -162,6 +162,30 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)
+                elif (
+                    isinstance(e, dict)
+                    and e.get("index") is None
+                    and e.get("id") not in (None, "")
+                ):
+                    # No valid index but has an id — merge with an existing element
+                    # that shares the same id. This handles providers that send
+                    # index=null but use id to identify tool call chunks.
+                    id_matches = [
+                        i
+                        for i, e_left in enumerate(merged)
+                        if isinstance(e_left, dict) and e_left.get("id") == e.get("id")
+                    ]
+                    if id_matches:
+                        new_e = (
+                            {k: v for k, v in e.items() if k != "type"}
+                            if "type" in e
+                            else e
+                        )
+                        merged[id_matches[0]] = merge_dicts(
+                            merged[id_matches[0]], new_e
+                        )
+                    else:
+                        merged.append(e)
                 else:
                     merged.append(e)
     return merged

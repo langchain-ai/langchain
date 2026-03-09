@@ -12,6 +12,8 @@ from pydantic.v1 import BaseModel as PydanticV1BaseModel
 from pydantic.v1 import Field as PydanticV1Field
 
 from langchain_core import utils
+from langchain_core.messages import AIMessageChunk
+from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
@@ -433,6 +435,40 @@ def test_generation_chunk_addition_type_error() -> None:
             [{"no_index": "b"}],
             [{"no_index": "a"}, {"no_index": "b"}],
         ),
+        # index=None with same id: should merge (provider sends null index, uses id)
+        (
+            [{"index": None, "id": "call_abc", "name": "get_weather", "args": ""}],
+            [{"index": None, "id": "call_abc", "name": None, "args": '{"city": "NY"}'}],
+            [
+                {
+                    "index": None,
+                    "id": "call_abc",
+                    "name": "get_weather",
+                    "args": '{"city": "NY"}',
+                }
+            ],
+        ),
+        # index=None with different ids: should stay separate
+        (
+            [{"index": None, "id": "call_001", "name": "tool_a", "args": ""}],
+            [{"index": None, "id": "call_002", "name": "tool_b", "args": ""}],
+            [
+                {"index": None, "id": "call_001", "name": "tool_a", "args": ""},
+                {"index": None, "id": "call_002", "name": "tool_b", "args": ""},
+            ],
+        ),
+        # index=None with no id: falls back to append (original behavior)
+        (
+            [{"index": None, "name": "tool_a"}],
+            [{"index": None, "name": "tool_a"}],
+            [{"index": None, "name": "tool_a"}, {"index": None, "name": "tool_a"}],
+        ),
+        # integer index still works normally (not affected by change)
+        (
+            [{"index": 0, "name": "tool_a", "args": ""}],
+            [{"index": 0, "name": None, "args": "val"}],
+            [{"index": 0, "name": "tool_a", "args": "val"}],
+        ),
     ],
 )
 def test_merge_lists(
@@ -457,6 +493,50 @@ def test_merge_lists_all_none() -> None:
     """Test `merge_lists` with all `None` arguments."""
     result = merge_lists(None, None, None)
     assert result is None
+
+
+def test_merge_lists_tool_call_chunks_null_index() -> None:
+    """Test that tool call chunks with index=None are merged by id."""
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(name="get_weather", args="", id="call_abc123", index=None)
+        ],
+    )
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(
+                name="", args='{"city": "Boston"}', id="call_abc123", index=None
+            )
+        ],
+    )
+    accumulated = chunk1 + chunk2
+    assert len(accumulated.tool_call_chunks) == 1
+    tc = accumulated.tool_call_chunks[0]
+    assert tc["name"] == "get_weather"
+    assert tc["args"] == '{"city": "Boston"}'
+    assert tc["id"] == "call_abc123"
+
+
+def test_merge_lists_tool_call_chunks_null_index_different_ids() -> None:
+    """Test that tool call chunks with index=None and different ids stay separate."""
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(name="tool_a", args="", id="call_001", index=None)
+        ],
+    )
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            ToolCallChunk(name="tool_b", args="", id="call_002", index=None)
+        ],
+    )
+    accumulated = chunk1 + chunk2
+    assert len(accumulated.tool_call_chunks) == 2
+    assert accumulated.tool_call_chunks[0]["id"] == "call_001"
+    assert accumulated.tool_call_chunks[1]["id"] == "call_002"
 
 
 @pytest.mark.parametrize(
