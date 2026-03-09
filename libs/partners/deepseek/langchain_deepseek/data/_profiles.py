@@ -32,7 +32,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "deepseek-reasoner": {
         "max_input_tokens": 128000,
-        "max_output_tokens": 128000,
+        "max_output_tokens": 64000,
         "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,

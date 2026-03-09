@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to file a bug report.
+        Thank you for taking the time to file a bug report. All issues must be written in English. See our [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
 
         For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
 
@@ -65,6 +65,7 @@ body:
         - label: langchain-mistralai
         - label: langchain-nomic
         - label: langchain-ollama
+        - label: langchain-openrouter
         - label: langchain-perplexity
         - label: langchain-qdrant
         - label: langchain-xai
