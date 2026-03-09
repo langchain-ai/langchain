@@ -1,0 +1,120 @@
+# Require external PRs to link to an approved issue or discussion using
+# GitHub auto-close keywords (Fixes #NNN, Closes #NNN, Resolves #NNN).
+#
+# - Reacts to the "external" label applied by tag-external-contributions.yml,
+#   avoiding a duplicate org membership check.
+# - Also re-checks on PR edits/reopens for PRs that already have the label.
+# - Adds a "missing-issue-link" label on failure; removes it on pass.
+# - Posts a comment explaining the requirement on failure.
+# - Deduplicates comments via an HTML marker so re-runs don't spam.
+#
+# Dependency: tag-external-contributions.yml must run first to apply the
+# "external" label on new PRs. Both workflows trigger on pull_request_target
+# opened events; this workflow additionally listens for the "labeled" event
+# to chain off the external classification.
+
+name: Require Issue Link
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  check-issue-link:
+    # Run when the "external" label is added, or on edit/reopen if already labeled
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'external') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Check for issue link
+        id: check-link
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const pattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#(\d+)/gi;
+            const matches = [...body.matchAll(pattern)];
+
+            if (matches.length > 0) {
+              const issues = matches.map(m => `#${m[1]}`).join(', ');
+              console.log(`Found issue link(s): ${issues}`);
+              core.setOutput('has-link', 'true');
+            } else {
+              console.log('No issue link found in PR body');
+              core.setOutput('has-link', 'false');
+            }
+
+      - name: Add missing-issue-link label
+        if: steps.check-link.outputs.has-link != 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: prNumber, labels: ['missing-issue-link'],
+            });
+
+      - name: Remove missing-issue-link label
+        if: steps.check-link.outputs.has-link == 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            try {
+              await github.rest.issues.removeLabel({
+                owner, repo, issue_number: prNumber, name: 'missing-issue-link',
+              });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+
+      - name: Post comment and fail
+        if: steps.check-link.outputs.has-link != 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const marker = '<!-- require-issue-link -->';
+
+            const body = [
+              marker,
+              '**This PR is missing a linked issue.** All external contributions must reference an approved issue or discussion.',
+              '',
+              'Please add one of the following to your PR description:',
+              '- `Fixes #<issue_number>`',
+              '- `Closes #<issue_number>`',
+              '- `Resolves #<issue_number>`',
+              '',
+              'If no issue exists yet, [open one](https://github.com/' + owner + '/' + repo + '/issues/new/choose) and wait for maintainer approval before proceeding.',
+            ].join('\n');
+
+            // Deduplicate: check for existing comment with the marker
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: prNumber, per_page: 100 },
+            );
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            if (!existing) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+              });
+              console.log('Posted issue-link requirement comment');
+            } else {
+              console.log('Comment already exists — skipping');
+            }
+
+            core.setFailed('PR must reference an issue using auto-close keywords (e.g., "Fixes #123").');
