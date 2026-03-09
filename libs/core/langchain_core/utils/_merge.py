@@ -173,7 +173,15 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                     id_matches = [
                         i
                         for i, e_left in enumerate(merged)
-                        if isinstance(e_left, dict) and e_left.get("id") == e.get("id")
+                        if (
+                            isinstance(e_left, dict)
+                            and e_left.get("id") == e.get("id")
+                            and (
+                                e_left.get("name") in (None, "")
+                                or e.get("name") in (None, "")
+                                or e_left.get("name") == e.get("name")
+                            )
+                        )
                     ]
                     if id_matches:
                         new_e = (

@@ -1019,8 +1019,8 @@
           A chunk of a tool call (yielded when streaming).
           
           When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
-          string attributes are concatenated. Chunks are only merged if their values of
-          `index` are equal and not `None`.
+          string attributes are concatenated. Chunks are merged if their values of `index`
+          are equal and not `None`, or if `index` is `None` but their `id` values match.
           
           Example:
           ```python
@@ -2434,8 +2434,8 @@
           A chunk of a tool call (yielded when streaming).
           
           When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
-          string attributes are concatenated. Chunks are only merged if their values of
-          `index` are equal and not `None`.
+          string attributes are concatenated. Chunks are merged if their values of `index`
+          are equal and not `None`, or if `index` is `None` but their `id` values match.
           
           Example:
           ```python
