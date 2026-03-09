@@ -1534,18 +1534,18 @@ def test_count_tokens_approximately_list_content() -> None:
 def test_count_tokens_approximately_tool_calls() -> None:
     tool_calls = [{"name": "test_tool", "args": {"foo": "bar"}, "id": "1"}]
     messages = [
-        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        # tool calls compact json -> 71 chars + 9 role chars -> 20 + 3 = 23 tokens
         AIMessage(content="", tool_calls=tool_calls),
         # 15 chars + 4 role chars -> 5 + 3 = 8 tokens
         HumanMessage(content="Regular message"),
     ]
-    assert count_tokens_approximately(messages) == 33
+    assert count_tokens_approximately(messages) == 31
     # AI message w/ both content and tool calls
-    # 94 chars + 9 role chars -> 26 + 3 = 29 tokens
+    # 86 chars + 9 role chars -> 24 + 3 = 27 tokens
     messages = [
         AIMessage(content="Regular message", tool_calls=tool_calls),
     ]
-    assert count_tokens_approximately(messages) == 29
+    assert count_tokens_approximately(messages) == 27
 
 
 def test_count_tokens_approximately_custom_token_length() -> None:
@@ -1580,16 +1580,16 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
     messages = [
         # 13 chars + 6 role chars -> 5 + 3 = 8 tokens
         SystemMessage(content="System prompt"),
-        # '[{"foo": "bar"}]' -> 16 chars + 4 role chars -> 5 + 3 = 8 tokens
+        # json.dumps({"foo":"bar"}) -> 13 chars + 4 role chars -> 5 + 3 = 8 tokens
         HumanMessage(content=[{"foo": "bar"}]),
-        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        # tool calls compact json -> 71 chars + 9 role chars -> 20 + 3 = 23 tokens
         AIMessage(content="", tool_calls=tool_calls),
         # 13 chars + 4 role chars + 9 name chars + 1 tool call ID char ->
         # 7 + 3 = 10 tokens
         ToolMessage(content="Tool response", name="test_tool", tool_call_id="1"),
     ]
     token_count = count_tokens_approximately(messages)
-    assert token_count == 51
+    assert token_count == 49
 
     # Ensure that count is consistent if we do one message at a time
     assert sum(count_tokens_approximately([m]) for m in messages) == token_count
@@ -2852,7 +2852,7 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     message_with_unknown_block = HumanMessage(
         content=[
             {"type": "text", "text": "hello"},
-            {"type": "foo", "bar": "baz"},  # unknown type, falls back to repr(block)
+            {"type": "foo", "bar": "baz"},  # unknown type, falls back to json.dumps
         ]
     )
 
@@ -2896,7 +2896,9 @@ def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> 
     )
     count_list = count_tokens_approximately([ai_with_list_content])
 
-    assert count_text - 1 <= count_list <= count_text + 1
+    # The two representations should produce similar counts (not double-counted).
+    # Small differences are expected since the serialization formats differ slightly.
+    assert count_text - 5 <= count_list <= count_text + 5
 
 
 def test_count_tokens_approximately_respects_count_name_flag() -> None:
@@ -2958,3 +2960,153 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+def test_count_tokens_approximately_tool_use_content_block() -> None:
+    """Test that tool_use content blocks are counted via compact JSON, not repr()."""
+    tool_use_block = {
+        "type": "tool_use",
+        "id": "toolu_01AbCdEf",
+        "name": "search_memories",
+        "input": {"query": "recent events", "limit": 10},
+    }
+    msg = AIMessage(content=[tool_use_block])
+    count = count_tokens_approximately([msg])
+
+    # The character contribution of the tool_use block should be based on
+    # compact JSON, not repr(). Verify by computing the expected count.
+    block_chars = len(json.dumps(tool_use_block, separators=(",", ":")))
+    role_chars = len("assistant")
+    expected = math.ceil((block_chars + role_chars) / 4.0) + 3
+    assert count == expected
+
+    # Verify it's strictly less than what repr() would produce
+    repr_chars = len(repr(tool_use_block))
+    assert block_chars < repr_chars
+
+
+def test_count_tokens_approximately_tool_use_nested_input() -> None:
+    """Test tool_use with deeply nested input is counted accurately."""
+    tool_use_block = {
+        "type": "tool_use",
+        "id": "toolu_abc123",
+        "name": "complex_tool",
+        "input": {
+            "filters": {"status": "active", "tags": ["a", "b", "c"]},
+            "options": {"verbose": True, "limit": 100},
+        },
+    }
+    msg = AIMessage(content=[tool_use_block])
+    count = count_tokens_approximately([msg])
+
+    block_chars = len(json.dumps(tool_use_block, separators=(",", ":")))
+    role_chars = len("assistant")
+    expected = math.ceil((block_chars + role_chars) / 4.0) + 3
+    assert count == expected
+
+
+def test_count_tokens_approximately_tool_result_text_content() -> None:
+    """Test that tool_result blocks with string content are counted correctly."""
+    tool_result_block = {
+        "type": "tool_result",
+        "tool_use_id": "toolu_01AbCdEf",
+        "content": "The weather is sunny and 72°F.",
+    }
+    msg = HumanMessage(content=[tool_result_block])
+    count = count_tokens_approximately([msg])
+
+    # Only the text content should be counted, not the entire block repr
+    content_chars = len("The weather is sunny and 72°F.")
+    role_chars = len("user")
+    expected = math.ceil((content_chars + role_chars) / 4.0) + 3
+    assert count == expected
+
+
+def test_count_tokens_approximately_tool_result_nested_blocks() -> None:
+    """Test tool_result with nested content blocks (text + image)."""
+    tool_result_block = {
+        "type": "tool_result",
+        "tool_use_id": "toolu_abc",
+        "content": [
+            {"type": "text", "text": "Here is the chart:"},
+            {"type": "image", "source": {"type": "base64", "data": "..."}},
+        ],
+    }
+    msg = HumanMessage(content=[tool_result_block])
+    count = count_tokens_approximately([msg])
+
+    # text content (18 chars) + role (4 chars) + image penalty (85 tokens)
+    text_chars = len("Here is the chart:")
+    role_chars = len("user")
+    expected = math.ceil((text_chars + role_chars) / 4.0) + 3 + 85
+    assert count == expected
+
+
+def test_count_tokens_approximately_multiple_tool_use_blocks() -> None:
+    """Test message with multiple tool_use blocks in content."""
+    blocks = [
+        {"type": "text", "text": "Let me search for that."},
+        {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "name": "search",
+            "input": {"query": "weather"},
+        },
+        {
+            "type": "tool_use",
+            "id": "toolu_2",
+            "name": "calendar",
+            "input": {"date": "2024-01-01"},
+        },
+    ]
+    msg = AIMessage(content=blocks)
+    count = count_tokens_approximately([msg])
+
+    text_chars = len("Let me search for that.")
+    tool1_chars = len(json.dumps(blocks[1], separators=(",", ":")))
+    tool2_chars = len(json.dumps(blocks[2], separators=(",", ":")))
+    role_chars = len("assistant")
+    total_chars = text_chars + tool1_chars + tool2_chars + role_chars
+    expected = math.ceil(total_chars / 4.0) + 3
+    assert count == expected
+
+
+def test_count_tokens_approximately_thinking_block() -> None:
+    """Test that thinking/reasoning blocks are counted by text content."""
+    msg = AIMessage(
+        content=[
+            {"type": "thinking", "thinking": "Let me reason about this step by step."},
+            {"type": "text", "text": "The answer is 42."},
+        ]
+    )
+    count = count_tokens_approximately([msg])
+
+    thinking_chars = len("Let me reason about this step by step.")
+    text_chars = len("The answer is 42.")
+    role_chars = len("assistant")
+    expected = math.ceil((thinking_chars + text_chars + role_chars) / 4.0) + 3
+    assert count == expected
+
+
+def test_count_tokens_approximately_tool_use_less_than_repr() -> None:
+    """Verify tool_use counting produces fewer chars than repr() would.
+
+    This is the core fix for langchain-ai/langchain#35558: repr() produces
+    Python dict representations ~2.4x longer than compact JSON for nested inputs.
+    """
+    tool_use_block = {
+        "type": "tool_use",
+        "id": "toolu_01AbCdEfGhIjKlMnOp",
+        "name": "search_memories",
+        "input": {
+            "query": "what happened at the meeting",
+            "filters": {"date_range": "last_week", "importance": "high"},
+            "max_results": 5,
+            "include_metadata": True,
+        },
+    }
+    json_chars = len(json.dumps(tool_use_block, separators=(",", ":")))
+    repr_chars = len(repr(tool_use_block))
+
+    # Compact JSON should be meaningfully shorter than repr()
+    assert json_chars < repr_chars

@@ -2276,9 +2276,42 @@ def count_tokens_approximately(
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
-                    # Conservative estimate for unknown block types
+                    # Count tool_use blocks by compact JSON of the block
+                    elif block_type == "tool_use":
+                        message_chars += len(json.dumps(block, separators=(",", ":")))
+                    # Count tool_result blocks by their content
+                    elif block_type == "tool_result":
+                        tr_content = block.get("content", "")
+                        if isinstance(tr_content, str):
+                            message_chars += len(tr_content)
+                        elif isinstance(tr_content, list):
+                            for sub in tr_content:
+                                if isinstance(sub, str):
+                                    message_chars += len(sub)
+                                elif isinstance(sub, dict):
+                                    sub_type = sub.get("type", "")
+                                    if sub_type == "text":
+                                        message_chars += len(sub.get("text", ""))
+                                    elif sub_type in {"image", "image_url"}:
+                                        token_count += tokens_per_image
+                                    else:
+                                        message_chars += len(
+                                            json.dumps(sub, separators=(",", ":"))
+                                        )
+                                else:
+                                    message_chars += len(repr(sub))
+                        else:
+                            message_chars += len(
+                                json.dumps(tr_content, separators=(",", ":"))
+                            )
+                    # Count thinking/reasoning blocks by text content
+                    elif block_type in {"thinking", "reasoning"}:
+                        message_chars += len(
+                            block.get("thinking", block.get("data", ""))
+                        )
+                    # Fallback: compact JSON for unknown dict blocks
                     else:
-                        message_chars += len(repr(block))
+                        message_chars += len(json.dumps(block, separators=(",", ":")))
                 else:
                     # Fallback for unexpected block types
                     message_chars += len(repr(block))
@@ -2293,8 +2326,7 @@ def count_tokens_approximately(
             and not isinstance(message.content, list)
             and message.tool_calls
         ):
-            tool_calls_content = repr(message.tool_calls)
-            message_chars += len(tool_calls_content)
+            message_chars += len(json.dumps(message.tool_calls, separators=(",", ":")))
 
         if isinstance(message, ToolMessage):
             message_chars += len(message.tool_call_id)
