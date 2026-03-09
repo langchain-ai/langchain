@@ -107,7 +107,7 @@ jobs:
               if (error.status !== 404) throw error;
             }
 
-      - name: Post comment and fail
+      - name: Post comment, close PR, and fail
         if: steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true'
         uses: actions/github-script@v8
         with:
@@ -122,21 +122,22 @@ jobs:
             if (!hasLink) {
               lines = [
                 marker,
-                '**This PR is missing a linked issue.** All external contributions must reference an approved issue or discussion.',
+                '**This PR has been automatically closed** because it does not link to an approved issue.',
                 '',
-                'Please add one of the following to your PR description:',
-                '- `Fixes #<issue_number>`',
-                '- `Closes #<issue_number>`',
-                '- `Resolves #<issue_number>`',
-                '',
-                'If no issue exists yet, [open one](https://github.com/' + owner + '/' + repo + '/issues/new/choose) and wait for maintainer approval before proceeding.',
+                'All external contributions must reference an approved issue or discussion. Please:',
+                '1. Find or [open an issue](https://github.com/' + owner + '/' + repo + '/issues/new/choose) describing the change',
+                '2. Wait for a maintainer to approve and assign you',
+                '3. Add `Fixes #<issue_number>`, `Closes #<issue_number>`, or `Resolves #<issue_number>` to your PR description',
+                '4. Ask a maintainer to reopen this PR',
               ];
             } else {
               lines = [
                 marker,
-                '**You are not assigned to the linked issue.** External contributors must be assigned to an issue before opening a PR for it.',
+                '**This PR has been automatically closed** because you are not assigned to the linked issue.',
                 '',
-                'Please comment on the issue to request assignment from a maintainer, then update this PR once you have been assigned.',
+                'External contributors must be assigned to an issue before opening a PR for it. Please:',
+                '1. Comment on the linked issue to request assignment from a maintainer',
+                '2. Once assigned, ask a maintainer to reopen this PR',
               ];
             }
 
@@ -167,6 +168,17 @@ jobs:
               console.log('Updated existing comment with new message');
             } else {
               console.log('Comment already exists — skipping');
+            }
+
+            // Close the PR
+            if (context.payload.pull_request.state === 'open') {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: prNumber,
+                state: 'closed',
+              });
+              console.log(`Closed PR #${prNumber}`);
             }
 
             const reason = !hasLink
