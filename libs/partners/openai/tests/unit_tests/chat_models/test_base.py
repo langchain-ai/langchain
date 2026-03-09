@@ -3599,3 +3599,142 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_disable_streaming_tool_calling_forces_stream_false_sync() -> None:
+    """When disable_streaming='tool_calling' redirects to _generate,
+    the payload sent to the API must have stream=False even if
+    self.streaming is True.  Regression test for #35436."""
+    mock_completion = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion",
+        "created": 1689989000,
+        "model": "gpt-4",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": '{"city":"Tokyo"}',
+                            },
+                        }
+                    ],
+                },
+                "finish_reason": "tool_calls",
+            }
+        ],
+    }
+
+    llm = ChatOpenAI(
+        model="gpt-4",
+        api_key=SecretStr("fake-key"),
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+
+    mock_raw_resp = MagicMock()
+    mock_raw_resp.headers = {"content-type": "application/json"}
+    mock_raw_resp.parse.return_value = mock_completion
+
+    mock_client = MagicMock()
+    mock_client.with_raw_response.create.return_value = mock_raw_resp
+
+    with patch.object(llm, "client", mock_client):
+        result = llm.invoke(
+            "What is the weather in Tokyo?",
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "description": "Get weather",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"city": {"type": "string"}},
+                        },
+                    },
+                }
+            ],
+        )
+
+    call_kwargs = mock_client.with_raw_response.create.call_args
+    payload = call_kwargs.kwargs if call_kwargs.kwargs else call_kwargs.args[0]
+    assert payload["stream"] is False, (
+        "stream must be False in the API payload when _generate is called"
+    )
+    assert result.tool_calls[0]["name"] == "get_weather"
+
+
+async def test_disable_streaming_tool_calling_forces_stream_false_async() -> None:
+    """Async variant: payload must have stream=False. Regression test for #35436."""
+    mock_completion = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion",
+        "created": 1689989000,
+        "model": "gpt-4",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": '{"city":"Tokyo"}',
+                            },
+                        }
+                    ],
+                },
+                "finish_reason": "tool_calls",
+            }
+        ],
+    }
+
+    llm = ChatOpenAI(
+        model="gpt-4",
+        api_key=SecretStr("fake-key"),
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+
+    mock_raw_resp = MagicMock()
+    mock_raw_resp.parse.return_value = mock_completion
+
+    mock_async_client = AsyncMock()
+    mock_async_client.with_raw_response.create.return_value = mock_raw_resp
+
+    with patch.object(llm, "async_client", mock_async_client):
+        result = await llm.ainvoke(
+            "What is the weather in Tokyo?",
+            tools=[
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "description": "Get weather",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"city": {"type": "string"}},
+                        },
+                    },
+                }
+            ],
+        )
+
+    call_kwargs = mock_async_client.with_raw_response.create.call_args
+    payload = call_kwargs.kwargs if call_kwargs.kwargs else call_kwargs.args[0]
+    assert payload["stream"] is False, (
+        "stream must be False in the API payload when _agenerate is called"
+    )
+    assert result.tool_calls[0]["name"] == "get_weather"
