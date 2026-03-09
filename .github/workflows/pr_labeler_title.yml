@@ -11,6 +11,9 @@ on:
   pull_request_target:
     types: [opened, edited]
 
+permissions:
+  contents: read
+
 jobs:
   pr-title-labeler:
     name: "label"
@@ -22,7 +25,7 @@ jobs:
 
     steps:
       - name: Label PR based on title
-        uses: bcoe/conventional-release-labels@v1
+        uses: bcoe/conventional-release-labels@b503ca473654e07521c051628c5f1f969e7436da # v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           type_labels: >-

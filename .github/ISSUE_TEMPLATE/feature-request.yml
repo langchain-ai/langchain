@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to request a new feature.
+        Thank you for taking the time to request a new feature. All contributions must be in English. See our [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
 
         Use this to request NEW FEATURES or ENHANCEMENTS in LangChain. For bug reports, please use the bug report template. For usage questions and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
 
