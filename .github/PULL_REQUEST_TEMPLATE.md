@@ -31,7 +31,7 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
 Additional guidelines:
 
-  - We ask that if you use generative AI for your contribution, you include a disclaimer.
+  - All external PRs must link to an issue or discussion where a solution has been approved by a maintainer. PRs without prior approval will be closed.
   - PRs should not touch more than one package unless absolutely necessary.
   - Do not update the `uv.lock` files or add dependencies to `pyproject.toml` files (even optional ones) unless you have explicit permission to do so by a maintainer.
 
