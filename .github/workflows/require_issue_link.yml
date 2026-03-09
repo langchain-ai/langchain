@@ -7,6 +7,8 @@
 # - Also re-checks on PR edits/reopens for PRs that already have the label.
 # - Validates the PR author is an assignee on at least one linked issue.
 # - Adds a "missing-issue-link" label on failure; removes it on pass.
+# - Automatically reopens PRs that were closed by this workflow once the
+#   check passes (e.g. author edits the body to add a valid issue link).
 # - Posts a comment explaining the requirement on failure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
@@ -92,7 +94,7 @@ jobs:
               owner, repo, issue_number: prNumber, labels: ['missing-issue-link'],
             });
 
-      - name: Remove missing-issue-link label
+      - name: Remove missing-issue-link label and reopen PR
         if: steps.check-link.outputs.has-link == 'true' && steps.check-link.outputs.is-assigned == 'true'
         uses: actions/github-script@v8
         with:
@@ -105,6 +107,18 @@ jobs:
               });
             } catch (error) {
               if (error.status !== 404) throw error;
+            }
+
+            // Reopen PR only if it was previously closed by this workflow
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            if (context.payload.pull_request.state === 'closed' && labels.includes('missing-issue-link')) {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: prNumber,
+                state: 'open',
+              });
+              console.log(`Reopened PR #${prNumber}`);
             }
 
       - name: Post comment, close PR, and fail
@@ -127,8 +141,7 @@ jobs:
                 'All external contributions must reference an approved issue or discussion. Please:',
                 '1. Find or [open an issue](https://github.com/' + owner + '/' + repo + '/issues/new/choose) describing the change',
                 '2. Wait for a maintainer to approve and assign you',
-                '3. Add `Fixes #<issue_number>`, `Closes #<issue_number>`, or `Resolves #<issue_number>` to your PR description',
-                '4. Ask a maintainer to reopen this PR',
+                '3. Add `Fixes #<issue_number>`, `Closes #<issue_number>`, or `Resolves #<issue_number>` to your PR description and the PR will be reopened automatically',
               ];
             } else {
               lines = [
@@ -137,7 +150,7 @@ jobs:
                 '',
                 'External contributors must be assigned to an issue before opening a PR for it. Please:',
                 '1. Comment on the linked issue to request assignment from a maintainer',
-                '2. Once assigned, ask a maintainer to reopen this PR',
+                '2. Once assigned, edit your PR description and the PR will be reopened automatically',
               ];
             }
 
