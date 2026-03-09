@@ -4363,6 +4363,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         input_.append(function_call)
 
         elif msg["role"] in ("user", "system", "developer"):
+            # The Responses API requires every input item to carry a top-level
+            # "type" field.  For user/system/developer messages that is "message".
+            # _convert_message_to_dict() does not add this field, so we inject it
+            # here to prevent a 400 "Invalid value: ''" error from the API.
+            msg.setdefault("type", "message")
             if isinstance(msg["content"], list):
                 new_blocks = []
                 non_message_item_types = ("mcp_approval_response", "tool_search_output")
