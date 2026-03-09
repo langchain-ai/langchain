@@ -16,8 +16,7 @@
 # Without it, the workflow will fail.
 #
 # Contributor tier thresholds:
-#   - trusted-contributor: >= 4 merged PRs
-#   - experienced-contributor: >= 10 merged PRs
+#   - trusted-contributor: >= 5 merged PRs
 
 name: Tag External Contributions
 
@@ -184,10 +183,9 @@ jobs:
             const author = item.user.login;
             const issueNumber = item.number;
 
-            const TRUSTED_THRESHOLD = 4;
-            const EXPERIENCED_THRESHOLD = 10;
+            const TRUSTED_THRESHOLD = 5;
 
-            const mergedQuery = `repo:${owner}/${repo} is:pr is:merged author:${author}`;
+            const mergedQuery = `repo:${owner}/${repo} is:pr is:merged author:"${author}"`;
             let mergedCount = 0;
             try {
               const result = await github.rest.search.issuesAndPullRequests({
@@ -201,12 +199,7 @@ jobs:
               return;
             }
 
-            let label = null;
-            if (mergedCount >= EXPERIENCED_THRESHOLD) {
-              label = 'experienced-contributor';
-            } else if (mergedCount >= TRUSTED_THRESHOLD) {
-              label = 'trusted-contributor';
-            }
+            const label = mergedCount >= TRUSTED_THRESHOLD ? 'trusted-contributor' : null;
 
             if (label) {
               await github.rest.issues.addLabels({
@@ -244,12 +237,11 @@ jobs:
             const maxItems = parseInt('${{ inputs.max_items }}') || 100;
             const backfillType = '${{ inputs.backfill_type }}';
 
-            const TRUSTED_THRESHOLD = 4;
-            const EXPERIENCED_THRESHOLD = 10;
+            const TRUSTED_THRESHOLD = 5;
             const LABEL_COLOR = 'b76e79';
 
             const sizeLabels = ['size: XS', 'size: S', 'size: M', 'size: L', 'size: XL'];
-            const tierLabels = ['trusted-contributor', 'experienced-contributor'];
+            const tierLabels = ['trusted-contributor'];
 
             // Ensure tier and size labels exist
             for (const name of [...tierLabels, ...sizeLabels]) {
@@ -287,7 +279,7 @@ jobs:
               if (isExternal) {
                 try {
                   const result = await github.rest.search.issuesAndPullRequests({
-                    q: `repo:${owner}/${repo} is:pr is:merged author:${author}`,
+                    q: `repo:${owner}/${repo} is:pr is:merged author:"${author}"`,
                     per_page: 1,
                   });
                   mergedCount = result?.data?.total_count ?? 0;
@@ -303,9 +295,7 @@ jobs:
             }
 
             function getTierLabel(mergedCount) {
-              if (mergedCount >= EXPERIENCED_THRESHOLD) return 'experienced-contributor';
-              if (mergedCount >= TRUSTED_THRESHOLD) return 'trusted-contributor';
-              return null;
+              return mergedCount >= TRUSTED_THRESHOLD ? 'trusted-contributor' : null;
             }
 
             function getSizeLabel(totalChangedLines) {

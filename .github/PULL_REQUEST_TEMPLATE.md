@@ -1,4 +1,6 @@
-(Replace this entire block of text)
+Fixes #
+
+<!-- Replace everything above this line with a 1-2 sentence description of your change. Keep the "Fixes #xx" keyword and update the issue number. -->
 
 Read the full contributing guidelines: https://docs.langchain.com/oss/python/contributing/overview
 
@@ -19,7 +21,7 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 2. PR description:
 
   - Write 1-2 sentences summarizing the change.
-  - If this PR addresses a specific issue, please include "Fixes #ISSUE_NUMBER" in the description to automatically close the issue when the PR is merged.
+  - The `Fixes #xx` line at the top is **required** for external contributions — update the issue number and keep the keyword. This links your PR to the approved issue and auto-closes it on merge.
   - If there are any breaking changes, please clearly describe them.
   - If this PR depends on another PR being merged first, please include "Depends on #PR_NUMBER" in the description.
 
@@ -31,7 +33,7 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
 Additional guidelines:
 
-  - We ask that if you use generative AI for your contribution, you include a disclaimer.
+  - All external PRs must link to an issue or discussion where a solution has been approved by a maintainer, and you must be assigned to that issue. PRs without prior approval will be closed.
   - PRs should not touch more than one package unless absolutely necessary.
   - Do not update the `uv.lock` files or add dependencies to `pyproject.toml` files (even optional ones) unless you have explicit permission to do so by a maintainer.
 
