@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langgraph.prebuilt import InjectedState, InjectedStore, ToolRuntime
 from langgraph.prebuilt.tool_node import (
@@ -48,11 +48,11 @@ class ToolNode(_ToolNode):
             return tool_call
 
         tool_call_copy: ToolCall = copy(tool_call)
-        injected_args: dict = {}
+        injected_args: dict[str, Any] = {}
 
         # Inject state
         if injected.state:
-            state = tool_runtime.state
+            state: Any = tool_runtime.state
             # Handle list state by converting to dict
             if isinstance(state, list):
                 required_fields = list(injected.state.values())
