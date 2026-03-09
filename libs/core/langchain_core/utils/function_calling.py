@@ -508,6 +508,8 @@ _WellKnownOpenAITools = (
     "image_generation",
     "web_search_preview",
     "web_search",
+    "tool_search",
+    "namespace",
 )
 
 

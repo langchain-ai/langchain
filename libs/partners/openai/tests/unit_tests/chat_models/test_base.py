@@ -2787,13 +2787,13 @@ def test_convert_from_v1_to_chat_completions(
                     "type": "function_call",
                     "call_id": "call_123",
                     "name": "get_weather",
-                    "arguments": '{"location": "San Francisco"}',
+                    "arguments": '{"location":"San Francisco"}',
                 },
                 {
                     "type": "function_call",
                     "call_id": "call_234",
                     "name": "get_weather_2",
-                    "arguments": '{"location": "New York"}',
+                    "arguments": '{"location":"New York"}',
                     "id": "fc_123",
                 },
                 {"type": "text", "text": "Hello "},
@@ -3474,3 +3474,113 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_tool_search_passthrough() -> None:
+    """Test that tool_search dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model="gpt-4o")
+    tool_search = {"type": "tool_search"}
+    bound = llm.bind_tools([tool_search])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "tool_search"} in payload["tools"]
+    assert "input" in payload
+
+
+def test_tool_search_with_defer_loading_extras() -> None:
+    """Test that defer_loading from BaseTool extras is merged into tool defs."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    llm = ChatOpenAI(model="gpt-4o")
+    bound = llm.bind_tools([get_weather, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    weather_tool = None
+    for t in payload["tools"]:
+        if t.get("type") == "function" and t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_namespace_passthrough() -> None:
+    """Test that namespace tool dicts are passed through unchanged."""
+    llm = ChatOpenAI(model="gpt-4o")
+    namespace_tool = {
+        "type": "namespace",
+        "name": "crm",
+        "description": "CRM tools.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "list_orders",
+                "description": "List orders.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                },
+            }
+        ],
+    }
+    bound = llm.bind_tools([namespace_tool, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    ns = None
+    for t in payload["tools"]:
+        if t.get("type") == "namespace":
+            ns = t
+            break
+    assert ns is not None
+    assert ns["name"] == "crm"
+    assert ns["tools"][0]["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_defer_loading_in_responses_api_payload() -> None:
+    """Test that defer_loading is preserved in Responses API tool format."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+    payload = {
+        "model": "gpt-4o",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                    },
+                },
+                "defer_loading": True,
+            },
+            {"type": "tool_search"},
+        ],
+    }
+    result = _construct_responses_api_payload(messages, payload)
+    weather_tool = None
+    for t in result["tools"]:
+        if t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert weather_tool["type"] == "function"
+    assert {"type": "tool_search"} in result["tools"]

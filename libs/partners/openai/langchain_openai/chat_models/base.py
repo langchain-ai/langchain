@@ -166,6 +166,7 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
 )
 
 
@@ -1984,6 +1985,14 @@ class BaseChatOpenAI(BaseChatModel):
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
+        for original, formatted in zip(tools, formatted_tools, strict=False):
+            if (
+                isinstance(original, BaseTool)
+                and hasattr(original, "extras")
+                and isinstance(original.extras, dict)
+                and "defer_loading" in original.extras
+            ):
+                formatted["defer_loading"] = original.extras["defer_loading"]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -3981,7 +3990,8 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
+                new_tools.append({"type": "function", **tool["function"], **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
@@ -4308,6 +4318,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_call",
                             "mcp_list_tools",
                             "mcp_approval_request",
+                            "tool_search_call",
+                            "tool_search_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4353,7 +4365,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response",)
+                non_message_item_types = ("mcp_approval_response", "tool_search_output")
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4510,6 +4522,8 @@ def _construct_lc_result_from_responses_api(
             "mcp_list_tools",
             "mcp_approval_request",
             "image_generation_call",
+            "tool_search_call",
+            "tool_search_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4719,6 +4733,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
+        "tool_search_call",
+        "tool_search_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
