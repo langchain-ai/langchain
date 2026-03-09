@@ -205,7 +205,7 @@ class Tee(Generic[T]):
         n: int = 2,
         *,
         lock: AbstractAsyncContextManager[Any] | None = None,
-    ):
+    ) -> None:
         """Create a `tee`.
 
         Args:

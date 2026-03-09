@@ -132,7 +132,7 @@ class Tee(Generic[T]):
         n: int = 2,
         *,
         lock: AbstractContextManager[Any] | None = None,
-    ):
+    ) -> None:
         """Create a `tee`.
 
         Args:
