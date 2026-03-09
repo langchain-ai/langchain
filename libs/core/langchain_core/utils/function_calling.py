@@ -783,8 +783,23 @@ def _parse_google_docstring(
     arg_descriptions = {}
     if args_block:
         arg = None
+        # Detect base indentation from the first argument line so we can
+        # distinguish new argument definitions from continuation lines.
+        arg_indent: int | None = None
         for line in args_block.split("\n")[1:]:
-            if ":" in line:
+            if not line.strip():
+                continue
+            current_indent = len(line) - len(line.lstrip())
+            if arg_indent is None and ":" in line:
+                arg_indent = current_indent
+            is_continuation = (
+                arg is not None
+                and arg_indent is not None
+                and current_indent > arg_indent
+            )
+            if is_continuation:
+                arg_descriptions[arg] += " " + line.strip()
+            elif ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
                 arg_name, _, annotations_ = arg.partition(" ")
