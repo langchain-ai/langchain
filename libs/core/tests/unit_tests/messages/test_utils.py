@@ -753,6 +753,93 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_per_message_lambda_counter() -> None:
+    messages = [
+        HumanMessage("hello world"),
+        AIMessage("hi there friend"),
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=2,
+        token_counter=lambda msg: len(msg.content.split()),
+        strategy="first",
+    )
+    assert len(result) == 1
+    assert result[0] == messages[0]
+
+
+def test_trim_messages_per_message_unannotated_counter() -> None:
+    def count(msg):  # type: ignore[no-untyped-def]
+        return len(msg.content.split())
+
+    messages = [
+        HumanMessage("hello world"),
+        AIMessage("hi there friend"),
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=2,
+        token_counter=count,
+        strategy="first",
+    )
+    assert len(result) == 1
+    assert result[0] == messages[0]
+
+
+def test_trim_messages_per_message_string_annotated_counter() -> None:
+    def count(msg: "BaseMessage") -> int:
+        return len(msg.content.split())
+
+    messages = [
+        HumanMessage("hello world"),
+        AIMessage("hi there friend"),
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=2,
+        token_counter=count,
+        strategy="first",
+    )
+    assert len(result) == 1
+    assert result[0] == messages[0]
+
+
+def test_trim_messages_per_message_subclass_annotated_counter() -> None:
+    def count(msg: HumanMessage) -> int:
+        return len(msg.content.split())
+
+    messages = [
+        HumanMessage("hello world"),
+        AIMessage("hi there friend"),
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=2,
+        token_counter=count,
+        strategy="first",
+    )
+    assert len(result) == 1
+    assert result[0] == messages[0]
+
+
+def test_trim_messages_list_counter_still_works() -> None:
+    def count(msgs: list[BaseMessage]) -> int:
+        return sum(len(m.content.split()) for m in msgs)
+
+    messages = [
+        HumanMessage("hello world"),
+        AIMessage("hi there friend"),
+    ]
+    result = trim_messages(
+        messages,
+        max_tokens=2,
+        token_counter=count,
+        strategy="first",
+    )
+    assert len(result) == 1
+    assert result[0] == messages[0]
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(

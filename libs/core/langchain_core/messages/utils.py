@@ -1076,6 +1076,66 @@ def merge_message_runs(
     return merged
 
 
+def _is_per_message_counter(fn: Callable) -> bool:
+    """Check if a callable takes a single BaseMessage rather than a list.
+
+    Handles lambdas, string annotations, subclass annotations, and
+    postponed annotations (PEP 563).
+    """
+    try:
+        sig = inspect.signature(fn)
+    except (ValueError, TypeError):
+        return False
+
+    params = list(sig.parameters.values())
+    if not params:
+        return False
+
+    first_param = params[0]
+    annotation = first_param.annotation
+
+    if annotation is inspect.Parameter.empty:
+        # No annotation: cannot determine from signature alone. Try resolving
+        # via get_type_hints in case postponed evaluation (PEP 563) is active
+        # in the caller's module.
+        try:
+            import typing
+
+            hints = typing.get_type_hints(fn)
+            first_key = next(iter(sig.parameters))
+            resolved = hints.get(first_key)
+            if resolved is not None and isinstance(resolved, type):
+                return issubclass(resolved, BaseMessage)
+        except Exception:
+            pass
+        return False
+
+    if isinstance(annotation, type):
+        return issubclass(annotation, BaseMessage)
+
+    if isinstance(annotation, str):
+        # Handle string annotations and postponed annotations (PEP 563).
+        try:
+            import typing
+
+            hints = typing.get_type_hints(fn)
+            first_key = next(iter(sig.parameters))
+            resolved = hints.get(first_key)
+            if resolved is not None and isinstance(resolved, type):
+                return issubclass(resolved, BaseMessage)
+        except Exception:
+            pass
+        base_name = annotation.split("[")[0].split(".")[-1].strip()
+        return base_name in {
+            cls.__name__ for cls in BaseMessage.__mro__ if cls is not object
+        } or base_name in {
+            cls.__name__
+            for cls in BaseMessage.__subclasses__()
+        }
+
+    return False
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support
@@ -1417,18 +1477,22 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
-        ):
+        if _is_per_message_counter(actual_token_counter):
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
         else:
-            list_token_counter = actual_token_counter
+            _counter = actual_token_counter
+
+            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+                try:
+                    return _counter(messages)  # type: ignore[arg-type]
+                except (TypeError, AttributeError):
+                    # The callable may be a per-message counter that we couldn't
+                    # detect from its signature (e.g. lambda, unannotated).
+                    # Fall back to calling it per-message.
+                    return sum(_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "
