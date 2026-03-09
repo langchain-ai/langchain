@@ -57,8 +57,7 @@ class ToolNode(_ToolNode):
             if isinstance(state, list):
                 required_fields = list(injected.state.values())
                 if (
-                    len(required_fields) == 1
-                    and required_fields[0] == self._messages_key
+                    len(required_fields) == 1 and required_fields[0] == self._messages_key
                 ) or required_fields[0] is None:
                     state = {self._messages_key: state}
                 else:
@@ -67,31 +66,20 @@ class ToolNode(_ToolNode):
                         f"Tool {tool_call['name']} requires "
                         f"graph state dict as input."
                     )
-                    if any(
-                        state_field for state_field in injected.state.values()
-                    ):
-                        required_fields_str = ", ".join(
-                            f for f in required_fields if f
-                        )
-                        err_msg += (
-                            f" State should contain fields "
-                            f"{required_fields_str}."
-                        )
+                    if any(state_field for state_field in injected.state.values()):
+                        required_fields_str = ", ".join(f for f in required_fields if f)
+                        err_msg += f" State should contain fields {required_fields_str}."
                     raise ValueError(err_msg)
 
             # Extract state values — use .get() / getattr default so that
             # NotRequired fields that are absent resolve to None (#35585).
             if isinstance(state, dict):
                 for tool_arg, state_field in injected.state.items():
-                    injected_args[tool_arg] = (
-                        state.get(state_field) if state_field else state
-                    )
+                    injected_args[tool_arg] = state.get(state_field) if state_field else state
             else:
                 for tool_arg, state_field in injected.state.items():
                     injected_args[tool_arg] = (
-                        getattr(state, state_field, None)
-                        if state_field
-                        else state
+                        getattr(state, state_field, None) if state_field else state
                     )
 
         # Inject store
