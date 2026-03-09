@@ -536,7 +536,7 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
 _RESPONSES_API_ONLY_PREFIXES = (
     "gpt-5-pro",
     "gpt-5.2-pro",
-    "gpt-5.4-pro",
+    "gpt-5.4",
 )
 
 
