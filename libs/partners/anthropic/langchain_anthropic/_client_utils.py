@@ -40,7 +40,14 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
 
         try:
             # TODO(someday): support non asyncio runtimes here
-            asyncio.get_running_loop().create_task(self.aclose())
+            loop = asyncio.get_running_loop()
+            # Only schedule cleanup if the loop is still running
+            if loop.is_running():
+                loop.create_task(self.aclose())
+        except RuntimeError:
+            # No running event loop (e.g., interpreter shutdown or loop already closed)
+            # Skip async cleanup to avoid RuntimeError; resources will be freed by GC
+            pass
         except Exception:  # noqa: S110
             pass
 
