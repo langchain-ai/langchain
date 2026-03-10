@@ -119,7 +119,10 @@ jobs:
         if: steps.check-membership.outputs.is-external == 'true' && github.event_name == 'pull_request_target'
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Use App token so the "labeled" event propagates to downstream
+          # workflows (e.g. require_issue_link.yml). Events created by the
+          # default GITHUB_TOKEN do not trigger additional workflow runs.
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
             const pull_number = context.payload.pull_request.number;
