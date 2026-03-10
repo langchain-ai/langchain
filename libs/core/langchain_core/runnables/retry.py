@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     TypeVar,
-    cast,
 )
 
 from tenacity import (
@@ -232,14 +231,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        exceptions_map: dict[int, Exception] = {}
 
-        not_set: list[Output] = []
-        result = not_set
+        retry_error: RetryError | None = None
         try:
             for attempt in self._sync_retrying():
                 with attempt:
-                    # Retry for inputs that have not yet succeeded
-                    # Determine which original indices remain.
                     remaining_indices = [
                         i for i in range(len(inputs)) if i not in results_map
                     ]
@@ -248,7 +245,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     pending_inputs = [inputs[i] for i in remaining_indices]
                     pending_configs = [config[i] for i in remaining_indices]
                     pending_run_managers = [run_manager[i] for i in remaining_indices]
-                    # Invoke underlying batch only on remaining elements.
                     result = super().batch(
                         pending_inputs,
                         self._patch_config_list(
@@ -257,17 +253,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded, mapping
-                    # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
+                            exceptions_map[orig_idx] = r
                             if not first_exception:
                                 first_exception = r
-                            continue
-                        orig_idx = remaining_indices[offset]
-                        results_map[orig_idx] = r
-                    # If any exception occurred, raise it, to retry the failed ones
+                        else:
+                            results_map[orig_idx] = r
+                            exceptions_map.pop(orig_idx, None)
                     if first_exception:
                         raise first_exception
                 if (
@@ -276,15 +271,19 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            retry_error = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exceptions_map:
+                outputs.append(exceptions_map[idx])
+            elif retry_error is not None:
+                outputs.append(retry_error)
             else:
-                outputs.append(result.pop(0))
+                msg = f"unexpected missing result for input at index {idx}"
+                outputs.append(RuntimeError(msg))
         return outputs
 
     @override
@@ -308,14 +307,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        exceptions_map: dict[int, Exception] = {}
 
-        not_set: list[Output] = []
-        result = not_set
+        retry_error: RetryError | None = None
         try:
             async for attempt in self._async_retrying():
                 with attempt:
-                    # Retry for inputs that have not yet succeeded
-                    # Determine which original indices remain.
                     remaining_indices = [
                         i for i in range(len(inputs)) if i not in results_map
                     ]
@@ -332,17 +329,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded, mapping
-                    # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
+                            exceptions_map[orig_idx] = r
                             if not first_exception:
                                 first_exception = r
-                            continue
-                        orig_idx = remaining_indices[offset]
-                        results_map[orig_idx] = r
-                    # If any exception occurred, raise it, to retry the failed ones
+                        else:
+                            results_map[orig_idx] = r
+                            exceptions_map.pop(orig_idx, None)
                     if first_exception:
                         raise first_exception
                 if (
@@ -351,15 +347,19 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            retry_error = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exceptions_map:
+                outputs.append(exceptions_map[idx])
+            elif retry_error is not None:
+                outputs.append(retry_error)
             else:
-                outputs.append(result.pop(0))
+                msg = f"unexpected missing result for input at index {idx}"
+                outputs.append(RuntimeError(msg))
         return outputs
 
     @override

@@ -3979,6 +3979,67 @@ async def test_async_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+def test_retry_batch_mixed_success_failure() -> None:
+    """When some items succeed on retry while others keep failing,
+    the output should map each result to the correct original index.
+    Previously, result.pop(0) consumed items in positional order from
+    the last batch call, mixing up successful and failed results."""
+    call_count: dict[int, int] = {0: 0, 1: 0, 2: 0, 3: 0}
+
+    def flaky(x: int) -> int:
+        call_count[x] += 1
+        if x == 0 and call_count[x] <= 1:
+            msg = "transient"
+            raise ValueError(msg)
+        if x == 2:
+            msg = "permanent"
+            raise ValueError(msg)
+        return x * 10
+
+    runnable = RunnableLambda(flaky)
+    retryable = runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    results = retryable.batch([0, 1, 2, 3], return_exceptions=True)
+
+    assert results[0] == 0
+    assert results[1] == 10
+    assert isinstance(results[2], Exception)
+    assert results[3] == 30
+
+
+async def test_async_retry_batch_mixed_success_failure() -> None:
+    """Async variant of mixed success/failure batch test."""
+    call_count: dict[int, int] = {0: 0, 1: 0, 2: 0, 3: 0}
+
+    def flaky(x: int) -> int:
+        call_count[x] += 1
+        if x == 0 and call_count[x] <= 1:
+            msg = "transient"
+            raise ValueError(msg)
+        if x == 2:
+            msg = "permanent"
+            raise ValueError(msg)
+        return x * 10
+
+    runnable = RunnableLambda(flaky)
+    retryable = runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    results = await retryable.abatch([0, 1, 2, 3], return_exceptions=True)
+
+    assert results[0] == 0
+    assert results[1] == 10
+    assert isinstance(results[2], Exception)
+    assert results[3] == 30
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> int:
         if x == 1:
