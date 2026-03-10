@@ -16,7 +16,7 @@ from langchain.tools.tool_node import ToolNode
 
 
 class StateWithOptional(TypedDict):
-    messages: list
+    messages: list[AIMessage]
     city: NotRequired[str]
 
 
@@ -27,7 +27,7 @@ def get_weather(city: Annotated[str, InjectedState("city")]) -> str:
 
 
 @tool
-def get_full_state(state: Annotated[dict, InjectedState()]) -> str:
+def get_full_state(state: Annotated[dict[str, object], InjectedState()]) -> str:
     """Tool that receives the full state."""
     return str(state)
 
@@ -94,7 +94,7 @@ def test_inject_state_object_attr_missing() -> None:
 
     class ObjState:
         def __init__(self) -> None:
-            self.messages = []
+            self.messages: list[AIMessage] = []
 
     node = ToolNode(tools=[get_weather])
     tc: ToolCall = {
