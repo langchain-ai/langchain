@@ -655,6 +655,130 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+def _auto_complete_tool_command(
+    result: Any,
+    tool_call_id: str,
+    tool_name: str,
+) -> Any:
+    """Auto-create a ToolMessage in a Command when one is missing.
+
+    When a tool returns a ``Command`` with a dict update (e.g.
+    ``Command(update={"jump_to": "end"})``), langgraph's ``ToolNode`` requires a
+    matching ``ToolMessage``.  This helper fills it in automatically so that tool
+    authors don't need to construct one by hand.
+
+    The following cases are handled:
+
+    * **No messages key** – a ``ToolMessage`` with empty content is inserted.
+    * **String items in messages list** – each string is converted to a
+      ``ToolMessage`` with the string as its content.
+
+    Non-``Command`` results and ``Command`` objects that already contain a valid
+    ``ToolMessage`` are returned unchanged.
+
+    Args:
+        result: The raw return value from a tool execution.
+        tool_call_id: The id of the tool call that triggered this execution.
+        tool_name: The name of the tool.
+
+    Returns:
+        The (possibly modified) result with a proper ``ToolMessage`` present.
+    """
+    if not isinstance(result, Command):
+        return result
+
+    update = result.update
+    if not isinstance(update, dict):
+        return result
+
+    messages = update.get("messages")
+
+    # Case 1: No messages key at all – create a ToolMessage with empty content
+    if messages is None:
+        update["messages"] = [ToolMessage(content="", tool_call_id=tool_call_id, name=tool_name)]
+        return result
+
+    # Case 2: Messages list exists – check if it already has a matching ToolMessage
+    has_tool_message = False
+    for i, msg in enumerate(messages):
+        if isinstance(msg, ToolMessage) and msg.tool_call_id == tool_call_id:
+            has_tool_message = True
+            break
+        # Convert plain strings to ToolMessage
+        if isinstance(msg, str):
+            messages[i] = ToolMessage(content=msg, tool_call_id=tool_call_id, name=tool_name)
+            has_tool_message = True
+
+    # If still no matching ToolMessage, prepend one
+    if not has_tool_message:
+        messages.insert(
+            0,
+            ToolMessage(content="", tool_call_id=tool_call_id, name=tool_name),
+        )
+
+    return result
+
+
+def _wrap_tool_for_auto_command(tool: BaseTool) -> BaseTool:
+    """Wrap a tool so that Command returns are auto-completed with ToolMessage.
+
+    This patches the tool's ``invoke`` and ``ainvoke`` methods so that when a
+    tool returns a ``Command`` without a matching ``ToolMessage``, one is
+    automatically created using the ``tool_call_id`` from the invocation
+    context.  This allows tool authors to write::
+
+        @tool
+        def my_tool(data: str) -> Command[dict[str, Any]]:
+            return Command(update={"jump_to": "end"})
+
+    instead of manually constructing a ``ToolMessage``.
+
+    Args:
+        tool: The tool to wrap.
+
+    Returns:
+        The same tool instance with patched ``invoke``/``ainvoke`` methods.
+    """
+    original_invoke = tool.invoke
+    original_ainvoke = tool.ainvoke
+
+    def _extract_tool_call_id(
+        tool_input: Any,
+    ) -> tuple[str | None, str | None]:
+        """Extract tool_call_id and tool name from a ToolCall input."""
+        if isinstance(tool_input, dict) and "id" in tool_input and "name" in tool_input:
+            return tool_input["id"], tool_input["name"]
+        return None, None
+
+    def patched_invoke(
+        tool_input: Any,
+        config: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        result = original_invoke(tool_input, config, **kwargs)
+        tool_call_id, tool_name = _extract_tool_call_id(tool_input)
+        if tool_call_id is not None and tool_name is not None:
+            return _auto_complete_tool_command(result, tool_call_id, tool_name)
+        return result
+
+    async def patched_ainvoke(
+        tool_input: Any,
+        config: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        result = await original_ainvoke(tool_input, config, **kwargs)
+        tool_call_id, tool_name = _extract_tool_call_id(tool_input)
+        if tool_call_id is not None and tool_name is not None:
+            return _auto_complete_tool_command(result, tool_call_id, tool_name)
+        return result
+
+    # Use object.__setattr__ to bypass Pydantic's __setattr__ which rejects
+    # setting attributes not declared as model fields.
+    object.__setattr__(tool, "invoke", patched_invoke)
+    object.__setattr__(tool, "ainvoke", patched_ainvoke)
+    return tool
+
+
 def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
@@ -901,6 +1025,14 @@ def create_agent(
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
+
+    # Wrap all tools so that Command returns are auto-completed with ToolMessage.
+    # This allows tools to return e.g. Command(update={"jump_to": "end"}) without
+    # manually constructing a ToolMessage. Must happen after ToolNode creation since
+    # ToolNode converts callables to BaseTool instances.
+    if tool_node is not None:
+        for tool_instance in tool_node.tools_by_name.values():
+            _wrap_tool_for_auto_command(tool_instance)
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
@@ -1439,14 +1571,10 @@ def create_agent(
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
-        # Only include exit_node in destinations if any tool has return_direct=True
-        # or if there are structured output tools
-        tools_to_model_destinations = [loop_entry_node]
-        if (
-            any(tool.return_direct for tool in tool_node.tools_by_name.values())
-            or structured_output_tools
-        ):
-            tools_to_model_destinations.append(exit_node)
+        # Always include exit_node in destinations so tools can dynamically end
+        # the loop via Command(update={"jump_to": "end"}), in addition to
+        # return_direct and structured output tools.
+        tools_to_model_destinations = [loop_entry_node, exit_node]
 
         graph.add_conditional_edges(
             "tools",
@@ -1761,7 +1889,17 @@ def _make_tools_to_model_edge(
         if any(t.name in structured_output_tools for t in tool_messages):
             return end_destination
 
-        # 4. Default: Continue the loop
+        # 4. If there's an explicit jump_to in the state, use it.
+        #    This allows tools to dynamically end (or redirect) the agent loop
+        #    by returning Command(update={"jump_to": "end"}).
+        if jump_to := state.get("jump_to"):
+            return _resolve_jump(
+                jump_to,
+                model_destination=model_destination,
+                end_destination=end_destination,
+            )
+
+        # 5. Default: Continue the loop
         #    Tool execution completed successfully, route back to the model
         #    so it can process the tool results and decide the next action.
         return model_destination
