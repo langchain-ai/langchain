@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -99,12 +100,56 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _is_retryable_status_error(exc: BaseException) -> bool:
+    """Return True if exc is an HTTP error worth retrying (429 or 5xx)."""
+    return (
+        isinstance(exc, httpx.HTTPStatusError)
+        and exc.response.status_code in {429, 500, 502, 503, 504}
+    )
+
+
+class _RetryableHTTPStatusError(httpx.HTTPStatusError):
+    """Thin wrapper so tenacity can match on a concrete error type."""
+
+
+def _raise_retryable_status_error(response: httpx.Response) -> None:
+    """Like _raise_on_error, but wraps retryable codes in a retriable type."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.read().decode("utf-8")
+        msg = (
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}"
+        )
+        exc = (
+            _RetryableHTTPStatusError
+            if response.status_code in {429, 500, 502, 503, 504}
+            else httpx.HTTPStatusError
+        )
+        raise exc(msg, request=response.request, response=response)
+
+
+async def _araise_retryable_status_error(response: httpx.Response) -> None:
+    """Async version of _raise_retryable_status_error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        msg = (
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}"
+        )
+        exc = (
+            _RetryableHTTPStatusError
+            if response.status_code in {429, 500, 502, 503, 504}
+            else httpx.HTTPStatusError
+        )
+        raise exc(msg, request=response.request, response=response)
+
+
 def _create_retry_decorator(
     llm: ChatMistralAI,
     run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
 ) -> Callable[[Any], Any]:
     """Return a tenacity retry decorator, preconfigured to handle exceptions."""
-    errors = [httpx.RequestError, httpx.StreamError]
+    errors = [httpx.RequestError, httpx.StreamError, _RetryableHTTPStatusError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -222,7 +267,16 @@ async def acompletion_with_retry(
     run_manager: AsyncCallbackManagerForLLMRun | None = None,
     **kwargs: Any,
 ) -> Any:
-    """Use tenacity to retry the async completion call."""
+    """Use tenacity to retry the async completion call.
+
+    Concurrency is limited by llm._concurrency_semaphore (sized to
+    llm.max_concurrent_requests). The semaphore is acquired for the
+    duration of each HTTP call so at most max_concurrent_requests
+    requests are in-flight at any time.
+
+    HTTP 429/5xx responses are wrapped in _RetryableHTTPStatusError so
+    tenacity retries them up to llm.max_retries times.
+    """
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
 
     @retry_decorator
@@ -230,14 +284,15 @@ async def acompletion_with_retry(
         if "stream" not in kwargs:
             kwargs["stream"] = False
         stream = kwargs["stream"]
-        if stream:
-            event_source = aconnect_sse(
-                llm.async_client, "POST", "/chat/completions", json=kwargs
-            )
-            return _aiter_sse(event_source)
-        response = await llm.async_client.post(url="/chat/completions", json=kwargs)
-        await _araise_on_error(response)
-        return response.json()
+        async with llm._concurrency_semaphore:
+            if stream:
+                event_source = aconnect_sse(
+                    llm.async_client, "POST", "/chat/completions", json=kwargs
+                )
+                return _aiter_sse(event_source)
+            response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+            await _araise_retryable_status_error(response)
+            return response.json()
 
     return await _completion_with_retry(**kwargs)
 
@@ -577,7 +632,7 @@ class ChatMistralAI(BaseChatModel):
 
                 return iter_sse()
             response = self.client.post(url="/chat/completions", json=kwargs)
-            _raise_on_error(response)
+            _raise_retryable_status_error(response)
             return response.json()
 
         return _completion_with_retry(**kwargs)
@@ -605,7 +660,9 @@ class ChatMistralAI(BaseChatModel):
         else:
             api_key_str = self.mistral_api_key
 
-        # TODO: handle retries
+        # Retries: handled by tenacity via _create_retry_decorator.
+        # _RetryableHTTPStatusError wraps 429/5xx so tenacity can match it;
+        # non-retryable HTTP errors surface immediately.
         base_url_str = (
             self.endpoint
             or os.environ.get("MISTRAL_BASE_URL")
@@ -623,7 +680,8 @@ class ChatMistralAI(BaseChatModel):
                 timeout=self.timeout,
                 verify=global_ssl_context,
             )
-        # TODO: handle retries and max_concurrency
+        # max_concurrency: enforced by an asyncio.Semaphore acquired inside
+        # acompletion_with_retry before every async API call.
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
@@ -635,6 +693,10 @@ class ChatMistralAI(BaseChatModel):
                 timeout=self.timeout,
                 verify=global_ssl_context,
             )
+        # Semaphore that caps concurrent async requests.
+        self._concurrency_semaphore: asyncio.Semaphore = asyncio.Semaphore(
+            self.max_concurrent_requests
+        )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
             msg = "temperature must be in the range [0.0, 1.0]"
