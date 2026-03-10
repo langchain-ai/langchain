@@ -94,7 +94,11 @@ class LangSmithLoader(BaseLoader):
             ValueError: If both `client` and `client_kwargs` are provided.
         """  # noqa: E501
         if client and client_kwargs:
-            raise ValueError
+            msg = (
+                "Cannot provide both 'client' and 'client_kwargs'. "
+                "Pass an existing client or keyword args to create one, not both."
+            )
+            raise ValueError(msg)
         self._client = client or LangSmithClient(**client_kwargs)
         self.content_key = list(content_key.split(".")) if content_key else []
         self.format_content = format_content or _stringify
