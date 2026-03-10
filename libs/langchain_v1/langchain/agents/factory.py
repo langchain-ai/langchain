@@ -16,10 +16,17 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    SystemMessage,
+    ToolMessage,
+    messages_from_dict,
+    messages_to_dict,
+)
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
-from langgraph.constants import END, START
+from langgraph.constants import END, START, TAG_NOSTREAM
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
@@ -67,6 +74,21 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 
     commands: list[Command[Any]] = field(default_factory=list)
     """Commands accumulated from all middleware layers (inner-first, then outer)."""
+
+
+_PENDING_MODEL_MESSAGES = "__pending_model_messages__"
+_PENDING_STRUCTURED_RESPONSE = "__pending_structured_response__"
+
+
+class _PendingAfterModelState(TypedDict):
+    """Internal state used to buffer model output before `after_model` commits it."""
+
+    __pending_model_messages__: NotRequired[
+        Annotated[list[dict[str, Any]] | None, OmitFromSchema(input=True, output=True)]
+    ]
+    __pending_structured_response__: NotRequired[
+        Annotated[Any | None, OmitFromSchema(input=True, output=True)]
+    ]
 
 
 if TYPE_CHECKING:
@@ -162,25 +184,42 @@ def _normalize_to_model_response(
 def _build_commands(
     model_response: ModelResponse,
     middleware_commands: list[Command[Any]] | None = None,
+    *,
+    current_messages: list[AnyMessage] | None = None,
+    defer_model_output: bool = False,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
-    The first Command contains the model response state (messages and optional
-    structured_response). Middleware commands are appended as-is.
+    The first Command contains either the public model response state or buffered
+    internal state when `after_model` middleware needs to inspect output before it is
+    committed. Middleware commands are appended as-is.
 
     Args:
         model_response: The model response containing messages and optional
             structured output.
         middleware_commands: Commands accumulated from middleware layers during
             composition (inner-first ordering).
+        current_messages: The current public message history before the latest model
+            response. Required when `defer_model_output=True`.
+        defer_model_output: Whether to buffer model output in private state instead of
+            writing directly to `messages`.
 
     Returns:
         List of ``Command`` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
-
-    if model_response.structured_response is not None:
-        state["structured_response"] = model_response.structured_response
+    if defer_model_output:
+        if current_messages is None:
+            msg = "current_messages must be provided when deferring model output."
+            raise ValueError(msg)
+        state: dict[str, Any] = {
+            _PENDING_MODEL_MESSAGES: messages_to_dict([*current_messages, *model_response.result])
+        }
+        if model_response.structured_response is not None:
+            state[_PENDING_STRUCTURED_RESPONSE] = model_response.structured_response
+    else:
+        state = {"messages": model_response.result}
+        if model_response.structured_response is not None:
+            state["structured_response"] = model_response.structured_response
 
     for cmd in middleware_commands or []:
         if cmd.goto:
@@ -199,6 +238,76 @@ def _build_commands(
     commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(middleware_commands or [])
     return commands
+
+
+def _get_pending_model_messages(state: dict[str, Any]) -> list[AnyMessage] | None:
+    """Return buffered model messages if `after_model` buffering is active."""
+    pending_messages = state.get(_PENDING_MODEL_MESSAGES)
+    if pending_messages is None:
+        return None
+    return cast('list[AnyMessage]', messages_from_dict(pending_messages))
+
+
+def _get_effective_after_model_state(state: AgentState[Any]) -> AgentState[Any]:
+    """Expose buffered model output to `after_model` middleware as the latest state."""
+    effective_state = dict(state)
+    pending_messages = _get_pending_model_messages(effective_state)
+    if pending_messages is not None:
+        effective_state["messages"] = pending_messages
+
+    if (
+        _PENDING_STRUCTURED_RESPONSE in effective_state
+        and effective_state[_PENDING_STRUCTURED_RESPONSE] is not None
+    ):
+        effective_state["structured_response"] = effective_state[
+            _PENDING_STRUCTURED_RESPONSE
+        ]
+
+    return cast('AgentState[Any]', effective_state)
+
+
+def _should_commit_after_model_output(
+    updates: dict[str, Any] | None,
+    *,
+    is_terminal: bool,
+) -> bool:
+    """Determine whether buffered model output should be committed publicly."""
+    if is_terminal or not updates:
+        return is_terminal
+    return "jump_to" in updates or "structured_response" in updates
+
+
+def _normalize_after_model_updates(
+    state: AgentState[Any],
+    updates: dict[str, Any] | None,
+    *,
+    commit_output: bool,
+) -> dict[str, Any]:
+    """Convert `after_model` updates into buffered or committed state transitions."""
+    normalized = dict(updates or {})
+    pending_messages = normalized.pop("messages", _get_pending_model_messages(state))
+
+    has_pending_structured_response = _PENDING_STRUCTURED_RESPONSE in state
+    pending_structured_response = normalized.pop(
+        "structured_response",
+        state.get(_PENDING_STRUCTURED_RESPONSE),
+    )
+
+    if commit_output:
+        if pending_messages is not None:
+            normalized["messages"] = pending_messages
+        if has_pending_structured_response or "structured_response" in (updates or {}):
+            if pending_structured_response is not None:
+                normalized["structured_response"] = pending_structured_response
+        normalized[_PENDING_MODEL_MESSAGES] = None
+        normalized[_PENDING_STRUCTURED_RESPONSE] = None
+        return normalized
+
+    if pending_messages is not None:
+        normalized[_PENDING_MODEL_MESSAGES] = messages_to_dict(pending_messages)
+    if has_pending_structured_response or "structured_response" in (updates or {}):
+        normalized[_PENDING_STRUCTURED_RESPONSE] = pending_structured_response
+    return normalized
 
 
 def _chain_model_call_handlers(
@@ -970,7 +1079,11 @@ def create_agent(
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
+    defer_model_output = bool(middleware_w_after_model)
+
     state_schemas: set[type] = {m.state_schema for m in middleware}
+    if defer_model_output:
+        state_schemas.add(_PendingAfterModelState)
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
@@ -1235,6 +1348,9 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
+        if defer_model_output:
+            model_ = model_.with_config(tags=[TAG_NOSTREAM])
+
         output = model_.invoke(messages)
         if name:
             output.name = name
@@ -1264,10 +1380,19 @@ def create_agent(
 
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                current_messages=state["messages"],
+                defer_model_output=defer_model_output,
+            )
 
         result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            current_messages=state["messages"],
+            defer_model_output=defer_model_output,
+        )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1282,6 +1407,9 @@ def create_agent(
         messages = request.messages
         if request.system_message:
             messages = [request.system_message, *messages]
+
+        if defer_model_output:
+            model_ = model_.with_config(tags=[TAG_NOSTREAM])
 
         output = await model_.ainvoke(messages)
         if name:
@@ -1312,13 +1440,68 @@ def create_agent(
 
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                current_messages=state["messages"],
+                defer_model_output=defer_model_output,
+            )
 
         result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            current_messages=state["messages"],
+            defer_model_output=defer_model_output,
+        )
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
+
+    def _create_after_model_node(
+        *,
+        sync_after: Callable[[AgentState[Any], Runtime[ContextT]], dict[str, Any] | None]
+        | None,
+        async_after: Callable[[AgentState[Any], Runtime[ContextT]], Awaitable[dict[str, Any] | None]]
+        | None,
+        is_terminal: bool,
+    ) -> RunnableCallable:
+        def _run_after_model_sync(
+            state: AgentState[Any], runtime: Runtime[ContextT]
+        ) -> dict[str, Any]:
+            effective_state = _get_effective_after_model_state(state)
+            updates = sync_after(effective_state, runtime) if sync_after is not None else None
+            return _normalize_after_model_updates(
+                state,
+                updates,
+                commit_output=_should_commit_after_model_output(
+                    updates,
+                    is_terminal=is_terminal,
+                ),
+            )
+
+        async def _run_after_model_async(
+            state: AgentState[Any], runtime: Runtime[ContextT]
+        ) -> dict[str, Any]:
+            effective_state = _get_effective_after_model_state(state)
+            updates = (
+                await async_after(effective_state, runtime)
+                if async_after is not None
+                else None
+            )
+            return _normalize_after_model_updates(
+                state,
+                updates,
+                commit_output=_should_commit_after_model_output(
+                    updates,
+                    is_terminal=is_terminal,
+                ),
+            )
+
+        return RunnableCallable(
+            _run_after_model_sync if sync_after is not None else None,
+            _run_after_model_async if async_after is not None else None,
+            trace=False,
+        )
 
     # Only add tools node if we have tools
     if tool_node is not None:
@@ -1372,8 +1555,6 @@ def create_agent(
             m.__class__.after_model is not AgentMiddleware.after_model
             or m.__class__.aafter_model is not AgentMiddleware.aafter_model
         ):
-            # Use RunnableCallable to support both sync and async
-            # Pass None for sync if not overridden to avoid signature conflicts
             sync_after = (
                 m.after_model
                 if m.__class__.after_model is not AgentMiddleware.after_model
@@ -1384,7 +1565,11 @@ def create_agent(
                 if m.__class__.aafter_model is not AgentMiddleware.aafter_model
                 else None
             )
-            after_node = RunnableCallable(sync_after, async_after, trace=False)
+            after_node = _create_after_model_node(
+                sync_after=sync_after,
+                async_after=async_after,
+                is_terminal=m is middleware_w_after_model[0],
+            )
             graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
 
         if (
