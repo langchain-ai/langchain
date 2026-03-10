@@ -12,7 +12,6 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain.tools.tool_node import ToolNode
 
-
 # -- helpers ----------------------------------------------------------------
 
 
@@ -94,7 +93,8 @@ def test_inject_state_object_attr_missing() -> None:
     """Handles missing attributes on non-dict state objects gracefully."""
 
     class ObjState:
-        messages: list = []
+        def __init__(self) -> None:
+            self.messages = []
 
     node = ToolNode(tools=[get_weather])
     tc: ToolCall = {
