@@ -9,68 +9,325 @@
 </div>
 
 <div align="center">
-  <h3>The agent engineering platform.</h3>
+  <h2>langchain-mistralai</h2>
+  <p>Official LangChain integration for Mistral AI — chat models, embeddings, structured output, and tool calling.</p>
 </div>
 
 <div align="center">
-  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/pypi/l/langchain" alt="PyPI - License"></a>
-  <a href="https://pypistats.org/packages/langchain" target="_blank"><img src="https://img.shields.io/pepy/dt/langchain" alt="PyPI - Downloads"></a>
-  <a href="https://pypi.org/project/langchain/#history" target="_blank"><img src="https://img.shields.io/pypi/v/langchain?label=%20" alt="Version"></a>
-  <a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers"></a>
-  <a href="https://codespaces.new/langchain-ai/langchain" target="_blank"><img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20"></a>
-  <a href="https://codspeed.io/langchain-ai/langchain" target="_blank"><img src="https://img.shields.io/endpoint?url=https://codspeed.io/badge.json" alt="CodSpeed Badge"></a>
-  <a href="https://x.com/langchain" target="_blank"><img src="https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain" alt="Twitter / X"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/pypi/l/langchain-mistralai" alt="License: MIT"></a>
+  <a href="https://pypi.org/project/langchain-mistralai/"><img src="https://img.shields.io/pypi/v/langchain-mistralai?label=version" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/langchain-mistralai/"><img src="https://img.shields.io/pypi/pyversions/langchain-mistralai" alt="Python versions"></a>
+  <a href="https://pypistats.org/packages/langchain-mistralai"><img src="https://img.shields.io/pepy/dt/langchain-mistralai" alt="Downloads"></a>
 </div>
-
-LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development – all while future-proofing decisions as the underlying technology evolves.
-
-```bash
-pip install langchain
-```
-
-If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
 
 ---
 
-**Documentation**:
+## Table of Contents
 
-- [docs.langchain.com](https://docs.langchain.com/oss/python/langchain/overview) – Comprehensive documentation, including conceptual overviews and guides
-- [reference.langchain.com/python](https://reference.langchain.com/python) – API reference docs for LangChain packages
-- [Chat LangChain](https://chat.langchain.com/) – Chat with the LangChain documentation and get answers to your questions
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Chat Model](#chat-model)
+  - [Basic Usage](#basic-usage)
+  - [Streaming](#streaming)
+  - [Structured Output](#structured-output)
+  - [Tool Calling](#tool-calling)
+- [Embeddings](#embeddings)
+- [Retry & Concurrency](#retry--concurrency)
+- [Configuration Reference](#configuration-reference)
+- [Development](#development)
 
-**Discussions**: Visit the [LangChain Forum](https://forum.langchain.com) to connect with the community and share all of your technical questions, ideas, and feedback.
+---
 
-> [!NOTE]
-> Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+## Installation
 
-## Why use LangChain?
+```bash
+pip install langchain-mistralai
+```
 
-LangChain helps developers build applications powered by LLMs through a standard interface for models, embeddings, vector stores, and more.
+Set your API key:
 
-Use LangChain for:
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
 
-- **Real-time data augmentation**. Easily connect LLMs to diverse data sources and external/internal systems, drawing from LangChain's vast library of integrations with model providers, tools, vector stores, retrievers, and more.
-- **Model interoperability**. Swap models in and out as your engineering team experiments to find the best choice for your application's needs. As the industry frontier evolves, adapt quickly – LangChain's abstractions keep you moving without losing momentum.
-- **Rapid prototyping**. Quickly build and iterate on LLM applications with LangChain's modular, component-based architecture. Test different approaches and workflows without rebuilding from scratch, accelerating your development cycle.
-- **Production-ready features**. Deploy reliable applications with built-in support for monitoring, evaluation, and debugging through integrations like LangSmith. Scale with confidence using battle-tested patterns and best practices.
-- **Vibrant community and ecosystem**. Leverage a rich ecosystem of integrations, templates, and community-contributed components. Benefit from continuous improvements and stay up-to-date with the latest AI developments through an active open-source community.
-- **Flexible abstraction layers**. Work at the level of abstraction that suits your needs - from high-level chains for quick starts to low-level components for fine-grained control. LangChain grows with your application's complexity.
+Or pass it directly when initializing the model (see [Configuration Reference](#configuration-reference)).
 
-## LangChain ecosystem
+---
 
-While the LangChain framework can be used standalone, it also integrates seamlessly with any LangChain product, giving developers a full suite of tools when building LLM applications.
+## Quick Start
 
-To improve your LLM application development, pair LangChain with:
+```python
+from langchain_mistralai import ChatMistralAI
 
-- [Deep Agents](https://github.com/langchain-ai/deepagents) *(new!)* – Build agents that can plan, use subagents, and leverage file systems for complex tasks
-- [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) – Build agents that can reliably handle complex tasks with LangGraph, our low-level agent orchestration framework. LangGraph offers customizable architecture, long-term memory, and human-in-the-loop workflows – and is trusted in production by companies like LinkedIn, Uber, Klarna, and GitLab.
-- [Integrations](https://docs.langchain.com/oss/python/integrations/providers/overview) – List of LangChain integrations, including chat & embedding models, tools & toolkits, and more
-- [LangSmith](https://www.langchain.com/langsmith) – Helpful for agent evals and observability. Debug poor-performing LLM app runs, evaluate agent trajectories, gain visibility in production, and improve performance over time.
-- [LangSmith Deployment](https://docs.langchain.com/langsmith/deployments) – Deploy and scale agents effortlessly with a purpose-built deployment platform for long-running, stateful workflows. Discover, reuse, configure, and share agents across teams – and iterate quickly with visual prototyping in [LangSmith Studio](https://docs.langchain.com/langsmith/studio).
+llm = ChatMistralAI(model="mistral-large-latest")
+response = llm.invoke("What is the capital of France?")
+print(response.content)
+# -> "The capital of France is Paris."
+```
 
-## Additional resources
+---
 
-- [API Reference](https://reference.langchain.com/python) – Detailed reference on navigating base packages and integrations for LangChain.
-- [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
-- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
-- [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+## Chat Model
+
+### Basic Usage
+
+```python
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_mistralai import ChatMistralAI
+
+llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="Explain quantum entanglement in one sentence."),
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+### Streaming
+
+```python
+from langchain_mistralai import ChatMistralAI
+
+llm = ChatMistralAI(model="mistral-large-latest")
+
+for chunk in llm.stream("Write a haiku about the ocean."):
+    print(chunk.content, end="", flush=True)
+```
+
+Async streaming:
+
+```python
+async for chunk in llm.astream("Write a haiku about the ocean."):
+    print(chunk.content, end="", flush=True)
+```
+
+### Structured Output
+
+Use `with_structured_output` to get responses that conform to a schema. Supported methods: `function_calling`, `json_mode`, `json_schema`.
+
+```python
+from pydantic import BaseModel
+from langchain_mistralai import ChatMistralAI
+
+
+class BookInfo(BaseModel):
+    title: str
+    author: str
+    year: int
+
+
+llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+structured_llm = llm.with_structured_output(BookInfo)
+
+result = structured_llm.invoke("Tell me about '1984' by George Orwell.")
+print(result.title)   # -> "1984"
+print(result.author)  # -> "George Orwell"
+print(result.year)    # -> 1949
+```
+
+### Tool Calling
+
+```python
+from langchain_core.tools import tool
+from langchain_mistralai import ChatMistralAI
+
+
+@tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"The weather in {city} is sunny and 25°C."
+
+
+llm = ChatMistralAI(model="mistral-large-latest")
+llm_with_tools = llm.bind_tools([get_weather])
+
+response = llm_with_tools.invoke("What's the weather in Paris?")
+print(response.tool_calls)
+```
+
+---
+
+## Embeddings
+
+```python
+from langchain_mistralai import MistralAIEmbeddings
+
+embeddings = MistralAIEmbeddings(model="mistral-embed")
+
+# Embed a single query
+vector = embeddings.embed_query("What is LangChain?")
+print(len(vector))  # -> 1024
+
+# Embed multiple documents
+vectors = embeddings.embed_documents([
+    "LangChain is a framework for LLM applications.",
+    "Mistral AI builds frontier language models.",
+])
+print(len(vectors))     # -> 2
+print(len(vectors[0]))  # -> 1024
+```
+
+---
+
+## Retry & Concurrency
+
+`ChatMistralAI` has built-in retry and concurrency controls to make your application resilient under load and rate limits.
+
+### Retry (`max_retries`)
+
+Failed requests are automatically retried using **tenacity** with exponential back-off. The following error types trigger a retry:
+
+| Trigger | Description |
+|---|---|
+| `httpx.RequestError` | Network-level errors (connection reset, DNS failure, etc.) |
+| `httpx.StreamError` | Errors during streaming |
+| HTTP `429` | Too Many Requests (rate limited) |
+| HTTP `500` | Internal Server Error |
+| HTTP `502` | Bad Gateway |
+| HTTP `503` | Service Unavailable |
+| HTTP `504` | Gateway Timeout |
+
+Non-retryable errors (e.g. `400 Bad Request`, `401 Unauthorized`, `404 Not Found`) are raised immediately without retrying.
+
+```python
+from langchain_mistralai import ChatMistralAI
+
+llm = ChatMistralAI(
+    model="mistral-large-latest",
+    max_retries=5,   # default is 5
+)
+```
+
+### Max Concurrency (`max_concurrent_requests`)
+
+When making many async calls simultaneously (e.g. inside `asyncio.gather`), use `max_concurrent_requests` to cap how many requests are in-flight at once. This helps avoid hitting rate limits.
+
+```python
+import asyncio
+from langchain_mistralai import ChatMistralAI
+
+llm = ChatMistralAI(
+    model="mistral-large-latest",
+    max_concurrent_requests=10,  # default is 64
+)
+
+# At most 10 requests will be in-flight at the same time
+responses = await asyncio.gather(*[
+    llm.ainvoke(f"Question {i}") for i in range(50)
+])
+```
+
+### Combined Example
+
+```python
+from langchain_mistralai import ChatMistralAI
+
+llm = ChatMistralAI(
+    model="mistral-large-latest",
+    max_retries=5,               # retry up to 5 times on transient failures
+    max_concurrent_requests=10,  # cap async concurrency at 10
+    timeout=60,                  # per-request timeout in seconds
+)
+```
+
+---
+
+## Configuration Reference
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `model` / `model_name` | `str` | `"mistral-small"` | Model identifier (e.g. `"mistral-large-latest"`) |
+| `api_key` / `mistral_api_key` | `SecretStr` | `$MISTRAL_API_KEY` | Your Mistral API key |
+| `base_url` / `endpoint` | `str` | `"https://api.mistral.ai/v1"` | Override the API base URL |
+| `temperature` | `float` | `0.7` | Sampling temperature, must be in `[0.0, 1.0]` |
+| `max_tokens` | `int \| None` | `None` | Maximum tokens in the response |
+| `top_p` | `float` | `1.0` | Nucleus sampling probability, must be in `[0.0, 1.0]` |
+| `max_retries` | `int` | `5` | Retry budget for transient failures |
+| `max_concurrent_requests` | `int` | `64` | Max simultaneous async requests |
+| `timeout` | `int` | `120` | Per-request HTTP timeout in seconds |
+| `random_seed` | `int \| None` | `None` | Seed for deterministic sampling |
+| `safe_mode` | `bool \| None` | `None` | Enable Mistral safe-prompt injection |
+| `streaming` | `bool` | `False` | Enable streaming by default |
+
+---
+
+## Development
+
+### Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/langchain-ai/langchain.git
+cd langchain/libs/partners/mistralai
+
+# Install with uv
+uv sync --group test
+```
+
+### Running Tests
+
+Unit tests (no API key required):
+
+```bash
+pytest tests/unit_tests/ -v
+```
+
+Integration tests (requires `MISTRAL_API_KEY`):
+
+```bash
+pytest tests/integration_tests/ -v
+```
+
+### Project Structure
+
+```
+langchain-mistralai/
+├── pyproject.toml
+├── langchain_mistralai/
+│   ├── __init__.py
+│   ├── chat_models.py      # ChatMistralAI — chat completions
+│   └── embeddings.py       # MistralAIEmbeddings
+└── tests/
+    ├── unit_tests/
+    │   ├── test_chat_models.py
+    │   ├── test_embeddings.py
+    │   ├── test_imports.py
+    │   ├── test_standard.py
+    │   └── test_retry_concurrency.py   # retry & concurrency tests
+    └── integration_tests/
+        ├── test_chat_models.py
+        ├── test_embeddings.py
+        └── test_standard.py
+```
+
+### Linting
+
+```bash
+uv run ruff check .
+uv run ruff format .
+```
+
+### Type Checking
+
+```bash
+uv run mypy langchain_mistralai/
+```
+
+---
+
+## Related Links
+
+- [Mistral AI Documentation](https://docs.mistral.ai/)
+- [LangChain Documentation](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+- [API Reference](https://reference.langchain.com/python/integrations/langchain_mistralai/)
+- [LangChain GitHub](https://github.com/langchain-ai/langchain)
+- [Report an Issue](https://github.com/langchain-ai/langchain/issues)
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by the LangChain community.</sub>
+</div>

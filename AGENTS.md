@@ -17,7 +17,9 @@ langchain/
 │   ├── partners/         # Third-party integrations
 │   │   ├── openai/       # OpenAI models and embeddings
 │   │   ├── anthropic/    # Anthropic (Claude) integration
+│   │   ├── mistralai/    # Mistral AI chat models and embeddings
 │   │   ├── ollama/       # Local model support
+│   │   ├── xai/          # xAI (Grok) chat models
 │   │   └── ... (other integrations maintained by the LangChain team)
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
@@ -246,6 +248,13 @@ When adding a new partner package, update these files:
 - `.github/workflows/check_diffs.yml` – Add to change detection
 - `.github/workflows/integration_tests.yml` – Add integration test config
 - `.github/workflows/pr_lint.yml` – Add to allowed scopes
+
+#### Partners added so far
+
+| Package | Provider | API key env var | Added |
+|---|---|---|---|
+| `langchain-mistralai` | Mistral AI | `MISTRAL_API_KEY` | existing |
+| `langchain-xai` | xAI (Grok) | `XAI_API_KEY` | new |
 
 ## Additional resources
 
