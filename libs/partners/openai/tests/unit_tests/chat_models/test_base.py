@@ -2151,6 +2151,7 @@ def test__construct_responses_api_input_human_message_with_text_blocks_conversio
     result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "user"
     assert isinstance(result[0]["content"], list)
     assert len(result[0]["content"]) == 1
@@ -2267,6 +2268,7 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "user"
     assert isinstance(result[0]["content"], list)
     assert len(result[0]["content"]) == 2
@@ -2459,17 +2461,21 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert len(result) == len(messages)
 
     # Check system message
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "system"
     assert result[0]["content"] == "You are a helpful assistant."
 
+    assert result[1]["type"] == "message"
     assert result[1]["role"] == "system"
     assert result[1]["content"] == [
         {"type": "input_text", "text": "You are a very helpful assistant!"}
     ]
 
     # Check human message
+    assert result[2]["type"] == "message"
     assert result[2]["role"] == "user"
     assert result[2]["content"] == "What's the weather in San Francisco?"
+    assert result[3]["type"] == "message"
     assert result[3]["role"] == "user"
     assert result[3]["content"] == [
         {"type": "input_text", "text": "What's the weather in San Francisco?"}
