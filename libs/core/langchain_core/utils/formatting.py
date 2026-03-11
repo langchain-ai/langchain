@@ -64,13 +64,31 @@ class StrictFormatter(Formatter):
 
         Raises:
             KeyError: If the format string contains placeholders not present
-                in input_variables.
+                in input_variables, or if input_variables contains extra variables
+                not present in the format string.
 
         Example:
             >>> fmt = StrictFormatter()
             >>> fmt.validate_input_variables("Hello, {name}!", ["name"])  # OK
             >>> fmt.validate_input_variables("Hello, {name}!", ["other"])  # Raises
         """
+        # Get all placeholders in the format string
+        placeholders = {
+            fname
+            for _, fname, _, _ in self.parse(format_string)
+            if fname
+        }
+
+        # Check for missing variables (placeholders not in input_variables)
+        missing = placeholders - set(input_variables)
+        if missing:
+            raise KeyError(f"Missing variables in input_variables: {missing}")
+
+        # Check for extra variables (input_variables not in placeholders)
+        extra = set(input_variables) - placeholders
+        if extra:
+            raise KeyError(f"Extra variables in input_variables not used: {extra}")
+
         dummy_inputs = dict.fromkeys(input_variables, "foo")
         super().format(format_string, **dummy_inputs)
 
