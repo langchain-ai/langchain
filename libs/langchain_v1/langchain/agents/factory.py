@@ -133,9 +133,10 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
 """.strip()
 
 
-def _scrub_runtime(inputs: dict[str, Any]) -> dict[str, Any]:
-    """Remove ``runtime`` from request objects before sending to LangSmith."""
+def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    """Remove ``runtime`` and ``handler`` from trace inputs before sending to LangSmith."""
     filtered = inputs.copy()
+    filtered.pop("handler", None)
     req = filtered.get("request")
     if isinstance(req, (ModelRequest, ToolCallRequest)):
         filtered["request"] = {
@@ -877,7 +878,7 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_runtime)(
+            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
                 m.wrap_tool_call
             )
             for m in middleware_w_wrap_tool_call
@@ -898,7 +899,7 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_runtime)(
+            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
                 m.awrap_tool_call
             )
             for m in middleware_w_awrap_tool_call
@@ -986,7 +987,7 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_runtime)(
+            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
                 m.wrap_model_call
             )
             for m in middleware_w_wrap_model_call
@@ -997,7 +998,7 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_runtime)(
+            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
                 m.awrap_model_call
             )
             for m in middleware_w_awrap_model_call
