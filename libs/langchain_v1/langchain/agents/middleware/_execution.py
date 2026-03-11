@@ -32,6 +32,21 @@ def _launch_subprocess(
     preexec_fn: typing.Callable[[], None] | None,
     start_new_session: bool,
 ) -> subprocess.Popen[str]:
+    """Launch a subprocess with standardised I/O and encoding settings.
+
+    All execution policies delegate to this helper so that stream handling,
+    encoding, and buffering are consistent across policy implementations.
+
+    Args:
+        command: The command and arguments to execute.
+        env: Environment variables for the subprocess.
+        cwd: Working directory for the subprocess.
+        preexec_fn: Optional callable invoked in the child process before exec.
+        start_new_session: Whether to start the process in a new session.
+
+    Returns:
+        The spawned `subprocess.Popen` instance.
+    """
     return subprocess.Popen(  # noqa: S603
         list(command),
         stdin=subprocess.PIPE,
@@ -146,6 +161,17 @@ class HostExecutionPolicy(BaseExecutionPolicy):
         return process
 
     def _create_preexec_fn(self) -> typing.Callable[[], None] | None:
+        """Create a pre-exec callback that sets resource limits in the child process.
+
+        On platforms where `prlimit` is available (Linux), limits are applied
+        after spawn instead, so this returns `None`. On other POSIX platforms
+        (e.g. macOS) the returned callback configures limits via
+        `resource.setrlimit` before exec.
+
+        Returns:
+            A callable that sets CPU and memory limits, or `None` if limits
+            will be applied post-spawn.
+        """
         if not self._limits_requested or self._can_use_prlimit():
             return None
 
@@ -163,6 +189,17 @@ class HostExecutionPolicy(BaseExecutionPolicy):
         return _configure
 
     def _apply_post_spawn_limits(self, process: subprocess.Popen[str]) -> None:
+        """Apply CPU and memory limits to an already-running process via `prlimit`.
+
+        This is the Linux-specific path. On platforms where `prlimit` is
+        unavailable, limits are set in the pre-exec callback instead.
+
+        Args:
+            process: The running subprocess to constrain.
+
+        Raises:
+            RuntimeError: If `prlimit` fails (e.g. insufficient permissions).
+        """
         if not self._limits_requested or not self._can_use_prlimit():
             return
         if not _HAS_RESOURCE:  # pragma: no cover - defensive
@@ -184,6 +221,11 @@ class HostExecutionPolicy(BaseExecutionPolicy):
 
     @staticmethod
     def _can_use_prlimit() -> bool:
+        """Check whether `resource.prlimit` is available on this platform.
+
+        Returns:
+            `True` on Linux when the `resource` module exposes `prlimit`.
+        """
         return _HAS_RESOURCE and hasattr(resource, "prlimit") and sys.platform.startswith("linux")
 
 
@@ -224,6 +266,14 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
         )
 
     def _build_command(self, command: Sequence[str]) -> list[str]:
+        """Assemble the full Codex CLI sandbox invocation.
+
+        Args:
+            command: The user command to run inside the sandbox.
+
+        Returns:
+            The complete argument list for `subprocess.Popen`.
+        """
         binary = self._resolve_binary()
         platform_arg = self._determine_platform()
         full_command: list[str] = [binary, "sandbox", platform_arg]
@@ -234,6 +284,14 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
         return full_command
 
     def _resolve_binary(self) -> str:
+        """Locate the Codex CLI binary on `PATH`.
+
+        Returns:
+            The absolute path to the resolved binary.
+
+        Raises:
+            RuntimeError: If the binary is not found.
+        """
         path = shutil.which(self.binary)
         if path is None:
             msg = (
@@ -243,6 +301,16 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
         return path
 
     def _determine_platform(self) -> str:
+        """Resolve the sandbox platform identifier.
+
+        When `platform` is set to ``"auto"``, the current OS is inspected.
+
+        Returns:
+            ``"linux"`` or ``"macos"``.
+
+        Raises:
+            RuntimeError: If the platform cannot be determined automatically.
+        """
         if self.platform != "auto":
             return self.platform
         if sys.platform.startswith("linux"):
@@ -257,6 +325,15 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
 
     @staticmethod
     def _format_override(value: typing.Any) -> str:
+        """Serialize a config override value to a string for the CLI.
+
+        Args:
+            value: The override value to serialize.
+
+        Returns:
+            A JSON string when the value is JSON-serializable, otherwise
+            the `str` representation.
+        """
         try:
             return json.dumps(value)
         except TypeError:
@@ -334,6 +411,16 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
         env: Mapping[str, str],
         command: Sequence[str],
     ) -> list[str]:
+        """Assemble the full `docker run` invocation.
+
+        Args:
+            workspace: Host directory to optionally bind-mount.
+            env: Environment variables to forward into the container.
+            command: The user command to execute inside the container.
+
+        Returns:
+            The complete argument list for `subprocess.Popen`.
+        """
         binary = self._resolve_binary()
         full_command: list[str] = [binary, "run", "-i"]
         if self.remove_container_on_exit:
@@ -364,9 +451,28 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
 
     @staticmethod
     def _should_mount_workspace(workspace: Path) -> bool:
+        """Determine whether the workspace should be bind-mounted into the container.
+
+        Ephemeral directories created by the shell middleware (prefixed with
+        `langchain-shell-`) are not mounted to minimise host exposure.
+
+        Args:
+            workspace: The candidate workspace path.
+
+        Returns:
+            `True` if the workspace should be mounted.
+        """
         return not workspace.name.startswith(SHELL_TEMP_PREFIX)
 
     def _resolve_binary(self) -> str:
+        """Locate the Docker CLI binary on `PATH`.
+
+        Returns:
+            The absolute path to the resolved binary.
+
+        Raises:
+            RuntimeError: If the binary is not found.
+        """
         path = shutil.which(self.binary)
         if path is None:
             msg = (
