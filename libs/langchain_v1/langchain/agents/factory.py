@@ -135,6 +135,7 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
             return handler(request)
 """.strip()
 
+
 def _trace(fn: Callable[..., Any], *, name: str) -> Callable[..., Any]:
     """Wrap ``fn`` with ``langsmith.traceable`` if available, otherwise return as-is."""
     if traceable is None:
