@@ -8,7 +8,8 @@ try:
     from langsmith import traceable  # type: ignore[import-untyped]
 except ImportError:
     traceable = None
-from dataclasses import dataclass, field
+
+from dataclasses import asdict, dataclass, field
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -41,6 +42,7 @@ from langchain.agents.middleware.types import (
     OmitFromSchema,
     ResponseT,
     StateT_co,
+    ToolCallRequest,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -84,7 +86,7 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
+    from langchain.agents.middleware.types import ToolCallWrapper
 
     _ModelCallHandler = Callable[
         [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse]],
@@ -138,14 +140,10 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
 
 def _scrub_runtime(inputs: dict[str, Any]) -> dict[str, Any]:
     """Remove ``runtime`` from request objects before sending to LangSmith."""
-    from langgraph.prebuilt.tool_node import ToolCallRequest
-
     filtered = inputs.copy()
     req = filtered.get("request")
     if isinstance(req, (ModelRequest, ToolCallRequest)):
-        filtered["request"] = {
-            k: v for k, v in req.__dict__.items() if k != "runtime"
-        }
+        filtered["request"] = {k: v for k, v in asdict(req).items() if k != "runtime"}
     return filtered
 
 
