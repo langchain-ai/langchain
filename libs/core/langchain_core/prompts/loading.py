@@ -55,7 +55,7 @@ def _load_template(var_name: str, config: dict) -> dict:
         if template_path.suffix == ".txt":
             template = template_path.read_text(encoding="utf-8")
         else:
-            raise ValueError
+            raise ValueError(f"Unsupported template file format: {template_path.suffix}. Only .txt is supported.")
         # Set the template variable to the extracted variable.
         config[var_name] = template
     return config

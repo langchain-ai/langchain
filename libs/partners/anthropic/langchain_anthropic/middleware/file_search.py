@@ -35,13 +35,13 @@ def _expand_include_patterns(pattern: str) -> list[str] | None:
 
         end = current.find("}", start)
         if end == -1:
-            raise ValueError
+            raise ValueError(f"Malformed brace expansion: missing closing '}}' in '{current}'")
 
         prefix = current[:start]
         suffix = current[end + 1 :]
         inner = current[start + 1 : end]
         if not inner:
-            raise ValueError
+            raise ValueError(f"Malformed brace expansion: empty braces '{{}}' in '{current}'")
 
         for option in inner.split(","):
             _expand(prefix + option + suffix)
