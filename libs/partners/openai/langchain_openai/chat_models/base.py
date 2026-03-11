@@ -4366,6 +4366,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "name": tool_call["function"]["name"],
                             "arguments": tool_call["function"]["arguments"],
                             "call_id": tool_call["id"],
+                            "status": None,
                         }
                         input_.append(function_call)
 
@@ -4485,7 +4486,12 @@ def _construct_lc_result_from_responses_api(
                         {"type": "refusal", "refusal": content.refusal, "id": output.id}
                     )
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            # Use exclude_none=False to preserve "status" field (even when
+            # None).  Some OpenAI-compatible servers (e.g. vLLM serving
+            # GPT-OSS models) require "status" to be present in the
+            # function_call block when it is sent back as conversation
+            # history; omitting it causes "No call message found" errors.
+            content_blocks.append(output.model_dump(exclude_none=False, mode="json"))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -4727,6 +4733,7 @@ def _convert_responses_chunk_to_generation_chunk(
                 "arguments": chunk.item.arguments,
                 "call_id": chunk.item.call_id,
                 "id": chunk.item.id,
+                "status": getattr(chunk.item, "status", None),
                 "index": current_index,
             }
         )
