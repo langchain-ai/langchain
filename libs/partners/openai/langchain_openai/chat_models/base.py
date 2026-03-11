@@ -152,6 +152,8 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
+_TIMEOUT_UNSET = object()
+
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
@@ -644,11 +646,13 @@ class BaseChatOpenAI(BaseChatModel):
     )
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
-        default=None, alias="timeout"
+        default=_TIMEOUT_UNSET, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API.
 
-    Can be float, `httpx.Timeout` or `None`.
+    Can be float, `httpx.Timeout` or `None`. When not set, the OpenAI SDK's
+    default timeout (600s) is used. Set to `None` explicitly to disable
+    timeouts entirely.
     """
 
     stream_usage: bool | None = None
@@ -1022,10 +1026,11 @@ class BaseChatOpenAI(BaseChatModel):
         client_params: dict = {
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
-            "timeout": self.request_timeout,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.request_timeout is not _TIMEOUT_UNSET:
+            client_params["timeout"] = self.request_timeout
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
@@ -1058,11 +1063,14 @@ class BaseChatOpenAI(BaseChatModel):
                     self.http_client = httpx.Client(
                         proxy=self.openai_proxy, verify=global_ssl_context
                     )
+                _timeout = (
+                    None
+                    if self.request_timeout is _TIMEOUT_UNSET
+                    else self.request_timeout
+                )
                 sync_specific = {
                     "http_client": self.http_client
-                    or _get_default_httpx_client(
-                        self.openai_api_base, self.request_timeout
-                    ),
+                    or _get_default_httpx_client(self.openai_api_base, _timeout),
                     "api_key": sync_api_key_value,
                 }
                 self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
@@ -1080,11 +1088,12 @@ class BaseChatOpenAI(BaseChatModel):
                 self.http_async_client = httpx.AsyncClient(
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
+            _timeout = (
+                None if self.request_timeout is _TIMEOUT_UNSET else self.request_timeout
+            )
             async_specific = {
                 "http_client": self.http_async_client
-                or _get_default_async_httpx_client(
-                    self.openai_api_base, self.request_timeout
-                ),
+                or _get_default_async_httpx_client(self.openai_api_base, _timeout),
                 "api_key": async_api_key_value,
             }
             self.root_async_client = openai.AsyncOpenAI(
