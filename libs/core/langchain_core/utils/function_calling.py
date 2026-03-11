@@ -780,11 +780,17 @@ def _parse_google_docstring(
             raise ValueError(msg)
         description = ""
         args_block = None
-    arg_descriptions = {}
+            arg_descriptions = {}
     if args_block:
         arg = None
+        base_indent = None
         for line in args_block.split("\n")[1:]:
-            if ":" in line:
+            if not line.strip():
+                continue
+            indent = len(line) - len(line.lstrip())
+            if base_indent is None:
+                base_indent = indent
+            if ":" in line and indent == base_indent:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
                 arg_name, _, annotations_ = arg.partition(" ")
