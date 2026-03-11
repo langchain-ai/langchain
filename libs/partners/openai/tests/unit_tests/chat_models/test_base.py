@@ -1727,8 +1727,76 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
             "name": "get_weather",
             "arguments": '{"location": "New York", "unit": "celsius"}',
             "call_id": "call_123",
+            "status": None,
         }
     ]
+
+
+def test__construct_lc_result_from_responses_api_function_call_preserves_status() -> (
+    None
+):
+    """Test that function_call status field is preserved (even when None).
+
+    Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models) require
+    the "status" field to be present in function_call blocks when they are sent
+    back as conversation history. Omitting it causes "No call message found"
+    errors.  See https://github.com/langchain-ai/langchain/issues/32885
+    """
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York"}',
+                # status defaults to None
+            )
+        ],
+    )
+    result = _construct_lc_result_from_responses_api(response)
+    msg = cast(AIMessage, result.generations[0].message)
+    assert isinstance(msg.content, list)
+    assert len(msg.content) == 1
+    block = msg.content[0]
+    assert isinstance(block, dict)
+    assert "status" in block, "status field must be present in function_call block"
+    assert block["status"] is None
+
+    # Verify a round-trip through _construct_responses_api_input preserves status
+    rebuilt = _construct_responses_api_input([msg])
+    assert any(
+        item.get("type") == "function_call" and "status" in item for item in rebuilt
+    ), "status field must survive round-trip through _construct_responses_api_input"
+
+
+def test__construct_responses_api_input_fallback_function_call_includes_status() -> (
+    None
+):
+    """Test that function_call blocks created from tool_calls include status."""
+    tool_calls = [
+        {
+            "id": "call_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+            "type": "tool_call",
+        }
+    ]
+    # When content is empty, function_call is reconstructed from tool_calls
+    ai_message = AIMessage(content="", tool_calls=tool_calls)
+    result = _construct_responses_api_input([ai_message])
+    fc_items = [item for item in result if item.get("type") == "function_call"]
+    assert len(fc_items) == 1
+    assert "status" in fc_items[0], (
+        "status field must be present in reconstructed function_call"
+    )
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
@@ -1852,6 +1920,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
             "call_id": "call_123",
             "name": "get_weather",
             "arguments": '{"location": "New York"}',
+            "status": None,
         },
     ]
 
