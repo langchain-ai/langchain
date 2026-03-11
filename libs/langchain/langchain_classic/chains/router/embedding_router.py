@@ -40,6 +40,8 @@ class EmbeddingRouterChain(RouterChain):
     ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = self.vectorstore.similarity_search(_input, k=1)
+        if not results:
+            raise ValueError("No results found from vectorstore")
         return {"next_inputs": inputs, "destination": results[0].metadata["name"]}
 
     @override
@@ -50,6 +52,8 @@ class EmbeddingRouterChain(RouterChain):
     ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = await self.vectorstore.asimilarity_search(_input, k=1)
+        if not results:
+            raise ValueError("No results found from vectorstore")
         return {"next_inputs": inputs, "destination": results[0].metadata["name"]}
 
     @classmethod
