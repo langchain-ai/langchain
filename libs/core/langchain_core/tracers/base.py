@@ -61,7 +61,13 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: str | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run.
+        """Start a trace for a chat model run.
+
+        Note:
+            Naming can be confusing here: there is `on_chat_model_start`, but no
+            corresponding `on_chat_model_end` callback. Chat model completion is
+            routed through `on_llm_end` / `_on_llm_end`, which are shared with
+            text LLM runs.
 
         Args:
             serialized: The serialized model.
@@ -191,7 +197,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
     @override
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
-        """End a trace for an LLM run.
+        """End a trace for an LLM or chat model run.
+
+        Note:
+            This is the end callback for both run types. Chat models start with
+            `on_chat_model_start`, but there is no `on_chat_model_end`;
+            completion is routed here for callback API compatibility.
 
         Args:
             response: The response.
@@ -654,6 +665,14 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
+        """End a trace for an LLM or chat model run.
+
+        Note:
+            This async callback also handles both run types. Async chat models
+            start with `on_chat_model_start`, but there is no
+            `on_chat_model_end`; completion is routed here for callback API
+            compatibility.
+        """
         llm_run = self._complete_llm_run(
             response=response,
             run_id=run_id,
@@ -874,7 +893,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         """Process the LLM Run upon start."""
 
     async def _on_llm_end(self, run: Run) -> None:
-        """Process the LLM Run."""
+        """Process LLM/chat model run completion."""
 
     async def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""

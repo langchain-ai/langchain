@@ -192,6 +192,60 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
+- Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
+
+## Model profiles
+
+Model profiles are generated using the `langchain-profiles` CLI in `libs/model-profiles`. The `--data-dir` must point to the directory containing `profile_augmentations.toml`, not the top-level package directory.
+
+```bash
+# Run from libs/model-profiles
+cd libs/model-profiles
+
+# Refresh profiles for a partner in this repo
+uv run langchain-profiles refresh --provider openai --data-dir ../partners/openai/langchain_openai/data
+
+# Refresh profiles for a partner in an external repo (requires echo y to confirm)
+echo y | uv run langchain-profiles refresh --provider google --data-dir /path/to/langchain-google/libs/genai/langchain_google_genai/data
+```
+
+Example partners with profiles in this repo:
+
+- `libs/partners/openai/langchain_openai/data/` (provider: `openai`)
+- `libs/partners/anthropic/langchain_anthropic/data/` (provider: `anthropic`)
+- `libs/partners/perplexity/langchain_perplexity/data/` (provider: `perplexity`)
+
+The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-profiles` working directory.
+
+## CI/CD infrastructure
+
+### Release process
+
+Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+
+### PR labeling and linting
+
+**Title linting** (`.github/workflows/pr_lint.yml`)
+
+**Auto-labeling:**
+
+- `.github/workflows/pr_labeler_file.yml`
+- `.github/workflows/pr_labeler_title.yml`
+- `.github/workflows/auto-label-by-package.yml`
+- `.github/workflows/tag-external-contributions.yml`
+
+### Adding a new partner to CI
+
+When adding a new partner package, update these files:
+
+- `.github/ISSUE_TEMPLATE/*.yml` – Add to package dropdown
+- `.github/dependabot.yml` – Add dependency update entry
+- `.github/pr-file-labeler.yml` – Add file-to-label mapping
+- `.github/workflows/_release.yml` – Add API key secrets if needed
+- `.github/workflows/auto-label-by-package.yml` – Add package label
+- `.github/workflows/check_diffs.yml` – Add to change detection
+- `.github/workflows/integration_tests.yml` – Add integration test config
+- `.github/workflows/pr_lint.yml` – Add to allowed scopes
 
 ## Additional resources
 

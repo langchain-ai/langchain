@@ -368,9 +368,9 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
             "call_id": tool_call_chunk.get("id"),
         }
         if function_call_ids is not None and (
-            _id := function_call_ids.get(tool_call_chunk.get("id"))
+            id_ := function_call_ids.get(tool_call_chunk.get("id"))
         ):
-            function_call["id"] = _id
+            function_call["id"] = id_
         buckets["function_call"].append(function_call)
     else:
         for tool_call in message.tool_calls:
@@ -381,9 +381,9 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
                 "call_id": tool_call["id"],
             }
             if function_call_ids is not None and (
-                _id := function_call_ids.get(tool_call["id"])
+                id_ := function_call_ids.get(tool_call["id"])
             ):
-                function_call["id"] = _id
+                function_call["id"] = id_
             buckets["function_call"].append(function_call)
 
     # Tool outputs
@@ -731,6 +731,11 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         tool_call_block["extras"]["item_id"] = block["id"]
                     if "index" in block:
                         tool_call_block["index"] = f"lc_tc_{block['index']}"
+                    for extra_key in ("status", "namespace"):
+                        if extra_key in block:
+                            if "extras" not in tool_call_block:
+                                tool_call_block["extras"] = {}
+                            tool_call_block["extras"][extra_key] = block[extra_key]
                     yield tool_call_block
 
             elif block_type == "web_search_call":
@@ -978,6 +983,51 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if "index" in block and isinstance(block["index"], int):
                     mcp_list_tools_result["index"] = f"lc_mltr_{block['index'] + 1}"
                 yield cast("types.ServerToolResult", mcp_list_tools_result)
+
+            elif (
+                block_type == "tool_search_call" and block.get("execution") == "server"
+            ):
+                tool_search_call: dict[str, Any] = {
+                    "type": "server_tool_call",
+                    "name": "tool_search",
+                    "id": block["id"],
+                    "args": block.get("arguments", {}),
+                }
+                if "index" in block:
+                    tool_search_call["index"] = f"lc_tsc_{block['index']}"
+                extras: dict[str, Any] = {}
+                known = {"type", "id", "arguments", "index"}
+                for key in block:
+                    if key not in known:
+                        extras[key] = block[key]
+                if extras:
+                    tool_search_call["extras"] = extras
+                yield cast("types.ServerToolCall", tool_search_call)
+
+            elif (
+                block_type == "tool_search_output"
+                and block.get("execution") == "server"
+            ):
+                tool_search_output: dict[str, Any] = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                    "output": {"tools": block.get("tools", [])},
+                }
+                status = block.get("status")
+                if status == "failed":
+                    tool_search_output["status"] = "error"
+                elif status == "completed":
+                    tool_search_output["status"] = "success"
+                if "index" in block and isinstance(block["index"], int):
+                    tool_search_output["index"] = f"lc_tso_{block['index']}"
+                extras_out: dict[str, Any] = {"name": "tool_search"}
+                known_out = {"type", "id", "status", "tools", "index"}
+                for key in block:
+                    if key not in known_out:
+                        extras_out[key] = block[key]
+                if extras_out:
+                    tool_search_output["extras"] = extras_out
+                yield cast("types.ServerToolResult", tool_search_output)
 
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)
