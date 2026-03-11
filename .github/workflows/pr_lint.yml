@@ -25,6 +25,7 @@
 #   * chore      — other changes that don't modify source or test files
 #   * revert     — reverts a previous commit
 #   * release    — prepare a new release
+#   * hotfix     — urgent fix
 #
 # Allowed Scope(s) (optional):
 #   core, langchain, langchain-classic, model-profiles,
@@ -83,6 +84,7 @@ jobs:
             chore
             revert
             release
+            hotfix
           scopes: |
             core
             langchain

@@ -1690,8 +1690,6 @@ def test_streaming_cache_token_reporting() -> None:
 
     from anthropic.types import MessageDeltaUsage
 
-    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
-
     # Create a mock message_start event
     mock_message = MagicMock()
     mock_message.model = MODEL_NAME
@@ -1721,8 +1719,10 @@ def test_streaming_cache_token_reporting() -> None:
     message_delta_event.usage = mock_delta_usage
     message_delta_event.delta = mock_delta
 
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
     # Test message_start event
-    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_start_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -1730,7 +1730,7 @@ def test_streaming_cache_token_reporting() -> None:
     )
 
     # Test message_delta event - should contain complete usage metadata (w/ cache)
-    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_delta_event,
         stream_usage=True,
         coerce_content_to_string=True,
