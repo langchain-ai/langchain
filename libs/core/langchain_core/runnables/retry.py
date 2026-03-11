@@ -233,8 +233,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
-        not_set: list[Output] = []
-        result = not_set
+        result: list[Output] = []
         try:
             for attempt in self._sync_retrying():
                 with attempt:
@@ -276,15 +275,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            retry_error: RetryError = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(cast("Output", retry_error))
         return outputs
 
     @override
@@ -309,8 +307,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
-        not_set: list[Output] = []
-        result = not_set
+        result: list[Output] = []
         try:
             async for attempt in self._async_retrying():
                 with attempt:
@@ -351,15 +348,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            retry_error: RetryError = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(cast("Output", retry_error))
         return outputs
 
     @override
