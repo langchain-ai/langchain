@@ -1,9 +1,10 @@
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
     LanguageModelInput,
@@ -28,6 +29,7 @@ from typing_extensions import override
 
 from langchain.agents import AgentState
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -1310,3 +1312,187 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+
+
+def _make_request(messages: list[AnyMessage]) -> ModelRequest:
+    """Create a ModelRequest for testing wrap_model_call."""
+    model = FakeToolCallingModel()
+    state = cast("AgentState[Any]", {"messages": messages})
+    return ModelRequest(
+        model=model,
+        messages=messages,
+        state=state,
+        runtime=cast("Runtime", object()),
+    )
+
+
+def test_wrap_model_call_passes_through_on_success() -> None:
+    """wrap_model_call returns the handler result when no error occurs."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi"),
+    ]
+    request = _make_request(messages)
+    expected = ModelResponse(result=[AIMessage(content="response")])
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        return expected
+
+    result = middleware.wrap_model_call(request, handler)
+    assert result is expected
+
+
+def test_wrap_model_call_catches_context_overflow_and_summarizes() -> None:
+    """wrap_model_call catches ContextOverflowError and retries after summarization."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(content="msg2"),
+        HumanMessage(content="msg3"),
+        AIMessage(content="msg4"),
+        HumanMessage(content="msg5"),
+    ]
+    request = _make_request(messages)
+
+    call_count = 0
+    captured_messages: list[list[AnyMessage]] = []
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        nonlocal call_count
+        call_count += 1
+        captured_messages.append(req.messages)
+        if call_count == 1:
+            msg = "too many tokens"
+            raise ContextOverflowError(msg)
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    result = middleware.wrap_model_call(request, handler)
+
+    assert call_count == 2
+    assert result.result[0].content == "ok"
+    retry_messages = captured_messages[1]
+    assert any(
+        isinstance(m, HumanMessage) and "summary" in m.content.lower() for m in retry_messages
+    )
+    assert len(retry_messages) < len(messages)
+
+
+def test_wrap_model_call_reraises_when_cutoff_impossible() -> None:
+    """wrap_model_call re-raises ContextOverflowError when summarization can't help."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("tokens", 1000), keep=("messages", 20)
+    )
+    messages: list[AnyMessage] = [HumanMessage(content="only one")]
+    request = _make_request(messages)
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        msg = "too many tokens"
+        raise ContextOverflowError(msg)
+
+    with pytest.raises(ContextOverflowError):
+        middleware.wrap_model_call(request, handler)
+
+
+async def test_awrap_model_call_passes_through_on_success() -> None:
+    """awrap_model_call returns the handler result when no error occurs."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi"),
+    ]
+    request = _make_request(messages)
+    expected = ModelResponse(result=[AIMessage(content="response")])
+
+    async def handler(req: ModelRequest) -> ModelResponse:
+        return expected
+
+    result = await middleware.awrap_model_call(request, handler)
+    assert result is expected
+
+
+async def test_awrap_model_call_catches_context_overflow_and_summarizes() -> None:
+    """awrap_model_call catches ContextOverflowError and retries after summarization."""
+
+    class AsyncMockModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Async Summary"))]
+            )
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=AsyncMockModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(content="msg2"),
+        HumanMessage(content="msg3"),
+        AIMessage(content="msg4"),
+        HumanMessage(content="msg5"),
+    ]
+    request = _make_request(messages)
+
+    call_count = 0
+    captured_messages: list[list[AnyMessage]] = []
+
+    async def handler(req: ModelRequest) -> ModelResponse:
+        nonlocal call_count
+        call_count += 1
+        captured_messages.append(req.messages)
+        if call_count == 1:
+            msg = "too many tokens"
+            raise ContextOverflowError(msg)
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    result = await middleware.awrap_model_call(request, handler)
+
+    assert call_count == 2
+    assert result.result[0].content == "ok"
+    retry_messages = captured_messages[1]
+    assert any(
+        isinstance(m, HumanMessage) and "summary" in m.content.lower() for m in retry_messages
+    )
+    assert len(retry_messages) < len(messages)
+
+
+def test_wrap_model_call_does_not_catch_other_errors() -> None:
+    """wrap_model_call only catches ContextOverflowError, not other exceptions."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("tokens", 1000), keep=("messages", 2)
+    )
+    messages: list[AnyMessage] = [HumanMessage(content="Hello")]
+    request = _make_request(messages)
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        msg = "some other error"
+        raise ValueError(msg)
+
+    with pytest.raises(ValueError, match="some other error"):
+        middleware.wrap_model_call(request, handler)

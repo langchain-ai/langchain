@@ -1,11 +1,13 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from functools import partial
 from typing import Any, Literal, cast
 
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -25,8 +27,17 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ModelRequest,
+    ModelResponse,
+    ResponseT,
+)
 from langchain.chat_models import BaseChatModel, init_chat_model
+
+logger = logging.getLogger(__name__)
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
@@ -364,6 +375,112 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 *preserved_messages,
             ]
         }
+
+    @override
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        """Catch context overflow errors and fall back to emergency summarization.
+
+        If the model call raises `ContextOverflowError` (e.g. a 400 due to too
+        many tokens), this method summarizes the conversation and retries.
+
+        Args:
+            request: The model request to process.
+            handler: Callback that executes the model request.
+
+        Returns:
+            The model response, possibly after emergency summarization and retry.
+        """
+        try:
+            return handler(request)
+        except ContextOverflowError:
+            logger.warning(
+                "Model call failed with ContextOverflowError, "
+                "falling back to emergency summarization."
+            )
+
+        return self._summarize_and_retry(request, handler)
+
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT]:
+        """Catch context overflow errors and fall back to emergency summarization (async).
+
+        If the model call raises `ContextOverflowError` (e.g. a 400 due to too
+        many tokens), this method summarizes the conversation and retries.
+
+        Args:
+            request: The model request to process.
+            handler: Async callback that executes the model request.
+
+        Returns:
+            The model response, possibly after emergency summarization and retry.
+        """
+        try:
+            return await handler(request)
+        except ContextOverflowError:
+            logger.warning(
+                "Model call failed with ContextOverflowError, "
+                "falling back to emergency summarization."
+            )
+
+        return await self._asummarize_and_retry(request, handler)
+
+    def _summarize_and_retry(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        """Summarize messages and retry the model call."""
+        messages = request.messages
+        self._ensure_message_ids(messages)
+
+        cutoff_index = self._determine_cutoff_index(messages)
+        if cutoff_index <= 0:
+            cutoff_index = self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        if cutoff_index <= 0:
+            msg = (
+                "ContextOverflowError occurred but unable to determine a valid "
+                "cutoff for summarization."
+            )
+            raise ContextOverflowError(msg)
+
+        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        summary = self._create_summary(messages_to_summarize)
+        new_messages = self._build_new_messages(summary)
+        modified_messages = [*new_messages, *preserved_messages]
+        return handler(request.override(messages=modified_messages))
+
+    async def _asummarize_and_retry(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT]:
+        """Summarize messages and retry the model call (async)."""
+        messages = request.messages
+        self._ensure_message_ids(messages)
+
+        cutoff_index = self._determine_cutoff_index(messages)
+        if cutoff_index <= 0:
+            cutoff_index = self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        if cutoff_index <= 0:
+            msg = (
+                "ContextOverflowError occurred but unable to determine a valid "
+                "cutoff for summarization."
+            )
+            raise ContextOverflowError(msg)
+
+        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        summary = await self._acreate_summary(messages_to_summarize)
+        new_messages = self._build_new_messages(summary)
+        modified_messages = [*new_messages, *preserved_messages]
+        return await handler(request.override(messages=modified_messages))
 
     def _should_summarize_based_on_reported_tokens(
         self, messages: list[AnyMessage], threshold: float
