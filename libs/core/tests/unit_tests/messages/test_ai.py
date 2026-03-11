@@ -502,3 +502,87 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_sse_fragmented_tool_calls_no_premature_parse() -> None:
+    chunk_1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "my_tool",
+                "args": "",
+                "id": "call_34db",
+                "index": 0,
+            }
+        ],
+    )
+    chunk_2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "",
+                "args": "{",
+                "id": "call_34db",
+                "index": 0,
+            }
+        ],
+    )
+    chunk_3 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "",
+                "args": '"url": "http://example.com"',
+                "id": "call_34db",
+                "index": 0,
+            }
+        ],
+    )
+    chunk_4 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "",
+                "args": "}",
+                "id": "call_34db",
+                "index": 0,
+            }
+        ],
+    )
+    chunk_5 = AIMessageChunk(content="", chunk_position="last")
+
+    assert chunk_1.tool_calls == []
+    assert chunk_1.invalid_tool_calls == []
+
+    full_chunk = chunk_1 + chunk_2 + chunk_3 + chunk_4 + chunk_5
+
+    assert full_chunk.tool_calls == [
+        create_tool_call(
+            name="my_tool",
+            args={"url": "http://example.com"},
+            id="call_34db",
+        )
+    ]
+
+
+def test_no_arg_tool_call_still_works() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "my_tool",
+                "args": "{}",
+                "id": "call_34db",
+                "index": 0,
+            }
+        ],
+    )
+
+    assert chunk.tool_calls == [
+        create_tool_call(name="my_tool", args={}, id="call_34db")
+    ]
