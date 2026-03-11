@@ -310,6 +310,18 @@ class LLMMathChain(Chain):
             llm: a language model
             prompt: a prompt template
             **kwargs: additional arguments
+
+        Returns:
+            LLMMathChain: a chain that can answer math questions.
+
+        Example:
+            .. code-block:: python
+
+                from langchain_classic.chains import LLMMathChain
+                from langchain_openai import OpenAI
+
+                llm = OpenAI(temperature=0)
+                chain = LLMMathChain.from_llm(llm=llm, verbose=True)
+                result = chain.invoke({"question": "What is 2 raised to the power 10?"})
+                print(result)
         """
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(llm_chain=llm_chain, **kwargs)
