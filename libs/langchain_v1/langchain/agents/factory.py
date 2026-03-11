@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -138,7 +138,9 @@ def _scrub_runtime(inputs: dict[str, Any]) -> dict[str, Any]:
     filtered = inputs.copy()
     req = filtered.get("request")
     if isinstance(req, (ModelRequest, ToolCallRequest)):
-        filtered["request"] = {k: v for k, v in asdict(req).items() if k != "runtime"}
+        filtered["request"] = {
+            f.name: getattr(req, f.name) for f in fields(req) if f.name != "runtime"
+        }
     return filtered
 
 
