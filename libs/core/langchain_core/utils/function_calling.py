@@ -423,6 +423,16 @@ def convert_to_openai_function(
         }
         if "description" in function["toolSpec"]:
             oai_function["description"] = function["toolSpec"]["description"]
+    # OpenAI structured output format with 'schema' key
+    elif isinstance(function, dict) and "name" in function and "schema" in function:
+        oai_function = {
+            "name": function["name"],
+            "parameters": function["schema"],
+        }
+        if "description" in function:
+            oai_function["description"] = function["description"]
+        if "strict" in function:
+            oai_function["strict"] = function["strict"]
     # already in OpenAI function format
     elif isinstance(function, dict) and "name" in function:
         oai_function = {

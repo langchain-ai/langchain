@@ -1242,3 +1242,93 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_openai_structured_output_format() -> None:
+    """Test conversion of OpenAI structured output format with 'schema' key."""
+    # This is the format used by OpenAI's structured output feature
+    # where 'schema' is used instead of 'parameters'
+    structured_output_schema = {
+        "name": "math_reasoning",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "explanation": {"type": "string"},
+                            "output": {"type": "string"},
+                        },
+                        "required": ["explanation", "output"],
+                        "additionalProperties": False,
+                    },
+                },
+                "final_answer": {"type": "string"},
+            },
+            "required": ["steps", "final_answer"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+    
+    expected = {
+        "name": "math_reasoning",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "explanation": {"type": "string"},
+                            "output": {"type": "string"},
+                        },
+                        "required": ["explanation", "output"],
+                        "additionalProperties": False,
+                    },
+                },
+                "final_answer": {"type": "string"},
+            },
+            "required": ["steps", "final_answer"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+    
+    result = convert_to_openai_function(structured_output_schema)
+    assert result == expected
+
+
+def test_convert_to_openai_function_openai_structured_output_with_description() -> None:
+    """Test OpenAI structured output format with optional description."""
+    structured_output_schema = {
+        "name": "simple_function",
+        "description": "A simple test function",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "value": {"type": "string"},
+            },
+            "required": ["value"],
+        },
+        "strict": True,
+    }
+    
+    expected = {
+        "name": "simple_function",
+        "description": "A simple test function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "value": {"type": "string"},
+            },
+            "required": ["value"],
+        },
+        "strict": True,
+    }
+    
+    result = convert_to_openai_function(structured_output_schema)
+    assert result == expected
