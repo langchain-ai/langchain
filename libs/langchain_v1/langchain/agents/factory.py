@@ -3,12 +3,6 @@
 from __future__ import annotations
 
 import itertools
-
-try:
-    from langsmith import traceable  # type: ignore[import-untyped]
-except ImportError:
-    traceable = None
-
 from dataclasses import asdict, dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -29,6 +23,7 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
+from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -145,13 +140,6 @@ def _scrub_runtime(inputs: dict[str, Any]) -> dict[str, Any]:
     if isinstance(req, (ModelRequest, ToolCallRequest)):
         filtered["request"] = {k: v for k, v in asdict(req).items() if k != "runtime"}
     return filtered
-
-
-def _trace_middleware(fn: Callable[..., Any], *, name: str) -> Callable[..., Any]:
-    """Wrap a middleware hook with ``langsmith.traceable``, scrubbing runtime."""
-    if traceable is None:
-        return fn
-    return traceable(name=name, process_inputs=_scrub_runtime)(fn)
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -887,7 +875,9 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            _trace_middleware(m.wrap_tool_call, name=f"{m.name}.wrap_tool_call")
+            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_runtime)(
+                m.wrap_tool_call
+            )
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -906,7 +896,9 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            _trace_middleware(m.awrap_tool_call, name=f"{m.name}.awrap_tool_call")
+            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_runtime)(
+                m.awrap_tool_call
+            )
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -992,7 +984,9 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            _trace_middleware(m.wrap_model_call, name=f"{m.name}.wrap_model_call")
+            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_runtime)(
+                m.wrap_model_call
+            )
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1001,7 +995,9 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            _trace_middleware(m.awrap_model_call, name=f"{m.name}.awrap_model_call")
+            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_runtime)(
+                m.awrap_model_call
+            )
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
