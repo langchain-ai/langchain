@@ -1,3 +1,3 @@
 # LangChain Tests
 
-[This guide has moved to the docs](https://python.langchain.com/docs/contributing/testing)
+[This guide has moved to the docs](https://docs.langchain.com/oss/python/contributing/testing)
