@@ -11,7 +11,7 @@ import textwrap
 # Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
 # RunnableConfigurableFields.
 from collections.abc import Mapping, Sequence  # noqa: TC003
-from functools import lru_cache
+from weakref import WeakKeyDictionary
 from inspect import signature
 from itertools import groupby
 from typing import (
@@ -404,7 +404,9 @@ def get_lambda_source(func: Callable) -> str | None:
     return visitor.source if visitor.count == 1 else name
 
 
-@lru_cache(maxsize=256)
+_function_nonlocals_cache: WeakKeyDictionary[Callable, list[Any]] = WeakKeyDictionary()
+
+
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -414,6 +416,15 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
     Returns:
         The nonlocal variables accessed by the function.
     """
+    try:
+        cached = _function_nonlocals_cache[func]
+    except (KeyError, TypeError):
+        # KeyError: not cached yet
+        # TypeError: func is not weakly referenceable (e.g. bound methods)
+        pass
+    else:
+        return cached
+
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
@@ -443,6 +454,12 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
                         values.append(vv)
     except (SyntaxError, TypeError, OSError, SystemError):
         return []
+
+    try:
+        _function_nonlocals_cache[func] = values
+    except TypeError:
+        # func is not weakly referenceable (e.g. bound methods), skip caching
+        pass
 
     return values
 

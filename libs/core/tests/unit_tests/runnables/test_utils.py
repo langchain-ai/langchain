@@ -1,3 +1,5 @@
+import gc
+import weakref
 from collections.abc import Callable
 from typing import Any
 
@@ -73,3 +75,32 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_get_function_nonlocals_no_memory_leak() -> None:
+    """Test that get_function_nonlocals does not prevent garbage collection.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/30667.
+    The previous @lru_cache decorator held strong references to Callable arguments,
+    preventing garbage collection of bound methods and their parent objects.
+    """
+
+    class HeavyObject:
+        def call(self, x: str) -> str:
+            return x
+
+    obj = HeavyObject()
+    ref = weakref.ref(obj)
+
+    def fn(value: str) -> str:
+        return obj.call(value)
+
+    runnable = RunnableLambda(fn)
+    _ = runnable.deps  # triggers get_function_nonlocals
+
+    del obj
+    del fn
+    del runnable
+    gc.collect()
+
+    assert ref() is None, "HeavyObject was not garbage collected — memory leak"
