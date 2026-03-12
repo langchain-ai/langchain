@@ -68,6 +68,15 @@ jobs:
             const { owner, repo } = context.repo;
             const author = context.payload.sender.login;
 
+            // GitHub App bots (e.g. model-profile-bot) are not org members
+            // but should be treated as internal — skip the membership check.
+            const senderType = context.payload.sender.type;
+            if (senderType === 'Bot') {
+              console.log(`Sender ${author} is a Bot — treating as internal`);
+              core.setOutput('is-external', 'false');
+              return;
+            }
+
             try {
               // Check if the author is a member of the langchain-ai organization
               // This requires org:read permissions to see private memberships
@@ -267,8 +276,15 @@ jobs:
             // Cache: author -> { isExternal, mergedCount }
             const contributorCache = new Map();
 
-            async function getContributorInfo(author) {
+            async function getContributorInfo(author, userType) {
               if (contributorCache.has(author)) return contributorCache.get(author);
+
+              // Bots are always internal
+              if (userType === 'Bot') {
+                const info = { isExternal: false, mergedCount: 0 };
+                contributorCache.set(author, info);
+                return info;
+              }
 
               let isExternal = true;
               try {
@@ -341,7 +357,7 @@ jobs:
               for (const pr of prs) {
                 if (processed >= maxItems) break;
                 const author = pr.user.login;
-                const info = await getContributorInfo(author);
+                const info = await getContributorInfo(author, pr.user.type);
 
                 const labels = [];
                 labels.push(info.isExternal ? 'external' : 'internal');
@@ -383,7 +399,7 @@ jobs:
                 if (issue.pull_request) continue;
 
                 const author = issue.user.login;
-                const info = await getContributorInfo(author);
+                const info = await getContributorInfo(author, issue.user.type);
 
                 const labels = [];
                 labels.push(info.isExternal ? 'external' : 'internal');
