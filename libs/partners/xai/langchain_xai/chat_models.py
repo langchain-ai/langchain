@@ -448,19 +448,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """
         return ["langchain_xai", "chat_models"]
 
-    @property
-    def lc_attributes(self) -> dict[str, Any]:
-        """List of attribute names that should be included in the serialized kwargs.
-
-        These attributes must be accepted by the constructor.
-        """
-        attributes: dict[str, Any] = {}
-
-        if self.xai_api_base:
-            attributes["xai_api_base"] = self.xai_api_base
-
-        return attributes
-
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by LangChain."""
