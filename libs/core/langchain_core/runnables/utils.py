@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import contextlib
 import inspect
 import sys
 import textwrap
-
-# Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
-# RunnableConfigurableFields.
 from collections.abc import Mapping, Sequence  # noqa: TC003
-from weakref import WeakKeyDictionary
 from inspect import signature
+from weakref import WeakKeyDictionary
 from itertools import groupby
 from typing import (
     TYPE_CHECKING,
@@ -455,11 +453,9 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
     except (SyntaxError, TypeError, OSError, SystemError):
         return []
 
-    try:
+    with contextlib.suppress(TypeError):
+        # func may not be weakly referenceable (e.g. bound methods), skip caching
         _function_nonlocals_cache[func] = values
-    except TypeError:
-        # func is not weakly referenceable (e.g. bound methods), skip caching
-        pass
 
     return values
 
