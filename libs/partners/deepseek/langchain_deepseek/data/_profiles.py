@@ -17,6 +17,10 @@ from typing import Any
 
 _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-chat": {
+        "name": "DeepSeek Chat",
+        "release_date": "2025-12-01",
+        "last_updated": "2026-02-28",
+        "open_weights": True,
         "max_input_tokens": 128000,
         "max_output_tokens": 8192,
         "text_inputs": True,
@@ -29,8 +33,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": True,
+        "attachment": True,
+        "temperature": True,
     },
     "deepseek-reasoner": {
+        "name": "DeepSeek Reasoner",
+        "release_date": "2025-12-01",
+        "last_updated": "2026-02-28",
+        "open_weights": True,
         "max_input_tokens": 128000,
         "max_output_tokens": 64000,
         "text_inputs": True,
@@ -43,5 +53,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
+        "attachment": True,
+        "temperature": True,
     },
 }
