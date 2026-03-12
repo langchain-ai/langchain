@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
+import weakref
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
 from typing import Any, cast
@@ -75,11 +76,43 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout)
 
 
-@lru_cache
+# Cache async httpx clients per event loop to avoid cross-loop connection reuse.
+# httpx.AsyncClient connections are bound to the event loop they were created on.
+# Using a process-global @lru_cache would cause 'Event loop is closed' errors when
+# asyncio.run() is called multiple times (e.g. in multi-threaded environments, Celery
+# workers, or sequential asyncio.run() calls), because each call creates and later
+# closes a new event loop while the cached client still holds connections to the
+# previous (now-closed) loop.
+#
+# Using WeakValueDictionary ensures that clients are automatically cleaned up when
+# their associated event loop is garbage collected, preventing memory leaks.
+_async_httpx_client_cache: weakref.WeakValueDictionary = (
+    weakref.WeakValueDictionary()
+)
+
+
 def _cached_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout)
+    """Get a cached async httpx client scoped to the current event loop.
+
+    Unlike sync clients, async httpx clients cannot be safely shared across
+    different event loops. This function uses the current loop's identity as
+    part of the cache key, so each event loop gets its own client instance.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+        loop_id = id(loop)
+    except RuntimeError:
+        # No running event loop; fall back to creating a fresh client.
+        return _build_async_httpx_client(base_url, timeout)
+
+    cache_key = (loop_id, base_url, timeout)
+    client = _async_httpx_client_cache.get(cache_key)
+    if client is None:
+        client = _build_async_httpx_client(base_url, timeout)
+        _async_httpx_client_cache[cache_key] = client
+    return client
 
 
 def _get_default_httpx_client(
@@ -100,9 +133,14 @@ def _get_default_httpx_client(
 def _get_default_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    """Get default httpx client.
+    """Get default async httpx client, scoped to the current event loop.
 
-    Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
+    Async httpx clients are bound to the event loop they were created on, so
+    they cannot be safely shared across different event loops. This function
+    returns a client that is cached per-loop to avoid 'Event loop is closed'
+    errors in multi-threaded or multi-loop environments.
+
+    Uses a fresh (uncached) client when timeout is not hashable.
     """
     try:
         hash(timeout)
@@ -117,8 +155,8 @@ def _resolve_sync_and_async_api_keys(
 ) -> tuple[str | None | Callable[[], str], str | Callable[[], Awaitable[str]]]:
     """Resolve sync and async API key values.
 
-    Because OpenAI and AsyncOpenAI clients support either sync or async callables for
-    the API key, we need to resolve separate values here.
+    Because OpenAI and AsyncOpenAI clients support either sync or async callables
+    for the API key, we need to resolve separate values here.
     """
     if isinstance(api_key, SecretStr):
         sync_api_key_value: str | None | Callable[[], str] = api_key.get_secret_value()
@@ -138,5 +176,4 @@ def _resolve_sync_and_async_api_keys(
                 )
 
             async_api_key_value = async_api_key_wrapper
-
     return sync_api_key_value, async_api_key_value
