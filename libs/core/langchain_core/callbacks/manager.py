@@ -378,7 +378,7 @@ async def _ahandle_event_for_handler(
             elif handler.run_inline:
                 event(*args, **kwargs)
             else:
-                await asyncio.get_event_loop().run_in_executor(
+                await asyncio.get_running_loop().run_in_executor(
                     None,
                     cast(
                         "Callable",
