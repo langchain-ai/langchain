@@ -329,7 +329,7 @@ class TestChatDeepSeekAzureToolChoice:
         return ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
-            api_base=endpoint,
+            base_url=endpoint,
         )
 
     def test_is_azure_endpoint_detection(self) -> None:
@@ -356,7 +356,7 @@ class TestChatDeepSeekAzureToolChoice:
             llm = ChatDeepSeek(
                 model="deepseek-chat",
                 api_key=SecretStr("test_key"),
-                api_base=endpoint,
+                base_url=endpoint,
             )
             assert not llm._is_azure_endpoint, f"Expected non-Azure for {endpoint}"
 
