@@ -235,13 +235,16 @@ def _create_subset_model_v2(
     *,
     descriptions: dict | None = None,
     fn_description: str | None = None,
+    field_renames: dict[str, str] | None = None,
 ) -> type[BaseModel]:
     """Create a Pydantic model with a subset of the model fields."""
     descriptions_ = descriptions or {}
+    renames = field_renames or {}
     fields = {}
     for field_name in field_names:
         field = model.model_fields[field_name]
-        description = descriptions_.get(field_name, field.description)
+        output_name = renames.get(field_name, field_name)
+        description = descriptions_.get(output_name, field.description)
         field_kwargs: dict[str, Any] = {"description": description}
         if field.default_factory is not None:
             field_kwargs["default_factory"] = field.default_factory
@@ -250,7 +253,7 @@ def _create_subset_model_v2(
         field_info = FieldInfoV2(**field_kwargs)
         if field.metadata:
             field_info.metadata = field.metadata
-        fields[field_name] = (field.annotation, field_info)
+        fields[output_name] = (field.annotation, field_info)
 
     rtn = cast(
         "type[BaseModel]",
@@ -264,7 +267,7 @@ def _create_subset_model_v2(
     # and using the Annotated type with TypedDict.
     # Comment out the following line, to trigger the relevant test case.
     selected_annotations = [
-        (name, annotation)
+        (renames.get(name, name), annotation)
         for name, annotation in model.__annotations__.items()
         if name in field_names
     ]
@@ -285,6 +288,7 @@ def _create_subset_model(
     *,
     descriptions: dict | None = None,
     fn_description: str | None = None,
+    field_renames: dict[str, str] | None = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model.
 
@@ -305,6 +309,7 @@ def _create_subset_model(
         field_names,
         descriptions=descriptions,
         fn_description=fn_description,
+        field_renames=field_renames,
     )
 
 

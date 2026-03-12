@@ -364,8 +364,17 @@ def create_schema_from_function(
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
-    # Pydantic adds placeholder virtual fields we need to strip
+    # Pydantic adds placeholder virtual fields we need to strip.
+    # When a function has a regular parameter named "args" (or "kwargs"),
+    # Pydantic's ValidatedFunction renames it to "v__args" ("v__kwargs")
+    # to avoid conflict with its own sentinel fields.  We detect this and
+    # map the mangled name back to the original so the JSON schema exposes
+    # the correct parameter name.
+    has_param_named_args = "args" in sig.parameters and not has_args
+    has_param_named_kwargs = "kwargs" in sig.parameters and not has_kwargs
+
     valid_properties = []
+    field_renames: dict[str, str] = {}
     for field in get_fields(inferred_model):
         if not has_args and field == "args":
             continue
@@ -375,8 +384,19 @@ def create_schema_from_function(
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
 
+        # Pydantic sentinel fields created by the v__* rename — skip them
+        if field == "v__args" and not has_param_named_args:
+            continue
+        if field == "v__kwargs" and not has_param_named_kwargs:
+            continue
+
         if field not in filter_args_:
             valid_properties.append(field)
+            # Restore original parameter names mangled by ValidatedFunction
+            if field == "v__args" and has_param_named_args:
+                field_renames[field] = "args"
+            elif field == "v__kwargs" and has_param_named_kwargs:
+                field_renames[field] = "kwargs"
 
     return _create_subset_model(
         model_name,
@@ -384,6 +404,7 @@ def create_schema_from_function(
         list(valid_properties),
         descriptions=arg_descriptions,
         fn_description=description,
+        field_renames=field_renames if field_renames else None,
     )
 
 
