@@ -25,6 +25,7 @@
 #   * chore      — other changes that don't modify source or test files
 #   * revert     — reverts a previous commit
 #   * release    — prepare a new release
+#   * hotfix     — urgent fix
 #
 # Allowed Scope(s) (optional):
 #   core, langchain, langchain-classic, model-profiles,
@@ -66,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "✅ Validate Conventional Commits Format"
-        uses: amannn/action-semantic-pull-request@v6
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -83,6 +84,7 @@ jobs:
             chore
             revert
             release
+            hotfix
           scopes: |
             core
             langchain

@@ -54,7 +54,7 @@ jobs:
           python-version: "3.11"
       - name: "📂 Get Changed Files"
         id: files
-        uses: Ana06/get-changed-files@v2.3.0
+        uses: Ana06/get-changed-files@25f79e676e7ea1868813e21465014798211fad8c # v2.3.0
       - name: "🔍 Analyze Changed Files & Generate Build Matrix"
         id: set-matrix
         run: |
@@ -185,20 +185,24 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: "📦 Install UV Package Manager"
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
         with:
-          python-version: "3.13"
+          # Pinned to 3.13.11 to work around CodSpeed walltime segfault on 3.13.12+
+          # See: https://github.com/CodSpeedHQ/pytest-codspeed/issues/106
+          python-version: "3.13.11"
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          # Pinned to 3.13.11 to work around CodSpeed walltime segfault on 3.13.12+
+          # See: https://github.com/CodSpeedHQ/pytest-codspeed/issues/106
+          python-version: "3.13.11"
 
       - name: "📦 Install Test Dependencies"
         run: uv sync --group test
         working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: "⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}"
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@a50965600eafa04edcd6717761f55b77e52aafbd # v4
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
