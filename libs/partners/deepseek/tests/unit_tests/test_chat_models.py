@@ -104,6 +104,15 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 class TestChatDeepSeekCustomUnit:
     """Custom tests specific to DeepSeek chat model."""
 
+    def test_base_url_alias(self) -> None:
+        """Test that `base_url` is accepted as an alias for `api_base`."""
+        chat_model = ChatDeepSeek(
+            model=MODEL_NAME,
+            api_key=SecretStr("api_key"),
+            base_url="http://example.test/v1",
+        )
+        assert chat_model.api_base == "http://example.test/v1"
+
     def test_create_chat_result_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from response."""
         chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
