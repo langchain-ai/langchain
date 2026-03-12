@@ -1769,6 +1769,9 @@ def test__construct_lc_result_from_responses_api_function_call_preserves_status(
     assert isinstance(block, dict)
     assert "status" in block, "status field must be present in function_call block"
     assert block["status"] is None
+    assert "namespace" not in block, (
+        "function_call block should not include unrelated None fields like namespace"
+    )
 
     # Verify a round-trip through _construct_responses_api_input preserves status
     rebuilt = _construct_responses_api_input([msg])
