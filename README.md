@@ -28,6 +28,25 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 pip install langchain
 ```
 
+## Quick Start
+
+After installing LangChain, you can quickly create a simple LLM-powered application.
+
+### Example
+
+```python
+from langchain_openai import ChatOpenAI
+
+# Initialize the model
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# Send a prompt
+response = llm.invoke("Explain machine learning in simple terms.")
+
+print(response)
+```
+
+This example initializes a language model and generates a response to a prompt using LangChain.
 If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
 
 ---
