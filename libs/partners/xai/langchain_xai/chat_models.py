@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.messages import AIMessageChunk
-from langchain_core.utils import secret_from_env
+from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -397,6 +397,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     model_name: str = Field(default="grok-4", alias="model")
     """Model name to use."""
+
     xai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("XAI_API_KEY", default=None),
@@ -405,8 +406,16 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Automatically read from env variable `XAI_API_KEY` if not provided.
     """
-    xai_api_base: str = Field(default="https://api.x.ai/v1/")
-    """Base URL path for API requests."""
+
+    xai_api_base: str = Field(
+        alias="base_url",
+        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
+    )
+    """Base URL path for API requests.
+
+    Automatically read from env variable `XAI_API_BASE` if not provided.
+    """
+
     search_parameters: dict[str, Any] | None = None
     """**Deprecated.** Use web search tools instead:
 
