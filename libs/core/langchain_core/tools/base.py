@@ -366,8 +366,17 @@ def create_schema_from_function(
     )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
+    has_named_args_param = "args" in sig.parameters and sig.parameters[
+        "args"
+    ].kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     for field in get_fields(inferred_model):
-        if not has_args and field == "args":
+        # Pydantic's ValidatedFunction injects a sentinel field named "args" (or
+        # "v__args" when the user function already has a parameter called
+        # "args") to validate unexpected positional arguments. These should not
+        # appear in tool schemas.
+        if field == "v__args":
+            continue
+        if not has_args and field == "args" and not has_named_args_param:
             continue
         if not has_kwargs and field == "kwargs":
             continue

@@ -522,6 +522,26 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     assert structured_tool.description == textwrap.dedent(foo.__doc__).strip()
 
 
+def test_structured_tool_from_function_with_args_param() -> None:
+    """StructuredTool.from_function handles named 'args' parameter correctly."""
+
+    def run_command(working_dir: str, args: list[str], timeout: int = 60) -> str:
+        """Run a command."""
+        return working_dir
+
+    structured_tool = StructuredTool.from_function(run_command)
+    schema = _schema(structured_tool.args_schema)
+    props = schema["properties"]
+
+    assert set(props.keys()) == {"working_dir", "args", "timeout"}
+    assert "v__args" not in props
+    assert props["args"] == {
+        "title": "Args",
+        "type": "array",
+        "items": {"type": "string"},
+    }
+
+
 def test_structured_tool_lambda_multi_args_schema() -> None:
     """Test args schema inference when the tool argument is a lambda function."""
     tool = StructuredTool.from_function(
