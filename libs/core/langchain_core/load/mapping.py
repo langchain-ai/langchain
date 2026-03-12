@@ -283,6 +283,11 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatXAI",
     ),
+    ("langchain_minimax", "chat_models", "ChatMiniMax"): (
+        "langchain_minimax",
+        "chat_models",
+        "ChatMiniMax",
+    ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
         "chat_models",

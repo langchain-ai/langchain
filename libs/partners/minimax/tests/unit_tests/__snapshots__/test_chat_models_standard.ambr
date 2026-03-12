@@ -1,0 +1,30 @@
+# serializer version: 1
+# name: TestMiniMaxStandard.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_minimax',
+      'chat_models',
+      'ChatMiniMax',
+    ]),
+    'kwargs': dict({
+      'max_retries': 2,
+      'max_tokens': 100,
+      'minimax_api_base': 'https://api.minimax.io/v1',
+      'minimax_api_key': dict({
+        'id': list([
+          'MINIMAX_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'model_name': 'MiniMax-M2.5',
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'temperature': 0.0,
+    }),
+    'lc': 1,
+    'name': 'ChatMiniMax',
+    'type': 'constructor',
+  })
+# ---

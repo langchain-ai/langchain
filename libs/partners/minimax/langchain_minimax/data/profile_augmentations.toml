@@ -1,0 +1,4 @@
+provider = "minimax"
+
+[overrides]
+structured_output = true
