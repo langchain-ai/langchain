@@ -35,13 +35,15 @@ def _expand_include_patterns(pattern: str) -> list[str] | None:
 
         end = current.find("}", start)
         if end == -1:
-            raise ValueError
+            msg = f"Malformed brace expansion: unmatched '{{' in pattern '{current}'."
+            raise ValueError(msg)
 
         prefix = current[:start]
         suffix = current[end + 1 :]
         inner = current[start + 1 : end]
         if not inner:
-            raise ValueError
+            msg = f"Malformed brace expansion: empty '{{}}' in pattern '{current}'."
+            raise ValueError(msg)
 
         for option in inner.split(","):
             _expand(prefix + option + suffix)
