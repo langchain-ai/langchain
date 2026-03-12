@@ -15,6 +15,29 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.context import register_configure_hook
 
 
+_usage_metadata_callback_vars: dict[
+    str, ContextVar["UsageMetadataCallbackHandler | None"]
+] = {}
+_usage_metadata_callback_vars_lock = threading.Lock()
+
+
+def _get_usage_metadata_callback_var(
+    name: str,
+) -> ContextVar["UsageMetadataCallbackHandler | None"]:
+    usage_metadata_callback_var = _usage_metadata_callback_vars.get(name)
+    if usage_metadata_callback_var is not None:
+        return usage_metadata_callback_var
+
+    with _usage_metadata_callback_vars_lock:
+        usage_metadata_callback_var = _usage_metadata_callback_vars.get(name)
+        if usage_metadata_callback_var is None:
+            usage_metadata_callback_var = ContextVar(name, default=None)
+            register_configure_hook(usage_metadata_callback_var, inheritable=True)
+            _usage_metadata_callback_vars[name] = usage_metadata_callback_var
+
+    return usage_metadata_callback_var
+
+
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks `AIMessage.usage_metadata`.
 
@@ -139,11 +162,10 @@ def get_usage_metadata_callback(
     !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
-        ContextVar(name, default=None)
-    )
-    register_configure_hook(usage_metadata_callback_var, inheritable=True)
+    usage_metadata_callback_var = _get_usage_metadata_callback_var(name)
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
-    yield cb
-    usage_metadata_callback_var.set(None)
+    token = usage_metadata_callback_var.set(cb)
+    try:
+        yield cb
+    finally:
+        usage_metadata_callback_var.reset(token)
