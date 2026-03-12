@@ -166,7 +166,6 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
     "allowed_callers",
     "cache_control",
     "defer_loading",
-    "eager_input_streaming",
     "input_examples",
 }
 """Valid Anthropic-specific extra fields"""
