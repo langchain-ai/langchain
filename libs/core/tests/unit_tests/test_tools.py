@@ -61,6 +61,7 @@ from langchain_core.tools.base import (
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
+    create_schema_from_function,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -2509,6 +2510,75 @@ def test_tool_injected_arg_with_custom_schema() -> None:
     assert result == "Results for hello with context test_context"
     assert captured["context"] is ctx
     assert captured["context"].value == "test_context"
+
+
+def test_create_schema_filters_injected_when_filter_args_provided() -> None:
+    """Ensure injected args are filtered even when custom filter_args is provided."""
+
+    class SecretContext:
+        def __init__(self, token: str) -> None:
+            self.token = token
+
+    def my_tool(
+        query: str,
+        limit: int,
+        secret: Annotated[SecretContext, InjectedToolArg],
+    ) -> str:
+        """Tool with a normal arg, a filtered arg, and an injected arg."""
+        return f"{query}:{limit}:{secret.token}"
+
+    schema = create_schema_from_function(
+        "MyTool",
+        my_tool,
+        filter_args=["limit"],
+        include_injected=False,
+    )
+
+    properties = set(schema.schema().get("properties", {}).keys())
+
+    assert "query" in properties, (
+        f"Expected 'query' in schema properties, got: {properties}"
+    )
+
+    assert "limit" not in properties, (
+        f"Expected 'limit' to be filtered via filter_args, got: {properties}"
+    )
+
+    assert "secret" not in properties, (
+        f"Expected 'secret' (InjectedToolArg) to be filtered when include_injected=False, "  # noqa: E501
+        f"got: {properties}. This indicates the bug where include_injected=False is "
+        f"ignored when filter_args is also provided."
+    )
+
+
+def test_create_schema_filter_args_list_not_mutated() -> None:
+    """Ensure the caller's filter_args list is not mutated."""
+
+    class SecretContext:
+        def __init__(self, token: str) -> None:
+            self.token = token
+
+    def my_tool(
+        query: str,
+        secret: Annotated[SecretContext, InjectedToolArg],
+    ) -> str:
+        """Tool with an injected arg."""
+        return query
+
+    original_filter_args = ["query"]
+    original_filter_args_copy = list(original_filter_args)
+
+    create_schema_from_function(
+        "MyTool",
+        my_tool,
+        filter_args=original_filter_args,
+        include_injected=False,
+    )
+
+    assert original_filter_args == original_filter_args_copy, (
+        f"filter_args was mutated from {original_filter_args_copy} "
+        f"to {original_filter_args}"
+    )
 
 
 def test_tool_injected_tool_call_id() -> None:
