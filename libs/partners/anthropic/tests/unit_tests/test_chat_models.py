@@ -1538,8 +1538,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["input_tokens"] == 360
     assert result["output_tokens"] == 30
     assert result["total_tokens"] == 390
-    details = result.get("input_token_details")
-    assert details is not None
+    details = dict(result.get("input_token_details") or {})
     assert details["cache_read"] == 10
     # cache_creation should be suppressed to avoid double counting
     assert "cache_creation" not in details
@@ -1559,8 +1558,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
 
     result = _create_usage_metadata(UsageWithCacheCreationDict())
     assert result["input_tokens"] == 200 + 10 + 80 + 70
-    assert details is not None
-    details = result.get("input_token_details")
+    details = dict(result.get("input_token_details") or {})
     assert "cache_creation" not in details
     assert details["ephemeral_5m_input_tokens"] == 80
     assert details["ephemeral_1h_input_tokens"] == 70
@@ -1584,8 +1582,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["input_tokens"] == 260
     assert result["output_tokens"] == 30
     assert result["total_tokens"] == 290
-    details = result.get("input_token_details")
-    assert details is not None
+    details = dict(result.get("input_token_details") or {})
     assert details["cache_read"] == 10
     assert details["cache_creation"] == 50
 
@@ -1605,8 +1602,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["input_tokens"] == 100 + 5 + 15
     assert result["output_tokens"] == 20
     assert result["total_tokens"] == 140
-    details = result.get("input_token_details")
-    assert details is not None
+    details = dict(result.get("input_token_details") or {})
     assert details["cache_creation"] == 15
 
     # Case 5: only one ephemeral key is non-zero
@@ -1626,8 +1622,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["input_tokens"] == 100 + 0 + 75
     assert result["output_tokens"] == 10
     assert result["total_tokens"] == 185
-    details = result.get("input_token_details")
-    assert details is not None
+    details = dict(result.get("input_token_details") or {})
     assert "cache_creation" not in details
     assert details["ephemeral_1h_input_tokens"] == 75
     # ephemeral_5m_input_tokens is 0 — still included since 0 is not None
@@ -1644,8 +1639,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["input_tokens"] == 50 + 5 + 10
     assert result["output_tokens"] == 25
     assert result["total_tokens"] == 90
-    details = result.get("input_token_details")
-    assert details is not None
+    details = dict(result.get("input_token_details") or {})
     assert details["cache_read"] == 5
     assert details["cache_creation"] == 10
 
