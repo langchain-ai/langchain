@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -3599,3 +3600,64 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test__convert_delta_to_message_chunk_malformed_tool_call() -> None:
+    """Valid tool calls must survive when a sibling chunk is malformed.
+
+    A bare ``except KeyError: pass`` around the entire list comprehension used
+    to discard *all* tool call chunks whenever a single one was missing the
+    ``function`` or ``index`` key.  The fix moves error handling per-item so
+    that only the malformed entry is skipped.
+    """
+    delta = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_good",
+                "type": "function",
+                "function": {"name": "good_func", "arguments": "{}"},
+                "index": 0,
+            },
+            {
+                # Missing 'function' key — previously caused the whole batch to drop
+                "id": "call_bad",
+                "type": "function",
+                "index": 1,
+            },
+        ],
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    # Only the valid chunk should survive
+    assert len(result.tool_call_chunks) == 1
+    assert result.tool_call_chunks[0]["name"] == "good_func"
+    assert result.tool_call_chunks[0]["id"] == "call_good"
+
+
+def test__convert_delta_to_message_chunk_all_valid_tool_calls() -> None:
+    """All valid tool calls are returned when none are malformed."""
+    delta = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_a",
+                "type": "function",
+                "function": {"name": "func_a", "arguments": '{"x": 1}'},
+                "index": 0,
+            },
+            {
+                "id": "call_b",
+                "type": "function",
+                "function": {"name": "func_b", "arguments": "{}"},
+                "index": 1,
+            },
+        ],
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert len(result.tool_call_chunks) == 2
+    names = {chunk["name"] for chunk in result.tool_call_chunks}
+    assert names == {"func_a", "func_b"}
