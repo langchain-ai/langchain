@@ -2155,7 +2155,7 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             specific_cache_creation_tokens = 0
         if specific_cache_creation_tokens > 0:
             # Remove generic key to avoid double counting cache creation tokens
-            input_token_details["cache_creation"] = None
+            input_token_details["cache_creation"] = 0
 
     # Calculate total input tokens: Anthropic's `input_tokens` excludes cached tokens,
     # so we need to add them back to get the true total input token count
