@@ -334,6 +334,12 @@ def create_schema_from_function(
 
     has_args = False
     has_kwargs = False
+    has_param_named_args = "args" in sig.parameters and sig.parameters["args"].kind not in (
+        inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD
+    )
+    has_param_named_kwargs = "kwargs" in sig.parameters and sig.parameters["kwargs"].kind not in (
+        inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD
+    )
 
     for param in sig.parameters.values():
         if param.kind == param.VAR_POSITIONAL:
@@ -367,12 +373,18 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args and field == "args":
+        if not has_args and field == "args" and not has_param_named_args:
             continue
-        if not has_kwargs and field == "kwargs":
+        if not has_kwargs and field == "kwargs" and not has_param_named_kwargs:
             continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
+            continue
+
+        # When a function has a parameter named 'args' or 'kwargs', Pydantic's
+        # ValidatedFunction renames its internal sentinel to 'v__args' or
+        # 'v__kwargs'. These are not real parameters and must be filtered out.
+        if field in ("v__args", "v__kwargs"):
             continue
 
         if field not in filter_args_:
