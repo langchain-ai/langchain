@@ -138,6 +138,27 @@ def test_structured_args() -> None:
     assert structured_api.run(args) == expected_result
 
 
+def test_structured_tool_args_param_not_injected() -> None:
+    """Test that a function param named 'args' doesn't create spurious v__args field.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35796
+    """
+
+    def run_command(working_dir: str, args: list[str], timeout: int = 60) -> str:
+        """Run a command."""
+        return f"{working_dir} {args} {timeout}"
+
+    st = StructuredTool.from_function(run_command)
+    schema = st.args_schema.model_json_schema()
+    props = list(schema["properties"].keys())
+
+    # 'args' should be present, 'v__args' should NOT be in the schema
+    assert "args" in props, f"'args' should be in properties, got: {props}"
+    assert "v__args" not in props, f"'v__args' should NOT be in properties, got: {props}"
+    assert "working_dir" in props
+    assert "timeout" in props
+
+
 def test_misannotated_base_tool_raises_error() -> None:
     """Test that a BaseTool with the incorrect typehint raises an exception."""
     with pytest.raises(SchemaAnnotationError):

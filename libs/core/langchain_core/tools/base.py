@@ -367,9 +367,10 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args and field == "args":
+        # Pydantic v2 uses v__args/v__kwargs for params named args/kwargs
+        if not has_args and field == "v__args":
             continue
-        if not has_kwargs and field == "kwargs":
+        if not has_kwargs and field == "v__kwargs":
             continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
