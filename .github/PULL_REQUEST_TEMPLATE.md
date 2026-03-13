@@ -31,6 +31,10 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
 4. How did you verify your code works?
 
+5. [ ] Documentation updates
+   - [ ] Have you added/updated documentation for your changes?
+   - [ ] Does the documentation include clear examples?
+
 Additional guidelines:
 
   - All external PRs must link to an issue or discussion where a solution has been approved by a maintainer, and you must be assigned to that issue. PRs without prior approval will be closed.
