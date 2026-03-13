@@ -77,7 +77,7 @@ def _cached_sync_httpx_client(
 
 @lru_cache
 def _cached_async_httpx_client(
-    base_url: str | None, timeout: Any
+    base_url: str | None, timeout: Any, _event_loop_id: int = 0
 ) -> _AsyncHttpxClientWrapper:
     return _build_async_httpx_client(base_url, timeout)
 
@@ -109,7 +109,8 @@ def _get_default_async_httpx_client(
     except TypeError:
         return _build_async_httpx_client(base_url, timeout)
     else:
-        return _cached_async_httpx_client(base_url, timeout)
+        loop_id = id(asyncio.get_event_loop())
+        return _cached_async_httpx_client(base_url, timeout, _event_loop_id=loop_id)
 
 
 def _resolve_sync_and_async_api_keys(
