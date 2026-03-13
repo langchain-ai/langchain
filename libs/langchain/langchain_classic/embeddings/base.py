@@ -6,6 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
 _SUPPORTED_PROVIDERS = {
+    "azure_ai": "langchain_azure_ai",
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
@@ -205,6 +206,10 @@ def init_embeddings(
         from langchain_openai import OpenAIEmbeddings
 
         return OpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "azure_ai":
+        from langchain_azure_ai.embeddings import AzureAIOpenAIApiEmbeddingsModel
+
+        return AzureAIOpenAIApiEmbeddingsModel(model=model_name, **kwargs)
     if provider == "azure_openai":
         from langchain_openai import AzureOpenAIEmbeddings
 
