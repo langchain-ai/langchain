@@ -60,94 +60,42 @@ body:
         - label: langchain-text-splitters
         - label: langchain-chroma
         - label: langchain-deepseek
-        - label: langchain-exa
-        - label: langchain-fireworks
-        - label: langchain-groq
-        - label: langchain-huggingface
-        - label: langchain-mistralai
-        - label: langchain-nomic
-        - label: langchain-ollama
-        - label: langchain-openrouter
-        - label: langchain-perplexity
-        - label: langchain-qdrant
-        - label: langchain-xai
-        - label: Other / not sure / general
-  - type: textarea
-    id: related
-    validations:
-      required: false
+        - label: langchain-community
+  - type: input
+    id: version
     attributes:
-      label: Related Issues / PRs
-      description: |
-        If this bug is related to any existing issues or pull requests, please link them here.
-      placeholder: |
-        * e.g. #123, #456
-  - type: textarea
-    id: reproduction
-    validations:
-      required: true
-    attributes:
-      label: Reproduction Steps / Example Code (Python)
-      description: |
-        Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
-
-        If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
-
-        **Important!**
-
-        * Avoid screenshots, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
-        * Reduce your code to the minimum required to reproduce the issue if possible.
-
-        (This will be automatically formatted into code, so no need for backticks.)
-      render: python
-      placeholder: |
-        from langchain_core.runnables import RunnableLambda
-
-        def bad_code(inputs) -> int:
-          raise NotImplementedError('For demo purpose')
-
-          chain = RunnableLambda(bad_code)
-          chain.invoke('Hello!')
-  - type: textarea
-    attributes:
-      label: Error Message and Stack Trace (if applicable)
-      description: |
-        If you are reporting an error, please copy and paste the full error message and
-        stack trace.
-        (This will be automatically formatted into code, so no need for backticks.)
-      render: shell
-  - type: textarea
-    id: description
-    attributes:
-      label: Description
-      description: |
-        What is the problem, question, or error?
-
-        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
-      placeholder: |
-        * I'm trying to use the `langchain` library to do X.
-        * I expect to see Y.
-        * Instead, it does Z.
-    validations:
+      label: LangChain version
+      description: Please specify the LangChain version you are using (e.g., 0.0.300). You can get this by running `pip show langchain` or `langchain.__version__` in Python.
       required: true
   - type: textarea
-    id: system-info
+    id: bug-description
     attributes:
-      label: System Info
-      description: |
-        Please share your system info with us.
+      label: Bug Description
+      description: Please provide a detailed description of the bug.
+      value: |
+        
 
-        Run the following command in your terminal and paste the output here:
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction Steps
+      description: Please provide a minimal, reproducible example.
+      value: |
+        
 
-        `python -m langchain_core.sys_info`
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      value: |
+        
 
-        or if you have an existing python interpreter running:
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      value: |
+        
 
-        ```python
-        from langchain_core import sys_info
-        sys_info.print_sys_info()
-        ```
-      placeholder: |
-        python -m langchain_core.sys_info
-    validations:
-      required: true
