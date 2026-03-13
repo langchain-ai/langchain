@@ -75,11 +75,36 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout)
 
 
-@lru_cache
+# Async httpx clients are cached per event loop to avoid sharing connections
+# across loops, which causes RuntimeError("Event loop is closed").
+# See: https://github.com/langchain-ai/langchain/issues/35783
+_async_httpx_client_cache: dict[
+    tuple[str | None, Any, int], _AsyncHttpxClientWrapper
+] = {}
+
+
 def _cached_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout)
+    try:
+        loop_id = id(asyncio.get_running_loop())
+    except RuntimeError:
+        # No running loop — return a fresh client (don't cache).
+        return _build_async_httpx_client(base_url, timeout)
+
+    key = (base_url, timeout, loop_id)
+    client = _async_httpx_client_cache.get(key)
+    if client is not None and not client.is_closed:
+        return client
+
+    # Clean up stale entries for dead loops before adding a new one.
+    stale_keys = [k for k, v in _async_httpx_client_cache.items() if v.is_closed]
+    for k in stale_keys:
+        del _async_httpx_client_cache[k]
+
+    client = _build_async_httpx_client(base_url, timeout)
+    _async_httpx_client_cache[key] = client
+    return client
 
 
 def _get_default_httpx_client(
@@ -100,9 +125,10 @@ def _get_default_httpx_client(
 def _get_default_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    """Get default httpx client.
+    """Get default async httpx client.
 
-    Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
+    Uses a loop-aware cache to avoid sharing connections across event loops.
+    Falls back to a fresh client if timeout is not hashable.
     """
     try:
         hash(timeout)
