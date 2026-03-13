@@ -375,6 +375,11 @@ def create_schema_from_function(
         if field == "v__duplicate_kwargs":  # Internal pydantic field
             continue
 
+        # Filter out v__args when function has a parameter named "args"
+        # Pydantic v2 adds this virtual field to handle conflict
+        if field == "v__args":
+            continue
+
         if field not in filter_args_:
             valid_properties.append(field)
 

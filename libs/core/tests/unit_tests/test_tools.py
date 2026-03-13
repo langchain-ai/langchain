@@ -3653,3 +3653,31 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+def test_structured_tool_from_function_with_args_param() -> None:
+    """Test that function parameter named 'args' doesn't create spurious v__args field."""
+
+    def tool_with_args_param(args: str, extra: int = 10) -> str:
+        """A tool with args as parameter name.
+
+        Args:
+            args: The args string.
+            extra: Extra value.
+        """
+        return f"{args}:{extra}"
+
+    tool = StructuredTool.from_function(tool_with_args_param)
+    schema = tool.args_schema
+
+    # Should have 'args' and 'extra' fields, but not 'v__args'
+    fields = schema.model_fields.keys()
+    assert "args" in fields, f"Expected 'args' in fields, got {fields}"
+    assert "extra" in fields, f"Expected 'extra' in fields, got {fields}"
+    assert "v__args" not in fields, f"Unexpected 'v__args' in fields: {fields}"
+    assert "kwargs" not in fields
+    assert "v__duplicate_kwargs" not in fields
+
+    # Verify the tool works correctly
+    result = tool.invoke({"args": "hello", "extra": 5})
+    assert result == "hello:5"
