@@ -301,6 +301,14 @@ class BaseLanguageModel(
         # generate responses that match a given schema.
         raise NotImplementedError
 
+    def _get_ls_params(
+        self,
+        stop: list[str] | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        return LangSmithParams()
+
     def _get_ls_params_with_defaults(
         self,
         stop: list[str] | None = None,
@@ -308,7 +316,7 @@ class BaseLanguageModel(
     ) -> LangSmithParams:
         """Wrap _get_ls_params to always include ls_integration."""
         ls_params = self._get_ls_params(stop=stop, **kwargs)
-        ls_params["ls_integration"] = "langchain"
+        ls_params["ls_integration"] = "langchain_chat_model"
         return ls_params
 
     @property
