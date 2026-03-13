@@ -10,6 +10,7 @@ from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
+import httpx
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
@@ -126,6 +127,63 @@ def test_anthropic_proxy_from_environment() -> None:
         explicit_proxy = "http://explicit-proxy.com"
         llm = ChatAnthropic(model=MODEL_NAME, anthropic_proxy=explicit_proxy)
         assert llm.anthropic_proxy == explicit_proxy
+
+
+def test_custom_http_client_sync() -> None:
+    """Custom http_client is passed through to anthropic.Client unchanged."""
+    custom = httpx.Client()
+    llm = ChatAnthropic(model=MODEL_NAME, http_client=custom)
+
+    with patch("langchain_anthropic.chat_models.anthropic.Client") as mock_client_cls:
+        _ = llm._client
+        _, kwargs = mock_client_cls.call_args
+        assert kwargs["http_client"] is custom
+
+
+def test_custom_http_client_async() -> None:
+    """Custom http_async_client is passed through to anthropic.AsyncClient unchanged."""
+    custom = httpx.AsyncClient()
+    llm = ChatAnthropic(model=MODEL_NAME, http_async_client=custom)
+
+    with patch(
+        "langchain_anthropic.chat_models.anthropic.AsyncClient"
+    ) as mock_async_cls:
+        _ = llm._async_client
+        _, kwargs = mock_async_cls.call_args
+        assert kwargs["http_client"] is custom
+
+
+def test_default_http_clients_used_when_not_provided() -> None:
+    """Default httpx clients are created when http_client / http_async_client are
+    None.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (
+        patch("langchain_anthropic.chat_models._get_default_httpx_client") as mock_sync,
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client"
+        ) as mock_async,
+        patch("langchain_anthropic.chat_models.anthropic.Client"),
+        patch("langchain_anthropic.chat_models.anthropic.AsyncClient"),
+    ):
+        _ = llm._client
+        mock_sync.assert_called_once()
+
+        _ = llm._async_client
+        mock_async.assert_called_once()
+
+
+def test_http_client_excluded_from_serialization() -> None:
+    """http_client and http_async_client are excluded from model serialization."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        http_client=httpx.Client(),
+        http_async_client=httpx.AsyncClient(),
+    )
+    serialized = llm.model_dump()
+    assert "http_client" not in serialized
+    assert "http_async_client" not in serialized
 
 
 def test_set_default_max_tokens() -> None:
