@@ -1091,6 +1091,20 @@ def create_agent(
                         ],
                     }
 
+        # Handle invalid tool calls by converting them to error ToolMessages
+        # so the LLM can see the parsing errors and retry
+        invalid_tool_calls = getattr(output, "invalid_tool_calls", None)
+        if invalid_tool_calls:
+            error_messages = [
+                ToolMessage(
+                    content=f"Error: Failed to parse tool call arguments. {inv.get('error', 'Unknown parsing error')}. Please try again with valid JSON arguments.",
+                    tool_call_id=inv.get("id", ""),
+                    status="error",
+                )
+                for inv in invalid_tool_calls
+            ]
+            return {"messages": [output, *error_messages]}
+
         return {"messages": [output]}
 
     def _get_bound_model(
@@ -1670,9 +1684,14 @@ def _make_model_to_tools_edge(
 
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 3. If the model hasn't called any tools, exit the loop
-        # this is the classic exit condition for an agent loop
+        # 3. If the model hasn't called any tools, check for invalid_tool_calls
+        # before exiting. If invalid_tool_calls exist, error ToolMessages have
+        # already been added to state by _handle_model_output, so we route
+        # back to the model for retry.
         if len(last_ai_message.tool_calls) == 0:
+            invalid_tool_calls = getattr(last_ai_message, "invalid_tool_calls", None)
+            if invalid_tool_calls:
+                return model_destination
             return end_destination
 
         pending_tool_calls = [
