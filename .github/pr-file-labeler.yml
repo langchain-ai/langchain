@@ -73,6 +73,11 @@ huggingface:
       - any-glob-to-any-file:
           - "libs/partners/huggingface/**/*"
 
+minimax:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/minimax/**/*"
+
 mistralai:
   - changed-files:
       - any-glob-to-any-file:
