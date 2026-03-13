@@ -15,6 +15,13 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.context import register_configure_hook
 
 
+# Global ContextVar for usage metadata callback - created once at module load
+# to prevent accumulation of hooks in _configure_hooks
+_usage_metadata_callback_var: ContextVar[
+    UsageMetadataCallbackHandler | None
+] | None = None
+
+
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks `AIMessage.usage_metadata`.
 
@@ -139,11 +146,21 @@ def get_usage_metadata_callback(
     !!! version-added "Added in `langchain-core` 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
-        ContextVar(name, default=None)
-    )
-    register_configure_hook(usage_metadata_callback_var, inheritable=True)
+    global _usage_metadata_callback_var
+
+    # Create the ContextVar only once and reuse it to prevent
+    # accumulation of hooks in _configure_hooks
+    if _usage_metadata_callback_var is None:
+        _usage_metadata_callback_var = ContextVar(name, default=None)
+        # Register the configure hook only once
+        register_configure_hook(_usage_metadata_callback_var, inheritable=True)
+    else:
+        # If the ContextVar already exists but with a different name,
+        # we still reuse it to prevent hook accumulation.
+        # The name parameter is now effectively ignored after first call
+        # to prevent the memory leak described in the issue.
+
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
+    _usage_metadata_callback_var.set(cb)
     yield cb
-    usage_metadata_callback_var.set(None)
+    _usage_metadata_callback_var.set(None)
