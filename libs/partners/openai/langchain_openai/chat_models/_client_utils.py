@@ -4,6 +4,19 @@ This module allows for the caching of httpx clients to avoid creating new instan
 for each instance of ChatOpenAI.
 
 Logic is largely replicated from openai._base_client.
+
+Async client caching strategy
+------------------------------
+``httpx.AsyncClient`` instances are bound to the event loop that first issues a
+request through them.  A process-global ``@lru_cache`` (the previous approach) shares
+one client across all event loops, which causes ``httpcore.ConnectError`` /
+``RuntimeError: Event loop is closed`` when a second call is made from a *different*
+loop (e.g. two successive ``asyncio.run()`` calls in separate threads).
+
+To fix this, async clients are cached in a ``weakref.WeakKeyDictionary`` keyed by the
+*current* event loop.  The ``WeakKeyDictionary`` automatically removes the entry when
+the loop is garbage-collected, so there is no unbounded memory growth.  Sync clients
+are unaffected and continue to use a process-global ``@lru_cache``.
 """
 
 from __future__ import annotations
@@ -11,8 +24,10 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
+import weakref
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
+from threading import Lock
 from typing import Any, cast
 
 import openai
@@ -75,11 +90,53 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout)
 
 
-@lru_cache
+# Per-loop async client cache: {loop -> {(base_url, timeout) -> client}}.
+# WeakKeyDictionary ensures entries are removed when the loop is garbage-collected.
+_async_client_cache: weakref.WeakKeyDictionary[
+    asyncio.AbstractEventLoop,
+    dict[tuple[str | None, Any], _AsyncHttpxClientWrapper],
+] = weakref.WeakKeyDictionary()
+_async_client_cache_lock = Lock()
+
+
 def _cached_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout)
+    """Return a cached async httpx client scoped to the current event loop.
+
+    Using a process-global ``@lru_cache`` (the previous implementation) shares a
+    single ``httpx.AsyncClient`` across all event loops.  When a second event loop
+    runs after the first has been closed (e.g. two ``asyncio.run()`` calls in
+    different threads), the cached client is bound to the dead loop and raises
+    ``APIConnectionError``.
+
+    This implementation caches one client *per event loop* so each loop always
+    gets a fresh, compatible client.  The ``WeakKeyDictionary`` guarantees that
+    cache entries are cleaned up automatically when a loop is garbage-collected.
+
+    Args:
+        base_url: Optional base URL override for the OpenAI API.
+        timeout: Timeout configuration forwarded to ``httpx.AsyncClient``.
+
+    Returns:
+        An ``_AsyncHttpxClientWrapper`` bound to the current event loop.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # No running event loop — called during synchronous initialization.
+        # Return a fresh (uncached) client; it will bind to whichever loop
+        # first issues a request through it.
+        return _build_async_httpx_client(base_url, timeout)
+
+    cache_key = (base_url, timeout)
+    with _async_client_cache_lock:
+        if loop not in _async_client_cache:
+            _async_client_cache[loop] = {}
+        loop_clients = _async_client_cache[loop]
+        if cache_key not in loop_clients:
+            loop_clients[cache_key] = _build_async_httpx_client(base_url, timeout)
+        return loop_clients[cache_key]
 
 
 def _get_default_httpx_client(
