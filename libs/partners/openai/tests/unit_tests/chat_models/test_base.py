@@ -56,6 +56,7 @@ from langchain_openai.chat_models._compat import (
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _construct_responses_api_payload,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -2528,3 +2529,67 @@ def test_make_computer_call_output_from_message() -> None:
             }
         ],
     }
+
+
+def test_construct_responses_api_payload_tool_strict_defaults_to_false() -> None:
+    """Tools without explicit strict should default to strict=False in Responses API.
+
+    Chat Completions API: omitting strict means non-strict (best-effort).
+    Responses API: omitting strict means strict=True (per OpenAI docs).
+    We must explicitly set strict=False to preserve Chat Completions semantics.
+    """
+    from langchain_core.messages import HumanMessage
+
+    payload = {
+        "model": "gpt-5",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "city": {"type": "string"},
+                        },
+                        "required": ["city"],
+                    },
+                    # No "strict" key — omitted intentionally
+                },
+            }
+        ],
+    }
+    result = _construct_responses_api_payload([HumanMessage(content="hi")], payload)
+    tool = result["tools"][0]
+    assert tool["strict"] is False, (
+        "Tool without explicit strict should default to strict=False in Responses API"
+    )
+
+
+def test_construct_responses_api_payload_tool_explicit_strict_preserved() -> None:
+    """Explicit strict=True on a tool should be preserved after conversion."""
+    from langchain_core.messages import HumanMessage
+
+    payload = {
+        "model": "gpt-5",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"city": {"type": "string"}},
+                        "required": ["city"],
+                        "additionalProperties": False,
+                    },
+                    "strict": True,
+                },
+            }
+        ],
+    }
+    result = _construct_responses_api_payload([HumanMessage(content="hi")], payload)
+    tool = result["tools"][0]
+    assert tool["strict"] is True, "Explicit strict=True should be preserved"
