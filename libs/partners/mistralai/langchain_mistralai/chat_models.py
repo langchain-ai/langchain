@@ -1088,6 +1088,18 @@ class ChatMistralAI(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
+            if self.streaming:
+                import warnings
+
+                warnings.warn(
+                    "Streaming with method='function_calling' does not support "
+                    "incremental token streaming with Mistral AI. Mistral's API "
+                    "returns tool call arguments as a single complete chunk rather "
+                    "than progressively. Use method='json_schema' instead if you "
+                    "need incremental streaming of structured output.",
+                    UserWarning,
+                    stacklevel=2,
+                )
             # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
             # specifying a tool.
             llm = self.bind_tools(

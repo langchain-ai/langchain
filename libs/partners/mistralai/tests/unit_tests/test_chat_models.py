@@ -167,6 +167,51 @@ async def test_astream_with_callback() -> None:
         assert callback.last_token == token.content
 
 
+def test_with_structured_output_function_calling_streaming_warns() -> None:
+    """Warn users that function_calling does not support incremental streaming.
+
+    Mistral's API returns tool call arguments as a single complete chunk when
+    streaming with function calling, so streaming yields only one result rather
+    than progressive partial results. The json_schema method should be used
+    for incremental streaming.
+    """
+    from pydantic import BaseModel
+
+    class City(BaseModel):
+        name: str
+        country: str
+
+    chat = ChatMistralAI(model="mistral-small-latest", streaming=True)
+    with pytest.warns(
+        UserWarning,
+        match="method='json_schema'",
+    ):
+        chat.with_structured_output(City, method="function_calling")
+
+
+def test_with_structured_output_function_calling_no_streaming_no_warn() -> None:
+    """No warning when streaming is not enabled."""
+    import warnings
+
+    from pydantic import BaseModel
+
+    class City(BaseModel):
+        name: str
+        country: str
+
+    chat = ChatMistralAI(model="mistral-small-latest", streaming=False)
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        chat.with_structured_output(City, method="function_calling")
+    streaming_warnings = [
+        w
+        for w in caught_warnings
+        if issubclass(w.category, UserWarning)
+        and "json_schema" in str(w.message)
+    ]
+    assert len(streaming_warnings) == 0
+
+
 def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "ssAbar4Dr",
