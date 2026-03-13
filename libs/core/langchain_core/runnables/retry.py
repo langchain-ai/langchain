@@ -283,9 +283,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         # Map last retry results back to original indices so that
         # successfully-retried values don't overwrite unrelated positions.
-        # If the final retry attempt succeeded for every remaining input, those
-        # indices are already in results_map, so last_result_map is never
-        # consulted for them.
+        # Note: if all items succeed on the very first attempt, remaining_indices
+        # becomes empty on the second iteration → break before updating
+        # last_remaining_indices.  In that case last_remaining_indices ==
+        # range(len(inputs)) and result == the full first-attempt output, so the
+        # zip still pairs correctly.  However, every idx will already be in
+        # results_map, so last_result_map is never actually consulted.
         last_result_map = dict(zip(last_remaining_indices, result, strict=True))
 
         outputs: list[Output | Exception] = []
@@ -367,9 +370,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
         # Map last retry results back to original indices so that
         # successfully-retried values don't overwrite unrelated positions.
-        # If the final retry attempt succeeded for every remaining input, those
-        # indices are already in results_map, so last_result_map is never
-        # consulted for them.
+        # Note: if all items succeed on the very first attempt, remaining_indices
+        # becomes empty on the second iteration → break before updating
+        # last_remaining_indices.  In that case last_remaining_indices ==
+        # range(len(inputs)) and result == the full first-attempt output, so the
+        # zip still pairs correctly.  However, every idx will already be in
+        # results_map, so last_result_map is never actually consulted.
         last_result_map = dict(zip(last_remaining_indices, result, strict=True))
 
         outputs: list[Output | Exception] = []
