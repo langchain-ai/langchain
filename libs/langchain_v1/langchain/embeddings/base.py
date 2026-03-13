@@ -13,6 +13,7 @@ def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
 
 
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
+    "azure_ai": ("langchain_azure_ai.embeddings", "AzureAIOpenAIApiEmbeddingsModel", _call),
     "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
     "bedrock": (
         "langchain_aws",
