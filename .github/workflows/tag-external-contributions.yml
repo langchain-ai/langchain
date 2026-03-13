@@ -68,6 +68,15 @@ jobs:
             const { owner, repo } = context.repo;
             const author = context.payload.sender.login;
 
+            // GitHub App bots (e.g. model-profile-bot) are not org members
+            // but should be treated as internal — skip the membership check.
+            const senderType = context.payload.sender.type;
+            if (senderType === 'Bot') {
+              console.log(`Sender ${author} is a Bot — treating as internal`);
+              core.setOutput('is-external', 'false');
+              return;
+            }
+
             try {
               // Check if the author is a member of the langchain-ai organization
               // This requires org:read permissions to see private memberships
@@ -95,6 +104,55 @@ jobs:
                 // If we can't determine membership due to API error, assume external for safety
                 core.setOutput('is-external', 'true');
               }
+            }
+
+      # Apply tier label BEFORE the external/internal labels so that
+      # "trusted-contributor" is already present when the "external" labeled
+      # event fires and triggers require_issue_link.yml.
+      - name: Apply contributor tier label
+        if: steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          # Use App token so the "labeled" event propagates to downstream
+          # workflows (e.g. require_issue_link.yml bypass-trusted-contributor).
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const isPR = context.eventName === 'pull_request_target';
+            const item = isPR
+              ? context.payload.pull_request
+              : context.payload.issue;
+            const author = item.user.login;
+            const issueNumber = item.number;
+
+            const TRUSTED_THRESHOLD = 5;
+
+            const mergedQuery = `repo:${owner}/${repo} is:pr is:merged author:"${author}"`;
+            let mergedCount = 0;
+            try {
+              const result = await github.rest.search.issuesAndPullRequests({
+                q: mergedQuery,
+                per_page: 1,
+              });
+              mergedCount = result?.data?.total_count ?? 0;
+            } catch (error) {
+              if (error?.status !== 422) throw error;
+              core.warning(`Search failed for ${author}; skipping tier label.`);
+              return;
+            }
+
+            const label = mergedCount >= TRUSTED_THRESHOLD ? 'trusted-contributor' : null;
+
+            if (label) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: [label],
+              });
+              console.log(`Applied '${label}' to #${issueNumber} (${mergedCount} merged PRs)`);
+            } else {
+              console.log(`No tier label for ${author} (${mergedCount} merged PRs)`);
             }
 
       - name: Add external label to issue
@@ -172,50 +230,6 @@ jobs:
 
             console.log(`Added 'internal' label to pull request #${pull_number}`);
 
-      - name: Apply contributor tier label
-        if: steps.check-membership.outputs.is-external == 'true'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { owner, repo } = context.repo;
-            const isPR = context.eventName === 'pull_request_target';
-            const item = isPR
-              ? context.payload.pull_request
-              : context.payload.issue;
-            const author = item.user.login;
-            const issueNumber = item.number;
-
-            const TRUSTED_THRESHOLD = 5;
-
-            const mergedQuery = `repo:${owner}/${repo} is:pr is:merged author:"${author}"`;
-            let mergedCount = 0;
-            try {
-              const result = await github.rest.search.issuesAndPullRequests({
-                q: mergedQuery,
-                per_page: 1,
-              });
-              mergedCount = result?.data?.total_count ?? 0;
-            } catch (error) {
-              if (error?.status !== 422) throw error;
-              core.warning(`Search failed for ${author}; skipping tier label.`);
-              return;
-            }
-
-            const label = mergedCount >= TRUSTED_THRESHOLD ? 'trusted-contributor' : null;
-
-            if (label) {
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                labels: [label],
-              });
-              console.log(`Applied '${label}' to #${issueNumber} (${mergedCount} merged PRs)`);
-            } else {
-              console.log(`No tier label for ${author} (${mergedCount} merged PRs)`);
-            }
-
   backfill:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -262,8 +276,15 @@ jobs:
             // Cache: author -> { isExternal, mergedCount }
             const contributorCache = new Map();
 
-            async function getContributorInfo(author) {
+            async function getContributorInfo(author, userType) {
               if (contributorCache.has(author)) return contributorCache.get(author);
+
+              // Bots are always internal
+              if (userType === 'Bot') {
+                const info = { isExternal: false, mergedCount: 0 };
+                contributorCache.set(author, info);
+                return info;
+              }
 
               let isExternal = true;
               try {
@@ -336,7 +357,7 @@ jobs:
               for (const pr of prs) {
                 if (processed >= maxItems) break;
                 const author = pr.user.login;
-                const info = await getContributorInfo(author);
+                const info = await getContributorInfo(author, pr.user.type);
 
                 const labels = [];
                 labels.push(info.isExternal ? 'external' : 'internal');
@@ -378,7 +399,7 @@ jobs:
                 if (issue.pull_request) continue;
 
                 const author = issue.user.login;
-                const info = await getContributorInfo(author);
+                const info = await getContributorInfo(author, issue.user.type);
 
                 const labels = [];
                 labels.push(info.isExternal ? 'external' : 'internal');
