@@ -2151,6 +2151,8 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         for k in cache_creation_keys:
             specific_cache_creation_tokens += cache_creation.get(k, 0)
             input_token_details[k] = cache_creation.get(k)
+        if not isinstance(specific_cache_creation_tokens, int):
+            specific_cache_creation_tokens = 0
         if specific_cache_creation_tokens > 0:
             # Remove generic key to avoid double counting cache creation tokens
             input_token_details["cache_creation"] = None
