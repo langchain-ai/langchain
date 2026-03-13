@@ -1,1 +1,0 @@
-"""Slack toolkit."""

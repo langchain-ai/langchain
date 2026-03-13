@@ -1,5 +1,0 @@
--e ../partners/openai
--e ../partners/anthropic
--e ../partners/fireworks
--e ../partners/mistralai
--e ../partners/groq
