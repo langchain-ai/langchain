@@ -1,10 +1,41 @@
-.PHONY: all format lint type test tests integration_tests help extended_tests
+.PHONY: all format lint type test tests integration_tests help extended_tests refresh-profiles
 
 # Default target executed when no arguments are given to make.
 all: help
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
+
+######################
+# MODEL PROFILE REFRESH
+######################
+
+# Provider map: partner directory name -> models.dev provider ID.
+# Used by .github/workflows/refresh_model_profiles.yml via `make refresh-profiles`.
+PROFILE_PROVIDERS := \
+	anthropic=anthropic \
+	deepseek=deepseek \
+	fireworks=fireworks-ai \
+	groq=groq \
+	huggingface=huggingface \
+	mistralai=mistral \
+	openai=openai \
+	openrouter=openrouter \
+	perplexity=perplexity \
+	xai=xai
+
+# Refresh model profiles for all supported partners in libs/partners/.
+# Requires network access, so UV_FROZEN is overridden for this target.
+refresh-profiles:
+	@for entry in $(PROFILE_PROVIDERS); do \
+		partner=$${entry%%=*}; \
+		provider=$${entry##*=}; \
+		data_dir="../partners/$${partner}/langchain_$${partner//-/_}/data"; \
+		echo "--- Refreshing $${partner} (provider: $${provider}) ---"; \
+		echo y | UV_FROZEN=false uv run langchain-profiles refresh \
+			--provider "$${provider}" \
+			--data-dir "$${data_dir}"; \
+	done
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
@@ -66,3 +97,4 @@ help:
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
+	@echo 'refresh-profiles             - refresh model profiles for all supported partners'
