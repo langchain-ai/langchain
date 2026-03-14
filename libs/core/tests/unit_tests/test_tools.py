@@ -3636,3 +3636,29 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_create_schema_from_function_include_injected_false_with_filter_args() -> None:
+    """Regression test: include_injected=False must be respected even when
+    filter_args is provided.  See https://github.com/langchain-ai/langchain/issues/35831
+    """
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_tool(
+        query: str,
+        secret: Annotated[str, InjectedToolArg],
+    ) -> str:
+        return query
+
+    schema = create_schema_from_function(
+        "MyTool",
+        my_tool,
+        filter_args=["query"],
+        include_injected=False,
+    )
+
+    props = schema.model_json_schema().get("properties", {})
+    assert "secret" not in props, (
+        "Injected arg 'secret' should be filtered when include_injected=False, "
+        f"but schema properties are: {props}"
+    )
