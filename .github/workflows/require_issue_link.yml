@@ -5,9 +5,14 @@
 # - Reacts to the "external" label applied by tag-external-contributions.yml,
 #   avoiding a duplicate org membership check.
 # - Also re-checks on PR edits/reopens for PRs that already have the label.
+# - Bypasses the check for PRs with the "trusted-contributor" label, and
+#   automatically reopens/cleans up PRs that receive it after enforcement.
 # - Validates the PR author is an assignee on at least one linked issue.
 # - Adds a "missing-issue-link" label on failure; removes it on pass.
+# - Automatically reopens PRs that were closed by this workflow once the
+#   check passes (e.g. author edits the body to add a valid issue link).
 # - Posts a comment explaining the requirement on failure.
+# - Cancels all other in-progress/queued CI runs for the PR on closure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
 # Dependency: tag-external-contributions.yml must run first to apply the
@@ -26,12 +31,17 @@ permissions:
 
 jobs:
   check-issue-link:
-    # Run when the "external" label is added, or on edit/reopen if already labeled
+    # Run when the "external" label is added, or on edit/reopen if already labeled.
+    # Skip entirely when the PR already carries "trusted-contributor".
     if: >-
-      (github.event.action == 'labeled' && github.event.label.name == 'external') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+      !contains(github.event.pull_request.labels.*.name, 'trusted-contributor') &&
+      (
+        (github.event.action == 'labeled' && github.event.label.name == 'external') ||
+        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+      )
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
 
     steps:
@@ -40,6 +50,21 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            // Fetch live labels to handle the race where "external" fires
+            // before "trusted-contributor" appears in the event payload.
+            const { data: liveLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number: prNumber,
+            });
+            if (liveLabels.some(l => l.name === 'trusted-contributor')) {
+              console.log('PR has trusted-contributor label — bypassing issue link check');
+              core.setOutput('has-link', 'true');
+              core.setOutput('is-assigned', 'true');
+              return;
+            }
+
             const body = context.payload.pull_request.body || '';
             const pattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#(\d+)/gi;
             const matches = [...body.matchAll(pattern)];
@@ -56,7 +81,6 @@ jobs:
             core.setOutput('has-link', 'true');
 
             // Check whether the PR author is assigned to at least one linked issue
-            const { owner, repo } = context.repo;
             const prAuthor = context.payload.pull_request.user.login;
             const issueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
 
@@ -92,7 +116,7 @@ jobs:
               owner, repo, issue_number: prNumber, labels: ['missing-issue-link'],
             });
 
-      - name: Remove missing-issue-link label
+      - name: Remove missing-issue-link label and reopen PR
         if: steps.check-link.outputs.has-link == 'true' && steps.check-link.outputs.is-assigned == 'true'
         uses: actions/github-script@v8
         with:
@@ -107,7 +131,19 @@ jobs:
               if (error.status !== 404) throw error;
             }
 
-      - name: Post comment and fail
+            // Reopen PR only if it was previously closed by this workflow
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            if (context.payload.pull_request.state === 'closed' && labels.includes('missing-issue-link')) {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: prNumber,
+                state: 'open',
+              });
+              console.log(`Reopened PR #${prNumber}`);
+            }
+
+      - name: Post comment, close PR, and fail
         if: steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true'
         uses: actions/github-script@v8
         with:
@@ -122,21 +158,21 @@ jobs:
             if (!hasLink) {
               lines = [
                 marker,
-                '**This PR is missing a linked issue.** All external contributions must reference an approved issue or discussion.',
+                '**This PR has been automatically closed** because it does not link to an approved issue.',
                 '',
-                'Please add one of the following to your PR description:',
-                '- `Fixes #<issue_number>`',
-                '- `Closes #<issue_number>`',
-                '- `Resolves #<issue_number>`',
-                '',
-                'If no issue exists yet, [open one](https://github.com/' + owner + '/' + repo + '/issues/new/choose) and wait for maintainer approval before proceeding.',
+                'All external contributions must reference an approved issue or discussion. Please:',
+                '1. Find or [open an issue](https://github.com/' + owner + '/' + repo + '/issues/new/choose) describing the change',
+                '2. Wait for a maintainer to approve and assign you',
+                '3. Add `Fixes #<issue_number>`, `Closes #<issue_number>`, or `Resolves #<issue_number>` to your PR description and the PR will be reopened automatically',
               ];
             } else {
               lines = [
                 marker,
-                '**You are not assigned to the linked issue.** External contributors must be assigned to an issue before opening a PR for it.',
+                '**This PR has been automatically closed** because you are not assigned to the linked issue.',
                 '',
-                'Please comment on the issue to request assignment from a maintainer, then update this PR once you have been assigned.',
+                'External contributors must be assigned to an issue before opening a PR for it. Please:',
+                '1. Comment on the linked issue to request assignment from a maintainer',
+                '2. Once assigned, edit your PR description and the PR will be reopened automatically',
               ];
             }
 
@@ -169,7 +205,70 @@ jobs:
               console.log('Comment already exists — skipping');
             }
 
+            // Close the PR
+            if (context.payload.pull_request.state === 'open') {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: prNumber,
+                state: 'closed',
+              });
+              console.log(`Closed PR #${prNumber}`);
+            }
+
+            // Cancel all other in-progress and queued workflow runs for this PR
+            const headSha = context.payload.pull_request.head.sha;
+            for (const status of ['in_progress', 'queued']) {
+              const runs = await github.paginate(
+                github.rest.actions.listWorkflowRunsForRepo,
+                { owner, repo, head_sha: headSha, status, per_page: 100 },
+              );
+              for (const run of runs) {
+                if (run.id === context.runId) continue;
+                try {
+                  await github.rest.actions.cancelWorkflowRun({
+                    owner, repo, run_id: run.id,
+                  });
+                  console.log(`Cancelled ${status} run ${run.id} (${run.name})`);
+                } catch (err) {
+                  console.log(`Could not cancel run ${run.id}: ${err.message}`);
+                }
+              }
+            }
+
             const reason = !hasLink
               ? 'PR must reference an issue using auto-close keywords (e.g., "Fixes #123").'
               : 'PR author must be assigned to the linked issue.';
             core.setFailed(reason);
+
+  # When a trusted-contributor label is added to a PR that was previously
+  # closed by check-issue-link, clean up and reopen it.
+  bypass-trusted-contributor:
+    if: github.event.action == 'labeled' && github.event.label.name == 'trusted-contributor'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Remove missing-issue-link label and reopen PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner, repo, issue_number: prNumber, name: 'missing-issue-link',
+              });
+              console.log('Removed missing-issue-link label');
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+
+            if (context.payload.pull_request.state === 'closed') {
+              await github.rest.pulls.update({
+                owner, repo, pull_number: prNumber, state: 'open',
+              });
+              console.log(`Reopened PR #${prNumber}`);
+            }

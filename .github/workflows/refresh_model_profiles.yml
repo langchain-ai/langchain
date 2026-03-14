@@ -36,28 +36,7 @@ jobs:
 
       - name: "🔄 Refresh profiles"
         working-directory: libs/model-profiles
-        run: |
-          declare -A PROVIDERS=(
-            [anthropic]=anthropic
-            [deepseek]=deepseek
-            [fireworks]=fireworks-ai
-            [groq]=groq
-            [huggingface]=huggingface
-            [mistralai]=mistral
-            [openai]=openai
-            [openrouter]=openrouter
-            [perplexity]=perplexity
-            [xai]=xai
-          )
-
-          for partner in "${!PROVIDERS[@]}"; do
-            provider="${PROVIDERS[$partner]}"
-            data_dir="../../libs/partners/${partner}/langchain_${partner//-/_}/data"
-            echo "--- Refreshing ${partner} (provider: ${provider}) ---"
-            echo y | uv run langchain-profiles refresh \
-              --provider "$provider" \
-              --data-dir "$data_dir"
-          done
+        run: make refresh-profiles
 
       - name: "🔑 Generate GitHub App token"
         id: app-token

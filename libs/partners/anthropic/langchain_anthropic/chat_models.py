@@ -166,6 +166,7 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
     "allowed_callers",
     "cache_control",
     "defer_loading",
+    "eager_input_streaming",
     "input_examples",
 }
 """Valid Anthropic-specific extra fields"""
@@ -2180,18 +2181,27 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     # Currently just copying over the 5m and 1h keys, but if more are added in the
     # future we'll need to expand this tuple
     cache_creation_keys = ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")
+    specific_cache_creation_tokens = 0
     if cache_creation:
         if isinstance(cache_creation, BaseModel):
             cache_creation = cache_creation.model_dump()
         for k in cache_creation_keys:
+            specific_cache_creation_tokens += cache_creation.get(k, 0)
             input_token_details[k] = cache_creation.get(k)
+        if not isinstance(specific_cache_creation_tokens, int):
+            specific_cache_creation_tokens = 0
+        if specific_cache_creation_tokens > 0:
+            # Remove generic key to avoid double counting cache creation tokens
+            input_token_details["cache_creation"] = 0
 
     # Calculate total input tokens: Anthropic's `input_tokens` excludes cached tokens,
     # so we need to add them back to get the true total input token count
     input_tokens = (
         (getattr(anthropic_usage, "input_tokens", 0) or 0)  # Base input tokens
         + (input_token_details["cache_read"] or 0)  # Tokens read from cache
-        + (input_token_details["cache_creation"] or 0)  # Tokens used to create cache
+        + (
+            specific_cache_creation_tokens or input_token_details["cache_creation"] or 0
+        )  # Tokens used to create cache
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 

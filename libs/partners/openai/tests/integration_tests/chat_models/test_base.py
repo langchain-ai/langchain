@@ -718,7 +718,7 @@ def test_image_token_counting_jpeg() -> None:
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
 
-    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
     message = HumanMessage(
         content=[
             {"type": "text", "text": "describe the weather in this image"},
@@ -750,7 +750,7 @@ def test_image_token_counting_png() -> None:
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
 
-    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
