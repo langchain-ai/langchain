@@ -39,9 +39,13 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
             return
 
         try:
-            # TODO(someday): support non asyncio runtimes here
-            asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:  # noqa: S110
+            loop = asyncio.get_running_loop()
+            if not loop.is_closed():
+                loop.create_task(self.aclose())
+        except RuntimeError:
+            # No running event loop or loop is closed — cannot schedule
+            # async cleanup. This is expected during interpreter shutdown
+            # or after asyncio.run() completes.
             pass
 
 
