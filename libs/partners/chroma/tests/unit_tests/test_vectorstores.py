@@ -1,3 +1,4 @@
+import pytest
 from langchain_core.embeddings.fake import (
     FakeEmbeddings,
 )
@@ -28,3 +29,31 @@ def test_similarity_search() -> None:
     output = docsearch.similarity_search("foo", k=1)
     docsearch.delete_collection()
     assert len(output) == 1
+
+
+def test_init_rejects_coroutine_client() -> None:
+    """Passing a coroutine as `client` should fail with a clear message."""
+
+    async def _build_client() -> object:
+        return object()
+
+    client_coro = _build_client()
+    try:
+        with pytest.raises(ValueError, match="`client` is a coroutine"):
+            Chroma(client=client_coro)
+    finally:
+        client_coro.close()
+
+
+def test_init_rejects_async_client_api_like_object() -> None:
+    """Async Chroma-style clients should fail fast instead of raising obscure errors."""
+
+    class _AsyncClientLike:
+        async def get_or_create_collection(self, **_kwargs: object) -> object:
+            return object()
+
+    with pytest.raises(
+        ValueError,
+        match="Asynchronous Chroma clients are not supported",
+    ):
+        Chroma(client=_AsyncClientLike())
