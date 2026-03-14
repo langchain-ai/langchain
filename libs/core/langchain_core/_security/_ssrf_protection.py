@@ -68,6 +68,21 @@ LOCALHOST_NAMES = [
 ]
 
 
+def _normalize_ip(ip_str: str) -> str:
+    """Normalize IP strings for consistent SSRF checks.
+
+    Args:
+        ip_str: IP address as a string.
+
+    Returns:
+        Canonical string form, converting IPv6-mapped IPv4 to plain IPv4.
+    """
+    ip = ipaddress.ip_address(ip_str)
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        return str(ip.ipv4_mapped)
+    return str(ip)
+
+
 def is_private_ip(ip_str: str) -> bool:
     """Check if an IP address is in a private range.
 
@@ -78,7 +93,7 @@ def is_private_ip(ip_str: str) -> bool:
         True if IP is in a private range, False otherwise
     """
     try:
-        ip = ipaddress.ip_address(ip_str)
+        ip = ipaddress.ip_address(_normalize_ip(ip_str))
         return any(ip in range_ for range_ in PRIVATE_IP_RANGES)
     except ValueError:
         return False
@@ -99,8 +114,12 @@ def is_cloud_metadata(hostname: str, ip_str: str | None = None) -> bool:
         return True
 
     # Check IP
-    if ip_str and ip_str in CLOUD_METADATA_IPS:  # noqa: SIM103
-        return True
+    if ip_str:
+        try:
+            if _normalize_ip(ip_str) in CLOUD_METADATA_IPS:
+                return True
+        except ValueError:
+            pass
 
     return False
 
@@ -122,12 +141,13 @@ def is_localhost(hostname: str, ip_str: str | None = None) -> bool:
     # Check IP
     if ip_str:
         try:
-            ip = ipaddress.ip_address(ip_str)
+            normalized_ip = _normalize_ip(ip_str)
+            ip = ipaddress.ip_address(normalized_ip)
             # Check if loopback
             if ip.is_loopback:
                 return True
             # Also check common localhost IPs
-            if ip_str in ("127.0.0.1", "::1", "0.0.0.0"):  # noqa: S104
+            if normalized_ip in ("127.0.0.1", "::1", "0.0.0.0"):  # noqa: S104
                 return True
         except ValueError:
             pass
@@ -225,20 +245,21 @@ def validate_safe_url(
 
         for result in addr_info:
             ip_str: str = result[4][0]  # type: ignore[assignment]
+            normalized_ip = _normalize_ip(ip_str)
 
             # ALWAYS block cloud metadata IPs
-            if is_cloud_metadata(hostname, ip_str):
-                msg = f"URL resolves to cloud metadata IP: {ip_str}"
+            if is_cloud_metadata(hostname, normalized_ip):
+                msg = f"URL resolves to cloud metadata IP: {normalized_ip}"
                 raise ValueError(msg)
 
             # Check for localhost IPs
-            if is_localhost(hostname, ip_str) and not allow_private:
-                msg = f"URL resolves to localhost IP: {ip_str}"
+            if is_localhost(hostname, normalized_ip) and not allow_private:
+                msg = f"URL resolves to localhost IP: {normalized_ip}"
                 raise ValueError(msg)
 
             # Check for private IPs
-            if not allow_private and is_private_ip(ip_str):
-                msg = f"URL resolves to private IP address: {ip_str}"
+            if not allow_private and is_private_ip(normalized_ip):
+                msg = f"URL resolves to private IP address: {normalized_ip}"
                 raise ValueError(msg)
 
     except socket.gaierror as e:

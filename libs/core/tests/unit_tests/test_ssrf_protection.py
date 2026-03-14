@@ -143,6 +143,16 @@ class TestValidateSafeUrl:
                 allow_private=True,
             )
 
+    def test_ipv6_mapped_ipv4_localhost_blocked(self) -> None:
+        """Test that IPv6-mapped IPv4 localhost is blocked."""
+        with pytest.raises(ValueError, match="localhost"):
+            validate_safe_url("http://[::ffff:127.0.0.1]:8080/webhook")
+
+    def test_ipv6_mapped_ipv4_cloud_metadata_blocked(self) -> None:
+        """Test that IPv6-mapped IPv4 cloud metadata is blocked."""
+        with pytest.raises(ValueError, match="metadata"):
+            validate_safe_url("http://[::ffff:169.254.169.254]/latest/meta-data/")
+
     def test_invalid_scheme_blocked(self) -> None:
         """Test that non-HTTP(S) schemes are blocked."""
         with pytest.raises(ValueError, match="scheme"):
