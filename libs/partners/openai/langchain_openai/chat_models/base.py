@@ -3999,7 +3999,15 @@ def _construct_responses_api_payload(
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
                 extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
-                new_tools.append({"type": "function", **tool["function"], **extra})
+                func = tool["function"]
+                # If strict is absent, explicitly set it to False to preserve Chat
+                # Completions semantics (non-strict / best-effort tool calling).
+                # The Responses API defaults strict to True, which silently enables
+                # structured-output mode and rejects schemas with keywords like
+                # "pattern" — breaking tools that worked fine via Chat Completions.
+                if "strict" not in func:
+                    func = {**func, "strict": False}
+                new_tools.append({"type": "function", **func, **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
