@@ -60,6 +60,7 @@ from langchain_core.tools.base import (
     _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -2410,6 +2411,28 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
+
+
+def test_create_schema_filters_injected_args_when_filter_args_provided() -> None:
+    """Explicit filter_args should not disable injected-arg filtering."""
+
+    def my_tool(
+        query: str,
+        runtime: Annotated[dict[str, Any], InjectedToolArg()],
+        debug_level: int,
+    ) -> str:
+        return query
+
+    schema = create_schema_from_function(
+        "MyToolSchema",
+        my_tool,
+        filter_args=("debug_level",),
+        include_injected=False,
+    )
+
+    assert schema.model_json_schema()["properties"] == {
+        "query": {"title": "Query", "type": "string"}
+    }
 
 
 @pytest.mark.parametrize("schema_format", ["model", "json_schema"])
