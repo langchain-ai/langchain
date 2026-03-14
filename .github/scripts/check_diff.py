@@ -44,7 +44,6 @@ IGNORE_CORE_DEPENDENTS = False
 IGNORED_PARTNERS = [
     # remove huggingface from dependents because of CI instability
     # specifically in huggingface jobs
-    # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
 ]
 

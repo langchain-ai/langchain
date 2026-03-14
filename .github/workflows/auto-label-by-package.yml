@@ -4,6 +4,9 @@ on:
   issues:
     types: [opened, edited]
 
+permissions:
+  contents: read
+
 jobs:
   label-by-package:
     permissions:

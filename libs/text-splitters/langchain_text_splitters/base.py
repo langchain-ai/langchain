@@ -227,7 +227,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         cls,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
@@ -247,6 +247,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
@@ -302,7 +304,7 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
@@ -319,6 +321,8 @@ class TokenTextSplitter(TextSplitter):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         super().__init__(**kwargs)
         if not _HAS_TIKTOKEN:
             msg = (
