@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, override
@@ -12,12 +12,16 @@ from typing_extensions import NotRequired, override
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ModelRequest,
+    ModelResponse,
     PrivateStateAttr,
     ResponseT,
     hook_config,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from langgraph.runtime import Runtime
 
 ExitBehavior = Literal["continue", "error", "end"]
@@ -65,6 +69,33 @@ def _build_tool_message_content(tool_name: str | None) -> str:
     if tool_name:
         return f"Tool call limit exceeded. Do not call '{tool_name}' again."
     return "Tool call limit exceeded. Do not make additional tool calls."
+
+
+def _build_warning_content(remaining: int, tool_name: str | None) -> str:
+    """Build the warning message injected before a model call.
+
+    This message is sent to the model ephemerally via `wrap_model_call` to give
+    it advance notice of how many tool calls remain.
+
+    Args:
+        remaining: Number of tool calls remaining. Values <= 0 mean the budget
+            is exhausted.
+        tool_name: Tool name being limited (if specific tool), or `None` for
+            all tools.
+
+    Returns:
+        A warning string for the model.
+    """
+    tool_desc = f" for '{tool_name}'" if tool_name else ""
+    if remaining <= 0:
+        return (
+            f"[System notice: You have exhausted your tool call budget{tool_desc}. "
+            "Do NOT call any more tools. Summarize what you have so far.]"
+        )
+    return (
+        f"[System notice: You have {remaining} tool call(s) remaining{tool_desc}. "
+        "Plan your tool usage carefully.]"
+    )
 
 
 def _build_final_ai_message_content(
@@ -194,6 +225,23 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 print(f"Search limit exceeded: {e}")
             ```
 
+        !!! example "Proactive warnings before limit is reached"
+
+            ```python
+            # Warn the model when approaching the limit
+            limiter = ToolCallLimitMiddleware(
+                run_limit=10,
+                proactive=True,
+                warning_threshold=5,
+            )
+
+            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            # The model will receive ephemeral warnings like
+            # "[System notice: You have 3 tool call(s) remaining...]"
+            # starting when remaining calls <= 5. The warnings do NOT
+            # persist in the conversation state.
+            ```
+
     """
 
     state_schema = ToolCallLimitState  # type: ignore[assignment]
@@ -205,6 +253,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         thread_limit: int | None = None,
         run_limit: int | None = None,
         exit_behavior: ExitBehavior = "continue",
+        proactive: bool = False,
+        warning_threshold: int = 5,
     ) -> None:
         """Initialize the tool call limit middleware.
 
@@ -225,9 +275,18 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                     `NotImplementedError` if there are multiple parallel tool
                     calls to other tools or multiple pending tool calls.
 
+            proactive: If `True`, inject an ephemeral warning message into the model
+                request when the remaining tool call budget is at or below
+                `warning_threshold`. The warning is added via `wrap_model_call` /
+                `awrap_model_call` and does **not** persist in the conversation state.
+            warning_threshold: When `proactive` is `True`, start injecting warnings
+                once the number of remaining calls is at or below this value.
+                Must be >= 0.
+
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
-                or if `run_limit` exceeds `thread_limit`.
+                if `run_limit` exceeds `thread_limit`, or if `warning_threshold`
+                is negative.
         """
         super().__init__()
 
@@ -247,10 +306,16 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             )
             raise ValueError(msg)
 
+        if warning_threshold < 0:
+            msg = f"warning_threshold must be >= 0, got {warning_threshold}"
+            raise ValueError(msg)
+
         self.tool_name = tool_name
         self.thread_limit = thread_limit
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
+        self.proactive = proactive
+        self.warning_threshold = warning_threshold
 
     @property
     def name(self) -> str:
@@ -288,6 +353,33 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             True if this middleware should track this tool call.
         """
         return self.tool_name is None or tool_call["name"] == self.tool_name
+
+    def _remaining_calls(self, state: ToolCallLimitState[ResponseT]) -> float:
+        """Calculate the number of remaining tool calls before a limit is hit.
+
+        Uses the tighter (minimum) of the thread and run limits. Returns
+        `float('inf')` when neither limit is configured (should not happen
+        after `__init__` validation).
+
+        Args:
+            state: The current agent state containing tool call counts.
+
+        Returns:
+            The number of remaining calls (may be negative if counts include
+            blocked attempts).
+        """
+        count_key = self.tool_name or "__all__"
+        remaining: float = float("inf")
+
+        if self.thread_limit is not None:
+            thread_count = state.get("thread_tool_call_count", {}).get(count_key, 0)
+            remaining = min(remaining, self.thread_limit - thread_count)
+
+        if self.run_limit is not None:
+            run_count = state.get("run_tool_call_count", {}).get(count_key, 0)
+            remaining = min(remaining, self.run_limit - run_count)
+
+        return remaining
 
     def _separate_tool_calls(
         self, tool_calls: list[ToolCall], thread_count: int, run_count: int
@@ -486,3 +578,64 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 and there are multiple tool calls.
         """
         return self.after_model(state, runtime)
+
+    @override
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Optionally inject a proactive warning before the model call.
+
+        When `proactive` is `True` and the remaining tool call budget is at or
+        below `warning_threshold`, an ephemeral `HumanMessage` warning is appended
+        to the model request via `request.override(messages=...)`. The warning
+        never enters the conversation state.
+
+        Args:
+            request: Model request to execute.
+            handler: Callback that executes the model request.
+
+        Returns:
+            The result of invoking the handler, with or without the injected
+            warning.
+        """
+        if not self.proactive:
+            return handler(request)
+
+        remaining = self._remaining_calls(request.state)  # type: ignore[arg-type]
+        if remaining > self.warning_threshold:
+            return handler(request)
+
+        warning = _build_warning_content(int(remaining), self.tool_name)
+        return handler(
+            request.override(messages=[*request.messages, HumanMessage(content=warning)])
+        )
+
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Async version of `wrap_model_call`.
+
+        Args:
+            request: Model request to execute.
+            handler: Async callback that executes the model request.
+
+        Returns:
+            The result of invoking the handler, with or without the injected
+            warning.
+        """
+        if not self.proactive:
+            return await handler(request)
+
+        remaining = self._remaining_calls(request.state)  # type: ignore[arg-type]
+        if remaining > self.warning_threshold:
+            return await handler(request)
+
+        warning = _build_warning_content(int(remaining), self.tool_name)
+        return await handler(
+            request.override(messages=[*request.messages, HumanMessage(content=warning)])
+        )
