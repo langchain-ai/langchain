@@ -1541,7 +1541,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     details = dict(result.get("input_token_details") or {})
     assert details["cache_read"] == 10
     # cache_creation should be suppressed to avoid double counting
-    assert "cache_creation" not in details
+    assert details["cache_creation"] == 0
     assert details["ephemeral_5m_input_tokens"] == 100
     assert details["ephemeral_1h_input_tokens"] == 50
 
@@ -1559,7 +1559,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     result = _create_usage_metadata(UsageWithCacheCreationDict())
     assert result["input_tokens"] == 200 + 10 + 80 + 70
     details = dict(result.get("input_token_details") or {})
-    assert "cache_creation" not in details
+    assert details["cache_creation"] == 0
     assert details["ephemeral_5m_input_tokens"] == 80
     assert details["ephemeral_1h_input_tokens"] == 70
 
@@ -1623,7 +1623,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert result["output_tokens"] == 10
     assert result["total_tokens"] == 185
     details = dict(result.get("input_token_details") or {})
-    assert "cache_creation" not in details
+    assert details["cache_creation"] == 0
     assert details["ephemeral_1h_input_tokens"] == 75
     # ephemeral_5m_input_tokens is 0 — still included since 0 is not None
     assert details["ephemeral_5m_input_tokens"] == 0
