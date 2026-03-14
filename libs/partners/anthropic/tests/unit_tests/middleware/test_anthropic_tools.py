@@ -1,5 +1,6 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -268,7 +269,7 @@ class TestFileOperations:
 
         args = {
             "command": "rename",
-            "old_path": "/memories/old.txt",
+            "path": "/memories/old.txt",
             "new_path": "/memories/new.txt",
         }
         result = middleware._handle_rename(args, state, "test_id")
@@ -281,6 +282,28 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_rename_operation_filesystem(self, tmp_path: Path) -> None:
+        """Test filesystem rename uses args['path'] as source key."""
+        from langchain_anthropic.middleware.anthropic_tools import (
+            FilesystemClaudeTextEditorMiddleware,
+        )
+
+        middleware = FilesystemClaudeTextEditorMiddleware(root_path=str(tmp_path))
+
+        # Filesystem middleware uses virtual paths resolved against root_path
+        old_file = tmp_path / "old.txt"
+        old_file.write_text("hello")
+
+        args = {
+            "path": "/old.txt",
+            "new_path": "/new.txt",
+        }
+        result = middleware._handle_rename(args, "test_id")
+
+        assert isinstance(result, Command)
+        assert not old_file.exists()
+        assert (tmp_path / "new.txt").read_text() == "hello"
 
 
 class TestSystemMessageHandling:
