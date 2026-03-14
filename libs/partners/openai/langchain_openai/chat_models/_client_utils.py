@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
+import threading
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
 from typing import Any, cast
@@ -75,11 +76,21 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout)
 
 
-@lru_cache
-def _cached_async_httpx_client(
-    base_url: str | None, timeout: Any
-) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout)
+# Thread-local storage for async httpx clients.
+#
+# Using @lru_cache (process-global) for the async client is unsafe when
+# `ainvoke()` is called from multiple threads that each run their own event
+# loop via `asyncio.run()`.  Each `asyncio.run()` call creates a *new* loop,
+# then **closes** it on exit.  The cached client holds open connections bound
+# to the first loop; when a later thread reuses the same cached client those
+# connections try to communicate with a closed loop, raising:
+#
+#   RuntimeError: Event loop is closed
+#   openai.APIConnectionError: Connection error.
+#
+# Storing one client per thread guarantees that the client is always used
+# within the event loop that created it.
+_thread_local_async_clients = threading.local()
 
 
 def _get_default_httpx_client(
@@ -100,16 +111,30 @@ def _get_default_httpx_client(
 def _get_default_async_httpx_client(
     base_url: str | None, timeout: Any
 ) -> _AsyncHttpxClientWrapper:
-    """Get default httpx client.
+    """Get default async httpx client.
 
-    Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
+    Uses a thread-local cache so that each thread (and therefore each asyncio
+    event loop created by ``asyncio.run()``) gets its own client.  This avoids
+    the ``RuntimeError: Event loop is closed`` / ``APIConnectionError`` that
+    occurs when a process-global cached client is reused across event loops.
+
+    If ``timeout`` is not hashable the client is built fresh (no caching).
     """
     try:
-        hash(timeout)
+        cache_key = (base_url, timeout)
+        hash(cache_key)
     except TypeError:
         return _build_async_httpx_client(base_url, timeout)
-    else:
-        return _cached_async_httpx_client(base_url, timeout)
+
+    if not hasattr(_thread_local_async_clients, "cache"):
+        _thread_local_async_clients.cache = {}
+
+    if cache_key not in _thread_local_async_clients.cache:
+        _thread_local_async_clients.cache[cache_key] = _build_async_httpx_client(
+            base_url, timeout
+        )
+
+    return _thread_local_async_clients.cache[cache_key]
 
 
 def _resolve_sync_and_async_api_keys(
