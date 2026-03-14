@@ -1117,15 +1117,23 @@ class Runnable(ABC, Generic[Input, Output]):
                 out = await self.ainvoke(input_, config, **kwargs)
             return (i, out)
 
-        coros = [
-            gated_coro(semaphore, ainvoke_task(i, input_, config))
-            if semaphore
-            else ainvoke_task(i, input_, config)
+        tasks = [
+            asyncio.ensure_future(
+                gated_coro(semaphore, ainvoke_task(i, input_, config))
+                if semaphore
+                else ainvoke_task(i, input_, config)
+            )
             for i, (input_, config) in enumerate(zip(inputs, configs, strict=False))
         ]
 
-        for coro in asyncio.as_completed(coros):
-            yield await coro
+        try:
+            for coro in asyncio.as_completed(tasks):
+                yield await coro
+        finally:
+            for task in tasks:
+                task.cancel()
+            # Suppress CancelledError from any still-running tasks
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     def stream(
         self,
