@@ -753,6 +753,148 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_last_token_counter_receives_original_order() -> None:
+    """Token counter must receive messages in chronological order when strategy='last'.
+
+    When strategy='last', _last_max_tokens internally reverses the message list before
+    calling _first_max_tokens. API-based token counters (e.g., ChatAnthropic) reject
+    reversed sequences because a ToolMessage appearing before its AIMessage with
+    tool_use is invalid. The fix wraps the counter so it always sees messages in their
+    original order — a valid suffix of the input list.
+
+    Regression test for: https://github.com/langchain-ai/langchain/issues/29637
+    """
+    call_log: list[list[BaseMessage]] = []
+
+    def order_sensitive_token_counter(messages: list[BaseMessage]) -> int:
+        call_log.append(list(messages))
+        # Raise if a ToolMessage appears before its corresponding AIMessage — this is
+        # exactly what Anthropic's token-counting API rejects.
+        seen_tool_call_ids: set[str] = set()
+        for msg in messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    seen_tool_call_ids.add(tc["id"])
+            if isinstance(msg, ToolMessage):
+                if msg.tool_call_id not in seen_tool_call_ids:
+                    raise ValueError(
+                        f"ToolMessage with tool_call_id '{msg.tool_call_id}' "
+                        "appeared before its corresponding AIMessage with tool_calls "
+                        "(invalid message ordering, e.g., Anthropic API rejects this)."
+                    )
+        return dummy_token_counter(messages)
+
+    messages = [
+        HumanMessage("hi"),
+        AIMessage("hello"),
+        HumanMessage("what's the weather?"),
+        AIMessage(
+            content=[{"type": "text", "text": "let me check"}],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "florida"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="abc123", name="get_weather"),
+        AIMessage("The weather in florida is sunny!"),
+    ]
+
+    # Must not raise even though messages contain tool_calls / ToolMessages.
+    result = trim_messages(
+        messages,
+        max_tokens=40,
+        token_counter=order_sensitive_token_counter,
+        strategy="last",
+    )
+
+    # Every call to the token counter must have received messages in chronological
+    # order (no ToolMessage before its AIMessage).
+    for call_messages in call_log:
+        seen_ids: set[str] = set()
+        for msg in call_messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    seen_ids.add(tc["id"])
+            if isinstance(msg, ToolMessage):
+                assert msg.tool_call_id in seen_ids, (
+                    f"Token counter was called with reversed/invalid message order: "
+                    f"{[type(m).__name__ for m in call_messages]}"
+                )
+
+    # Result must be a valid suffix (messages appear in original relative order).
+    assert len(result) > 0
+    result_ids = [id(m) for m in result]
+    msg_ids = [id(m) for m in messages]
+    # Every result message should appear in the original messages in the same order.
+    positions = [msg_ids.index(rid) for rid in result_ids if rid in msg_ids]
+    assert positions == sorted(positions)
+
+
+def test_trim_messages_last_token_counter_receives_original_order_with_system() -> None:
+    """Token counter receives correct order when include_system=True."""
+    call_log: list[list[BaseMessage]] = []
+
+    def order_sensitive_token_counter(messages: list[BaseMessage]) -> int:
+        call_log.append(list(messages))
+        seen_tool_call_ids: set[str] = set()
+        for msg in messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    seen_tool_call_ids.add(tc["id"])
+            if isinstance(msg, ToolMessage):
+                if msg.tool_call_id not in seen_tool_call_ids:
+                    raise ValueError(
+                        f"ToolMessage appeared before AIMessage with tool_calls: "
+                        f"{[type(m).__name__ for m in messages]}"
+                    )
+        return dummy_token_counter(messages)
+
+    messages = [
+        SystemMessage("You are a helpful assistant."),
+        HumanMessage("what's the weather?"),
+        AIMessage(
+            content=[{"type": "text", "text": "let me check"}],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "florida"},
+                    "id": "tool1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="tool1", name="get_weather"),
+        AIMessage("Sunny in florida!"),
+        HumanMessage("thanks"),
+    ]
+
+    result = trim_messages(
+        messages,
+        max_tokens=50,
+        token_counter=order_sensitive_token_counter,
+        strategy="last",
+        include_system=True,
+    )
+
+    for call_messages in call_log:
+        seen_ids: set[str] = set()
+        for msg in call_messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    seen_ids.add(tc["id"])
+            if isinstance(msg, ToolMessage):
+                assert msg.tool_call_id in seen_ids, (
+                    f"Token counter called with invalid order: "
+                    f"{[type(m).__name__ for m in call_messages]}"
+                )
+
+    assert len(result) > 0
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(

@@ -2063,10 +2063,33 @@ def _last_max_tokens(
         system_tokens = token_counter([system_message])
         remaining_tokens = max(0, max_tokens - system_tokens)
 
+    # _first_max_tokens calls token_counter on prefixes of reversed_messages.
+    # Some token counters (e.g., ChatAnthropic.get_num_tokens_from_messages) call
+    # provider APIs that reject reversed or otherwise invalid message sequences.
+    # Wrapping the counter to re-reverse ensures it always receives messages in
+    # their original chronological order
+    # (reversed_messages[:k] reversed == messages[-k:]).
+    #
+    # Additionally, provider APIs (e.g., Anthropic) reject message sequences that
+    # start with a ToolMessage whose corresponding AIMessage (with tool_calls) is
+    # not included in the sequence. When a candidate suffix begins with such an
+    # "orphaned" ToolMessage, we return a sentinel value so the binary search
+    # expands the window to include the preceding AIMessage.
+    _large_token_count = 2**31 - 1
+
+    def _suffix_token_counter(reversed_msgs: list[BaseMessage]) -> int:
+        suffix = list(reversed(reversed_msgs))
+        # If the suffix begins with a ToolMessage, the corresponding AIMessage
+        # (which must precede tool results) is not included — an invalid sequence.
+        # Signal "too many tokens" so the binary search expands the window.
+        if suffix and isinstance(suffix[0], ToolMessage):
+            return _large_token_count
+        return token_counter(suffix)
+
     reversed_result = _first_max_tokens(
         reversed_messages,
         max_tokens=remaining_tokens,
-        token_counter=token_counter,
+        token_counter=_suffix_token_counter,
         text_splitter=text_splitter,
         partial_strategy="last" if allow_partial else None,
         end_on=start_on,
