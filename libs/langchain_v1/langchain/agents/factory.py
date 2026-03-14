@@ -672,7 +672,7 @@ def _chain_async_tool_call_wrappers(
 
 def create_agent(
     model: str | BaseChatModel,
-    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | ToolNode | None = None,
     *,
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
@@ -908,24 +908,35 @@ def create_agent(
 
     # Setup tools
     tool_node: ToolNode | None = None
+
+    # Support passing a pre-built ToolNode directly (e.g. ToolNode([...], handle_tool_errors=True))
+    # In that case, reuse it as-is instead of creating a new one and extract its tools so that
+    # the rest of the factory logic (built-ins, middleware, default_tools, etc.) continues to work.
+    if isinstance(tools, ToolNode):
+        tool_node = tools
+        tools = list(tools.tools_by_name.values())
+
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
-    built_in_tools = [t for t in tools if isinstance(t, dict)]
-    regular_tools = [t for t in tools if not isinstance(t, dict)]
+    tools_seq = tools or []
+    built_in_tools = [t for t in tools_seq if isinstance(t, dict)]
+    regular_tools = [t for t in tools_seq if not isinstance(t, dict)]
 
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
     # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
     # (which may handle dynamically registered tools)
-    tool_node = (
-        ToolNode(
-            tools=available_tools,
-            wrap_tool_call=wrap_tool_call_wrapper,
-            awrap_tool_call=awrap_tool_call_wrapper,
+    # Skip if caller already passed a pre-built ToolNode (above).
+    if tool_node is None:
+        tool_node = (
+            ToolNode(
+                tools=available_tools,
+                wrap_tool_call=wrap_tool_call_wrapper,
+                awrap_tool_call=awrap_tool_call_wrapper,
+            )
+            if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
+            else None
         )
-        if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
-        else None
-    )
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
