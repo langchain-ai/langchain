@@ -3702,4 +3702,3 @@ async def test_tool_ainvoke_with_self_keyword_in_input() -> None:
     # Should not raise TypeError about multiple values for 'self'
     result = await structured.ainvoke(tool_input)
     assert result == repr(tool_input)
-
