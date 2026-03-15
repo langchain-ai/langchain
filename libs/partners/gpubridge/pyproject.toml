@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-gpubridge"
+version = "0.1.0"
+description = "LangChain integration for GPU-Bridge — 30 AI services, one endpoint"
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=0.3.0,<1.0.0",
+    "requests>=2.28.0",
+    "pydantic>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://gpubridge.xyz"
+Repository = "https://github.com/fjnunezp75/langchain-gpubridge"
+Documentation = "https://api.gpubridge.xyz/catalog"
+
+[tool.hatch.build.targets.wheel]
+packages = ["langchain_gpubridge"]
