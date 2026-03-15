@@ -129,6 +129,15 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Float fields should be summed (e.g., temperature, score)
+        ({"score": 0.5}, {"score": 0.3}, {"score": 0.8}),
+        ({"temperature": 0.7}, {"temperature": 0.5}, {"temperature": 1.2}),
+        # Float 'index' should be preserved, not summed
+        ({"index": 1.0}, {"index": 1.0}, {"index": 1.0}),
+        ({"index": 0.0}, {"index": 1.0}, {"index": 1.0}),
+        # Float 'created'/'timestamp' should be preserved, not summed
+        ({"created": 1700000000.0}, {"created": 1700000000.0}, {"created": 1700000000.0}),
+        ({"timestamp": 100.0}, {"timestamp": 200.0}, {"timestamp": 200.0}),
     ],
 )
 def test_merge_dicts(
