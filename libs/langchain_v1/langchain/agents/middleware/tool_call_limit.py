@@ -98,6 +98,68 @@ def _build_warning_content(remaining: int, tool_name: str | None) -> str:
     )
 
 
+def _build_initial_context(
+    thread_limit: int | None,
+    run_limit: int | None,
+    warning_threshold: int | list[int],
+    tool_name: str | None,
+) -> str:
+    """Build the initial context message injected on the first model call of a run.
+
+    This message informs the model about the configured tool call limits and
+    warning thresholds so it can plan tool usage from the start.
+
+    Args:
+        thread_limit: Maximum tool calls allowed per thread, or ``None``.
+        run_limit: Maximum tool calls allowed per run, or ``None``.
+        warning_threshold: Warning threshold value(s).
+        tool_name: Tool name being limited (if specific tool), or ``None`` for
+            all tools.
+
+    Returns:
+        A context string for the model.
+    """
+    tool_desc = f" for '{tool_name}'" if tool_name else ""
+    parts = [f"[System notice: Tool call limits are active{tool_desc}."]
+
+    if run_limit is not None:
+        parts.append(f"Run limit: {run_limit} calls.")
+    if thread_limit is not None:
+        parts.append(f"Thread limit (persistent across runs): {thread_limit} calls.")
+
+    if isinstance(warning_threshold, list):
+        thresholds_str = ", ".join(str(t) for t in sorted(warning_threshold, reverse=True))
+        parts.append(f"You will receive warnings when remaining calls reach: {thresholds_str}.")
+    else:
+        parts.append(f"You will receive warnings when {warning_threshold} or fewer calls remain.")
+
+    parts.append("Plan your tool usage accordingly.]")
+    return " ".join(parts)
+
+
+def _validate_warning_threshold(warning_threshold: int | list[int]) -> None:
+    """Validate the ``warning_threshold`` parameter.
+
+    Args:
+        warning_threshold: The value to validate. Must be a non-negative `int` or a
+            non-empty `list[int]` with all elements >= 0.
+
+    Raises:
+        ValueError: If `warning_threshold` is an empty list, contains negative
+            values, or is a negative integer.
+    """
+    if isinstance(warning_threshold, list):
+        if not warning_threshold:
+            msg = "warning_threshold list must not be empty"
+            raise ValueError(msg)
+        if any(t < 0 for t in warning_threshold):
+            msg = f"All warning_threshold values must be >= 0, got {warning_threshold}"
+            raise ValueError(msg)
+    elif warning_threshold < 0:
+        msg = f"warning_threshold must be >= 0, got {warning_threshold}"
+        raise ValueError(msg)
+
+
 def _build_final_ai_message_content(
     thread_count: int,
     run_count: int,
@@ -254,7 +316,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         run_limit: int | None = None,
         exit_behavior: ExitBehavior = "continue",
         proactive: bool = False,
-        warning_threshold: int = 5,
+        warning_threshold: int | list[int] = 5,
     ) -> None:
         """Initialize the tool call limit middleware.
 
@@ -279,9 +341,12 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 request when the remaining tool call budget is at or below
                 `warning_threshold`. The warning is added via `wrap_model_call` /
                 `awrap_model_call` and does **not** persist in the conversation state.
-            warning_threshold: When `proactive` is `True`, start injecting warnings
-                once the number of remaining calls is at or below this value.
-                Must be >= 0.
+
+            warning_threshold: When `proactive` is `True`, controls when warnings
+                are injected. If an `int`, warnings fire when remaining calls
+                are at or below this value. If a `list[int]`, warnings fire only
+                when remaining calls exactly match a value in the list.
+                All values must be >= 0.
 
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
@@ -306,9 +371,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             )
             raise ValueError(msg)
 
-        if warning_threshold < 0:
-            msg = f"warning_threshold must be >= 0, got {warning_threshold}"
-            raise ValueError(msg)
+        _validate_warning_threshold(warning_threshold)
 
         self.tool_name = tool_name
         self.thread_limit = thread_limit
@@ -380,6 +443,33 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             remaining = min(remaining, self.run_limit - run_count)
 
         return remaining
+
+    def _is_first_model_call_of_run(self, state: ToolCallLimitState[ResponseT]) -> bool:
+        """Check if this is the first model call of the current run.
+
+        Args:
+            state: The current agent state.
+
+        Returns:
+            True if no tool calls have been tracked for this run yet.
+        """
+        count_key = self.tool_name or "__all__"
+        return state.get("run_tool_call_count", {}).get(count_key, 0) == 0
+
+    def _should_warn(self, remaining: float) -> bool:
+        """Check if a warning should be injected based on remaining calls.
+
+        Args:
+            remaining: Number of remaining tool calls.
+
+        Returns:
+            True if a warning should be injected.
+        """
+        if remaining == float("inf"):
+            return False
+        if isinstance(self.warning_threshold, list):
+            return int(remaining) in self.warning_threshold
+        return remaining <= self.warning_threshold
 
     def _separate_tool_calls(
         self, tool_calls: list[ToolCall], thread_count: int, run_count: int
@@ -587,10 +677,13 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
     ) -> ModelResponse[ResponseT] | AIMessage:
         """Optionally inject a proactive warning before the model call.
 
-        When `proactive` is `True` and the remaining tool call budget is at or
-        below `warning_threshold`, an ephemeral `HumanMessage` warning is appended
-        to the model request via `request.override(messages=...)`. The warning
-        never enters the conversation state.
+        When `proactive` is `True`:
+        - On the first model call of a run,
+          an ephemeral `HumanMessage` with initial context about limits is injected.
+        - When the remaining tool call budget triggers `_should_warn`, an ephemeral
+          warning `HumanMessage` is injected instead.
+
+        Neither message persists in the conversation state.
 
         Args:
             request: Model request to execute.
@@ -604,13 +697,22 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             return handler(request)
 
         remaining = self._remaining_calls(request.state)  # type: ignore[arg-type]
-        if remaining > self.warning_threshold:
-            return handler(request)
 
-        warning = _build_warning_content(int(remaining), self.tool_name)
-        return handler(
-            request.override(messages=[*request.messages, HumanMessage(content=warning)])
-        )
+        if self._should_warn(remaining):
+            warning = _build_warning_content(int(remaining), self.tool_name)
+            return handler(
+                request.override(messages=[*request.messages, HumanMessage(content=warning)])
+            )
+
+        if self._is_first_model_call_of_run(request.state):  # type: ignore[arg-type]
+            context = _build_initial_context(
+                self.thread_limit, self.run_limit, self.warning_threshold, self.tool_name
+            )
+            return handler(
+                request.override(messages=[*request.messages, HumanMessage(content=context)])
+            )
+
+        return handler(request)
 
     @override
     async def awrap_model_call(
@@ -632,10 +734,19 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             return await handler(request)
 
         remaining = self._remaining_calls(request.state)  # type: ignore[arg-type]
-        if remaining > self.warning_threshold:
-            return await handler(request)
 
-        warning = _build_warning_content(int(remaining), self.tool_name)
-        return await handler(
-            request.override(messages=[*request.messages, HumanMessage(content=warning)])
-        )
+        if self._should_warn(remaining):
+            warning = _build_warning_content(int(remaining), self.tool_name)
+            return await handler(
+                request.override(messages=[*request.messages, HumanMessage(content=warning)])
+            )
+
+        if self._is_first_model_call_of_run(request.state):  # type: ignore[arg-type]
+            context = _build_initial_context(
+                self.thread_limit, self.run_limit, self.warning_threshold, self.tool_name
+            )
+            return await handler(
+                request.override(messages=[*request.messages, HumanMessage(content=context)])
+            )
+
+        return await handler(request)

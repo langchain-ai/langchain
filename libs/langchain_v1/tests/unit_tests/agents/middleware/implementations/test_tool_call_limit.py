@@ -905,11 +905,11 @@ def test_proactive_warning_injected() -> None:
 
 
 def test_proactive_no_warning_above_threshold() -> None:
-    """No warning when remaining calls > threshold."""
+    """No injection when not the first call of the run and remaining calls > threshold."""
     middleware = ToolCallLimitMiddleware(run_limit=5, proactive=True, warning_threshold=3)
     handler = _FakeHandler(response="ok")
-    # 0 calls used → 5 remaining → 5 > 3 → no warning
-    request = _make_request(run_tool_call_count={"__all__": 0})
+    # 1 call already made (not first call) → 4 remaining → 4 > 3 → no injection
+    request = _make_request(run_tool_call_count={"__all__": 1})
 
     middleware.wrap_model_call(request, handler)
 
@@ -1078,3 +1078,213 @@ def test_proactive_warning_with_create_agent() -> None:
     # Agent should complete normally with tool results
     tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
     assert len(tool_messages) >= 1, "Agent should have executed at least one tool call"
+
+
+def test_proactive_initial_context_injected() -> None:
+    """First model call of a run injects initial context when above warning threshold."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=3)
+    handler = _FakeHandler(response="ok")
+    # First call: run_count=0 → remaining=10 > 3 → initial context fires
+
+    request = _make_request(run_tool_call_count={})
+    middleware.wrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    assert captured is not request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "Tool call limits are active" in last_msg.content
+    assert "Run limit: 10" in last_msg.content
+
+
+def test_proactive_initial_context_not_on_subsequent_calls() -> None:
+    """Subsequent model calls (run_count > 0) do not inject initial context."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=3)
+    handler = _FakeHandler(response="ok")
+    # Not first call: run_count=2 → remaining=8 > 3 → no injection
+    request = _make_request(run_tool_call_count={"__all__": 2})
+
+    middleware.wrap_model_call(request, handler)
+
+    assert handler.captured_request is request, "Request should be passed through unmodified"
+
+
+def test_proactive_initial_context_skipped_when_in_warning_zone() -> None:
+    """First call in warning zone gets warning only, not initial context."""
+    middleware = ToolCallLimitMiddleware(run_limit=3, proactive=True, warning_threshold=5)
+    handler = _FakeHandler(response="ok")
+    # First call: run_count=0 → remaining=3 ≤ 5 → warning fires (not initial context)
+    request = _make_request(run_tool_call_count={})
+
+    middleware.wrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "3 tool call(s) remaining" in last_msg.content
+    assert "Tool call limits are active" not in last_msg.content
+
+
+def test_proactive_initial_context_with_tool_name() -> None:
+    """Initial context message mentions the specific tool name."""
+    middleware = ToolCallLimitMiddleware(
+        tool_name="search", run_limit=8, proactive=True, warning_threshold=2
+    )
+    handler = _FakeHandler(response="ok")
+    request = _make_request(run_tool_call_count={})
+
+    middleware.wrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "'search'" in last_msg.content
+    assert "Run limit: 8" in last_msg.content
+
+
+def test_proactive_initial_context_message_content() -> None:
+    """Initial context includes thread_limit, run_limit, and warning_threshold."""
+    middleware = ToolCallLimitMiddleware(
+        thread_limit=20, run_limit=10, proactive=True, warning_threshold=4
+    )
+    handler = _FakeHandler(response="ok")
+    request = _make_request(run_tool_call_count={})
+
+    middleware.wrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    content = last_msg.content
+    assert "Run limit: 10" in content
+    assert "Thread limit (persistent across runs): 20" in content
+    assert "4 or fewer calls remain" in content
+
+
+@pytest.mark.asyncio
+async def test_proactive_initial_context_async() -> None:
+    """Async wrap_model_call injects initial context identically to sync version."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=3)
+    handler = _FakeAsyncHandler(response="ok")
+    request = _make_request(run_tool_call_count={})
+
+    await middleware.awrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    assert captured is not request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "Tool call limits are active" in last_msg.content
+
+
+def test_warning_threshold_list_exact_match() -> None:
+    """List threshold fires only at exact remaining counts."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=[5, 2])
+    handler = _FakeHandler(response="ok")
+
+    # remaining=5 → exact match → warning fires
+    request = _make_request(run_tool_call_count={"__all__": 5})
+    middleware.wrap_model_call(request, handler)
+    captured = handler.captured_request
+    assert captured is not request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "5 tool call(s) remaining" in last_msg.content
+
+    # remaining=2 → exact match → warning fires
+    handler2 = _FakeHandler(response="ok")
+    request2 = _make_request(run_tool_call_count={"__all__": 8})
+    middleware.wrap_model_call(request2, handler2)
+    captured2 = handler2.captured_request
+    last_msg2 = captured2.messages[-1]
+    assert isinstance(last_msg2, HumanMessage)
+    assert "2 tool call(s) remaining" in last_msg2.content
+
+
+def test_warning_threshold_list_no_warn_between() -> None:
+    """No warning at remaining counts not in the list."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=[5, 2])
+    handler = _FakeHandler(response="ok")
+
+    # remaining=4 → not in [5, 2] → no warning (also not first call)
+    request = _make_request(run_tool_call_count={"__all__": 6})
+    middleware.wrap_model_call(request, handler)
+    assert handler.captured_request is request, "Request should pass through unmodified"
+
+
+def test_warning_threshold_list_validation() -> None:
+    """Empty list and negative elements raise ValueError."""
+    with pytest.raises(ValueError, match="must not be empty"):
+        ToolCallLimitMiddleware(run_limit=5, warning_threshold=[])
+
+    with pytest.raises(ValueError, match="must be >= 0"):
+        ToolCallLimitMiddleware(run_limit=5, warning_threshold=[3, -1])
+
+
+def test_warning_threshold_list_with_tool_name() -> None:
+    """List threshold works with tool_name filtering."""
+    middleware = ToolCallLimitMiddleware(
+        tool_name="search", run_limit=6, proactive=True, warning_threshold=[3, 1]
+    )
+    handler = _FakeHandler(response="ok")
+
+    # remaining=3 for "search" → exact match → warning fires
+    request = _make_request(run_tool_call_count={"search": 3})
+    middleware.wrap_model_call(request, handler)
+    captured = handler.captured_request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "'search'" in last_msg.content
+    assert "3 tool call(s) remaining" in last_msg.content
+
+
+def test_warning_threshold_int_backward_compat() -> None:
+    """Integer threshold retains existing <= behavior."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=3)
+    handler = _FakeHandler(response="ok")
+
+    # remaining=3 → 3 <= 3 → warning fires
+    request = _make_request(run_tool_call_count={"__all__": 7})
+    middleware.wrap_model_call(request, handler)
+    captured = handler.captured_request
+    assert captured is not request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "3 tool call(s) remaining" in last_msg.content
+
+    # remaining=2 → 2 <= 3 → warning also fires
+    handler2 = _FakeHandler(response="ok")
+    request2 = _make_request(run_tool_call_count={"__all__": 8})
+    middleware.wrap_model_call(request2, handler2)
+    captured2 = handler2.captured_request
+    assert captured2 is not request2
+
+
+@pytest.mark.asyncio
+async def test_warning_threshold_list_async() -> None:
+    """Async wrap_model_call works with list threshold."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=[5, 2])
+    handler = _FakeAsyncHandler(response="ok")
+
+    # remaining=5 → exact match → warning fires
+    request = _make_request(run_tool_call_count={"__all__": 5})
+    await middleware.awrap_model_call(request, handler)
+    captured = handler.captured_request
+    assert captured is not request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "5 tool call(s) remaining" in last_msg.content
+
+
+def test_proactive_initial_context_with_list_threshold() -> None:
+    """Initial context message correctly describes list-based thresholds."""
+    middleware = ToolCallLimitMiddleware(run_limit=10, proactive=True, warning_threshold=[5, 3, 1])
+    handler = _FakeHandler(response="ok")
+    request = _make_request(run_tool_call_count={})
+
+    middleware.wrap_model_call(request, handler)
+
+    captured = handler.captured_request
+    last_msg = captured.messages[-1]
+    assert isinstance(last_msg, HumanMessage)
+    assert "5, 3, 1" in last_msg.content
