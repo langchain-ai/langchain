@@ -117,7 +117,55 @@ def test_parse_case_matched_and_final_answer() -> None:
     assert log == llm_output
 
 
-# TODO: add more tests.
+def test_parse_malformed_json() -> None:
+    llm_output = """I can use the `foo` tool to achieve the goal.
+
+    Action:
+    ```json
+    {
+      "action": "foo",
+      "action_input": "bar"
+      "missing_comma": "oops"
+    }
+    ```
+    """
+    from langchain_core.exceptions import OutputParserException
+    import pytest
+    with pytest.raises(OutputParserException):
+        get_action_and_input(llm_output)
+
+
+def test_parse_multiple_actions_in_list() -> None:
+    llm_output = """I can use the `foo` tool to achieve the goal.
+
+    Action:
+    ```json
+    [
+      {
+        "action": "foo",
+        "action_input": "bar1"
+      },
+      {
+        "action": "foo",
+        "action_input": "bar2"
+      }
+    ]
+    ```
+    """
+    action, action_input = get_action_and_input(llm_output)
+    assert action == "foo"
+    # Should extract the first one
+    assert action_input == "bar1"
+
+
+def test_parse_no_action_block() -> None:
+    # Just plain text response without a code block format
+    llm_output = "I don't need any tools for this. The answer is 42."
+    output, log = get_action_and_input(llm_output)
+    assert output == llm_output
+    assert log == llm_output
+
+
 # Test: StructuredChatAgent.create_prompt() method.
 class TestCreatePrompt:
     # Test: Output should be a ChatPromptTemplate with sys and human messages.
