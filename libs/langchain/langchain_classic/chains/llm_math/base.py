@@ -307,9 +307,22 @@ class LLMMathChain(Chain):
         """Create a LLMMathChain from a language model.
 
         Args:
-            llm: a language model
-            prompt: a prompt template
-            **kwargs: additional arguments
+            llm: A language model.
+            prompt: A prompt template.
+            **kwargs: Additional arguments passed to the constructor.
+
+        Returns:
+            A `LLMMathChain` configured with the provided language model.
+
+        Examples:
+            ```python
+            from langchain_core.language_models.fake import FakeListLLM
+            from langchain_classic.chains import LLMMathChain
+
+            llm = FakeListLLM(responses=["Answer: 2"])
+            chain = LLMMathChain.from_llm(llm)
+            chain.run("What is 1 plus 1?")
+            ```
         """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)
