@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -233,6 +234,12 @@ class ChatOpenRouter(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
 
+    cache_control: dict[str, Any] | None = None
+    """Top-level cache control settings for Anthropic automatic caching.
+
+    Example: `{"type": "ephemeral"}`
+    """
+
     reasoning: dict[str, Any] | None = None
     """Reasoning settings to pass to OpenRouter.
 
@@ -276,7 +283,9 @@ class ChatOpenRouter(BaseChatModel):
     def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
+        extra = dict(values.get("model_kwargs", {}))
+        if "cache_control" in extra and "cache_control" not in values:
+            values["cache_control"] = extra.pop("cache_control")
         for field_name in list(values):
             if field_name in extra:
                 msg = f"Found {field_name} supplied twice."
@@ -387,6 +396,7 @@ class ChatOpenRouter(BaseChatModel):
             "max_tokens": self.max_tokens,
             "top_p": self.top_p,
             "streaming": self.streaming,
+            "cache_control": self.cache_control,
             "reasoning": self.reasoning,
             "openrouter_provider": self.openrouter_provider,
             "route": self.route,
@@ -427,6 +437,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
+        _validate_sdk_request_param_support(self.client, "send", params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
         response = self.client.chat.send(messages=sdk_messages, **params)
         return self._create_chat_result(response)
@@ -446,6 +457,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
+        _validate_sdk_request_param_support(self.client, "send_async", params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
         response = await self.client.chat.send_async(messages=sdk_messages, **params)
         return self._create_chat_result(response)
@@ -462,6 +474,7 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
+        _validate_sdk_request_param_support(self.client, "send", params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
@@ -548,6 +561,7 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
+        _validate_sdk_request_param_support(self.client, "send_async", params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
@@ -653,6 +667,8 @@ class ChatOpenRouter(BaseChatModel):
             params["n"] = self.n
         if self.stop is not None:
             params["stop"] = self.stop
+        if self.cache_control is not None:
+            params["cache_control"] = self.cache_control
         # OpenRouter-specific params
         if self.reasoning is not None:
             params["reasoning"] = self.reasoning
@@ -906,6 +922,41 @@ class ChatOpenRouter(BaseChatModel):
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
+def _sdk_supports_request_param(method: Callable[..., Any], param_name: str) -> bool:
+    """Return whether an SDK method accepts a given request parameter."""
+    try:
+        signature = inspect.signature(method)
+    except (TypeError, ValueError):
+        return True
+
+    for parameter in signature.parameters.values():
+        if parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            return True
+        if parameter.name == param_name:
+            return True
+    return False
+
+
+def _validate_sdk_request_param_support(
+    client: Any, method_name: str, params: Mapping[str, Any]
+) -> None:
+    """Raise a clear error when the installed SDK is too old for `cache_control`."""
+    if "cache_control" not in params:
+        return
+
+    chat_client = getattr(client, "chat", None)
+    method = getattr(chat_client, method_name, None)
+    if method is None or _sdk_supports_request_param(method, "cache_control"):
+        return
+
+    msg = (
+        "The installed `openrouter` Python SDK does not support the "
+        "`cache_control` request parameter. Upgrade the `openrouter` package "
+        "to a version that supports Anthropic automatic caching."
+    )
+    raise ValueError(msg)
 
 
 def _strip_internal_kwargs(params: dict[str, Any]) -> None:

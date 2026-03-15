@@ -500,6 +500,18 @@ class TestMockedGenerate:
         call_kwargs = model.client.chat.send.call_args[1]
         assert call_kwargs["stream"] is True
 
+    def test_stream_forwards_cache_control(self) -> None:
+        """Test that stream forwards cache_control to the SDK."""
+        model = _make_model(cache_control={"type": "ephemeral"})
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["cache_control"] == {"type": "ephemeral"}
+
     def test_invoke_with_streaming_flag(self) -> None:
         """Test that invoke delegates to stream when streaming=True."""
         model = _make_model(streaming=True)
@@ -674,6 +686,32 @@ class TestRequestPayload:
 
         model.invoke("Hi")
         call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["top_k"] == 50
+
+    def test_cache_control_forwarded(self) -> None:
+        """Test that cache_control is included in the SDK call."""
+        model = _make_model(cache_control={"type": "ephemeral"})
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["cache_control"] == {"type": "ephemeral"}
+
+    def test_cache_control_in_model_kwargs_is_backward_compatible(self) -> None:
+        """Test that cache_control can still be provided through model_kwargs."""
+        model = _make_model(
+            model_kwargs={"cache_control": {"type": "ephemeral"}, "top_k": 50}
+        )
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        assert model.cache_control == {"type": "ephemeral"}
+        assert model.model_kwargs == {"top_k": 50}
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["cache_control"] == {"type": "ephemeral"}
         assert call_kwargs["top_k"] == 50
 
     def test_stop_sequences_in_payload(self) -> None:
@@ -1811,6 +1849,27 @@ class TestErrorPaths:
         """Test that a known field passed in model_kwargs raises."""
         with pytest.raises(ValueError, match="should be specified explicitly"):
             _make_model(model_kwargs={"model_name": "some-model"})
+
+    def test_cache_control_requires_supported_sdk(self) -> None:
+        """Test that cache_control raises a clear error on older SDKs."""
+
+        class _UnsupportedChat:
+            def send(self, messages: list[dict[str, Any]]) -> None:
+                return None
+
+        unsupported_client = type(
+            "_UnsupportedClient",
+            (),
+            {"chat": _UnsupportedChat()},
+        )()
+
+        model = _make_model(
+            cache_control={"type": "ephemeral"},
+            client=unsupported_client,
+        )
+
+        with pytest.raises(ValueError, match="does not support the `cache_control`"):
+            model.invoke("Hi")
 
     def test_max_retries_zero_disables_retries(self) -> None:
         """Test that max_retries=0 does not configure retry."""
