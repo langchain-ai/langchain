@@ -3,7 +3,9 @@
 from textwrap import dedent
 from typing import Any
 
+import pytest
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -129,8 +131,6 @@ def test_parse_malformed_json() -> None:
     }
     ```
     """
-    from langchain_core.exceptions import OutputParserException
-    import pytest
     with pytest.raises(OutputParserException):
         get_action_and_input(llm_output)
 
