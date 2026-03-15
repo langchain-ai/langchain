@@ -316,12 +316,12 @@ class ChatDeepSeek(BaseChatOpenAI):
             generation.message.response_metadata["model_provider"] = "deepseek"
 
         choices = getattr(response, "choices", None)
-        if choices and hasattr(choices[0].message, "reasoning_content"):
+        if choices and rtn.generations and hasattr(choices[0].message, "reasoning_content"):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
                 0
             ].message.reasoning_content
         # Handle use via OpenRouter
-        elif choices and hasattr(choices[0].message, "model_extra"):
+        elif choices and rtn.generations and hasattr(choices[0].message, "model_extra"):
             model_extra = choices[0].message.model_extra
             if isinstance(model_extra, dict) and (
                 reasoning := model_extra.get("reasoning")
