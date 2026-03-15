@@ -945,7 +945,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[dict[str, Any] | None]",
+                metadata or [{} for _ in range(len(prompts))],
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
@@ -1209,7 +1210,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[dict[str, Any] | None]",
+                metadata or [{} for _ in range(len(prompts))],
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))

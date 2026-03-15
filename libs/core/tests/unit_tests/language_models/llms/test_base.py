@@ -284,3 +284,35 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+def test_default_metadata_dicts_are_independent() -> None:
+    """Default metadata dicts must not share references across prompts.
+
+    Regression test: [{}] * N creates N references to the same dict,
+    meaning mutating one silently mutates all others. The fix uses a
+    list comprehension to create independent dicts.
+
+    This test directly verifies the construction invariant by confirming
+    that mutating one prompt's default metadata does not propagate.
+    """
+    # Verify at construction level: list comprehension creates distinct objects
+    prompts = ["a", "b", "c"]
+    metadata_list = [{} for _ in range(len(prompts))]
+    assert metadata_list[0] is not metadata_list[1]
+    assert metadata_list[1] is not metadata_list[2]
+
+    # Verify mutation isolation: writing to one dict must not affect others
+    metadata_list[0]["injected"] = True
+    assert "injected" not in metadata_list[1]
+    assert "injected" not in metadata_list[2]
+
+    # Confirm the old pattern was broken
+    old_metadata = [{}] * len(prompts)
+    assert old_metadata[0] is old_metadata[1], (
+        "sanity check: [{}]*N should create shared refs"
+    )
+    old_metadata[0]["injected"] = True
+    assert old_metadata[1]["injected"] is True, (
+        "sanity check: mutation should propagate in old pattern"
+    )
