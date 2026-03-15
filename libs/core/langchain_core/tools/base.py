@@ -332,15 +332,6 @@ def create_schema_from_function(
     # If qualified name has a ".", then it likely belongs in a class namespace
     in_class = bool(func.__qualname__ and "." in func.__qualname__)
 
-    has_args = False
-    has_kwargs = False
-
-    for param in sig.parameters.values():
-        if param.kind == param.VAR_POSITIONAL:
-            has_args = True
-        elif param.kind == param.VAR_KEYWORD:
-            has_kwargs = True
-
     inferred_model = validated.model
 
     if filter_args:
@@ -365,11 +356,22 @@ def create_schema_from_function(
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
+    # Check specifically if there's a VAR_POSITIONAL/VAR_KEYWORD parameter
+    # with the name "args"/"kwargs" (not just any *args/**kwargs)
+    has_varargs_named_args = any(
+        p.kind == p.VAR_POSITIONAL and p.name == "args"
+        for p in sig.parameters.values()
+    )
+    has_varkwarg_named_kwargs = any(
+        p.kind == p.VAR_KEYWORD and p.name == "kwargs"
+        for p in sig.parameters.values()
+    )
+
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args and field == "args":
+        if not has_varargs_named_args and field == "args":
             continue
-        if not has_kwargs and field == "kwargs":
+        if not has_varkwarg_named_kwargs and field == "kwargs":
             continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field
