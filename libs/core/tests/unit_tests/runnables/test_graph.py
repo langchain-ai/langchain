@@ -455,6 +455,51 @@ def test_triple_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+def test_deep_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    """3-level nesting with no internal edges should render nested subgraph boxes.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35492.
+    When the only internal node is ``parent:child:grandchild``, all edges connect
+    nodes across subgraph boundaries so ``draw_mermaid`` took the "empty subgraphs"
+    code path.  The previous condition ``if ":" not in prefix`` skipped multi-level
+    prefixes entirely, producing flat escaped IDs instead of nested subgraph boxes.
+    """
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "parent:child:grandchild": Node(
+            id="parent:child:grandchild",
+            name="grandchild",
+            data=empty_data,
+            metadata=None,
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="__start__",
+            target="parent:child:grandchild",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="parent:child:grandchild",
+            target="__end__",
+            data=None,
+            conditional=False,
+        ),
+    ]
+    graph = Graph(nodes, edges)
+    result = graph.draw_mermaid()
+    assert result == snapshot(name="mermaid")
+    # The rendered output must contain proper nested subgraph boxes, not flat
+    # escaped IDs like ``parent\3achild\3agrandchild`` as a bare node label.
+    assert "subgraph parent" in result
+    assert "subgraph child" in result
+
+
 def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     empty_data = BaseModel
     nodes = {
