@@ -3999,7 +3999,18 @@ def _construct_responses_api_payload(
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
                 extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
+<<<<<<< HEAD
                 new_tools.append({"type": "function", **tool["function"], **extra})
+=======
+                func = tool["function"]
+                # Responses API defaults strict=True, but Chat Completions defaults
+                # to non-strict (false). Preserve the original semantics by explicitly
+                # setting strict=False when not specified.
+                # See https://github.com/langchain-ai/langchain/issues/35837
+                if "strict" not in func:
+                    func = {**func, "strict": False}
+                new_tools.append({"type": "function", **func, **extra})
+>>>>>>> a1a6d64 (fix: add strict=False when not specified for Responses API + add tests)
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
