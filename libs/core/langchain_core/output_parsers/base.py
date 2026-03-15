@@ -261,6 +261,11 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
+        if not result:
+            from langchain_core.exceptions import OutputParserException
+
+            msg = "parse_result requires a non-empty list of Generation objects."
+            raise OutputParserException(msg)
         return self.parse(result[0].text)
 
     @abstractmethod

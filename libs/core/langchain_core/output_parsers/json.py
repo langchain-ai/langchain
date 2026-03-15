@@ -76,6 +76,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
+        if not result:
+            msg = "parse_result requires a non-empty list of Generation objects."
+            raise OutputParserException(msg)
         text = result[0].text
         text = text.strip()
         if partial:

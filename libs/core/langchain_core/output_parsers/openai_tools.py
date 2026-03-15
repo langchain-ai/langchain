@@ -181,6 +181,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
+        if not result:
+            msg = "parse_result requires a non-empty list of Generation objects."
+            raise OutputParserException(msg)
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
@@ -244,6 +247,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Returns:
             The parsed tool calls.
         """
+        if not result:
+            msg = "parse_result requires a non-empty list of Generation objects."
+            raise OutputParserException(msg)
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
