@@ -12,6 +12,7 @@
 # - Automatically reopens PRs that were closed by this workflow once the
 #   check passes (e.g. author edits the body to add a valid issue link).
 # - Posts a comment explaining the requirement on failure.
+# - Cancels all other in-progress/queued CI runs for the PR on closure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
 # Dependency: tag-external-contributions.yml must run first to apply the
@@ -40,6 +41,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
 
     steps:
@@ -212,6 +214,26 @@ jobs:
                 state: 'closed',
               });
               console.log(`Closed PR #${prNumber}`);
+            }
+
+            // Cancel all other in-progress and queued workflow runs for this PR
+            const headSha = context.payload.pull_request.head.sha;
+            for (const status of ['in_progress', 'queued']) {
+              const runs = await github.paginate(
+                github.rest.actions.listWorkflowRunsForRepo,
+                { owner, repo, head_sha: headSha, status, per_page: 100 },
+              );
+              for (const run of runs) {
+                if (run.id === context.runId) continue;
+                try {
+                  await github.rest.actions.cancelWorkflowRun({
+                    owner, repo, run_id: run.id,
+                  });
+                  console.log(`Cancelled ${status} run ${run.id} (${run.name})`);
+                } catch (err) {
+                  console.log(`Could not cancel run ${run.id}: ${err.message}`);
+                }
+              }
             }
 
             const reason = !hasLink
