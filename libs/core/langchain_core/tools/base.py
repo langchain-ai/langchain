@@ -344,7 +344,7 @@ def create_schema_from_function(
     inferred_model = validated.model
 
     if filter_args:
-        filter_args_ = filter_args
+        filter_args_ = list(filter_args)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -353,11 +353,10 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
-            ):
-                filter_args_.append(existing_param)
+    if not include_injected:
+        for param_name, param in sig.parameters.items():
+            if _is_injected_arg_type(param.annotation):
+                filter_args_.append(param_name)
 
     description, arg_descriptions = _infer_arg_descriptions(
         func,

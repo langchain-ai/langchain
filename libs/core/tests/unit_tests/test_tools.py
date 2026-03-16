@@ -2412,6 +2412,60 @@ def test_injected_arg_with_complex_type() -> None:
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
 
 
+def test_injected_arg_excluded_when_filter_args_provided() -> None:
+    """Test that InjectedToolArg params are excluded even when filter_args is set.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35831.
+    """
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_func(
+        x: int,
+        y: str,
+        hidden: str = "h",
+        injected: Annotated[Any, InjectedToolArg] = None,
+    ) -> str:
+        """A test function."""
+        return "ok"
+
+    schema = create_schema_from_function(
+        "MyFunc",
+        my_func,
+        filter_args=["hidden"],
+        include_injected=False,
+    )
+    field_names = set(schema.model_fields.keys())
+    # 'hidden' should be filtered by filter_args,
+    # 'injected' should be filtered because include_injected=False.
+    assert "hidden" not in field_names, "filter_args should exclude 'hidden'"
+    assert "injected" not in field_names, (
+        "InjectedToolArg param should be excluded when include_injected=False, "
+        "even when filter_args is provided"
+    )
+    assert field_names == {"x", "y"}
+
+
+def test_filter_args_not_mutated() -> None:
+    """Test that passing filter_args does not mutate the caller's list."""
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_func(
+        x: int,
+        injected: Annotated[Any, InjectedToolArg] = None,
+    ) -> str:
+        """A test function."""
+        return "ok"
+
+    original = ["some_arg"]
+    create_schema_from_function(
+        "MyFunc",
+        my_func,
+        filter_args=original,
+        include_injected=False,
+    )
+    assert original == ["some_arg"], "filter_args list should not be mutated"
+
+
 @pytest.mark.parametrize("schema_format", ["model", "json_schema"])
 def test_tool_allows_extra_runtime_args_with_custom_schema(
     schema_format: Literal["model", "json_schema"],
