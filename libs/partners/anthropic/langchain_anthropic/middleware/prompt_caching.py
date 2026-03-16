@@ -226,27 +226,30 @@ def _tag_tools(
     tools: list[Any] | None,
     cache_control: dict[str, str],
 ) -> list[Any] | None:
-    """Tag all tools with cache_control via their extras dict.
+    """Tag the last tool with cache_control via its extras dict.
 
-    Creates copies of tools with cache_control added to extras, without
-    mutating the originals.
+    Only the last tool is tagged to minimize the number of explicit cache
+    breakpoints (Anthropic limits these to 4 per request). Since tool
+    definitions are sent as a contiguous block, a single breakpoint on the
+    last tool caches the entire set.
+
+    Creates a copy of the last tool with cache_control added to extras,
+    without mutating the original.
 
     Args:
         tools: The list of tools to tag.
         cache_control: The cache control dict to apply.
 
     Returns:
-        A new list of tools with cache_control in extras, or the original
-        if no tools are present.
+        A new list with cache_control on the last tool's extras, or the
+        original if no tools are present.
     """
     if not tools:
         return tools
 
-    tagged = []
-    for tool in tools:
-        if isinstance(tool, BaseTool):
-            new_extras = {**(tool.extras or {}), "cache_control": cache_control}
-            tagged.append(tool.model_copy(update={"extras": new_extras}))
-        else:
-            tagged.append(tool)
-    return tagged
+    last = tools[-1]
+    if not isinstance(last, BaseTool):
+        return tools
+
+    new_extras = {**(last.extras or {}), "cache_control": cache_control}
+    return [*tools[:-1], last.model_copy(update={"extras": new_extras})]

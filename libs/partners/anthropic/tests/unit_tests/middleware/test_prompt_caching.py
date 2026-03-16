@@ -695,7 +695,7 @@ class TestToolCaching:
         assert captured is not None
         return captured
 
-    def test_tags_all_tools_with_cache_control(self) -> None:
+    def test_tags_only_last_tool_with_cache_control(self) -> None:
         @tool
         def get_weather(location: str) -> str:
             """Get weather for a location."""
@@ -709,10 +709,13 @@ class TestToolCaching:
         result = self._run(self._make_request(tools=[get_weather, get_time]))
         assert result.tools is not None
         assert len(result.tools) == 2
-        for t in result.tools:
-            assert isinstance(t, BaseTool)
-            assert t.extras is not None
-            assert t.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+        first = result.tools[0]
+        assert isinstance(first, BaseTool)
+        assert first.extras is None or "cache_control" not in first.extras
+        last = result.tools[1]
+        assert isinstance(last, BaseTool)
+        assert last.extras is not None
+        assert last.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
 
     def test_does_not_mutate_original_tools(self) -> None:
         @tool
