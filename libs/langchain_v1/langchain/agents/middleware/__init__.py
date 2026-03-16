@@ -7,6 +7,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     InterruptOnConfig,
 )
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
+from langchain.agents.middleware.session_cache import MiddlewareSessionCache
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
@@ -55,6 +56,7 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "MiddlewareSessionCache",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
