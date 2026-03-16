@@ -107,5 +107,5 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
     return (
         f"{message}\n"
         "For troubleshooting, visit: https://docs.langchain.com/oss/python/langchain"
-        f"/errors/{error_code.value} "
+        f"/errors/{error_code.value}"
     )
