@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -314,6 +315,51 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """Test that reasoning_content from vLLM-served Qwen models is extracted."""
+    message = {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_content": "Let me think about this...",
+    }
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": "Let me think about this..."},
+    )
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content_only() -> None:
+    """Test that reasoning_content is extracted even when content is empty."""
+    message = {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "Let me think about this...",
+    }
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        additional_kwargs={"reasoning_content": "Let me think about this..."},
+    )
+    assert result == expected_output
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content is extracted from streaming delta."""
+    delta = {
+        "role": "assistant",
+        "content": "The answer is 42.",
+        "reasoning_content": "Let me think about this...",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    expected_output = AIMessageChunk(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": "Let me think about this..."},
+    )
+    assert result == expected_output
 
 
 class MockAsyncContextManager:
