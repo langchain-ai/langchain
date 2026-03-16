@@ -43,6 +43,11 @@ anthropic:
       - any-glob-to-any-file:
           - "libs/partners/anthropic/**/*"
 
+sarvamcloud:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/sarvamcloud/**/*"
+
 chroma:
   - changed-files:
       - any-glob-to-any-file:

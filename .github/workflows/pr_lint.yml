@@ -108,6 +108,7 @@ jobs:
             perplexity
             qdrant
             xai
+            sarvamcloud
             infra
             deps
           requireScope: false

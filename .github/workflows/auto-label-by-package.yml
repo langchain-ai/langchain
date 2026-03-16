@@ -49,6 +49,7 @@ jobs:
               "langchain-perplexity": "perplexity",
               "langchain-qdrant": "qdrant",
               "langchain-xai": "xai",
+              "langchain-sarvamcloud": "sarvamcloud",
             };
 
             // All possible package labels we manage

@@ -70,6 +70,7 @@ body:
         - label: langchain-perplexity
         - label: langchain-qdrant
         - label: langchain-xai
+        - label: langchain-sarvamcloud
         - label: Other / not sure / general
   - type: textarea
     id: feature-description

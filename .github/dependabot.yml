@@ -58,6 +58,7 @@ updates:
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
+      - "/libs/partners/sarvamcloud/"
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"

@@ -1,0 +1,33 @@
+# serializer version: 1
+# name: TestChatSarvamStandard.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_sarvamcloud',
+      'chat_models',
+      'ChatSarvam',
+    ]),
+    'kwargs': dict({
+      'api_subscription_key': dict({
+        'id': list([
+          'SARVAM_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'base_url': 'https://api.sarvam.ai/v1',
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_kwargs': dict({
+        'stop': list([
+        ]),
+        'timeout': 60,
+      }),
+      'model_name': 'sarvam-105b',
+      'temperature': 0.0,
+      'top_p': 1.0,
+    }),
+    'lc': 1,
+    'name': 'ChatSarvam',
+    'type': 'constructor',
+  })
+# ---

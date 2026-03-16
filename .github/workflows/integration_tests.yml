@@ -190,6 +190,7 @@ jobs:
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests

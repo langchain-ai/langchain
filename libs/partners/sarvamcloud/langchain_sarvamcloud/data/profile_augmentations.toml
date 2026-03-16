@@ -1,0 +1,25 @@
+provider = "sarvamcloud"
+
+[overrides]
+# Sarvam AI chat models support tool calling (except sarvam-m)
+# All chat models are free to use (no per-token cost)
+structured_output = false
+
+[overrides."sarvam-m"]
+# Legacy 24B model based on Mistral-Small
+# Tool calling not supported on this model
+tool_use = false
+structured_output = false
+
+[overrides."sarvam-30b"]
+tool_use = true
+
+[overrides."sarvam-30b-16k"]
+tool_use = true
+
+[overrides."sarvam-105b"]
+tool_use = true
+structured_output = false
+
+[overrides."sarvam-105b-32k"]
+tool_use = true
