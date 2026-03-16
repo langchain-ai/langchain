@@ -449,3 +449,35 @@ class TestSystemMessageHandling:
         assert captured_request.system_message is not None
         assert "Existing instructions." in captured_request.system_message.text
         assert custom_prompt in captured_request.system_message.text
+
+
+class TestTextEditorRename:
+    """Test text editor rename command fix."""
+
+    def test_rename_uses_correct_args_key(self) -> None:
+        """Test that rename command uses 'path' key instead of 'old_path'."""
+        middleware = StateClaudeTextEditorMiddleware()
+        
+        # Simulate args as built by dispatch (uses 'path', not 'old_path')
+        args = {"path": "/old_name.txt", "new_path": "/new_name.txt"}
+        
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/old_name.txt": {
+                    "content": "test content",
+                    "modified_at": "2024-01-01T00:00:00+00:00"
+                }
+            },
+        }
+        
+        # Should not raise KeyError
+        result = middleware._handle_rename(args, state, tool_call_id="test123")
+        
+        # Verify the rename happened
+        assert isinstance(result, Command)
+        assert "update" in result
+        updated_files = result["update"]["text_editor_files"]
+        assert "/new_name.txt" in updated_files
+        assert "/old_name.txt" not in updated_files
+        assert updated_files["/new_name.txt"]["content"] == "test content"
