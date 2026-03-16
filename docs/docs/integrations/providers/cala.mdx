@@ -1,0 +1,108 @@
+# Cala
+
+>[Cala](https://cala.ai) is a verified knowledge graph for AI agents.
+>It returns structured, source-cited, traceable facts — not raw web scrapes.
+>Every answer includes citations, confidence scores, and entity-level provenance,
+>making it suitable for production agents that require auditable, hallucination-resistant retrieval.
+
+## Installation
+
+```bash
+pip install langchain-cala
+```
+
+Get your API key at [console.cala.ai](https://console.cala.ai).
+
+## Configuration
+
+```python
+import os
+os.environ["CALA_API_KEY"] = "your-api-key"
+```
+
+Or pass the key directly:
+
+```python
+from langchain_cala import CalaRetriever
+
+retriever = CalaRetriever(api_key="your-api-key")
+```
+
+## Retriever
+
+`CalaRetriever` implements LangChain's `BaseRetriever` interface and supports
+three modes:
+
+| Mode | Endpoint | Use when |
+|------|----------|----------|
+| `"search"` *(default)* | `POST /v1/knowledge/search` | Open-ended NL questions — returns a synthesised answer with citations |
+| `"query"` | `POST /v1/knowledge/query` | Structured dot-notation lookups — e.g. `"OpenAI.founded.year"` |
+| `"entities"` | `GET /v1/entities` | Discovering entities by name before deeper queries |
+
+### Basic search
+
+```python
+from langchain_cala import CalaRetriever
+
+retriever = CalaRetriever(api_key="your-api-key")
+docs = retriever.invoke("Which EU AI startups raised funding in 2024?")
+
+for doc in docs:
+    print(doc.page_content)
+    print(doc.metadata)  # includes 'verified', 'source', 'explainability'
+```
+
+### Structured query
+
+```python
+retriever = CalaRetriever(api_key="your-api-key", mode="query")
+docs = retriever.invoke("Mistral.founded.year")
+```
+
+### Entity discovery
+
+```python
+retriever = CalaRetriever(api_key="your-api-key", mode="entities")
+docs = retriever.invoke("Factorial HR")
+```
+
+### In a RAG chain
+
+```python
+from langchain_cala import CalaRetriever
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI
+
+retriever = CalaRetriever(api_key="your-api-key")
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer the question based only on the following context:\n\n{context}\n\nQuestion: {question}"
+)
+
+chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | ChatOpenAI()
+    | StrOutputParser()
+)
+
+chain.invoke("Who are the key players in European AI infrastructure?")
+```
+
+## Key parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `api_key` | `SecretStr` | `$CALA_API_KEY` | Your Cala API key |
+| `mode` | `str` | `"search"` | One of `"search"`, `"query"`, `"entities"` |
+| `k` | `int` | `5` | Maximum number of documents to return |
+| `timeout` | `int` | `30` | HTTP request timeout in seconds |
+
+## Why Cala
+
+Unlike web-search retrievers, Cala returns **verified entity data** with
+full source traceability. Every document in the response includes a `verified`
+metadata field and a citation chain — making it compatible with EU AI Act
+Article 13 explainability requirements for high-risk AI deployments.
