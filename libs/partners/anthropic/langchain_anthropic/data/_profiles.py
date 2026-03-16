@@ -444,9 +444,9 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "claude-opus-4-6": {
         "name": "Claude Opus 4.6",
         "release_date": "2026-02-05",
-        "last_updated": "2026-02-05",
+        "last_updated": "2026-03-13",
         "open_weights": False,
-        "max_input_tokens": 200000,
+        "max_input_tokens": 1000000,
         "max_output_tokens": 128000,
         "text_inputs": True,
         "image_inputs": True,
@@ -569,9 +569,9 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "claude-sonnet-4-6": {
         "name": "Claude Sonnet 4.6",
         "release_date": "2026-02-17",
-        "last_updated": "2026-02-17",
+        "last_updated": "2026-03-13",
         "open_weights": False,
-        "max_input_tokens": 200000,
+        "max_input_tokens": 1000000,
         "max_output_tokens": 64000,
         "text_inputs": True,
         "image_inputs": True,
