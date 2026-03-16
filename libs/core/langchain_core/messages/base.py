@@ -336,10 +336,39 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        # Handle non-string content (content blocks)
+        if isinstance(self.content, str):
+            content_str = self.content
+        else:
+            # Format content blocks as a readable string
+            content_parts = []
+            for block in self.content:
+                if isinstance(block, str):
+                    content_parts.append(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type", "unknown")
+                    if block_type == "text":
+                        content_parts.append(block.get("text", ""))
+                    elif block_type == "image":
+                        url = block.get("url") or block.get("file_id") or "image"
+                        content_parts.append(f"<image: {url}>")
+                    elif block_type == "video":
+                        url = block.get("url") or block.get("file_id") or "video"
+                        content_parts.append(f"<video: {url}>")
+                    elif block_type == "audio":
+                        url = block.get("url") or block.get("file_id") or "audio"
+                        content_parts.append(f"<audio: {url}>")
+                    elif block_type == "reasoning":
+                        content_parts.append(f"<reasoning: {block.get('reasoning', '')}>")
+                    else:
+                        # Fallback for unknown block types
+                        content_parts.append(str(block))
+                else:
+                    content_parts.append(str(block))
+            content_str = "\n".join(content_parts)
+        return f"{title}\n\n{content_str}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
