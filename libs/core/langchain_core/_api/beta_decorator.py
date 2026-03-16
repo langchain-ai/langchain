@@ -63,7 +63,7 @@ def beta(
     Example:
         ```python
         @beta
-        def the_function_to_annotate():
+        def the_function_to_annotate() -> None:
             pass
         ```
     """
