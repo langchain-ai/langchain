@@ -77,6 +77,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     merged[right_k] = right_v
                 else:
                     merged[right_k] += right_v
+            elif isinstance(merged[right_k], float):
+                # Handle float values using last-wins strategy
+                # Float values like logprob, score, safety scores should not be
+                # accumulated during streaming chunk aggregation
+                merged[right_k] = right_v
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
