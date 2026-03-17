@@ -227,7 +227,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         cls,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
@@ -304,7 +304,7 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
