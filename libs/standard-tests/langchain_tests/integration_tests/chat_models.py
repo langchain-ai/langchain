@@ -2583,7 +2583,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF inputs.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         message = HumanMessage(
             [
@@ -2781,7 +2783,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         message = HumanMessage(
@@ -2887,7 +2891,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image tool message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         oai_format_message = ToolMessage(
@@ -2986,7 +2992,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF tool message.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         tool_message = ToolMessage(
             content_blocks=[
@@ -3122,7 +3130,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         if self.supports_image_inputs:
             image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-            image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
+            image_data = base64.b64encode(
+                httpx.get(image_url, timeout=10.0).content
+            ).decode("utf-8")
             human_content.append(
                 {
                     "type": "image",
