@@ -257,6 +257,44 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
+def _handle_anyof_null(schema: dict[str, Any]) -> dict[str, Any]:
+    """Recursively collapse anyOf: [T, null] into T for Ollama compatibility.
+
+    Ollama's model templates expect flat {"type": "..."} schemas and do not
+    handle the anyOf: [T, null] pattern that Pydantic v2 generates for
+    Optional fields. This recursively collapses those to their base type.
+    """
+    if not isinstance(schema, dict):
+        return schema
+
+    # 1. Process anyOf if it exists
+    if "anyOf" in schema:
+        # Filter out the 'null' type
+        types = [t for t in schema["anyOf"] if t.get("type") != "null"]
+
+        # If it's a simple Optional[T] (anyOf: [T, null]), collapse it to T
+        if len(types) == 1:
+            new_schema = types[0].copy()
+            # Preserve other keys from the original schema (like description, title)
+            for k, v in schema.items():
+                if k != "anyOf" and k not in new_schema:
+                    new_schema[k] = v
+            schema = new_schema
+        # If it's a complex Union[T1, T2, ...], keep anyOf but clean inner types
+        else:
+            schema["anyOf"] = [_handle_anyof_null(t) for t in types]
+
+    # 2. Recurse into nested structures
+    if "properties" in schema:
+        schema["properties"] = {
+            k: _handle_anyof_null(v) for k, v in schema["properties"].items()
+        }
+    if "items" in schema:
+        schema["items"] = _handle_anyof_null(schema["items"])
+
+    return schema
+
+
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
@@ -1261,7 +1299,14 @@ class ChatOllama(BaseChatModel):
             kwargs: Any additional parameters are passed directly to
                 `self.bind(**kwargs)`.
         """  # noqa: E501
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        formatted_tools = []
+        for tool in tools:
+            oai_tool = convert_to_openai_tool(tool)
+            if "function" in oai_tool and "parameters" in oai_tool["function"]:
+                oai_tool["function"]["parameters"] = _handle_anyof_null(
+                    oai_tool["function"]["parameters"]
+                )
+            formatted_tools.append(oai_tool)
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
