@@ -73,7 +73,10 @@
     { "label": "perplexity", "prefix": "libs/partners/perplexity/" },
     { "label": "qdrant", "prefix": "libs/partners/qdrant/" },
     { "label": "xai", "prefix": "libs/partners/xai/" },
-    { "label": "github_actions", "prefix": [".github/workflows/", ".github/actions/"] },
-    { "label": "dependencies", "pattern": "deps" }
+    { "label": "github_actions", "prefix": ".github/workflows/" },
+    { "label": "github_actions", "prefix": ".github/actions/" },
+    { "label": "dependencies", "suffix": "pyproject.toml" },
+    { "label": "dependencies", "exact": "uv.lock" },
+    { "label": "dependencies", "pattern": "(?:^|/)requirements[^/]*\\.txt$" }
   ]
 }

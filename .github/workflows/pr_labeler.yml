@@ -85,18 +85,15 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { owner, repo } = context.repo;
-            const pr = context.payload.pull_request;
-            if (!pr) {
-              core.warning('pull_request payload is missing — skipping label step');
-              return;
-            }
-            const prNumber = pr.number;
-            const action = context.payload.action;
-
             const helpers = require('./.github/scripts/pr-labeler.js');
             const config = helpers.loadConfig();
+            const { owner, repo } = context.repo;
             const h = helpers.init(github, owner, repo, config);
+
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            const prNumber = pr.number;
+            const action = context.payload.action;
 
             const toAdd = new Set();
             const toRemove = new Set();
@@ -106,7 +103,7 @@ jobs:
               { owner, repo, issue_number: prNumber, per_page: 100 },
             )).map(l => l.name ?? '');
 
-            // ── Size + file labels (skip on 'edited' — files don't change on title/body edits) ──
+            // ── Size + file labels (skip on 'edited' — content unchanged) ──
             if (action !== 'edited') {
               for (const sl of h.sizeLabels) await h.ensureLabel(sl);
 
@@ -121,27 +118,25 @@ jobs:
               }
               console.log(`Size: ${totalChanged} changed lines → ${sizeLabel}`);
 
-              const fileRules = h.buildFileRules();
-              for (const label of h.matchFileLabels(files, fileRules)) {
+              for (const label of h.matchFileLabels(files)) {
                 toAdd.add(label);
               }
             }
 
             // ── Title-based labels ──
-            const { labels: titleLabels } = h.matchTitleLabels(pr.title || '');
-            for (const tl of titleLabels) toAdd.add(tl);
+            const { labels: titleLabels, typeLabel } = h.matchTitleLabels(pr.title || '');
+            for (const label of titleLabels) toAdd.add(label);
 
-            // Remove stale type labels when title changes
-            if (titleLabels.size > 0) {
+            // Remove stale type labels only when a type was detected
+            if (typeLabel) {
               for (const tl of h.allTypeLabels) {
                 if (currentLabels.includes(tl) && !titleLabels.has(tl)) toRemove.add(tl);
               }
             }
 
             // ── Internal label (only on open, non-external contributors) ──
-            // IS_EXTERNAL is '' (empty) when action != 'opened' because
-            // the check-membership step is skipped, so this condition is
-            // only satisfied for opened + internal.
+            // IS_EXTERNAL is empty string on non-opened events (step didn't
+            // run), so this guard is only true for opened + internal.
             if (action === 'opened' && process.env.IS_EXTERNAL === 'false') {
               toAdd.add('internal');
             }

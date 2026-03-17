@@ -61,6 +61,7 @@ jobs:
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
 
       - name: Check if contributor is external
+        if: steps.app-token.outcome == 'success'
         id: check-membership
         uses: actions/github-script@v8
         with:

@@ -1,9 +1,9 @@
 // Shared helpers for pr_labeler.yml and tag-external-issues.yml.
 //
-// Usage from actions/github-script:
+// Usage from actions/github-script (requires actions/checkout first):
 //   const helpers = require('./.github/scripts/pr-labeler.js');
 //   const config = helpers.loadConfig();
-//   const { ensureLabel, getSizeLabel, ... } = helpers.init(github, owner, repo, config);
+//   const h = helpers.init(github, owner, repo, config);
 
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +35,22 @@ function loadConfig() {
 }
 
 function init(github, owner, repo, config) {
-  const { labelColor } = config;
+  const {
+    trustedThreshold,
+    labelColor,
+    sizeThresholds,
+    scopeToLabel,
+    typeToLabel,
+    fileRules: fileRulesDef,
+    excludedFiles,
+    excludedPaths,
+  } = config;
+
+  const sizeLabels = sizeThresholds.map(t => t.label);
+  const allTypeLabels = [...new Set(Object.values(typeToLabel))];
+  const tierLabels = ['new-contributor', 'trusted-contributor'];
+
+  // ── Label management ──────────────────────────────────────────────
 
   async function ensureLabel(name, color = labelColor) {
     try {
@@ -45,64 +60,58 @@ function init(github, owner, repo, config) {
       try {
         await github.rest.issues.createLabel({ owner, repo, name, color });
       } catch (createErr) {
-        if (createErr.status !== 422) throw createErr;
         // 422 = label created by a concurrent run between our get and create
+        if (createErr.status !== 422) throw createErr;
         const core = require('@actions/core');
         core.info(`Label "${name}" creation returned 422 (likely already exists)`);
       }
     }
   }
 
+  // ── Size calculation ──────────────────────────────────────────────
+
   function getSizeLabel(totalChanged) {
-    for (const t of config.sizeThresholds) {
+    for (const t of sizeThresholds) {
       if (t.max != null && totalChanged < t.max) return t.label;
     }
     // Last entry has no max — it's the catch-all (XL)
-    return config.sizeThresholds[config.sizeThresholds.length - 1].label;
+    return sizeThresholds[sizeThresholds.length - 1].label;
   }
 
-  const sizeLabels = config.sizeThresholds.map(t => t.label);
-
   function computeSize(files) {
-    const excluded = new Set(config.excludedFiles);
+    const excluded = new Set(excludedFiles);
     const totalChanged = files.reduce((sum, f) => {
       const p = f.filename ?? '';
       const base = p.split('/').pop();
-      if (config.excludedPaths.some(ep => p.startsWith(ep)) || excluded.has(base)) {
-        return sum;
+      if (excluded.has(base)) return sum;
+      for (const prefix of excludedPaths) {
+        if (p.startsWith(prefix)) return sum;
       }
       return sum + (f.additions ?? 0) + (f.deletions ?? 0);
     }, 0);
     return { totalChanged, sizeLabel: getSizeLabel(totalChanged) };
   }
 
-  const depsPattern = /(?:^|\/)requirements[^/]*\.txt$/;
+  // ── File-based labels ─────────────────────────────────────────────
 
   function buildFileRules() {
-    return config.fileRules.map(rule => {
-      if (rule.pattern === 'deps') {
-        return {
-          label: rule.label,
-          test: p => {
-            const base = p.split('/').pop();
-            return p.endsWith('pyproject.toml') ||
-              base === 'uv.lock' ||
-              depsPattern.test(p) ||
-              p.endsWith('poetry.lock');
-          },
-        };
+    return fileRulesDef.map(rule => {
+      let test;
+      if (rule.prefix) test = p => p.startsWith(rule.prefix);
+      else if (rule.suffix) test = p => p.endsWith(rule.suffix);
+      else if (rule.exact) test = p => p === rule.exact;
+      else if (rule.pattern) {
+        const re = new RegExp(rule.pattern);
+        test = p => re.test(p);
       }
-      const prefixes = Array.isArray(rule.prefix) ? rule.prefix : [rule.prefix];
-      return {
-        label: rule.label,
-        test: p => prefixes.some(pfx => p.startsWith(pfx)),
-      };
+      return { label: rule.label, test };
     });
   }
 
   function matchFileLabels(files, fileRules) {
+    const rules = fileRules || buildFileRules();
     const labels = new Set();
-    for (const rule of fileRules) {
+    for (const rule of rules) {
       if (files.some(f => rule.test(f.filename ?? ''))) {
         labels.add(rule.label);
       }
@@ -110,29 +119,31 @@ function init(github, owner, repo, config) {
     return labels;
   }
 
+  // ── Title-based labels ────────────────────────────────────────────
+
   function matchTitleLabels(title) {
     const labels = new Set();
-    const titleMatch = title.match(/^(\w+)(?:\(([^)]+)\))?(!)?:/);
-    if (!titleMatch) return { labels, type: null, scopes: [] };
+    const m = (title ?? '').match(/^(\w+)(?:\(([^)]+)\))?(!)?:/);
+    if (!m) return { labels, type: null, typeLabel: null, scopes: [], breaking: false };
 
-    const type = titleMatch[1].toLowerCase();
-    const scopeStr = titleMatch[2] ?? '';
-    const breaking = !!titleMatch[3];
+    const type = m[1].toLowerCase();
+    const scopeStr = m[2] ?? '';
+    const breaking = !!m[3];
 
-    const typeLabel = config.typeToLabel[type];
+    const typeLabel = typeToLabel[type] || null;
     if (typeLabel) labels.add(typeLabel);
     if (breaking) labels.add('breaking');
 
     const scopes = scopeStr.split(',').map(s => s.trim()).filter(Boolean);
     for (const scope of scopes) {
-      const scopeLabel = config.scopeToLabel[scope];
-      if (scopeLabel) labels.add(scopeLabel);
+      const sl = scopeToLabel[scope];
+      if (sl) labels.add(sl);
     }
 
-    return { labels, type, scopes };
+    return { labels, type, typeLabel, scopes, breaking };
   }
 
-  const allTypeLabels = [...new Set(Object.values(config.typeToLabel))];
+  // ── Org membership ────────────────────────────────────────────────
 
   async function checkMembership(author, userType) {
     if (userType === 'Bot') {
@@ -165,6 +176,8 @@ function init(github, owner, repo, config) {
     }
   }
 
+  // ── Contributor analysis ──────────────────────────────────────────
+
   async function getContributorInfo(contributorCache, author, userType) {
     if (contributorCache.has(author)) return contributorCache.get(author);
 
@@ -193,7 +206,6 @@ function init(github, owner, repo, config) {
   return {
     ensureLabel,
     getSizeLabel,
-    sizeLabels,
     computeSize,
     buildFileRules,
     matchFileLabels,
@@ -201,6 +213,10 @@ function init(github, owner, repo, config) {
     allTypeLabels,
     checkMembership,
     getContributorInfo,
+    sizeLabels,
+    tierLabels,
+    trustedThreshold,
+    labelColor,
   };
 }
 
