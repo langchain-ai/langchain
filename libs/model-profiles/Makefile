@@ -30,7 +30,7 @@ refresh-profiles:
 	@for entry in $(PROFILE_PROVIDERS); do \
 		partner=$${entry%%=*}; \
 		provider=$${entry##*=}; \
-		data_dir="../partners/$${partner}/langchain_$${partner//-/_}/data"; \
+		data_dir="../partners/$${partner}/langchain_$$(echo "$${partner}" | tr '-' '_')/data"; \
 		echo "--- Refreshing $${partner} (provider: $${provider}) ---"; \
 		echo y | UV_FROZEN=false uv run langchain-profiles refresh \
 			--provider "$${provider}" \
