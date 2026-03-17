@@ -102,6 +102,41 @@ class TestModelRequestOverride:
         assert len(new_request.messages) == 2
         assert len(original_request.messages) == 1
 
+    def test_override_messages_with_list_base_message(self) -> None:
+        """Test overriding messages with list[BaseMessage] - regression test for #35971.
+
+        This test verifies that list[BaseMessage] is accepted by override()
+        even though list is invariant. The fix uses Sequence[BaseMessage]
+        which is covariant and accepts list[BaseMessage].
+        """
+        from langchain_core.messages import BaseMessage
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
+        original_request = ModelRequest(
+            model=model,
+            system_message=None,
+            messages=[HumanMessage("Hi")],
+            tool_choice=None,
+            tools=[],
+            response_format=None,
+            state=AgentState(messages=[]),
+            runtime=None,
+        )
+
+        # Filter messages - result is list[BaseMessage]
+        # This is the exact pattern from issue #35971
+        trimmed: list[BaseMessage] = [
+            m for m in original_request.messages
+            if isinstance(m, (AIMessage, HumanMessage))
+        ]
+
+        # This should not raise a type error because messages parameter
+        # is typed as Sequence[BaseMessage] which is covariant
+        new_request = original_request.override(messages=trimmed)
+
+        assert new_request.messages == trimmed
+        assert len(new_request.messages) == 1
+
     def test_override_model_settings(self) -> None:
         """Test overriding model_settings dict."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
