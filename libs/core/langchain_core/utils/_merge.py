@@ -68,11 +68,12 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
-            elif isinstance(merged[right_k], int):
+            elif isinstance(merged[right_k], (int, float)):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to
                 # - created/timestamp: temporal values that shouldn't be accumulated
+                # Note: float support added to fix streaming with float values in generation_info
                 if right_k in {"index", "created", "timestamp"}:
                     merged[right_k] = right_v
                 else:
