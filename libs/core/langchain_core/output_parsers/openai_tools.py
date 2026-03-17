@@ -68,6 +68,14 @@ def parse_tool_call(
                 f"Received JSONDecodeError {e}"
             )
             raise OutputParserException(msg) from e
+
+    if not isinstance(function_args, dict):
+        msg = (
+            f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+            f"{arguments}\n\nmust be a dictionary"
+        )
+        raise OutputParserException(msg)
+
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},
