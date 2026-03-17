@@ -77,7 +77,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
     model: BaseChatModel
     system_message: SystemMessage | None
-    messages: list[AnyMessage]
+    messages: Sequence[BaseMessage]
     tool_choice: Any | None
     tools: list[BaseTool | dict[str, Any]]
     response_format: ResponseFormat[Any] | None
@@ -94,7 +94,7 @@ class ModelRequest(Generic[ContextT]):
     """
 
     model: BaseChatModel
-    messages: list[AnyMessage]  # excluding system message
+    messages: Sequence[BaseMessage]  # excluding system message
     system_message: SystemMessage | None
     tool_choice: Any | None
     tools: list[BaseTool | dict[str, Any]]
@@ -107,7 +107,7 @@ class ModelRequest(Generic[ContextT]):
         self,
         *,
         model: BaseChatModel,
-        messages: list[AnyMessage],
+        messages: Sequence[BaseMessage],
         system_message: SystemMessage | None = None,
         system_prompt: str | None = None,
         tool_choice: Any | None = None,
