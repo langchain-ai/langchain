@@ -1768,6 +1768,53 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
+def test__construct_lc_result_from_responses_api_function_call_non_dict_args() -> None:
+    """Test that non-dict tool arguments are treated as invalid tool calls.
+
+    Issue #35990: json.loads() can succeed but return non-dict types (string, int,
+    list, null, bool). These should be treated as invalid tool calls to avoid
+    ValidationError when creating AIMessage.
+    """
+    test_cases = [
+        ('"just a string"', "string"),
+        ("123", "int"),
+        ('["list", "items"]', "list"),
+        ("null", "null"),
+        ("true", "bool"),
+    ]
+
+    for arguments_json, type_name in test_cases:
+        response = Response(
+            id="resp_123",
+            created_at=1234567890,
+            model="gpt-4o",
+            object="response",
+            parallel_tool_calls=True,
+            tools=[],
+            tool_choice="auto",
+            output=[
+                ResponseFunctionToolCall(
+                    type="function_call",
+                    id="func_123",
+                    call_id="call_123",
+                    name="test_function",
+                    arguments=arguments_json,
+                )
+            ],
+        )
+
+        result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+        msg: AIMessage = cast(AIMessage, result.generations[0].message)
+        assert len(msg.invalid_tool_calls) == 1, f"Failed for {type_name}: {arguments_json}"
+        assert msg.invalid_tool_calls[0]["type"] == "invalid_tool_call"
+        assert msg.invalid_tool_calls[0]["name"] == "test_function"
+        assert msg.invalid_tool_calls[0]["id"] == "call_123"
+        assert msg.invalid_tool_calls[0]["args"] == arguments_json
+        assert "Arguments must be a dictionary" in msg.invalid_tool_calls[0]["error"]
+        assert len(msg.tool_calls) == 0, f"Failed for {type_name}: {arguments_json}"
+
+
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
     """Test a complex response with multiple output types."""
     response = Response(
