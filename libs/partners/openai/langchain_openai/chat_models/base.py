@@ -1104,6 +1104,15 @@ class BaseChatOpenAI(BaseChatModel):
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
+        # Azure endpoint does not support context_management (e.g. compact_threshold)
+        context_management = self.context_management
+        if (
+            context_management is not None
+            and self.openai_api_base
+            and "azure" in self.openai_api_base.lower()
+        ):
+            context_management = None
+
         exclude_if_none = {
             "presence_penalty": self.presence_penalty,
             "frequency_penalty": self.frequency_penalty,
@@ -1120,7 +1129,7 @@ class BaseChatOpenAI(BaseChatModel):
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
             "verbosity": self.verbosity,
-            "context_management": self.context_management,
+            "context_management": context_management,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,

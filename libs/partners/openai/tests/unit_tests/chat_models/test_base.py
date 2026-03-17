@@ -97,6 +97,30 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
 
 
+def test_context_management_excluded_for_azure_base_url() -> None:
+    """Azure endpoint does not support context_management (e.g. compact_threshold)."""
+    llm = ChatOpenAI(
+        model="gpt-4",
+        base_url="https://my-resource.openai.azure.com/openai/v1/",
+        context_management=[{"type": "compaction", "compact_threshold": 100_000}],
+    )
+    params = llm._default_params
+    assert "context_management" not in params
+
+
+def test_context_management_included_for_non_azure_base_url() -> None:
+    """Non-Azure endpoints receive context_management when set."""
+    llm = ChatOpenAI(
+        model="gpt-4",
+        base_url="https://api.openai.com/v1/",
+        context_management=[{"type": "compaction", "compact_threshold": 100_000}],
+    )
+    params = llm._default_params
+    assert params["context_management"] == [
+        {"type": "compaction", "compact_threshold": 100_000}
+    ]
+
+
 @pytest.mark.parametrize("async_api", [True, False])
 def test_streaming_attribute_should_stream(async_api: bool) -> None:
     llm = ChatOpenAI(model="foo", streaming=True)
