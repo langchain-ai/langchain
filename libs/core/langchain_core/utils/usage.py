@@ -1,6 +1,7 @@
 """Usage utilities."""
 
 from collections.abc import Callable
+from typing import Any
 
 
 def _dict_int_op(
@@ -33,19 +34,25 @@ def _dict_int_op(
     Raises:
         ValueError: If `max_depth` is exceeded or if value types are not supported.
     """
+
+    def _is_numeric(x: Any) -> bool:
+        """Check if x is int or float (but not bool)."""
+        return isinstance(x, (int, float)) and not isinstance(x, bool)
+
     if depth >= max_depth:
         msg = f"{max_depth=} exceeded, unable to combine dicts."
         raise ValueError(msg)
     combined: dict = {}
     for k in set(left).union(right):
-        if isinstance(left.get(k, default), int) and isinstance(
-            right.get(k, default), int
-        ):
-            combined[k] = op(left.get(k, default), right.get(k, default))
-        elif isinstance(left.get(k, {}), dict) and isinstance(right.get(k, {}), dict):
+        left_val = left.get(k, default)
+        right_val = right.get(k, default)
+        if _is_numeric(left_val) and _is_numeric(right_val):
+            # Convert floats to ints for the operation
+            combined[k] = op(int(left_val), int(right_val))
+        elif isinstance(left_val, dict) and isinstance(right_val, dict):
             combined[k] = _dict_int_op(
-                left.get(k, {}),
-                right.get(k, {}),
+                left_val,
+                right_val,
                 op,
                 default=default,
                 depth=depth + 1,
@@ -54,7 +61,8 @@ def _dict_int_op(
         else:
             types = [type(d[k]) for d in (left, right) if k in d]
             msg = (
-                f"Unknown value types: {types}. Only dict and int values are supported."
+                f"Unknown value types: {types}. Only dict and numeric (int/float) "
+                f"values are supported."
             )
             raise ValueError(msg)  # noqa: TRY004
     return combined

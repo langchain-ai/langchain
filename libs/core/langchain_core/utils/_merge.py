@@ -37,11 +37,21 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif right_v is None:
                 continue
             elif type(merged[right_k]) is not type(right_v):
-                msg = (
-                    f'additional_kwargs["{right_k}"] already exists in this message,'
-                    " but with a different type."
-                )
-                raise TypeError(msg)
+                # Allow int/float mixing - treat them as numeric types
+                if isinstance(merged[right_k], (int, float)) and isinstance(
+                    right_v, (int, float)
+                ):
+                    # Both numeric but different types - sum them
+                    if right_k in {"index", "created", "timestamp"}:
+                        merged[right_k] = right_v
+                    else:
+                        merged[right_k] = merged[right_k] + right_v
+                else:
+                    msg = (
+                        f'additional_kwargs["{right_k}"] already exists in this message,'
+                        " but with a different type."
+                    )
+                    raise TypeError(msg)
             elif isinstance(merged[right_k], str):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
@@ -68,7 +78,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
-            elif isinstance(merged[right_k], int):
+            elif isinstance(merged[right_k], (int, float)):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to
@@ -76,7 +86,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 if right_k in {"index", "created", "timestamp"}:
                     merged[right_k] = right_v
                 else:
-                    merged[right_k] += right_v
+                    merged[right_k] = merged[right_k] + right_v
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
