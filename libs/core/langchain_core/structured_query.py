@@ -39,7 +39,7 @@ class Visitor(ABC):
         ):
             msg = (
                 f"Received disallowed comparator {func}. Allowed "
-                f"operators are {self.allowed_comparators}"
+                f"comparators are {self.allowed_comparators}"
             )
             raise ValueError(msg)
 
