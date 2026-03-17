@@ -266,9 +266,10 @@ class TestFileOperations:
             },
         }
 
+        # The tool builds args with "path" key (not "old_path")
         args = {
             "command": "rename",
-            "old_path": "/memories/old.txt",
+            "path": "/memories/old.txt",
             "new_path": "/memories/new.txt",
         }
         result = middleware._handle_rename(args, state, "test_id")
