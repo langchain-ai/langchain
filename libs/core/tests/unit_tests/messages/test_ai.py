@@ -482,6 +482,49 @@ def test_content_blocks() -> None:
     ]
 
 
+def test_content_blocks_v1_string_content_falls_through() -> None:
+    """Test that content_blocks falls through to translator when content is a string.
+
+    When output_version="v1" is set but content is a string (as in Chat
+    Completions streaming), content_blocks must not short-circuit. It should
+    fall through to the model_provider translator so tool calls are included.
+    """
+    # AIMessage with string content + tool_calls + v1 metadata
+    msg = AIMessage(
+        content="Hello",
+        tool_calls=[
+            create_tool_call(name="foo", args={"a": 1}, id="tc_1"),
+        ],
+        response_metadata={
+            "output_version": "v1",
+            "model_provider": "openai",
+        },
+    )
+    blocks = msg.content_blocks
+    assert isinstance(blocks, list)
+    # Should contain a text block and a tool_call block, not the raw string
+    types_found = {b["type"] for b in blocks}
+    assert "text" in types_found
+    assert "tool_call" in types_found
+
+    # AIMessageChunk with string content + tool_call_chunks + v1 metadata
+    chunk = AIMessageChunk(
+        content="Hello",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="foo", args='{"a": 1}', id="tc_1", index=0),
+        ],
+        response_metadata={
+            "output_version": "v1",
+            "model_provider": "openai",
+        },
+    )
+    blocks = chunk.content_blocks
+    assert isinstance(blocks, list)
+    types_found = {b["type"] for b in blocks}
+    assert "text" in types_found
+    assert "tool_call_chunk" in types_found
+
+
 def test_content_blocks_reasoning_extraction() -> None:
     """Test best-effort reasoning extraction from `additional_kwargs`."""
     message = AIMessage(

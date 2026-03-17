@@ -1185,8 +1185,13 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            # Keep content as "" (the default) rather than converting to [].
+            # All Chat Completions content chunks arrive as strings. Starting
+            # with [] causes merge_content to silently drop string content
+            # (empty list is falsy, so no merge branch applies). The empty
+            # list also triggers the content_blocks isinstance(list) short-
+            # circuit, which would return [] and miss tool_call_chunks.
             if self.output_version == "v1":
-                generation_chunk.message.content = []
                 generation_chunk.message.response_metadata["output_version"] = "v1"
 
             return generation_chunk
@@ -1217,6 +1222,9 @@ class BaseChatOpenAI(BaseChatModel):
             message_chunk.usage_metadata = usage_metadata
 
         message_chunk.response_metadata["model_provider"] = "openai"
+        # Propagate output_version so content_blocks can detect v1 mode.
+        if self.output_version == "v1":
+            message_chunk.response_metadata["output_version"] = "v1"
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
