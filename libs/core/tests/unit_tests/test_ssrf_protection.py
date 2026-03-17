@@ -50,7 +50,16 @@ class TestIPValidation:
         """Test cloud metadata IP detection."""
         assert is_cloud_metadata("example.com", "169.254.169.254") is True
         assert is_cloud_metadata("example.com", "169.254.170.2") is True
+        assert is_cloud_metadata("example.com", "169.254.170.23") is True
         assert is_cloud_metadata("example.com", "100.100.100.200") is True
+        assert is_cloud_metadata("example.com", "fd00:ec2::254") is True
+        assert is_cloud_metadata("example.com", "fd00:ec2::23") is True
+        assert is_cloud_metadata("example.com", "fe80::a9fe:a9fe") is True
+
+    def test_is_cloud_metadata_link_local_range(self) -> None:
+        """Test that IPv4 link-local is flagged as cloud metadata."""
+        assert is_cloud_metadata("example.com", "169.254.1.2") is True
+        assert is_cloud_metadata("example.com", "169.254.255.254") is True
 
     def test_is_cloud_metadata_hostnames(self) -> None:
         """Test cloud metadata hostname detection."""

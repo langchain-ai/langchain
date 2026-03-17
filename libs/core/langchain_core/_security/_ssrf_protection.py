@@ -49,10 +49,18 @@ PRIVATE_IP_RANGES = [
 ]
 
 # Cloud provider metadata endpoints
+CLOUD_METADATA_RANGES = [
+    ipaddress.ip_network("169.254.0.0/16"),  # IPv4 link-local (used by metadata services)
+]
+
 CLOUD_METADATA_IPS = [
     "169.254.169.254",  # AWS, GCP, Azure, DigitalOcean, Oracle Cloud
     "169.254.170.2",  # AWS ECS task metadata
+    "169.254.170.23",  # AWS EKS Pod Identity Agent
     "100.100.100.200",  # Alibaba Cloud metadata
+    "fd00:ec2::254",  # AWS EC2 IMDSv2 over IPv6 (Nitro instances)
+    "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
+    "fe80::a9fe:a9fe",  # OpenStack Nova metadata (IPv6 link-local equiv of 169.254.169.254)
 ]
 
 CLOUD_METADATA_HOSTNAMES = [
@@ -116,7 +124,12 @@ def is_cloud_metadata(hostname: str, ip_str: str | None = None) -> bool:
     # Check IP
     if ip_str:
         try:
-            if _normalize_ip(ip_str) in CLOUD_METADATA_IPS:
+            normalized_ip = _normalize_ip(ip_str)
+            if normalized_ip in CLOUD_METADATA_IPS:
+                return True
+
+            ip = ipaddress.ip_address(normalized_ip)
+            if any(ip in range_ for range_ in CLOUD_METADATA_RANGES):
                 return True
         except ValueError:
             pass
