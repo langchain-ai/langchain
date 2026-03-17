@@ -314,10 +314,8 @@ class BaseLanguageModel(
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
-        """Wrap _get_ls_params to always include ls_integration."""
-        ls_params = self._get_ls_params(stop=stop, **kwargs)
-        ls_params["ls_integration"] = "langchain_chat_model"
-        return ls_params
+        """Wrap _get_ls_params to include any additional default parameters."""
+        return self._get_ls_params(stop=stop, **kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
