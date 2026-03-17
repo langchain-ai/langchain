@@ -60,94 +60,34 @@ body:
         - label: langchain-text-splitters
         - label: langchain-chroma
         - label: langchain-deepseek
-        - label: langchain-exa
-        - label: langchain-fireworks
-        - label: langchain-groq
-        - label: langchain-huggingface
-        - label: langchain-mistralai
-        - label: langchain-nomic
-        - label: langchain-ollama
-        - label: langchain-openrouter
-        - label: langchain-perplexity
-        - label: langchain-qdrant
-        - label: langchain-xai
-        - label: Other / not sure / general
-  - type: textarea
-    id: related
-    validations:
-      required: false
-    attributes:
-      label: Related Issues / PRs
-      description: |
-        If this bug is related to any existing issues or pull requests, please link them here.
-      placeholder: |
-        * e.g. #123, #456
+        - label: langchain-community
   - type: textarea
     id: reproduction
-    validations:
-      required: true
     attributes:
-      label: Reproduction Steps / Example Code (Python)
+      label: Reproduction steps
       description: |
-        Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
-
-        If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
-
-        **Important!**
-
-        * Avoid screenshots, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
-        * Reduce your code to the minimum required to reproduce the issue if possible.
-
-        (This will be automatically formatted into code, so no need for backticks.)
-      render: python
-      placeholder: |
-        from langchain_core.runnables import RunnableLambda
-
-        def bad_code(inputs) -> int:
-          raise NotImplementedError('For demo purpose')
-
-          chain = RunnableLambda(bad_code)
-          chain.invoke('Hello!')
+        Please provide a minimal, reproducible example to demonstrate the bug.
+        Include the code, the expected behavior, and the actual behavior.
+        Make sure the code is formatted correctly.
+        If possible, provide a link to a GitHub repository with the code.
+      value: ""  
   - type: textarea
+    id: crash-context
     attributes:
-      label: Error Message and Stack Trace (if applicable)
+      label: ChatOllama Crash Context (If Applicable)
       description: |
-        If you are reporting an error, please copy and paste the full error message and
-        stack trace.
-        (This will be automatically formatted into code, so no need for backticks.)
-      render: shell
+        If this bug involves ChatOllama, please provide the following information:
+        * ChatOllama version
+        * Operating System
+        * Full traceback or error message from ChatOllama
+        * Any relevant logs from ChatOllama
+        * Model being used with ChatOllama
+      value: ""
   - type: textarea
-    id: description
+    id: additional-context
     attributes:
-      label: Description
+      label: Additional context
       description: |
-        What is the problem, question, or error?
-
-        Write a short description telling what you are doing, what you expect to happen, and what is currently happening.
-      placeholder: |
-        * I'm trying to use the `langchain` library to do X.
-        * I expect to see Y.
-        * Instead, it does Z.
-    validations:
-      required: true
-  - type: textarea
-    id: system-info
-    attributes:
-      label: System Info
-      description: |
-        Please share your system info with us.
-
-        Run the following command in your terminal and paste the output here:
-
-        `python -m langchain_core.sys_info`
-
-        or if you have an existing python interpreter running:
-
-        ```python
-        from langchain_core import sys_info
-        sys_info.print_sys_info()
-        ```
-      placeholder: |
-        python -m langchain_core.sys_info
-    validations:
-      required: true
+        Any additional information that might be helpful in understanding the bug.
+        For example, environment details, specific use case, or related issues.
+      value: ""
