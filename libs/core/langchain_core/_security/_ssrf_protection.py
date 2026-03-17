@@ -50,7 +50,9 @@ PRIVATE_IP_RANGES = [
 
 # Cloud provider metadata endpoints
 CLOUD_METADATA_RANGES = [
-    ipaddress.ip_network("169.254.0.0/16"),  # IPv4 link-local (used by metadata services)
+    ipaddress.ip_network(
+        "169.254.0.0/16"
+    ),  # IPv4 link-local (used by metadata services)
 ]
 
 CLOUD_METADATA_IPS = [
@@ -60,7 +62,8 @@ CLOUD_METADATA_IPS = [
     "100.100.100.200",  # Alibaba Cloud metadata
     "fd00:ec2::254",  # AWS EC2 IMDSv2 over IPv6 (Nitro instances)
     "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
-    "fe80::a9fe:a9fe",  # OpenStack Nova metadata (IPv6 link-local equiv of 169.254.169.254)
+    "fe80::a9fe:a9fe",  # OpenStack Nova metadata (IPv6 link-local equiv of
+    # 169.254.169.254)
 ]
 
 CLOUD_METADATA_HOSTNAMES = [
