@@ -4491,8 +4491,10 @@ def _construct_lc_result_from_responses_api(
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
                 args = json.loads(output.arguments, strict=False)
+                if not isinstance(args, dict):
+                    raise TypeError("Arguments must be a dictionary")
                 error = None
-            except JSONDecodeError as e:
+            except (JSONDecodeError, TypeError) as e:
                 args = output.arguments
                 error = str(e)
             if error is None:

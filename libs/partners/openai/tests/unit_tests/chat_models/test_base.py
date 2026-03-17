@@ -1768,6 +1768,42 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
+def test__construct_lc_result_from_responses_api_function_call_non_dict_args() -> None:
+    """Test a response with a valid JSON but non-dict arguments."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                # Arguments is a valid JSON array, not a dict
+                arguments='["location1", "location2"]',
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    # Should be treated as invalid tool call, not raise ValidationError
+    assert len(msg.invalid_tool_calls) == 1
+    assert msg.invalid_tool_calls[0]["type"] == "invalid_tool_call"
+    assert msg.invalid_tool_calls[0]["name"] == "get_weather"
+    assert msg.invalid_tool_calls[0]["id"] == "call_123"
+    assert msg.invalid_tool_calls[0]["args"] == '["location1", "location2"]'
+    assert "error" in msg.invalid_tool_calls[0]
+    assert "Arguments must be a dictionary" in msg.invalid_tool_calls[0]["error"]
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+
+
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
     """Test a complex response with multiple output types."""
     response = Response(
