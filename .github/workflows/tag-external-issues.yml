@@ -66,34 +66,16 @@ jobs:
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
+            const { owner, repo } = context.repo;
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
             const author = context.payload.sender.login;
-
-            if (context.payload.sender.type === 'Bot') {
-              console.log(`${author} is a Bot — treating as internal`);
-              core.setOutput('is-external', 'false');
-              return;
-            }
-
-            try {
-              const membership = await github.rest.orgs.getMembershipForUser({
-                org: 'langchain-ai',
-                username: author,
-              });
-              if (membership.data.state === 'active') {
-                console.log(`${author} is an active member of langchain-ai`);
-                core.setOutput('is-external', 'false');
-              } else {
-                console.log(`${author} has pending membership`);
-                core.setOutput('is-external', 'true');
-              }
-            } catch (error) {
-              if (error.status === 404) {
-                console.log(`${author} is not a member of langchain-ai`);
-              } else {
-                core.warning(`Membership check error (${error.status}): ${error.message}`);
-              }
-              core.setOutput('is-external', 'true');
-            }
+            const { isExternal } = await h.checkMembership(
+              author, context.payload.sender.type,
+            );
+            core.setOutput('is-external', isExternal ? 'true' : 'false');
 
       - name: Apply contributor tier label
         if: steps.check-membership.outputs.is-external == 'true'
@@ -111,6 +93,7 @@ jobs:
 
             const helpers = require('./.github/scripts/pr-labeler.js');
             const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
 
             let mergedCount;
             try {
@@ -131,6 +114,7 @@ jobs:
             }
 
             if (mergedCount >= config.trustedThreshold) {
+              await h.ensureLabel('trusted-contributor');
               await github.rest.issues.addLabels({
                 owner, repo, issue_number: issueNumber,
                 labels: ['trusted-contributor'],
@@ -140,31 +124,25 @@ jobs:
               console.log(`No tier label for ${author} (${mergedCount} merged PRs)`);
             }
 
-      - name: Add external label
-        if: steps.check-membership.outputs.is-external == 'true'
+      - name: Add external/internal label
         uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
             const issue_number = context.payload.issue.number;
-            await github.rest.issues.addLabels({
-              owner, repo, issue_number, labels: ['external'],
-            });
-            console.log(`Added 'external' label to issue #${issue_number}`);
 
-      - name: Add internal label
-        if: steps.check-membership.outputs.is-external == 'false'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.issue.number;
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            const label = '${{ steps.check-membership.outputs.is-external }}' === 'true'
+              ? 'external' : 'internal';
+            await h.ensureLabel(label);
             await github.rest.issues.addLabels({
-              owner, repo, issue_number, labels: ['internal'],
+              owner, repo, issue_number, labels: [label],
             });
-            console.log(`Added 'internal' label to issue #${issue_number}`);
+            console.log(`Added '${label}' label to issue #${issue_number}`);
 
   backfill:
     if: github.event_name == 'workflow_dispatch'
@@ -189,7 +167,12 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
-            const maxItems = parseInt('${{ inputs.max_items }}') || 100;
+            const rawMax = '${{ inputs.max_items }}';
+            const maxItems = parseInt(rawMax, 10);
+            if (isNaN(maxItems) || maxItems <= 0) {
+              core.setFailed(`Invalid max_items: "${rawMax}" — must be a positive integer`);
+              return;
+            }
 
             const helpers = require('./.github/scripts/pr-labeler.js');
             const config = helpers.loadConfig();
@@ -207,40 +190,51 @@ jobs:
             });
 
             let processed = 0;
+            let failures = 0;
             for (const issue of issues) {
               if (processed >= maxItems) break;
               if (issue.pull_request) continue;
 
-              const author = issue.user.login;
-              const info = await h.getContributorInfo(contributorCache, author, issue.user.type);
+              try {
+                const author = issue.user.login;
+                const info = await h.getContributorInfo(contributorCache, author, issue.user.type);
 
-              const labels = [info.isExternal ? 'external' : 'internal'];
-              if (info.isExternal && info.mergedCount != null && info.mergedCount >= config.trustedThreshold) {
-                labels.push('trusted-contributor');
-              }
+                const labels = [info.isExternal ? 'external' : 'internal'];
+                if (info.isExternal && info.mergedCount != null && info.mergedCount >= config.trustedThreshold) {
+                  labels.push('trusted-contributor');
+                }
 
-              // Remove stale tier labels
-              const currentLabels = (await github.paginate(
-                github.rest.issues.listLabelsOnIssue,
-                { owner, repo, issue_number: issue.number, per_page: 100 },
-              )).map(l => l.name ?? '');
-              for (const name of currentLabels) {
-                if (tierLabels.includes(name) && !labels.includes(name)) {
-                  try {
-                    await github.rest.issues.removeLabel({
-                      owner, repo, issue_number: issue.number, name,
-                    });
-                  } catch (e) {
-                    if (e.status !== 404) throw e;
+                // Ensure all labels exist before batch add
+                for (const name of labels) {
+                  await h.ensureLabel(name);
+                }
+
+                // Remove stale tier labels
+                const currentLabels = (await github.paginate(
+                  github.rest.issues.listLabelsOnIssue,
+                  { owner, repo, issue_number: issue.number, per_page: 100 },
+                )).map(l => l.name ?? '');
+                for (const name of currentLabels) {
+                  if (tierLabels.includes(name) && !labels.includes(name)) {
+                    try {
+                      await github.rest.issues.removeLabel({
+                        owner, repo, issue_number: issue.number, name,
+                      });
+                    } catch (e) {
+                      if (e.status !== 404) throw e;
+                    }
                   }
                 }
-              }
 
-              await github.rest.issues.addLabels({
-                owner, repo, issue_number: issue.number, labels,
-              });
-              console.log(`Issue #${issue.number} (${author}): ${labels.join(', ')}`);
-              processed++;
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: issue.number, labels,
+                });
+                console.log(`Issue #${issue.number} (${author}): ${labels.join(', ')}`);
+                processed++;
+              } catch (e) {
+                failures++;
+                core.warning(`Failed to process issue #${issue.number}: ${e.message}`);
+              }
             }
 
-            console.log(`\nBackfill complete. Processed ${processed} issues. ${contributorCache.size} unique authors.`);
+            console.log(`\nBackfill complete. Processed ${processed} issues, ${failures} failures. ${contributorCache.size} unique authors.`);

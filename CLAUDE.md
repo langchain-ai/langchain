@@ -230,6 +230,7 @@ Releases are triggered manually via `.github/workflows/_release.yml` with `worki
 **Auto-labeling:**
 
 - `.github/workflows/pr_labeler.yml` – Unified PR labeler (size, file, title, external/internal, contributor tier)
+- `.github/workflows/pr_labeler_backfill.yml` – Manual backfill of PR labels on open PRs
 - `.github/workflows/auto-label-by-package.yml` – Issue labeling by package
 - `.github/workflows/tag-external-issues.yml` – Issue external/internal classification
 

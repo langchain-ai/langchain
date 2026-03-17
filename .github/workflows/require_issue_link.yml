@@ -99,7 +99,17 @@ jobs:
                   console.log(`PR author "${prAuthor}" is NOT assigned to #${num} (assignees: ${assignees.join(', ') || 'none'})`);
                 }
               } catch (error) {
-                console.log(`Could not fetch issue #${num}: ${error.message}`);
+                if (error.status === 404) {
+                  console.log(`Issue #${num} not found — skipping`);
+                } else {
+                  core.warning(
+                    `Failed to fetch issue #${num} (${error.status}): ${error.message} — cannot verify assignment`,
+                  );
+                  // Treat transient API errors as inconclusive — don't let
+                  // a GitHub outage close a valid PR.
+                  assignedToAny = true;
+                  break;
+                }
               }
             }
 

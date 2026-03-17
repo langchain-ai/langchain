@@ -1,4 +1,4 @@
-// Shared helpers for pr_labeler.yml (label + backfill jobs).
+// Shared helpers for pr_labeler.yml and tag-external-issues.yml.
 //
 // Usage from actions/github-script:
 //   const helpers = require('./.github/scripts/pr-labeler.js');
@@ -45,15 +45,17 @@ function init(github, owner, repo, config) {
       try {
         await github.rest.issues.createLabel({ owner, repo, name, color });
       } catch (createErr) {
-        // 422 = label created by a concurrent run between our get and create
         if (createErr.status !== 422) throw createErr;
+        // 422 = label created by a concurrent run between our get and create
+        const core = require('@actions/core');
+        core.info(`Label "${name}" creation returned 422 (likely already exists)`);
       }
     }
   }
 
   function getSizeLabel(totalChanged) {
     for (const t of config.sizeThresholds) {
-      if (t.max && totalChanged < t.max) return t.label;
+      if (t.max != null && totalChanged < t.max) return t.label;
     }
     // Last entry has no max — it's the catch-all (XL)
     return config.sizeThresholds[config.sizeThresholds.length - 1].label;
@@ -132,28 +134,41 @@ function init(github, owner, repo, config) {
 
   const allTypeLabels = [...new Set(Object.values(config.typeToLabel))];
 
-  async function getContributorInfo(contributorCache, author, userType) {
-    if (contributorCache.has(author)) return contributorCache.get(author);
-
+  async function checkMembership(author, userType) {
     if (userType === 'Bot') {
-      const info = { isExternal: false, mergedCount: 0 };
-      contributorCache.set(author, info);
-      return info;
+      console.log(`${author} is a Bot — treating as internal`);
+      return { isExternal: false };
     }
 
-    let isExternal = true;
     try {
       const membership = await github.rest.orgs.getMembershipForUser({
         org: 'langchain-ai',
         username: author,
       });
-      isExternal = membership.data.state !== 'active';
+      const isExternal = membership.data.state !== 'active';
+      console.log(
+        isExternal
+          ? `${author} has pending membership — treating as external`
+          : `${author} is an active member of langchain-ai`,
+      );
+      return { isExternal };
     } catch (e) {
-      if (e.status !== 404) {
-        const core = require('@actions/core');
-        core.warning(`Membership check failed for ${author}: ${e.message}`);
+      if (e.status === 404) {
+        console.log(`${author} is not a member of langchain-ai`);
+        return { isExternal: true };
       }
+      // Non-404 errors (rate limit, auth failure, server error) must not
+      // silently default to external — rethrow to fail the step.
+      throw new Error(
+        `Membership check failed for ${author} (${e.status}): ${e.message}`,
+      );
     }
+  }
+
+  async function getContributorInfo(contributorCache, author, userType) {
+    if (contributorCache.has(author)) return contributorCache.get(author);
+
+    const { isExternal } = await checkMembership(author, userType);
 
     let mergedCount = null;
     if (isExternal) {
@@ -184,6 +199,7 @@ function init(github, owner, repo, config) {
     matchFileLabels,
     matchTitleLabels,
     allTypeLabels,
+    checkMembership,
     getContributorInfo,
   };
 }

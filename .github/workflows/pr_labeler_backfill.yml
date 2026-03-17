@@ -1,0 +1,134 @@
+# Backfill PR labels on all open PRs.
+#
+# Manual-only workflow that applies the same labels as pr_labeler.yml
+# (size, file, title, contributor classification) to existing open PRs.
+# Reuses shared logic from .github/scripts/pr-labeler.js.
+
+name: "PR Labeler Backfill"
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: "Maximum number of open PRs to process"
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Backfill labels on open PRs
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const rawMax = '${{ inputs.max_items }}';
+            const maxItems = parseInt(rawMax, 10);
+            if (isNaN(maxItems) || maxItems <= 0) {
+              core.setFailed(`Invalid max_items: "${rawMax}" — must be a positive integer`);
+              return;
+            }
+
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            const tierLabels = ['new-contributor', 'trusted-contributor'];
+
+            for (const name of [...h.sizeLabels, ...tierLabels]) {
+              await h.ensureLabel(name);
+            }
+
+            const contributorCache = new Map();
+            const fileRules = h.buildFileRules();
+
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', per_page: 100,
+            });
+
+            let processed = 0;
+            let failures = 0;
+            for (const pr of prs) {
+              if (processed >= maxItems) break;
+              try {
+                const author = pr.user.login;
+                const info = await h.getContributorInfo(contributorCache, author, pr.user.type);
+                const labels = new Set();
+
+                labels.add(info.isExternal ? 'external' : 'internal');
+                if (info.isExternal && info.mergedCount != null && info.mergedCount >= config.trustedThreshold) {
+                  labels.add('trusted-contributor');
+                } else if (info.isExternal && info.mergedCount === 0) {
+                  labels.add('new-contributor');
+                }
+
+                // Size + file labels
+                const files = await github.paginate(github.rest.pulls.listFiles, {
+                  owner, repo, pull_number: pr.number, per_page: 100,
+                });
+                const { sizeLabel } = h.computeSize(files);
+                labels.add(sizeLabel);
+
+                for (const label of h.matchFileLabels(files, fileRules)) {
+                  labels.add(label);
+                }
+
+                // Title labels
+                const { labels: titleLabels } = h.matchTitleLabels(pr.title ?? '');
+                for (const tl of titleLabels) labels.add(tl);
+
+                // Ensure all labels exist before batch add
+                for (const name of labels) {
+                  await h.ensureLabel(name);
+                }
+
+                // Remove stale managed labels
+                const currentLabels = (await github.paginate(
+                  github.rest.issues.listLabelsOnIssue,
+                  { owner, repo, issue_number: pr.number, per_page: 100 },
+                )).map(l => l.name ?? '');
+
+                const managed = [...h.sizeLabels, ...tierLabels, ...h.allTypeLabels];
+                for (const name of currentLabels) {
+                  if (managed.includes(name) && !labels.has(name)) {
+                    try {
+                      await github.rest.issues.removeLabel({
+                        owner, repo, issue_number: pr.number, name,
+                      });
+                    } catch (e) {
+                      if (e.status !== 404) throw e;
+                    }
+                  }
+                }
+
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: pr.number, labels: [...labels],
+                });
+                console.log(`PR #${pr.number} (${author}): ${[...labels].join(', ')}`);
+                processed++;
+              } catch (e) {
+                failures++;
+                core.warning(`Failed to process PR #${pr.number}: ${e.message}`);
+              }
+            }
+
+            console.log(`\nBackfill complete. Processed ${processed} PRs, ${failures} failures. ${contributorCache.size} unique authors.`);
