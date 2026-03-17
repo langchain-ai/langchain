@@ -2,7 +2,7 @@
 # GitHub auto-close keywords (Fixes #NNN, Closes #NNN, Resolves #NNN),
 # AND require that the PR author is assigned to the linked issue.
 #
-# - Reacts to the "external" label applied by tag-external-contributions.yml,
+# - Reacts to the "external" label applied by pr_labeler.yml,
 #   avoiding a duplicate org membership check.
 # - Also re-checks on PR edits/reopens for PRs that already have the label.
 # - Bypasses the check for PRs with the "trusted-contributor" label, and
@@ -15,10 +15,10 @@
 # - Cancels all other in-progress/queued CI runs for the PR on closure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
-# Dependency: tag-external-contributions.yml must run first to apply the
-# "external" label on new PRs. Both workflows trigger on pull_request_target
-# opened events; this workflow additionally listens for the "labeled" event
-# to chain off the external classification.
+# Dependency: pr_labeler.yml must run first to apply the "external" label
+# on new PRs. Both workflows trigger on pull_request_target opened events;
+# this workflow additionally listens for the "labeled" event to chain off
+# the external classification.
 
 name: Require Issue Link
 

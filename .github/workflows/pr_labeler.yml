@@ -1,0 +1,375 @@
+# Unified PR labeler — applies size, file-based, title-based, and
+# contributor classification labels in a single sequential workflow.
+#
+# Consolidates pr_labeler_file.yml, pr_labeler_title.yml,
+# pr_size_labeler.yml, and PR-handling from tag-external-issues.yml
+# into one workflow to eliminate race conditions from concurrent label
+# mutations. tag-external-issues.yml remains active for issue-only
+# labeling.
+#
+# Config and shared logic live in .github/scripts/pr-labeler-config.json
+# and .github/scripts/pr-labeler.js — update those when adding partners.
+
+name: "PR Labeler"
+
+on:
+  # Safe since we're not checking out or running the PR's code.
+  # Never check out the PR's head in a pull_request_target job.
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: "Maximum number of open PRs to process"
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Separate opened events so external/tier labels are never lost to cancellation
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.event.action == 'opened' && 'opened' || 'update' }}
+  cancel-in-progress: ${{ github.event.action != 'opened' }}
+
+jobs:
+  label:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      # Checks out the BASE branch (safe for pull_request_target — never
+      # the PR head). Needed to load .github/scripts/pr-labeler*.
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        if: github.event.action == 'opened'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Check org membership
+        if: github.event.action == 'opened'
+        id: check-membership
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const author = context.payload.sender.login;
+
+            // GitHub App bots are not org members but should be
+            // treated as internal — skip the membership check.
+            if (context.payload.sender.type === 'Bot') {
+              console.log(`${author} is a Bot — treating as internal`);
+              core.setOutput('is-external', 'false');
+              return;
+            }
+
+            try {
+              const membership = await github.rest.orgs.getMembershipForUser({
+                org: 'langchain-ai',
+                username: author,
+              });
+              if (membership.data.state === 'active') {
+                console.log(`${author} is an active member of langchain-ai`);
+                core.setOutput('is-external', 'false');
+              } else {
+                console.log(`${author} has pending membership`);
+                core.setOutput('is-external', 'true');
+              }
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`${author} is not a member of langchain-ai`);
+              } else {
+                core.warning(`Membership check error (${error.status}): ${error.message}`);
+              }
+              core.setOutput('is-external', 'true');
+            }
+
+      - name: Apply PR labels
+        uses: actions/github-script@v8
+        env:
+          IS_EXTERNAL: ${{ steps.check-membership.outputs.is-external }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.warning('pull_request payload is missing — skipping label step');
+              return;
+            }
+            const prNumber = pr.number;
+            const action = context.payload.action;
+
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            const toAdd = new Set();
+            const toRemove = new Set();
+
+            const currentLabels = (await github.paginate(
+              github.rest.issues.listLabelsOnIssue,
+              { owner, repo, issue_number: prNumber, per_page: 100 },
+            )).map(l => l.name ?? '');
+
+            // ── Size + file labels (skip on 'edited' — files don't change on title/body edits) ──
+            if (action !== 'edited') {
+              for (const sl of h.sizeLabels) await h.ensureLabel(sl);
+
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner, repo, pull_number: prNumber, per_page: 100,
+              });
+
+              const { totalChanged, sizeLabel } = h.computeSize(files);
+              toAdd.add(sizeLabel);
+              for (const sl of h.sizeLabels) {
+                if (currentLabels.includes(sl) && sl !== sizeLabel) toRemove.add(sl);
+              }
+              console.log(`Size: ${totalChanged} changed lines → ${sizeLabel}`);
+
+              const fileRules = h.buildFileRules();
+              for (const label of h.matchFileLabels(files, fileRules)) {
+                toAdd.add(label);
+              }
+            }
+
+            // ── Title-based labels ──
+            const { labels: titleLabels } = h.matchTitleLabels(pr.title || '');
+            for (const tl of titleLabels) toAdd.add(tl);
+
+            // Remove stale type labels when title changes
+            if (titleLabels.size > 0) {
+              for (const tl of h.allTypeLabels) {
+                if (currentLabels.includes(tl) && !titleLabels.has(tl)) toRemove.add(tl);
+              }
+            }
+
+            // ── Internal label (only on open, non-external contributors) ──
+            // IS_EXTERNAL is '' (empty) when action != 'opened' because
+            // the check-membership step is skipped, so this condition is
+            // only satisfied for opened + internal.
+            if (action === 'opened' && process.env.IS_EXTERNAL === 'false') {
+              toAdd.add('internal');
+            }
+
+            // ── Apply changes ──
+            // Ensure all labels we're about to add exist (addLabels returns
+            // 422 if any label in the batch is missing, which would prevent
+            // ALL labels from being applied).
+            for (const name of toAdd) {
+              await h.ensureLabel(name);
+            }
+
+            for (const name of toRemove) {
+              if (toAdd.has(name)) continue;
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: prNumber, name,
+                });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+            }
+
+            const addList = [...toAdd];
+            if (addList.length > 0) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: prNumber, labels: addList,
+              });
+            }
+
+            const removed = [...toRemove].filter(r => !toAdd.has(r));
+            console.log(`PR #${prNumber}: +[${addList.join(', ')}] -[${removed.join(', ')}]`);
+
+      # Apply tier label BEFORE the external label so that
+      # "trusted-contributor" is already present when the "external" labeled
+      # event fires and triggers require_issue_link.yml.
+      - name: Apply contributor tier label
+        if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const author = pr.user.login;
+            const prNumber = pr.number;
+
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            let mergedCount;
+            try {
+              const result = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} is:pr is:merged author:"${author}"`,
+                per_page: 1,
+              });
+              mergedCount = result?.data?.total_count;
+            } catch (error) {
+              if (error?.status !== 422) throw error;
+              core.warning(`Search failed for ${author}; skipping tier label.`);
+              return;
+            }
+
+            if (mergedCount == null) {
+              core.warning(`Search response missing total_count for ${author}; skipping tier label.`);
+              return;
+            }
+
+            if (mergedCount >= config.trustedThreshold) {
+              await h.ensureLabel('trusted-contributor');
+              await github.rest.issues.addLabels({
+                owner, repo,
+                issue_number: prNumber,
+                labels: ['trusted-contributor'],
+              });
+              console.log(`Applied 'trusted-contributor' to #${prNumber} (${mergedCount} merged PRs)`);
+            } else if (mergedCount === 0) {
+              await h.ensureLabel('new-contributor');
+              await github.rest.issues.addLabels({
+                owner, repo,
+                issue_number: prNumber,
+                labels: ['new-contributor'],
+              });
+              console.log(`Applied 'new-contributor' to #${prNumber} (0 merged PRs from ${author})`);
+            } else {
+              console.log(`No tier label for ${author} (${mergedCount} merged PRs)`);
+            }
+
+      - name: Add external label
+        if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          # Use App token so the "labeled" event propagates to downstream
+          # workflows (e.g. require_issue_link.yml). Events created by the
+          # default GITHUB_TOKEN do not trigger additional workflow runs.
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            await h.ensureLabel('external');
+            await github.rest.issues.addLabels({
+              owner, repo,
+              issue_number: prNumber,
+              labels: ['external'],
+            });
+            console.log(`Added 'external' label to PR #${prNumber}`);
+
+  backfill:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Backfill labels on open PRs
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const maxItems = parseInt('${{ inputs.max_items }}') || 100;
+
+            const helpers = require('./.github/scripts/pr-labeler.js');
+            const config = helpers.loadConfig();
+            const h = helpers.init(github, owner, repo, config);
+
+            const tierLabels = ['new-contributor', 'trusted-contributor'];
+
+            for (const name of [...h.sizeLabels, ...tierLabels]) {
+              await h.ensureLabel(name);
+            }
+
+            const contributorCache = new Map();
+            const fileRules = h.buildFileRules();
+
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', per_page: 100,
+            });
+
+            let processed = 0;
+            for (const pr of prs) {
+              if (processed >= maxItems) break;
+              const author = pr.user.login;
+              const info = await h.getContributorInfo(contributorCache, author, pr.user.type);
+              const labels = new Set();
+
+              labels.add(info.isExternal ? 'external' : 'internal');
+              if (info.isExternal && info.mergedCount != null && info.mergedCount >= config.trustedThreshold) {
+                labels.add('trusted-contributor');
+              } else if (info.isExternal && info.mergedCount === 0) {
+                labels.add('new-contributor');
+              }
+
+              // Size + file labels
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner, repo, pull_number: pr.number, per_page: 100,
+              });
+              const { sizeLabel } = h.computeSize(files);
+              labels.add(sizeLabel);
+
+              for (const label of h.matchFileLabels(files, fileRules)) {
+                labels.add(label);
+              }
+
+              // Title labels
+              const { labels: titleLabels } = h.matchTitleLabels(pr.title ?? '');
+              for (const tl of titleLabels) labels.add(tl);
+
+              // Ensure all labels exist before batch add
+              for (const name of labels) {
+                await h.ensureLabel(name);
+              }
+
+              // Remove stale managed labels
+              const currentLabels = (await github.paginate(
+                github.rest.issues.listLabelsOnIssue,
+                { owner, repo, issue_number: pr.number, per_page: 100 },
+              )).map(l => l.name ?? '');
+
+              const managed = [...h.sizeLabels, ...tierLabels, ...h.allTypeLabels];
+              for (const name of currentLabels) {
+                if (managed.includes(name) && !labels.has(name)) {
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner, repo, issue_number: pr.number, name,
+                    });
+                  } catch (e) {
+                    if (e.status !== 404) throw e;
+                  }
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: pr.number, labels: [...labels],
+              });
+              console.log(`PR #${pr.number} (${author}): ${[...labels].join(', ')}`);
+              processed++;
+            }
+
+            console.log(`\nBackfill complete. Processed ${processed} PRs. ${contributorCache.size} unique authors.`);
