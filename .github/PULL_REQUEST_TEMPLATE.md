@@ -37,6 +37,16 @@ Additional guidelines:
   - PRs should not touch more than one package unless absolutely necessary.
   - Do not update the `uv.lock` files or add dependencies to `pyproject.toml` files (even optional ones) unless you have explicit permission to do so by a maintainer.
 
+## Documentation Checklist
+
+If this PR introduces new features or changes existing ones, please ensure the following documentation updates are included:
+
+- [ ] **API Documentation:** Have you updated the API documentation (docstrings) to reflect the changes?
+- [ ] **Tutorials/Examples:** Are there any new tutorials or examples needed to demonstrate the new functionality?
+- [ ] **Conceptual Documentation:** Does the change require updates to the conceptual documentation to explain the new concepts or changes?
+- [ ] **Type Hints:** Are type hints accurate and complete?
+- [ ] **LangChain Hub:** If applicable, have you updated the LangChain Hub documentation?
+
 ## Social handles (optional)
 <!-- If you'd like a shoutout on release, add your socials below -->
 Twitter: @
