@@ -82,7 +82,14 @@ jobs:
 
             // Check whether the PR author is assigned to at least one linked issue
             const prAuthor = context.payload.pull_request.user.login;
-            const issueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
+            const MAX_ISSUES = 5;
+            const allIssueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
+            const issueNumbers = allIssueNumbers.slice(0, MAX_ISSUES);
+            if (allIssueNumbers.length > MAX_ISSUES) {
+              core.warning(
+                `PR references ${allIssueNumbers.length} issues — only checking the first ${MAX_ISSUES}`,
+              );
+            }
 
             let assignedToAny = false;
             for (const num of issueNumbers) {
@@ -103,12 +110,8 @@ jobs:
                   console.log(`Issue #${num} not found — skipping`);
                 } else {
                   core.warning(
-                    `Failed to fetch issue #${num} (${error.status}): ${error.message} — cannot verify assignment`,
+                    `Failed to fetch issue #${num} (${error.status}): ${error.message} — skipping`,
                   );
-                  // Treat transient API errors as inconclusive — don't let
-                  // a GitHub outage close a valid PR.
-                  assignedToAny = true;
-                  break;
                 }
               }
             }
