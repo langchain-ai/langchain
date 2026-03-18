@@ -365,13 +365,18 @@ def default_tool_parser(
         function_name = raw_tool_call["function"]["name"]
         try:
             function_args = json.loads(raw_tool_call["function"]["arguments"])
+            if not isinstance(function_args, dict):
+                raise TypeError(
+                    f"Tool call arguments must be a dict, "
+                    f"got {type(function_args).__name__}"
+                )
             parsed = tool_call(
                 name=function_name or "",
                 args=function_args or {},
                 id=raw_tool_call.get("id"),
             )
             tool_calls.append(parsed)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             invalid_tool_calls.append(
                 invalid_tool_call(
                     name=function_name,

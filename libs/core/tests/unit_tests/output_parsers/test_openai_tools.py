@@ -1426,6 +1426,28 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
     assert result is None
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        "[1, 2, 3]",
+        '"just a string"',
+        "42",
+        "true",
+        "null",
+    ],
+)
+def test_parse_tool_call_with_non_dict_arguments(arguments: str) -> None:
+    """Test parse_tool_call raises OutputParserException for non-dict JSON args."""
+    raw_tool_call = {
+        "function": {"arguments": arguments, "name": "myTool"},
+        "id": "call_123",
+        "type": "function",
+    }
+
+    with pytest.raises(OutputParserException, match="not a JSON object"):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+
 @pytest.mark.parametrize("partial", [False, True])
 def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     partial: bool,  # noqa: FBT001

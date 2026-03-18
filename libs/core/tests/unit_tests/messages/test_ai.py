@@ -11,6 +11,9 @@ from langchain_core.messages.ai import (
     add_usage,
     subtract_usage,
 )
+import pytest
+
+from langchain_core.messages.tool import default_tool_parser
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -502,3 +505,31 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        "[1, 2, 3]",
+        '"just a string"',
+        "42",
+        "true",
+        "null",
+    ],
+)
+def test_default_tool_parser_non_dict_args_are_invalid(arguments: str) -> None:
+    """Non-dict JSON tool arguments should be routed to invalid_tool_calls."""
+    raw_tool_calls = [
+        {
+            "function": {"arguments": arguments, "name": "get_weather"},
+            "id": "call_123",
+            "type": "function",
+        }
+    ]
+
+    tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+
+    assert len(tool_calls) == 0, "Non-dict args should not produce valid tool calls"
+    assert len(invalid_tool_calls) == 1, "Non-dict args should produce invalid tool call"
+    assert invalid_tool_calls[0]["name"] == "get_weather"
+    assert invalid_tool_calls[0]["id"] == "call_123"
