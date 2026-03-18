@@ -530,8 +530,11 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         self, args: dict, state: AnthropicToolsState, tool_call_id: str | None
     ) -> Command:
         """Handle rename command."""
-        old_path = args["old_path"]
-        new_path = args["new_path"]
+        old_path = args.get("old_path") or args.get("source") or args.get("src")
+        new_path = args.get("new_path") or args.get("destination") or args.get("dst")
+        if not old_path or not new_path:
+            msg = f"rename requires old_path/new_path keys, got: {list(args.keys())}"
+            raise ValueError(msg)
 
         normalized_old = _validate_path(
             old_path, allowed_prefixes=self.allowed_prefixes
@@ -1032,8 +1035,11 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
     def _handle_rename(self, args: dict, tool_call_id: str | None) -> Command:
         """Handle rename command."""
-        old_path = args["old_path"]
-        new_path = args["new_path"]
+        old_path = args.get("old_path") or args.get("source") or args.get("src")
+        new_path = args.get("new_path") or args.get("destination") or args.get("dst")
+        if not old_path or not new_path:
+            msg = f"rename requires old_path/new_path keys, got: {list(args.keys())}"
+            raise ValueError(msg)
 
         old_full = self._validate_and_resolve_path(old_path)
         new_full = self._validate_and_resolve_path(new_path)
