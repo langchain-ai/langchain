@@ -98,6 +98,79 @@ from langchain_ollama._utils import (
 log = logging.getLogger(__name__)
 
 
+def _flatten_pydantic_anyof_null(schema: dict[str, Any]) -> dict[str, Any]:
+    """Flatten Pydantic v2's anyOf: [T, null] pattern to nullable: true.
+
+    Ollama's template parser doesn't handle the anyOf: [T, null] pattern that
+    Pydantic v2 generates for Optional fields. This function converts it back
+    to the simpler nullable: true format that Ollama can process.
+
+    Example:
+        {"anyOf": [{"type": "string"}, {"type": "null"}]}
+        becomes
+        {"type": "string", "nullable": True}
+
+    Args:
+        schema: JSON schema dict that may contain anyOf patterns.
+
+    Returns:
+        Schema with anyOf: [T, null] patterns flattened to nullable: true.
+    """
+
+    def _process_value(value: Any) -> Any:
+        if isinstance(value, dict):
+            if "anyOf" in value:
+                return _flatten_anyof(value)
+            return _process_dict(value)
+        elif isinstance(value, list):
+            return [_process_value(item) for item in value]
+        return value
+
+    def _process_dict(d: dict) -> dict:
+        result = {}
+        for k, v in d.items():
+            if k == "anyOf":
+                continue
+            result[k] = _process_value(v)
+        return result
+
+    def _flatten_anyof(schema_item: dict) -> dict:
+        if "anyOf" not in schema_item:
+            return _process_dict(schema_item)
+
+        anyof_list = schema_item.get("anyOf", [])
+        if not isinstance(anyof_list, list):
+            return _process_dict(schema_item)
+
+        # Look for the pattern [T, {"type": "null"}] or [{"type": "null"}, T]
+        non_null_schema = None
+        has_null_type = False
+
+        for item in anyof_list:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "null":
+                has_null_type = True
+            else:
+                non_null_schema = item
+
+        if has_null_type and non_null_schema is not None:
+            # Found pattern [T, null] - convert to {**T, nullable: true}
+            result = _process_value(non_null_schema).copy()
+            result["nullable"] = True
+            return result
+        elif has_null_type and non_null_schema is None:
+            # Only null type found
+            return {"type": "null"}
+        elif non_null_schema is not None:
+            # Has non-null but no null - process normally
+            return _process_value(non_null_schema)
+
+        return _process_dict(schema_item)
+
+    return _process_value(schema)
+
+
 def _get_usage_metadata_from_generation_info(
     generation_info: Mapping[str, Any] | None,
 ) -> UsageMetadata | None:
@@ -1262,7 +1335,19 @@ class ChatOllama(BaseChatModel):
                 `self.bind(**kwargs)`.
         """  # noqa: E501
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        return super().bind(tools=formatted_tools, **kwargs)
+
+        # Fix Pydantic v2's anyOf: [T, null] pattern for Ollama compatibility
+        fixed_tools = []
+        for tool in formatted_tools:
+            if isinstance(tool, dict) and "function" in tool:
+                func_def = tool["function"]
+                if "parameters" in func_def:
+                    func_def["parameters"] = _flatten_pydantic_anyof_null(
+                        func_def["parameters"]
+                    )
+            fixed_tools.append(tool)
+
+        return super().bind(tools=fixed_tools, **kwargs)
 
     def with_structured_output(
         self,
@@ -1528,6 +1613,11 @@ class ChatOllama(BaseChatModel):
                 )
                 raise ValueError(msg)
             formatted_tool = convert_to_openai_tool(schema)
+            # Fix Pydantic v2's anyOf: [T, null] pattern for Ollama compatibility
+            if "function" in formatted_tool and "parameters" in formatted_tool["function"]:
+                formatted_tool["function"]["parameters"] = _flatten_pydantic_anyof_null(
+                    formatted_tool["function"]["parameters"]
+                )
             tool_name = formatted_tool["function"]["name"]
             llm = self.bind_tools(
                 [schema],
@@ -1572,6 +1662,8 @@ class ChatOllama(BaseChatModel):
                     response_format = schema.schema()
                 else:
                     response_format = schema.model_json_schema()
+                # Fix Pydantic v2's anyOf: [T, null] pattern for Ollama compatibility
+                response_format = _flatten_pydantic_anyof_null(response_format)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={
@@ -1590,6 +1682,8 @@ class ChatOllama(BaseChatModel):
                 else:
                     # is JSON schema
                     response_format = cast("dict", schema)
+                # Fix Pydantic v2's anyOf: [T, null] pattern for Ollama compatibility
+                response_format = _flatten_pydantic_anyof_null(response_format)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={
