@@ -32,21 +32,25 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/fi
 lint_package: PYTHON_FILES=langchain_fireworks
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
+UV_RUN = uv run --all-groups
+lint_package: UV_RUN = uv run --group lint --group typing
+lint_tests: UV_RUN = uv run --group lint --group typing --group test
 
 lint lint_diff lint_package lint_tests:
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	./scripts/lint_imports.sh
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && $(UV_RUN) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 type:
-	mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	mkdir -p $(MYPY_CACHE) && $(UV_RUN) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff check --fix $(PYTHON_FILES)
 
 check_imports: $(shell find langchain_fireworks -name '*.py')
-	uv run --all-groups python ./scripts/check_imports.py $^
+	$(UV_RUN) python ./scripts/check_imports.py $^
 
 ######################
 # HELP
