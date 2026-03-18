@@ -48,7 +48,9 @@
     "perplexity": "perplexity",
     "qdrant": "qdrant",
     "xai": "xai",
-    "deps": "dependencies"
+    "deps": "dependencies",
+    "docs": "documentation",
+    "infra": "infra"
   },
   "fileRules": [
     { "label": "core", "prefix": "libs/core/" },

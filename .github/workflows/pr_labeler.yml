@@ -60,17 +60,23 @@ jobs:
           app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
 
+      - name: Verify App token
+        if: github.event.action == 'opened'
+        run: |
+          if [ -z "${{ steps.app-token.outputs.token }}" ]; then
+            echo "::error::GitHub App token generation failed — cannot classify contributor"
+            exit 1
+          fi
+
       - name: Check org membership
-        if: github.event.action == 'opened' && steps.app-token.outcome == 'success'
+        if: github.event.action == 'opened'
         id: check-membership
         uses: actions/github-script@v8
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
-            const helpers = require('./.github/scripts/pr-labeler.js');
-            const config = helpers.loadConfig();
-            const h = helpers.init(github, owner, repo, config);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
 
             const author = context.payload.sender.login;
             const { isExternal } = await h.checkMembership(
@@ -85,10 +91,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const helpers = require('./.github/scripts/pr-labeler.js');
-            const config = helpers.loadConfig();
             const { owner, repo } = context.repo;
-            const h = helpers.init(github, owner, repo, config);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
 
             const pr = context.payload.pull_request;
             if (!pr) return;
@@ -103,7 +107,7 @@ jobs:
               { owner, repo, issue_number: prNumber, per_page: 100 },
             )).map(l => l.name ?? '');
 
-            // ── Size + file labels (skip on 'edited' — content unchanged) ──
+            // ── Size + file labels (skip on 'edited' — files unchanged) ──
             if (action !== 'edited') {
               for (const sl of h.sizeLabels) await h.ensureLabel(sl);
 
@@ -180,47 +184,10 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+
             const pr = context.payload.pull_request;
-            const author = pr.user.login;
-            const prNumber = pr.number;
-
-            const helpers = require('./.github/scripts/pr-labeler.js');
-            const config = helpers.loadConfig();
-            const h = helpers.init(github, owner, repo, config);
-
-            let mergedCount;
-            try {
-              const result = await github.rest.search.issuesAndPullRequests({
-                q: `repo:${owner}/${repo} is:pr is:merged author:"${author}"`,
-                per_page: 1,
-              });
-              mergedCount = result?.data?.total_count;
-            } catch (error) {
-              if (error?.status !== 422) throw error;
-              core.warning(`Search failed for ${author}; skipping tier label.`);
-              return;
-            }
-
-            if (mergedCount == null) {
-              core.warning(`Search response missing total_count for ${author}; skipping tier label.`);
-              return;
-            }
-
-            let tierLabel = null;
-            if (mergedCount >= config.trustedThreshold) tierLabel = 'trusted-contributor';
-            else if (mergedCount === 0) tierLabel = 'new-contributor';
-
-            if (tierLabel) {
-              await h.ensureLabel(tierLabel);
-              await github.rest.issues.addLabels({
-                owner, repo,
-                issue_number: prNumber,
-                labels: [tierLabel],
-              });
-              console.log(`Applied '${tierLabel}' to #${prNumber} (${mergedCount} merged PRs)`);
-            } else {
-              console.log(`No tier label for ${author} (${mergedCount} merged PRs)`);
-            }
+            await h.applyTierLabel(pr.number, pr.user.login);
 
       - name: Add external label
         if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
@@ -234,9 +201,7 @@ jobs:
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
 
-            const helpers = require('./.github/scripts/pr-labeler.js');
-            const config = helpers.loadConfig();
-            const h = helpers.init(github, owner, repo, config);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
 
             await h.ensureLabel('external');
             await github.rest.issues.addLabels({
