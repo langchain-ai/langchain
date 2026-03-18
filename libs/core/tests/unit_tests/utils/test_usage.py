@@ -40,6 +40,30 @@ def test_dict_int_op_invalid_types() -> None:
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported",
+        match="Only dict, int, and float values are supported",
     ):
         _dict_int_op(left, right, operator.add)
+
+
+def test_dict_int_op_float_add() -> None:
+    """Test that float values are handled correctly."""
+    left = {"a": 0.5, "b": 1.2}
+    right = {"b": 0.3, "c": 2.5}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 0.5, "b": 1.5, "c": 2.5}
+
+
+def test_dict_int_op_mixed_int_float() -> None:
+    """Test that mixed int and float values are handled correctly."""
+    left = {"a": 1, "b": 0.5}
+    right = {"a": 2.5, "b": 3}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 3.5, "b": 3.5}
+
+
+def test_dict_int_op_nested_float() -> None:
+    """Test that nested dictionaries with float values are handled correctly."""
+    left = {"a": 1, "b": {"c": 0.5, "d": 3}}
+    right = {"a": 2, "b": {"c": 1.5, "e": 0.1}}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 3, "b": {"c": 2.0, "d": 3, "e": 0.1}}
