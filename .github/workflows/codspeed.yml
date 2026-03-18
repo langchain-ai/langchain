@@ -67,12 +67,6 @@ jobs:
           # See: https://github.com/CodSpeedHQ/pytest-codspeed/issues/106
           python-version: "3.13.11"
 
-      - uses: actions/setup-python@v6
-        with:
-          # Pinned to 3.13.11 to work around CodSpeed walltime segfault on 3.13.12+
-          # See: https://github.com/CodSpeedHQ/pytest-codspeed/issues/106
-          python-version: "3.13.11"
-
       - name: "📦 Install Test Dependencies"
         run: uv sync --group test
         working-directory: ${{ matrix.job-configs.working-directory }}
