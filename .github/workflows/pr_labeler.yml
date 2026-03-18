@@ -23,7 +23,7 @@
 # The GitHub App token is required to check private organization membership
 # and to propagate label events to downstream workflows.
 
-name: "PR Labeler"
+name: "🏷️ PR Labeler"
 
 on:
   # Safe since we're not checking out or running the PR's code.
