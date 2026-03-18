@@ -44,6 +44,7 @@ UV_RUN_LINT = uv run --all-groups
 UV_RUN_TYPE = uv run --all-groups
 lint_package lint_tests: UV_RUN_LINT = uv run --group lint
 lint_package: UV_RUN_TYPE = uv run --group lint --group typing
+lint_tests: UV_RUN_TYPE = uv run --group typing --group test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
