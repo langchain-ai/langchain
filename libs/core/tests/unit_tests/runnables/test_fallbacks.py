@@ -9,6 +9,7 @@ from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -400,3 +401,119 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+class _ParentRunTracker(BaseCallbackHandler):
+    """Track parent_run_id for child events."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, Any, Any]] = []
+
+    def on_chain_start(
+        self, serialized: Any, inputs: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+    ) -> None:
+        self.events.append(("chain_start", run_id, parent_run_id))
+
+    def on_chain_error(
+        self, error: BaseException, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+    ) -> None:
+        self.events.append(("chain_error", run_id, parent_run_id))
+
+    def on_chain_end(
+        self, outputs: Any, *, run_id: Any, parent_run_id: Any = None, **kwargs: Any
+    ) -> None:
+        self.events.append(("chain_end", run_id, parent_run_id))
+
+
+def test_invoke_child_callbacks_receive_parent_run_id() -> None:
+    """Child runnables in fallbacks should receive parent_run_id from the
+    fallback chain's run manager, not None.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072
+    """
+
+    def _fail(x: str) -> str:
+        raise ValueError("primary failed")
+
+    def _succeed(x: str) -> str:
+        return "ok"
+
+    chain = RunnableLambda(_fail).with_fallbacks([RunnableLambda(_succeed)])
+    tracker = _ParentRunTracker()
+    chain.invoke("hello", config={"callbacks": [tracker]})
+
+    # First event should be the root chain_start (parent_run_id=None)
+    root_event = tracker.events[0]
+    assert root_event[0] == "chain_start"
+    assert root_event[2] is None  # root has no parent
+    root_run_id = root_event[1]
+
+    # All subsequent chain_start/chain_end/chain_error events should have
+    # parent_run_id == root_run_id
+    child_events = [e for e in tracker.events[1:] if e[0] in ("chain_start", "chain_end", "chain_error")]
+    assert len(child_events) > 0, "Expected at least one child event"
+    for event_name, _run_id, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{event_name}: expected parent_run_id={root_run_id}, "
+            f"got {parent_run_id}"
+        )
+
+
+async def test_ainvoke_child_callbacks_receive_parent_run_id() -> None:
+    """Async variant: child runnables should receive parent_run_id.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072
+    """
+
+    async def _fail(x: str) -> str:
+        raise ValueError("primary failed")
+
+    async def _succeed(x: str) -> str:
+        return "ok"
+
+    chain = RunnableLambda(_fail).with_fallbacks([RunnableLambda(_succeed)])
+    tracker = _ParentRunTracker()
+    await chain.ainvoke("hello", config={"callbacks": [tracker]})
+
+    root_event = tracker.events[0]
+    assert root_event[0] == "chain_start"
+    assert root_event[2] is None
+    root_run_id = root_event[1]
+
+    child_events = [e for e in tracker.events[1:] if e[0] in ("chain_start", "chain_end", "chain_error")]
+    assert len(child_events) > 0
+    for event_name, _run_id, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{event_name}: expected parent_run_id={root_run_id}, "
+            f"got {parent_run_id}"
+        )
+
+
+def test_stream_child_callbacks_receive_parent_run_id() -> None:
+    """Stream variant: child runnables should receive parent_run_id.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072
+    """
+
+    def _fail(x: str) -> str:
+        raise ValueError("primary failed")
+
+    def _succeed(x: str) -> str:
+        return "ok"
+
+    chain = RunnableLambda(_fail).with_fallbacks([RunnableLambda(_succeed)])
+    tracker = _ParentRunTracker()
+    list(chain.stream("hello", config={"callbacks": [tracker]}))
+
+    root_event = tracker.events[0]
+    assert root_event[0] == "chain_start"
+    assert root_event[2] is None
+    root_run_id = root_event[1]
+
+    child_events = [e for e in tracker.events[1:] if e[0] in ("chain_start", "chain_end", "chain_error")]
+    assert len(child_events) > 0
+    for event_name, _run_id, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{event_name}: expected parent_run_id={root_run_id}, "
+            f"got {parent_run_id}"
+        )
