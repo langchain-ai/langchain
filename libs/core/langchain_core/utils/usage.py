@@ -38,8 +38,8 @@ def _dict_int_op(
         raise ValueError(msg)
     combined: dict = {}
     for k in set(left).union(right):
-        if isinstance(left.get(k, default), int) and isinstance(
-            right.get(k, default), int
+        if isinstance(left.get(k, default), (int, float)) and isinstance(
+            right.get(k, default), (int, float)
         ):
             combined[k] = op(left.get(k, default), right.get(k, default))
         elif isinstance(left.get(k, {}), dict) and isinstance(right.get(k, {}), dict):
@@ -54,7 +54,7 @@ def _dict_int_op(
         else:
             types = [type(d[k]) for d in (left, right) if k in d]
             msg = (
-                f"Unknown value types: {types}. Only dict and int values are supported."
+                f"Unknown value types: {types}. Only dict and int/float values are supported."
             )
             raise ValueError(msg)  # noqa: TRY004
     return combined
