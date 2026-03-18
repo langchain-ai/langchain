@@ -16,15 +16,15 @@
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
 # Dependency: pr_labeler.yml must run first to apply the "external" label
-# on new PRs. Both workflows trigger on pull_request_target opened events;
-# this workflow additionally listens for the "labeled" event to chain off
-# the external classification.
+# on new PRs. This workflow chains off that classification via the "labeled"
+# event. It does NOT trigger on "opened" because new PRs have no labels yet,
+# so the job-level gate would always skip — producing noisy "Skipped" checks.
 
 name: Require Issue Link
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened, labeled]
+    types: [edited, reopened, labeled]
 
 permissions:
   contents: read
