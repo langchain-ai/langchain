@@ -3998,8 +3998,15 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
+                func = tool["function"]
+                # In Chat Completions API, omitting strict means non-strict (best-effort).
+                # In Responses API, omitting strict means strict: true (default is true).
+                # To preserve consistent behavior, explicitly set strict: False when
+                # not already set in the Chat Completions tool.
+                if "strict" not in func:
+                    func = {**func, "strict": False}
                 extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
-                new_tools.append({"type": "function", **tool["function"], **extra})
+                new_tools.append({"type": "function", **func, **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
@@ -4495,7 +4502,7 @@ def _construct_lc_result_from_responses_api(
             except JSONDecodeError as e:
                 args = output.arguments
                 error = str(e)
-            if error is None:
+            if error is None and isinstance(args, dict):
                 tool_call = {
                     "type": "tool_call",
                     "name": output.name,
@@ -4504,10 +4511,14 @@ def _construct_lc_result_from_responses_api(
                 }
                 tool_calls.append(tool_call)
             else:
+                if error is None:
+                    error = (
+                        f"Expected arguments to be a dictionary, got {type(args).__name__}"
+                    )
                 tool_call = {
                     "type": "invalid_tool_call",
                     "name": output.name,
-                    "args": args,
+                    "args": output.arguments,
                     "id": output.call_id,
                     "error": error,
                 }
