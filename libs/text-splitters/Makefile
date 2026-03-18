@@ -38,12 +38,13 @@ MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/core --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_text_splitters
-lint_tests: PYTHON_FILES=tests
+lint_tests: PYTHON_FILES=tests/unit_tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 UV_RUN_LINT = uv run --all-groups
 UV_RUN_TYPE = uv run --all-groups
 lint_package lint_tests: UV_RUN_LINT = uv run --group lint
 lint_package: UV_RUN_TYPE = uv run --group lint --group typing
+lint_tests: UV_RUN_TYPE = uv run --group typing --group test
 
 lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
