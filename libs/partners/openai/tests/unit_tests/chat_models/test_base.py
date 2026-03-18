@@ -3638,3 +3638,53 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test__construct_lc_result_from_responses_api_function_call_non_dict_args() -> None:
+    """Test that non-dict tool arguments are routed to invalid_tool_calls.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35990.
+    json.loads can return non-dict types (e.g. a JSON string or list) which
+    would cause a ValidationError on AIMessage since ToolCall.args must be a
+    dict.  These should be treated as invalid tool calls instead.
+    """
+    for args_json, description in [
+        ('"just a string"', "string argument"),
+        ("[1, 2, 3]", "list argument"),
+        ("42", "integer argument"),
+        ("true", "boolean argument"),
+    ]:
+        response = Response(
+            id="resp_123",
+            created_at=1234567890,
+            model="gpt-4o",
+            object="response",
+            parallel_tool_calls=True,
+            tools=[],
+            tool_choice="auto",
+            output=[
+                ResponseFunctionToolCall(
+                    type="function_call",
+                    id="func_123",
+                    call_id="call_123",
+                    name="get_weather",
+                    arguments=args_json,
+                )
+            ],
+        )
+
+        result = _construct_lc_result_from_responses_api(
+            response, output_version="v0"
+        )
+
+        msg: AIMessage = cast(AIMessage, result.generations[0].message)
+        assert len(msg.tool_calls) == 0, (
+            f"Non-dict args ({description}) should not appear in tool_calls"
+        )
+        assert len(msg.invalid_tool_calls) == 1, (
+            f"Non-dict args ({description}) should appear in invalid_tool_calls"
+        )
+        assert msg.invalid_tool_calls[0]["name"] == "get_weather"
+        assert msg.invalid_tool_calls[0]["id"] == "call_123"
+        assert msg.invalid_tool_calls[0]["args"] == args_json
+        assert "must be a dict" in msg.invalid_tool_calls[0]["error"]
