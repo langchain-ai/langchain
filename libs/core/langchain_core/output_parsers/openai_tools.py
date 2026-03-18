@@ -61,6 +61,14 @@ def parse_tool_call(
     else:
         try:
             function_args = json.loads(arguments, strict=strict)
+            if not isinstance(function_args, dict):
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{arguments}\n\nare not a JSON object (got "
+                    f"{type(function_args).__name__}). "
+                    f"Tool call arguments must be a dict."
+                )
+                raise OutputParserException(msg)
         except JSONDecodeError as e:
             msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"

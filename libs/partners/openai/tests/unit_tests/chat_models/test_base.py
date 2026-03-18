@@ -1768,6 +1768,52 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        '["a", "b", "c"]',  # list
+        '"just a string"',  # string
+        "42",  # number
+        "true",  # boolean
+        "null",  # null
+    ],
+    ids=["list", "string", "number", "boolean", "null"],
+)
+def test__construct_lc_result_from_responses_api_function_call_non_dict_args(
+    arguments: str,
+) -> None:
+    """Test that non-dict tool arguments are routed to invalid_tool_calls."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments=arguments,
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.tool_calls) == 0
+    assert len(msg.invalid_tool_calls) == 1
+    assert msg.invalid_tool_calls[0]["type"] == "invalid_tool_call"
+    assert msg.invalid_tool_calls[0]["name"] == "get_weather"
+    assert msg.invalid_tool_calls[0]["id"] == "call_123"
+    assert msg.invalid_tool_calls[0]["args"] == arguments
+    assert "error" in msg.invalid_tool_calls[0]
+
+
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
     """Test a complex response with multiple output types."""
     response = Response(
