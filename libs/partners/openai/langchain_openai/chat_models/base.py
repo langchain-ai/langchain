@@ -4492,17 +4492,28 @@ def _construct_lc_result_from_responses_api(
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
-            except JSONDecodeError as e:
+            except (JSONDecodeError, TypeError) as e:
                 args = output.arguments
                 error = str(e)
             if error is None:
-                tool_call = {
-                    "type": "tool_call",
-                    "name": output.name,
-                    "args": args,
-                    "id": output.call_id,
-                }
-                tool_calls.append(tool_call)
+                if not isinstance(args, dict):
+                    error = f"Expected dict, got {type(args).__name__}"
+                    tool_call = {
+                        "type": "invalid_tool_call",
+                        "name": output.name,
+                        "args": args,
+                        "id": output.call_id,
+                        "error": error,
+                    }
+                    invalid_tool_calls.append(tool_call)
+                else:
+                    tool_call = {
+                        "type": "tool_call",
+                        "name": output.name,
+                        "args": args,
+                        "id": output.call_id,
+                    }
+                    tool_calls.append(tool_call)
             else:
                 tool_call = {
                     "type": "invalid_tool_call",
