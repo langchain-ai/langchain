@@ -77,7 +77,7 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
     model: BaseChatModel
     system_message: SystemMessage | None
-    messages: list[AnyMessage]
+    messages: Sequence[AnyMessage]
     tool_choice: Any | None
     tools: list[BaseTool | dict[str, Any]]
     response_format: ResponseFormat[Any] | None
