@@ -2,6 +2,11 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware.cisco_ai_defense import (
+    CiscoAIDefenseError,
+    CiscoAIDefenseMiddleware,
+    CiscoAIDefenseToolMiddleware,
+)
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -46,6 +51,9 @@ from langchain.agents.middleware.types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "CiscoAIDefenseError",
+    "CiscoAIDefenseMiddleware",
+    "CiscoAIDefenseToolMiddleware",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
