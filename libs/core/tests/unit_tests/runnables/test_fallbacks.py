@@ -28,6 +28,7 @@ from langchain_core.runnables import (
     RunnableWithFallbacks,
 )
 from langchain_core.tools import BaseTool
+from tests.unit_tests.runnables.test_runnable import FakeTracer
 
 
 @pytest.fixture
@@ -400,3 +401,43 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+def test_fallbacks_invoke_preserves_parent_run_id() -> None:
+    def fail(_: str) -> str:
+        msg = "fail"
+        raise ValueError(msg)
+
+    def succeed(value: str) -> str:
+        return value
+
+    runnable = RunnableLambda(fail).with_fallbacks([RunnableLambda(succeed)])
+    tracer = FakeTracer()
+
+    assert runnable.invoke("hello", {"callbacks": [tracer]}) == "hello"
+
+    root_runs = [run for run in tracer.runs if run.parent_run_id is None]
+    assert len(root_runs) == 1
+    parent_run = root_runs[0]
+    assert [child.name for child in parent_run.child_runs] == ["fail", "succeed"]
+    assert all(child.parent_run_id == parent_run.id for child in parent_run.child_runs)
+
+
+async def test_fallbacks_ainvoke_preserves_parent_run_id() -> None:
+    async def afail(_: str) -> str:
+        msg = "fail"
+        raise ValueError(msg)
+
+    async def apass(value: str) -> str:
+        return value
+
+    runnable = RunnableLambda(afail).with_fallbacks([RunnableLambda(apass)])
+    tracer = FakeTracer()
+
+    assert await runnable.ainvoke("hello", {"callbacks": [tracer]}) == "hello"
+
+    root_runs = [run for run in tracer.runs if run.parent_run_id is None]
+    assert len(root_runs) == 1
+    parent_run = root_runs[0]
+    assert [child.name for child in parent_run.child_runs] == ["afail", "apass"]
+    assert all(child.parent_run_id == parent_run.id for child in parent_run.child_runs)
