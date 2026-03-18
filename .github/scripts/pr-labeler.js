@@ -262,9 +262,7 @@ function init(github, owner, repo, config, core) {
 
 function loadAndInit(github, owner, repo, core) {
   const config = loadConfig();
-  // Fallback to console so callers that don't need core.setFailed still work.
-  const _core = core || { info: console.log, warning: console.warn, setFailed: (m) => { throw new Error(m); } };
-  return { config, h: init(github, owner, repo, config, _core) };
+  return { config, h: init(github, owner, repo, config, core) };
 }
 
 module.exports = { loadConfig, init, loadAndInit };
