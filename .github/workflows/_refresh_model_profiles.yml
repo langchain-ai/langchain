@@ -128,7 +128,7 @@ jobs:
 
       - name: "📦 Install langchain-profiles CLI"
         working-directory: ${{ steps.cli.outputs.dir }}
-        run: uv sync --no-group test --no-group dev --no-group lint
+        run: uv sync --frozen --no-group test --no-group dev --no-group lint
 
       - name: "✅ Validate providers input"
         env:
@@ -154,7 +154,7 @@ jobs:
             provider=$(echo "${row}" | jq -r '.provider')
             data_dir=$(echo "${row}" | jq -r '.data_dir')
             echo "--- Refreshing ${provider} -> ${data_dir} ---"
-            if ! echo y | uv run --project "${cli_dir}" \
+            if ! echo y | uv run --frozen --project "${cli_dir}" \
               langchain-profiles refresh \
               --provider "${provider}" \
               --data-dir "${GITHUB_WORKSPACE}/${data_dir}"; then
