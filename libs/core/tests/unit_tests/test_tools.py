@@ -60,6 +60,7 @@ from langchain_core.tools.base import (
     _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -3653,3 +3654,51 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+def test_create_schema_injected_arg_filtered_with_filter_args() -> None:
+    """InjectedToolArg params should be excluded even when filter_args is provided.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35831
+    """
+
+    def my_func(
+        query: str,
+        api_key: Annotated[str, InjectedToolArg],
+    ) -> str:
+        """Search.
+
+        Args:
+            query: The search query.
+            api_key: Secret API key (should be hidden from LLM).
+        """
+        return query
+
+    # When filter_args is provided alongside include_injected=False,
+    # injected args should still be filtered out.
+    schema = create_schema_from_function(
+        "my_func",
+        my_func,
+        filter_args=(),
+        include_injected=False,
+        parse_docstring=True,
+        error_on_invalid_docstring=False,
+    )
+    fields = list(schema.model_fields.keys())
+    assert "query" in fields, "Regular arg 'query' should be in schema"
+    assert "api_key" not in fields, (
+        "InjectedToolArg 'api_key' should be filtered from schema "
+        "even when filter_args is provided"
+    )
+
+    # Also verify the caller's filter_args is not mutated
+    original_filter: tuple[str, ...] = ("some_other_arg",)
+    create_schema_from_function(
+        "my_func",
+        my_func,
+        filter_args=original_filter,
+        include_injected=False,
+    )
+    assert original_filter == ("some_other_arg",), (
+        "Caller's filter_args should not be mutated"
+    )
