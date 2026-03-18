@@ -128,7 +128,7 @@ jobs:
 
       - name: "📦 Install langchain-profiles CLI"
         working-directory: ${{ steps.cli.outputs.dir }}
-        run: uv sync
+        run: uv sync --no-group test --no-group dev --no-group lint
 
       - name: "✅ Validate providers input"
         env:
