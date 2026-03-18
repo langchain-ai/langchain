@@ -506,7 +506,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             inheritable_metadata = {
                 **self._get_metadata_invocation_params(params),
                 **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -635,7 +635,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         inheritable_metadata = {
             **self._get_metadata_invocation_params(params),
             **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -841,6 +841,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         return ls_params
 
+    def _get_ls_params_with_defaults(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Wrap _get_ls_params to always include ls_integration."""
+        ls_params = self._get_ls_params(stop=stop, **kwargs)
+        ls_params["ls_integration"] = "langchain_chat_model"
+        return ls_params
+
     def _get_llm_string(self, stop: list[str] | None = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
             params = {**kwargs, "stop": stop}
@@ -914,7 +924,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         inheritable_metadata = {
             **self._get_metadata_invocation_params(params),
             **(metadata or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
 
         callback_manager = CallbackManager.configure(
@@ -1038,7 +1048,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         inheritable_metadata = {
             **self._get_metadata_invocation_params(params),
             **(metadata or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
 
         callback_manager = AsyncCallbackManager.configure(

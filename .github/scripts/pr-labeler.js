@@ -1,7 +1,7 @@
 // Shared helpers for pr_labeler.yml and tag-external-issues.yml.
 //
 // Usage from actions/github-script (requires actions/checkout first):
-//   const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+//   const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
 const fs = require('fs');
 const path = require('path');
@@ -32,7 +32,10 @@ function loadConfig() {
   return config;
 }
 
-function init(github, owner, repo, config) {
+function init(github, owner, repo, config, core) {
+  if (!core) {
+    throw new Error('init() requires a `core` parameter (e.g., from actions/github-script)');
+  }
   const {
     trustedThreshold,
     labelColor,
@@ -60,7 +63,6 @@ function init(github, owner, repo, config) {
       } catch (createErr) {
         // 422 = label created by a concurrent run between our get and create
         if (createErr.status !== 422) throw createErr;
-        const core = require('@actions/core');
         core.info(`Label "${name}" creation returned 422 (likely already exists)`);
       }
     }
@@ -196,7 +198,6 @@ function init(github, owner, repo, config) {
         mergedCount = result?.data?.total_count ?? null;
       } catch (e) {
         if (e?.status !== 422) throw e;
-        const core = require('@actions/core');
         core.warning(`Search failed for ${author}; skipping tier.`);
       }
     }
@@ -209,7 +210,6 @@ function init(github, owner, repo, config) {
   // ── Tier label resolution ───────────────────────────────────────────
 
   async function applyTierLabel(issueNumber, author, { skipNewContributor = false } = {}) {
-    const core = require('@actions/core');
     let mergedCount;
     try {
       const result = await github.rest.search.issuesAndPullRequests({
@@ -263,9 +263,9 @@ function init(github, owner, repo, config) {
   };
 }
 
-function loadAndInit(github, owner, repo) {
+function loadAndInit(github, owner, repo, core) {
   const config = loadConfig();
-  return { config, h: init(github, owner, repo, config) };
+  return { config, h: init(github, owner, repo, config, core) };
 }
 
 module.exports = { loadConfig, init, loadAndInit };

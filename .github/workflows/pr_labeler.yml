@@ -23,7 +23,7 @@
 # The GitHub App token is required to check private organization membership
 # and to propagate label events to downstream workflows.
 
-name: "PR Labeler"
+name: "🏷️ PR Labeler"
 
 on:
   # Safe since we're not checking out or running the PR's code.
@@ -76,7 +76,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             const author = context.payload.sender.login;
             const { isExternal } = await h.checkMembership(
@@ -92,7 +92,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             const pr = context.payload.pull_request;
             if (!pr) return;
@@ -184,7 +184,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             const pr = context.payload.pull_request;
             await h.applyTierLabel(pr.number, pr.user.login);
@@ -201,7 +201,7 @@ jobs:
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
 
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             await h.ensureLabel('external');
             await github.rest.issues.addLabels({

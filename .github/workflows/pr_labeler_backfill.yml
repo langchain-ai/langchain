@@ -4,7 +4,7 @@
 # (size, file, title, contributor classification) to existing open PRs.
 # Reuses shared logic from .github/scripts/pr-labeler.js.
 
-name: "PR Labeler Backfill"
+name: "🏷️ PR Labeler Backfill"
 
 on:
   workflow_dispatch:
@@ -48,7 +48,7 @@ jobs:
               return;
             }
 
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             for (const name of [...h.sizeLabels, ...h.tierLabels]) {
               await h.ensureLabel(name);
