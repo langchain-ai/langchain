@@ -40,22 +40,22 @@ lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/core --name
 lint_package: PYTHON_FILES=langchain_text_splitters
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
-UV_RUN = uv run --all-groups
-lint_package: UV_RUN = uv run --group lint --group typing
-lint_tests: UV_RUN = uv run --group lint --group typing --group test
+UV_RUN_LINT = uv run --all-groups
+UV_RUN_TYPE = uv run --all-groups
+lint_package lint_tests: UV_RUN_LINT = uv run --group lint
 
 lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
-	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff check $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && $(UV_RUN) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && $(UV_RUN_TYPE) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 type:
-	mkdir -p $(MYPY_CACHE) && $(UV_RUN) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	mkdir -p $(MYPY_CACHE) && $(UV_RUN_TYPE) mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN) ruff check --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff check --fix $(PYTHON_FILES)
 
 ######################
 # HELP
