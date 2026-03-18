@@ -234,7 +234,7 @@ jobs:
             if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
               uv run --no-sync pytest ./tests/benchmarks --codspeed
             else
-              uv run --no-sync pytest ./tests/ --codspeed
+              uv run --no-sync pytest ./tests/unit_tests/ -m benchmark --codspeed
             fi
           mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'simulation' }}
 
