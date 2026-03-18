@@ -79,6 +79,10 @@ langchain = { path = "../../langchain_v1", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "langchain_community", "langchain_community.*",]
+ignore_missing_imports = true
+
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 100
