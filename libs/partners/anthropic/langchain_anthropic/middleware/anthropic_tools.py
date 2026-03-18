@@ -530,7 +530,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         self, args: dict, state: AnthropicToolsState, tool_call_id: str | None
     ) -> Command:
         """Handle rename command."""
-        old_path = args["old_path"]
+        old_path = args["path"]
         new_path = args["new_path"]
 
         normalized_old = _validate_path(
@@ -1032,7 +1032,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
     def _handle_rename(self, args: dict, tool_call_id: str | None) -> Command:
         """Handle rename command."""
-        old_path = args["old_path"]
+        old_path = args["path"]
         new_path = args["new_path"]
 
         old_full = self._validate_and_resolve_path(old_path)
