@@ -33,6 +33,9 @@ function loadConfig() {
 }
 
 function init(github, owner, repo, config, core) {
+  if (!core) {
+    throw new Error('init() requires a `core` parameter (e.g., from actions/github-script)');
+  }
   const {
     trustedThreshold,
     labelColor,
