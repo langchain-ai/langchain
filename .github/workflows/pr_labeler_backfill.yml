@@ -4,7 +4,7 @@
 # (size, file, title, contributor classification) to existing open PRs.
 # Reuses shared logic from .github/scripts/pr-labeler.js.
 
-name: "PR Labeler Backfill"
+name: "🏷️ PR Labeler Backfill"
 
 on:
   workflow_dispatch:
