@@ -3654,6 +3654,7 @@ def test_tool_default_factory_not_required() -> None:
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
 
+
 def test_tool_invoke_with_self_keyword_in_input() -> None:
     """Tool invocation should not fail when input contains a key named 'self'.
 
