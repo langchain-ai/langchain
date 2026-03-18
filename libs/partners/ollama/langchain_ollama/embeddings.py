@@ -153,7 +153,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client_kwargs: dict | None = {}
+    client_kwargs: dict | None = None
     """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
@@ -162,7 +162,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     to synchronous and asynchronous clients.
     """
 
-    async_client_kwargs: dict | None = {}
+    async_client_kwargs: dict | None = None
     """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
@@ -170,7 +170,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
-    sync_client_kwargs: dict | None = {}
+    sync_client_kwargs: dict | None = None
     """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
