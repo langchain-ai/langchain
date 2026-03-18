@@ -48,7 +48,7 @@ jobs:
               return;
             }
 
-            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo);
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
 
             for (const name of [...h.sizeLabels, ...h.tierLabels]) {
               await h.ensureLabel(name);
