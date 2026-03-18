@@ -149,7 +149,8 @@ class InMemoryRateLimiter(BaseRateLimiter):
         self.requests_per_second = requests_per_second
 
         # Number of tokens in the bucket.
-        self.available_tokens = 0.0
+        # Initialize to max_bucket_size to allow bursting on first request.
+        self.available_tokens = max_bucket_size
 
         self.max_bucket_size = max_bucket_size
 
