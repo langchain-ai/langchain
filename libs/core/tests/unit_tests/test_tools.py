@@ -3653,3 +3653,50 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+def test_create_schema_from_function_include_injected_false_with_filter_args() -> None:
+    """Regression test for #35831.
+
+    create_schema_from_function should respect include_injected=False even when
+    filter_args is explicitly provided.
+    """
+    from typing import Annotated
+
+    from langchain_core.tools.base import InjectedToolArg, create_schema_from_function
+
+    def my_func(
+        x: int,
+        y: str,
+        injected_param: Annotated[str, InjectedToolArg],
+    ) -> str:
+        """A function with an injected parameter."""
+        return f"{x} {y} {injected_param}"
+
+    # With filter_args provided and include_injected=False:
+    # injected_param should be excluded from the schema
+    schema = create_schema_from_function(
+        "MyFunc",
+        my_func,
+        filter_args=["x"],  # explicitly filter out 'x'
+        include_injected=False,
+    )
+    fields = list(schema.model_fields.keys())
+    assert "x" not in fields, "x should be filtered by filter_args"
+    assert "injected_param" not in fields, (
+        "injected_param should be filtered because include_injected=False"
+    )
+    assert "y" in fields, "y should remain in schema"
+
+    # Without filter_args and include_injected=False: same expectation
+    schema2 = create_schema_from_function(
+        "MyFunc2",
+        my_func,
+        include_injected=False,
+    )
+    fields2 = list(schema2.model_fields.keys())
+    assert "injected_param" not in fields2, (
+        "injected_param should be filtered when include_injected=False"
+    )
+    assert "y" in fields2
+    assert "x" in fields2
