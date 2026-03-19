@@ -85,7 +85,7 @@ def _load_examples(config: dict) -> dict:
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
     if config_ := config.get("output_parser"):
-        if output_parser_type := config_.get("_type") != "default":
+        if (output_parser_type := config_.get("_type")) is not None and output_parser_type != "default":
             msg = f"Unsupported output parser {output_parser_type}"
             raise ValueError(msg)
         config["output_parser"] = StrOutputParser(**config_)
