@@ -8,12 +8,13 @@ UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
 
 # unit tests are run with the --disable-socket flag to prevent network calls
 test tests:
-	uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
