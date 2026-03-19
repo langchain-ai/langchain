@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
+    from langchain_core.output_parsers.echarts import EChartsOutputParser
     from langchain_core.output_parsers.base import (
         BaseGenerationOutputParser,
         BaseLLMOutputParser,
@@ -56,6 +57,7 @@ __all__ = [
     "BaseOutputParser",
     "BaseTransformOutputParser",
     "CommaSeparatedListOutputParser",
+    "EChartsOutputParser",
     "JsonOutputKeyToolsParser",
     "JsonOutputParser",
     "JsonOutputToolsParser",
@@ -86,6 +88,7 @@ _dynamic_imports = {
     "StrOutputParser": "string",
     "BaseTransformOutputParser": "transform",
     "BaseCumulativeTransformOutputParser": "transform",
+    "EChartsOutputParser": "echarts",
     "XMLOutputParser": "xml",
 }
 
