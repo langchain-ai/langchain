@@ -4723,16 +4723,17 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-        content.append(
-            {
-                "type": "function_call",
-                "name": chunk.item.name,
-                "arguments": chunk.item.arguments,
-                "call_id": chunk.item.call_id,
-                "id": chunk.item.id,
-                "index": current_index,
-            }
-        )
+        content_block = {
+            "type": "function_call",
+            "name": chunk.item.name,
+            "arguments": chunk.item.arguments,
+            "call_id": chunk.item.call_id,
+            "id": chunk.item.id,
+            "index": current_index,
+        }
+        if hasattr(chunk.item, "namespace") and chunk.item.namespace:
+            content_block["namespace"] = chunk.item.namespace
+        content.append(content_block)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
