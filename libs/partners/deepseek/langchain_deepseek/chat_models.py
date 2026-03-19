@@ -6,6 +6,7 @@ import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
+from urllib.parse import urlparse
 
 import openai
 from langchain_core.callbacks import (
@@ -188,16 +189,21 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API key"""
     api_base: str = Field(
+        alias="base_url",
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
-    """DeepSeek API base URL"""
+    """DeepSeek API base URL.
+
+    Automatically read from env variable `DEEPSEEK_API_BASE` if not provided.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
     @property
     def _is_azure_endpoint(self) -> bool:
         """Check if the configured endpoint is an Azure deployment."""
-        return "azure.com" in (self.api_base or "").lower()
+        hostname = urlparse(self.api_base or "").hostname or ""
+        return hostname == "azure.com" or hostname.endswith(".azure.com")
 
     @property
     def _llm_type(self) -> str:

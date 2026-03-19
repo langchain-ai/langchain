@@ -13,6 +13,22 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langc
 pip install langchain-huggingface
 ```
 
+> **Note:** The base install does not include `sentence-transformers` or `transformers`.
+> If you plan to use `HuggingFaceEmbeddings` or `HuggingFacePipeline` for **local inference**,
+> install the `[full]` extra which includes `sentence-transformers>=5.2.0` and `transformers>=5.0.0`:
+>
+> ```bash
+> pip install langchain-huggingface[full]
+> ```
+>
+> **Migrating from `langchain-community`?** Note that `langchain-community` accepted
+> `sentence-transformers>=2.2.0`, but `langchain-huggingface[full]` requires `>=5.2.0`.
+> If your project pins an older version, upgrade it:
+>
+> ```bash
+> pip install "sentence-transformers>=5.2.0"
+> ```
+
 ## 🤔 What is this?
 
 This package contains the LangChain integrations for Hugging Face related classes.
