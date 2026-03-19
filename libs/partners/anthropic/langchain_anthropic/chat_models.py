@@ -802,6 +802,20 @@ class ChatAnthropic(BaseChatModel):
     variable.
     """
 
+    http_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.Client`. Passed directly to `anthropic.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well
+    if you'd like a custom client for async invocations.
+    """
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.AsyncClient`. Passed directly to `anthropic.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if
+    you'd like a custom client for sync invocations.
+    """
+
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -1004,12 +1018,15 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_httpx_client(**http_client_params)
+        if self.http_client is not None:
+            http_client = self.http_client
+        else:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
@@ -1019,12 +1036,15 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_async_httpx_client(**http_client_params)
+        if self.http_async_client is not None:
+            http_client = self.http_async_client
+        else:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
