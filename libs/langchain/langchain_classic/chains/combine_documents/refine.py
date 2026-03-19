@@ -142,33 +142,242 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             raise ValueError(msg)
         return values
 
+
+"""Why i am suggestiing this :-
+See your refine logic currently do this
+if i have 5 chunks it will send one chunk at a time then second chunk 2nd time now the problem is that this cost tokens and time also 
+so what i am suggesting this is my simpler version:-
+1.see although my suggestion is based on this code
+#RETRIEVAL
+def retrieval(DB_PATH,emb=HuggingFaceBgeEmbeddings(model_name="BAAI/bge-small-en-v1.5",model_kwargs={"device":"cpu"},encode_kwargs = {"normalize_embeddings": True},query_instruction="Represent this sentence for searching relevant passages: "), texts=None, query=None, temperature=None, model=None, secret_key=None, Upload=None, public=None):
+    if DB_PATH:
+      if os.path.exists(DB_PATH):
+          vector_db=FAISS.load_local(
+              DB_PATH,
+              emb,
+              allow_dangerous_deserialization=True
+          )
+          print("2")
+          no_of_chunks= vector_db.index.ntotal
+          dynamic_k= max(1,int(no_of_chunks*0.70))
+          retriever=vector_db.similarity_search(query,k=dynamic_k)
+          return preref(text=retriever,question=query,temperature=temperature,model=model)
+      
+      else:
+          text_splitter=RecursiveCharacterTextSplitter(
+              chunk_size=1000,
+              chunk_overlap=200
+          )
+          chunks=text_splitter.split_text(texts)
+          
+          vector_db=FAISS.from_texts(chunks,emb)
+          vector_db.save_local(DB_PATH)
+
+          if Upload:
+              index_file_faiss_var= open(f"{DB_PATH}/index.faiss","rb")
+              index_file_pkl_var= open(f"{DB_PATH}/index.pkl","rb")
+              
+              if secret_key:
+                  try:
+                      index1faiss = (
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .upload(
+                              file=index_file_faiss_var,
+                              path=f"{secret_key}/{DB_PATH}/index.faiss",
+                              file_options={"upsert": "false"}
+                          )
+                      )
+                      print(index1faiss)
+                  except:
+                      return "Sorry Some problems in uploading your Documents in Database, reupload the documents"
+                  
+                  try:
+                      index2pkl= (
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .upload(
+                              file=index_file_pkl_var,
+                              path=f"{secret_key}/{DB_PATH}/index.pkl",
+                              file_options={"upsert": "false"}
+                          )
+                      )
+                      print(index2pkl)
+                  except:
+                      file_first_faiss_removal = (
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .remove([f"{secret_key}/{DB_PATH}/index.faiss"])
+                      )
+                      print(file_first_faiss_removal)
+                      
+                      return "Sory some problem in uploading your Documents in Database, reupload the documents"
+                      
+              elif public:
+                  try:
+                      index_public_faiss=(
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .upload(
+                              file=index_file_faiss_var,
+                              path=f"public/{DB_PATH}/index.faiss",
+                              file_options={"upsert": "false"}
+                          )
+                      )
+                      print(index_public_faiss)
+                  except:
+                      return "Sory some problem in uploading your Documents in Database, reupload the documents"
+
+                  try:
+                      index_public_pkl=(
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .upload(
+                              file=index_file_pkl_var,
+                              path=f"public/{DB_PATH}/index.pkl",
+                              file_options={"upsert": "false"}
+                          )
+                      )
+                      print(index_public_pkl)
+                  except:
+                      file_first_faiss_removal = (
+                          supabase.storage
+                          .from_("NPMRagWebVectorDB")
+                          .remove([f"public/{DB_PATH}/index.faiss"])
+                      )
+                      print(file_first_faiss_removal)
+                      return "Sory some problem in uploading your Documents in Database, reupload the documents"
+                      
+              else:
+                  return "Sorry please pass at least Secret_key or Public param in order to save your document in Database for persistent memory."
+                  
+          else:
+              no_of_chunks_d= vector_db.index.ntotal
+              dynamic_k_d= max(1,(no_of_chunks_d*0.70))
+              retriever=vector_db.similarity_search(query,k=dynamic_k_d)
+              return preref(text=retriever,question=query,temperature=temperature,model=model)
+    else:
+      return "Sorry but you have to provide query and DB_PATH also in order to retrieve from Vectorised DataBase"
+
+  
+#REFINE INITIALISATION
+def preref(text,question, temperature, model, **kwargs):
+  ref=refine(
+      text=text,
+      question=question,
+      temperature=temperature,
+      model=model
+  )
+  result=ref.refinef()
+  return result
+
+
+#REFINE
+class refine:
+  def __init__(self,text,question, temperature, model):
+    self.text=text
+    self.question=question
+    self.temperature=temperature
+    self.model=model
+
+  def refinef(self):
+    texts=self.text
+    question=self.question
+    temperature=self.temperature
+    model=self.model
+    answers=[]
+    no=len(texts)
+    no_of_loop=0
+    if no > 2:
+        chunks_send=no/3
+        for i in range(chunks_send):
+            context=texts[i*3:(i+1)*3]
+            final_context="\n---\n".join([doc.page_content for doc in context])"""
+            #prompt=f"""Use the following information to answer the question: 
+            #Text: {final_context}
+            #Existing Answer: {answers}
+            #Question: {question}
+            #""" 
+            """
+            llm=Ollama(
+                model=model,
+                temperature=temperature
+            )
+            response=llm.invoke(prompt)
+            
+            if answers:
+                answers.remove(answers[0])
+                answers.append(response)
+            else:
+                answers.append(response)
+            
+            if not no_of_loop==chunks_send:
+                no_of_loop+=1
+            else:
+                pass
+        return response
+    elif no == 2 or no < 2:
+      context_texts=texts[0:2]
+      final_context_e="\n---\n".join([doc.page_content for doc in context_texts])"""
+      #prompt=f"""Use the following information to answer the question: 
+      #Text: {final_context_e}
+      #Existing Answer: {answers}
+      #Question: {question}
+      #"""
+"""
+      llm=Ollama(
+          model=model,
+          temperature=temperature
+      )
+      response_e=llm.invoke(prompt)
+      return response
+
+HERE you will see that i am using Ollama under npmai so the avergae content limit is 4k ok so i am  selecting 3 chunks to send at a time now i am selectioing 3 beacuase chunk
+size is 1000 ok but this is a issue where we have to understand user llm and chunk size and also chunk overlap although i gave you a simple idea of how you can do this
+"""
+
+    
     def combine_docs(
         self,
         docs: list[Document],
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
-        """Combine by mapping first chain over all, then stuffing into final chain.
-
-        Args:
-            docs: List of documents to combine
-            callbacks: Callbacks to be passed through
-            **kwargs: additional parameters to be passed to LLM calls (like other
-                input variables besides the documents)
-
-        Returns:
-            The first element returned is the single string output. The second
-            element returned is a dictionary of other keys to return.
+        """Combine by mapping first chain over the first batch, 
+        then refining over subsequent batches.
         """
+        # 1. Define Batch Size (Default to 3 for speed, can be passed via kwargs)
+        batch_size = kwargs.get("batch_size", 3)
+
+        # 2. Construct Initial Inputs (Index 0 is the starting point)
+        # Note: Initial chain still takes the first document to start the 'Existing Answer'
         inputs = self._construct_initial_inputs(docs, **kwargs)
         res = self.initial_llm_chain.predict(callbacks=callbacks, **inputs)
         refine_steps = [res]
-        for doc in docs[1:]:
-            base_inputs = self._construct_refine_inputs(doc, res)
+
+        # 3. Batch Loop: Start from index 1 and jump by 'batch_size'
+        for i in range(1, len(docs), batch_size):
+            # Slice the list to get the next batch of documents
+            batch = docs[i : i + batch_size]
+            
+            # Combine the batch into a single string using LangChain's formatter
+            combined_page_content = "\n\n".join(
+                [format_document(doc, self.document_prompt) for doc in batch]
+            )
+            
+            # Create a temporary Document to pass into the refine logic
+            # This keeps the 'construct_refine_inputs' helper working perfectly
+            combined_doc = Document(page_content=combined_page_content)
+
+            # 4. Refine Step
+            base_inputs = self._construct_refine_inputs(combined_doc, res)
             inputs = {**base_inputs, **kwargs}
             res = self.refine_llm_chain.predict(callbacks=callbacks, **inputs)
             refine_steps.append(res)
+
         return self._construct_result(refine_steps, res)
+
+
 
     async def acombine_docs(
         self,
