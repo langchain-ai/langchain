@@ -103,40 +103,40 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     Example:
     ```python
-    from langchain_classic.agents import AgentType, initialize_agent
     from langchain_openai import ChatOpenAI
+    from langchain.tools import tool
+    from langchain.agents import create_react_agent, AgentExecutor
     from langchain_classic.evaluation import TrajectoryEvalChain
-    from langchain_classic.tools import tool
 
     @tool
     def geography_answers(country: str, question: str) -> str:
-        \"\"\"Very helpful answers to geography questions.\"\"\"
+        # Very helpful answers to geography questions.
         return f"{country}? IDK - We may never know {question}."
 
-    model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-    agent = initialize_agent(
-        tools=[geography_answers],
-        llm=model,
-        agent=AgentType.OPENAI_FUNCTIONS,
-        return_intermediate_steps=True,
-    )
+    model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+    # Create agent using new API
+    agent = create_react_agent(model, [geography_answers])
+    agent_executor = AgentExecutor(agent=agent, tools=[geography_answers])
 
     question = "How many dwell in the largest minor region in Argentina?"
-    response = agent(question)
+
+    response = agent_executor.invoke({"input": question})
 
     eval_chain = TrajectoryEvalChain.from_llm(
-        llm=model, agent_tools=[geography_answers], return_reasoning=True
+        llm=model,
+        agent_tools=[geography_answers],
+        return_reasoning=True
     )
 
     result = eval_chain.evaluate_agent_trajectory(
         input=question,
-        agent_trajectory=response["intermediate_steps"],
+        agent_trajectory=response.get("intermediate_steps", []),
         prediction=response["output"],
         reference="Paris",
     )
-    print(result["score"])  # noqa: T201
-    # 0
 
+    print(result["score"])
     ```
     """
 
