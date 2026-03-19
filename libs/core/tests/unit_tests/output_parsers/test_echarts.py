@@ -39,5 +39,6 @@ def test_echarts_output_parser_format_instructions() -> None:
     assert "json" in instructions
     assert '"title": { "text": "ECharts Example" }' in instructions
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     test_echarts_output_parser()
