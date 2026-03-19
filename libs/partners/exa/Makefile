@@ -8,14 +8,15 @@ UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 
 integration_tests: TEST_FILE=tests/integration_tests/
 
 test integration_tests:
-	uv run --group test --group test_integration pytest $(TEST_FILE)
+	uv run --group test --group test_integration pytest $(PYTEST_EXTRA) $(TEST_FILE)
 
 tests:
-	uv run --group test pytest $(TEST_FILE)
+	uv run --group test pytest $(PYTEST_EXTRA) $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)

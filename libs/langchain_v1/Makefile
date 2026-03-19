@@ -15,6 +15,7 @@ stop_services:
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
@@ -37,13 +38,13 @@ coverage_agents:
 		--cov-report=html:htmlcov \
 
 test:
-	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered --snapshot-update; \
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered --snapshot-update; \
 	EXIT_CODE=$$?; \
 	make stop_services; \
 	exit $$EXIT_CODE
 
 test_fast:
-	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
+	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
 	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests; \

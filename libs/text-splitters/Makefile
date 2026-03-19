@@ -5,12 +5,13 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
 
 test tests:
-	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
 	uv run --group test --group test_integration pytest tests/integration_tests/

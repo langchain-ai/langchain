@@ -5,6 +5,7 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
@@ -16,7 +17,7 @@ test tests:
 	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
-	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	env \
