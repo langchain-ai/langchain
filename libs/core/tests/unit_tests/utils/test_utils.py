@@ -129,6 +129,10 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Float fields should be summed
+        ({"score": 0.5}, {"score": 0.3}, {"score": 0.8}),
+        ({"weight": 1.2}, {"weight": 2.4}, {"weight": 3.6}),
+        ({"index": 0.5}, {"index": 1.5}, {"index": 1.5}),
     ],
 )
 def test_merge_dicts(
