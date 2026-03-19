@@ -455,7 +455,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True,
+        "tool_calling": False,
         "attachment": True,
         "temperature": True,
     },
