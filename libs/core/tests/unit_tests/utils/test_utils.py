@@ -129,6 +129,18 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Float fields should be summed like int fields
+        ({"score": 0.5}, {"score": 0.3}, {"score": 0.8}),
+        ({"logprob": -1.2}, {"logprob": -0.5}, {"logprob": -1.7}),
+        # Mixed int and float should raise TypeError (different types)
+        (
+            {"val": 1},
+            {"val": 0.5},
+            pytest.raises(
+                TypeError,
+                match="already exists in this message, but with a different type",
+            ),
+        ),
     ],
 )
 def test_merge_dicts(
@@ -478,6 +490,11 @@ def test_merge_lists_all_none() -> None:
         (42, 42, 42),
         (3.14, 3.14, 3.14),
         (True, True, True),
+        # Unequal int values should be summed
+        (1, 2, 3),
+        # Unequal float values should be summed
+        (0.5, 0.3, 0.8),
+        (-1.2, -0.5, -1.7),
     ],
 )
 def test_merge_obj(left: Any, right: Any, expected: Any) -> None:
@@ -494,7 +511,7 @@ def test_merge_obj_type_mismatch() -> None:
 def test_merge_obj_unmergeable_values() -> None:
     """Test `merge_obj` raises `ValueError` on unmergeable values."""
     with pytest.raises(ValueError, match="Unable to merge"):
-        merge_obj(1, 2)  # Different integers
+        merge_obj(object(), object())  # Non-mergeable types
 
 
 def test_merge_obj_tuple_raises() -> None:

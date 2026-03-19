@@ -35,11 +35,25 @@ def test_dict_int_op_max_depth_exceeded() -> None:
         _dict_int_op(left, right, operator.add, max_depth=2)
 
 
+def test_dict_int_op_float() -> None:
+    left = {"a": 0.5, "b": 1.2}
+    right = {"b": 0.3, "c": 0.4}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 0.5, "b": 1.5, "c": 0.4}
+
+
+def test_dict_int_op_mixed_int_float() -> None:
+    left = {"a": 1, "b": 0.5}
+    right = {"a": 2, "b": 0.3}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 3, "b": 0.8}
+
+
 def test_dict_int_op_invalid_types() -> None:
     left = {"a": 1, "b": "string"}
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported",
+        match="Only dict, int, and float values are supported",
     ):
         _dict_int_op(left, right, operator.add)
