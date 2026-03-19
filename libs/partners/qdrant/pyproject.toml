@@ -65,6 +65,12 @@ typing = [
     "langchain-core"
 ]
 
+# CVE-2026-25990: pillow < 12.1.1 is vulnerable to out-of-bounds write when loading PSD images.
+# fastembed 0.7.x caps pillow<12.0. Override to pull in the fix for the lockfile.
+# Remove this override once fastembed releases a version that allows pillow>=12.1.1.
+[tool.uv]
+override-dependencies = ["pillow>=12.1.1"]
+
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
