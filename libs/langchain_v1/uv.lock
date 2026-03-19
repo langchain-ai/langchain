@@ -385,6 +385,43 @@ wheels = [
 ]
 
 [[package]]
+name = "baseten-performance-client"
+version = "0.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/41/eb/dc8a0dd381cdac0132ea0f7833e707413a137f0590a849504e03d40776eb/baseten_performance_client-0.1.5.tar.gz", hash = "sha256:8e6999295fa2a5ce54aeb83f1c04417628282b66117c22101d023c746522816a", size = 92286, upload-time = "2026-01-30T06:37:30.283Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/fa/98a00aba838856b7ec4acd4b397dfb7a8a29575787e5849503402f4030cd/baseten_performance_client-0.1.5-cp313-cp313t-macosx_10_12_x86_64.whl", hash = "sha256:482955696ae2520c6dff144f20b49d1f520c905d9030c8055c5afac62c220b2c", size = 3147816, upload-time = "2026-01-30T06:37:14.854Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/ae/b8db03a7ad89f2f13e778f3051487a4f12b4bd0acbd701ae6dd3da1d2533/baseten_performance_client-0.1.5-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:b8eade7428cfca9d19a0e7a8b476bd70d7e48bcefc339a29e457d16edc0dc2da", size = 3060717, upload-time = "2026-01-30T06:37:10.434Z" },
+    { url = "https://files.pythonhosted.org/packages/86/97/5d1cad74be84a38e6046c3de88b761e0400fc5dea533a4d11aebea78a8cb/baseten_performance_client-0.1.5-cp313-cp313t-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e4651b2416a1a90fc3afb4c43c14a5aa51896f9ffc31d2f366515c405dd03c94", size = 5530068, upload-time = "2026-01-30T06:36:59.194Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/39/caf41d87bc1a0bf61deb398593d7a64f8b8757f6208c41168d62808c1aab/baseten_performance_client-0.1.5-cp313-cp313t-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:a89576b0c3872aa5d0fe29b2d3a44fd0d61b930e8b1293ce4d985b960584fa2e", size = 5732313, upload-time = "2026-01-30T06:36:51.212Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/7a/0968e269ccc2a50a5f2092df8b4b43a3bdc02c96ffeed4d70e18469a2234/baseten_performance_client-0.1.5-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8f89b3c38693bfc3b973b6cf02ec679ef914b2d9ef77f9ab182fd9d5b5f2e61b", size = 5432538, upload-time = "2026-01-30T06:37:04.574Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/37/858a1ce843b69168a92009550315b87266c39c5d8b4c7fa72185017a07f8/baseten_performance_client-0.1.5-cp313-cp313t-musllinux_1_2_aarch64.whl", hash = "sha256:1d23d805446520e61234d5c97e02eaf9eed3a49ad73f4ba7e9c120000b8fbbfa", size = 6028052, upload-time = "2026-01-30T06:37:17.661Z" },
+    { url = "https://files.pythonhosted.org/packages/20/a8/1254e1f6b623e352faf687012a26911faf85e99f078b5c2b4b1cb416f2fd/baseten_performance_client-0.1.5-cp313-cp313t-musllinux_1_2_armv7l.whl", hash = "sha256:e9f1227c0a7cc9297629da8a41bc03fe4c91298776d11207a865c30e3463ab39", size = 5102401, upload-time = "2026-01-30T06:37:20.63Z" },
+    { url = "https://files.pythonhosted.org/packages/71/d7/750149a0a3b2a598fcf953373d8bb5033cf254a5dbc11adfdabb716d9e37/baseten_performance_client-0.1.5-cp313-cp313t-musllinux_1_2_i686.whl", hash = "sha256:a1d7acbc55a716ad7664e4170179f45fa262b9da64c10452fadeec7d3b2fbbf8", size = 5534519, upload-time = "2026-01-30T06:37:24.336Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/c7/783c8bad9c2603b6f68d103b8a9e9a125751b9c482604d4be60fc59688b4/baseten_performance_client-0.1.5-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:df0a073a1a9fb55992e2a96bff9e1d06d75c58ce2c5a4a5c84b950e9d1550834", size = 5721807, upload-time = "2026-01-30T06:37:27.312Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/95/b9df7ae97cbb8d8b748ef1237e638bdc3ea5d1fea9ded8b6e03a63b8644d/baseten_performance_client-0.1.5-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:13c3b0cadcacb83499050fa14d0eaa5fd161c05bc7ff8cc88c3150e663d21993", size = 3160489, upload-time = "2026-01-30T06:37:16.266Z" },
+    { url = "https://files.pythonhosted.org/packages/79/38/2e92a0ce0a6b2c00b4ebc4654759c57b445df4c734f5e7526e9892f97947/baseten_performance_client-0.1.5-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:549774519199a9dd29d447c121d16d0539e521724cc84b86d265a85d37b2efcd", size = 3075288, upload-time = "2026-01-30T06:37:12.932Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/da/36237d3cf7d9d4d703d1b49c6a2404c82bd52b2825c2cca51e9571292122/baseten_performance_client-0.1.5-cp38-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4289efa45a0b58030b8afd39de49cfb13ae3df2a6d6fcff914c05050201a53d4", size = 5537399, upload-time = "2026-01-30T06:37:00.922Z" },
+    { url = "https://files.pythonhosted.org/packages/31/40/826100d99ba83fa087702fa2b8482de03efb955c8ef7467adf2088554eb6/baseten_performance_client-0.1.5-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:05ebb680e6ae7471be67edaa570a9e37bbed4c8f127cd357ecebddad149f58c7", size = 5737746, upload-time = "2026-01-30T06:36:53.767Z" },
+    { url = "https://files.pythonhosted.org/packages/60/56/5bb14d8caf8d86e8c29679276c9a7de9ac6c5b6e6e807cd7607b82ec1ca7/baseten_performance_client-0.1.5-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a646d9cd6f4ecd2732bfd4fcb279934e982bbdd589770d9262a57de8f64d7d92", size = 5436024, upload-time = "2026-01-30T06:37:07.329Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/74/e9314f9fbb3ed482a076ae1365ff25434df2aa02b279942227b5232b63fd/baseten_performance_client-0.1.5-cp38-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:e63398c779fd9f02c194810b83aa6d133a8ef2b10840335d62369ba1c8f1fb0a", size = 5714843, upload-time = "2026-01-30T06:36:35.695Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/9e/e3fe5724f328ab55b3e0a58d1d24432ab0131a9bb83b9181a129a3ec9e80/baseten_performance_client-0.1.5-cp38-abi3-manylinux_2_28_armv7l.whl", hash = "sha256:1e6436ccd2e16b347e7c56cbaced4c6d79c908a8315fa49087a46ab9424c65c6", size = 4850782, upload-time = "2026-01-30T06:36:41.461Z" },
+    { url = "https://files.pythonhosted.org/packages/46/5f/4ca4ad5d22415f9c334318aeba20e6324b5c06501d07caca32aa3d2333b5/baseten_performance_client-0.1.5-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:61e26074ea8401441638f034f793cc44e860c42ef32d7387f217383cc2529a99", size = 6036443, upload-time = "2026-01-30T06:37:19.055Z" },
+    { url = "https://files.pythonhosted.org/packages/64/7a/8ed76be21f70b269b0c31f79b8c25eac0caa2c86180094f1c40f5f14072a/baseten_performance_client-0.1.5-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:9d17185b3ccf6967517a2bf9605b5f6835f25beab547876781e91f92c0874b38", size = 5103375, upload-time = "2026-01-30T06:37:22.916Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/d6/4f386ed0825b8799031cc89e123e34fb78bf16858db6a8f959e21f5906fb/baseten_performance_client-0.1.5-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:5a1d60f380dda875aeb35ed31aa1d859b9e04f0eba4e46ca1a62e0ba35feb5f2", size = 5539203, upload-time = "2026-01-30T06:37:25.817Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/38/c9bb285592afc400fda1b7fd54b4b9758b468062d8db68048aebe35e88ff/baseten_performance_client-0.1.5-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c4c4bef13dfb0e1b1436749b4d21d21179cb066b38d94789ddd6ba3e3566eea9", size = 5724862, upload-time = "2026-01-30T06:37:28.884Z" },
+    { url = "https://files.pythonhosted.org/packages/15/f4/ad409cc286dc61d6bdab92ac3f4f00545f5988c2dbda481c446cabb3c8b3/baseten_performance_client-0.1.5-cp38-abi3-win_amd64.whl", hash = "sha256:f00aa89592ff53418dde223a50b82b6a01f3c5315bf188a36687e0ce7cd0b6e1", size = 2809316, upload-time = "2026-01-30T06:37:32.414Z" },
+    { url = "https://files.pythonhosted.org/packages/99/53/def8115561be1d7a4c7ded974400015622710b76d7562452482f6cc6a968/baseten_performance_client-0.1.5-pp310-pypy310_pp73-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:9a06ccad0ec7a6d7ea3cfd59c65d3dd578c7d98bf7d2d0901d348195a5db7cfd", size = 5736529, upload-time = "2026-01-30T06:36:55.808Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/f8/d7a6a51aa2ca2870457d8a6e22b3c789e06c75a42c4ae310c7376ea2ba57/baseten_performance_client-0.1.5-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:c6a9229a3e9334d99abed9cd6b9e47a3f4bbf564ff4ab36a44c2c4784136fda9", size = 5707146, upload-time = "2026-01-30T06:36:37.42Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/50/ade2a69531ba7c485ddd3a6505be91aac30fd45d1a7edaaa30320926d8d2/baseten_performance_client-0.1.5-pp310-pypy310_pp73-manylinux_2_28_armv7l.whl", hash = "sha256:b1b8c8f6a4a421d961adea80bafd1ae9cf5fa9ca1b711e3342975a3c15eeb145", size = 4849396, upload-time = "2026-01-30T06:36:43.555Z" },
+    { url = "https://files.pythonhosted.org/packages/95/3a/1def52754477403bb58e7c0ba9aca4e3322847be59c5951e5a544b2f807b/baseten_performance_client-0.1.5-pp311-pypy311_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b349015ef7998aadb238dbc9178c99ca8be908805784cc7415ad9bf31d7552c3", size = 5531762, upload-time = "2026-01-30T06:37:02.527Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/cc/0d1439d043f15e0b65bac6d49dec1002c8b94959d141d546927d5c568d32/baseten_performance_client-0.1.5-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:592744c6ee0c5fa366d26a62fbe24dee0bce5b7f0eab50563ddce3a4d2eb9193", size = 5431874, upload-time = "2026-01-30T06:37:08.857Z" },
+]
+
+[[package]]
 name = "betterproto"
 version = "2.0.0b7"
 source = { registry = "https://pypi.org/simple" }
@@ -1875,7 +1912,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.2.12"
+version = "1.2.13"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1892,6 +1929,9 @@ aws = [
 ]
 azure-ai = [
     { name = "langchain-azure-ai" },
+]
+baseten = [
+    { name = "langchain-baseten" },
 ]
 community = [
     { name = "langchain-community" },
@@ -1969,6 +2009,7 @@ requires-dist = [
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
+    { name = "langchain-baseten", marker = "extra == 'baseten'", specifier = ">=0.2.0" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
@@ -1986,7 +2027,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.1.1,<1.2.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
@@ -2019,7 +2060,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.3.5"
+version = "1.4.0"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2107,6 +2148,20 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-baseten"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "baseten-performance-client" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5d/fe/8cdbe5987e7d7c2ba5468509d0f0a7207fb89ce575a9017fd282de024d4a/langchain_baseten-0.2.0.tar.gz", hash = "sha256:74c1cf4f251e02a5a6d2277c2253fd257b25e9a9afbdd9602384147efdd8a532", size = 133922, upload-time = "2026-03-17T04:25:47.083Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/f1/16447180565b351399b121a762376d29cacc136612927184a37d0d7c38fa/langchain_baseten-0.2.0-py3-none-any.whl", hash = "sha256:8f7f4ed7cd64a5fde49bd233c775239654db815368f7f1c7bf1a61eb782b5a8b", size = 13471, upload-time = "2026-03-17T04:25:46.248Z" },
+]
+
+[[package]]
 name = "langchain-classic"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2151,7 +2206,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.19"
+version = "1.2.20"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
