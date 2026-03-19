@@ -5,12 +5,13 @@
 # - Reacts to the "external" label applied by pr_labeler.yml,
 #   avoiding a duplicate org membership check.
 # - Also re-checks on PR edits/reopens for PRs that already have the label.
-# - Bypasses the check for PRs with the "trusted-contributor" label, and
-#   automatically reopens/cleans up PRs that receive it after enforcement.
+# - Bypasses the check for PRs with the "trusted-contributor" label.
 # - Validates the PR author is an assignee on at least one linked issue.
 # - Adds a "missing-issue-link" label on failure; removes it on pass.
 # - Automatically reopens PRs that were closed by this workflow once the
 #   check passes (e.g. author edits the body to add a valid issue link).
+# - Respects maintainer reopens: if an org member manually reopens a
+#   previously auto-closed PR, enforcement is skipped so it stays open.
 # - Posts (or updates) a comment explaining the requirement on failure.
 # - Cancels all other in-progress/queued CI runs for the PR on closure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
@@ -52,6 +53,42 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
+
+            // If a maintainer (org member) manually reopened a PR that was
+            // previously auto-closed by this workflow (indicated by the
+            // "missing-issue-link" label), respect that decision and skip
+            // enforcement. Without this, the workflow would immediately
+            // re-close the PR on the "reopened" event.
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            if (context.payload.action === 'reopened' && prLabels.includes('missing-issue-link')) {
+              const sender = context.payload.sender?.login;
+              if (!sender) {
+                throw new Error('Unexpected: reopened event has no sender — cannot check org membership');
+              }
+              try {
+                const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                  org: 'langchain-ai',
+                  username: sender,
+                });
+                if (membership.state === 'active') {
+                  console.log(`Maintainer ${sender} reopened PR #${prNumber} — skipping enforcement`);
+                  core.setOutput('has-link', 'true');
+                  core.setOutput('is-assigned', 'true');
+                  return;
+                } else {
+                  console.log(`${sender} is an org member but state is "${membership.state}" — proceeding with check`);
+                }
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`${sender} is not an org member — proceeding with check`);
+                } else {
+                  const status = e.status ?? 'unknown';
+                  throw new Error(
+                    `Membership check failed for ${sender} (HTTP ${status}): ${e.message}`,
+                  );
+                }
+              }
+            }
 
             // Fetch live labels to handle the race where "external" fires
             // before "trusted-contributor" appears in the event payload.
@@ -274,35 +311,3 @@ jobs:
               ? 'PR must reference an issue using auto-close keywords (e.g., "Fixes #123").'
               : 'PR author must be assigned to the linked issue.';
             core.setFailed(reason);
-
-  # When a trusted-contributor label is added to a PR that was previously
-  # closed by check-issue-link, clean up and reopen it.
-  bypass-trusted-contributor:
-    if: github.event.action == 'labeled' && github.event.label.name == 'trusted-contributor'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-
-    steps:
-      - name: Remove missing-issue-link label and reopen PR
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const prNumber = context.payload.pull_request.number;
-
-            try {
-              await github.rest.issues.removeLabel({
-                owner, repo, issue_number: prNumber, name: 'missing-issue-link',
-              });
-              console.log('Removed missing-issue-link label');
-            } catch (error) {
-              if (error.status !== 404) throw error;
-            }
-
-            if (context.payload.pull_request.state === 'closed') {
-              await github.rest.pulls.update({
-                owner, repo, pull_number: prNumber, state: 'open',
-              });
-              console.log(`Reopened PR #${prNumber}`);
-            }
