@@ -109,15 +109,22 @@ function init(github, owner, repo, config, core) {
           `(expected one of: prefix, suffix, exact, pattern)`
         );
       }
-      return { label: rule.label, test };
+      return { label: rule.label, test, skipExcluded: !!rule.skipExcludedFiles };
     });
   }
 
   function matchFileLabels(files, fileRules) {
     const rules = fileRules || buildFileRules();
+    const excluded = new Set(excludedFiles);
     const labels = new Set();
     for (const rule of rules) {
-      if (files.some(f => rule.test(f.filename ?? ''))) {
+      // skipExcluded: ignore files whose basename is in the top-level
+      // "excludedFiles" list (e.g. uv.lock) so lockfile-only changes
+      // don't trigger package labels.
+      const candidates = rule.skipExcluded
+        ? files.filter(f => !excluded.has((f.filename ?? '').split('/').pop()))
+        : files;
+      if (candidates.some(f => rule.test(f.filename ?? ''))) {
         labels.add(rule.label);
       }
     }
