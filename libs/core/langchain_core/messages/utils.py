@@ -1551,7 +1551,7 @@ def convert_to_openai_messages(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "whats in this"},
+                    {"type": "text", "text": "what's in this"},
                     {
                         "type": "image_url",
                         "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
@@ -1570,7 +1570,7 @@ def convert_to_openai_messages(
                 ],
             ),
             ToolMessage("foobar", tool_call_id="1", name="bar"),
-            {"role": "assistant", "content": "thats nice"},
+            {"role": "assistant", "content": "that's nice"},
         ]
         oai_messages = convert_to_openai_messages(messages)
         # -> [
