@@ -976,7 +976,9 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
     assert isinstance(full, AIMessageChunk)
 
     function_call_blocks = [
-        block for block in full.content if isinstance(block, dict) and block.get("type") == "function_call"
+        block
+        for block in full.content
+        if isinstance(block, dict) and block.get("type") == "function_call"
     ]
     assert len(function_call_blocks) > 0
 
