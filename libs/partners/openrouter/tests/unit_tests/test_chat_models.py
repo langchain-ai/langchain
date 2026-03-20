@@ -2963,3 +2963,8 @@ class TestStreamUsage:
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
+
+
+def test_profile() -> None:
+    model = _make_model()
+    assert model.profile
