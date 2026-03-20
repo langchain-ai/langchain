@@ -3226,3 +3226,66 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pass
     except ValueError as e:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
+
+
+def test__construct_responses_api_input_preserves_phase() -> None:
+    """Test that phase is preserved on assistant message items during roundtrip."""
+    messages: list = [
+        AIMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "thinking...",
+                    "id": "msg_001",
+                    "phase": "commentary",
+                },
+                {
+                    "type": "text",
+                    "text": "final answer",
+                    "id": "msg_002",
+                    "phase": "final_answer",
+                },
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+    assert result[0]["phase"] == "commentary"
+    assert result[1]["phase"] == "final_answer"
+
+
+def test__construct_responses_api_input_no_phase_when_absent() -> None:
+    """Test that phase is not added to assistant message items when not present."""
+    messages: list = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "hello", "id": "msg_123"},
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+    assert "phase" not in result[0]
+
+
+def test__construct_lc_result_from_responses_api_captures_phase() -> None:
+    """Test that phase from output message is stored on content blocks."""
+    output_item = MagicMock()
+    output_item.type = "message"
+    output_item.phase = "commentary"
+    output_item.id = "msg_001"
+    content_block = MagicMock()
+    content_block.type = "output_text"
+    content_block.text = "thinking"
+    content_block.annotations = []
+    output_item.content = [content_block]
+    response = MagicMock()
+    response.error = None
+    response.id = "resp_001"
+    response.output = [output_item]
+    response.usage = None
+    response.model_dump.return_value = {}
+
+    result = _construct_lc_result_from_responses_api(response)
+    msg = result.generations[0].message
+    assert isinstance(msg.content, list)
+    block = cast(dict, msg.content[0])
+    assert block["phase"] == "commentary"
