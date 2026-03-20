@@ -4723,16 +4723,17 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-        content.append(
-            {
-                "type": "function_call",
-                "name": chunk.item.name,
-                "arguments": chunk.item.arguments,
-                "call_id": chunk.item.call_id,
-                "id": chunk.item.id,
-                "index": current_index,
-            }
-        )
+        function_call_content: dict = {
+            "type": "function_call",
+            "name": chunk.item.name,
+            "arguments": chunk.item.arguments,
+            "call_id": chunk.item.call_id,
+            "id": chunk.item.id,
+            "index": current_index,
+        }
+        if getattr(chunk.item, "namespace", None) is not None:
+            function_call_content["namespace"] = chunk.item.namespace
+        content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
