@@ -23,6 +23,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1296,6 +1297,42 @@ def test_check_profile_keys_runs_despite_partner_override() -> None:
     profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
     assert len(profile_warnings) == 1
     assert "partner_only_field" in str(profile_warnings[0].message)
+
+
+def test_resolve_model_profile_auto_populates() -> None:
+    """Base _set_model_profile validator auto-populates from _resolve_model_profile."""
+
+    class AutoProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 42, "tool_calling": True}
+
+    model = AutoProfileModel(messages=iter([]))
+    assert model.profile is not None
+    assert model.profile["max_input_tokens"] == 42
+    assert model.profile["tool_calling"] is True
+
+
+def test_explicit_profile_not_overwritten_by_resolve() -> None:
+    """Explicit profile= kwarg takes precedence over _resolve_model_profile."""
+
+    class AutoProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 42}
+
+    model = AutoProfileModel(messages=iter([]), profile={"max_input_tokens": 999})
+    assert model.profile is not None
+    assert model.profile["max_input_tokens"] == 999
+
+
+def test_resolve_model_profile_none_leaves_profile_none() -> None:
+    """Subclass returning None from _resolve_model_profile leaves profile as None."""
+
+    class NoProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return None
+
+    model = NoProfileModel(messages=iter([]))
+    assert model.profile is None
 
 
 class MockResponse:

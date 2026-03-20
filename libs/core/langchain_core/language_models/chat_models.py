@@ -385,11 +385,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         - Override this validator directly (existing behavior, replaces this
             implementation in Pydantic v2).
         """
-        try:
-            if self.profile is None:
-                self.profile = self._resolve_model_profile()
-        except AttributeError:
-            pass
+        if self.profile is None:
+            self.profile = self._resolve_model_profile()
         return self
 
     @model_validator(mode="after")
@@ -399,11 +396,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Uses a distinct method name so that partner subclasses that override
         `_set_model_profile` do not inadvertently suppress this check.
         """
-        try:
-            if self.profile:
-                _warn_unknown_profile_keys(self.profile)
-        except AttributeError:
-            pass
+        if self.profile:
+            _warn_unknown_profile_keys(self.profile)
         return self
 
     @cached_property
