@@ -1,0 +1,124 @@
+---
+sidebar_label: xProof
+---
+
+# xProof Callback Handler
+
+[xProof](https://xproof.app) is a blockchain certification API that anchors tamper-proof proofs of agent actions on the MultiversX blockchain. The `XProofCallbackHandler` automatically certifies LLM inputs, outputs, and tool calls — giving every agent action a verifiable, on-chain audit trail.
+
+**Key properties:**
+- Content is hashed locally (SHA-256) — no prompt text leaves your environment
+- Each certification is anchored on-chain within seconds
+- Supports the 4W framework (WHO/WHAT/WHEN/WHY) for full agent accountability
+- Free tier: 10 certifications/day, no credit card required
+
+## Installation
+
+```bash
+pip install xproof
+```
+
+## Setup
+
+Get a free API key at [xproof.app](https://xproof.app) or register programmatically:
+
+```python
+from xproof import XProofClient
+
+client = await XProofClient.register("my-langchain-agent")
+print(client.api_key)  # Save this
+```
+
+Set your API key as an environment variable:
+
+```bash
+export XPROOF_API_KEY="pm_your_key_here"
+```
+
+## Usage
+
+```python
+import os
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage
+from xproof.integrations.langchain import XProofCallbackHandler
+
+# Initialize handler
+handler = XProofCallbackHandler(
+    api_key=os.environ["XPROOF_API_KEY"],
+    agent_name="my-langchain-agent",
+)
+
+# Attach to any LangChain model
+llm = ChatOpenAI(
+    model="gpt-4",
+    callbacks=[handler],
+)
+
+# Every call is automatically certified on-chain
+response = llm.invoke([HumanMessage(content="Summarize Q1 earnings report")])
+print(response.content)
+```
+
+## With 4W Metadata (Full Accountability)
+
+The [4W framework](https://xproof.app/docs/4w) captures WHO made the decision, WHAT was decided, WHEN, and WHY:
+
+```python
+handler = XProofCallbackHandler(
+    api_key=os.environ["XPROOF_API_KEY"],
+    agent_name="research-agent",
+    four_w={
+        "who": "erd1abc...wallet-or-agent-id",
+        "why": "Summarize Q1 earnings for compliance report",
+    },
+)
+```
+
+## With a Chain
+
+```python
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+
+prompt = PromptTemplate.from_template("Analyze this data: {data}")
+
+chain = LLMChain(
+    llm=ChatOpenAI(model="gpt-4"),
+    prompt=prompt,
+    callbacks=[handler],
+)
+
+result = chain.invoke({"data": "Revenue: $2.4M, Costs: $1.8M"})
+```
+
+## Verifying a Proof
+
+Each certified action returns a proof ID you can verify independently:
+
+```python
+# Access the last proof from the handler
+last_proof = handler.last_proof
+if last_proof:
+    print(f"Proof ID: {last_proof['id']}")
+    print(f"Transaction: {last_proof['transactionHash']}")
+    print(f"Verify: https://xproof.app/proof/{last_proof['id']}")
+```
+
+## API Reference
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `api_key` | `str` | xProof API key (required) |
+| `agent_name` | `str` | Name identifying this agent |
+| `certify_llm` | `bool` | Certify LLM calls (default: `True`) |
+| `certify_tools` | `bool` | Certify tool calls (default: `True`) |
+| `certify_chains` | `bool` | Certify chain runs (default: `False`) |
+| `four_w` | `dict` | Optional WHO/WHAT/WHEN/WHY metadata |
+| `base_url` | `str` | API base URL (default: `https://xproof.app`) |
+
+## Related
+
+- [xProof Documentation](https://xproof.app/docs)
+- [4W Certification Guide](https://xproof.app/docs/4w)
+- [Python SDK on PyPI](https://pypi.org/project/xproof/)
