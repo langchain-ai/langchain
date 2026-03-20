@@ -2966,5 +2966,6 @@ class TestStreamUsage:
 
 
 def test_profile() -> None:
+    """Test that the model has a profile."""
     model = _make_model()
     assert model.profile
