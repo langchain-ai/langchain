@@ -1347,6 +1347,15 @@ class Chroma(VectorStore):
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
             ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
+
+        # Pre-compute all embeddings once so that ChromaDB batching below only
+        # affects storage, not embedding. Previously each add_texts() call inside
+        # the batch loop re-embedded its slice, causing N_batches embed calls and
+        # N_batches device→CPU transfers on GPU/MPS hardware.
+        all_embeddings: list[list[float]] | None = None
+        if embedding is not None:
+            all_embeddings = embedding.embed_documents(texts)
+
         if hasattr(
             chroma_collection._client,
             "get_max_batch_size",
@@ -1361,14 +1370,21 @@ class Chroma(VectorStore):
                 ids=ids,
                 metadatas=metadatas,  # type: ignore[arg-type]
                 documents=texts,
+                embeddings=all_embeddings,  # type: ignore[arg-type]
             ):
-                chroma_collection.add_texts(
-                    texts=batch[3] if batch[3] else [],
-                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
+                chroma_collection._collection.add(
                     ids=batch[0],
+                    embeddings=batch[1],  # type: ignore[arg-type]
+                    documents=batch[3] if batch[3] else None,
+                    metadatas=batch[2] if batch[2] else None,  # type: ignore[arg-type]
                 )
         else:
-            chroma_collection.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+            chroma_collection._collection.add(
+                ids=ids,
+                embeddings=all_embeddings,  # type: ignore[arg-type]
+                documents=texts,
+                metadatas=metadatas,  # type: ignore[arg-type]
+            )
         return chroma_collection
 
     @classmethod

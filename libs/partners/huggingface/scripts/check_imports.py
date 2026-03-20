@@ -10,8 +10,8 @@ if __name__ == "__main__":
             SourceFileLoader("x", file).load_module()
         except Exception:
             has_failure = True
-            print(file)  # noqa: T201
+            print(file)
             traceback.print_exc()
-            print()  # noqa: T201
+            print()
 
     sys.exit(1 if has_failure else 0)

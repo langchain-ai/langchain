@@ -60,6 +60,10 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """Run encode() on multiple GPUs."""
     show_progress: bool = False
     """Whether to show a progress bar."""
+    batch_size: int = 32
+    """Batch size passed to `encode()`. Larger values improve GPU/MPS throughput
+    at the cost of memory. If `batch_size` is also present in `encode_kwargs` or
+    `query_encode_kwargs`, those values take precedence over this field."""
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
@@ -107,13 +111,13 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def _embed(
         self, texts: list[str], encode_kwargs: dict[str, Any]
     ) -> list[list[float]]:
-        """Embed a text using the HuggingFace transformer model.
+        """Embed a list of texts using the HuggingFace transformer model.
 
         Args:
             texts: The list of texts to embed.
-            encode_kwargs: Keyword arguments to pass when calling the
-                `encode` method for the documents of the SentenceTransformer
-                encode method.
+            encode_kwargs: Keyword arguments to pass when calling the `encode`
+                method of the SentenceTransformer model. Values here take
+                precedence over `batch_size` and the `convert_to_tensor` default.
 
         Returns:
             List of embeddings, one for each text.
@@ -122,6 +126,17 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         import sentence_transformers  # type: ignore[import]
 
         texts = [x.replace("\n", " ") for x in texts]
+
+        # Default to convert_to_tensor=True so all micro-batch outputs stay on
+        # the model's device (MPS/CUDA) and are torch.cat'd there. This avoids
+        # one device→CPU memory transfer per micro-batch; instead there is
+        # exactly one transfer at the very end. encode_kwargs can override this.
+        effective_encode_kwargs = {
+            "batch_size": self.batch_size,
+            "convert_to_tensor": True,
+            **encode_kwargs,
+        }
+
         if self.multi_process:
             pool = self._client.start_multi_process_pool()
             embeddings = self._client.encode_multi_process(texts, pool)
@@ -130,7 +145,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             embeddings = self._client.encode(
                 texts,
                 show_progress_bar=self.show_progress,
-                **encode_kwargs,
+                **effective_encode_kwargs,
             )
 
         if isinstance(embeddings, list):
@@ -140,6 +155,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
             raise TypeError(msg)
 
+        # torch.Tensor path (convert_to_tensor=True default or user override):
+        # single device→CPU transfer, then numpy's C-optimized tolist().
+        if hasattr(embeddings, "cpu"):
+            return embeddings.cpu().numpy().tolist()
+
+        # numpy array path (user set convert_to_tensor=False in encode_kwargs):
         return embeddings.tolist()  # type: ignore[return-type]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

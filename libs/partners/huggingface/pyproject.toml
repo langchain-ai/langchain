@@ -164,3 +164,6 @@ asyncio_mode = "auto"
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
+"scripts/**/*.py" = [
+    "T201", # print() is expected in benchmark/utility scripts
+]
