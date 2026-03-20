@@ -932,6 +932,72 @@ class TestWithStructuredOutput:
         assert rf["type"] == "json_schema"
         assert rf["json_schema"]["strict"] is True
 
+    def test_with_structured_output_json_schema_response_format_reaches_sdk(
+        self,
+    ) -> None:
+        """Test that response_format is forwarded all the way to client.chat.send().
+
+        The existing tests only verify that response_format is stored in
+        RunnableBinding.kwargs (the binding layer).  This test drives the full
+        invocation — bind() → _generate() → _create_message_dicts() →
+        client.chat.send() — and asserts that response_format is present in
+        the actual SDK call, and that ls_structured_output_format is stripped.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        json_content = '{"name": "alice_42", "hair_color": "brown"}'
+        model.client.chat.send.return_value = _make_sdk_response(
+            {
+                **_SIMPLE_RESPONSE_DICT,
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": json_content},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+            }
+        )
+        structured = model.with_structured_output(
+            GenerateUsername, method="json_schema"
+        )
+        structured.invoke([HumanMessage(content="Generate a username")])
+
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "response_format" in call_kwargs, (
+            "response_format was not forwarded to client.chat.send()"
+        )
+        assert "ls_structured_output_format" not in call_kwargs
+        rf = call_kwargs["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == "GenerateUsername"
+        assert "schema" in rf["json_schema"]
+
+    def test_with_structured_output_json_schema_strict_reaches_sdk(self) -> None:
+        """Test that strict=True is forwarded inside response_format to chat.send()."""
+        model = _make_model()
+        model.client = MagicMock()
+        json_content = '{"name": "alice_42", "hair_color": "brown"}'
+        model.client.chat.send.return_value = _make_sdk_response(
+            {
+                **_SIMPLE_RESPONSE_DICT,
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": json_content},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+            }
+        )
+        structured = model.with_structured_output(
+            GenerateUsername, method="json_schema", strict=True
+        )
+        structured.invoke([HumanMessage(content="Generate a username")])
+
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["response_format"]["json_schema"]["strict"] is True
+
 
 # ===========================================================================
 # Message conversion tests
