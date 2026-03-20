@@ -11,8 +11,8 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import override
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -32,7 +32,10 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
-from langchain_core.language_models.model_profile import ModelProfile
+from langchain_core.language_models.model_profile import (
+    ModelProfile,
+    _warn_unknown_profile_keys,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -356,6 +359,46 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        """Resolve the default model profile for this model.
+
+        Override in subclasses to provide auto-populated profile data.
+
+        Subclasses that override this method do not need to define their own
+        `_set_model_profile` validator — the base class validator will call this
+        method automatically.
+
+        Returns:
+            A `ModelProfile` dict, or `None` if no default profile is available.
+        """
+        return None
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden.
+
+        Subclasses can either:
+
+        - Override `_resolve_model_profile` (recommended) and inherit this
+            validator, or
+        - Override this validator directly (existing behavior, replaces this
+            implementation in Pydantic v2).
+        """
+        if self.profile is None:
+            self.profile = self._resolve_model_profile()
+        return self
+
+    @model_validator(mode="after")
+    def _check_profile_keys(self) -> Self:
+        """Warn on unrecognized profile keys.
+
+        Uses a distinct method name so that partner subclasses that override
+        `_set_model_profile` do not inadvertently suppress this check.
+        """
+        if self.profile:
+            _warn_unknown_profile_keys(self.profile)
+        return self
 
     @cached_property
     def _serialized(self) -> dict[str, Any]:

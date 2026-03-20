@@ -6,7 +6,8 @@ from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
-from typing_extensions import override
+from pydantic import model_validator
+from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -1228,6 +1229,73 @@ def test_model_profiles() -> None:
         messages=iter([]), profile={"max_input_tokens": 100}
     )
     assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+def test_model_profile_extra_keys_accepted() -> None:
+    """extra='allow' on ModelProfile means unknown keys don't crash."""
+    model = GenericFakeChatModel(
+        messages=iter([]),
+        profile={"max_input_tokens": 100, "unknown_future_field": True},
+    )
+    assert model.profile is not None
+    assert model.profile.get("unknown_future_field") is True
+
+
+def test_check_profile_keys_warns_on_unknown() -> None:
+    """_check_profile_keys validator warns for undeclared profile keys."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        GenericFakeChatModel(
+            messages=iter([]),
+            profile={"max_input_tokens": 100, "unknown_field": True},
+        )
+
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 1
+    assert "unknown_field" in str(profile_warnings[0].message)
+
+
+def test_check_profile_keys_silent_on_valid() -> None:
+    """_check_profile_keys validator does not warn for declared keys."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        GenericFakeChatModel(
+            messages=iter([]),
+            profile={"max_input_tokens": 100, "tool_calling": True},
+        )
+
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 0
+
+
+def test_check_profile_keys_runs_despite_partner_override() -> None:
+    """Verify _check_profile_keys fires even when _set_model_profile is overridden.
+
+    Uses a distinct validator name so partner overrides do not suppress it.
+    """
+
+    class PartnerModel(GenericFakeChatModel):
+        """Simulates a partner that overrides _set_model_profile."""
+
+        @model_validator(mode="after")
+        def _set_model_profile(self) -> Self:
+            if self.profile is None:
+                profile: dict[str, Any] = {
+                    "max_input_tokens": 100,
+                    "partner_only_field": True,
+                }
+                self.profile = profile  # type: ignore[assignment]
+            return self
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model = PartnerModel(messages=iter([]))
+
+    assert model.profile is not None
+    assert model.profile.get("partner_only_field") is True
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 1
+    assert "partner_only_field" in str(profile_warnings[0].message)
 
 
 class MockResponse:

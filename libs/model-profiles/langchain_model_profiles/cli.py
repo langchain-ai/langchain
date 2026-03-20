@@ -5,6 +5,7 @@ import json
 import re
 import sys
 import tempfile
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -148,6 +149,44 @@ def _apply_overrides(
             if value is not None:
                 merged[key] = value  # noqa: PERF403
     return merged
+
+
+def _warn_undeclared_profile_keys(
+    profiles: dict[str, dict[str, Any]],
+) -> None:
+    """Warn if any profile keys are not declared in `ModelProfile`.
+
+    Requires `langchain-core` to be installed. If it is not available the
+    check is silently skipped (`langchain-core` is a test dependency, not a
+    runtime dependency of this package).
+
+    Args:
+        profiles: Mapping of model IDs to their profile dicts.
+    """
+    try:
+        from langchain_core.language_models.model_profile import ModelProfile
+    except ImportError:
+        # langchain-core is a test dep, not a runtime dep; skip check.
+        return
+
+    from typing import get_type_hints
+
+    declared = set(get_type_hints(ModelProfile).keys())
+
+    all_keys: set[str] = set()
+    for profile in profiles.values():
+        all_keys.update(profile.keys())
+
+    extra = sorted(all_keys - declared)
+    if extra:
+        warnings.warn(
+            f"Profile keys not declared in langchain_core ModelProfile: {extra}. "
+            f"Add these fields to "
+            f"langchain_core.language_models.model_profile.ModelProfile and "
+            f"release langchain-core before publishing partner packages that "
+            f"use these profiles.",
+            stacklevel=2,
+        )
 
 
 def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
@@ -299,6 +338,9 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
         print(f"Adding {len(extra_models)} models from augmentations only...")
     for model_id in sorted(extra_models):
         profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
+
+    # Warn about profile keys not declared in ModelProfile
+    _warn_undeclared_profile_keys(profiles)
 
     # Ensure directory exists
     try:

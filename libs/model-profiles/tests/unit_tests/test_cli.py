@@ -2,9 +2,11 @@
 
 import importlib.util
 from pathlib import Path
+from typing import get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
+from langchain_core.language_models.model_profile import ModelProfile
 
 from langchain_model_profiles.cli import _model_data_to_profile, refresh
 
@@ -364,3 +366,52 @@ def test_model_data_to_profile_text_modalities() -> None:
     profile = _model_data_to_profile(image_gen_model)
     assert profile["text_inputs"] is True
     assert profile["text_outputs"] is False
+
+
+def test_model_data_to_profile_keys_subset_of_model_profile() -> None:
+    """Every key emitted by _model_data_to_profile must be declared in ModelProfile.
+
+    If this test fails, a new field was added to `_model_data_to_profile` in the CLI
+    without a matching field in `langchain_core.language_models.ModelProfile`. Add
+    the field to `ModelProfile` and release langchain-core BEFORE refreshing partner
+    profiles. While `ModelProfile` uses `extra='allow'` so Pydantic won't reject
+    unknown keys at runtime, undeclared fields lack type annotations, won't appear
+    in IDE autocompletion, and are invisible to static analysis.
+    """
+    # Build a model_data dict with every possible field populated so
+    # _model_data_to_profile includes all keys it can emit.
+    model_data = {
+        "id": "test-model",
+        "name": "Test Model",
+        "status": "active",
+        "release_date": "2025-01-01",
+        "last_updated": "2025-01-01",
+        "open_weights": True,
+        "reasoning": True,
+        "tool_call": True,
+        "tool_choice": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": True,
+        "image_url_inputs": True,
+        "image_tool_message": True,
+        "pdf_tool_message": True,
+        "pdf_inputs": True,
+        "limit": {"context": 100000, "output": 4096},
+        "modalities": {
+            "input": ["text", "image", "audio", "video", "pdf"],
+            "output": ["text", "image", "audio", "video"],
+        },
+    }
+
+    profile = _model_data_to_profile(model_data)
+    declared_fields = set(get_type_hints(ModelProfile).keys())
+    emitted_fields = set(profile.keys())
+    extra = emitted_fields - declared_fields
+
+    assert not extra, (
+        f"CLI emits profile keys not declared in ModelProfile: {sorted(extra)}. "
+        f"Add these fields to langchain_core.language_models.model_profile."
+        f"ModelProfile and release langchain-core before refreshing partner "
+        f"profiles."
+    )
