@@ -859,7 +859,7 @@ class ChatOpenRouter(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
-            json_schema = convert_to_json_schema(schema)
+            json_schema = convert_to_json_schema(schema, strict=strict)
             schema_name = json_schema.get("title", "")
             json_schema_spec: dict[str, Any] = {
                 "name": schema_name,

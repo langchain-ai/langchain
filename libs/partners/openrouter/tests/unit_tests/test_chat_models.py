@@ -905,7 +905,12 @@ class TestWithStructuredOutput:
         assert tools[0]["function"]["strict"] is True
 
     def test_with_structured_output_strict_json_schema(self) -> None:
-        """Test that strict is forwarded for json_schema method."""
+        """Test that strict=True sets strict flag and adds additionalProperties: false.
+
+        convert_to_json_schema must receive strict so it injects
+        additionalProperties: false — without it the OpenRouter API cannot
+        guarantee schema enforcement even when strict is requested.
+        """
         model = _make_model()
         structured = model.with_structured_output(
             GenerateUsername, method="json_schema", strict=True
@@ -914,6 +919,7 @@ class TestWithStructuredOutput:
         assert isinstance(bound, RunnableBinding)
         rf = bound.kwargs["response_format"]
         assert rf["json_schema"]["strict"] is True
+        assert rf["json_schema"]["schema"].get("additionalProperties") is False
 
     def test_with_structured_output_json_mode_with_strict_warns_and_forwards(
         self,
@@ -996,7 +1002,9 @@ class TestWithStructuredOutput:
         structured.invoke([HumanMessage(content="Generate a username")])
 
         call_kwargs = model.client.chat.send.call_args[1]
-        assert call_kwargs["response_format"]["json_schema"]["strict"] is True
+        rf = call_kwargs["response_format"]
+        assert rf["json_schema"]["strict"] is True
+        assert rf["json_schema"]["schema"].get("additionalProperties") is False
 
 
 # ===========================================================================
