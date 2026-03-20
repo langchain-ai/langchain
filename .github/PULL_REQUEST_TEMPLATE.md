@@ -4,7 +4,7 @@ Fixes #
 
 Read the full contributing guidelines: https://docs.langchain.com/oss/python/contributing/overview
 
-All contributions must be in English. See our [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
+> **All contributions must be in English.** See the [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
 
 If you paste a large clearly AI generated description here your PR may be IGNORED or CLOSED!
 

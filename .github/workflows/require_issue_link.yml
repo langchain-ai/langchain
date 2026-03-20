@@ -2,38 +2,47 @@
 # GitHub auto-close keywords (Fixes #NNN, Closes #NNN, Resolves #NNN),
 # AND require that the PR author is assigned to the linked issue.
 #
-# - Reacts to the "external" label applied by tag-external-contributions.yml,
+# - Reacts to the "external" label applied by pr_labeler.yml,
 #   avoiding a duplicate org membership check.
 # - Also re-checks on PR edits/reopens for PRs that already have the label.
+# - Bypasses the check for PRs with the "trusted-contributor" label.
 # - Validates the PR author is an assignee on at least one linked issue.
 # - Adds a "missing-issue-link" label on failure; removes it on pass.
 # - Automatically reopens PRs that were closed by this workflow once the
 #   check passes (e.g. author edits the body to add a valid issue link).
-# - Posts a comment explaining the requirement on failure.
+# - Respects maintainer reopens: if an org member manually reopens a
+#   previously auto-closed PR, enforcement is skipped so it stays open.
+# - Posts (or updates) a comment explaining the requirement on failure.
+# - Cancels all other in-progress/queued CI runs for the PR on closure.
 # - Deduplicates comments via an HTML marker so re-runs don't spam.
 #
-# Dependency: tag-external-contributions.yml must run first to apply the
-# "external" label on new PRs. Both workflows trigger on pull_request_target
-# opened events; this workflow additionally listens for the "labeled" event
-# to chain off the external classification.
+# Dependency: pr_labeler.yml must run first to apply the "external" label
+# on new PRs. This workflow chains off that classification via the "labeled"
+# event. It does NOT trigger on "opened" because new PRs have no labels yet,
+# so the job-level gate would always skip — producing noisy "Skipped" checks.
 
 name: Require Issue Link
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened, labeled]
+    types: [edited, reopened, labeled]
 
 permissions:
   contents: read
 
 jobs:
   check-issue-link:
-    # Run when the "external" label is added, or on edit/reopen if already labeled
+    # Run when the "external" label is added, or on edit/reopen if already labeled.
+    # Skip entirely when the PR already carries "trusted-contributor".
     if: >-
-      (github.event.action == 'labeled' && github.event.label.name == 'external') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+      !contains(github.event.pull_request.labels.*.name, 'trusted-contributor') &&
+      (
+        (github.event.action == 'labeled' && github.event.label.name == 'external') ||
+        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+      )
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
 
     steps:
@@ -42,6 +51,57 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            // If a maintainer (org member) manually reopened a PR that was
+            // previously auto-closed by this workflow (indicated by the
+            // "missing-issue-link" label), respect that decision and skip
+            // enforcement. Without this, the workflow would immediately
+            // re-close the PR on the "reopened" event.
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            if (context.payload.action === 'reopened' && prLabels.includes('missing-issue-link')) {
+              const sender = context.payload.sender?.login;
+              if (!sender) {
+                throw new Error('Unexpected: reopened event has no sender — cannot check org membership');
+              }
+              try {
+                const { data: membership } = await github.rest.orgs.getMembershipForUser({
+                  org: 'langchain-ai',
+                  username: sender,
+                });
+                if (membership.state === 'active') {
+                  console.log(`Maintainer ${sender} reopened PR #${prNumber} — skipping enforcement`);
+                  core.setOutput('has-link', 'true');
+                  core.setOutput('is-assigned', 'true');
+                  return;
+                } else {
+                  console.log(`${sender} is an org member but state is "${membership.state}" — proceeding with check`);
+                }
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`${sender} is not an org member — proceeding with check`);
+                } else {
+                  const status = e.status ?? 'unknown';
+                  throw new Error(
+                    `Membership check failed for ${sender} (HTTP ${status}): ${e.message}`,
+                  );
+                }
+              }
+            }
+
+            // Fetch live labels to handle the race where "external" fires
+            // before "trusted-contributor" appears in the event payload.
+            const { data: liveLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number: prNumber,
+            });
+            if (liveLabels.some(l => l.name === 'trusted-contributor')) {
+              console.log('PR has trusted-contributor label — bypassing issue link check');
+              core.setOutput('has-link', 'true');
+              core.setOutput('is-assigned', 'true');
+              return;
+            }
+
             const body = context.payload.pull_request.body || '';
             const pattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#(\d+)/gi;
             const matches = [...body.matchAll(pattern)];
@@ -58,9 +118,15 @@ jobs:
             core.setOutput('has-link', 'true');
 
             // Check whether the PR author is assigned to at least one linked issue
-            const { owner, repo } = context.repo;
             const prAuthor = context.payload.pull_request.user.login;
-            const issueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
+            const MAX_ISSUES = 5;
+            const allIssueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
+            const issueNumbers = allIssueNumbers.slice(0, MAX_ISSUES);
+            if (allIssueNumbers.length > MAX_ISSUES) {
+              core.warning(
+                `PR references ${allIssueNumbers.length} issues — only checking the first ${MAX_ISSUES}`,
+              );
+            }
 
             let assignedToAny = false;
             for (const num of issueNumbers) {
@@ -77,7 +143,16 @@ jobs:
                   console.log(`PR author "${prAuthor}" is NOT assigned to #${num} (assignees: ${assignees.join(', ') || 'none'})`);
                 }
               } catch (error) {
-                console.log(`Could not fetch issue #${num}: ${error.message}`);
+                if (error.status === 404) {
+                  console.log(`Issue #${num} not found — skipping`);
+                } else {
+                  // Non-404 errors (rate limit, server error) must not be
+                  // silently skipped — they could cause false enforcement
+                  // (closing a legitimate PR whose assignment can't be verified).
+                  throw new Error(
+                    `Cannot verify assignee for issue #${num} (${error.status}): ${error.message}`,
+                  );
+                }
               }
             }
 
@@ -90,8 +165,24 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
+            const labelName = 'missing-issue-link';
+
+            // Ensure the label exists (no checkout/shared helper available)
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: labelName });
+            } catch (e) {
+              if (e.status !== 404) throw e;
+              try {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: labelName, color: 'b76e79',
+                });
+              } catch (createErr) {
+                if (createErr.status !== 422) throw createErr;
+              }
+            }
+
             await github.rest.issues.addLabels({
-              owner, repo, issue_number: prNumber, labels: ['missing-issue-link'],
+              owner, repo, issue_number: prNumber, labels: [labelName],
             });
 
       - name: Remove missing-issue-link label and reopen PR
@@ -109,7 +200,9 @@ jobs:
               if (error.status !== 404) throw error;
             }
 
-            // Reopen PR only if it was previously closed by this workflow
+            // Reopen if this workflow previously closed the PR. We check the
+            // event payload labels (not live labels) because we already removed
+            // missing-issue-link above; the payload still reflects pre-step state.
             const labels = context.payload.pull_request.labels.map(l => l.name);
             if (context.payload.pull_request.state === 'closed' && labels.includes('missing-issue-link')) {
               await github.rest.pulls.update({
@@ -192,6 +285,26 @@ jobs:
                 state: 'closed',
               });
               console.log(`Closed PR #${prNumber}`);
+            }
+
+            // Cancel all other in-progress and queued workflow runs for this PR
+            const headSha = context.payload.pull_request.head.sha;
+            for (const status of ['in_progress', 'queued']) {
+              const runs = await github.paginate(
+                github.rest.actions.listWorkflowRunsForRepo,
+                { owner, repo, head_sha: headSha, status, per_page: 100 },
+              );
+              for (const run of runs) {
+                if (run.id === context.runId) continue;
+                try {
+                  await github.rest.actions.cancelWorkflowRun({
+                    owner, repo, run_id: run.id,
+                  });
+                  console.log(`Cancelled ${status} run ${run.id} (${run.name})`);
+                } catch (err) {
+                  console.log(`Could not cancel run ${run.id}: ${err.message}`);
+                }
+              }
             }
 
             const reason = !hasLink

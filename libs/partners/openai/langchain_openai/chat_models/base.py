@@ -146,7 +146,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -3693,8 +3693,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 )
                 return None
 
-            # close things (context managers)
-            width, height = Image.open(BytesIO(response.content)).size
+            with Image.open(BytesIO(response.content)) as img:
+                width, height = img.size
             return width, height
         except httpx.TimeoutException:
             logger.warning("Image URL request timed out after %s seconds", timeout)
@@ -3709,7 +3709,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)
-        width, height = Image.open(BytesIO(data)).size
+        with Image.open(BytesIO(data)) as img:
+            width, height = img.size
         return width, height
     return None
 
@@ -4386,8 +4387,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
                 if msg["content"]:
+                    msg["type"] = "message"
                     input_.append(msg)
             else:
+                msg["type"] = "message"
                 input_.append(msg)
         else:
             input_.append(msg)
