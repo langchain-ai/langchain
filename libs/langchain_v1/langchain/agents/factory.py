@@ -1630,8 +1630,9 @@ def create_agent(
         )
 
     config: RunnableConfig = {"recursion_limit": 10_000}
+    config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
-        config["metadata"] = {"lc_agent_name": name}
+        config["metadata"]["lc_agent_name"] = name
 
     return graph.compile(
         checkpointer=checkpointer,

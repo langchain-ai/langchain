@@ -87,7 +87,7 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["konlpy", "nltk",]
+module = ["konlpy", "nltk", "transformers", "transformers.*",]
 ignore_missing_imports = true
 
 [tool.ruff.format]

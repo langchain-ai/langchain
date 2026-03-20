@@ -38,7 +38,7 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
     "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
-    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
+    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "baseten": ("langchain_baseten", "ChatBaseten", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
