@@ -24,13 +24,11 @@ if TYPE_CHECKING:
 class ToolNode(_ToolNode):
     """ToolNode subclass that gracefully handles ``NotRequired`` state fields.
 
-    Upstream ``langgraph.prebuilt.ToolNode._inject_tool_args`` accesses state
-    fields with ``state[field]`` which raises ``KeyError`` when the field is
-    declared as ``NotRequired`` in the state schema and is absent at runtime.
-
-    This subclass overrides ``_inject_tool_args`` to use ``.get()`` (for dict
-    state) and ``getattr(…, None)`` (for object state) so that missing optional
-    fields resolve to ``None`` instead of crashing.
+    Keep the override as narrow as possible: delegate to upstream
+    ``langgraph.prebuilt.ToolNode._inject_tool_args`` by default, and only
+    recover the specific case where an injected state field is optional and
+    absent at runtime. That keeps LangChain aligned with upstream ToolNode
+    changes while still fixing ``#35585``.
 
     See: https://github.com/langchain-ai/langchain/issues/35585
     """
@@ -41,63 +39,55 @@ class ToolNode(_ToolNode):
         tool_runtime: ToolRuntime,
         tool: BaseTool | None = None,
     ) -> ToolCall:
-        injected = self._injected_args.get(tool_call["name"])
-        if not injected and tool is not None:
-            injected = _get_all_injected_args(tool)
-        if not injected:
-            return tool_call
+        try:
+            return super()._inject_tool_args(tool_call, tool_runtime, tool=tool)
+        except (KeyError, AttributeError) as err:
+            injected = self._injected_args.get(tool_call["name"])
+            if not injected and tool is not None:
+                injected = _get_all_injected_args(tool)
+            if not injected or not injected.state:
+                raise
 
-        tool_call_copy: ToolCall = copy(tool_call)
-        injected_args: dict[str, Any] = {}
-
-        # Inject state
-        if injected.state:
             state: Any = tool_runtime.state
-            # Handle list state by converting to dict
-            if isinstance(state, list):
-                required_fields = list(injected.state.values())
-                if (
-                    len(required_fields) == 1 and required_fields[0] == self._messages_key
-                ) or required_fields[0] is None:
-                    state = {self._messages_key: state}
-                else:
-                    err_msg = (
-                        f"Invalid input to ToolNode. "
-                        f"Tool {tool_call['name']} requires "
-                        f"graph state dict as input."
-                    )
-                    if any(state_field for state_field in injected.state.values()):
-                        required_fields_str = ", ".join(f for f in required_fields if f)
-                        err_msg += f" State should contain fields {required_fields_str}."
-                    raise ValueError(err_msg)
-
-            # Extract state values — use .get() / getattr default so that
-            # NotRequired fields that are absent resolve to None (#35585).
             if isinstance(state, dict):
-                for tool_arg, state_field in injected.state.items():
-                    injected_args[tool_arg] = state.get(state_field) if state_field else state
-            else:
-                for tool_arg, state_field in injected.state.items():
-                    injected_args[tool_arg] = (
-                        getattr(state, state_field, None) if state_field else state
-                    )
-
-        # Inject store
-        if injected.store:
-            if tool_runtime.store is None:
-                msg = (
-                    "Cannot inject store into tools with InjectedStore "
-                    "annotations - please compile your graph with a store."
+                missing_optional_state = any(
+                    state_field and state_field not in state
+                    for state_field in injected.state.values()
                 )
-                raise ValueError(msg)
-            injected_args[injected.store] = tool_runtime.store
+                if not missing_optional_state:
+                    raise
+                injected_args: dict[str, Any] = {
+                    tool_arg: state.get(state_field) if state_field else state
+                    for tool_arg, state_field in injected.state.items()
+                }
+            else:
+                missing_optional_state = any(
+                    state_field and not hasattr(state, state_field)
+                    for state_field in injected.state.values()
+                )
+                if not missing_optional_state:
+                    raise
+                injected_args = {
+                    tool_arg: getattr(state, state_field, None) if state_field else state
+                    for tool_arg, state_field in injected.state.items()
+                }
 
-        # Inject runtime
-        if injected.runtime:
-            injected_args[injected.runtime] = tool_runtime
+            tool_call_copy: ToolCall = copy(tool_call)
 
-        tool_call_copy["args"] = {**tool_call_copy["args"], **injected_args}
-        return tool_call_copy
+            if injected.store:
+                if tool_runtime.store is None:
+                    msg = (
+                        "Cannot inject store into tools with InjectedStore "
+                        "annotations - please compile your graph with a store."
+                    )
+                    raise ValueError(msg) from err
+                injected_args[injected.store] = tool_runtime.store
+
+            if injected.runtime:
+                injected_args[injected.runtime] = tool_runtime
+
+            tool_call_copy["args"] = {**tool_call_copy["args"], **injected_args}
+            return tool_call_copy
 
 
 __all__ = [
