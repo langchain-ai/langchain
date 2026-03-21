@@ -289,7 +289,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         # range(len(inputs)) and result == the full first-attempt output, so the
         # zip still pairs correctly.  However, every idx will already be in
         # results_map, so last_result_map is never actually consulted.
-        last_result_map = dict(zip(last_remaining_indices, result))
+        last_result_map = dict(zip(last_remaining_indices, result, strict=False))
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
@@ -376,7 +376,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         # range(len(inputs)) and result == the full first-attempt output, so the
         # zip still pairs correctly.  However, every idx will already be in
         # results_map, so last_result_map is never actually consulted.
-        last_result_map = dict(zip(last_remaining_indices, result))
+        last_result_map = dict(zip(last_remaining_indices, result, strict=False))
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
