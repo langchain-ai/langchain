@@ -40,8 +40,8 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=4.39.0,<6.0.0",
-    "sentence-transformers>=2.6.0,<3.0.0",
+    "transformers>=5.0.0,<6.0.0",
+    "sentence-transformers>=5.2.0,<6.0.0",
 ]
 
 [dependency-groups]
@@ -53,8 +53,8 @@ test = [
     "scipy>=1.0.0,<2.0.0; python_version < \"3.12\"",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
-    "transformers>=4.39.0,<6.0.0",
-    "sentence-transformers>=2.6.0,<3.0.0",
+    "transformers>=5.0.0,<6.0.0",
+    "sentence-transformers>=5.2.0,<6.0.0",
     "langchain-core",
     "langchain-tests",
     "langchain-community",
@@ -78,6 +78,10 @@ langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "langchain_community", "langchain_community.*",]
+ignore_missing_imports = true
 
 [tool.ruff.format]
 docstring-code-format = true

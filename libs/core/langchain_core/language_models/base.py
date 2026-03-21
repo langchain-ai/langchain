@@ -69,6 +69,8 @@ class LangSmithParams(TypedDict, total=False):
 
     ls_stop: list[str] | None
     """Stop words for generation."""
+    ls_integration: str
+    """Integration that created the trace."""
 
 
 @cache  # Cache the tokenizer
@@ -298,6 +300,22 @@ class BaseLanguageModel(
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
         raise NotImplementedError
+
+    def _get_ls_params(
+        self,
+        stop: list[str] | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        return LangSmithParams()
+
+    def _get_ls_params_with_defaults(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Wrap _get_ls_params to include any additional default parameters."""
+        return self._get_ls_params(stop=stop, **kwargs)
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import os
+import warnings
 from collections.abc import Callable
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
@@ -15,7 +16,7 @@ from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr, ValidationError
@@ -249,7 +250,10 @@ def test__format_output_cached() -> None:
     expected = AIMessage(  # type: ignore[misc]
         "bar",
         usage_metadata={
-            "input_tokens": 9,
+            # input_tokens mirrors Anthropic's raw field (non-cached only).
+            # cache_creation (3) and cache_read (4) are in input_token_details.
+            # total_tokens = 2 + 3 + 4 + 1 = 10 (all token types).
+            "input_tokens": 2,
             "output_tokens": 1,
             "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
@@ -1489,7 +1493,10 @@ def test_usage_metadata_standardization() -> None:
     # Happy path
     usage = UsageModel()
     result = _create_usage_metadata(usage)
-    assert result["input_tokens"] == 15  # 10 + 3 + 2
+    # input_tokens mirrors Anthropic's raw field (non-cached: 10).
+    # Cache tokens live in input_token_details, not in input_tokens.
+    # total_tokens = 10 (input) + 3 (cache_read) + 2 (cache_creation) + 5 (output) = 20
+    assert result["input_tokens"] == 10
     assert result["output_tokens"] == 5
     assert result["total_tokens"] == 20
     assert result.get("input_token_details") == {"cache_read": 3, "cache_creation": 2}
@@ -1516,6 +1523,140 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 0
     assert result["output_tokens"] == 0
     assert result["total_tokens"] == 0
+
+
+def test_usage_metadata_cache_creation_ttl() -> None:
+    """Test _create_usage_metadata with granular cache_creation TTL fields."""
+
+    # Case 1: cache_creation with specific ephemeral TTL tokens (BaseModel)
+    class CacheCreation(BaseModel):
+        ephemeral_5m_input_tokens: int = 100
+        ephemeral_1h_input_tokens: int = 50
+
+    class UsageWithCacheCreation(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: CacheCreation = CacheCreation()
+
+    result = _create_usage_metadata(UsageWithCacheCreation())
+    # input_tokens = 200 (raw Anthropic field, non-cached only).
+    # total_tokens = 200 + 10 (cache_read) + 150 (specific: 100+50) + 30 (output) = 390
+    assert result["input_tokens"] == 200
+    assert result["output_tokens"] == 30
+    assert result["total_tokens"] == 390
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 10
+    # cache_creation should be suppressed to avoid double counting
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 100
+    assert details["ephemeral_1h_input_tokens"] == 50
+
+    # Case 2: cache_creation as a dict
+    class UsageWithCacheCreationDict(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: dict = {
+            "ephemeral_5m_input_tokens": 80,
+            "ephemeral_1h_input_tokens": 70,
+        }
+
+    result = _create_usage_metadata(UsageWithCacheCreationDict())
+    # input_tokens = 200 (raw). total = 200 + 10 + (80+70) + 30 = 390
+    assert result["input_tokens"] == 200
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 80
+    assert details["ephemeral_1h_input_tokens"] == 70
+
+    # Case 3: cache_creation exists but specific keys are zero — falls back to
+    # generic cache_creation_input_tokens
+    class CacheCreationZero(BaseModel):
+        ephemeral_5m_input_tokens: int = 0
+        ephemeral_1h_input_tokens: int = 0
+
+    class UsageWithCacheCreationZero(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 50
+        cache_creation: CacheCreationZero = CacheCreationZero()
+
+    result = _create_usage_metadata(UsageWithCacheCreationZero())
+    # input_tokens = 200 (raw). specific_cache_creation = 0, falls back to
+    # cache_creation_input_tokens (50).
+    # total = 200 + 10 (cache_read) + 50 (cache_creation) + 30 (output) = 290
+    assert result["input_tokens"] == 200
+    assert result["output_tokens"] == 30
+    assert result["total_tokens"] == 290
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 10
+    assert details["cache_creation"] == 50
+
+    # Case 4: cache_creation exists but specific keys are missing from the dict
+    class CacheCreationEmpty(BaseModel):
+        pass
+
+    class UsageWithCacheCreationEmpty(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 15
+        cache_creation: CacheCreationEmpty = CacheCreationEmpty()
+
+    result = _create_usage_metadata(UsageWithCacheCreationEmpty())
+    # input_tokens = 100 (raw). specific_cache_creation = 0, falls back to
+    # cache_creation_input_tokens (15).
+    # total = 100 + 5 (cache_read) + 15 (cache_creation) + 20 (output) = 140
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 20
+    assert result["total_tokens"] == 140
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 15
+
+    # Case 5: only one ephemeral key is non-zero
+    class CacheCreationPartial(BaseModel):
+        ephemeral_5m_input_tokens: int = 0
+        ephemeral_1h_input_tokens: int = 75
+
+    class UsageWithPartialCache(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 10
+        cache_read_input_tokens: int = 0
+        cache_creation_input_tokens: int = 75
+        cache_creation: CacheCreationPartial = CacheCreationPartial()
+
+    result = _create_usage_metadata(UsageWithPartialCache())
+    # input_tokens = 100 (raw). specific_cache_creation = 75 > 0 (from 1h key).
+    # total = 100 + 0 (cache_read) + 75 (cache_creation) + 10 (output) = 185
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 10
+    assert result["total_tokens"] == 185
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_1h_input_tokens"] == 75
+    # ephemeral_5m_input_tokens is 0 — still included since 0 is not None
+    assert details["ephemeral_5m_input_tokens"] == 0
+
+    # Case 6: no cache_creation field at all (the pre-existing path)
+    class UsageNoCacheCreation(BaseModel):
+        input_tokens: int = 50
+        output_tokens: int = 25
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 10
+
+    result = _create_usage_metadata(UsageNoCacheCreation())
+    # input_tokens = 50 (raw). No cache_creation TTL obj.
+    # total = 50 + 5 (cache_read) + 10 (cache_creation) + 25 (output) = 90
+    assert result["input_tokens"] == 50
+    assert result["output_tokens"] == 25
+    assert result["total_tokens"] == 90
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 5
+    assert details["cache_creation"] == 10
 
 
 class FakeTracer(BaseTracer):
@@ -1584,63 +1725,14 @@ def test_cache_control_kwarg() -> None:
 
     messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
     payload = llm._get_request_payload(messages)
+    assert "cache_control" not in payload
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["cache_control"] == {"type": "ephemeral"}
     assert payload["messages"] == [
         {"role": "user", "content": "foo"},
         {"role": "assistant", "content": "bar"},
         {"role": "user", "content": "baz"},
-    ]
-
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-    ]
-    assert isinstance(messages[-1].content, str)  # test no mutation
-
-    messages = [
-        HumanMessage("foo"),
-        AIMessage("bar"),
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux"},
-            ]
-        ),
-    ]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
-            ],
-        },
-    ]
-    assert "cache_control" not in messages[-1].content[-1]  # test no mutation
-
-
-def test_cache_control_kwarg_skips_empty_messages() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)
-
-    messages = [HumanMessage("foo"), AIMessage(content=[])]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-        {"role": "assistant", "content": []},
     ]
 
 
@@ -1689,8 +1781,6 @@ def test_streaming_cache_token_reporting() -> None:
 
     from anthropic.types import MessageDeltaUsage
 
-    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
-
     # Create a mock message_start event
     mock_message = MagicMock()
     mock_message.model = MODEL_NAME
@@ -1720,8 +1810,10 @@ def test_streaming_cache_token_reporting() -> None:
     message_delta_event.usage = mock_delta_usage
     message_delta_event.delta = mock_delta
 
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
     # Test message_start event
-    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_start_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -1729,7 +1821,7 @@ def test_streaming_cache_token_reporting() -> None:
     )
 
     # Test message_delta event - should contain complete usage metadata (w/ cache)
-    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_delta_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -2006,9 +2098,9 @@ def test_tool_search_with_deferred_tools() -> None:
 
     # Find the calculator tool in the payload
     calculator_tool = None
-    for tool in payload["tools"]:
-        if isinstance(tool, dict) and tool.get("name") == "calculator":
-            calculator_tool = tool
+    for tool_ in payload["tools"]:
+        if isinstance(tool_, dict) and tool_.get("name") == "calculator":
+            calculator_tool = tool_
             break
 
     assert calculator_tool is not None
@@ -2263,7 +2355,6 @@ def test_output_config_without_effort() -> None:
 
 def test_extras_with_defer_loading() -> None:
     """Test that extras with `defer_loading` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(extras={"defer_loading": True})
     def get_weather(location: str) -> str:
@@ -2292,7 +2383,6 @@ def test_extras_with_defer_loading() -> None:
 
 def test_extras_with_cache_control() -> None:
     """Test that extras with `cache_control` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(extras={"cache_control": {"type": "ephemeral"}})
     def search_files(query: str) -> str:
@@ -2317,9 +2407,31 @@ def test_extras_with_cache_control() -> None:
     assert search_tool.get("cache_control") == {"type": "ephemeral"}
 
 
+def test_extras_with_fine_grained_streaming() -> None:
+    @tool(extras={"eager_input_streaming": True})
+    def tell_story(story: str) -> None:
+        """Tell a story."""
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([tell_story])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    tell_story_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "tell_story":
+            tell_story_tool = tool_def
+            break
+
+    assert tell_story_tool is not None
+    assert tell_story_tool.get("eager_input_streaming") is True
+
+
 def test_extras_with_input_examples() -> None:
     """Test that extras with `input_examples` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(
         extras={
@@ -2362,7 +2474,6 @@ def test_extras_with_input_examples() -> None:
 
 def test_extras_with_multiple_fields() -> None:
     """Test that multiple extra fields can be specified together."""
-    from langchain_core.tools import tool
 
     @tool(
         extras={
@@ -2520,3 +2631,89 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, anthropic.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/35539.
+
+    Anthropic API rejects forced tool_choice when thinking is enabled:
+    "Thinking may not be enabled when tool_choice forces tool use."
+    bind_tools should drop forced tool_choice and warn.
+    """
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+
+    # tool_choice="any" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+    assert "thinking is enabled" in str(w[0].message)
+
+    # tool_choice="auto" should NOT be dropped (auto is allowed)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "auto"}
+    assert len(w) == 0
+
+    # tool_choice=specific tool name should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "tool" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "tool", "name": "GetWeather"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "any" should also be dropped
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "any"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+
+def test_bind_tools_keeps_forced_tool_choice_when_thinking_disabled() -> None:
+    """When thinking is not enabled, forced tool_choice should pass through."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    # No thinking — tool_choice="any" should pass through
+    result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly None
+    chat_model_none = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=None,
+    )
+    result = chat_model_none.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly disabled — should NOT drop tool_choice
+    chat_model_disabled = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "disabled"},
+    )
+    result = chat_model_disabled.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
