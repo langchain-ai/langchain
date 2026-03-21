@@ -2034,6 +2034,14 @@ class BaseChatOpenAI(BaseChatModel):
                     f"Received: {tool_choice}"
                 )
                 raise ValueError(msg)
+            # Reasoning models do not support tool_choice='required'.
+            # Downgrade to 'auto' to avoid API errors.
+            if tool_choice == "required" and (
+                (self.profile is not None and self.profile.get("reasoning_output"))
+                or self.reasoning_effort is not None
+                or self.reasoning is not None
+            ):
+                tool_choice = "auto"
             kwargs["tool_choice"] = tool_choice
 
         if response_format:

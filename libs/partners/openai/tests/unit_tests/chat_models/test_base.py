@@ -918,6 +918,63 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
 
 
 @pytest.mark.parametrize(
+    ("tool_choice_input", "reasoning_kwargs", "expected_tool_choice"),
+    [
+        # Reasoning model via profile: 'any' -> 'auto' (not 'required')
+        (
+            "any",
+            {"profile": {"reasoning_output": True}},
+            "auto",
+        ),
+        # Reasoning model via reasoning_effort: 'required' -> 'auto'
+        (
+            "required",
+            {"reasoning_effort": "medium"},
+            "auto",
+        ),
+        # Reasoning model via reasoning: True -> 'auto'
+        (
+            True,
+            {"reasoning": {"effort": "medium"}},
+            "auto",
+        ),
+        # Non-reasoning model: 'any' -> 'required' (unchanged behavior)
+        (
+            "any",
+            {},
+            "required",
+        ),
+        # Reasoning model with 'auto' stays 'auto'
+        (
+            "auto",
+            {"profile": {"reasoning_output": True}},
+            "auto",
+        ),
+        # Reasoning model with 'none' stays 'none'
+        (
+            "none",
+            {"profile": {"reasoning_output": True}},
+            "none",
+        ),
+    ],
+)
+def test_bind_tools_tool_choice_reasoning_models(
+    tool_choice_input: Any,
+    reasoning_kwargs: dict,
+    expected_tool_choice: str,
+) -> None:
+    """Test that reasoning models downgrade tool_choice='required' to 'auto'."""
+    llm = ChatOpenAI(
+        model="test-model",
+        temperature=0,
+        api_key=SecretStr("test"),
+        **reasoning_kwargs,
+    )
+    bound = llm.bind_tools(tools=[GenerateUsername], tool_choice=tool_choice_input)
+    assert bound.kwargs["tool_choice"] == expected_tool_choice  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
     "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
 )
 @pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
