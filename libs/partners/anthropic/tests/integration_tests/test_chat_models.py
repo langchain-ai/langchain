@@ -1231,7 +1231,7 @@ def test_image_tool_calling() -> None:
         },
     ]
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-    image_data = b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
     human_content.append(
         {
             "type": "image",
