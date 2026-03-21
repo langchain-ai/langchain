@@ -956,6 +956,18 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
             {"profile": {"reasoning_output": True}},
             "none",
         ),
+        # reasoning_effort='none' should NOT trigger downgrade
+        (
+            "any",
+            {"reasoning_effort": "none"},
+            "required",
+        ),
+        # reasoning={'effort': 'none'} should NOT trigger downgrade
+        (
+            "any",
+            {"reasoning": {"effort": "none"}},
+            "required",
+        ),
     ],
 )
 def test_bind_tools_tool_choice_reasoning_models(
@@ -972,6 +984,23 @@ def test_bind_tools_tool_choice_reasoning_models(
     )
     bound = llm.bind_tools(tools=[GenerateUsername], tool_choice=tool_choice_input)
     assert bound.kwargs["tool_choice"] == expected_tool_choice  # type: ignore[attr-defined]
+
+
+def test_bind_tools_tool_choice_reasoning_model_warning() -> None:
+    """Test that a warning is emitted when downgrading tool_choice for reasoning."""
+    llm = ChatOpenAI(
+        model="o3",
+        temperature=0,
+        api_key=SecretStr("test"),
+        reasoning_effort="medium",
+    )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        bound = llm.bind_tools(tools=[GenerateUsername], tool_choice="any")
+        assert bound.kwargs["tool_choice"] == "auto"  # type: ignore[attr-defined]
+        assert len(w) == 1
+        assert "tool_choice='required' is not supported" in str(w[0].message)
+        assert "o3" in str(w[0].message)
 
 
 @pytest.mark.parametrize(

@@ -2034,13 +2034,26 @@ class BaseChatOpenAI(BaseChatModel):
                     f"Received: {tool_choice}"
                 )
                 raise ValueError(msg)
-            # Reasoning models do not support tool_choice='required'.
-            # Downgrade to 'auto' to avoid API errors.
+            # Reasoning models (o-series, gpt-5, and custom models with
+            # reasoning params) do not support tool_choice='required'.
+            # Downgrade to 'auto' to avoid API errors. Models with reasoning
+            # explicitly disabled (effort='none') are treated as non-reasoning.
             if tool_choice == "required" and (
                 (self.profile is not None and self.profile.get("reasoning_output"))
-                or self.reasoning_effort is not None
-                or self.reasoning is not None
+                or (
+                    self.reasoning_effort is not None
+                    and self.reasoning_effort != "none"
+                )
+                or (
+                    self.reasoning is not None
+                    and (self.reasoning or {}).get("effort") != "none"
+                )
             ):
+                warnings.warn(
+                    f"tool_choice='required' is not supported for reasoning model "
+                    f"'{self.model_name}'. Downgrading to tool_choice='auto'. "
+                    f"Pass tool_choice='auto' explicitly to suppress this warning."
+                )
                 tool_choice = "auto"
             kwargs["tool_choice"] = tool_choice
 
