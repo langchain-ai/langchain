@@ -376,3 +376,41 @@ def test_create_agent_error_only_model_controllable_params() -> None:
     assert "super_secret_password" not in content, (
         "Error should NOT contain password value (from system-injected state)"
     )
+
+
+def test_create_agent_rejects_tool_call_with_empty_id() -> None:
+    """Tool calls must provide a non-empty string id before execution."""
+
+    @dec_tool
+    def echo(text: str) -> str:
+        """Return the provided text."""
+        return text
+
+    malformed_tool_call = {"name": "echo", "args": {"text": "hi"}, "id": ""}
+
+    agent = create_agent(
+        model=FakeToolCallingModel(tool_calls=[[malformed_tool_call]]),
+        tools=[echo],
+    )
+
+    with pytest.raises(ValueError, match=r"requires a non-empty string 'id'"):
+        agent.invoke({"messages": [HumanMessage("hi")]} )
+
+
+def test_create_agent_rejects_tool_call_missing_name() -> None:
+    """Tool calls must include a non-empty name to be dispatched."""
+
+    @dec_tool
+    def echo(text: str) -> str:
+        """Return the provided text."""
+        return text
+
+    malformed_tool_call = {"id": "call-1", "args": {"text": "hi"}, "name": ""}
+
+    agent = create_agent(
+        model=FakeToolCallingModel(tool_calls=[[malformed_tool_call]]),
+        tools=[echo],
+    )
+
+    with pytest.raises(ValueError, match=r"invalid name; expected a non-empty string"):
+        agent.invoke({"messages": [HumanMessage("hi")]})

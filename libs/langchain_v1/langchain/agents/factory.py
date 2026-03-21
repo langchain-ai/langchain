@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -143,6 +144,64 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
             f.name: getattr(req, f.name) for f in fields(req) if f.name != "runtime"
         }
     return filtered
+
+
+def _validate_tool_call_payload(
+    tool_call: Mapping[str, Any],
+    *,
+    index: int | None = None,
+) -> None:
+    """Validate that a model-produced tool call is well-formed.
+
+    Args:
+        tool_call: The tool call payload from the model response.
+        index: Optional positional index for clearer error messages.
+
+    Raises:
+        ValueError: If the tool call is missing required fields or has invalid types.
+    """
+
+    label = f"Tool call #{index + 1}" if index is not None else "Tool call"
+
+    required_fields = ("id", "name", "args")
+    missing_fields = [field for field in required_fields if field not in tool_call]
+    if missing_fields:
+        msg = f"{label} is missing required field(s) {missing_fields}."
+        raise ValueError(msg)
+
+    name = tool_call["name"]
+    if not isinstance(name, str) or not name.strip():
+        msg = f"{label} has invalid name; expected a non-empty string, got {name!r}."
+        raise ValueError(msg)
+
+    tool_id = tool_call["id"]
+    if not isinstance(tool_id, str) or not tool_id.strip():
+        msg = (
+            f"{label} (name='{name}') requires a non-empty string 'id'; "
+            f"got {tool_id!r}."
+        )
+        raise ValueError(msg)
+
+    args = tool_call["args"]
+    if not isinstance(args, Mapping):
+        msg = (
+            f"{label} (name='{name}') must provide 'args' as a mapping; "
+            f"got {type(args).__name__}."
+        )
+        raise ValueError(msg)
+
+
+def _validate_tool_calls(tool_calls: Sequence[Mapping[str, Any]]) -> None:
+    """Validate all tool calls before they are dispatched for execution."""
+
+    for index, tool_call in enumerate(tool_calls):
+        if not isinstance(tool_call, Mapping):
+            msg = (
+                f"Tool call #{index + 1} must be a mapping with 'id', 'name', and 'args' keys; "
+                f"got {type(tool_call).__name__}."
+            )
+            raise ValueError(msg)
+        _validate_tool_call_payload(tool_call, index=index)
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1034,6 +1093,9 @@ def create_agent(
             effective_response_format: The actual strategy used (may differ from initial
                 if auto-detected).
         """
+        if output.tool_calls:
+            _validate_tool_calls(output.tool_calls)
+
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
             if not output.tool_calls:
@@ -1703,6 +1765,9 @@ def _make_model_to_tools_edge(
         # 2. if no AIMessage exists (e.g., messages were cleared), exit the loop
         if last_ai_message is None:
             return end_destination
+
+        if last_ai_message.tool_calls:
+            _validate_tool_calls(last_ai_message.tool_calls)
 
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
