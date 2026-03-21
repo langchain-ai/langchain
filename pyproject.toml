@@ -53,6 +53,12 @@ test = [
 ]
 
 
+[tool.uv.override-dependencies]
+# langchain-together pins langchain-openai to ^0.3 which blocks v1.x+ in user projects.
+# Override the constraint so the monorepo and downstream users can resolve with any
+# compatible 0.x–2.x release.  See: https://github.com/langchain-ai/langchain/issues/36104
+langchain-openai = [">=0.1,<3"]
+
 [tool.uv.sources]
 langchain-core = { path = "./libs/core", editable = true }
 langchain-text-splitters = { path = "./libs/text-splitters", editable = true }
