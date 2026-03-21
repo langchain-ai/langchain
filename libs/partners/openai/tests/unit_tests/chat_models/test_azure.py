@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 
+import httpx
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import SecretStr
@@ -174,3 +175,24 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_azure_reuses_default_httpx_clients() -> None:
+    """AzureChatOpenAI should reuse default httpx clients across instances."""
+    llm1 = AzureChatOpenAI(
+        api_key="xyz",  # type: ignore[arg-type]
+        azure_endpoint="https://example-resource.openai.azure.com/",
+        azure_deployment="gpt-4o-mini",
+        openai_api_version="2024-05-01-preview",
+    )
+    llm2 = AzureChatOpenAI(
+        api_key="xyz",  # type: ignore[arg-type]
+        azure_endpoint="https://example-resource.openai.azure.com/",
+        azure_deployment="gpt-4o-mini",
+        openai_api_version="2024-05-01-preview",
+    )
+
+    assert isinstance(llm1.root_client._client, httpx.Client)
+    assert isinstance(llm1.root_async_client._client, httpx.AsyncClient)
+    assert llm1.root_client._client is llm2.root_client._client
+    assert llm1.root_async_client._client is llm2.root_async_client._client
