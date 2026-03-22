@@ -971,7 +971,7 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     def model_post_init(self, _context: Any, /) -> None:
-        """Add langchain-openai version to metadata."""
+        """Add `langchain-openai` version to metadata."""
         super().model_post_init(_context)
         self._add_version("langchain-openai", __version__)
 

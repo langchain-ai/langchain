@@ -27,8 +27,8 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_deepseek.data._profiles import _PROFILES
 from langchain_deepseek._version import __version__
+from langchain_deepseek.data._profiles import _PROFILES
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
