@@ -71,8 +71,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
+from langchain_groq._version import __version__
 from langchain_groq.data._profiles import _PROFILES
-from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 _STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(

@@ -16,7 +16,7 @@ from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 
-from langchain_fireworks.version import __version__
+from langchain_fireworks._version import __version__
 
 logger = logging.getLogger(__name__)
 

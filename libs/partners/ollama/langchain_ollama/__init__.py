@@ -13,26 +13,10 @@ service.
 
 """
 
-from importlib import metadata
-from importlib.metadata import PackageNotFoundError
-
+from langchain_ollama._version import __version__
 from langchain_ollama.chat_models import ChatOllama
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
-
-
-def _raise_package_not_found_error() -> None:
-    raise PackageNotFoundError
-
-
-try:
-    if __package__ is None:
-        _raise_package_not_found_error()
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
-del metadata  # optional, avoids polluting the results of dir(__package__)
 
 __all__ = [
     "ChatOllama",

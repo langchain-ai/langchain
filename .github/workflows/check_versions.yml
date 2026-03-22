@@ -18,13 +18,13 @@ on:
       - "libs/partners/openai/pyproject.toml"
       - "libs/partners/openai/langchain_openai/_version.py"
       - "libs/partners/groq/pyproject.toml"
-      - "libs/partners/groq/langchain_groq/version.py"
+      - "libs/partners/groq/langchain_groq/_version.py"
       - "libs/partners/deepseek/pyproject.toml"
       - "libs/partners/deepseek/langchain_deepseek/_version.py"
       - "libs/partners/xai/pyproject.toml"
       - "libs/partners/xai/langchain_xai/_version.py"
       - "libs/partners/fireworks/pyproject.toml"
-      - "libs/partners/fireworks/langchain_fireworks/version.py"
+      - "libs/partners/fireworks/langchain_fireworks/_version.py"
       - "libs/partners/mistralai/pyproject.toml"
       - "libs/partners/mistralai/langchain_mistralai/_version.py"
       - "libs/partners/ollama/pyproject.toml"
@@ -95,7 +95,7 @@ jobs:
 
           check_version "langchain-groq" \
             libs/partners/groq/pyproject.toml \
-            libs/partners/groq/langchain_groq/version.py \
+            libs/partners/groq/langchain_groq/_version.py \
             "__version__" || FAILED=1
 
           check_version "langchain-deepseek" \
@@ -110,7 +110,7 @@ jobs:
 
           check_version "langchain-fireworks" \
             libs/partners/fireworks/pyproject.toml \
-            libs/partners/fireworks/langchain_fireworks/version.py \
+            libs/partners/fireworks/langchain_fireworks/_version.py \
             "__version__" || FAILED=1
 
           check_version "langchain-mistralai" \

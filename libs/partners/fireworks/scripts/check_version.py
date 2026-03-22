@@ -1,7 +1,7 @@
-"""Check version consistency between `pyproject.toml` and `version.py`.
+"""Check version consistency between `pyproject.toml` and `_version.py`.
 
 This script validates that the version defined in pyproject.toml matches the
-`__version__` variable in `langchain_fireworks/version.py`. Intended for use as a
+`__version__` variable in `langchain_fireworks/_version.py`. Intended for use as a
 pre-commit hook to prevent version mismatches.
 """
 
@@ -18,7 +18,7 @@ def get_pyproject_version(pyproject_path: Path) -> str | None:
 
 
 def get_version_py_version(version_path: Path) -> str | None:
-    """Extract `__version__` from `version.py`.
+    """Extract `__version__` from `_version.py`.
 
     Returns ``None`` if the version is set dynamically (e.g. via
     ``importlib.metadata``), indicating the check should be skipped.
@@ -34,7 +34,7 @@ def main() -> int:
     package_dir = script_dir.parent
 
     pyproject_path = package_dir / "pyproject.toml"
-    version_path = package_dir / "langchain_fireworks" / "version.py"
+    version_path = package_dir / "langchain_fireworks" / "_version.py"
 
     if not pyproject_path.exists():
         print(f"Error: {pyproject_path} not found")  # noqa: T201
@@ -60,7 +60,7 @@ def main() -> int:
     if pyproject_version != version_py_version:
         print("Error: Version mismatch detected!")  # noqa: T201
         print(f"  pyproject.toml: {pyproject_version}")  # noqa: T201
-        print(f"  langchain_fireworks/version.py: {version_py_version}")  # noqa: T201
+        print(f"  langchain_fireworks/_version.py: {version_py_version}")  # noqa: T201
         return 1
 
     print(f"Version check passed: {pyproject_version}")  # noqa: T201
