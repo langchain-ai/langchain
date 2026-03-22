@@ -310,6 +310,19 @@ class LLMMathChain(Chain):
             llm: a language model
             prompt: a prompt template
             **kwargs: additional arguments
+
+        Returns:
+            An ``LLMMathChain`` instance configured with the provided language model.
+
+        Example:
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_classic.chains.llm_math.base import LLMMathChain
+
+                chain = LLMMathChain.from_llm(ChatOpenAI(model="gpt-4o-mini"))
+                result = chain.invoke({"question": "What is 37593 * 67?"})
+                print(result["answer"])
         """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)
