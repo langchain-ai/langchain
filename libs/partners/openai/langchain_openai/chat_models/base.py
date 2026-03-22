@@ -4293,6 +4293,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         # Aggregate content blocks for a single message
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
+                            phase = block.get("phase")
                             if block_type in ("text", "output_text"):
                                 # Defensive check: block may not have "text" key
                                 text = block.get("text")
@@ -4318,17 +4319,20 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                     if "content" not in item:
                                         item["content"] = []
                                     item["content"].append(new_block)
+                                    if phase is not None:
+                                        item["phase"] = phase
                                     break
                             else:
                                 # If no block with this ID, create a new one
-                                input_.append(
-                                    {
-                                        "type": "message",
-                                        "content": [new_block],
-                                        "role": "assistant",
-                                        "id": msg_id,
-                                    }
-                                )
+                                new_item: dict = {
+                                    "type": "message",
+                                    "content": [new_block],
+                                    "role": "assistant",
+                                    "id": msg_id,
+                                }
+                                if phase is not None:
+                                    new_item["phase"] = phase
+                                input_.append(new_item)
                         elif block_type in (
                             "reasoning",
                             "compaction",
@@ -4482,6 +4486,7 @@ def _construct_lc_result_from_responses_api(
     additional_kwargs: dict = {}
     for output in response.output:
         if output.type == "message":
+            phase = getattr(output, "phase", None)
             for content in output.content:
                 if content.type == "output_text":
                     block = {
@@ -4495,13 +4500,20 @@ def _construct_lc_result_from_responses_api(
                         else [],
                         "id": output.id,
                     }
+                    if phase is not None:
+                        block["phase"] = phase
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
-                    content_blocks.append(
-                        {"type": "refusal", "refusal": content.refusal, "id": output.id}
-                    )
+                    refusal_block = {
+                        "type": "refusal",
+                        "refusal": content.refusal,
+                        "id": output.id,
+                    }
+                    if phase is not None:
+                        refusal_block["phase"] = phase
+                    content_blocks.append(refusal_block)
         elif output.type == "function_call":
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
@@ -4722,6 +4734,16 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
+        elif phase := getattr(chunk.item, "phase", None):
+            _advance(chunk.output_index, 0)
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "phase": phase,
+                    "index": current_index,
+                }
+            )
         else:
             pass
     elif (
