@@ -1,6 +1,6 @@
-from langchain_xai import __all__
+from langchain_deepseek import __all__
 
-EXPECTED_ALL = ["__version__", "ChatXAI"]
+EXPECTED_ALL = ["__version__", "ChatDeepSeek"]
 
 
 def test_all_imports() -> None:

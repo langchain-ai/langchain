@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
-from importlib.metadata import PackageNotFoundError, version as _get_pkg_version
 from operator import itemgetter
 from typing import Any, Literal, cast
 
@@ -70,12 +69,8 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
-
-try:
-    _PKG_VERSION = _get_pkg_version("langchain-openrouter")
-except PackageNotFoundError:
-    _PKG_VERSION = ""
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
@@ -310,7 +305,7 @@ class ChatOpenRouter(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
-        self._add_version("langchain-openrouter", _PKG_VERSION)
+        self._add_version("langchain-openrouter", __version__)
         if not (self.openrouter_api_key and self.openrouter_api_key.get_secret_value()):
             msg = "OPENROUTER_API_KEY must be set."
             raise ValueError(msg)

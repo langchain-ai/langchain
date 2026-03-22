@@ -1,0 +1,135 @@
+# Ensures version numbers in pyproject.toml and version.py/_version.py stay in
+# sync for packages that use hardcoded version strings.
+#
+# Packages using `importlib.metadata.version(__package__)` are auto-synced and
+# skipped by this check.
+
+name: "Check Version Equality"
+
+on:
+  pull_request:
+    paths:
+      - "libs/core/pyproject.toml"
+      - "libs/core/langchain_core/version.py"
+      - "libs/langchain_v1/pyproject.toml"
+      - "libs/langchain_v1/langchain/__init__.py"
+      - "libs/partners/anthropic/pyproject.toml"
+      - "libs/partners/anthropic/langchain_anthropic/_version.py"
+      - "libs/partners/openai/pyproject.toml"
+      - "libs/partners/openai/langchain_openai/_version.py"
+      - "libs/partners/groq/pyproject.toml"
+      - "libs/partners/groq/langchain_groq/version.py"
+      - "libs/partners/deepseek/pyproject.toml"
+      - "libs/partners/deepseek/langchain_deepseek/_version.py"
+      - "libs/partners/xai/pyproject.toml"
+      - "libs/partners/xai/langchain_xai/_version.py"
+      - "libs/partners/fireworks/pyproject.toml"
+      - "libs/partners/fireworks/langchain_fireworks/version.py"
+      - "libs/partners/mistralai/pyproject.toml"
+      - "libs/partners/mistralai/langchain_mistralai/_version.py"
+      - "libs/partners/ollama/pyproject.toml"
+      - "libs/partners/ollama/langchain_ollama/_version.py"
+      - "libs/partners/openrouter/pyproject.toml"
+      - "libs/partners/openrouter/langchain_openrouter/_version.py"
+
+permissions:
+  contents: read
+
+jobs:
+  check_version_equality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: "Verify pyproject.toml & version files match"
+        run: |
+          # check_version PKG_LABEL PYPROJECT_PATH VERSION_FILE PATTERN
+          #   PATTERN: "VERSION" for `VERSION = "..."`, "__version__" for `__version__ = "..."`
+          #   Exits 0 (skip) if the version file uses importlib.metadata (dynamic).
+          check_version() {
+            local label="$1" pyproject="$2" verfile="$3" pattern="$4"
+
+            local pyproject_ver
+            pyproject_ver=$(grep -Po '(?<=^version = ")[^"]*' "$pyproject")
+
+            local file_ver
+            file_ver=$(grep -Po "(?<=^${pattern} = \")[^\"]*" "$verfile" || true)
+
+            if [ -z "$file_ver" ]; then
+              echo "✔ $label: version is dynamic (importlib.metadata) — skipped"
+              return 0
+            fi
+
+            if [ "$pyproject_ver" != "$file_ver" ]; then
+              echo "✘ $label: version MISMATCH"
+              echo "  pyproject.toml: $pyproject_ver"
+              echo "  $verfile: $file_ver"
+              return 1
+            fi
+
+            echo "✔ $label: $pyproject_ver"
+          }
+
+          FAILED=0
+
+          check_version "langchain-core" \
+            libs/core/pyproject.toml \
+            libs/core/langchain_core/version.py \
+            "VERSION" || FAILED=1
+
+          check_version "langchain (v1)" \
+            libs/langchain_v1/pyproject.toml \
+            libs/langchain_v1/langchain/__init__.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-anthropic" \
+            libs/partners/anthropic/pyproject.toml \
+            libs/partners/anthropic/langchain_anthropic/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-openai" \
+            libs/partners/openai/pyproject.toml \
+            libs/partners/openai/langchain_openai/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-groq" \
+            libs/partners/groq/pyproject.toml \
+            libs/partners/groq/langchain_groq/version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-deepseek" \
+            libs/partners/deepseek/pyproject.toml \
+            libs/partners/deepseek/langchain_deepseek/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-xai" \
+            libs/partners/xai/pyproject.toml \
+            libs/partners/xai/langchain_xai/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-fireworks" \
+            libs/partners/fireworks/pyproject.toml \
+            libs/partners/fireworks/langchain_fireworks/version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-mistralai" \
+            libs/partners/mistralai/pyproject.toml \
+            libs/partners/mistralai/langchain_mistralai/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-ollama" \
+            libs/partners/ollama/pyproject.toml \
+            libs/partners/ollama/langchain_ollama/_version.py \
+            "__version__" || FAILED=1
+
+          check_version "langchain-openrouter" \
+            libs/partners/openrouter/pyproject.toml \
+            libs/partners/openrouter/langchain_openrouter/_version.py \
+            "__version__" || FAILED=1
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo ""
+            echo "One or more version checks failed!"
+            exit 1
+          fi

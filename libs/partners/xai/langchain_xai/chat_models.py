@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import warnings
-from importlib.metadata import PackageNotFoundError, version as _get_pkg_version
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
@@ -14,11 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_xai.data._profiles import _PROFILES
-
-try:
-    _PKG_VERSION = _get_pkg_version("langchain-xai")
-except PackageNotFoundError:
-    _PKG_VERSION = ""
+from langchain_xai._version import __version__
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -477,7 +472,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     @model_validator(mode="after")
     def _warn_search_parameters_deprecated(self) -> Self:
         """Emit deprecation warning if search_parameters (Live Search) is used."""
-        self._add_version("langchain-xai", _PKG_VERSION)
+        self._add_version("langchain-xai", __version__)
         if self.search_parameters:
             warnings.warn(
                 "search_parameters (Live Search) is deprecated by xAI and is ignored. "

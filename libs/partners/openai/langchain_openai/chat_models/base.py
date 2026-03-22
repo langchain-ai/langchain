@@ -30,8 +30,6 @@ from collections.abc import (
     Sequence,
 )
 from functools import partial
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as _get_pkg_version
 from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
@@ -53,12 +51,6 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-
-try:
-    _PKG_VERSION = _get_pkg_version("langchain-openai")
-except PackageNotFoundError:
-    _PKG_VERSION = ""
-
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -136,6 +128,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
@@ -980,7 +973,7 @@ class BaseChatOpenAI(BaseChatModel):
     def model_post_init(self, _context: Any, /) -> None:
         """Add langchain-openai version to metadata."""
         super().model_post_init(_context)
-        self._add_version("langchain-openai", _PKG_VERSION)
+        self._add_version("langchain-openai", __version__)
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

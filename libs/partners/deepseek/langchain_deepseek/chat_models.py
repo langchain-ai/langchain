@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Iterator, Sequence
-from importlib.metadata import PackageNotFoundError, version as _get_pkg_version
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
 from urllib.parse import urlparse
@@ -29,11 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_deepseek.data._profiles import _PROFILES
-
-try:
-    _PKG_VERSION = _get_pkg_version("langchain-deepseek")
-except PackageNotFoundError:
-    _PKG_VERSION = ""
+from langchain_deepseek._version import __version__
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
@@ -233,7 +228,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        self._add_version("langchain-deepseek", _PKG_VERSION)
+        self._add_version("langchain-deepseek", __version__)
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
