@@ -1,44 +1,44 @@
-# Require external PRs to link to an approved issue or discussion using
-# GitHub auto-close keywords (Fixes #NNN, Closes #NNN, Resolves #NNN),
-# AND require that the PR author is assigned to the linked issue.
+# Require external PRs to reference an approved issue (e.g. Fixes #NNN) and
+# the PR author to be assigned to that issue. On failure the PR is
+# labeled "missing-issue-link", commented on, and closed.
 #
-# - Reacts to the "external" label applied by pr_labeler.yml,
-#   avoiding a duplicate org membership check.
-# - Also re-checks on PR edits/reopens for PRs that already have the label.
-# - Bypasses the check for PRs with the "trusted-contributor" label.
-# - Validates the PR author is an assignee on at least one linked issue.
-# - Adds a "missing-issue-link" label on failure; removes it on pass.
-# - Automatically reopens PRs that were closed by this workflow once the
-#   check passes (e.g. author edits the body to add a valid issue link).
-# - Respects maintainer reopens: if an org member manually reopens a
-#   previously auto-closed PR, enforcement is skipped so it stays open.
-# - Posts (or updates) a comment explaining the requirement on failure.
-# - Cancels all other in-progress/queued CI runs for the PR on closure.
-# - Deduplicates comments via an HTML marker so re-runs don't spam.
+# Maintainer override: an org member can reopen the PR or remove
+# "missing-issue-link" — both add "bypass-issue-check" and reopen.
 #
-# Dependency: pr_labeler.yml must run first to apply the "external" label
-# on new PRs. This workflow chains off that classification via the "labeled"
-# event. It does NOT trigger on "opened" because new PRs have no labels yet,
-# so the job-level gate would always skip — producing noisy "Skipped" checks.
+# Dependency: pr_labeler.yml must apply the "external" label first. This
+# workflow does NOT trigger on "opened" (new PRs have no labels yet, so the
+# gate would always skip).
 
 name: Require Issue Link
 
 on:
   pull_request_target:
-    types: [edited, reopened, labeled]
+    types: [edited, reopened, labeled, unlabeled]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Enforcement gate: set to 'true' to activate the issue link requirement.
+# When 'false', the workflow still runs the check logic (useful for dry-run
+# visibility) but will NOT label, comment, close, or fail PRs.
+# ──────────────────────────────────────────────────────────────────────────────
+env:
+  ENFORCE_ISSUE_LINK: "true"
 
 permissions:
   contents: read
 
 jobs:
   check-issue-link:
-    # Run when the "external" label is added, or on edit/reopen if already labeled.
-    # Skip entirely when the PR already carries "trusted-contributor".
+    # Run when the "external" label is added, on edit/reopen if already labeled,
+    # or when "missing-issue-link" is removed (triggers maintainer override check).
+    # Skip entirely when the PR already carries "trusted-contributor" or
+    # "bypass-issue-check".
     if: >-
       !contains(github.event.pull_request.labels.*.name, 'trusted-contributor') &&
+      !contains(github.event.pull_request.labels.*.name, 'bypass-issue-check') &&
       (
         (github.event.action == 'labeled' && github.event.label.name == 'external') ||
-        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'external'))
+        (github.event.action == 'unlabeled' && github.event.label.name == 'missing-issue-link' && contains(github.event.pull_request.labels.*.name, 'external')) ||
+        (github.event.action != 'labeled' && github.event.action != 'unlabeled' && contains(github.event.pull_request.labels.*.name, 'external'))
       )
     runs-on: ubuntu-latest
     permissions:
@@ -53,50 +53,140 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const prNumber = context.payload.pull_request.number;
+            const action = context.payload.action;
 
-            // If a maintainer (org member) manually reopened a PR that was
-            // previously auto-closed by this workflow (indicated by the
-            // "missing-issue-link" label), respect that decision and skip
-            // enforcement. Without this, the workflow would immediately
-            // re-close the PR on the "reopened" event.
-            const prLabels = context.payload.pull_request.labels.map(l => l.name);
-            if (context.payload.action === 'reopened' && prLabels.includes('missing-issue-link')) {
+            // ── Helper: ensure a label exists, then add it to the PR ────────
+            async function ensureAndAddLabel(labelName, color) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+                try {
+                  await github.rest.issues.createLabel({ owner, repo, name: labelName, color });
+                } catch (createErr) {
+                  // 422 = label was created by a concurrent run between our
+                  // GET and POST — safe to ignore.
+                  if (createErr.status !== 422) throw createErr;
+                }
+              }
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: prNumber, labels: [labelName],
+              });
+            }
+
+            // ── Helper: check if sender is an active org member ─────────────
+            async function senderIsOrgMember() {
               const sender = context.payload.sender?.login;
               if (!sender) {
-                throw new Error('Unexpected: reopened event has no sender — cannot check org membership');
+                throw new Error('Event has no sender — cannot check org membership');
               }
               try {
                 const { data: membership } = await github.rest.orgs.getMembershipForUser({
-                  org: 'langchain-ai',
+                  org: owner,
                   username: sender,
                 });
                 if (membership.state === 'active') {
-                  console.log(`Maintainer ${sender} reopened PR #${prNumber} — skipping enforcement`);
-                  core.setOutput('has-link', 'true');
-                  core.setOutput('is-assigned', 'true');
-                  return;
-                } else {
-                  console.log(`${sender} is an org member but state is "${membership.state}" — proceeding with check`);
+                  return { isMember: true, login: sender };
                 }
+                console.log(`${sender} is an org member but state is "${membership.state}"`);
+                return { isMember: false, login: sender };
               } catch (e) {
                 if (e.status === 404) {
-                  console.log(`${sender} is not an org member — proceeding with check`);
-                } else {
-                  const status = e.status ?? 'unknown';
-                  throw new Error(
-                    `Membership check failed for ${sender} (HTTP ${status}): ${e.message}`,
-                  );
+                  console.log(`${sender} is not an org member`);
+                  return { isMember: false, login: sender };
                 }
+                const status = e.status ?? 'unknown';
+                throw new Error(
+                  `Membership check failed for ${sender} (HTTP ${status}): ${e.message}`,
+                );
               }
             }
 
-            // Fetch live labels to handle the race where "external" fires
-            // before "trusted-contributor" appears in the event payload.
+            // ── Helper: apply maintainer bypass (shared by both override paths) ──
+            async function applyMaintainerBypass(reason) {
+              console.log(reason);
+
+              // Remove missing-issue-link if present
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: prNumber, name: 'missing-issue-link',
+                });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+
+              // Reopen before adding bypass label — a failed reopen is more
+              // actionable than a closed PR with a bypass label stuck on it.
+              if (context.payload.pull_request.state === 'closed') {
+                try {
+                  await github.rest.pulls.update({
+                    owner, repo, pull_number: prNumber, state: 'open',
+                  });
+                  console.log(`Reopened PR #${prNumber}`);
+                } catch (e) {
+                  // 422 if head branch deleted; 403 if permissions insufficient.
+                  // Bypass labels still apply — maintainer can reopen manually.
+                  core.warning(
+                    `Could not reopen PR #${prNumber} (HTTP ${e.status ?? 'unknown'}): ${e.message}. ` +
+                    `Bypass labels were applied — a maintainer may need to reopen manually.`,
+                  );
+                }
+              }
+
+              // Add bypass-issue-check so future triggers skip enforcement
+              await ensureAndAddLabel('bypass-issue-check', '0e8a16');
+
+              core.setOutput('has-link', 'true');
+              core.setOutput('is-assigned', 'true');
+            }
+
+            // ── Maintainer override: removed "missing-issue-link" label ─────
+            if (action === 'unlabeled') {
+              const { isMember, login } = await senderIsOrgMember();
+              if (isMember) {
+                await applyMaintainerBypass(
+                  `Maintainer ${login} removed missing-issue-link from PR #${prNumber} — bypassing enforcement`,
+                );
+                return;
+              }
+              // Non-member removed the label — re-add it defensively and
+              // set failure outputs so downstream steps (comment, close) fire.
+              // NOTE: addLabels fires a "labeled" event, but the job-level gate
+              // only matches labeled events for "external", so no re-trigger.
+              console.log(`Non-member ${login} removed missing-issue-link — re-adding`);
+              try {
+                await ensureAndAddLabel('missing-issue-link', 'b76e79');
+              } catch (e) {
+                core.warning(
+                  `Failed to re-add missing-issue-link (HTTP ${e.status ?? 'unknown'}): ${e.message}. ` +
+                  `Downstream step will retry.`,
+                );
+              }
+              core.setOutput('has-link', 'false');
+              core.setOutput('is-assigned', 'false');
+              return;
+            }
+
+            // ── Maintainer override: reopened PR with "missing-issue-link" ──
+            const prLabels = context.payload.pull_request.labels.map(l => l.name);
+            if (action === 'reopened' && prLabels.includes('missing-issue-link')) {
+              const { isMember, login } = await senderIsOrgMember();
+              if (isMember) {
+                await applyMaintainerBypass(
+                  `Maintainer ${login} reopened PR #${prNumber} — bypassing enforcement`,
+                );
+                return;
+              }
+              console.log(`Non-member ${login} reopened PR — proceeding with check`);
+            }
+
+            // ── Fetch live labels (race guard) ──────────────────────────────
             const { data: liveLabels } = await github.rest.issues.listLabelsOnIssue({
               owner, repo, issue_number: prNumber,
             });
-            if (liveLabels.some(l => l.name === 'trusted-contributor')) {
-              console.log('PR has trusted-contributor label — bypassing issue link check');
+            const liveNames = liveLabels.map(l => l.name);
+            if (liveNames.includes('trusted-contributor') || liveNames.includes('bypass-issue-check')) {
+              console.log('PR has trusted-contributor or bypass-issue-check label — bypassing');
               core.setOutput('has-link', 'true');
               core.setOutput('is-assigned', 'true');
               return;
@@ -159,7 +249,9 @@ jobs:
             core.setOutput('is-assigned', assignedToAny ? 'true' : 'false');
 
       - name: Add missing-issue-link label
-        if: steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true'
+        if: >-
+          env.ENFORCE_ISSUE_LINK == 'true' &&
+          (steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true')
         uses: actions/github-script@v8
         with:
           script: |
@@ -186,7 +278,9 @@ jobs:
             });
 
       - name: Remove missing-issue-link label and reopen PR
-        if: steps.check-link.outputs.has-link == 'true' && steps.check-link.outputs.is-assigned == 'true'
+        if: >-
+          env.ENFORCE_ISSUE_LINK == 'true' &&
+          steps.check-link.outputs.has-link == 'true' && steps.check-link.outputs.is-assigned == 'true'
         uses: actions/github-script@v8
         with:
           script: |
@@ -215,7 +309,9 @@ jobs:
             }
 
       - name: Post comment, close PR, and fail
-        if: steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true'
+        if: >-
+          env.ENFORCE_ISSUE_LINK == 'true' &&
+          (steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true')
         uses: actions/github-script@v8
         with:
           script: |
@@ -235,6 +331,8 @@ jobs:
                 '1. Find or [open an issue](https://github.com/' + owner + '/' + repo + '/issues/new/choose) describing the change',
                 '2. Wait for a maintainer to approve and assign you',
                 '3. Add `Fixes #<issue_number>`, `Closes #<issue_number>`, or `Resolves #<issue_number>` to your PR description and the PR will be reopened automatically',
+                '',
+                '*Maintainers: reopen this PR or remove the `missing-issue-link` label to bypass this check.*',
               ];
             } else {
               lines = [
@@ -244,6 +342,8 @@ jobs:
                 'External contributors must be assigned to an issue before opening a PR for it. Please:',
                 '1. Comment on the linked issue to request assignment from a maintainer',
                 '2. Once assigned, edit your PR description and the PR will be reopened automatically',
+                '',
+                '*Maintainers: reopen this PR or remove the `missing-issue-link` label to bypass this check.*',
               ];
             }
 
