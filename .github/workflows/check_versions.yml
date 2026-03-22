@@ -1,8 +1,4 @@
-# Ensures version numbers in pyproject.toml and version.py/_version.py stay in
-# sync for packages that use hardcoded version strings.
-#
-# Packages using `importlib.metadata.version(__package__)` are auto-synced and
-# skipped by this check.
+# Ensures version numbers in pyproject.toml and _version.py stay in sync.
 
 name: "Check Version Equality"
 
