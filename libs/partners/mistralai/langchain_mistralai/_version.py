@@ -1,9 +1,3 @@
-"""Main entrypoint into package."""
+"""Version information for langchain-mistralai."""
 
-from importlib import metadata
-
-try:
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
+__version__ = "1.1.2"
