@@ -4720,7 +4720,16 @@ def _convert_responses_chunk_to_generation_chunk(
         if output_version == "v0":
             id = chunk.item.id
         else:
-            pass
+            if phase := getattr(chunk.item, "phase", None):
+                _advance(chunk.output_index)
+                content.append(
+                    {
+                        "type": "text",
+                        "text": "",
+                        "phase": phase,
+                        "index": current_index,
+                    }
+                )
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
