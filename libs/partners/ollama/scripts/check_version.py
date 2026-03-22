@@ -18,11 +18,7 @@ def get_pyproject_version(pyproject_path: Path) -> str | None:
 
 
 def get_version_py_version(version_path: Path) -> str | None:
-    """Extract `__version__` from `_version.py`.
-
-    Returns ``None`` if the version is set dynamically (e.g. via
-    ``importlib.metadata``), indicating the check should be skipped.
-    """
+    """Extract `__version__` from `_version.py`."""
     content = version_path.read_text(encoding="utf-8")
     match = re.search(r'^__version__\s*=\s*"([^"]+)"', content, re.MULTILINE)
     return match.group(1) if match else None
@@ -52,10 +48,8 @@ def main() -> int:
         return 1
 
     if version_py_version is None:
-        print(  # noqa: T201
-            "Version is dynamic (importlib.metadata) — skipping check"
-        )
-        return 0
+        print("Error: Could not find __version__ in langchain_ollama/_version.py")  # noqa: T201
+        return 1
 
     if pyproject_version != version_py_version:
         print("Error: Version mismatch detected!")  # noqa: T201
