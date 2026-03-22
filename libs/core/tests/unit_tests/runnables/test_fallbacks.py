@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -400,3 +401,103 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+class _RunTracker(BaseCallbackHandler):
+    """Records (event_name, run_id, parent_run_id) for every callback event."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, uuid.UUID, uuid.UUID | None]] = []
+
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_start", run_id, parent_run_id))
+
+    def on_chain_end(
+        self,
+        outputs: dict[str, Any],
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_end", run_id, parent_run_id))
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: uuid.UUID,
+        parent_run_id: uuid.UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_error", run_id, parent_run_id))
+
+
+def _make_error_then_ok_fallback() -> RunnableWithFallbacks:
+    """Return a RunnableWithFallbacks whose first runnable always raises."""
+    primary = RunnableLambda(lambda _: (_ for _ in ()).throw(ValueError("primary")))
+    fallback = RunnableLambda(lambda _: "ok")
+    return primary.with_fallbacks([fallback])
+
+
+def _assert_child_runs_nested(tracker: _RunTracker) -> None:
+    """Assert that all child runs have the root run as their parent.
+
+    The root run is the one whose parent_run_id is None.  All other runs
+    must have that root run_id as their parent_run_id.
+    """
+    root_run_ids = {rid for _, rid, pid in tracker.events if pid is None}
+    assert len(root_run_ids) == 1, (
+        f"Expected exactly one root run_id, got {root_run_ids}"
+    )
+    root_run_id = next(iter(root_run_ids))
+
+    child_events = [(name, pid) for name, rid, pid in tracker.events if pid is not None]
+    assert len(child_events) >= 1, "Expected at least one child run"
+    for name, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{name}: expected parent_run_id={root_run_id}, got {parent_run_id}"
+        )
+
+
+def test_fallbacks_invoke_preserves_parent_run_id() -> None:
+    """invoke() must pass child_config so child runs are nested under the fallback run.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072.
+    Before the fix, child runnables received ``config`` instead of ``child_config``,
+    so their parent_run_id was None (orphaned spans).
+    """
+    tracker = _RunTracker()
+    runnable = _make_error_then_ok_fallback()
+    runnable.invoke("hello", config={"callbacks": [tracker]})
+    _assert_child_runs_nested(tracker)
+
+
+async def test_fallbacks_ainvoke_preserves_parent_run_id() -> None:
+    """ainvoke() must pass child_config so child runs are nested under the fallback run.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072.
+    """
+    tracker = _RunTracker()
+    runnable = _make_error_then_ok_fallback()
+    await runnable.ainvoke("hello", config={"callbacks": [tracker]})
+    _assert_child_runs_nested(tracker)
+
+
+def test_fallbacks_stream_preserves_parent_run_id() -> None:
+    """stream() must pass child_config so child runs are nested under the fallback run.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36072.
+    """
+    tracker = _RunTracker()
+    runnable = _make_error_then_ok_fallback()
+    list(runnable.stream("hello", config={"callbacks": [tracker]}))
+    _assert_child_runs_nested(tracker)
