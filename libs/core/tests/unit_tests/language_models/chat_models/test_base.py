@@ -1230,6 +1230,31 @@ def test_model_profiles() -> None:
     assert model_with_profile.profile == {"max_input_tokens": 100}
 
 
+def test_supports_code_execution() -> None:
+    """Test _supports_code_execution property."""
+    # Model without profile
+    model_no_profile = GenericFakeChatModel(messages=iter([]))
+    assert model_no_profile._supports_code_execution is False
+
+    # Model with profile but no code_execution field
+    model_no_code_exec = GenericFakeChatModel(
+        messages=iter([]), profile={"max_input_tokens": 100}
+    )
+    assert model_no_code_exec._supports_code_execution is False
+
+    # Model with code_execution: False
+    model_code_exec_false = GenericFakeChatModel(
+        messages=iter([]), profile={"code_execution": False}
+    )
+    assert model_code_exec_false._supports_code_execution is False
+
+    # Model with code_execution: True
+    model_code_exec_true = GenericFakeChatModel(
+        messages=iter([]), profile={"code_execution": True}
+    )
+    assert model_code_exec_true._supports_code_execution is True
+
+
 class MockResponse:
     """Mock response for testing _generate_response_from_error."""
 
