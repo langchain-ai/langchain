@@ -32,19 +32,11 @@ jobs:
         run: |
           FAILED=0
 
-          # langchain-core uses VERSION (not __version__) in version.py (not _version.py).
-          python .github/scripts/check_version.py libs/core \
-            --pattern VERSION --version-file version.py || FAILED=1
-
-          # langchain (v1) package dir is "langchain", not "langchain_*", so
-          # auto-detection won't find it — pass --package-name explicitly.
-          python .github/scripts/check_version.py libs/langchain_v1 \
-            --package-name langchain --pattern __version__ --version-file __init__.py || FAILED=1
-
-          # Partner packages all follow the default convention:
-          # __version__ in langchain_<pkg>/_version.py.
-          for pkg in anthropic openai groq deepseek xai fireworks mistralai ollama openrouter; do
-            python .github/scripts/check_version.py "libs/partners/$pkg" || FAILED=1
+          for dir in libs/core libs/langchain_v1 libs/partners/*; do
+            [ -f "$dir/Makefile" ] || continue
+            grep -q '^check_version:' "$dir/Makefile" || continue
+            echo "--- $dir ---"
+            make -C "$dir" check_version || FAILED=1
           done
 
           if [ "$FAILED" -ne 0 ]; then
