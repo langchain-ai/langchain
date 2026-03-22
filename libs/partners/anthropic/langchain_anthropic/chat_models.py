@@ -968,9 +968,14 @@ class ChatAnthropic(BaseChatModel):
         return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-anthropic", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
-        self._add_version("langchain-anthropic", __version__)
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model)
         if (

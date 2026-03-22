@@ -397,9 +397,14 @@ class ChatFireworks(BaseChatModel):
         return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-fireworks", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self._add_version("langchain-fireworks", __version__)
         if self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)

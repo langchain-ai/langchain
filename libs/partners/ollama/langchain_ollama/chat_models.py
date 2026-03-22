@@ -789,9 +789,14 @@ class ChatOllama(BaseChatModel):
         return params
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-ollama", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        self._add_version("langchain-ollama", __version__)
         client_kwargs = self.client_kwargs or {}
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)

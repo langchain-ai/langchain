@@ -303,9 +303,14 @@ class ChatOpenRouter(BaseChatModel):
         return values
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-openrouter", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
-        self._add_version("langchain-openrouter", __version__)
         if not (self.openrouter_api_key and self.openrouter_api_key.get_secret_value()):
             msg = "OPENROUTER_API_KEY must be set."
             raise ValueError(msg)

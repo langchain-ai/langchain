@@ -226,9 +226,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         return ls_params
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-deepseek", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        self._add_version("langchain-deepseek", __version__)
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):

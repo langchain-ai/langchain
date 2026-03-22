@@ -470,9 +470,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return params
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-xai", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _warn_search_parameters_deprecated(self) -> Self:
         """Emit deprecation warning if search_parameters (Live Search) is used."""
-        self._add_version("langchain-xai", __version__)
         if self.search_parameters:
             warnings.warn(
                 "search_parameters (Live Search) is deprecated by xAI and is ignored. "

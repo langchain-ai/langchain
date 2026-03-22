@@ -970,10 +970,11 @@ class BaseChatOpenAI(BaseChatModel):
 
         return values
 
-    def model_post_init(self, _context: Any, /) -> None:
-        """Add `langchain-openai` version to metadata."""
-        super().model_post_init(_context)
+    @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
         self._add_version("langchain-openai", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

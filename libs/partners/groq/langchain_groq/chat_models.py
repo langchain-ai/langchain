@@ -544,9 +544,14 @@ class ChatGroq(BaseChatModel):
         return self
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-groq", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _set_model_profile(self) -> Self:
         """Set model profile if not overridden."""
-        self._add_version("langchain-groq", __version__)
         if self.profile is None:
             self.profile = _get_default_model_profile(self.model_name)
         return self

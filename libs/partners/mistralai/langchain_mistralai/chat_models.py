@@ -599,9 +599,14 @@ class ChatMistralAI(BaseChatModel):
         return {"token_usage": overall_token_usage, "model_name": self.model}
 
     @model_validator(mode="after")
+    def _set_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-mistralai", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
-        self._add_version("langchain-mistralai", __version__)
         if isinstance(self.mistral_api_key, SecretStr):
             api_key_str: str | None = self.mistral_api_key.get_secret_value()
         else:
