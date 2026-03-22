@@ -75,6 +75,12 @@ from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+_STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
+    {
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    }
+)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -192,9 +198,8 @@ class ChatGroq(BaseChatModel):
         print(response.content)
         ```
 
-        Vision-capable models:
-        - meta-llama/llama-4-scout-17b-16e-instruct
-        - meta-llama/llama-4-maverick-17b-128e-instruct
+        See [Groq model docs](https://console.groq.com/docs/vision#supported-models)
+        for the latest available vision models.
 
         Maximum image size: 20MB per request.
 
@@ -351,6 +356,11 @@ class ChatGroq(BaseChatModel):
 
     model_name: str = Field(alias="model")
     """Model name to use."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -904,6 +914,7 @@ class ChatGroq(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -975,6 +986,16 @@ class ChatGroq(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+            strict:
+                Only used with `method="json_schema"`. When `True`, Groq's Structured
+                Output API uses constrained decoding to guarantee schema compliance.
+                This requires every object to set `additionalProperties: false` and
+                all properties to be listed in `required`. When `False`, schema
+                adherence is best-effort. If `None`, the argument is omitted.
+
+                Strict mode is only supported for `openai/gpt-oss-20b` and
+                `openai/gpt-oss-120b`. For other models, `strict=True` is ignored.
 
             kwargs:
                 Any additional parameters to pass to the `langchain.runnable.Runnable`
@@ -1169,7 +1190,6 @@ class ChatGroq(BaseChatModel):
         ```
 
         """  # noqa: E501
-        _ = kwargs.pop("strict", None)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1207,14 +1227,25 @@ class ChatGroq(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
-            json_schema = convert_to_json_schema(schema)
+            if (
+                strict is True
+                and self.model_name not in _STRICT_STRUCTURED_OUTPUT_MODELS
+            ):
+                # Ignore unsupported strict=True to preserve backward compatibility.
+                strict = None
+            json_schema = convert_to_json_schema(schema, strict=strict)
             schema_name = json_schema.get("title", "")
-            response_format = {
+            response_format: dict[str, Any] = {
                 "type": "json_schema",
                 "json_schema": {"name": schema_name, "schema": json_schema},
             }
+            if strict is not None:
+                response_format["json_schema"]["strict"] = strict
+            ls_format_kwargs: dict[str, Any] = {"method": "json_schema"}
+            if strict is not None:
+                ls_format_kwargs["strict"] = strict
             ls_format_info = {
-                "kwargs": {"method": "json_schema"},
+                "kwargs": ls_format_kwargs,
                 "schema": json_schema,
             }
             llm = self.bind(
@@ -1244,8 +1275,9 @@ class ChatGroq(BaseChatModel):
             )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                "Unrecognized method argument. Expected one of "
+                "'function_calling', 'json_mode', or 'json_schema'. "
+                f"Received: '{method}'"
             )
             raise ValueError(msg)
 
@@ -1331,7 +1363,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 for block in message.content
                 if isinstance(block, dict) and block.get("type") == "text"
             ]
-            message_dict["content"] = text_blocks if text_blocks else ""
+            message_dict["content"] = text_blocks or ""
 
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]

@@ -22,10 +22,10 @@ classifiers = [
     "Topic :: Text Processing",
 ]
 
-version = "1.1.0"
+version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.12,<2.0.0",
+    "langchain-core>=1.2.13,<2.0.0",
 ]
 
 [project.urls]
@@ -87,7 +87,7 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["konlpy", "nltk",]
+module = ["konlpy", "nltk", "transformers", "transformers.*",]
 ignore_missing_imports = true
 
 [tool.ruff.format]

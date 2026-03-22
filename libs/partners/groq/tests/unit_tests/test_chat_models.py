@@ -16,6 +16,8 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
+from langchain_core.runnables import RunnableBinding, RunnableSequence
+from pydantic import BaseModel
 
 from langchain_groq.chat_models import (
     ChatGroq,
@@ -32,8 +34,10 @@ if "GROQ_API_KEY" not in os.environ:
 def test_groq_model_param() -> None:
     llm = ChatGroq(model="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
     llm = ChatGroq(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -252,6 +256,49 @@ def test_chat_groq_invalid_streaming_params() -> None:
             temperature=0,
             n=5,
         )
+
+
+def test_with_structured_output_json_schema_strict() -> None:
+    class Response(BaseModel):
+        """Response schema."""
+
+        foo: str
+
+    structured_model = ChatGroq(model="openai/gpt-oss-20b").with_structured_output(
+        Response, method="json_schema", strict=True
+    )
+
+    assert isinstance(structured_model, RunnableSequence)
+    first_step = structured_model.steps[0]
+    assert isinstance(first_step, RunnableBinding)
+    response_format = first_step.kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    json_schema = response_format["json_schema"]
+    assert json_schema["strict"] is True
+    assert json_schema["name"] == "Response"
+    assert json_schema["schema"]["properties"]["foo"]["type"] == "string"
+    assert "foo" in json_schema["schema"]["required"]
+    assert json_schema["schema"]["additionalProperties"] is False
+
+
+def test_with_structured_output_json_schema_strict_ignored_on_unsupported_model() -> (
+    None
+):
+    class Response(BaseModel):
+        """Response schema."""
+
+        foo: str
+
+    structured_model = ChatGroq(model="llama-3.1-8b-instant").with_structured_output(
+        Response, method="json_schema", strict=True
+    )
+
+    assert isinstance(structured_model, RunnableSequence)
+    first_step = structured_model.steps[0]
+    assert isinstance(first_step, RunnableBinding)
+    response_format = first_step.kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    assert "strict" not in response_format["json_schema"]
 
 
 def test_chat_groq_secret() -> None:

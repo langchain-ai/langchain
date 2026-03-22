@@ -13,13 +13,19 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
 
 ## Security model
 
-!!! warning "Do not use with untrusted input"
+!!! warning "Exercise caution with untrusted input"
 
-    These functions instantiate Python objects and can trigger side effects
-    such as network calls, file operations, or environment variable access
-    during deserialization. **Never call `load()` or `loads()` on data from an
-    untrusted or unauthenticated source.** Even with the allowlist, allowed
-    classes may perform dangerous operations during `__init__`.
+    These functions deserialize by instantiating Python objects, which means
+    constructors (`__init__`) and validators may run and can trigger side effects.
+    With the default settings, deserialization is restricted to a core allowlist
+    of `langchain_core` types (for example: messages, documents, and prompts)
+    defined in `langchain_core.load.mapping`.
+
+    If you broaden `allowed_objects` (for example, by using `'all'` or adding
+    additional classes), treat the serialized payload as a manifest and only
+    deserialize data that comes from a trusted source. A crafted payload that
+    is allowed to instantiate unintended classes could cause network calls,
+    file operations, or environment variable access during `__init__`.
 
 The `allowed_objects` parameter controls which classes can be deserialized:
 

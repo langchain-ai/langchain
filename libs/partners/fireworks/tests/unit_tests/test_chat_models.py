@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage
 
+from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import _convert_dict_to_message
+
+
+def test_fireworks_model_param() -> None:
+    llm = ChatFireworks(model="foo", api_key="fake-key")  # type: ignore[arg-type]
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
+    llm = ChatFireworks(model_name="foo", api_key="fake-key")  # type: ignore[call-arg, arg-type]
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:

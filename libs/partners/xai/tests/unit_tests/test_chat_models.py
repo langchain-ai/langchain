@@ -12,6 +12,7 @@ from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
+from pydantic import SecretStr
 
 from langchain_xai import ChatXAI
 
@@ -64,6 +65,27 @@ def test_chat_xai_extra_kwargs() -> None:
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_chat_xai_base_url_alias() -> None:
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        api_key=SecretStr("test-api-key"),
+        base_url="http://example.test/v1",
+    )
+    assert llm.xai_api_base == "http://example.test/v1"
+    assert llm.model_kwargs == {}
+
+
+def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XAI_API_BASE", "http://env.example.test/v1")
+
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        api_key=SecretStr("test-api-key"),
+    )
+
+    assert llm.xai_api_base == "http://env.example.test/v1"
 
 
 def test_function_dict_to_message_function_message() -> None:

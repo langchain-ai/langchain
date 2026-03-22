@@ -147,7 +147,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -167,6 +167,7 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
 )
 
 
@@ -533,10 +534,17 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
+_RESPONSES_API_ONLY_PREFIXES = (
+    "gpt-5-pro",
+    "gpt-5.2-pro",
+    "gpt-5.4-pro",
+)
+
+
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
-    return "gpt-5.2-pro" in model_name or "codex" in model_name
+    return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -578,8 +586,8 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """API key to use.
 
-    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
-    string, or sync or async callable that returns a string.
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified
+    as a string, or sync or async callable that returns a string.
 
     ??? example "Specify with environment variable"
 
@@ -601,6 +609,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with a sync callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -612,6 +621,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with an async callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -637,16 +647,20 @@ class BaseChatOpenAI(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
-    `None`."""
+    """Timeout for requests to OpenAI completion API.
+
+    Can be float, `httpx.Timeout` or `None`.
+    """
 
     stream_usage: bool | None = None
-    """Whether to include usage metadata in streaming output. If enabled, an additional
-    message chunk will be generated during the stream including usage metadata.
+    """Whether to include usage metadata in streaming output.
+
+    If enabled, an additional message chunk will be generated during the stream
+    including usage metadata.
 
     This parameter is enabled unless `openai_api_base` is set or the model is
-    initialized with a custom client, as many chat completions APIs do not support
-    streaming token usage.
+    initialized with a custom client, as many chat completions APIs do not
+    support streaming token usage.
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
@@ -672,8 +686,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with an
-    associated log probability. `logprobs` must be set to true if this parameter is
-    used."""
+    associated log probability.
+
+    `logprobs` must be set to true if this parameter is used.
+    """
 
     logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -691,10 +707,9 @@ class BaseChatOpenAI(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     reasoning_effort: str | None = None
-    """Constrains effort on reasoning for reasoning models. For use with the Chat
-    Completions API.
+    """Constrains effort on reasoning for reasoning models.
 
-    Reasoning models only.
+    For use with the Chat Completions API. Reasoning models only.
 
     Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
@@ -702,7 +717,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     reasoning: dict[str, Any] | None = None
-    """Reasoning parameters for reasoning models. For use with the Responses API.
+    """Reasoning parameters for reasoning models.
+
+    For use with the Responses API.
 
     ```python
     reasoning={
@@ -715,8 +732,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     verbosity: str | None = None
-    """Controls the verbosity level of responses for reasoning models. For use with the
-    Responses API.
+    """Controls the verbosity level of responses for reasoning models.
+
+    For use with the Responses API.
 
     Currently supported values are `'low'`, `'medium'`, and `'high'`.
 
@@ -746,35 +764,36 @@ class BaseChatOpenAI(BaseChatModel):
     http_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.Client`.
 
-    Only used for sync invocations. Must specify `http_async_client` as well if you'd
-    like a custom client for async invocations.
+    Only used for sync invocations. Must specify `http_async_client` as well if
+    you'd like a custom client for async invocations.
     """
 
     http_async_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.AsyncClient`.
 
-    Only used for async invocations. Must specify `http_client` as well if you'd like a
-    custom client for sync invocations.
+    Only used for async invocations. Must specify `http_client` as well if you'd
+    like a custom client for sync invocations.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
 
     extra_body: Mapping[str, Any] | None = None
-    """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
-    providers.
+    """Optional additional JSON properties to include in the request parameters
+    when making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or
+    other providers.
 
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
 
     Examples:
-        - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
-        - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
-            `extra_body={"use_beam_search": True}`
-        - Any other provider-specific parameters
+    - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
+    - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
+        `extra_body={"use_beam_search": True}`
+    - Any other provider-specific parameters
 
     !!! warning
+
         Do not use `model_kwargs` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
         `extra_body` instead.
@@ -1538,7 +1557,13 @@ class BaseChatOpenAI(BaseChatModel):
         generations = []
 
         response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
+            response
+            if isinstance(response, dict)
+            # `parsed` may hold arbitrary Pydantic models from structured output.
+            # Exclude it from this dump and copy it from the typed response below.
+            else response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         )
         # Sometimes the AI Model calling will get error, we should raise it (this is
         # typically followed by a null value for `choices`, which we raise for
@@ -1971,6 +1996,14 @@ class BaseChatOpenAI(BaseChatModel):
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
+        for original, formatted in zip(tools, formatted_tools, strict=False):
+            if (
+                isinstance(original, BaseTool)
+                and hasattr(original, "extras")
+                and isinstance(original.extras, dict)
+                and "defer_loading" in original.extras
+            ):
+                formatted["defer_loading"] = original.extras["defer_loading"]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -3664,8 +3697,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 )
                 return None
 
-            # close things (context managers)
-            width, height = Image.open(BytesIO(response.content)).size
+            with Image.open(BytesIO(response.content)) as img:
+                width, height = img.size
             return width, height
         except httpx.TimeoutException:
             logger.warning("Image URL request timed out after %s seconds", timeout)
@@ -3680,7 +3713,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)
-        width, height = Image.open(BytesIO(data)).size
+        with Image.open(BytesIO(data)) as img:
+            width, height = img.size
         return width, height
     return None
 
@@ -3769,7 +3803,7 @@ def _convert_to_openai_response_format(
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: type[_BM]
 ) -> PydanticBaseModel | None:
-    if parsed := ai_msg.additional_kwargs.get("parsed"):
+    if (parsed := ai_msg.additional_kwargs.get("parsed")) is not None:
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
@@ -3968,7 +4002,8 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
+                new_tools.append({"type": "function", **tool["function"], **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
@@ -4295,6 +4330,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_call",
                             "mcp_list_tools",
                             "mcp_approval_request",
+                            "tool_search_call",
+                            "tool_search_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4340,7 +4377,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response",)
+                non_message_item_types = ("mcp_approval_response", "tool_search_output")
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4354,8 +4391,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
                 if msg["content"]:
+                    msg["type"] = "message"
                     input_.append(msg)
             else:
+                msg["type"] = "message"
                 input_.append(msg)
         else:
             input_.append(msg)
@@ -4497,6 +4536,8 @@ def _construct_lc_result_from_responses_api(
             "mcp_list_tools",
             "mcp_approval_request",
             "image_generation_call",
+            "tool_search_call",
+            "tool_search_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4686,16 +4727,17 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-        content.append(
-            {
-                "type": "function_call",
-                "name": chunk.item.name,
-                "arguments": chunk.item.arguments,
-                "call_id": chunk.item.call_id,
-                "id": chunk.item.id,
-                "index": current_index,
-            }
-        )
+        function_call_content: dict = {
+            "type": "function_call",
+            "name": chunk.item.name,
+            "arguments": chunk.item.arguments,
+            "call_id": chunk.item.call_id,
+            "id": chunk.item.id,
+            "index": current_index,
+        }
+        if getattr(chunk.item, "namespace", None) is not None:
+            function_call_content["namespace"] = chunk.item.namespace
+        content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
@@ -4706,6 +4748,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
+        "tool_search_call",
+        "tool_search_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
