@@ -1,4 +1,6 @@
 # Ensures version numbers in pyproject.toml and _version.py stay in sync.
+#
+# (Prevents releases with mismatched version numbers)
 
 name: "Check Version Equality"
 
@@ -42,7 +44,6 @@ jobs:
         run: |
           # check_version PKG_LABEL PYPROJECT_PATH VERSION_FILE PATTERN
           #   PATTERN: "VERSION" for `VERSION = "..."`, "__version__" for `__version__ = "..."`
-          #   Exits 0 (skip) if the version file uses importlib.metadata (dynamic).
           check_version() {
             local label="$1" pyproject="$2" verfile="$3" pattern="$4"
 
@@ -53,8 +54,8 @@ jobs:
             file_ver=$(grep -Po "(?<=^${pattern} = \")[^\"]*" "$verfile" || true)
 
             if [ -z "$file_ver" ]; then
-              echo "✔ $label: version is dynamic (importlib.metadata) — skipped"
-              return 0
+              echo "✘ $label: could not find ${pattern} in $verfile"
+              return 1
             fi
 
             if [ "$pyproject_ver" != "$file_ver" ]; then
