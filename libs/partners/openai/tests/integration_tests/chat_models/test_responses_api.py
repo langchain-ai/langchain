@@ -1351,7 +1351,6 @@ def test_csv_input() -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
 def test_phase(output_version: str) -> None:
-
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "It's sunny."
@@ -1375,11 +1374,15 @@ def test_phase(output_version: str) -> None:
     }
     result = agent.invoke({"messages": [input_message]})
     first_response = result["messages"][1]
-    text_block = next(block for block in first_response.content if block["type"] == "text")
+    text_block = next(
+        block for block in first_response.content if block["type"] == "text"
+    )
     assert text_block["phase"] == "commentary"
 
     final_response = result["messages"][-1]
-    text_block = next(block for block in final_response.content if block["type"] == "text")
+    text_block = next(
+        block for block in final_response.content if block["type"] == "text"
+    )
     assert text_block["phase"] == "final_answer"
 
 
@@ -1387,7 +1390,6 @@ def test_phase(output_version: str) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
 def test_phase_streaming(output_version: str) -> None:
-
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "It's sunny."
@@ -1412,11 +1414,28 @@ def test_phase_streaming(output_version: str) -> None:
     }
     result = agent.invoke({"messages": [input_message]})
     first_response = result["messages"][1]
-    text_block = next(block for block in first_response.content if block["type"] == "text")
+    if output_version == "responses/v1":
+        assert [block["type"] for block in first_response.content] == [
+            "reasoning",
+            "text",
+            "function_call",
+        ]
+    else:
+        assert [block["type"] for block in first_response.content] == [
+            "reasoning",
+            "text",
+            "tool_call",
+        ]
+    text_block = next(
+        block for block in first_response.content if block["type"] == "text"
+    )
     assert text_block["phase"] == "commentary"
 
     final_response = result["messages"][-1]
-    text_block = next(block for block in final_response.content if block["type"] == "text")
+    assert [block["type"] for block in final_response.content] == ["text"]
+    text_block = next(
+        block for block in final_response.content if block["type"] == "text"
+    )
     assert text_block["phase"] == "final_answer"
 
 

@@ -4719,17 +4719,19 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
+        elif phase := getattr(chunk.item, "phase", None):
+            _advance(chunk.output_index)
+            current_sub_index = 0
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "phase": phase,
+                    "index": current_index,
+                }
+            )
         else:
-            if phase := getattr(chunk.item, "phase", None):
-                _advance(chunk.output_index)
-                content.append(
-                    {
-                        "type": "text",
-                        "text": "",
-                        "phase": phase,
-                        "index": current_index,
-                    }
-                )
+            pass
     elif (
         chunk.type == "response.output_item.added"
         and chunk.item.type == "function_call"
