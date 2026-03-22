@@ -180,7 +180,19 @@ class BaseLanguageModel(
     )
 
     def model_post_init(self, _context: Any, /) -> None:
-        """Add langchain-core version to metadata after model init."""
+        """Pydantic V2 lifecycle hook called automatically after `__init__`.
+
+        Seeds `metadata.versions` with the installed `langchain-core` version so
+        that every LLM trace carries the package version that produced it.
+
+        Partner packages should **not** override this method. Instead, they
+        should define a `@model_validator(mode="after")` method named
+        `_set_version` that calls `_add_version` to append their version to the
+        same dict.
+
+        Args:
+            _context: Pydantic validation context (typically `None`).
+        """
         from langchain_core.version import VERSION  # noqa: PLC0415
 
         self._add_version("langchain-core", VERSION)
@@ -188,12 +200,18 @@ class BaseLanguageModel(
     def _add_version(self, pkg: str, version: str) -> None:
         """Record a package version in ``metadata.versions`` for tracing.
 
-        Each integration layer calls this in its constructor so that traces
-        carry the full set of package versions involved in an invocation.
-        Mirrors ``_addVersion`` in the JS SDK.
+        Each layer in the class hierarchy (core -> langchain -> partner)
+        calls this so that the resulting metadata dict accumulates *all*
+        package versions involved in an invocation.
+
+        Example resulting metadata:
+
+        ```python
+        {"versions": {"langchain-core": "1.x.x", "langchain-openai": "1.x.x"}}
+        ```
 
         Args:
-            pkg: Package name (e.g., ``"langchain-openai"``).
+            pkg: Package name (e.g., `'langchain-openai'`).
             version: Installed version string.
         """
         if self.metadata is None:
