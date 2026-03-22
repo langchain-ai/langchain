@@ -292,9 +292,14 @@ class ChatPerplexity(BaseChatModel):
         return values
 
     @model_validator(mode="after")
+    def _set_perplexity_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-perplexity", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        self._add_version("langchain-perplexity", __version__)
         pplx_api_key = (
             self.pplx_api_key.get_secret_value() if self.pplx_api_key else None
         )

@@ -1222,7 +1222,7 @@ def test_get_ls_params() -> None:
 
 
 class _VersionedFakeModel(FakeListChatModel):
-    """Fake model that adds a version via ``_add_version`` (JS-style)."""
+    """Fake model that adds a version via `_add_version`."""
 
     def model_post_init(self, _context: Any, /) -> None:
         super().model_post_init(_context)
@@ -1232,7 +1232,7 @@ class _VersionedFakeModel(FakeListChatModel):
 def test_user_versions_metadata_survives_merge() -> None:
     """User-provided versions metadata should be deep-merged with model versions.
 
-    Regression test: the ``add_metadata`` deep-merge in ``CallbackManager``
+    Regression test: the `add_metadata` deep-merge in `CallbackManager`
     must preserve both user-provided and model-provided versions dicts.
     """
     llm = _VersionedFakeModel(responses=["hello"])
@@ -1290,6 +1290,24 @@ async def test_user_versions_metadata_survives_merge_astream() -> None:
         assert "my-app" in run_metadata["versions"]
         assert "langchain-fake" in run_metadata["versions"]
         assert "langchain-core" in run_metadata["versions"]
+
+
+def test_add_version_with_none_metadata() -> None:
+    """Model constructed with metadata=None should still get versions."""
+    llm = FakeListChatModel(responses=["x"], metadata=None)
+    assert llm.metadata is not None
+    assert "langchain-core" in llm.metadata["versions"]
+
+
+def test_add_version_with_non_dict_versions() -> None:
+    """Non-dict `versions` value is silently replaced with a warning."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        llm = FakeListChatModel(responses=["x"], metadata={"versions": "garbage"})
+        assert any("expected a dict" in str(warning.message) for warning in w)
+    assert llm.metadata is not None
+    assert isinstance(llm.metadata["versions"], dict)
+    assert "langchain-core" in llm.metadata["versions"]
 
 
 def test_model_profiles() -> None:

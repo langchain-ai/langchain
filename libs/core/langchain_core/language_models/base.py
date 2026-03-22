@@ -201,6 +201,7 @@ class BaseLanguageModel(
         Args:
             _context: Pydantic validation context (typically `None`).
         """
+        super().model_post_init(_context)
         from langchain_core.version import VERSION  # noqa: PLC0415
 
         self._add_version("langchain-core", VERSION)
@@ -225,8 +226,15 @@ class BaseLanguageModel(
         if self.metadata is None:
             self.metadata = {}
         existing = self.metadata.get("versions")
+        if existing is not None and not isinstance(existing, Mapping):
+            warnings.warn(
+                f"metadata['versions'] expected a dict, got "
+                f"{type(existing).__name__}; overwriting with package version dict",
+                stacklevel=2,
+            )
+            existing = None
         self.metadata["versions"] = {
-            **(existing if isinstance(existing, dict) else {}),
+            **(existing if isinstance(existing, Mapping) else {}),
             pkg: version,
         }
 

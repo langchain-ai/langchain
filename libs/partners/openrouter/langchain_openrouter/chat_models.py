@@ -303,7 +303,7 @@ class ChatOpenRouter(BaseChatModel):
         return values
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_openrouter_version(self) -> Self:
         """Set package version in metadata."""
         self._add_version("langchain-openrouter", __version__)
         return self

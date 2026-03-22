@@ -968,7 +968,7 @@ class ChatAnthropic(BaseChatModel):
         return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_anthropic_version(self) -> Self:
         """Set package version in metadata."""
         self._add_version("langchain-anthropic", __version__)
         return self

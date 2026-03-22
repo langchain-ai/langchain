@@ -208,6 +208,18 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
     patcher.assert_called_once()
 
 
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    from langchain_perplexity._version import __version__
+
+    llm = ChatPerplexity(model="test")
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-perplexity" in versions
+    assert versions["langchain-perplexity"] == __version__
+
+
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile

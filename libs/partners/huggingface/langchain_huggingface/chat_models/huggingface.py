@@ -582,7 +582,8 @@ class ChatHuggingFace(BaseChatModel):
             self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
-    def _add_pkg_version(self) -> Self:
+    def _set_huggingface_version(self) -> Self:
+        """Set package version in metadata."""
         self._add_version("langchain-huggingface", __version__)
         return self
 

@@ -321,7 +321,7 @@ class OllamaLLM(BaseLLM):
         return params
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_ollama_llm_version(self) -> Self:
         """Set package version in metadata."""
         self._add_version("langchain-ollama", __version__)
         return self

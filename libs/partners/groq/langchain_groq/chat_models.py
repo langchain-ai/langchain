@@ -544,7 +544,7 @@ class ChatGroq(BaseChatModel):
         return self
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_groq_version(self) -> Self:
         """Set package version in metadata."""
         self._add_version("langchain-groq", __version__)
         return self

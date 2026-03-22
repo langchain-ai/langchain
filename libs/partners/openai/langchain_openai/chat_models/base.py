@@ -971,14 +971,14 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_openai_chat_version(self) -> Self:
         """Set package version in metadata.
 
         Note: Subclasses that inherit from `BaseChatOpenAI` (e.g.
         `ChatDeepSeek`, `ChatXAI`) must use a **unique** validator name
         (e.g. `_set_deepseek_version`) instead of overriding this one. Pydantic
         replaces same-named `model_validator` methods rather than chaining them,
-        so reusing `_set_version` would silently drop the parent's
+        so reusing `_set_openai_chat_version` would silently drop the parent's
         `langchain-openai` version entry.
         """
         self._add_version("langchain-openai", __version__)

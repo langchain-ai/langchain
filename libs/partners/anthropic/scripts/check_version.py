@@ -2,7 +2,7 @@
 
 This script validates that the version defined in pyproject.toml matches the
 `__version__` variable in `langchain_anthropic/_version.py`. Intended for use as a
-pre-commit hook to prevent version mismatches.
+CI check to prevent version mismatches.
 """
 
 import re

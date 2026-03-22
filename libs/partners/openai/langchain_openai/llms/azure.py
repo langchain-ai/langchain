@@ -119,7 +119,7 @@ class AzureOpenAI(BaseOpenAI):
         return True
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
+    def _set_azure_openai_version(self) -> Self:
         """Set package version in metadata."""
         self._add_version("langchain-openai", __version__)
         return self

@@ -15,6 +15,7 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_fireworks._version import __version__
 
@@ -97,6 +98,12 @@ class Fireworks(LLM):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="after")
+    def _set_fireworks_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-fireworks", __version__)
+        return self
 
     @property
     def _llm_type(self) -> str:
