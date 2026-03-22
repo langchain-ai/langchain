@@ -17,6 +17,9 @@
   <a href="https://pypistats.org/packages/langchain" target="_blank"><img src="https://img.shields.io/pepy/dt/langchain" alt="PyPI - Downloads"></a>
   <a href="https://pypi.org/project/langchain/#history" target="_blank"><img src="https://img.shields.io/pypi/v/langchain?label=%20" alt="Version"></a>
   <a href="https://x.com/langchain" target="_blank"><img src="https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain" alt="Twitter / X"></a>
+  <a href="https://gitcgr.com/langchain-ai/langchain">
+    <img src="https://gitcgr.com/badge/langchain-ai/langchain.svg" alt="gitcgr" />
+  </a>
 </div>
 
 <br>
