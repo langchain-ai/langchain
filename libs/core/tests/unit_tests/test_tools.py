@@ -2672,6 +2672,20 @@ def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> N
     assert "Failed to get args_schema annotations for filtering" not in caplog.text
 
 
+def test_structured_tool_allows_self_key_in_kwargs() -> None:
+    def func(**kwargs: Any) -> dict[str, Any]:
+        return kwargs
+
+    tool = StructuredTool(
+        name="test_tool",
+        description="test tool",
+        args_schema={"type": "object", "properties": {}},
+        func=func,
+    )
+
+    assert tool.invoke({"self": 2, "other": 3}) == {"self": 2, "other": 3}
+
+
 def test_simple_tool_args_schema_dict() -> None:
     args_schema = {
         "properties": {
@@ -2903,6 +2917,25 @@ async def test_tool_ainvoke_does_not_mutate_inputs() -> None:
         "id": "call_0_82c17db8-95df-452f-a4c2-03f809022134",
         "type": "tool_call",
     }
+
+
+async def test_structured_tool_ainvoke_allows_self_in_kwargs() -> None:
+    async def echo_kwargs(**kwargs: Any) -> dict[str, Any]:
+        return kwargs
+
+    tool = StructuredTool(
+        name="echo_kwargs",
+        description="Return all kwargs untouched.",
+        coroutine=echo_kwargs,
+        args_schema={
+            "type": "object",
+            "properties": {},
+        },
+    )
+
+    payload = {"self": 2, "other": 3}
+
+    assert await tool.ainvoke(payload) == payload
 
 
 def test_tool_invoke_does_not_mutate_inputs() -> None:
