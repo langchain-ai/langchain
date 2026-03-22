@@ -182,13 +182,21 @@ class BaseLanguageModel(
     def model_post_init(self, _context: Any, /) -> None:
         """Pydantic V2 lifecycle hook called automatically after `__init__`.
 
-        Seeds `metadata.versions` with the installed `langchain-core` version so
-        that every LLM trace carries the package version that produced it.
+        Seeds `metadata["versions"]` with the installed `langchain-core`
+        version so that every LLM trace carries the package version that
+        produced it.
 
         Partner packages should **not** override this method. Instead, they
-        should define a `@model_validator(mode="after")` method named
-        `_set_version` that calls `_add_version` to append their version to the
-        same dict.
+        should define a `@model_validator(mode="after")` that calls
+        `_add_version` to append their own version to the same dict.
+
+        !!! warning "Validator naming"
+
+            Each subclass's validator **must** have a unique name. Pydantic
+            replaces — rather than chains — same-named `model_validator` methods
+            in child classes. For example, a `BaseChatOpenAI` subclass should
+            use `_set_<partner>_version`, not `_set_version`, to avoid silently
+            dropping the parent's entry.
 
         Args:
             _context: Pydantic validation context (typically `None`).
@@ -198,7 +206,7 @@ class BaseLanguageModel(
         self._add_version("langchain-core", VERSION)
 
     def _add_version(self, pkg: str, version: str) -> None:
-        """Record a package version in ``metadata.versions`` for tracing.
+        """Record a package version in `metadata.versions` for tracing.
 
         Each layer in the class hierarchy (core -> langchain -> partner)
         calls this so that the resulting metadata dict accumulates *all*

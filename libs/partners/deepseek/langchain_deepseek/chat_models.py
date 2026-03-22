@@ -226,8 +226,12 @@ class ChatDeepSeek(BaseChatOpenAI):
         return ls_params
 
     @model_validator(mode="after")
-    def _set_version(self) -> Self:
-        """Set package version in metadata."""
+    def _set_deepseek_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
         self._add_version("langchain-deepseek", __version__)
         return self
 

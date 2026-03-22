@@ -91,6 +91,7 @@ from langchain_core.tracers import (
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from langchain_core.version import VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
@@ -2149,7 +2150,11 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakelist",
+                        "versions": {"langchain-core": VERSION},
+                    },
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2363,6 +2368,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
+                        "versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",

@@ -97,7 +97,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -227,7 +227,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['baz, qux'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -346,7 +346,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         },
         {
@@ -457,7 +457,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['baz, qux'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -848,7 +848,7 @@
             "fake",
             "FakeStreamingListLLM"
           ],
-          "repr": "FakeStreamingListLLM(responses=['first item, second item, third item'])",
+          "repr": "FakeStreamingListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['first item, second item, third item'])",
           "name": "FakeStreamingListLLM"
         },
         {
@@ -884,7 +884,7 @@
               "fake",
               "FakeStreamingListLLM"
             ],
-            "repr": "FakeStreamingListLLM(responses=['this', 'is', 'a', 'test'])",
+            "repr": "FakeStreamingListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['this', 'is', 'a', 'test'])",
             "name": "FakeStreamingListLLM"
           }
         },
@@ -1009,7 +1009,7 @@
 # name: test_prompt_with_chat_model
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo'])
+  | FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model.1
@@ -1109,7 +1109,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(responses=['foo'])",
+        "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1220,7 +1220,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -1249,7 +1249,7 @@
 # name: test_prompt_with_chat_model_async
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo'])
+  | FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model_async.1
@@ -1349,7 +1349,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(responses=['foo'])",
+        "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1459,7 +1459,7 @@
           "fake",
           "FakeListLLM"
         ],
-        "repr": "FakeListLLM(responses=['foo', 'bar'])",
+        "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo', 'bar'])",
         "name": "FakeListLLM"
       }
     },
@@ -1576,7 +1576,7 @@
             "fake",
             "FakeListLLM"
           ],
-          "repr": "FakeListLLM(responses=['foo', 'bar'])",
+          "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo', 'bar'])",
           "name": "FakeListLLM"
         }
       ],
@@ -1699,7 +1699,7 @@
             "fake",
             "FakeStreamingListLLM"
           ],
-          "repr": "FakeStreamingListLLM(responses=['bear, dog, cat', 'tomato, lettuce, onion'])",
+          "repr": "FakeStreamingListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['bear, dog, cat', 'tomato, lettuce, onion'])",
           "name": "FakeStreamingListLLM"
         }
       ],
@@ -1867,7 +1867,7 @@
                     "fake",
                     "FakeListLLM"
                   ],
-                  "repr": "FakeListLLM(responses=['4'])",
+                  "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['4'])",
                   "name": "FakeListLLM"
                 }
               },
@@ -1940,7 +1940,7 @@
                     "fake",
                     "FakeListLLM"
                   ],
-                  "repr": "FakeListLLM(responses=['2'])",
+                  "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['2'])",
                   "name": "FakeListLLM"
                 }
               },
@@ -13407,7 +13407,7 @@
     just_to_test_lambda: RunnableLambda(...)
   }
   | ChatPromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, template='Context:\n{documents}\n\nQuestion:\n{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo, bar'])
+  | FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo, bar'])
   | CommaSeparatedListOutputParser()
   '''
 # ---
@@ -13610,7 +13610,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -13636,8 +13636,8 @@
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
   | RunnableLambda(...)
   | {
-      chat: FakeListChatModel(responses=["i'm a chatbot"]),
-      llm: FakeListLLM(responses=["i'm a textbot"])
+      chat: FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=["i'm a chatbot"]),
+      llm: FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=["i'm a textbot"])
     }
   '''
 # ---
@@ -13762,7 +13762,7 @@
                 "fake_chat_models",
                 "FakeListChatModel"
               ],
-              "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
+              "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=[\"i'm a chatbot\"])",
               "name": "FakeListChatModel"
             },
             "llm": {
@@ -13774,7 +13774,7 @@
                 "fake",
                 "FakeListLLM"
               ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
+              "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=[\"i'm a textbot\"])",
               "name": "FakeListLLM"
             }
           }
@@ -13917,7 +13917,7 @@
                     "fake_chat_models",
                     "FakeListChatModel"
                   ],
-                  "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
+                  "repr": "FakeListChatModel(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=[\"i'm a chatbot\"])",
                   "name": "FakeListChatModel"
                 },
                 "kwargs": {
@@ -13938,7 +13938,7 @@
                 "fake",
                 "FakeListLLM"
               ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
+              "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=[\"i'm a textbot\"])",
               "name": "FakeListLLM"
             },
             "passthrough": {

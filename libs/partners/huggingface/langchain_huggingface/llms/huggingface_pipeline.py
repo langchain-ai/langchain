@@ -9,7 +9,9 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
+from typing_extensions import Self
 
+from langchain_huggingface._version import __version__
 from langchain_huggingface.utils.import_utils import (
     IMPORT_ERROR,
     is_ipex_available,
@@ -90,6 +92,11 @@ class HuggingFacePipeline(BaseLLM):
     model_config = ConfigDict(
         extra="forbid",
     )
+
+    @model_validator(mode="after")
+    def _add_pkg_version(self) -> Self:
+        self._add_version("langchain-huggingface", __version__)
+        return self
 
     @model_validator(mode="before")
     @classmethod

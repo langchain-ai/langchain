@@ -1,4 +1,4 @@
-.PHONY: all format lint type test tests integration_tests help extended_tests
+.PHONY: all format lint type test tests integration_tests help extended_tests check_version
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -53,13 +53,17 @@ format format_diff:
 check_imports: $(shell find langchain_perplexity -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
 
 help:
 	@echo '----'
-	@echo 'check_imports				- check imports'
+	@echo 'check_imports                - check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

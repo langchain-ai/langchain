@@ -84,7 +84,7 @@
                   "fake",
                   "FakeListLLM"
                 ],
-                "repr": "FakeListLLM(responses=['foo'], i=1)",
+                "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'], i=1)",
                 "name": "FakeListLLM"
               }
             },
@@ -128,7 +128,7 @@
                     "fake",
                     "FakeListLLM"
                   ],
-                  "repr": "FakeListLLM(responses=['bar'])",
+                  "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['bar'])",
                   "name": "FakeListLLM"
                 }
               },
@@ -268,7 +268,7 @@
           "fake",
           "FakeListLLM"
         ],
-        "repr": "FakeListLLM(responses=['foo'], i=1)",
+        "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'], i=1)",
         "name": "FakeListLLM"
       },
       "fallbacks": [
@@ -281,7 +281,7 @@
             "fake",
             "FakeListLLM"
           ],
-          "repr": "FakeListLLM(responses=['bar'])",
+          "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['bar'])",
           "name": "FakeListLLM"
         }
       ],
@@ -322,7 +322,7 @@
           "fake",
           "FakeListLLM"
         ],
-        "repr": "FakeListLLM(responses=['foo'], i=1)",
+        "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['foo'], i=1)",
         "name": "FakeListLLM"
       },
       "fallbacks": [
@@ -335,7 +335,7 @@
             "fake",
             "FakeListLLM"
           ],
-          "repr": "FakeListLLM(responses=['baz'], i=1)",
+          "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['baz'], i=1)",
           "name": "FakeListLLM"
         },
         {
@@ -347,7 +347,7 @@
             "fake",
             "FakeListLLM"
           ],
-          "repr": "FakeListLLM(responses=['bar'])",
+          "repr": "FakeListLLM(metadata={'versions': {'langchain-core': '1.2.20'}}, responses=['bar'])",
           "name": "FakeListLLM"
         }
       ],
