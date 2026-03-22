@@ -31,7 +31,9 @@ def _convert_v0_multimodal_input_to_v1(
         for block in content
     ]
     for block in unpacked_blocks:
-        if block.get("type") in {"image", "audio", "file"} and "source_type" in block:
+        if block.get("type") in {"image", "audio", "file"} and (
+            "source_type" in block or "sourceType" in block
+        ):
             converted_block = _convert_legacy_v0_content_block_to_v1(block)
             converted_blocks.append(cast("types.ContentBlock", converted_block))
         elif block.get("type") in types.KNOWN_BLOCK_TYPES:
@@ -64,6 +66,19 @@ def _convert_legacy_v0_content_block_to_v1(
             A dictionary of extra keys not part of the known v0 format.
         """
         return {k: v for k, v in block_dict.items() if k not in known_keys}
+
+    # Copy to avoid mutating the original user-supplied block.
+    block = dict(block)
+
+    # Normalize camelCase keys to snake_case for compatibility with LangGraph JS SDK.
+    # Keep snake_case values when both forms are present.
+    if "mime_type" not in block and "mimeType" in block:
+        block["mime_type"] = block["mimeType"]
+    block.pop("mimeType", None)
+
+    if "source_type" not in block and "sourceType" in block:
+        block["source_type"] = block["sourceType"]
+    block.pop("sourceType", None)
 
     # Check if this is actually a v0 format block
     block_type = block.get("type")

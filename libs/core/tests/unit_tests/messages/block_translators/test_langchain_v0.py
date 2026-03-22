@@ -111,3 +111,71 @@ def test_convert_with_extras_on_v0_block() -> None:
     }
 
     assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+
+
+def test_convert_to_v1_from_camel_case_input() -> None:
+    """Test that JS-style camelCase v0 blocks are normalized and converted."""
+    message = HumanMessage(
+        content=[
+            {
+                "type": "image",
+                "sourceType": "url",
+                "url": "https://example.com/image.png",
+                "mimeType": "image/png",
+            },
+            {
+                "type": "audio",
+                "sourceType": "base64",
+                "data": "<audio base64 data>",
+                "mimeType": "audio/mpeg",
+            },
+            {
+                "type": "file",
+                "sourceType": "base64",
+                "data": "<file base64 data>",
+                "mimeType": "application/pdf",
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {
+            "type": "image",
+            "url": "https://example.com/image.png",
+            "mime_type": "image/png",
+        },
+        {
+            "type": "audio",
+            "base64": "<audio base64 data>",
+            "mime_type": "audio/mpeg",
+        },
+        {
+            "type": "file",
+            "base64": "<file base64 data>",
+            "mime_type": "application/pdf",
+        },
+    ]
+
+    assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
+
+
+def test_convert_legacy_block_prefers_snake_case_when_both_key_styles_present() -> None:
+    """Test that snake_case wins if both snake_case and camelCase are provided."""
+    block = {
+        "type": "image",
+        "source_type": "url",
+        "sourceType": "base64",
+        "url": "https://example.com/image.png",
+        "mime_type": "image/snake",
+        "mimeType": "image/camel",
+    }
+
+    expected_output = {
+        "type": "image",
+        "url": "https://example.com/image.png",
+        "mime_type": "image/snake",
+    }
+
+    assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+    assert block["sourceType"] == "base64"
+    assert block["mimeType"] == "image/camel"
