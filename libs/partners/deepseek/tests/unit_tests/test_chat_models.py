@@ -439,13 +439,11 @@ def test_profile() -> None:
     assert model.profile["reasoning_output"]
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-deepseek version."""
-    from importlib.metadata import version  # noqa: PLC0415
-
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
     llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("test_key"))
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {
-        "langchain-deepseek": version("langchain-deepseek")
-    }
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-deepseek" in versions
+    assert "langchain-openai" in versions

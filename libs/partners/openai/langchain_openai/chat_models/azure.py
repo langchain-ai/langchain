@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _get_pkg_version
 from typing import Any, Literal, TypeAlias, TypeVar
 
@@ -21,6 +22,11 @@ from typing_extensions import Self
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 logger = logging.getLogger(__name__)
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-openai")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -596,6 +602,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        self._add_version("langchain-openai", _PKG_VERSION)
         if self.n is not None and self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
@@ -753,7 +760,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 params["ls_model_name"] = self.model_name
         elif self.deployment_name:
             params["ls_model_name"] = self.deployment_name
-        params["versions"] = {"langchain-openai": _get_pkg_version("langchain-openai")}
         return params
 
     def _create_chat_result(

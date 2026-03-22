@@ -409,13 +409,10 @@ def test_profile() -> None:
     assert model.profile
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-mistralai version."""
-    from importlib.metadata import version
-
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
     llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {
-        "langchain-mistralai": version("langchain-mistralai")
-    }
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-mistralai" in versions

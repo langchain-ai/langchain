@@ -6,6 +6,7 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import (
@@ -85,6 +86,11 @@ from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
 from langchain_fireworks.data._profiles import _PROFILES
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-fireworks")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 logger = logging.getLogger(__name__)
 
@@ -399,6 +405,7 @@ class ChatFireworks(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        self._add_version("langchain-fireworks", _PKG_VERSION)
         if self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
@@ -463,9 +470,6 @@ class ChatFireworks(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
-        ls_params["versions"] = {
-            "langchain-fireworks": _get_pkg_version("langchain-fireworks")
-        }
         return ls_params
 
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:

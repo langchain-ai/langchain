@@ -1756,8 +1756,9 @@ def test_anthropic_model_params() -> None:
         "ls_model_name": MODEL_NAME,
         "ls_max_tokens": 64000,
         "ls_temperature": None,
-        "versions": {"langchain-anthropic": __version__},
     }
+    assert llm.metadata is not None
+    assert llm.metadata["versions"]["langchain-anthropic"] == __version__
 
     ls_params = llm._get_ls_params(model=MODEL_NAME)
     assert ls_params.get("ls_model_name") == MODEL_NAME

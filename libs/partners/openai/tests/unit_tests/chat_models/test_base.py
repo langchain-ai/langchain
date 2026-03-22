@@ -3530,14 +3530,13 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     assert isinstance(exc_info.value, ContextOverflowError)
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-openai version."""
-    from importlib.metadata import version
-
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
     llm = ChatOpenAI()
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {"langchain-openai": version("langchain-openai")}
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-openai" in versions
 
 
 def test_tool_search_passthrough() -> None:

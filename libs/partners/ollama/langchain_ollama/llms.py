@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator, Mapping
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _get_pkg_version
 from typing import Any, Literal
 
 from langchain_core.callbacks import (
@@ -20,6 +22,11 @@ from langchain_ollama._utils import (
     parse_url_with_auth,
     validate_model,
 )
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-ollama")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 
 class OllamaLLM(BaseLLM):
@@ -322,6 +329,7 @@ class OllamaLLM(BaseLLM):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
+        self._add_version("langchain-ollama", _PKG_VERSION)
         client_kwargs = self.client_kwargs or {}
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)

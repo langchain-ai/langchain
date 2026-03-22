@@ -511,11 +511,10 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         assert "strict" not in call_kwargs
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-ollama version."""
-    from importlib.metadata import version  # noqa: PLC0415
-
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
     llm = ChatOllama(model=MODEL_NAME)
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {"langchain-ollama": version("langchain-ollama")}
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-ollama" in versions

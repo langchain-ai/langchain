@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
-from importlib.metadata import version as _get_pkg_version
+from importlib.metadata import PackageNotFoundError, version as _get_pkg_version
 from operator import itemgetter
 from typing import Any, Literal, cast
 
@@ -71,6 +71,11 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openrouter.data._profiles import _PROFILES
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-openrouter")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
@@ -305,6 +310,7 @@ class ChatOpenRouter(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
+        self._add_version("langchain-openrouter", _PKG_VERSION)
         if not (self.openrouter_api_key and self.openrouter_api_key.get_secret_value()):
             msg = "OPENROUTER_API_KEY must be set."
             raise ValueError(msg)
@@ -411,9 +417,6 @@ class ChatOpenRouter(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
             ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
-        ls_params["versions"] = {
-            "langchain-openrouter": _get_pkg_version("langchain-openrouter")
-        }
         return ls_params
 
     def _generate(

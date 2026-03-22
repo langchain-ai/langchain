@@ -17,7 +17,6 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.base import LangSmithParams
 from langchain_core.language_models.chat_models import _generate_response_from_error
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
@@ -1223,22 +1222,18 @@ def test_get_ls_params() -> None:
 
 
 class _VersionedFakeModel(FakeListChatModel):
-    """Fake model that reports a versions dict in `ls_params`."""
+    """Fake model that adds a version via ``_add_version`` (JS-style)."""
 
-    def _get_ls_params(
-        self, stop: list[str] | None = None, **kwargs: Any
-    ) -> LangSmithParams:
-        params = super()._get_ls_params(stop=stop, **kwargs)
-        params["versions"] = {"langchain-fake": "0.1.0"}
-        return params
+    def model_post_init(self, _context: Any, /) -> None:
+        super().model_post_init(_context)
+        self._add_version("langchain-fake", "0.1.0")
 
 
 def test_user_versions_metadata_survives_merge() -> None:
     """User-provided versions metadata should be deep-merged with model versions.
 
-    Regression test: if the merge in `BaseChatModel` reverts to a flat dict
-    spread, user-provided versions would be silently overwritten by the
-    model's versions.
+    Regression test: the ``add_metadata`` deep-merge in ``CallbackManager``
+    must preserve both user-provided and model-provided versions dicts.
     """
     llm = _VersionedFakeModel(responses=["hello"])
     user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
@@ -1247,11 +1242,10 @@ def test_user_versions_metadata_survives_merge() -> None:
         llm.invoke([HumanMessage(content="hi")], config=user_config)
         assert len(cb.traced_runs) == 1
         run_metadata = cb.traced_runs[0].extra["metadata"]
-        # Both user-provided and model-provided versions must be present.
-        assert run_metadata["versions"] == {
-            "my-app": "2.0",
-            "langchain-fake": "0.1.0",
-        }
+        assert "my-app" in run_metadata["versions"]
+        assert run_metadata["versions"]["my-app"] == "2.0"
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
 
 
 async def test_user_versions_metadata_survives_merge_async() -> None:
@@ -1263,10 +1257,39 @@ async def test_user_versions_metadata_survives_merge_async() -> None:
         await llm.ainvoke([HumanMessage(content="hi")], config=user_config)
         assert len(cb.traced_runs) == 1
         run_metadata = cb.traced_runs[0].extra["metadata"]
-        assert run_metadata["versions"] == {
-            "my-app": "2.0",
-            "langchain-fake": "0.1.0",
-        }
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+def test_user_versions_metadata_survives_merge_stream() -> None:
+    """Stream variant: user-provided versions metadata deep-merged with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        for _ in llm.stream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+async def test_user_versions_metadata_survives_merge_astream() -> None:
+    """Async stream variant: user-provided versions metadata deep-merged."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        async for _ in llm.astream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
 
 
 def test_model_profiles() -> None:

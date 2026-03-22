@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable, Mapping
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _get_pkg_version
 from typing import Any, cast
 
 import openai
@@ -13,6 +15,11 @@ from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openai.llms.base import BaseOpenAI
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-openai")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +127,7 @@ class AzureOpenAI(BaseOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        self._add_version("langchain-openai", _PKG_VERSION)
         if self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)

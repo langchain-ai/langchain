@@ -36,7 +36,6 @@ def test_xai_model_param() -> None:
     assert llm.model_name == "foo"
     ls_params = llm._get_ls_params()
     assert ls_params.get("ls_provider") == "xai"
-    assert "versions" in ls_params
 
 
 def test_chat_xai_invalid_streaming_params() -> None:
@@ -167,11 +166,11 @@ def test_stream_usage_metadata() -> None:
     assert model.stream_usage is False
 
 
-def test_ls_params_versions_value() -> None:
-    """Test that _get_ls_params reports the correct langchain-xai version."""
-    from importlib.metadata import version  # noqa: PLC0415
-
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
     llm = ChatXAI(model=MODEL_NAME)
-    ls_params = llm._get_ls_params()
-    assert "versions" in ls_params
-    assert ls_params["versions"] == {"langchain-xai": version("langchain-xai")}
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-xai" in versions
+    assert "langchain-openai" in versions

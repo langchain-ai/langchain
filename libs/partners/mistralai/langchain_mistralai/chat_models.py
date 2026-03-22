@@ -8,6 +8,7 @@ import re
 import ssl
 import uuid
 from collections.abc import Callable, Sequence  # noqa: TC003
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _get_pkg_version
 from operator import itemgetter
 from typing import (
@@ -76,6 +77,11 @@ from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
 from langchain_mistralai.data._profiles import _PROFILES
+
+try:
+    _PKG_VERSION = _get_pkg_version("langchain-mistralai")
+except PackageNotFoundError:
+    _PKG_VERSION = ""
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -546,9 +552,6 @@ class ChatMistralAI(BaseChatModel):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
-        ls_params["versions"] = {
-            "langchain-mistralai": _get_pkg_version("langchain-mistralai")
-        }
         return ls_params
 
     @property
@@ -604,6 +607,7 @@ class ChatMistralAI(BaseChatModel):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
+        self._add_version("langchain-mistralai", _PKG_VERSION)
         if isinstance(self.mistral_api_key, SecretStr):
             api_key_str: str | None = self.mistral_api_key.get_secret_value()
         else:

@@ -72,14 +72,6 @@ class LangSmithParams(TypedDict, total=False):
     ls_integration: str
     """Integration that created the trace."""
 
-    versions: dict[str, str]
-    """Package versions for tracing (e.g., `{"langchain-anthropic": "1.3.3"}`).
-
-    Maps partner package names to their installed versions. Deep-merged with
-    existing metadata so that versions from multiple integration layers are
-    preserved rather than overwritten.
-    """
-
 
 @cache  # Cache the tokenizer
 def get_tokenizer() -> Any:
@@ -186,6 +178,31 @@ class BaseLanguageModel(
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    def model_post_init(self, _context: Any, /) -> None:
+        """Add langchain-core version to metadata after model init."""
+        from langchain_core.version import VERSION  # noqa: PLC0415
+
+        self._add_version("langchain-core", VERSION)
+
+    def _add_version(self, pkg: str, version: str) -> None:
+        """Record a package version in ``metadata.versions`` for tracing.
+
+        Each integration layer calls this in its constructor so that traces
+        carry the full set of package versions involved in an invocation.
+        Mirrors ``_addVersion`` in the JS SDK.
+
+        Args:
+            pkg: Package name (e.g., ``"langchain-openai"``).
+            version: Installed version string.
+        """
+        if self.metadata is None:
+            self.metadata = {}
+        existing = self.metadata.get("versions")
+        self.metadata["versions"] = {
+            **(existing if isinstance(existing, dict) else {}),
+            pkg: version,
+        }
 
     @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
