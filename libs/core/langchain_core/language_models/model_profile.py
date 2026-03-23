@@ -1,6 +1,5 @@
 """Model profile types and utilities."""
 
-import contextlib
 import warnings
 from typing import get_type_hints
 
@@ -123,47 +122,19 @@ ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""
 
 
-# Cache for ModelProfile's declared field names. Populated lazily because
-# _warn_unknown_profile_keys runs on every chat model construction and
-# get_type_hints is not free.
-_DECLARED_PROFILE_KEYS: frozenset[str] | None = None
-
-
-def _get_declared_profile_keys() -> frozenset[str]:
-    """Return the declared `ModelProfile` field names, cached after first call."""
-    global _DECLARED_PROFILE_KEYS  # noqa: PLW0603
-    if _DECLARED_PROFILE_KEYS is None:
-        _DECLARED_PROFILE_KEYS = frozenset(get_type_hints(ModelProfile).keys())
-    return _DECLARED_PROFILE_KEYS
-
-
 def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
-    """Emit a warning if a profile dict contains keys not declared in `ModelProfile`.
-
-    This function must never raise — it is called during model construction and
-    a failure here would prevent all chat model instantiation.
-
-    Args:
-        profile: Model profile dict to check.
-    """
+    """Warn if *profile* contains keys not declared on `ModelProfile`."""
     try:
-        declared = _get_declared_profile_keys()
-    except Exception:
-        # If introspection fails (e.g. forward ref issues), skip rather than
-        # crash model construction.
+        declared = frozenset(get_type_hints(ModelProfile).keys())
+    except TypeError:
+        # get_type_hints raises TypeError on unresolvable forward refs.
         return
 
     extra = sorted(set(profile) - declared)
     if extra:
-        # warnings.warn() raises when the user (or a test framework like
-        # pytest) configures warnings-as-errors (-W error /
-        # warnings.simplefilter("error")). Suppress so we honour the
-        # "must never raise" contract — this runs during every chat model
-        # construction.
-        with contextlib.suppress(Exception):
-            warnings.warn(
-                f"Unrecognized keys in model profile: {extra}. "
-                f"This may indicate a version mismatch between langchain-core "
-                f"and your provider package. Consider upgrading langchain-core.",
-                stacklevel=2,
-            )
+        warnings.warn(
+            f"Unrecognized keys in model profile: {extra}. "
+            f"This may indicate a version mismatch between langchain-core "
+            f"and your provider package. Consider upgrading langchain-core.",
+            stacklevel=2,
+        )

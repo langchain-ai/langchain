@@ -369,15 +369,7 @@ def test_model_data_to_profile_text_modalities() -> None:
 
 
 def test_model_data_to_profile_keys_subset_of_model_profile() -> None:
-    """Every key emitted by _model_data_to_profile must be declared in ModelProfile.
-
-    If this test fails, a new field was added to `_model_data_to_profile` in the CLI
-    without a matching field in `langchain_core.language_models.ModelProfile`. Add
-    the field to `ModelProfile` and release langchain-core BEFORE refreshing partner
-    profiles. While `ModelProfile` uses `extra='allow'` so Pydantic won't reject
-    unknown keys at runtime, undeclared fields lack type annotations, won't appear
-    in IDE autocompletion, and are invisible to static analysis.
-    """
+    """All CLI-emitted profile keys must be declared in `ModelProfile`."""
     # Build a model_data dict with every possible field populated so
     # _model_data_to_profile includes all keys it can emit.
     model_data = {

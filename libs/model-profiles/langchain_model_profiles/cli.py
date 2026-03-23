@@ -156,28 +156,19 @@ def _warn_undeclared_profile_keys(
 ) -> None:
     """Warn if any profile keys are not declared in `ModelProfile`.
 
-    Requires `langchain-core` to be installed. If it is not available the
-    check is silently skipped (`langchain-core` is a test dependency, not a
-    runtime dependency of this package).
-
     Args:
         profiles: Mapping of model IDs to their profile dicts.
     """
     try:
         from langchain_core.language_models.model_profile import ModelProfile
-    except ImportError:
+    except ModuleNotFoundError:
         # langchain-core is a test dep, not a runtime dep; skip check.
         return
 
     from typing import get_type_hints
 
     declared = set(get_type_hints(ModelProfile).keys())
-
-    all_keys: set[str] = set()
-    for profile in profiles.values():
-        all_keys.update(profile.keys())
-
-    extra = sorted(all_keys - declared)
+    extra = sorted({k for p in profiles.values() for k in p} - declared)
     if extra:
         warnings.warn(
             f"Profile keys not declared in langchain_core ModelProfile: {extra}. "
