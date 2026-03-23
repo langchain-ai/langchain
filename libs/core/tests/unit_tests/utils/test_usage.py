@@ -35,11 +35,32 @@ def test_dict_int_op_max_depth_exceeded() -> None:
         _dict_int_op(left, right, operator.add, max_depth=2)
 
 
+def test_dict_int_op_float_values() -> None:
+    left = {"tokens": 10, "cost": 0.05}
+    right = {"tokens": 20, "cost": 0.03}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"tokens": 30, "cost": pytest.approx(0.08)}
+
+
+def test_dict_int_op_float_only_one_side() -> None:
+    left = {"tokens": 100, "cost": 0.005}
+    right = {"tokens": 200}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"tokens": 300, "cost": pytest.approx(0.005)}
+
+
+def test_dict_int_op_mixed_int_float() -> None:
+    left = {"tokens": 100, "cost": 0}
+    right = {"tokens": 200, "cost": 0.01}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"tokens": 300, "cost": pytest.approx(0.01)}
+
+
 def test_dict_int_op_invalid_types() -> None:
     left = {"a": 1, "b": "string"}
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported",
+        match="Only dict, int, and float values are supported",
     ):
         _dict_int_op(left, right, operator.add)
