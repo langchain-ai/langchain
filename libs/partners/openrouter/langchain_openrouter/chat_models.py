@@ -223,6 +223,13 @@ class ChatOpenRouter(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output.
+
+    If `True`, additional message chunks will be generated during the stream including
+    usage metadata.
+    """
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
 
@@ -343,12 +350,8 @@ class ChatOpenRouter(BaseChatModel):
             self.client = openrouter.OpenRouter(**client_kwargs)
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     #
     # Serializable class method overrides
@@ -443,7 +446,7 @@ class ChatOpenRouter(BaseChatModel):
         response = await self.client.chat.send_async(messages=sdk_messages, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901
+    def _stream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -452,6 +455,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -466,6 +471,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -515,7 +532,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901
+    async def _astream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -524,6 +541,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -540,6 +559,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token=generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -934,8 +965,7 @@ def _wrap_messages_for_sdk(
             # Unknown role — pass dict through and hope for the best.
             wrapped.append(msg)
             continue
-        fields = {k: v for k, v in msg.items() if k != "role"}
-        wrapped.append(model_cls.model_construct(**fields))
+        wrapped.append(model_cls.model_construct(**msg))
     return wrapped
 
 

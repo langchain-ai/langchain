@@ -607,12 +607,10 @@ class ChatHuggingFace(BaseChatModel):
             raise TypeError(msg)
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None and self.model_id:
-            self.profile = _get_default_model_profile(self.model_id)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        if self.model_id:
+            return _get_default_model_profile(self.model_id) or None
+        return None
 
     @classmethod
     def from_model_id(
