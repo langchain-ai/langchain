@@ -7,7 +7,7 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import httpx
 
@@ -161,13 +161,15 @@ def _warn_undeclared_profile_keys(
     """
     try:
         from langchain_core.language_models.model_profile import ModelProfile
-    except ModuleNotFoundError:
-        # langchain-core is a test dep, not a runtime dep; skip check.
+    except ImportError:
+        # langchain-core may not be installed or importable; skip check.
         return
 
-    from typing import get_type_hints
-
-    declared = set(get_type_hints(ModelProfile).keys())
+    try:
+        declared = set(get_type_hints(ModelProfile).keys())
+    except TypeError:
+        # get_type_hints can raise TypeError on unresolvable forward refs.
+        return
     extra = sorted({k for p in profiles.values() for k in p} - declared)
     if extra:
         warnings.warn(
@@ -330,7 +332,6 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     for model_id in sorted(extra_models):
         profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
 
-    # Warn about profile keys not declared in ModelProfile
     _warn_undeclared_profile_keys(profiles)
 
     # Ensure directory exists

@@ -19,12 +19,13 @@ class TestModelProfileExtraAllow:
         profile: ModelProfile = {"max_input_tokens": 100, "tool_calling": True}
         assert profile["max_input_tokens"] == 100
 
-    def test_accepts_extra_keys_at_runtime(self) -> None:
-        profile: dict[str, Any] = {
-            "max_input_tokens": 100,
-            "unknown_future_field": "value",
-        }
-        assert profile["unknown_future_field"] == "value"
+    def test_extra_keys_accepted_via_typed_dict(self) -> None:
+        """ModelProfile TypedDict allows extra keys at construction."""
+        profile = ModelProfile(
+            max_input_tokens=100,
+            unknown_future_field="value",  # type: ignore[typeddict-unknown-key]
+        )
+        assert profile["unknown_future_field"] == "value"  # type: ignore[typeddict-item]
 
     def test_extra_keys_survive_pydantic_validation(self) -> None:
         """Extra keys pass through even when parent model forbids extras."""

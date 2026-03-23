@@ -1,10 +1,13 @@
 """Model profile types and utilities."""
 
+import logging
 import warnings
 from typing import get_type_hints
 
 from pydantic import ConfigDict
 from typing_extensions import TypedDict
+
+logger = logging.getLogger(__name__)
 
 
 class ModelProfile(TypedDict, total=False):
@@ -123,11 +126,24 @@ ModelProfileRegistry = dict[str, ModelProfile]
 
 
 def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
-    """Warn if *profile* contains keys not declared on `ModelProfile`."""
+    """Warn if `profile` contains keys not declared on `ModelProfile`.
+
+    Args:
+        profile: The model profile dict to check for undeclared keys.
+    """
+    if not isinstance(profile, dict):
+        return
+
     try:
         declared = frozenset(get_type_hints(ModelProfile).keys())
     except TypeError:
-        # get_type_hints raises TypeError on unresolvable forward refs.
+        # get_type_hints can raise TypeError on unresolvable forward refs
+        # (e.g., when annotation imports fail at runtime).
+        logger.debug(
+            "Could not resolve type hints for ModelProfile; "
+            "skipping unknown-key check.",
+            exc_info=True,
+        )
         return
 
     extra = sorted(set(profile) - declared)

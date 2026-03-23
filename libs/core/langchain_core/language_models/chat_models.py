@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -363,7 +364,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def _resolve_model_profile(self) -> ModelProfile | None:
         """Return the default model profile, or `None` if unavailable.
 
-        Override this in subclasses instead of `_set_model_profile` — the base
+        Override this in subclasses instead of `_set_model_profile`. The base
         validator calls it automatically and handles assignment. This avoids
         coupling partner code to Pydantic validator mechanics.
         """
@@ -371,20 +372,26 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @model_validator(mode="after")
     def _set_model_profile(self) -> Self:
-        """Call `_resolve_model_profile` to populate profile when not set explicitly.
+        """Populate `profile` from `_resolve_model_profile` if not provided.
 
         Partners should override `_resolve_model_profile` rather than this
         validator. Overriding this method directly still works (Pydantic v2
         replaces the base validator), but bypasses the standard resolution path.
         """
         if self.profile is None:
-            self.profile = self._resolve_model_profile()
+            # Suppress errors from partner overrides (e.g., missing profile
+            # files, broken imports) so model construction never fails over an
+            # optional field.
+            with contextlib.suppress(Exception):
+                self.profile = self._resolve_model_profile()
         return self
 
+    # NOTE: _check_profile_keys must be defined AFTER _set_model_profile.
+    # Pydantic v2 runs mode="after" validators in definition order.
     @model_validator(mode="after")
     def _check_profile_keys(self) -> Self:
         """Warn on unrecognized profile keys."""
-        if self.profile:
+        if self.profile and isinstance(self.profile, dict):
             _warn_unknown_profile_keys(self.profile)
         return self
 
