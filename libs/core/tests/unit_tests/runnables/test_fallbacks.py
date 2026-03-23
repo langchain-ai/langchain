@@ -2,13 +2,14 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
 )
+from uuid import UUID
 
 import pytest
 from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -68,6 +69,72 @@ def _dont_raise_error(inputs: dict[str, Any]) -> str:
     raise ValueError
 
 
+class _FallbackRunTracker(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.events: list[tuple[str, UUID, UUID | None]] = []
+
+    @override
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any] | None,
+        inputs: Any,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_start", run_id, parent_run_id))
+
+    @override
+    def on_chain_end(
+        self,
+        outputs: dict[str, Any] | Any,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_end", run_id, parent_run_id))
+
+    @override
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_error", run_id, parent_run_id))
+
+
+def _raise_string_error(_: str) -> str:
+    msg = "boom"
+    raise ValueError(msg)
+
+
+def _uppercase(value: str) -> str:
+    return value.upper()
+
+
+def _assert_fallback_child_run_parents(
+    events: list[tuple[str, UUID, UUID | None]],
+) -> None:
+    root_run_id = events[0][1]
+    child_starts = [event for event in events if event[0] == "chain_start"][1:]
+
+    assert len(child_starts) == 2
+    assert {event[2] for event in child_starts} == {root_run_id}
+
+    child_error = next(event for event in events if event[0] == "chain_error")
+    assert child_error[2] == root_run_id
+
+    child_end = next(
+        event for event in events if event[0] == "chain_end" and event[1] != root_run_id
+    )
+    assert child_end[2] == root_run_id
+
+
 @pytest.fixture
 def chain_pass_exceptions() -> Runnable[Any, str]:
     fallback = RunnableLambda(_dont_raise_error)
@@ -99,6 +166,26 @@ async def test_fallbacks_async(runnable_name: str, request: Any) -> None:
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
+
+
+def test_invoke_propagates_parent_run_id_to_fallback_children() -> None:
+    tracker = _FallbackRunTracker()
+    runnable = RunnableLambda(_raise_string_error).with_fallbacks(
+        [RunnableLambda(_uppercase)]
+    )
+
+    assert runnable.invoke("hello", config={"callbacks": [tracker]}) == "HELLO"
+    _assert_fallback_child_run_parents(tracker.events)
+
+
+async def test_ainvoke_propagates_parent_run_id_to_fallback_children() -> None:
+    tracker = _FallbackRunTracker()
+    runnable = RunnableLambda(_raise_string_error).with_fallbacks(
+        [RunnableLambda(_uppercase)]
+    )
+
+    assert await runnable.ainvoke("hello", config={"callbacks": [tracker]}) == "HELLO"
+    _assert_fallback_child_run_parents(tracker.events)
 
 
 def _runnable(inputs: dict[str, Any]) -> str:
