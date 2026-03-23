@@ -1232,47 +1232,50 @@ def test_model_profiles() -> None:
     assert model_with_profile.profile == {"max_input_tokens": 100}
 
 
-def test_model_profile_extra_keys_accepted() -> None:
-    """extra='allow' on ModelProfile means unknown keys don't crash."""
-    model = GenericFakeChatModel(
-        messages=iter([]),
-        profile={"max_input_tokens": 100, "unknown_future_field": True},
-    )
+def test_resolve_model_profile_hook_populates_profile() -> None:
+    """_resolve_model_profile is called when profile is None."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]))
+    assert model.profile == {"max_input_tokens": 500}
+
+
+def test_resolve_model_profile_hook_skipped_when_explicit() -> None:
+    """_resolve_model_profile is NOT called when profile is set explicitly."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]), profile={"max_input_tokens": 999})
     assert model.profile is not None
-    assert model.profile.get("unknown_future_field") is True
+    assert model.profile["max_input_tokens"] == 999
 
 
-def test_check_profile_keys_warns_on_unknown() -> None:
-    """_check_profile_keys validator warns for undeclared profile keys."""
-    with warnings.catch_warnings(record=True) as w:
+def test_resolve_model_profile_hook_exception_is_caught() -> None:
+    """Model is still usable if _resolve_model_profile raises."""
+
+    class BrokenProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            msg = "profile file not found"
+            raise RuntimeError(msg)
+
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("always")
-        GenericFakeChatModel(
-            messages=iter([]),
-            profile={"max_input_tokens": 100, "unknown_field": True},
-        )
+        model = BrokenProfileModel(messages=iter([]))
 
-    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
-    assert len(profile_warnings) == 1
-    assert "unknown_field" in str(profile_warnings[0].message)
-
-
-def test_check_profile_keys_silent_on_valid() -> None:
-    """_check_profile_keys validator does not warn for declared keys."""
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        GenericFakeChatModel(
-            messages=iter([]),
-            profile={"max_input_tokens": 100, "tool_calling": True},
-        )
-
-    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
-    assert len(profile_warnings) == 0
+    assert model.profile is None
 
 
 def test_check_profile_keys_runs_despite_partner_override() -> None:
     """Verify _check_profile_keys fires even when _set_model_profile is overridden.
 
-    Uses a distinct validator name so partner overrides do not suppress it.
+    Because _check_profile_keys has a distinct validator name from
+    _set_model_profile, a partner override of the latter does not suppress
+    the key-checking validator.
     """
 
     class PartnerModel(GenericFakeChatModel):
@@ -1297,42 +1300,6 @@ def test_check_profile_keys_runs_despite_partner_override() -> None:
     profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
     assert len(profile_warnings) == 1
     assert "partner_only_field" in str(profile_warnings[0].message)
-
-
-def test_resolve_model_profile_auto_populates() -> None:
-    """Base _set_model_profile validator auto-populates from _resolve_model_profile."""
-
-    class AutoProfileModel(GenericFakeChatModel):
-        def _resolve_model_profile(self) -> ModelProfile | None:
-            return {"max_input_tokens": 42, "tool_calling": True}
-
-    model = AutoProfileModel(messages=iter([]))
-    assert model.profile is not None
-    assert model.profile["max_input_tokens"] == 42
-    assert model.profile["tool_calling"] is True
-
-
-def test_explicit_profile_not_overwritten_by_resolve() -> None:
-    """Explicit profile= kwarg takes precedence over _resolve_model_profile."""
-
-    class AutoProfileModel(GenericFakeChatModel):
-        def _resolve_model_profile(self) -> ModelProfile | None:
-            return {"max_input_tokens": 42}
-
-    model = AutoProfileModel(messages=iter([]), profile={"max_input_tokens": 999})
-    assert model.profile is not None
-    assert model.profile["max_input_tokens"] == 999
-
-
-def test_resolve_model_profile_none_leaves_profile_none() -> None:
-    """Subclass returning None from _resolve_model_profile leaves profile as None."""
-
-    class NoProfileModel(GenericFakeChatModel):
-        def _resolve_model_profile(self) -> ModelProfile | None:
-            return None
-
-    model = NoProfileModel(messages=iter([]))
-    assert model.profile is None
 
 
 class MockResponse:

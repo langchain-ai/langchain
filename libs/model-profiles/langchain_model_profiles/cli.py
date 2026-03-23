@@ -7,7 +7,7 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import httpx
 
@@ -156,28 +156,21 @@ def _warn_undeclared_profile_keys(
 ) -> None:
     """Warn if any profile keys are not declared in `ModelProfile`.
 
-    Requires `langchain-core` to be installed. If it is not available the
-    check is silently skipped (`langchain-core` is a test dependency, not a
-    runtime dependency of this package).
-
     Args:
         profiles: Mapping of model IDs to their profile dicts.
     """
     try:
         from langchain_core.language_models.model_profile import ModelProfile
     except ImportError:
-        # langchain-core is a test dep, not a runtime dep; skip check.
+        # langchain-core may not be installed or importable; skip check.
         return
 
-    from typing import get_type_hints
-
-    declared = set(get_type_hints(ModelProfile).keys())
-
-    all_keys: set[str] = set()
-    for profile in profiles.values():
-        all_keys.update(profile.keys())
-
-    extra = sorted(all_keys - declared)
+    try:
+        declared = set(get_type_hints(ModelProfile).keys())
+    except TypeError:
+        # get_type_hints can raise TypeError on unresolvable forward refs.
+        return
+    extra = sorted({k for p in profiles.values() for k in p} - declared)
     if extra:
         warnings.warn(
             f"Profile keys not declared in langchain_core ModelProfile: {extra}. "
@@ -339,7 +332,6 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     for model_id in sorted(extra_models):
         profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
 
-    # Warn about profile keys not declared in ModelProfile
     _warn_undeclared_profile_keys(profiles)
 
     # Ensure directory exists
