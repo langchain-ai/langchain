@@ -459,9 +459,7 @@ class TestWarnUndeclaredProfileKeys:
             warnings.simplefilter("always")
             _warn_undeclared_profile_keys(profiles)
 
-        undeclared_warnings = [
-            x for x in w if "not declared" in str(x.message)
-        ]
+        undeclared_warnings = [x for x in w if "not declared" in str(x.message)]
         assert len(undeclared_warnings) == 0
 
     def test_survives_get_type_hints_failure(self) -> None:
