@@ -136,9 +136,9 @@ def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
 
     try:
         declared = frozenset(get_type_hints(ModelProfile).keys())
-    except TypeError:
-        # get_type_hints can raise TypeError on unresolvable forward refs
-        # (e.g., when annotation imports fail at runtime).
+    except (TypeError, NameError):
+        # get_type_hints raises NameError on unresolvable forward refs and
+        # TypeError when annotations evaluate to non-type objects.
         logger.debug(
             "Could not resolve type hints for ModelProfile; "
             "skipping unknown-key check.",

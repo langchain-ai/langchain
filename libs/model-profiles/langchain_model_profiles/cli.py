@@ -167,8 +167,9 @@ def _warn_undeclared_profile_keys(
 
     try:
         declared = set(get_type_hints(ModelProfile).keys())
-    except TypeError:
-        # get_type_hints can raise TypeError on unresolvable forward refs.
+    except (TypeError, NameError):
+        # get_type_hints raises NameError on unresolvable forward refs and
+        # TypeError when annotations evaluate to non-type objects.
         return
     extra = sorted({k for p in profiles.values() for k in p} - declared)
     if extra:

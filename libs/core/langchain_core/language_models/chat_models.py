@@ -367,7 +367,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Override this in subclasses instead of `_set_model_profile`. The base
         validator calls it automatically and handles assignment. This avoids
         coupling partner code to Pydantic validator mechanics.
+
+        Each partner needs its own override because things can vary per-partner,
+        such as the attribute that identifies the model (e.g., `model`,
+        `model_name`, `model_id`, `deployment_name`) and the partner-local
+        `_get_default_model_profile` function that reads from each partner's own
+        profile data.
         """
+        # TODO: consider adding a `_model_identifier` property on BaseChatModel
+        # to standardize how partners identify their model, which could allow a
+        # default implementation here that calls a shared
+        # profile-loading mechanism.
         return None
 
     @model_validator(mode="after")
@@ -375,8 +385,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Populate `profile` from `_resolve_model_profile` if not provided.
 
         Partners should override `_resolve_model_profile` rather than this
-        validator. Overriding this method directly still works (Pydantic v2
-        replaces the base validator), but bypasses the standard resolution path.
+        validator. Overriding this with a new `@model_validator` replaces the
+        base validator (Pydantic v2 behavior), bypassing the standard resolution
+        path. A plain method override does not prevent the base validator from
+        running.
         """
         if self.profile is None:
             # Suppress errors from partner overrides (e.g., missing profile
@@ -391,6 +403,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     @model_validator(mode="after")
     def _check_profile_keys(self) -> Self:
         """Warn on unrecognized profile keys."""
+        # isinstance guard: ModelProfile is a TypedDict (always a dict), but
+        # protects against unexpected types from partner overrides.
         if self.profile and isinstance(self.profile, dict):
             _warn_unknown_profile_keys(self.profile)
         return self
