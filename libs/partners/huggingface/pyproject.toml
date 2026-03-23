@@ -23,7 +23,7 @@ classifiers = [
 version = "1.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.11,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
     "huggingface-hub>=0.33.4,<2.0.0",
 ]

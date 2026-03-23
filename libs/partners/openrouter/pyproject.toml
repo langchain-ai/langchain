@@ -23,7 +23,7 @@ classifiers = [
 version = "0.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.13,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "openrouter>=0.6.0,<1.0.0",
 ]
 
