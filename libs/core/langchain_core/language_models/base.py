@@ -183,8 +183,8 @@ class BaseLanguageModel(
         """Pydantic V2 lifecycle hook called automatically after `__init__`.
 
         Seeds `metadata["versions"]` with the installed `langchain-core`
-        version so that every LLM trace carries the package version that
-        produced it.
+        (and `langchain`, if installed) versions so that every LLM trace
+        carries the package versions that produced it.
 
         Partner packages should **not** override this method. Instead, they
         should define a `@model_validator(mode="after")` that calls
@@ -206,6 +206,13 @@ class BaseLanguageModel(
 
         self._add_version("langchain-core", VERSION)
 
+        try:
+            from importlib.metadata import version as pkg_version  # noqa: PLC0415
+
+            self._add_version("langchain", pkg_version("langchain"))
+        except Exception:  # noqa: S110
+            pass
+
     def _add_version(self, pkg: str, version: str) -> None:
         """Record a package version in `metadata.versions` for tracing.
 
@@ -216,7 +223,13 @@ class BaseLanguageModel(
         Example resulting metadata:
 
         ```python
-        {"versions": {"langchain-core": "1.x.x", "langchain-openai": "1.x.x"}}
+        {
+            "versions": {
+                "langchain-core": "1.x.x",
+                "langchain": "1.x.x",
+                "langchain-openai": "1.x.x",
+            }
+        }
         ```
 
         Args:

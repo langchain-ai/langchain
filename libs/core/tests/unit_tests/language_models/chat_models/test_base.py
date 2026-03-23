@@ -1312,6 +1312,36 @@ def test_add_version_with_non_dict_versions() -> None:
     assert "langchain-core" in llm.metadata["versions"]
 
 
+def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When `langchain` is installed, its version appears in metadata."""
+    monkeypatch.setattr(
+        "importlib.metadata.version",
+        lambda pkg: (
+            "1.2.13"
+            if pkg == "langchain"
+            else (_ for _ in ()).throw(Exception(f"not found: {pkg}"))
+        ),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert llm.metadata["versions"]["langchain"] == "1.2.13"
+    assert "langchain-core" in llm.metadata["versions"]
+
+
+def test_langchain_version_missing_when_not_installed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When `langchain` is not installed, metadata.versions has no entry."""
+    monkeypatch.setattr(
+        "importlib.metadata.version",
+        lambda pkg: (_ for _ in ()).throw(Exception(f"not found: {pkg}")),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert "langchain" not in llm.metadata["versions"]
+    assert "langchain-core" in llm.metadata["versions"]
+
+
 def test_model_profiles() -> None:
     model = GenericFakeChatModel(messages=iter([]))
     assert model.profile is None
