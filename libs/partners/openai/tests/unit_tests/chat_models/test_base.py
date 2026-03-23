@@ -2151,6 +2151,7 @@ def test__construct_responses_api_input_human_message_with_text_blocks_conversio
     result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "user"
     assert isinstance(result[0]["content"], list)
     assert len(result[0]["content"]) == 1
@@ -2267,6 +2268,7 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     result = _construct_responses_api_input(messages)
 
     assert len(result) == 1
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "user"
     assert isinstance(result[0]["content"], list)
     assert len(result[0]["content"]) == 2
@@ -2459,17 +2461,21 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert len(result) == len(messages)
 
     # Check system message
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "system"
     assert result[0]["content"] == "You are a helpful assistant."
 
+    assert result[1]["type"] == "message"
     assert result[1]["role"] == "system"
     assert result[1]["content"] == [
         {"type": "input_text", "text": "You are a very helpful assistant!"}
     ]
 
     # Check human message
+    assert result[2]["type"] == "message"
     assert result[2]["role"] == "user"
     assert result[2]["content"] == "What's the weather in San Francisco?"
+    assert result[3]["type"] == "message"
     assert result[3]["role"] == "user"
     assert result[3]["content"] == [
         {"type": "input_text", "text": "What's the weather in San Francisco?"}
@@ -2519,12 +2525,45 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     payload = llm._get_request_payload(message_dicts)
     result = payload["input"]
     assert len(result) == 2
+    assert result[0]["type"] == "message"
     assert result[0]["role"] == "developer"
     assert result[0]["content"] == "This is a developer message."
+    assert result[1]["type"] == "message"
     assert result[1]["role"] == "developer"
     assert result[1]["content"] == [
         {"type": "input_text", "text": "This is a developer message!"}
     ]
+
+
+def test__construct_responses_api_input_message_type_on_all_roles() -> None:
+    """Test that user/system/developer messages include type: 'message'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35688.
+    Strict OpenAI-compatible endpoints (e.g. Azure AI Foundry) require the
+    'type' field on every input item; omitting it causes HTTP 400.
+    """
+    messages: list = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="Hello"),
+        HumanMessage(content=[{"type": "text", "text": "Hello again"}]),
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 3
+    for item in result:
+        assert item["type"] == "message", (
+            f"Expected type='message' for role={item['role']}, got {item.get('type')!r}"
+        )
+
+    # Also test developer messages via dict input
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [{"role": "developer", "content": "Translate English to Italian"}]
+    )
+    result = payload["input"]
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "developer"
 
 
 def test_service_tier() -> None:
