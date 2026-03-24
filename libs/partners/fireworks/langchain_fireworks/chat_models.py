@@ -325,6 +325,12 @@ class ChatFireworks(BaseChatModel):
 
     async_client: Any = Field(default=None, exclude=True)
 
+    root_client: Any = Field(default=None, exclude=True)
+    """Underlying `Fireworks` client (owns the httpx transport)."""
+
+    root_async_client: Any = Field(default=None, exclude=True)
+    """Underlying `AsyncFireworks` client (owns the httpx transport)."""
+
     model_name: str = Field(alias="model")
     """Model name to use."""
 
@@ -416,9 +422,11 @@ class ChatFireworks(BaseChatModel):
         }
 
         if not self.client:
-            self.client = Fireworks(**client_params).chat.completions
+            self.root_client = Fireworks(**client_params)
+            self.client = self.root_client.chat.completions
         if not self.async_client:
-            self.async_client = AsyncFireworks(**client_params).chat.completions
+            self.root_async_client = AsyncFireworks(**client_params)
+            self.async_client = self.root_async_client.chat.completions
         if self.max_retries:
             self.client._max_retries = self.max_retries
             self.async_client._max_retries = self.max_retries
