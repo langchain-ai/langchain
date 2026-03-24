@@ -1284,17 +1284,45 @@ def test_convert_to_openai_image_block() -> None:
             "type": "image",
             "url": "https://...",
             "cache_control": {"type": "ephemeral"},
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+            "metadata": {"detail": "high"},
         },
         {
             "type": "image",
             "source_type": "url",
             "url": "https://...",
             "cache_control": {"type": "ephemeral"},
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://...",
+            "cache_control": {"type": "ephemeral"},
+            "metadata": {"detail": "high"},
         },
     ]:
         expected = {
             "type": "image_url",
-            "image_url": {"url": "https://..."},
+            "image_url": {"url": "https://...", "detail": "high"},
         }
         result = convert_to_openai_image_block(input_block)
         assert result == expected
@@ -1305,6 +1333,21 @@ def test_convert_to_openai_image_block() -> None:
             "base64": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+            "metadata": {"detail": "high"},
         },
         {
             "type": "image",
@@ -1312,12 +1355,30 @@ def test_convert_to_openai_image_block() -> None:
             "data": "<base64 data>",
             "mime_type": "image/jpeg",
             "cache_control": {"type": "ephemeral"},
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "cache_control": {"type": "ephemeral"},
+            "metadata": {"detail": "high"},
         },
     ]:
         expected = {
             "type": "image_url",
             "image_url": {
                 "url": "data:image/jpeg;base64,<base64 data>",
+                "detail": "high",
             },
         }
         result = convert_to_openai_image_block(input_block)

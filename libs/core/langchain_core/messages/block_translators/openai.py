@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions.
+    """Convert `ImageContentBlock` and `Base64ContentBlock` to OpenAI Chat Completions.
 
     Args:
         block: The image content block to convert.
@@ -32,25 +32,27 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     Returns:
         The formatted image content block.
     """
-    if "url" in block:
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
-        }
+    image_url: dict[str, Any] = {}
+
+    # Extract detail from the block
+    if detail := block.get("detail"):
+        image_url["detail"] = detail
+    elif ((extras := block.get("extras")) and ("detail" in extras)) or (
+        (extras := block.get("metadata")) and ("detail" in extras)
+    ):
+        image_url["detail"] = extras["detail"]
+
+    if "url" in block:  # Intentionally do not check for source_type="url"
+        image_url["url"] = block["url"]
+        return {"type": "image_url", "image_url": image_url}
     if "base64" in block or block.get("source_type") == "base64":
         if "mime_type" not in block:
             error_message = "mime_type key is required for base64 data."
             raise ValueError(error_message)
         mime_type = block["mime_type"]
         base64_data = block["data"] if "data" in block else block["base64"]
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
-        }
+        image_url["url"] = f"data:{mime_type};base64,{base64_data}"
+        return {"type": "image_url", "image_url": image_url}
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)
 
@@ -82,10 +84,8 @@ def convert_to_openai_data_block(
                 "type": "input_image",
                 "image_url": chat_completions_block["image_url"]["url"],
             }
-            if chat_completions_block["image_url"].get("detail"):
-                formatted_block["detail"] = chat_completions_block["image_url"][
-                    "detail"
-                ]
+            if detail := chat_completions_block["image_url"].get("detail"):
+                formatted_block["detail"] = detail
         else:
             formatted_block = chat_completions_block
 
