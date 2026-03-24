@@ -1697,13 +1697,32 @@ def test_mcp_tracing() -> None:
     with patch.object(llm, "_client", mock_client):
         _ = llm.invoke([input_message], config={"callbacks": [tracer]})
 
-    # Test headers are not traced
+    # Test authorization_token is not traced
     assert len(tracer.chat_model_start_inputs) == 1
     assert "PLACEHOLDER" not in str(tracer.chat_model_start_inputs)
 
-    # Test headers are correctly propagated to request
+    # Verify _get_invocation_params redacts authorization_token (model attribute case)
+    invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
+    if invocation_params.get("mcp_servers"):
+        for server in invocation_params["mcp_servers"]:
+            if "authorization_token" in server:
+                assert server["authorization_token"] == "**REDACTED**"  # noqa: S105
+
+    # Test authorization_token is correctly propagated to the actual API request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+    # Test that authorization_token is redacted when mcp_servers is passed via kwargs
+    llm_no_mcp = ChatAnthropic(model=MODEL_NAME)
+    invocation_params_kwargs = llm_no_mcp._get_invocation_params(
+        mcp_servers=mcp_servers
+    )
+    assert (
+        invocation_params_kwargs["mcp_servers"][0]["authorization_token"]
+        == "**REDACTED**"  # noqa: S105
+    )
+    # Verify the original mcp_servers list is not mutated
+    assert mcp_servers[0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
 
 
 def test_cache_control_kwarg() -> None:

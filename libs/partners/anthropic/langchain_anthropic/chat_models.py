@@ -929,6 +929,33 @@ class ChatAnthropic(BaseChatModel):
             "thinking": self.thinking,
         }
 
+    def _get_invocation_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Get the parameters used to invoke the model.
+
+        Redacts ``authorization_token`` from any ``mcp_servers`` entries so that
+        secrets are not leaked into LangSmith traces.
+        """
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        # Redact authorization_token from MCP server configs to avoid leaking
+        # credentials into traces (mirrors the analogous redaction in ChatOpenAI
+        # for MCP tool ``headers``).
+        if (mcp_servers := params.get("mcp_servers")) and isinstance(
+            mcp_servers, list
+        ):
+            params["mcp_servers"] = [
+                (
+                    {**server, "authorization_token": "**REDACTED**"}
+                    if isinstance(server, dict) and "authorization_token" in server
+                    else server
+                )
+                for server in mcp_servers
+            ]
+        return params
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
