@@ -1332,6 +1332,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type. Used for serialization."""
         return "chat"
 
+    @deprecated(
+        since="0.3.86",
+        removal="1.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Union[Path, str]) -> None:
         """Save prompt to file.
 

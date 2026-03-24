@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain_core._api import deprecated
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -210,6 +211,12 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot_with_templates"
 
+    @deprecated(
+        since="0.3.86",
+        removal="1.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt to a file.
 

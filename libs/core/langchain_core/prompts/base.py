@@ -23,6 +23,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -345,6 +346,12 @@ class BasePromptTemplate(
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
+    @deprecated(
+        since="0.3.86",
+        removal="1.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Union[Path, str]) -> None:
         """Save the prompt.
 
