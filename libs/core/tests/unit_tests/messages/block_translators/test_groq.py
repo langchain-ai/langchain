@@ -27,6 +27,41 @@ def test_extract_reasoning_from_additional_kwargs_exists() -> None:
     assert callable(_extract_reasoning_from_additional_kwargs)
 
 
+def test_extract_reasoning_ignores_empty_string() -> None:
+    """Test that empty reasoning_content strings are ignored (not returned as blocks)."""
+    from langchain_core.messages.base import _extract_reasoning_from_additional_kwargs
+
+    # Empty string should return None
+    message = AIMessage(
+        content="answer",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    assert _extract_reasoning_from_additional_kwargs(message) is None
+
+    # Whitespace-only string should also return None
+    message_ws = AIMessage(
+        content="answer",
+        additional_kwargs={"reasoning_content": "   "},
+    )
+    assert _extract_reasoning_from_additional_kwargs(message_ws) is None
+
+    # None value should return None
+    message_none = AIMessage(
+        content="answer",
+        additional_kwargs={"reasoning_content": None},
+    )
+    assert _extract_reasoning_from_additional_kwargs(message_none) is None
+
+    # Non-empty string should still work
+    message_valid = AIMessage(
+        content="answer",
+        additional_kwargs={"reasoning_content": "some reasoning"},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message_valid)
+    assert result is not None
+    assert result["reasoning"] == "some reasoning"
+
+
 def test_groq_translate_content_basic() -> None:
     """Test basic groq content translation."""
     # Test with simple text message
