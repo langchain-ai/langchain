@@ -4,6 +4,8 @@ from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Literal,
+    NotRequired,
+    Required,
     TypeAlias,
 )
 from typing import TypedDict as TypingTypedDict
@@ -1242,3 +1244,80 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
+def test_convert_typed_dict_notrequired_fields(typed_dict: type) -> None:
+    """NotRequired fields in TypedDict must not raise TypeError (issue #34085).
+
+    Required fields must appear in the ``required`` list; NotRequired fields
+    must be absent from ``required`` and still appear as schema properties.
+    """
+
+    class Tool(typed_dict):  # type: ignore[misc]
+        """A tool with optional fields."""
+
+        required_field: str
+        optional_field: NotRequired[str]
+        optional_int: NotRequired[int]
+
+    result = _convert_typed_dict_to_openai_function(Tool)
+
+    assert result["name"] == "Tool"
+    params = result["parameters"]
+    props = params["properties"]
+
+    # Both fields must appear in properties
+    assert "required_field" in props
+    assert "optional_field" in props
+    assert "optional_int" in props
+
+    assert props["required_field"] == {"type": "string"}
+    assert props["optional_field"] == {"type": "string"}
+    assert props["optional_int"] == {"type": "integer"}
+
+    # Only the truly required field is in the required list
+    assert params["required"] == ["required_field"]
+
+
+@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
+def test_convert_typed_dict_required_fields_total_false(typed_dict: type) -> None:
+    """Required[] on a total=False TypedDict forces a field into ``required``."""
+
+    class Tool(typed_dict, total=False):  # type: ignore[misc]
+        """A total=False tool."""
+
+        required_field: Required[str]
+        optional_field: str
+
+    result = _convert_typed_dict_to_openai_function(Tool)
+
+    params = result["parameters"]
+    props = params["properties"]
+
+    assert "required_field" in props
+    assert "optional_field" in props
+
+    # Required[] field must appear in the required list; optional_field must not
+    assert "required_field" in params.get("required", [])
+    assert "optional_field" not in params.get("required", [])
+
+
+@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
+def test_convert_typed_dict_notrequired_nested_type(typed_dict: type) -> None:
+    """NotRequired wrapping a generic type (e.g. list[str]) must not raise."""
+
+    class Tool(typed_dict):  # type: ignore[misc]
+        """Tool with nested NotRequired."""
+
+        items: NotRequired[list[str]]
+        count: int
+
+    result = _convert_typed_dict_to_openai_function(Tool)
+
+    params = result["parameters"]
+    props = params["properties"]
+
+    assert props["items"] == {"type": "array", "items": {"type": "string"}}
+    assert props["count"] == {"type": "integer"}
+    assert params["required"] == ["count"]

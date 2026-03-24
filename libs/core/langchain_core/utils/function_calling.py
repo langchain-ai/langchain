@@ -13,6 +13,8 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    NotRequired,
+    Required,
     Union,
     cast,
     get_args,
@@ -280,7 +282,23 @@ def _convert_any_typed_dicts_to_pydantic(
             docstring, list(annotations_)
         )
         fields: dict = {}
+        optional_keys = getattr(typed_dict, "__optional_keys__", frozenset())
         for arg, arg_type in annotations_.items():
+            # Unwrap NotRequired[X] / Required[X] wrappers that appear when
+            # get_type_hints(include_extras=True) is used on a TypedDict.
+            # NotRequired marks a field as not required (has a default of None),
+            # Required marks a field as required (overrides total=False).
+            is_not_required = get_origin(arg_type) in {
+                NotRequired,
+                typing_extensions.NotRequired,
+            }
+            is_required_wrapper = get_origin(arg_type) in {
+                Required,
+                typing_extensions.Required,
+            }
+            if is_not_required or is_required_wrapper:
+                arg_type = get_args(arg_type)[0]
+
             if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
@@ -300,12 +318,22 @@ def _convert_any_typed_dicts_to_pydantic(
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
+                # If the field was originally NotRequired and no explicit default
+                # was provided via Annotated metadata, mark it as optional.
+                if is_not_required and "default" not in field_kwargs:
+                    field_kwargs["default"] = None
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
                 )
-                field_kwargs = {"default": ...}
+                # NotRequired fields (or fields on total=False TypedDicts) have no
+                # mandatory value — use None as the default so Pydantic treats them
+                # as optional in the generated JSON schema.
+                if is_not_required or arg in optional_keys:
+                    field_kwargs: dict = {"default": None}
+                else:
+                    field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
@@ -321,6 +349,17 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
+        # NotRequired and Required only accept a single type argument; passing a
+        # tuple causes "NotRequired accepts only a single type. Got (<class ...>,)".
+        # Unwrap the single-element tuple in those cases.
+        _single_arg_origins = {
+            NotRequired,
+            typing_extensions.NotRequired,
+            Required,
+            typing_extensions.Required,
+        }
+        if origin in _single_arg_origins and len(type_args) == 1:
+            return cast("type", subscriptable_origin[type_args[0]])  # type: ignore[index]
         return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
     return type_
 
