@@ -30,7 +30,9 @@ from langchain_core.messages.utils import (
     trim_messages,
 )
 from langchain_core.tools import BaseTool, tool
-
+from langchain_core.messages.base import (
+    _extract_reasoning_from_additional_kwargs,
+)
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
 def test_merge_message_runs_str(msg_cls: type[BaseMessage]) -> None:
@@ -2958,3 +2960,39 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+def test_extract_reasoning_ignores_empty_string():
+    msg = AIMessage(
+        content="Hello",
+        additional_kwargs={"reasoning_content": ""}
+    )
+
+    result = _extract_reasoning_from_additional_kwargs(msg)
+
+    assert result is None
+
+
+def test_extract_reasoning_ignores_whitespace():
+    msg = AIMessage(
+        content="Hello",
+        additional_kwargs={"reasoning_content": "   "}
+    )
+
+    result = _extract_reasoning_from_additional_kwargs(msg)
+
+    assert result is None
+
+
+def test_extract_reasoning_valid_string():
+    msg = AIMessage(
+        content="Hello",
+        additional_kwargs={"reasoning_content": "thinking..."}
+    )
+
+    result = _extract_reasoning_from_additional_kwargs(msg)
+
+    assert result == {
+        "type": "reasoning",
+        "reasoning": "thinking..."
+    }
+
