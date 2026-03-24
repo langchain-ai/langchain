@@ -1,0 +1,3 @@
+# Ignore all output files — these are generated at runtime
+*
+!.gitignore
