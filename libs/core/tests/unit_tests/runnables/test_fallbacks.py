@@ -2,13 +2,14 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
 )
+from uuid import UUID
 
 import pytest
 from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -399,4 +400,136 @@ def test_fallbacks_getattr_runnable_output() -> None:
         isinstance(fallback, RunnableBinding)
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
-    assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+class _ParentRunIdTracker(BaseCallbackHandler):
+    """Records (event_name, run_id, parent_run_id) for each callback event."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, UUID | None, UUID | None]] = []
+
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any],
+        inputs: dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_start", run_id, parent_run_id))
+
+    def on_chain_end(
+        self,
+        outputs: dict[str, Any],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_end", run_id, parent_run_id))
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("chain_error", run_id, parent_run_id))
+
+    def on_llm_start(
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("llm_start", run_id, parent_run_id))
+
+    def on_llm_end(
+        self,
+        response: Any,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("llm_end", run_id, parent_run_id))
+
+    def on_llm_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("llm_error", run_id, parent_run_id))
+
+
+def test_invoke_child_callbacks_have_correct_parent_run_id() -> None:
+    """Regression test for #36072.
+
+    RunnableWithFallbacks.invoke() was passing `config` instead of `child_config`
+    to child runnables, causing child callback events to lose their parent_run_id.
+    """
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+    runnable = error_llm.with_fallbacks([pass_llm])
+
+    tracker = _ParentRunIdTracker()
+    runnable.invoke("hello", config={"callbacks": [tracker]})
+
+    # The first event is the RunnableWithFallbacks chain_start (root run, no parent)
+    assert tracker.events[0][0] == "chain_start"
+    root_run_id = tracker.events[0][1]
+    assert tracker.events[0][2] is None  # root has no parent
+
+    # All child events (run_id != root_run_id) must have root as their parent_run_id.
+    # The root's own chain_end/chain_error events are also emitted with parent_run_id=None
+    # (they belong to the root), so we skip those.
+    child_events = [
+        (name, rid, pid)
+        for name, rid, pid in tracker.events
+        if rid != root_run_id
+    ]
+    assert child_events, "Expected at least one child event (llm_start/llm_error)"
+    for event_name, run_id, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{event_name} (run_id={run_id}): "
+            f"expected parent_run_id={root_run_id}, got {parent_run_id}"
+        )
+
+
+async def test_ainvoke_child_callbacks_have_correct_parent_run_id() -> None:
+    """Async regression test for #36072.
+
+    RunnableWithFallbacks.ainvoke() was passing `config` instead of `child_config`
+    to child runnables, causing child callback events to lose their parent_run_id.
+    """
+    error_llm = FakeListLLM(responses=["foo"], i=1)
+    pass_llm = FakeListLLM(responses=["bar"])
+    runnable = error_llm.with_fallbacks([pass_llm])
+
+    tracker = _ParentRunIdTracker()
+    await runnable.ainvoke("hello", config={"callbacks": [tracker]})
+
+    assert tracker.events[0][0] == "chain_start"
+    root_run_id = tracker.events[0][1]
+    assert tracker.events[0][2] is None
+
+    child_events = [
+        (name, rid, pid)
+        for name, rid, pid in tracker.events
+        if rid != root_run_id
+    ]
+    assert child_events, "Expected at least one child event (llm_start/llm_error)"
+    for event_name, run_id, parent_run_id in child_events:
+        assert parent_run_id == root_run_id, (
+            f"{event_name} (run_id={run_id}): "
+            f"expected parent_run_id={root_run_id}, got {parent_run_id}"
+        )

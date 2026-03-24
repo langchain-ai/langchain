@@ -193,7 +193,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output = context.run(
                         runnable.invoke,
                         input,
-                        config,
+                        child_config,
                         **kwargs,
                     )
             except self.exceptions_to_handle as e:
@@ -244,7 +244,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     input[self.exception_key] = last_error  # type: ignore[index]
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
-                    coro = context.run(runnable.ainvoke, input, config, **kwargs)
+                    coro = context.run(runnable.ainvoke, input, child_config, **kwargs)
                     output = await coro_with_context(coro, context)
             except self.exceptions_to_handle as e:
                 if first_error is None:
