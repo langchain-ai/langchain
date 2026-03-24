@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+from langchain_core._api import deprecated
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -44,6 +45,12 @@ def _validate_path(path: Path) -> None:
         raise ValueError(msg)
 
 
+@deprecated(
+    since="1.2.21",
+    removal="2.0.0",
+    alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+    "prompts and `load`/`loads` to deserialize them.",
+)
 def load_prompt_from_config(
     config: dict, *, allow_dangerous_paths: bool = False
 ) -> BasePromptTemplate:
@@ -191,6 +198,12 @@ def _load_prompt(
     return PromptTemplate(**config)
 
 
+@deprecated(
+    since="1.2.21",
+    removal="2.0.0",
+    alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+    "prompts and `load`/`loads` to deserialize them.",
+)
 def load_prompt(
     path: str | Path,
     encoding: str | None = None,

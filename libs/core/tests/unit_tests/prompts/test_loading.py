@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from langchain_core._api import suppress_langchain_deprecation_warning
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import (
     _load_examples,
@@ -33,7 +34,8 @@ def change_directory(dir_path: Path) -> Iterator[None]:
 
 def test_loading_from_yaml() -> None:
     """Test loading from yaml file."""
-    prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.yaml")
+    with suppress_langchain_deprecation_warning():
+        prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.yaml")
     expected_prompt = PromptTemplate(
         input_variables=["adjective"],
         partial_variables={"content": "dogs"},
@@ -44,7 +46,8 @@ def test_loading_from_yaml() -> None:
 
 def test_loading_from_json() -> None:
     """Test loading from json file."""
-    prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.json")
+    with suppress_langchain_deprecation_warning():
+        prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.json")
     expected_prompt = PromptTemplate(
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",
@@ -55,14 +58,20 @@ def test_loading_from_json() -> None:
 def test_loading_jinja_from_json() -> None:
     """Test that loading jinja2 format prompts from JSON raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.json"
-    with pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"),
+    ):
         load_prompt(prompt_path)
 
 
 def test_loading_jinja_from_yaml() -> None:
     """Test that loading jinja2 format prompts from YAML raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.yaml"
-    with pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"),
+    ):
         load_prompt(prompt_path)
 
 
@@ -72,8 +81,9 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
         input_variables=["adjective", "content"],
         template="Tell me a {adjective} joke about {content}.",
     )
-    simple_prompt.save(file_path=tmp_path / "prompt.yaml")
-    loaded_prompt = load_prompt(tmp_path / "prompt.yaml")
+    with suppress_langchain_deprecation_warning():
+        simple_prompt.save(file_path=tmp_path / "prompt.yaml")
+        loaded_prompt = load_prompt(tmp_path / "prompt.yaml")
     assert loaded_prompt == simple_prompt
 
     few_shot_prompt = FewShotPromptTemplate(
@@ -89,14 +99,15 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
         ],
         suffix="Input: {adjective}\nOutput:",
     )
-    few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
-    loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
+    with suppress_langchain_deprecation_warning():
+        few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
+        loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
 
 
 def test_loading_with_template_as_file() -> None:
     """Test loading when the template is a file."""
-    with change_directory(EXAMPLE_DIR):
+    with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
         prompt = load_prompt(
             "simple_prompt_with_template_file.json", allow_dangerous_paths=True
         )
@@ -161,7 +172,10 @@ def test_load_prompt_from_config_rejects_absolute_template_path(
         "template_path": str(secret),
         "input_variables": [],
     }
-    with pytest.raises(ValueError, match="is absolute"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="is absolute"),
+    ):
         load_prompt_from_config(config)
 
 
@@ -171,7 +185,10 @@ def test_load_prompt_from_config_rejects_traversal_template_path() -> None:
         "template_path": "../../../tmp/secret.txt",
         "input_variables": [],
     }
-    with pytest.raises(ValueError, match=r"contains '\.\.' components"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match=r"contains '\.\.' components"),
+    ):
         load_prompt_from_config(config)
 
 
@@ -183,7 +200,8 @@ def test_load_prompt_from_config_allows_dangerous_paths(tmp_path: Path) -> None:
         "template_path": str(secret),
         "input_variables": [],
     }
-    prompt = load_prompt_from_config(config, allow_dangerous_paths=True)
+    with suppress_langchain_deprecation_warning():
+        prompt = load_prompt_from_config(config, allow_dangerous_paths=True)
     assert isinstance(prompt, PromptTemplate)
     assert prompt.template == "SECRET"
 
@@ -201,7 +219,10 @@ def test_load_prompt_from_config_few_shot_rejects_traversal_examples() -> None:
         "examples": "../../../../.docker/config.json",
         "suffix": "Query: {query}",
     }
-    with pytest.raises(ValueError, match=r"contains '\.\.' components"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match=r"contains '\.\.' components"),
+    ):
         load_prompt_from_config(config)
 
 
@@ -222,7 +243,10 @@ def test_load_prompt_from_config_few_shot_rejects_absolute_examples(
         "examples": str(examples_file),
         "suffix": "Query: {query}",
     }
-    with pytest.raises(ValueError, match="is absolute"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="is absolute"),
+    ):
         load_prompt_from_config(config)
 
 
@@ -247,14 +271,17 @@ def test_load_prompt_from_config_few_shot_rejects_absolute_example_prompt_path(
         "examples": [{"input": "a", "output": "b"}],
         "suffix": "Query: {query}",
     }
-    with pytest.raises(ValueError, match="is absolute"):
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="is absolute"),
+    ):
         load_prompt_from_config(config)
 
 
 def test_loading_few_shot_prompt_from_yaml() -> None:
     """Test loading few shot prompt from yaml."""
-    with change_directory(EXAMPLE_DIR):
-        prompt = load_prompt("few_shot_prompt.yaml")
+    with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
+        prompt = load_prompt("few_shot_prompt.yaml", allow_dangerous_paths=True)
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -273,8 +300,8 @@ def test_loading_few_shot_prompt_from_yaml() -> None:
 
 def test_loading_few_shot_prompt_from_json() -> None:
     """Test loading few shot prompt from json."""
-    with change_directory(EXAMPLE_DIR):
-        prompt = load_prompt("few_shot_prompt.json")
+    with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
+        prompt = load_prompt("few_shot_prompt.json", allow_dangerous_paths=True)
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -293,8 +320,10 @@ def test_loading_few_shot_prompt_from_json() -> None:
 
 def test_loading_few_shot_prompt_when_examples_in_config() -> None:
     """Test loading few shot prompt when the examples are in the config."""
-    with change_directory(EXAMPLE_DIR):
-        prompt = load_prompt("few_shot_prompt_examples_in.json")
+    with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
+        prompt = load_prompt(
+            "few_shot_prompt_examples_in.json", allow_dangerous_paths=True
+        )
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
@@ -313,8 +342,10 @@ def test_loading_few_shot_prompt_when_examples_in_config() -> None:
 
 def test_loading_few_shot_prompt_example_prompt() -> None:
     """Test loading few shot when the example prompt is in its own file."""
-    with change_directory(EXAMPLE_DIR):
-        prompt = load_prompt("few_shot_prompt_example_prompt.json")
+    with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
+        prompt = load_prompt(
+            "few_shot_prompt_example_prompt.json", allow_dangerous_paths=True
+        )
         expected_prompt = FewShotPromptTemplate(
             input_variables=["adjective"],
             prefix="Write antonyms for the following words.",
