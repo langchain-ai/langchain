@@ -53,6 +53,7 @@ from langchain_core.messages.block_translators.openai import (
 )
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import (
@@ -80,7 +81,6 @@ if TYPE_CHECKING:
     import builtins
     import uuid
 
-    from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
@@ -88,7 +88,7 @@ if TYPE_CHECKING:
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
-        metadata: dict = {}
+        metadata: dict[str, Any] = {}
         if hasattr(response, "json"):
             try:
                 metadata["body"] = response.json()
@@ -228,7 +228,9 @@ async def agenerate_from_stream(
     return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
-def _format_ls_structured_output(ls_structured_output_format: dict | None) -> dict:
+def _format_ls_structured_output(
+    ls_structured_output_format: dict[str, Any] | None,
+) -> dict[str, Any]:
     if ls_structured_output_format:
         try:
             ls_structured_output_format_dict = {
@@ -410,11 +412,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         return self
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
         # guaranteed to be a dict since dumps uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -621,7 +623,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     and isinstance(chunk.message, AIMessageChunk)
                     and not chunk.message.chunk_position
                 ):
-                    empty_content: str | list = (
+                    empty_content: str | list[str | dict[str, Any]] = (
                         "" if isinstance(chunk.message.content, str) else []
                     )
                     msg_chunk = AIMessageChunk(
@@ -753,7 +755,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 msg_chunk = AIMessageChunk(
@@ -788,10 +790,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
+    def _combine_llm_outputs(
+        self, _llm_outputs: list[builtins.dict[str, Any] | None], /
+    ) -> builtins.dict[str, Any]:
         return {}
 
-    def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
+    def _convert_cached_generations(
+        self, cache_val: list[Generation]
+    ) -> list[ChatGeneration]:
         """Convert cached Generation objects to ChatGeneration objects.
 
         Handle case where cache contains Generation objects instead of
@@ -834,7 +840,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> dict:
+    ) -> builtins.dict[str, Any]:
         params = self.dict()
         params["stop"] = stop
         return {**params, **kwargs}
@@ -924,7 +930,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -1048,7 +1054,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -1297,7 +1303,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 chunk = ChatGenerationChunk(
@@ -1423,7 +1429,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 chunk = ChatGenerationChunk(
@@ -1592,7 +1598,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Return type of chat model."""
 
     @override
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1600,7 +1606,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
+        tools: Sequence[builtins.dict[str, Any] | type | Callable[..., Any] | BaseTool],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -1780,8 +1786,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 "schema": schema,
             },
         )
+        output_parser: JsonOutputToolsParser
         if isinstance(schema, type) and is_basemodel_subclass(schema):
-            output_parser: OutputParserLike = PydanticToolsParser(
+            output_parser = PydanticToolsParser(
                 tools=[cast("TypeBaseModel", schema)], first_tool_only=True
             )
         else:
@@ -1851,7 +1858,7 @@ class SimpleChatModel(BaseChatModel):
 
 def _gen_info_and_msg_metadata(
     generation: ChatGeneration | ChatGenerationChunk,
-) -> dict:
+) -> dict[str, Any]:
     return {
         **(generation.generation_info or {}),
         **generation.message.response_metadata,

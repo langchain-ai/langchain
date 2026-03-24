@@ -35,7 +35,7 @@ MessagesOrDictWithMessages = Sequence["BaseMessage"] | dict[str, Any]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
-class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
+class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore[no-redef]
     """`Runnable` that manages chat message history for another `Runnable`.
 
     A chat message history is a sequence of messages that represent a conversation.
@@ -382,7 +382,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
     @override
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
-        fields: dict = {}
+        fields: dict[str, Any] = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
                 str | BaseMessage | Sequence[BaseMessage],
@@ -441,7 +441,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         )
 
     def _get_input_messages(
-        self, input_val: str | BaseMessage | Sequence[BaseMessage] | dict
+        self, input_val: str | BaseMessage | Sequence[BaseMessage] | dict[str, Any]
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
@@ -479,7 +479,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         raise ValueError(msg)
 
     def _get_output_messages(
-        self, output_val: str | BaseMessage | Sequence[BaseMessage] | dict
+        self, output_val: str | BaseMessage | Sequence[BaseMessage] | dict[str, Any]
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):

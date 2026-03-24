@@ -536,7 +536,7 @@ class _TracerCore(ABC):
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
 
-    def __deepcopy__(self, memo: dict) -> _TracerCore:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
         """Return self deepcopied."""
         return self
 

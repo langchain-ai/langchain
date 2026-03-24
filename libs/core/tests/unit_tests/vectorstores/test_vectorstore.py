@@ -30,7 +30,7 @@ class CustomAddTextsVectorstore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
@@ -58,7 +58,7 @@ class CustomAddTextsVectorstore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> CustomAddTextsVectorstore:
         vectorstore = CustomAddTextsVectorstore()
@@ -104,7 +104,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> CustomAddDocumentsVectorstore:
         vectorstore = CustomAddDocumentsVectorstore()

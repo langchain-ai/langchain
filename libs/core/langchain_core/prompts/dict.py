@@ -15,7 +15,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 
 
-class DictPromptTemplate(RunnableSerializable[dict, dict]):
+class DictPromptTemplate(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     """Template represented by a dictionary.
 
     Recognizes variables in f-string or mustache formatted string dict values.
@@ -49,8 +49,8 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @override
     def invoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
-    ) -> dict:
+        self, input: dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         return self._call_with_config(
             lambda x: self.format(**x),
             input,
@@ -98,7 +98,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
 
 def _get_input_variables(
-    template: dict, template_format: Literal["f-string", "mustache"]
+    template: dict[str, Any], template_format: Literal["f-string", "mustache"]
 ) -> list[str]:
     input_variables = []
     for v in template.values():

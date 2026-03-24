@@ -48,7 +48,7 @@ class LangSmithLoader(BaseLoader):
         inline_s3_urls: bool = True,
         offset: int = 0,
         limit: int | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
         filter: str | None = None,  # noqa: A002
         content_key: str = "",
         format_content: Callable[..., str] | None = None,

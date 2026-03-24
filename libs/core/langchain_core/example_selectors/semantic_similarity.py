@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
 
 
-def sorted_values(values: dict[str, str]) -> list[Any]:
+def sorted_values(values: dict[str, str]) -> list[str]:
     """Return a list of values in dict sorted by key.
 
     Args:
@@ -54,7 +54,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
             return " ".join(sorted_values({key: example[key] for key in input_keys}))
         return " ".join(sorted_values(example))
 
-    def _documents_to_examples(self, documents: list[Document]) -> list[dict]:
+    def _documents_to_examples(self, documents: list[Document]) -> list[dict[str, Any]]:
         # Get the examples from the metadata.
         # This assumes that examples are stored in metadata.
         examples = [dict(e.metadata) for e in documents]
@@ -97,7 +97,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
 class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
     """Select examples based on semantic similarity."""
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, Any]]:
         """Select examples based on semantic similarity.
 
         Args:
@@ -115,7 +115,9 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         )
         return self._documents_to_examples(example_docs)
 
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Asynchronously select examples based on semantic similarity.
 
         Args:
@@ -136,14 +138,14 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
     @classmethod
     def from_examples(
         cls,
-        examples: list[dict],
+        examples: list[dict[str, str]],
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
         input_keys: list[str] | None = None,
         *,
         example_keys: list[str] | None = None,
-        vectorstore_kwargs: dict | None = None,
+        vectorstore_kwargs: dict[str, Any] | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -180,14 +182,14 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
     @classmethod
     async def afrom_examples(
         cls,
-        examples: list[dict],
+        examples: list[dict[str, str]],
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
         input_keys: list[str] | None = None,
         *,
         example_keys: list[str] | None = None,
-        vectorstore_kwargs: dict | None = None,
+        vectorstore_kwargs: dict[str, Any] | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Async create k-shot example selector using example list and embeddings.
@@ -232,7 +234,7 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
     fetch_k: int = 20
     """Number of examples to fetch to rerank."""
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, Any]]:
         """Select examples based on Max Marginal Relevance.
 
         Args:
@@ -248,7 +250,9 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         )
         return self._documents_to_examples(example_docs)
 
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Asynchronously select examples based on Max Marginal Relevance.
 
         Args:
@@ -267,14 +271,14 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
     @classmethod
     def from_examples(
         cls,
-        examples: list[dict],
+        examples: list[dict[str, str]],
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
         input_keys: list[str] | None = None,
         fetch_k: int = 20,
         example_keys: list[str] | None = None,
-        vectorstore_kwargs: dict | None = None,
+        vectorstore_kwargs: dict[str, Any] | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -313,7 +317,7 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
     @classmethod
     async def afrom_examples(
         cls,
-        examples: list[dict],
+        examples: list[dict[str, str]],
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         *,
@@ -321,7 +325,7 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         input_keys: list[str] | None = None,
         fetch_k: int = 20,
         example_keys: list[str] | None = None,
-        vectorstore_kwargs: dict | None = None,
+        vectorstore_kwargs: dict[str, Any] | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.

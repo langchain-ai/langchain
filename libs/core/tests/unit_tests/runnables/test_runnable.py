@@ -5374,7 +5374,7 @@ async def test_ainvoke_on_returned_runnable() -> None:
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)
@@ -5394,7 +5394,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
 
 
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)

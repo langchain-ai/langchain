@@ -604,7 +604,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_prompts(
         self, config: RunnableConfig | None = None
-    ) -> list[BasePromptTemplate]:
+    ) -> list[BasePromptTemplate[Any]]:
         """Return a list of prompts used by this `Runnable`."""
         # Import locally to prevent circular import
         from langchain_core.prompts.base import BasePromptTemplate  # noqa: PLC0415
@@ -2310,7 +2310,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
                 if stream_handler := next(
                     (
-                        cast("_StreamingCallbackHandler", h)
+                        h
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
                         if isinstance(h, _StreamingCallbackHandler)
@@ -2412,7 +2412,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
                 if stream_handler := next(
                     (
-                        cast("_StreamingCallbackHandler", h)
+                        h
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
                         if isinstance(h, _StreamingCallbackHandler)
@@ -2910,7 +2910,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     def __init__(
         self,
-        *steps: RunnableLike,
+        *steps: RunnableLike[Any, Any],
         name: str | None = None,
         first: Runnable[Any, Any] | None = None,
         middle: list[Runnable[Any, Any]] | None = None,
@@ -2928,7 +2928,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Raises:
             ValueError: If the sequence has less than 2 steps.
         """
-        steps_flat: list[Runnable] = []
+        steps_flat: list[Runnable[Any, Any]] = []
         if not steps and first is not None and last is not None:
             steps_flat = [first] + (middle or []) + [last]
         for step in steps:
@@ -4038,7 +4038,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         ]
 
         # Wrap in a coroutine to satisfy linter
-        async def get_next_chunk(generator: AsyncIterator) -> Output | None:
+        async def get_next_chunk(generator: AsyncIterator[Any]) -> Output | None:
             return await anext(generator)
 
         # Start the first iteration of each generator
@@ -4205,9 +4205,10 @@ class RunnableGenerator(Runnable[Input, Output]):
             TypeError: If the transform is not a generator function.
 
         """
+        func_for_name: Callable[..., Any]
         if atransform is not None:
             self._atransform = atransform
-            func_for_name: Callable = atransform
+            func_for_name = atransform
 
         if is_async_generator(transform):
             self._atransform = transform
@@ -4617,9 +4618,10 @@ class RunnableLambda(Runnable[Input, Output]):
             TypeError: If both `func` and `afunc` are provided.
 
         """
+        func_for_name: Callable[..., Any]
         if afunc is not None:
             self.afunc = afunc
-            func_for_name: Callable = afunc
+            func_for_name = afunc
 
         if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
@@ -4761,7 +4763,7 @@ class RunnableLambda(Runnable[Input, Output]):
         )
 
     @functools.cached_property
-    def deps(self) -> list[Runnable]:
+    def deps(self) -> list[Runnable[Any, Any]]:
         """The dependencies of this `Runnable`.
 
         Returns:
@@ -4776,7 +4778,7 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        deps: list[Runnable] = []
+        deps: list[Runnable[Any, Any]] = []
         for obj in objects:
             if isinstance(obj, Runnable):
                 deps.append(obj)
@@ -4952,7 +4954,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 cast(
                     "AsyncGenerator[Any, Any]",
                     acall_func_with_variable_args(
-                        cast("Callable", afunc),
+                        cast("Callable[..., Any]", afunc),
                         value,
                         config,
                         run_manager,
@@ -4973,7 +4975,7 @@ class RunnableLambda(Runnable[Input, Output]):
                             output = chunk
         else:
             output = await acall_func_with_variable_args(
-                cast("Callable", afunc), value, config, run_manager, **kwargs
+                cast("Callable[..., Any]", afunc), value, config, run_manager, **kwargs
             )
         # If the output is a Runnable, invoke it
         if isinstance(output, Runnable):
@@ -5195,7 +5197,7 @@ class RunnableLambda(Runnable[Input, Output]):
             async for chunk in cast(
                 "AsyncIterator[Output]",
                 acall_func_with_variable_args(
-                    cast("Callable", afunc),
+                    cast("Callable[..., Any]", afunc),
                     final,
                     config,
                     run_manager,
@@ -5212,7 +5214,7 @@ class RunnableLambda(Runnable[Input, Output]):
                         output = chunk
         else:
             output = await acall_func_with_variable_args(
-                cast("Callable", afunc),
+                cast("Callable[..., Any]", afunc),
                 final,
                 config,
                 run_manager,
@@ -6173,7 +6175,7 @@ RunnableLike = (
 )
 
 
-def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
+def coerce_to_runnable(thing: RunnableLike[Input, Output]) -> Runnable[Input, Output]:
     """Coerce a `Runnable`-like object into a `Runnable`.
 
     Args:
