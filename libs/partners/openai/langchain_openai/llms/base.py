@@ -344,31 +344,32 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        normal_params: dict[str, Any] = {
+        params: dict[str, Any] = {
             "temperature": self.temperature,
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
-            "seed": self.seed,
-            "logprobs": self.logprobs,
         }
 
-        if self.logit_bias is not None:
-            normal_params["logit_bias"] = self.logit_bias
-
-        if self.max_tokens is not None:
-            normal_params["max_tokens"] = self.max_tokens
-
-        if self.extra_body is not None:
-            normal_params["extra_body"] = self.extra_body
+        # Only include optional parameters when explicitly set (not None).
+        # This improves compatibility with OpenAI-compatible APIs that may
+        # not support all parameters. See #31437.
+        exclude_if_none: dict[str, Any] = {
+            "seed": self.seed,
+            "logprobs": self.logprobs,
+            "logit_bias": self.logit_bias,
+            "max_tokens": self.max_tokens,
+            "extra_body": self.extra_body,
+        }
+        params.update({k: v for k, v in exclude_if_none.items() if v is not None})
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
         if self.best_of > 1:
-            normal_params["best_of"] = self.best_of
+            params["best_of"] = self.best_of
 
-        return {**normal_params, **self.model_kwargs}
+        return {**params, **self.model_kwargs}
 
     def _stream(
         self,
