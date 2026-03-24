@@ -318,7 +318,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.15"
+version = "1.2.20"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -378,7 +378,7 @@ typing = [
 
 [[package]]
 name = "langchain-openrouter"
-version = "0.0.2"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },

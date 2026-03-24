@@ -104,6 +104,15 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 class TestChatDeepSeekCustomUnit:
     """Custom tests specific to DeepSeek chat model."""
 
+    def test_base_url_alias(self) -> None:
+        """Test that `base_url` is accepted as an alias for `api_base`."""
+        chat_model = ChatDeepSeek(
+            model=MODEL_NAME,
+            api_key=SecretStr("api_key"),
+            base_url="http://example.test/v1",
+        )
+        assert chat_model.api_base == "http://example.test/v1"
+
     def test_create_chat_result_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from response."""
         chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
@@ -396,7 +405,7 @@ class TestChatDeepSeekAzureToolChoice:
         return ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
-            api_base=endpoint,
+            base_url=endpoint,
         )
 
     def test_is_azure_endpoint_detection(self) -> None:
@@ -415,12 +424,15 @@ class TestChatDeepSeekAzureToolChoice:
             DEFAULT_API_BASE,
             "https://api.openai.com/v1",
             "https://custom-endpoint.com/api",
+            "https://evil-azure.com/v1",  # hostname bypass attempt
+            "https://notazure.com.evil.com/",  # subdomain bypass attempt
+            "https://example.com/azure.com",  # path bypass attempt
         ]
         for endpoint in non_azure_endpoints:
             llm = ChatDeepSeek(
                 model="deepseek-chat",
                 api_key=SecretStr("test_key"),
-                api_base=endpoint,
+                base_url=endpoint,
             )
             assert not llm._is_azure_endpoint, f"Expected non-Azure for {endpoint}"
 
