@@ -3636,3 +3636,58 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_structured_tool_with_self_in_input() -> None:
+    """Regression test for #34900.
+
+    A StructuredTool whose payload contains a key named 'self' must not
+    raise ``TypeError: got multiple values for argument 'self'``.  This can
+    happen when an unbound **kwargs function is wrapped as a tool and the
+    caller passes a dict that includes the key "self".
+    """
+
+    def func(**kwargs: object) -> str:
+        """Accept any keyword arguments."""
+        return str(kwargs)
+
+    tool_obj = StructuredTool(
+        name="test_tool",
+        func=func,
+        description="A tool that accepts any kwargs.",
+        args_schema={
+            "type": "object",
+            "properties": {},
+        },
+    )
+
+    tool_input = {"self": 2, "other": 3}
+
+    # Calling the plain function directly must work
+    assert func(**tool_input) == str(tool_input)
+
+    # Invoking through StructuredTool must produce the same result
+    result = tool_obj.invoke(tool_input)
+    assert result == str(tool_input)
+
+
+async def test_structured_tool_with_self_in_input_async() -> None:
+    """Async regression test for #34900 — same as sync variant but via ainvoke."""
+
+    async def afunc(**kwargs: object) -> str:
+        """Accept any keyword arguments."""
+        return str(kwargs)
+
+    tool_obj = StructuredTool(
+        name="test_tool_async",
+        coroutine=afunc,
+        description="An async tool that accepts any kwargs.",
+        args_schema={
+            "type": "object",
+            "properties": {},
+        },
+    )
+
+    tool_input = {"self": 2, "other": 3}
+    result = await tool_obj.ainvoke(tool_input)
+    assert result == str(tool_input)

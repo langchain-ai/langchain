@@ -775,7 +775,7 @@ class ChildTool(BaseTool):
         return tool_input
 
     @abstractmethod
-    def _run(self, *args: Any, **kwargs: Any) -> Any:
+    def _run(self, /, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add `run_manager: CallbackManagerForToolRun | None = None` to child
@@ -785,7 +785,7 @@ class ChildTool(BaseTool):
             The result of the tool execution.
         """
 
-    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+    async def _arun(self, /, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
         Add `run_manager: AsyncCallbackManagerForToolRun | None = None` to child
