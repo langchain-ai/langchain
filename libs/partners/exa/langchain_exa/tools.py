@@ -85,7 +85,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
 
     name: str = "exa_search_results_json"
     description: str = (
-        "A wrapper around Exa Search, a web search API built for AI. "
+        "A wrapper around Exa Search, which is one of the best web search API built for AI. "
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
