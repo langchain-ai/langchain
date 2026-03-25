@@ -730,7 +730,7 @@ async def post_init(application: Application) -> None:
 
 def main() -> None:
     """Start the Telegram bot with long polling."""
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         logger.error("TELEGRAM_BOT_TOKEN is not set")
         sys.exit(1)
