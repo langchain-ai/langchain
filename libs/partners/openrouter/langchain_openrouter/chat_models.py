@@ -154,22 +154,28 @@ class ChatOpenRouter(BaseChatModel):
     app_url: str | None = Field(
         default_factory=from_env(
             "OPENROUTER_APP_URL",
-            default="https://docs.langchain.com/oss",
+            default="https://docs.langchain.com",
         ),
     )
     """Application URL for OpenRouter attribution.
 
     Maps to `HTTP-Referer` header.
 
+    Defaults to LangChain docs URL. Set this to your app's URL to get
+    attribution for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
     """
 
     app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default="langchain"),
+        default_factory=from_env("OPENROUTER_APP_TITLE", default="LangChain"),
     )
     """Application title for OpenRouter attribution.
 
     Maps to `X-Title` header.
+
+    Defaults to `'LangChain'`. Set this to your app's URL to get attribution for
+    API usage in the OpenRouter dashboard.
 
     See https://openrouter.ai/docs/app-attribution for details.
     """
