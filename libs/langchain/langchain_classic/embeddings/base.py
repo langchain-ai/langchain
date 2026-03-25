@@ -6,6 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
 _SUPPORTED_PROVIDERS = {
+    "azure_ai": "langchain_azure_ai",
     "azure_openai": "langchain_openai",
     "bedrock": "langchain_aws",
     "cohere": "langchain_cohere",
@@ -118,9 +119,10 @@ def _infer_model_and_provider(
 def _check_pkg(pkg: str) -> None:
     """Check if a package is installed."""
     if not util.find_spec(pkg):
+        pip_name = pkg.replace("_", "-")
         msg = (
             f"Could not import {pkg} python package. "
-            f"Please install it with `pip install {pkg}`"
+            f"Please install it with `pip install {pip_name}`"
         )
         raise ImportError(msg)
 
@@ -153,6 +155,7 @@ def init_embeddings(
             Supported providers:
 
             - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
             - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
@@ -201,14 +204,22 @@ def init_embeddings(
     pkg = _SUPPORTED_PROVIDERS[provider]
     _check_pkg(pkg)
 
-    if provider == "openai":
-        from langchain_openai import OpenAIEmbeddings
+    if provider == "azure_ai":
+        from langchain_azure_ai.embeddings import AzureAIOpenAIApiEmbeddingsModel
 
-        return OpenAIEmbeddings(model=model_name, **kwargs)
+        return AzureAIOpenAIApiEmbeddingsModel(model=model_name, **kwargs)
     if provider == "azure_openai":
         from langchain_openai import AzureOpenAIEmbeddings
 
         return AzureOpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "openai":
+        from langchain_openai import OpenAIEmbeddings
+
+        return OpenAIEmbeddings(model=model_name, **kwargs)
+    if provider == "bedrock":
+        from langchain_aws import BedrockEmbeddings
+
+        return BedrockEmbeddings(model_id=model_name, **kwargs)
     if provider == "google_genai":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
@@ -217,10 +228,6 @@ def init_embeddings(
         from langchain_google_vertexai import VertexAIEmbeddings
 
         return VertexAIEmbeddings(model=model_name, **kwargs)
-    if provider == "bedrock":
-        from langchain_aws import BedrockEmbeddings
-
-        return BedrockEmbeddings(model_id=model_name, **kwargs)
     if provider == "cohere":
         from langchain_cohere import CohereEmbeddings
 
