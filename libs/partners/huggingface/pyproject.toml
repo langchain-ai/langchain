@@ -23,7 +23,7 @@ classifiers = [
 version = "1.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.11,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
     "huggingface-hub>=0.33.4,<2.0.0",
 ]
@@ -78,6 +78,10 @@ langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "langchain_community", "langchain_community.*",]
+ignore_missing_imports = true
 
 [tool.ruff.format]
 docstring-code-format = true
