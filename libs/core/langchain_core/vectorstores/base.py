@@ -205,9 +205,6 @@ class VectorStore(ABC):
             ValueError: If the number of metadatas does not match the number of texts.
             ValueError: If the number of IDs does not match the number of texts.
         """
-        if ids is not None:
-            # For backward compatibility
-            kwargs["ids"] = ids
         if type(self).aadd_documents != VectorStore.aadd_documents:
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
@@ -228,7 +225,14 @@ class VectorStore(ABC):
                 Document(id=id_, page_content=text, metadata=metadata_)
                 for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
             ]
+            # Do not forward ids in kwargs — they are embedded in each Document.
+            # Passing ids via kwargs AND as an explicit argument in a subclass's
+            # aadd_documents would raise TypeError: multiple values for 'ids'.
             return await self.aadd_documents(docs, **kwargs)
+        if ids is not None:
+            # For backward compatibility with add_texts implementations that
+            # accept ids via **kwargs rather than as an explicit parameter.
+            kwargs["ids"] = ids
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
     def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:

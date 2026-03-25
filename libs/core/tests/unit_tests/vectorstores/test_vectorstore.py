@@ -292,3 +292,93 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+class CustomAAddDocumentsVectorstore(VectorStore):
+    """A VectorStore that overrides aadd_documents and re-delegates to aadd_texts.
+
+    Mirrors a real-world pattern used by partner integrations (e.g. Qdrant) where
+    aadd_documents unpacks Document ids and forwards them as an explicit ``ids``
+    keyword argument to aadd_texts.  Before the fix this triggered:
+        TypeError: aadd_texts() got multiple values for keyword argument 'ids'
+    because VectorStore.aadd_texts was incorrectly forwarding ``ids`` via **kwargs
+    into aadd_documents, which then passed it again as an explicit kwarg.
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+
+    @override
+    async def aadd_documents(
+        self,
+        documents: list[Document],
+        **kwargs: Any,
+    ) -> list[str]:
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        ids = [doc.id for doc in documents if doc.id]
+        # Pass ids as an explicit kwarg — this used to collide with ids already
+        # present inside **kwargs when called from VectorStore.aadd_texts.
+        return await self.aadd_texts(texts, metadatas, ids=ids or None, **kwargs)
+
+    @override
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        texts_list = list(texts)
+        ids_iter = iter(ids or [])
+        result_ids = []
+        for text, metadata in zip(
+            texts_list, metadatas or [{} for _ in texts_list], strict=False
+        ):
+            id_ = next(ids_iter, None) or str(uuid.uuid4())
+            self.store[id_] = Document(id=id_, page_content=text, metadata=metadata)
+            result_ids.append(id_)
+        return result_ids
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict] | None = None,
+        **kwargs: Any,
+    ) -> CustomAAddDocumentsVectorstore:
+        raise NotImplementedError
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
+async def test_aadd_texts_with_ids_does_not_conflict_in_aadd_documents() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/32283.
+
+    VectorStore.aadd_texts must not forward ``ids`` via **kwargs into aadd_documents
+    when the ids are already embedded in each Document object.  Doing so caused a
+    TypeError when a subclass's aadd_documents passed the ids back to aadd_texts as
+    an explicit keyword argument alongside the same **kwargs.
+    """
+    store = CustomAAddDocumentsVectorstore()
+
+    # Calling aadd_texts with explicit ids must not raise TypeError.
+    returned_ids = await store.aadd_texts(
+        ["hello", "world"], ids=["id-1", "id-2"]
+    )
+    assert returned_ids == ["id-1", "id-2"]
+    assert await store.aget_by_ids(["id-1"]) == [
+        Document(id="id-1", page_content="hello")
+    ]
+    assert await store.aget_by_ids(["id-2"]) == [
+        Document(id="id-2", page_content="world")
+    ]
