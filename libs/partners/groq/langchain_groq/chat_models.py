@@ -75,6 +75,12 @@ from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+_STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
+    {
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    }
+)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -537,12 +543,8 @@ class ChatGroq(BaseChatModel):
             raise ImportError(msg) from exc
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     #
     # Serializable class method overrides
@@ -907,6 +909,7 @@ class ChatGroq(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -978,6 +981,16 @@ class ChatGroq(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+            strict:
+                Only used with `method="json_schema"`. When `True`, Groq's Structured
+                Output API uses constrained decoding to guarantee schema compliance.
+                This requires every object to set `additionalProperties: false` and
+                all properties to be listed in `required`. When `False`, schema
+                adherence is best-effort. If `None`, the argument is omitted.
+
+                Strict mode is only supported for `openai/gpt-oss-20b` and
+                `openai/gpt-oss-120b`. For other models, `strict=True` is ignored.
 
             kwargs:
                 Any additional parameters to pass to the `langchain.runnable.Runnable`
@@ -1172,7 +1185,6 @@ class ChatGroq(BaseChatModel):
         ```
 
         """  # noqa: E501
-        _ = kwargs.pop("strict", None)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1210,14 +1222,25 @@ class ChatGroq(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
-            json_schema = convert_to_json_schema(schema)
+            if (
+                strict is True
+                and self.model_name not in _STRICT_STRUCTURED_OUTPUT_MODELS
+            ):
+                # Ignore unsupported strict=True to preserve backward compatibility.
+                strict = None
+            json_schema = convert_to_json_schema(schema, strict=strict)
             schema_name = json_schema.get("title", "")
-            response_format = {
+            response_format: dict[str, Any] = {
                 "type": "json_schema",
                 "json_schema": {"name": schema_name, "schema": json_schema},
             }
+            if strict is not None:
+                response_format["json_schema"]["strict"] = strict
+            ls_format_kwargs: dict[str, Any] = {"method": "json_schema"}
+            if strict is not None:
+                ls_format_kwargs["strict"] = strict
             ls_format_info = {
-                "kwargs": {"method": "json_schema"},
+                "kwargs": ls_format_kwargs,
                 "schema": json_schema,
             }
             llm = self.bind(
@@ -1247,8 +1270,9 @@ class ChatGroq(BaseChatModel):
             )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                "Unrecognized method argument. Expected one of "
+                "'function_calling', 'json_mode', or 'json_schema'. "
+                f"Received: '{method}'"
             )
             raise ValueError(msg)
 

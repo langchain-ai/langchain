@@ -50,7 +50,7 @@ jobs:
       - name: "🧪 Run Core Unit Tests"
         shell: bash
         run: |
-          make test
+          make test PYTEST_EXTRA=-q
 
       - name: "🔍 Calculate Minimum Dependency Versions"
         working-directory: ${{ inputs.working-directory }}
@@ -69,7 +69,7 @@ jobs:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
           VIRTUAL_ENV=.venv uv pip install $MIN_VERSIONS
-          make tests
+          make tests PYTEST_EXTRA=-q
         working-directory: ${{ inputs.working-directory }}
 
       - name: "🧹 Verify Clean Working Directory"

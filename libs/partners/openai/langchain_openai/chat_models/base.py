@@ -146,7 +146,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -166,6 +166,7 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
 )
 
 
@@ -532,10 +533,17 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
+_RESPONSES_API_ONLY_PREFIXES = (
+    "gpt-5-pro",
+    "gpt-5.2-pro",
+    "gpt-5.4-pro",
+)
+
+
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
-    return "gpt-5.2-pro" in model_name or "codex" in model_name
+    return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -1087,12 +1095,8 @@ class BaseChatOpenAI(BaseChatModel):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     @property
     def _default_params(self) -> dict[str, Any]:
@@ -1549,7 +1553,13 @@ class BaseChatOpenAI(BaseChatModel):
         generations = []
 
         response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
+            response
+            if isinstance(response, dict)
+            # `parsed` may hold arbitrary Pydantic models from structured output.
+            # Exclude it from this dump and copy it from the typed response below.
+            else response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         )
         # Sometimes the AI Model calling will get error, we should raise it (this is
         # typically followed by a null value for `choices`, which we raise for
@@ -1979,6 +1989,14 @@ class BaseChatOpenAI(BaseChatModel):
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
+        for original, formatted in zip(tools, formatted_tools, strict=False):
+            if (
+                isinstance(original, BaseTool)
+                and hasattr(original, "extras")
+                and isinstance(original.extras, dict)
+                and "defer_loading" in original.extras
+            ):
+                formatted["defer_loading"] = original.extras["defer_loading"]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -3672,8 +3690,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 )
                 return None
 
-            # close things (context managers)
-            width, height = Image.open(BytesIO(response.content)).size
+            with Image.open(BytesIO(response.content)) as img:
+                width, height = img.size
             return width, height
         except httpx.TimeoutException:
             logger.warning("Image URL request timed out after %s seconds", timeout)
@@ -3688,7 +3706,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)
-        width, height = Image.open(BytesIO(data)).size
+        with Image.open(BytesIO(data)) as img:
+            width, height = img.size
         return width, height
     return None
 
@@ -3976,7 +3995,8 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
+                new_tools.append({"type": "function", **tool["function"], **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
@@ -4255,6 +4275,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         # Aggregate content blocks for a single message
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
+                            phase = block.get("phase")
                             if block_type in ("text", "output_text"):
                                 # Defensive check: block may not have "text" key
                                 text = block.get("text")
@@ -4280,17 +4301,20 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                     if "content" not in item:
                                         item["content"] = []
                                     item["content"].append(new_block)
+                                    if phase is not None:
+                                        item["phase"] = phase
                                     break
                             else:
                                 # If no block with this ID, create a new one
-                                input_.append(
-                                    {
-                                        "type": "message",
-                                        "content": [new_block],
-                                        "role": "assistant",
-                                        "id": msg_id,
-                                    }
-                                )
+                                new_item: dict = {
+                                    "type": "message",
+                                    "content": [new_block],
+                                    "role": "assistant",
+                                    "id": msg_id,
+                                }
+                                if phase is not None:
+                                    new_item["phase"] = phase
+                                input_.append(new_item)
                         elif block_type in (
                             "reasoning",
                             "compaction",
@@ -4303,6 +4327,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_call",
                             "mcp_list_tools",
                             "mcp_approval_request",
+                            "tool_search_call",
+                            "tool_search_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4348,7 +4374,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response",)
+                non_message_item_types = ("mcp_approval_response", "tool_search_output")
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4362,8 +4388,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
                 if msg["content"]:
+                    msg["type"] = "message"
                     input_.append(msg)
             else:
+                msg["type"] = "message"
                 input_.append(msg)
         else:
             input_.append(msg)
@@ -4440,6 +4468,7 @@ def _construct_lc_result_from_responses_api(
     additional_kwargs: dict = {}
     for output in response.output:
         if output.type == "message":
+            phase = getattr(output, "phase", None)
             for content in output.content:
                 if content.type == "output_text":
                     block = {
@@ -4453,13 +4482,20 @@ def _construct_lc_result_from_responses_api(
                         else [],
                         "id": output.id,
                     }
+                    if phase is not None:
+                        block["phase"] = phase
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
-                    content_blocks.append(
-                        {"type": "refusal", "refusal": content.refusal, "id": output.id}
-                    )
+                    refusal_block = {
+                        "type": "refusal",
+                        "refusal": content.refusal,
+                        "id": output.id,
+                    }
+                    if phase is not None:
+                        refusal_block["phase"] = phase
+                    content_blocks.append(refusal_block)
         elif output.type == "function_call":
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
@@ -4505,6 +4541,8 @@ def _construct_lc_result_from_responses_api(
             "mcp_list_tools",
             "mcp_approval_request",
             "image_generation_call",
+            "tool_search_call",
+            "tool_search_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4678,6 +4716,16 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
+        elif phase := getattr(chunk.item, "phase", None):
+            _advance(chunk.output_index, 0)
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "phase": phase,
+                    "index": current_index,
+                }
+            )
         else:
             pass
     elif (
@@ -4694,16 +4742,17 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-        content.append(
-            {
-                "type": "function_call",
-                "name": chunk.item.name,
-                "arguments": chunk.item.arguments,
-                "call_id": chunk.item.call_id,
-                "id": chunk.item.id,
-                "index": current_index,
-            }
-        )
+        function_call_content: dict = {
+            "type": "function_call",
+            "name": chunk.item.name,
+            "arguments": chunk.item.arguments,
+            "call_id": chunk.item.call_id,
+            "id": chunk.item.id,
+            "index": current_index,
+        }
+        if getattr(chunk.item, "namespace", None) is not None:
+            function_call_content["namespace"] = chunk.item.namespace
+        content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
@@ -4714,6 +4763,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
+        "tool_search_call",
+        "tool_search_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
