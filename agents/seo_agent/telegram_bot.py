@@ -623,84 +623,96 @@ async def _format_task_result(action: str, result: dict) -> str:
 
 async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle free-text messages by routing through Claude."""
-    if not await _check_auth(update):
-        return
-
-    user_id = update.effective_user.id
-    user_text = update.message.text or ""
-    if not user_text.strip():
-        return
-
-    # Add to conversation history
-    history = _conversation_history[user_id]
-    history.append({"role": "user", "content": user_text})
-
-    # Build messages for the LLM (include history for context)
-    messages = list(history)
-
     try:
-        # Send typing indicator
-        await update.message.chat.send_action("typing")
-
-        # Call LLM to interpret intent
-        loop = asyncio.get_event_loop()
-        llm_response = await loop.run_in_executor(
-            None,
-            partial(_call_openrouter_sync, messages, _NL_SYSTEM_PROMPT),
-        )
-    except Exception as e:
-        logger.error("NL router LLM call failed: %s", e)
-        await update.message.reply_text(
-            "Sorry, I couldn't process that right now. Try again or use a /command."
-        )
-        return
-
-    # Check if the LLM returned an action
-    action_data = _parse_action(llm_response)
-
-    if action_data:
-        action = action_data["action"]
-        params = action_data.get("params", {})
-
-        # Handle special non-graph actions
-        if action == "cost_report":
-            await cmd_cost_report(update, context)
-            history.append({"role": "assistant", "content": "[Ran cost report]"})
-            return
-        if action == "status":
-            await cmd_status(update, context)
-            history.append({"role": "assistant", "content": "[Ran status check]"})
+        if not await _check_auth(update):
             return
 
-        # Run the agent task
-        await update.message.reply_text(f"On it — running {action.replace('_', ' ')}...")
+        user_id = update.effective_user.id
+        user_text = update.message.text or ""
+        if not user_text.strip():
+            return
 
-        result = {}
+        logger.info("NL message from %s: %s", user_id, user_text[:100])
+
+        # Add to conversation history
+        history = _conversation_history[user_id]
+        history.append({"role": "user", "content": user_text})
+
+        # Build messages for the LLM (include history for context)
+        messages = list(history)
+
         try:
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, partial(_run_graph_sync, action, **params)
+            # Send typing indicator
+            await update.message.chat.send_action("typing")
+
+            # Call LLM to interpret intent
+            loop = asyncio.get_event_loop()
+            llm_response = await loop.run_in_executor(
+                None,
+                partial(_call_openrouter_sync, messages, _NL_SYSTEM_PROMPT),
             )
+            logger.info("NL router response: %s", llm_response[:200])
         except Exception as e:
-            logger.error("Agent task %s failed: %s", action, traceback.format_exc())
-            await update.message.reply_text(f"That didn't work: {str(e)[:300]}")
-            history.append({"role": "assistant", "content": f"[Task {action} failed: {str(e)[:100]}]"})
+            logger.error("NL router LLM call failed: %s", traceback.format_exc())
+            await update.message.reply_text(
+                f"Sorry, I couldn't process that right now: {str(e)[:200]}"
+            )
             return
 
-        # Format and send results
-        formatted = await _format_task_result(action, result)
+        # Check if the LLM returned an action
+        action_data = _parse_action(llm_response)
 
-        # Telegram 4096 char limit
-        for i in range(0, len(formatted), 4000):
-            await update.message.reply_text(formatted[i:i + 4000])
+        if action_data:
+            action = action_data["action"]
+            params = action_data.get("params", {})
+            logger.info("NL action detected: %s params=%s", action, params)
 
-        # Store a summary in conversation history
-        summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
-        history.append({"role": "assistant", "content": summary})
+            # Handle special non-graph actions
+            if action == "cost_report":
+                await cmd_cost_report(update, context)
+                history.append({"role": "assistant", "content": "[Ran cost report]"})
+                return
+            if action == "status":
+                await cmd_status(update, context)
+                history.append({"role": "assistant", "content": "[Ran status check]"})
+                return
 
-    else:
-        # Pure conversational response
-        await update.message.reply_text(llm_response)
-        history.append({"role": "assistant", "content": llm_response})
+            # Run the agent task
+            await update.message.reply_text(f"On it \u2014 running {action.replace('_', ' ')}...")
+
+            result = {}
+            try:
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, partial(_run_graph_sync, action, **params)
+                )
+            except Exception as e:
+                logger.error("Agent task %s failed: %s", action, traceback.format_exc())
+                await update.message.reply_text(f"That didn't work: {str(e)[:300]}")
+                history.append({"role": "assistant", "content": f"[Task {action} failed: {str(e)[:100]}]"})
+                return
+
+            # Format and send results
+            formatted = await _format_task_result(action, result)
+
+            # Telegram 4096 char limit
+            for i in range(0, len(formatted), 4000):
+                await update.message.reply_text(formatted[i:i + 4000])
+
+            # Store a summary in conversation history
+            summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
+            history.append({"role": "assistant", "content": summary})
+
+        else:
+            # Pure conversational response
+            await update.message.reply_text(llm_response)
+            history.append({"role": "assistant", "content": llm_response})
+
+    except Exception as e:
+        logger.error("handle_natural_language crashed: %s", traceback.format_exc())
+        try:
+            await update.message.reply_text(f"Something went wrong: {str(e)[:300]}")
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------
