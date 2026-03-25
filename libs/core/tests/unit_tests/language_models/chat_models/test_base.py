@@ -1297,6 +1297,8 @@ def test_tracing_parameter_default_false() -> None:
     """Test that tracing defaults to False."""
     llm = FakeListChatModel(responses=["test response"])
     assert llm.tracing is False
+
+
 def test_resolve_model_profile_hook_populates_profile() -> None:
     """_resolve_model_profile is called when profile is None."""
 
