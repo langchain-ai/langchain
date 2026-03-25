@@ -11,6 +11,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    cast
 )
 
 from pydantic import Field, SkipValidation
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
 
 
-class StructuredTool(BaseTool):
+class StructuredTool(BaseTool): # type: ignore[misc]
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
@@ -93,7 +94,9 @@ class StructuredTool(BaseTool):
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
-                kwargs[config_param] = config
+                # Only inject if user didn't already provide it
+                if config_param not in kwargs:
+                    kwargs[config_param] = config
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -117,18 +120,23 @@ class StructuredTool(BaseTool):
             The result of the tool execution
         """
         if self.coroutine:
-            if run_manager and signature(self.coroutine).parameters.get("callbacks"):
+            coroutine = self.coroutine  # 👈 helps mypy
+
+            if run_manager and signature(coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
-            if config_param := _get_runnable_config_param(self.coroutine):
-                kwargs[config_param] = config
-            return await self.coroutine(*args, **kwargs)
+
+            if config_param := _get_runnable_config_param(coroutine):
+                # Only inject if user didn't already provide it
+                if config_param not in kwargs:
+                    kwargs[config_param] = config
+
+            return await coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default
         # implementation which is expected to delegate to _run on a separate thread.
         return await super()._arun(
             *args, config=config, run_manager=run_manager, **kwargs
         )
-
     @classmethod
     def from_function(
         cls,
@@ -240,26 +248,34 @@ class StructuredTool(BaseTool):
         # Description example:
         # search_api(query: str) - Searches the API for the query.
         description_ = f"{description_.strip()}"
-        return cls(
+        tool_kwargs = dict(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
             **kwargs,
         )
 
+        if args_schema is not None:
+            tool_kwargs["args_schema"] = args_schema
+
+        return cls(**tool_kwargs)
+    
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
         fn = self.func or self.coroutine
         if fn is None:
-            return _EMPTY_SET
-        return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
+            return cast(frozenset[str], _EMPTY_SET)
+
+        return cast(
+            frozenset[str],
+            frozenset(
+                k
+                for k, v in signature(fn).parameters.items()
+                if _is_injected_arg_type(v.annotation)
+            ),
         )
 
 
