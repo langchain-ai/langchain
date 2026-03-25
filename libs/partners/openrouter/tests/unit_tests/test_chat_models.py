@@ -202,6 +202,7 @@ class TestChatOpenRouterInstantiation:
         """Test basic model instantiation with required params."""
         model = _make_model()
         assert model.model_name == MODEL_NAME
+        assert model.model == MODEL_NAME
         assert model.openrouter_api_base is None
 
     def test_api_key_from_field(self) -> None:
@@ -319,8 +320,8 @@ class TestChatOpenRouterInstantiation:
                 api_key=SecretStr("test-key"),
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == ("https://docs.langchain.com/oss")
-            assert call_kwargs["x_title"] == "langchain"
+            assert call_kwargs["http_referer"] == ("https://docs.langchain.com")
+            assert call_kwargs["x_title"] == "LangChain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
@@ -335,6 +336,72 @@ class TestChatOpenRouterInstantiation:
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == "https://my-custom-app.com"
             assert call_kwargs["x_title"] == "My Custom App"
+
+    def test_app_categories_passed_to_client(self) -> None:
+        """Test that app_categories injects custom httpx clients with header."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["cli-agent", "programming-app"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # Custom httpx clients should be created
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            # Verify the header value is comma-joined
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+            async_headers = call_kwargs["async_client"].headers
+            assert async_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+
+    def test_app_categories_none_no_custom_clients(self) -> None:
+        """Test that no custom httpx clients are created when categories unset."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
+
+    def test_app_categories_empty_list_no_custom_clients(self) -> None:
+        """Test that an empty list does not inject custom httpx clients."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=[],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
+
+    def test_app_categories_with_other_attribution(self) -> None:
+        """Test that app_categories coexists with app_url and app_title."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+                app_categories=["cli-agent"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["http_referer"] == "https://myapp.com"
+            assert call_kwargs["x_title"] == "My App"
+            assert "client" in call_kwargs
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
@@ -2830,3 +2897,141 @@ class TestStreamingErrors:
             assert any(
                 "malformed tool call chunk" in str(warning.message) for warning in w
             )
+
+
+class TestStreamUsage:
+    """Tests for stream_usage and usage-only chunk handling."""
+
+    def test_stream_options_passed_by_default(self) -> None:
+        """Test that stream_options with include_usage is sent by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    def test_stream_options_not_passed_when_disabled(self) -> None:
+        """Test that stream_options is omitted when stream_usage=False."""
+        model = _make_model(stream_usage=False)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "stream_options" not in call_kwargs
+
+    def test_usage_only_chunk_emitted(self) -> None:
+        """Test that a usage-only chunk (no choices) emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        # Content chunks followed by a usage-only chunk (no choices key)
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            # Usage-only final chunk — no choices
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(
+            chunks_with_separate_usage
+        )
+        chunks = list(model.stream("Hello"))
+
+        # Last chunk should carry usage_metadata
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
+
+    async def test_astream_options_passed_by_default(self) -> None:
+        """Test that async stream sends stream_options by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream([dict(c) for c in _STREAM_CHUNKS])
+        )
+        chunks = [c async for c in model.astream("Hello")]  # noqa: F841
+        call_kwargs = model.client.chat.send_async.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    async def test_astream_usage_only_chunk_emitted(self) -> None:
+        """Test that an async usage-only chunk emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(chunks_with_separate_usage)
+        )
+        chunks = [c async for c in model.astream("Hello")]
+
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
+
+
+def test_profile() -> None:
+    """Test that the model has a profile."""
+    model = _make_model()
+    assert model.profile
