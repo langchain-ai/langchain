@@ -11,6 +11,5 @@ COPY agents/ agents/
 COPY .env.example .env.example
 COPY migrations/ migrations/
 
-# Default command — can be overridden via Railway service settings
-# Runs the SEO agent CLI; Railway will set the specific command
-CMD ["python", "-m", "agents.seo_agent.run", "--help"]
+# Run the Telegram bot as the main process
+CMD ["python", "-m", "agents.seo_agent.telegram_bot"]
