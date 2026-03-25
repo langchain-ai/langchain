@@ -7,8 +7,8 @@
       'ChatOpenRouter',
     ]),
     'kwargs': dict({
-      'app_title': 'langchain',
-      'app_url': 'https://docs.langchain.com/oss',
+      'app_title': 'LangChain',
+      'app_url': 'https://docs.langchain.com',
       'max_retries': 2,
       'max_tokens': 100,
       'model_name': 'openai/gpt-4o-mini',
@@ -23,6 +23,7 @@
       'request_timeout': 60,
       'stop': list([
       ]),
+      'stream_usage': True,
       'temperature': 0.0,
     }),
     'lc': 1,

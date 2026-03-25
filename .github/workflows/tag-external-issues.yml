@@ -1,0 +1,205 @@
+# Automatically tag issues as "external" or "internal" based on whether
+# the author is a member of the langchain-ai GitHub organization, and
+# apply contributor tier labels to external contributors based on their
+# merged PR history.
+#
+# NOTE: PR labeling (including external/internal, tier, size, file, and
+# title labels) is handled by pr_labeler.yml. This workflow handles
+# issues only.
+#
+# Config (trustedThreshold, labelColor) is read from
+# .github/scripts/pr-labeler-config.json to stay in sync with
+# pr_labeler.yml.
+#
+# Setup Requirements:
+# 1. Create a GitHub App with permissions:
+#    - Repository: Issues (write)
+#    - Organization: Members (read)
+# 2. Install the app on your organization and this repository
+# 3. Add these repository secrets:
+#    - ORG_MEMBERSHIP_APP_ID: Your app's ID
+#    - ORG_MEMBERSHIP_APP_PRIVATE_KEY: Your app's private key
+#
+# The GitHub App token is required to check private organization membership.
+# Without it, the workflow will fail.
+
+name: Tag External Issues
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: "Maximum number of open issues to process"
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  tag-external:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Check if contributor is external
+        if: steps.app-token.outcome == 'success'
+        id: check-membership
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const author = context.payload.sender.login;
+            const { isExternal } = await h.checkMembership(
+              author, context.payload.sender.type,
+            );
+            core.setOutput('is-external', isExternal ? 'true' : 'false');
+
+      - name: Apply contributor tier label
+        if: steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          # GITHUB_TOKEN is fine here — no downstream workflow chains
+          # off tier labels on issues (unlike PRs where App token is
+          # needed for require_issue_link.yml).
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const issue = context.payload.issue;
+            // new-contributor is only meaningful on PRs, not issues
+            await h.applyTierLabel(issue.number, issue.user.login, { skipNewContributor: true });
+
+      - name: Add external/internal label
+        if: steps.check-membership.outputs.is-external != ''
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const label = '${{ steps.check-membership.outputs.is-external }}' === 'true'
+              ? 'external' : 'internal';
+            await h.ensureLabel(label);
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number, labels: [label],
+            });
+            console.log(`Added '${label}' label to issue #${issue_number}`);
+
+  backfill:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Backfill labels on open issues
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const rawMax = '${{ inputs.max_items }}';
+            const maxItems = parseInt(rawMax, 10);
+            if (isNaN(maxItems) || maxItems <= 0) {
+              core.setFailed(`Invalid max_items: "${rawMax}" — must be a positive integer`);
+              return;
+            }
+
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const tierLabels = ['trusted-contributor'];
+            for (const name of tierLabels) {
+              await h.ensureLabel(name);
+            }
+
+            const contributorCache = new Map();
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100,
+            });
+
+            let processed = 0;
+            let failures = 0;
+            for (const issue of issues) {
+              if (processed >= maxItems) break;
+              if (issue.pull_request) continue;
+
+              try {
+                const author = issue.user.login;
+                const info = await h.getContributorInfo(contributorCache, author, issue.user.type);
+
+                const labels = [info.isExternal ? 'external' : 'internal'];
+                if (info.isExternal && info.mergedCount != null && info.mergedCount >= h.trustedThreshold) {
+                  labels.push('trusted-contributor');
+                }
+
+                // Ensure all labels exist before batch add
+                for (const name of labels) {
+                  await h.ensureLabel(name);
+                }
+
+                // Remove stale tier labels
+                const currentLabels = (await github.paginate(
+                  github.rest.issues.listLabelsOnIssue,
+                  { owner, repo, issue_number: issue.number, per_page: 100 },
+                )).map(l => l.name ?? '');
+                for (const name of currentLabels) {
+                  if (tierLabels.includes(name) && !labels.includes(name)) {
+                    try {
+                      await github.rest.issues.removeLabel({
+                        owner, repo, issue_number: issue.number, name,
+                      });
+                    } catch (e) {
+                      if (e.status !== 404) throw e;
+                    }
+                  }
+                }
+
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: issue.number, labels,
+                });
+                console.log(`Issue #${issue.number} (${author}): ${labels.join(', ')}`);
+                processed++;
+              } catch (e) {
+                failures++;
+                core.warning(`Failed to process issue #${issue.number}: ${e.message}`);
+              }
+            }
+
+            console.log(`\nBackfill complete. Processed ${processed} issues, ${failures} failures. ${contributorCache.size} unique authors.`);
