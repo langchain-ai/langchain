@@ -394,7 +394,7 @@ typing = [
 
 [[package]]
 name = "langchain-openrouter"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -423,7 +423,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "openrouter", specifier = ">=0.6.0,<1.0.0" },
+    { name = "openrouter", specifier = ">=0.7.11,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
