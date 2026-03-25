@@ -177,8 +177,12 @@ def _get_openrouter_client() -> Any:
     global _openai_client  # noqa: PLW0603
     if _openai_client is None:
         from openai import OpenAI
+        api_key = "".join(os.environ.get("OPENROUTER_API_KEY", "").split())
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY is not set")
+        logger.info("OpenRouter client init: key_len=%d prefix=%s", len(api_key), api_key[:5])
         _openai_client = OpenAI(
-            api_key=os.environ["OPENROUTER_API_KEY"],
+            api_key=api_key,
             base_url=os.getenv(
                 "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
             ),
