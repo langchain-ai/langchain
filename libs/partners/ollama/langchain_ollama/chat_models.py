@@ -94,6 +94,7 @@ from langchain_ollama._utils import (
     parse_url_with_auth,
     validate_model,
 )
+from langchain_ollama._version import __version__
 
 log = logging.getLogger(__name__)
 
@@ -786,6 +787,12 @@ class ChatOllama(BaseChatModel):
             params["tools"] = tools
 
         return params
+
+    @model_validator(mode="after")
+    def _set_ollama_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-ollama", __version__)
+        return self
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:

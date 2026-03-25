@@ -274,6 +274,14 @@ class TestChatOpenRouterInstantiation:
         ls_params = model._get_ls_params()
         assert ls_params["ls_stop"] == ["END", "STOP"]
 
+    def test_metadata_versions(self) -> None:
+        """Test that metadata reports the correct version info."""
+        model = _make_model()
+        assert model.metadata is not None
+        versions = model.metadata["versions"]
+        assert "langchain-core" in versions
+        assert "langchain-openrouter" in versions
+
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""
         model = _make_model()

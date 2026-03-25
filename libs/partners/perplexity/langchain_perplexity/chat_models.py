@@ -49,6 +49,7 @@ from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity._version import __version__
 from langchain_perplexity.data._profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
@@ -289,6 +290,12 @@ class ChatPerplexity(BaseChatModel):
 
         values["model_kwargs"] = extra
         return values
+
+    @model_validator(mode="after")
+    def _set_perplexity_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-perplexity", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

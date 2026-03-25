@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _create_usage_metadata,
     _format_image,
@@ -1756,6 +1757,8 @@ def test_anthropic_model_params() -> None:
         "ls_max_tokens": 64000,
         "ls_temperature": None,
     }
+    assert llm.metadata is not None
+    assert llm.metadata["versions"]["langchain-anthropic"] == __version__
 
     ls_params = llm._get_ls_params(model=MODEL_NAME)
     assert ls_params.get("ls_model_name") == MODEL_NAME

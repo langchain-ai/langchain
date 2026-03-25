@@ -509,3 +509,12 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatOllama(model=MODEL_NAME)
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-ollama" in versions

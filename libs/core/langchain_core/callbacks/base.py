@@ -1139,9 +1139,15 @@ class BaseCallbackManager(CallbackManagerMixin):
             metadata: The metadata to add.
             inherit: Whether to inherit the metadata.
         """
-        self.metadata.update(metadata)
+        from langchain_core.runnables.config import (  # noqa: PLC0415
+            _merge_metadata_dicts,
+        )
+
+        self.metadata = _merge_metadata_dicts(self.metadata, metadata)
         if inherit:
-            self.inheritable_metadata.update(metadata)
+            self.inheritable_metadata = _merge_metadata_dicts(
+                self.inheritable_metadata, metadata
+            )
 
     def remove_metadata(self, keys: list[str]) -> None:
         """Remove metadata from the callback manager.

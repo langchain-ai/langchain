@@ -12,6 +12,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_xai._version import __version__
 from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
@@ -467,6 +468,16 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "xai"
         return params
+
+    @model_validator(mode="after")
+    def _set_xai_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-xai", __version__)
+        return self
 
     @model_validator(mode="after")
     def _warn_search_parameters_deprecated(self) -> Self:

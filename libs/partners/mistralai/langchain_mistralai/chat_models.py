@@ -74,6 +74,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai._version import __version__
 from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
@@ -596,6 +597,12 @@ class ChatMistralAI(BaseChatModel):
                     else:
                         overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model}
+
+    @model_validator(mode="after")
+    def _set_mistralai_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-mistralai", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

@@ -55,7 +55,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -966,6 +966,12 @@ class ChatAnthropic(BaseChatModel):
         """Build model kwargs."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="after")
+    def _set_anthropic_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-anthropic", __version__)
+        return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None

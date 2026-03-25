@@ -27,6 +27,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_deepseek._version import __version__
 from langchain_deepseek.data._profiles import _PROFILES
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
@@ -223,6 +224,16 @@ class ChatDeepSeek(BaseChatOpenAI):
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
         ls_params["ls_provider"] = "deepseek"
         return ls_params
+
+    @model_validator(mode="after")
+    def _set_deepseek_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-deepseek", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

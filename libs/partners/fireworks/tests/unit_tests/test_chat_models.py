@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from langchain_core.messages import AIMessage
 
 from langchain_fireworks import ChatFireworks
@@ -46,3 +48,13 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" not in message.additional_kwargs
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    os.environ.setdefault("FIREWORKS_API_KEY", "fake-key")
+    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3-70b-instruct")
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-fireworks" in versions

@@ -327,6 +327,17 @@ def test_inheritance_with_empty_llm() -> None:
         assert chat.temperature is None
 
 
+def test_metadata_versions(chat_hugging_face: Any) -> None:
+    """Test that metadata reports the correct version info."""
+    from langchain_huggingface._version import __version__
+
+    assert chat_hugging_face.metadata is not None
+    versions = chat_hugging_face.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-huggingface" in versions
+    assert versions["langchain-huggingface"] == __version__
+
+
 def test_profile() -> None:
     empty_llm = Mock(spec=HuggingFaceEndpoint)
     empty_llm.repo_id = "test/model"

@@ -407,3 +407,12 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-mistralai" in versions

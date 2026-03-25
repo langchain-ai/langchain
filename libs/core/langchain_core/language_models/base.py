@@ -179,6 +179,78 @@ class BaseLanguageModel(
         arbitrary_types_allowed=True,
     )
 
+    def model_post_init(self, _context: Any, /) -> None:
+        """Pydantic V2 lifecycle hook called automatically after `__init__`.
+
+        Seeds `metadata["versions"]` with the installed `langchain-core`
+        (and `langchain`, if installed) versions so that every LLM trace
+        carries the package versions that produced it.
+
+        Partner packages should **not** override this method. Instead, they
+        should define a `@model_validator(mode="after")` that calls
+        `_add_version` to append their own version to the same dict.
+
+        !!! warning "Validator naming"
+
+            Each subclass's validator **must** have a unique name. Pydantic
+            replaces — rather than chains — same-named `model_validator` methods
+            in child classes. For example, a `BaseChatOpenAI` subclass should
+            use `_set_<partner>_version`, not `_set_version`, to avoid silently
+            dropping the parent's entry.
+
+        Args:
+            _context: Pydantic validation context (typically `None`).
+        """
+        super().model_post_init(_context)
+        from langchain_core.version import VERSION  # noqa: PLC0415
+
+        self._add_version("langchain-core", VERSION)
+
+        try:
+            from importlib.metadata import version as pkg_version  # noqa: PLC0415
+
+            self._add_version("langchain", pkg_version("langchain"))
+        except Exception:  # noqa: S110
+            pass
+
+    def _add_version(self, pkg: str, version: str) -> None:
+        """Record a package version in `metadata.versions` for tracing.
+
+        Each layer in the class hierarchy (core -> langchain -> partner)
+        calls this so that the resulting metadata dict accumulates *all*
+        package versions involved in an invocation.
+
+        Example resulting metadata:
+
+        ```python
+        {
+            "versions": {
+                "langchain-core": "1.x.x",
+                "langchain": "1.x.x",
+                "langchain-openai": "1.x.x",
+            }
+        }
+        ```
+
+        Args:
+            pkg: Package name (e.g., `'langchain-openai'`).
+            version: Installed version string.
+        """
+        if self.metadata is None:
+            self.metadata = {}
+        existing = self.metadata.get("versions")
+        if existing is not None and not isinstance(existing, Mapping):
+            warnings.warn(
+                f"metadata['versions'] expected a dict, got "
+                f"{type(existing).__name__}; overwriting with package version dict",
+                stacklevel=2,
+            )
+            existing = None
+        self.metadata["versions"] = {
+            **(existing if isinstance(existing, Mapping) else {}),
+            pkg: version,
+        }
+
     @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
         """If verbose is `None`, set it.

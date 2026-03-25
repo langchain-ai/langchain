@@ -174,3 +174,16 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+    )
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-openai" in versions

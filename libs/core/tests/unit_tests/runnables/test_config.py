@@ -16,6 +16,7 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _merge_metadata_dicts,
     _set_config_context,
     ensure_config,
     merge_configs,
@@ -161,3 +162,85 @@ async def test_run_in_executor() -> None:
 
     with pytest.raises(RuntimeError):
         await run_in_executor(None, raises_stop_iter)
+
+
+class TestMergeMetadataDicts:
+    """Tests for _merge_metadata_dicts deep-merge behavior."""
+
+    def test_deep_merge_preserves_both_nested_dicts(self) -> None:
+        base = {"versions": {"langchain-core": "0.3.1"}, "user_id": "abc"}
+        incoming = {"versions": {"langchain-anthropic": "1.3.3"}, "run": "x"}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {
+            "versions": {
+                "langchain-core": "0.3.1",
+                "langchain-anthropic": "1.3.3",
+            },
+            "user_id": "abc",
+            "run": "x",
+        }
+
+    def test_last_writer_wins_within_nested_dicts(self) -> None:
+        base = {"versions": {"pkg": "1.0"}}
+        incoming = {"versions": {"pkg": "2.0"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"versions": {"pkg": "2.0"}}
+
+    def test_non_dict_overwrites_dict(self) -> None:
+        base = {"key": {"nested": "value"}}
+        incoming = {"key": "flat"}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"key": "flat"}
+
+    def test_dict_overwrites_non_dict(self) -> None:
+        base = {"key": "flat"}
+        incoming = {"key": {"nested": "value"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"key": {"nested": "value"}}
+
+    def test_no_mutation_of_inputs(self) -> None:
+        base = {"versions": {"a": "1"}}
+        incoming = {"versions": {"b": "2"}}
+        base_copy = {"versions": {"a": "1"}}
+        incoming_copy = {"versions": {"b": "2"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert base == base_copy
+        assert incoming == incoming_copy
+        # Returned nested dicts should not share identity with originals.
+        assert result["versions"] is not base["versions"]
+        assert result["versions"] is not incoming["versions"]
+
+    def test_non_overlapping_nested_dict_is_copied(self) -> None:
+        base = {"versions": {"a": "1"}, "extras": {"x": "y"}}
+        incoming = {"versions": {"b": "2"}}
+        result = _merge_metadata_dicts(base, incoming)
+        # "extras" was not in incoming — result should still be a copy.
+        assert result["extras"] is not base["extras"]
+        assert result["extras"] == {"x": "y"}
+
+    def test_both_empty(self) -> None:
+        assert _merge_metadata_dicts({}, {}) == {}
+
+    def test_empty_base(self) -> None:
+        result = _merge_metadata_dicts({}, {"versions": {"pkg": "1.0"}})
+        assert result == {"versions": {"pkg": "1.0"}}
+
+    def test_empty_incoming(self) -> None:
+        result = _merge_metadata_dicts({"versions": {"pkg": "1.0"}}, {})
+        assert result == {"versions": {"pkg": "1.0"}}
+
+    def test_merge_configs_with_none_metadata(self) -> None:
+        merged = merge_configs(
+            cast("RunnableConfig", {"metadata": None}),
+            {"metadata": {"versions": {"a": "1"}}},
+        )
+        assert merged["metadata"] == {"versions": {"a": "1"}}
+
+    def test_three_config_merge_accumulates(self) -> None:
+        c1: RunnableConfig = {"metadata": {"versions": {"a": "1"}}}
+        c2: RunnableConfig = {"metadata": {"versions": {"b": "2"}}}
+        c3: RunnableConfig = {"metadata": {"versions": {"c": "3"}}}
+        merged = merge_configs(c1, c2, c3)
+        assert merged["metadata"] == {
+            "versions": {"a": "1", "b": "2", "c": "3"},
+        }

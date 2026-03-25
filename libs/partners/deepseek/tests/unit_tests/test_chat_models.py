@@ -437,3 +437,13 @@ def test_profile() -> None:
     model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("test_key"))
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-deepseek" in versions
+    assert "langchain-openai" in versions

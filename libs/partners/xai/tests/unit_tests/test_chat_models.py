@@ -164,3 +164,13 @@ def test_stream_usage_metadata() -> None:
 
     model = ChatXAI(model=MODEL_NAME, stream_usage=False)
     assert model.stream_usage is False
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatXAI(model=MODEL_NAME)
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-xai" in versions
+    assert "langchain-openai" in versions

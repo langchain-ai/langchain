@@ -1054,3 +1054,12 @@ def test_format_message_content_mixed() -> None:
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
     ]
     assert expected == _format_message_content(content)
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatGroq(model="foo")  # type: ignore[call-arg]
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-groq" in versions

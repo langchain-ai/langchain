@@ -1,0 +1,46 @@
+# Ensures version numbers in pyproject.toml and _version.py stay in sync.
+#
+# (Prevents releases with mismatched version numbers)
+
+name: "Check Version Equality"
+
+on:
+  pull_request:
+    paths:
+      - "libs/core/pyproject.toml"
+      - "libs/core/langchain_core/version.py"
+      - "libs/langchain_v1/pyproject.toml"
+      - "libs/langchain_v1/langchain/__init__.py"
+      - "libs/partners/*/pyproject.toml"
+      - "libs/partners/**/_version.py"
+
+permissions:
+  contents: read
+
+jobs:
+  check_version_equality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: "Verify pyproject.toml & version files match"
+        run: |
+          FAILED=0
+
+          for dir in libs/core libs/langchain_v1 libs/partners/*; do
+            [ -f "$dir/Makefile" ] || continue
+            grep -q '^check_version:' "$dir/Makefile" || continue
+            echo "--- $dir ---"
+            make -C "$dir" check_version || FAILED=1
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo ""
+            echo "One or more version checks failed!"
+            exit 1
+          fi

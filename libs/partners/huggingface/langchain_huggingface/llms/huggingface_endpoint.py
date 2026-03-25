@@ -16,6 +16,8 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface._version import __version__
+
 logger = logging.getLogger(__name__)
 
 VALID_TASKS = (
@@ -227,6 +229,12 @@ class HuggingFaceEndpoint(LLM):
             )
             raise ValueError(msg)
         return values
+
+    @model_validator(mode="after")
+    def _set_huggingface_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-huggingface", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
