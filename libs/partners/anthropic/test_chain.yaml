@@ -1,0 +1,26 @@
+_type: llm_chain
+llm:
+  i: 0
+  name: null
+  responses:
+  - hello
+  sleep: null
+llm_kwargs: {}
+memory: null
+metadata: null
+name: null
+output_key: text
+output_parser:
+  name: null
+prompt:
+  input_variables:
+  - input
+  metadata: null
+  name: null
+  optional_variables: []
+  output_parser: null
+  partial_variables: {}
+  tags: null
+return_final_only: true
+tags: null
+verbose: false
