@@ -310,6 +310,17 @@ class LLMMathChain(Chain):
             llm: a language model
             prompt: a prompt template
             **kwargs: additional arguments
+
+        Returns:
+            An `LLMMathChain` instance initialized with the provided language model.
+
+        Example:
+            ```python
+            from langchain_classic.chains import LLMMathChain
+            from langchain_openai import OpenAI
+
+            llm_math = LLMMathChain.from_llm(OpenAI())
+            ```
         """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)
