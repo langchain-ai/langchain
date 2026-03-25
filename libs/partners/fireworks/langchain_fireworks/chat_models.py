@@ -328,6 +328,11 @@ class ChatFireworks(BaseChatModel):
     model_name: str = Field(alias="model")
     """Model name to use."""
 
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
+
     temperature: float | None = None
     """What sampling temperature to use."""
 
@@ -419,12 +424,8 @@ class ChatFireworks(BaseChatModel):
             self.async_client._max_retries = self.max_retries
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     @property
     def _default_params(self) -> dict[str, Any]:
