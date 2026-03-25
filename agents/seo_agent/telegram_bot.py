@@ -765,4 +765,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Startup diagnostics for Railway deploy logs
+    print("[BOOT] telegram_bot.py starting...")
+    print(f"[BOOT] Python: {sys.version}")
+    print(f"[BOOT] TELEGRAM_BOT_TOKEN: {'SET' if os.environ.get('TELEGRAM_BOT_TOKEN') else 'MISSING'}")
+    print(f"[BOOT] OPENROUTER_API_KEY: {'SET' if os.environ.get('OPENROUTER_API_KEY') else 'MISSING'}")
+    print(f"[BOOT] SUPABASE_URL: {'SET' if os.environ.get('SUPABASE_URL') else 'MISSING'}")
+    print(f"[BOOT] CWD: {os.getcwd()}")
+    print(f"[BOOT] Files in CWD: {os.listdir('.')}")
+    sys.stdout.flush()
     main()

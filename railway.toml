@@ -6,3 +6,4 @@ startCommand = "python -m agents.seo_agent.telegram_bot"
 healthcheckPath = ""
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
+numReplicas = 1
