@@ -12,10 +12,12 @@ Usage::
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import sys
 import traceback
+from collections import defaultdict, deque
 from functools import partial
 
 from dotenv import load_dotenv
@@ -394,10 +396,311 @@ async def cmd_outreach_report(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def cmd_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle unknown commands."""
+    """Handle unknown commands — route through natural language handler."""
     if not await _check_auth(update):
         return
-    await update.message.reply_text("Unknown command. Send /start to see available commands.")
+    # Strip the slash and treat as natural language
+    text = update.message.text
+    if text:
+        update.message.text = text.lstrip("/").replace("_", " ")
+        await handle_natural_language(update, context)
+
+
+# ---------------------------------------------------------------------------
+# Natural language conversation handler
+# ---------------------------------------------------------------------------
+
+# Per-user conversation history (last 20 messages)
+_conversation_history: dict[int, deque] = defaultdict(lambda: deque(maxlen=20))
+
+_NL_SYSTEM_PROMPT = """You are Ralf, an SEO assistant bot for a portfolio of websites:
+- kitchensdirectory.co.uk — a directory of UK kitchen makers
+- freeroomplanner.com — a free online room planning tool
+- kitchen_estimator — a kitchen renovation cost estimator
+
+You help the user manage SEO for these sites. You can run the following tasks by
+returning a JSON action block. If the user's message maps to one of these tasks,
+return ONLY a JSON block (no other text) in this exact format:
+
+```json
+{"action": "<task_type>", "params": {"target_site": "...", ...}}
+```
+
+Available actions and their parameters:
+- keyword_research: {target_site, seed_keyword?} — Find keyword opportunities
+- content_gap: {target_site} — Find content gaps vs competitors
+- content_brief: {target_site, selected_keyword} — Generate a content brief
+- write_content: {target_site, brief_id} — Write content from a brief
+- discover_prospects: {target_site} — Find backlink prospects
+- enrich_prospects: {target_site:"all"} — Enrich prospect data
+- score_prospects: {target_site:"all"} — Score all enriched prospects
+- generate_emails: {target_site:"all"} — Generate outreach emails
+- rank_report: {target_site} — Ranking report
+- weekly_report: {target_site:"all"} — Full weekly SEO report
+- outreach_report: {target_site:"all"} — Outreach summary
+- cost_report: (no params, handled directly)
+- status: (no params, handled directly)
+
+Site keys: "kitchensdirectory", "freeroomplanner", "kitchen_estimator", "all"
+
+Rules:
+1. If the user clearly wants to run a task, return the JSON action block ONLY.
+2. If the user asks about costs/spend, return: {"action": "cost_report"}
+3. If the user asks about system status, return: {"action": "status"}
+4. If the user's intent is ambiguous, ask a clarifying question in plain text.
+5. If the user is just chatting, asking questions about SEO strategy, or asking
+   about results you previously shared, respond conversationally in plain text.
+6. Keep responses concise — this is Telegram, not email.
+7. When the user says a site name casually (e.g. "kitchens directory", "the directory",
+   "room planner"), map it to the correct site key.
+8. Default to "kitchensdirectory" if the user doesn't specify a site and the context
+   suggests kitchens.
+"""
+
+
+def _call_openrouter_sync(
+    messages: list[dict[str, str]],
+    system: str,
+) -> str:
+    """Call OpenRouter synchronously for the NL router (Haiku — fast + cheap)."""
+    from agents.seo_agent.tools.llm_router import (
+        _get_openrouter_client,
+        _get_anthropic_client,
+        _use_openrouter,
+        _resolve_model_id,
+        _HAIKU,
+    )
+
+    oai_messages = [{"role": "system", "content": system}] + messages
+
+    if _use_openrouter():
+        client = _get_openrouter_client()
+        response = client.chat.completions.create(
+            model=_resolve_model_id(_HAIKU),
+            max_tokens=500,
+            messages=oai_messages,
+        )
+        return response.choices[0].message.content or ""
+    else:
+        client = _get_anthropic_client()
+        response = client.messages.create(
+            model=_resolve_model_id(_HAIKU),
+            max_tokens=500,
+            system=system,
+            messages=messages,
+        )
+        return "".join(b.text for b in response.content if b.type == "text")
+
+
+def _parse_action(text: str) -> dict | None:
+    """Try to extract a JSON action block from the LLM response."""
+    text = text.strip()
+    # Try direct JSON parse
+    try:
+        data = json.loads(text)
+        if isinstance(data, dict) and "action" in data:
+            return data
+    except (json.JSONDecodeError, ValueError):
+        pass
+    # Try extracting from markdown code block
+    if "```" in text:
+        for block in text.split("```"):
+            block = block.strip()
+            if block.startswith("json"):
+                block = block[4:].strip()
+            try:
+                data = json.loads(block)
+                if isinstance(data, dict) and "action" in data:
+                    return data
+            except (json.JSONDecodeError, ValueError):
+                continue
+    return None
+
+
+async def _format_task_result(action: str, result: dict) -> str:
+    """Format agent task results into a readable Telegram message."""
+    if not result:
+        return "The task didn't return any results."
+
+    if result.get("errors"):
+        error_text = "\n".join(str(e) for e in result["errors"][:3])
+        return f"⚠️ Completed with errors:\n{error_text}"
+
+    parts = []
+
+    if action == "keyword_research":
+        opps = result.get("keyword_opportunities", [])
+        if opps:
+            parts.append(f"Found {len(opps)} keyword opportunities:\n")
+            for kw in opps[:12]:
+                parts.append(f"• {kw.get('keyword', 'N/A')} — vol:{kw.get('volume', '?')} KD:{kw.get('kd', '?')}")
+            if len(opps) > 12:
+                parts.append(f"\n…and {len(opps) - 12} more saved to the database.")
+        else:
+            parts.append("No keyword opportunities found.")
+
+    elif action == "content_gap":
+        gaps = result.get("content_gaps", [])
+        if gaps:
+            parts.append(f"Found {len(gaps)} content gaps:\n")
+            for g in gaps[:12]:
+                parts.append(f"• {g.get('keyword', 'N/A')} — vol:{g.get('volume', '?')} stage:{g.get('funnel_stage', '?')}")
+        else:
+            parts.append("No content gaps found.")
+
+    elif action == "content_brief":
+        brief = result.get("content_brief")
+        if brief:
+            parts.append(f"Content Brief: {brief.get('title', 'Untitled')}\n")
+            if brief.get("meta_description"):
+                parts.append(f"Meta: {brief['meta_description'][:200]}\n")
+            parts.append(f"Target: {brief.get('target_word_count', '?')} words")
+            headings = brief.get("headings", [])
+            if headings:
+                parts.append("\nHeadings:")
+                for h in headings[:10]:
+                    parts.append(f"• {h}")
+        else:
+            parts.append("Failed to generate content brief.")
+
+    elif action == "discover_prospects":
+        prospects = result.get("backlink_prospects", [])
+        if prospects:
+            parts.append(f"Found {len(prospects)} backlink prospects:\n")
+            for p in prospects[:12]:
+                parts.append(f"• DR:{p.get('dr', '?')} {p.get('domain', 'N/A')} ({p.get('discovery_method', '?')})")
+        else:
+            parts.append("No prospects found.")
+
+    elif action == "score_prospects":
+        scored = result.get("scored_prospects", [])
+        tier1 = sum(1 for p in scored if p.get("tier") == "tier1")
+        tier2 = sum(1 for p in scored if p.get("tier") == "tier2")
+        rejected = sum(1 for p in scored if p.get("status") == "rejected")
+        parts.append(f"Scored {len(scored)} prospects:\nTier 1: {tier1}\nTier 2: {tier2}\nRejected: {rejected}")
+
+    elif action == "generate_emails":
+        emails = result.get("emails_generated", [])
+        if emails:
+            parts.append(f"Generated {len(emails)} outreach emails:\n")
+            for e in emails[:8]:
+                parts.append(f"• Tier {e.get('tier', '?')} → {e.get('contact_email', 'N/A')} | {e.get('subject', '')[:50]}")
+        else:
+            parts.append("No emails generated — check if prospects are scored.")
+
+    elif action in ("rank_report",):
+        data = result.get("rank_data", [])
+        if data:
+            parts.append(f"Rank report ({len(data)} keywords):\n")
+            for row in data[:15]:
+                pos = row.get("position", "?")
+                prev = row.get("previous_position")
+                change = ""
+                if isinstance(pos, (int, float)) and isinstance(prev, (int, float)):
+                    diff = prev - pos
+                    if diff != 0:
+                        change = f" ({'↑' if diff > 0 else '↓'}{abs(diff):.0f})"
+                parts.append(f"• {row.get('keyword', 'N/A')[:35]} → pos {pos}{change}")
+        else:
+            parts.append("No ranking data available.")
+
+    elif action in ("weekly_report", "outreach_report"):
+        report = result.get("report", "")
+        parts.append(report if report else "No report data available.")
+
+    else:
+        # Generic fallback
+        parts.append(f"Task `{action}` completed.")
+        for key, val in result.items():
+            if key not in ("errors", "llm_spend_this_week", "task_type") and val:
+                if isinstance(val, list):
+                    parts.append(f"{key}: {len(val)} items")
+                elif isinstance(val, str) and len(val) > 10:
+                    parts.append(f"{key}: {val[:200]}")
+
+    return "\n".join(parts) if parts else "Task completed with no output."
+
+
+async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle free-text messages by routing through Claude."""
+    if not await _check_auth(update):
+        return
+
+    user_id = update.effective_user.id
+    user_text = update.message.text or ""
+    if not user_text.strip():
+        return
+
+    # Add to conversation history
+    history = _conversation_history[user_id]
+    history.append({"role": "user", "content": user_text})
+
+    # Build messages for the LLM (include history for context)
+    messages = list(history)
+
+    try:
+        # Send typing indicator
+        await update.message.chat.send_action("typing")
+
+        # Call LLM to interpret intent
+        loop = asyncio.get_event_loop()
+        llm_response = await loop.run_in_executor(
+            None,
+            partial(_call_openrouter_sync, messages, _NL_SYSTEM_PROMPT),
+        )
+    except Exception as e:
+        logger.error("NL router LLM call failed: %s", e)
+        await update.message.reply_text(
+            "Sorry, I couldn't process that right now. Try again or use a /command."
+        )
+        return
+
+    # Check if the LLM returned an action
+    action_data = _parse_action(llm_response)
+
+    if action_data:
+        action = action_data["action"]
+        params = action_data.get("params", {})
+
+        # Handle special non-graph actions
+        if action == "cost_report":
+            await cmd_cost_report(update, context)
+            history.append({"role": "assistant", "content": "[Ran cost report]"})
+            return
+        if action == "status":
+            await cmd_status(update, context)
+            history.append({"role": "assistant", "content": "[Ran status check]"})
+            return
+
+        # Run the agent task
+        await update.message.reply_text(f"On it — running {action.replace('_', ' ')}...")
+
+        result = {}
+        try:
+            result = await asyncio.get_event_loop().run_in_executor(
+                None, partial(_run_graph_sync, action, **params)
+            )
+        except Exception as e:
+            logger.error("Agent task %s failed: %s", action, traceback.format_exc())
+            await update.message.reply_text(f"That didn't work: {str(e)[:300]}")
+            history.append({"role": "assistant", "content": f"[Task {action} failed: {str(e)[:100]}]"})
+            return
+
+        # Format and send results
+        formatted = await _format_task_result(action, result)
+
+        # Telegram 4096 char limit
+        for i in range(0, len(formatted), 4000):
+            await update.message.reply_text(formatted[i:i + 4000])
+
+        # Store a summary in conversation history
+        summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
+        history.append({"role": "assistant", "content": summary})
+
+    else:
+        # Pure conversational response
+        await update.message.reply_text(llm_response)
+        history.append({"role": "assistant", "content": llm_response})
 
 
 # ---------------------------------------------------------------------------
@@ -453,6 +756,9 @@ def main() -> None:
 
     # Catch unknown commands
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
+
+    # Natural language handler — catches all non-command text messages
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_natural_language))
 
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
