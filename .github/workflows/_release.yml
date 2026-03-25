@@ -97,6 +97,8 @@ jobs:
               f.write(f"pkg-name={pkg_name}\n")
               f.write(f"version={version}\n")
   release-notes:
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
     needs:
       - build
     runs-on: ubuntu-latest
@@ -193,6 +195,8 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
     needs:
       - build
       - release-notes
@@ -214,7 +218,7 @@ jobs:
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
@@ -572,7 +576,7 @@ jobs:
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
@@ -614,7 +618,7 @@ jobs:
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Create Tag
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}

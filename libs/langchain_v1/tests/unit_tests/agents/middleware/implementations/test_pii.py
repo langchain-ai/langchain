@@ -1,5 +1,6 @@
 """Tests for PII detection middleware."""
 
+import re
 from typing import Any
 
 import pytest
@@ -556,6 +557,57 @@ class TestCustomDetector:
 
         assert result is not None
         assert "[REDACTED_CONFIDENTIAL]" in result["messages"][0].content
+
+    def test_custom_callable_detector_with_text_key_hash(self) -> None:
+        """Custom detectors returning 'text' instead of 'value' must work with hash strategy.
+
+        Regression test for https://github.com/langchain-ai/langchain/issues/35647:
+        Custom detectors documented to return {"text", "start", "end"} caused
+        KeyError: 'value' when used with hash or mask strategies.
+        """
+
+        def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
+            return [
+                {"text": m.group(), "start": m.start(), "end": m.end()}
+                for m in re.finditer(r"\+91[\s.-]?\d{10}", content)
+            ]
+
+        middleware = PIIMiddleware(
+            "indian_phone",
+            detector=detect_phone,
+            strategy="hash",
+            apply_to_input=True,
+        )
+
+        state = AgentState[Any](messages=[HumanMessage("Call +91 9876543210")])
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        assert "<indian_phone_hash:" in result["messages"][0].content
+        assert "+91 9876543210" not in result["messages"][0].content
+
+    def test_custom_callable_detector_with_text_key_mask(self) -> None:
+        """Custom detectors returning 'text' instead of 'value' must work with mask strategy."""
+
+        def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
+            return [
+                {"text": m.group(), "start": m.start(), "end": m.end()}
+                for m in re.finditer(r"\+91[\s.-]?\d{10}", content)
+            ]
+
+        middleware = PIIMiddleware(
+            "indian_phone",
+            detector=detect_phone,
+            strategy="mask",
+            apply_to_input=True,
+        )
+
+        state = AgentState[Any](messages=[HumanMessage("Call +91 9876543210")])
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        assert "****" in result["messages"][0].content
+        assert "+91 9876543210" not in result["messages"][0].content
 
     def test_unknown_builtin_type_raises_error(self) -> None:
         with pytest.raises(ValueError, match="Unknown PII type"):
