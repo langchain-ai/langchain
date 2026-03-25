@@ -1,6 +1,7 @@
 langgraph>=1.1.1,<2.0.0
 langchain-core>=1.2.0,<2.0.0
 anthropic>=0.40.0,<1.0.0
+openai>=1.50.0,<2.0.0
 supabase>=2.0.0,<3.0.0
 google-api-python-client>=2.100.0,<3.0.0
 google-auth>=2.23.0,<3.0.0

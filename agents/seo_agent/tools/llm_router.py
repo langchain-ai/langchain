@@ -15,8 +15,6 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
-import anthropic
-
 from agents.seo_agent.config import MAX_WEEKLY_SPEND_USD, TOKEN_BUDGETS
 
 logger = logging.getLogger(__name__)
@@ -25,33 +23,66 @@ logger = logging.getLogger(__name__)
 # Task → model mapping
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Internal model tier names (provider-agnostic)
+# ---------------------------------------------------------------------------
+_HAIKU = "haiku"
+_SONNET = "sonnet"
+_OPUS = "opus"
+
 TASK_MODEL_MAP: dict[str, str] = {
     # Haiku — classification, extraction, filtering (cheapest)
-    "classify_prospect": "claude-haiku-4-5-20251001",
-    "score_prospect": "claude-haiku-4-5-20251001",
-    "extract_contact_email": "claude-haiku-4-5-20251001",
-    "detect_page_type": "claude-haiku-4-5-20251001",
-    "summarise_page": "claude-haiku-4-5-20251001",
-    "check_reply_intent": "claude-haiku-4-5-20251001",
-    "filter_keywords": "claude-haiku-4-5-20251001",
+    "classify_prospect": _HAIKU,
+    "score_prospect": _HAIKU,
+    "extract_contact_email": _HAIKU,
+    "detect_page_type": _HAIKU,
+    "summarise_page": _HAIKU,
+    "check_reply_intent": _HAIKU,
+    "filter_keywords": _HAIKU,
     # Sonnet — drafting, analysis, briefs (mid-cost, default)
-    "write_content_brief": "claude-sonnet-4-6",
-    "write_blog_post": "claude-sonnet-4-6",
-    "write_location_page": "claude-sonnet-4-6",
-    "write_tier2_email": "claude-sonnet-4-6",
-    "analyse_content_gap": "claude-sonnet-4-6",
-    "generate_pr_angles": "claude-sonnet-4-6",
-    "write_followup_email": "claude-sonnet-4-6",
+    "write_content_brief": _SONNET,
+    "write_blog_post": _SONNET,
+    "write_location_page": _SONNET,
+    "write_tier2_email": _SONNET,
+    "analyse_content_gap": _SONNET,
+    "generate_pr_angles": _SONNET,
+    "write_followup_email": _SONNET,
     # Opus — highest-stakes output only (most expensive, use sparingly)
-    "write_tier1_email": "claude-opus-4-6",
-    "write_digital_pr_pitch": "claude-opus-4-6",
+    "write_tier1_email": _OPUS,
+    "write_digital_pr_pitch": _OPUS,
+}
+
+# Anthropic native model IDs (used when ANTHROPIC_API_KEY is set)
+_ANTHROPIC_MODELS: dict[str, str] = {
+    _HAIKU: "claude-haiku-4-5-20251001",
+    _SONNET: "claude-sonnet-4-6",
+    _OPUS: "claude-opus-4-6",
+}
+
+# OpenRouter model IDs (used when OPENROUTER_API_KEY is set)
+_OPENROUTER_MODELS: dict[str, str] = {
+    _HAIKU: "anthropic/claude-haiku-4.5",
+    _SONNET: "anthropic/claude-sonnet-4.6",
+    _OPUS: "anthropic/claude-opus-4.6",
 }
 
 MODEL_COSTS_PER_1M: dict[str, dict[str, float]] = {
-    "claude-haiku-4-5-20251001": {"input": 0.25, "output": 1.25},
-    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
-    "claude-opus-4-6": {"input": 15.00, "output": 75.00},
+    _HAIKU: {"input": 1.00, "output": 5.00},
+    _SONNET: {"input": 3.00, "output": 15.00},
+    _OPUS: {"input": 5.00, "output": 25.00},
 }
+
+
+def _use_openrouter() -> bool:
+    """Return True if OpenRouter is configured as the LLM provider."""
+    return bool(os.getenv("OPENROUTER_API_KEY"))
+
+
+def _resolve_model_id(tier: str) -> str:
+    """Map an internal tier name to the provider-specific model ID."""
+    if _use_openrouter():
+        return _OPENROUTER_MODELS.get(tier, _OPENROUTER_MODELS[_SONNET])
+    return _ANTHROPIC_MODELS.get(tier, _ANTHROPIC_MODELS[_SONNET])
 
 # Default freshness thresholds for output caching (days)
 CACHE_FRESHNESS_DAYS: dict[str, int] = {
@@ -65,23 +96,23 @@ CACHE_FRESHNESS_DAYS: dict[str, int] = {
 
 
 def get_model(task: str, budget_remaining: float = 999.0) -> str:
-    """Return the appropriate model for a task, downgrading if budget is low.
+    """Return the appropriate model tier for a task, downgrading if budget is low.
 
     Args:
         task: The task identifier (must match a key in TASK_MODEL_MAP).
         budget_remaining: Fraction of weekly budget remaining (0.0–1.0).
 
     Returns:
-        A Claude model identifier string.
+        An internal model tier string (haiku/sonnet/opus).
     """
-    model = TASK_MODEL_MAP.get(task, "claude-sonnet-4-6")
+    tier = TASK_MODEL_MAP.get(task, _SONNET)
     # If over 80% of weekly budget spent, downgrade Sonnet tasks to Haiku
-    if budget_remaining < 0.20 and model == "claude-sonnet-4-6":
-        return "claude-haiku-4-5-20251001"
+    if budget_remaining < 0.20 and tier == _SONNET:
+        return _HAIKU
     # If over 80% of budget, skip Opus entirely — return Sonnet instead
-    if budget_remaining < 0.20 and model == "claude-opus-4-6":
-        return "claude-sonnet-4-6"
-    return model
+    if budget_remaining < 0.20 and tier == _OPUS:
+        return _SONNET
+    return tier
 
 
 def calculate_cost(
@@ -101,7 +132,7 @@ def calculate_cost(
     Returns:
         Cost in USD, rounded to 6 decimal places.
     """
-    rates = MODEL_COSTS_PER_1M.get(model, MODEL_COSTS_PER_1M["claude-sonnet-4-6"])
+    rates = MODEL_COSTS_PER_1M.get(model, MODEL_COSTS_PER_1M[_SONNET])
     uncached_input = input_tokens - cached_tokens
     cost = uncached_input / 1_000_000 * rates["input"]
     cost += cached_tokens / 1_000_000 * rates["input"] * 0.10  # 10% for cached
@@ -125,33 +156,105 @@ def get_budget_remaining(weekly_spend: float) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Anthropic SDK helper — every LLM call goes through here
+# LLM client — supports both Anthropic SDK and OpenRouter (OpenAI-compat)
 # ---------------------------------------------------------------------------
 
-_client: anthropic.Anthropic | None = None
+_anthropic_client: Any = None
+_openai_client: Any = None
 
 
-def _get_client() -> anthropic.Anthropic:
-    """Return a singleton Anthropic client.
+def _get_anthropic_client() -> Any:
+    """Return a singleton Anthropic client (direct Anthropic API)."""
+    global _anthropic_client  # noqa: PLW0603
+    if _anthropic_client is None:
+        import anthropic
+        _anthropic_client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
+    return _anthropic_client
 
-    Supports OpenRouter as a proxy: set ``OPENROUTER_API_KEY`` and optionally
-    ``OPENROUTER_BASE_URL`` in the environment. Falls back to the standard
-    ``ANTHROPIC_API_KEY`` when no OpenRouter key is present.
-    """
-    global _client  # noqa: PLW0603
-    if _client is None:
-        openrouter_key = os.getenv("OPENROUTER_API_KEY")
-        if openrouter_key:
-            base_url = os.getenv(
+
+def _get_openrouter_client() -> Any:
+    """Return a singleton OpenAI-compatible client pointed at OpenRouter."""
+    global _openai_client  # noqa: PLW0603
+    if _openai_client is None:
+        from openai import OpenAI
+        _openai_client = OpenAI(
+            api_key=os.environ["OPENROUTER_API_KEY"],
+            base_url=os.getenv(
                 "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
-            )
-            _client = anthropic.Anthropic(
-                api_key=openrouter_key,
-                base_url=base_url,
-            )
-        else:
-            _client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
-    return _client
+            ),
+            default_headers={
+                "HTTP-Referer": "https://kitchensdirectory.co.uk",
+                "X-Title": "SEO Agent",
+            },
+        )
+    return _openai_client
+
+
+def _call_openrouter(
+    model_id: str,
+    messages: list[dict[str, str]],
+    system: str | list[dict],
+    max_tokens: int,
+) -> dict[str, Any]:
+    """Call OpenRouter via the OpenAI-compatible chat completions API."""
+    client = _get_openrouter_client()
+
+    # Prepend system prompt as a system message
+    oai_messages: list[dict[str, str]] = []
+    if system:
+        sys_text = system if isinstance(system, str) else " ".join(
+            block.get("text", "") for block in system if isinstance(block, dict)
+        )
+        if sys_text.strip():
+            oai_messages.append({"role": "system", "content": sys_text})
+    oai_messages.extend(messages)
+
+    response = client.chat.completions.create(
+        model=model_id,
+        max_tokens=max_tokens,
+        messages=oai_messages,
+    )
+
+    choice = response.choices[0]
+    usage = response.usage
+
+    return {
+        "text": choice.message.content or "",
+        "input_tokens": usage.prompt_tokens if usage else 0,
+        "output_tokens": usage.completion_tokens if usage else 0,
+        "cached_tokens": 0,
+    }
+
+
+def _call_anthropic(
+    model_id: str,
+    messages: list[dict[str, str]],
+    system: str | list[dict],
+    max_tokens: int,
+) -> dict[str, Any]:
+    """Call the Anthropic messages API directly."""
+    client = _get_anthropic_client()
+    kwargs: dict[str, Any] = {
+        "model": model_id,
+        "max_tokens": max_tokens,
+        "messages": messages,
+    }
+    if system:
+        kwargs["system"] = system
+
+    response = client.messages.create(**kwargs)
+
+    usage = response.usage
+    text = "".join(
+        block.text for block in response.content if block.type == "text"
+    )
+
+    return {
+        "text": text,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "cached_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
+    }
 
 
 def call_llm(
@@ -163,14 +266,15 @@ def call_llm(
     site: str = "",
     log_fn: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
-    """Call the Claude API via the Anthropic SDK with cost tracking.
+    """Call Claude via Anthropic API or OpenRouter with cost tracking.
 
-    Uses prompt caching when `system` is passed as a list of content blocks
-    (include ``"cache_control": {"type": "ephemeral"}`` on static blocks).
+    Automatically selects the correct provider based on environment variables:
+    - ``OPENROUTER_API_KEY`` set → uses OpenRouter (OpenAI-compatible API)
+    - Otherwise → uses Anthropic SDK (reads ``ANTHROPIC_API_KEY``)
 
     Args:
         task: Task identifier for model routing and token budgets.
-        messages: Conversation messages in Anthropic format.
+        messages: Conversation messages (``{"role": ..., "content": ...}``).
         system: System prompt — string or list of content blocks for caching.
         weekly_spend: Current week's LLM spend in USD.
         site: Target site name (for cost logging).
@@ -181,34 +285,27 @@ def call_llm(
         ``output_tokens``, ``cached_tokens``, ``cost_usd``.
     """
     budget_remaining = get_budget_remaining(weekly_spend)
-    model = get_model(task, budget_remaining)
+    tier = get_model(task, budget_remaining)
+    model_id = _resolve_model_id(tier)
     max_tokens = TOKEN_BUDGETS.get(task, 1024)
 
-    client = _get_client()
-    kwargs: dict[str, Any] = {
-        "model": model,
-        "max_tokens": max_tokens,
-        "messages": messages,
-    }
-    if system:
-        kwargs["system"] = system
+    if _use_openrouter():
+        result = _call_openrouter(model_id, messages, system, max_tokens)
+    else:
+        result = _call_anthropic(model_id, messages, system, max_tokens)
 
-    response = client.messages.create(**kwargs)
+    input_tokens = result["input_tokens"]
+    output_tokens = result["output_tokens"]
+    cached_tokens = result["cached_tokens"]
 
-    # Extract token usage
-    usage = response.usage
-    input_tokens = usage.input_tokens
-    output_tokens = usage.output_tokens
-    cached_tokens = getattr(usage, "cache_read_input_tokens", 0) or 0
-
-    cost = calculate_cost(model, input_tokens, output_tokens, cached_tokens)
+    cost = calculate_cost(tier, input_tokens, output_tokens, cached_tokens)
 
     # Log cost if a logging function is provided
     if log_fn is not None:
         try:
             log_fn(
                 task_type=task,
-                model=model,
+                model=model_id,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cached_tokens=cached_tokens,
@@ -218,14 +315,9 @@ def call_llm(
         except Exception:
             logger.warning("Failed to log LLM cost", exc_info=True)
 
-    text = ""
-    for block in response.content:
-        if block.type == "text":
-            text += block.text
-
     return {
-        "text": text,
-        "model": model,
+        "text": result["text"],
+        "model": model_id,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cached_tokens": cached_tokens,
