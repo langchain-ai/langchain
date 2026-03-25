@@ -730,12 +730,14 @@ async def post_init(application: Application) -> None:
 
 def main() -> None:
     """Start the Telegram bot with long polling."""
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    # Strip all whitespace/newlines — Railway env vars often have trailing \n
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    token = "".join(token.split())  # removes ALL whitespace including embedded \n
     if not token:
         logger.error("TELEGRAM_BOT_TOKEN is not set")
         sys.exit(1)
 
-    logger.info("Starting RalfSEObot...")
+    logger.info("Starting RalfSEObot with token length=%d...", len(token))
 
     app = Application.builder().token(token).post_init(post_init).build()
 
