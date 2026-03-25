@@ -132,10 +132,25 @@ _client: anthropic.Anthropic | None = None
 
 
 def _get_client() -> anthropic.Anthropic:
-    """Return a singleton Anthropic client."""
+    """Return a singleton Anthropic client.
+
+    Supports OpenRouter as a proxy: set ``OPENROUTER_API_KEY`` and optionally
+    ``OPENROUTER_BASE_URL`` in the environment. Falls back to the standard
+    ``ANTHROPIC_API_KEY`` when no OpenRouter key is present.
+    """
     global _client  # noqa: PLW0603
     if _client is None:
-        _client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+        openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        if openrouter_key:
+            base_url = os.getenv(
+                "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
+            )
+            _client = anthropic.Anthropic(
+                api_key=openrouter_key,
+                base_url=base_url,
+            )
+        else:
+            _client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
     return _client
 
 
