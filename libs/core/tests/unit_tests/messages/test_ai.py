@@ -11,6 +11,7 @@ from langchain_core.messages.ai import (
     add_usage,
     subtract_usage,
 )
+from langchain_core.messages.base import _extract_reasoning_from_additional_kwargs
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -502,3 +503,21 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_ignore_empty_reasoning_string() -> None:
+    """Tests if strings with empty reasoning content are ignored."""
+    message = AIMessage(
+        content="content",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    assert _extract_reasoning_from_additional_kwargs(message) is None
+
+
+def test_not_empty_reasoning_string() -> None:
+    """Tests if strings with a reasoning content aren't ignored."""
+    message = AIMessage(
+        content="content",
+        additional_kwargs={"reasoning_content": "content"},
+    )
+    assert _extract_reasoning_from_additional_kwargs(message)
