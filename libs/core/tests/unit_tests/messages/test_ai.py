@@ -502,3 +502,16 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_content_blocks_empty_reasoning_content_ignored() -> None:
+    """Empty or whitespace-only reasoning_content should not produce a block."""
+    # Empty string
+    message = AIMessage(
+        content="hi",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    content_blocks = message.content_blocks
+    assert len(content_blocks) == 1
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"] == "hi"
