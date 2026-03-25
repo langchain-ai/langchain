@@ -337,6 +337,72 @@ class TestChatOpenRouterInstantiation:
             assert call_kwargs["http_referer"] == "https://my-custom-app.com"
             assert call_kwargs["x_title"] == "My Custom App"
 
+    def test_app_categories_passed_to_client(self) -> None:
+        """Test that app_categories injects custom httpx clients with header."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["cli-agent", "programming-app"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # Custom httpx clients should be created
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            # Verify the header value is comma-joined
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+            async_headers = call_kwargs["async_client"].headers
+            assert async_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+
+    def test_app_categories_none_no_custom_clients(self) -> None:
+        """Test that no custom httpx clients are created when categories unset."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
+
+    def test_app_categories_empty_list_no_custom_clients(self) -> None:
+        """Test that an empty list does not inject custom httpx clients."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=[],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
+
+    def test_app_categories_with_other_attribution(self) -> None:
+        """Test that app_categories coexists with app_url and app_title."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+                app_categories=["cli-agent"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["http_referer"] == "https://myapp.com"
+            assert call_kwargs["x_title"] == "My App"
+            assert "client" in call_kwargs
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
         model = _make_model(reasoning={"effort": "high"})
