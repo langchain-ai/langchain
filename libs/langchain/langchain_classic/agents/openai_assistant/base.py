@@ -75,7 +75,7 @@ def _get_openai_client() -> openai.OpenAI:
     try:
         import openai
 
-        return openai.OpenAI()
+        return openai.OpenAI(timeout=60.0, max_retries=3)
     except ImportError as e:
         msg = "Unable to import openai, please install with `pip install openai`."
         raise ImportError(msg) from e
@@ -91,7 +91,7 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
     try:
         import openai
 
-        return openai.AsyncOpenAI()
+        return openai.AsyncOpenAI(timeout=60.0, max_retries=3)
     except ImportError as e:
         msg = "Unable to import openai, please install with `pip install openai`."
         raise ImportError(msg) from e
@@ -247,7 +247,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             import openai
 
             api_key = self.client.api_key
-            self.async_client = openai.AsyncOpenAI(api_key=api_key)
+            self.async_client = openai.AsyncOpenAI(api_key=api_key, timeout=60.0, max_retries=3)
         return self
 
     @classmethod
