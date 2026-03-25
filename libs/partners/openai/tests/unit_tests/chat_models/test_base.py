@@ -3638,3 +3638,210 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+# ---------------------------------------------------------------------------
+# Tests for disable_streaming="tool_calling" (issue #35436)
+# ---------------------------------------------------------------------------
+
+_TOOL_CALL_COMPLETION = {
+    "id": "chatcmpl-test",
+    "object": "chat.completion",
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": '{"city": "Tokyo"}',
+                        },
+                    }
+                ],
+            },
+            "finish_reason": "tool_calls",
+        }
+    ],
+    "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+}
+
+_TEXT_COMPLETION = {
+    "id": "chatcmpl-test",
+    "object": "chat.completion",
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Hello!",
+            },
+            "finish_reason": "stop",
+        }
+    ],
+    "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+}
+
+_DUMMY_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}
+
+
+def _make_raw_response(body: dict) -> MagicMock:
+    """Create a mock raw response whose .parse() returns an object with
+    model_dump() returning *body*."""
+    parsed = MagicMock()
+    parsed.model_dump.return_value = body
+    raw = MagicMock()
+    raw.parse.return_value = parsed
+    raw.headers = {}
+    return raw
+
+
+def _make_llm(**kwargs: Any) -> ChatOpenAI:
+    """Create a ChatOpenAI instance with a dummy API key."""
+    kwargs.setdefault("api_key", "sk-test")
+    return ChatOpenAI(**kwargs)
+
+
+def test_disable_streaming_tool_calling_generate_no_stream_in_payload() -> None:
+    """_generate must not include stream=True in the API payload when
+    disable_streaming='tool_calling' is set, even if streaming=True."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    raw = _make_raw_response(_TOOL_CALL_COMPLETION)
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = raw
+        llm._generate(
+            [HumanMessage(content="What's the weather?")],
+            tools=[_DUMMY_TOOL],
+        )
+        call_kwargs = mock_client.create.call_args[1]
+        assert call_kwargs.get("stream") is not True
+
+
+async def test_disable_streaming_tool_calling_agenerate_no_stream_in_payload() -> None:
+    """_agenerate must not include stream=True in the API payload when
+    disable_streaming='tool_calling' is set, even if streaming=True."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    raw = _make_raw_response(_TOOL_CALL_COMPLETION)
+    with patch.object(llm, "async_client") as mock_client:
+        mock_client.with_raw_response.create = AsyncMock(return_value=raw)
+        await llm._agenerate(
+            [HumanMessage(content="What's the weather?")],
+            tools=[_DUMMY_TOOL],
+        )
+        call_kwargs = mock_client.with_raw_response.create.call_args[1]
+        assert call_kwargs.get("stream") is not True
+
+
+def test_disable_streaming_tool_calling_does_not_crash_on_invoke() -> None:
+    """invoke() with disable_streaming='tool_calling', streaming=True, and
+    tools should not crash (the original bug from issue #35436)."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    raw = _make_raw_response(_TOOL_CALL_COMPLETION)
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = raw
+        result = llm.invoke(
+            [HumanMessage(content="What's the weather?")],
+            tools=[_DUMMY_TOOL],
+        )
+        assert result.tool_calls[0]["name"] == "get_weather"
+
+
+def test_disable_streaming_tool_calling_stream_falls_back_to_invoke() -> None:
+    """stream() with disable_streaming='tool_calling' and tools bound should
+    fall back to invoke (non-streaming) and not crash."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    raw = _make_raw_response(_TEXT_COMPLETION)
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = raw
+        chunks = list(
+            llm.stream(
+                [HumanMessage(content="What's the weather?")],
+                tools=[_DUMMY_TOOL],
+            )
+        )
+        assert len(chunks) == 1
+        assert chunks[0].content == "Hello!"
+
+
+def test_disable_streaming_false_still_streams_with_tools() -> None:
+    """When disable_streaming is False (default), streaming with tools should
+    still use the streaming path (stream=True in payload)."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming=False,
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage(content="hi")],
+        tools=[_DUMMY_TOOL],
+    )
+    assert payload.get("stream") is True
+
+
+def test_generate_without_streaming_flag_no_stream_in_payload() -> None:
+    """_generate must not send stream=True in the payload when
+    streaming=False (the default)."""
+    llm = _make_llm(model="gpt-4o")
+    raw = _make_raw_response(_TEXT_COMPLETION)
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = raw
+        llm._generate([HumanMessage(content="hi")])
+        call_kwargs = mock_client.create.call_args[1]
+        assert call_kwargs.get("stream") is not True
+
+
+def test_should_stream_false_when_tool_calling_and_tools_bound() -> None:
+    """_should_stream must return False when disable_streaming='tool_calling'
+    and tools are present in kwargs."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    assert llm._should_stream(async_api=False, tools=[_DUMMY_TOOL]) is False
+    assert llm._should_stream(async_api=True, tools=[_DUMMY_TOOL]) is False
+
+
+def test_should_stream_true_when_tool_calling_and_no_tools() -> None:
+    """_should_stream must return True when disable_streaming='tool_calling'
+    but no tools are bound."""
+    llm = _make_llm(
+        model="gpt-4o",
+        streaming=True,
+        disable_streaming="tool_calling",
+    )
+    assert llm._should_stream(async_api=False, stream=True) is True
+    assert llm._should_stream(async_api=True, stream=True) is True

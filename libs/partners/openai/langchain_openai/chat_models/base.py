@@ -1450,12 +1450,16 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         self._ensure_sync_client_available()
+        # _generate is the non-streaming path. Ensure that any payload
+        # construction logic sees stream=False, even if streaming was
+        # enabled in default params or caller kwargs.
+        kwargs = {**kwargs, "stream": False}
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None
         try:
             if "response_format" in payload:
-                payload.pop("stream")
+                payload.pop("stream", None)
                 raw_response = (
                     self.root_client.chat.completions.with_raw_response.parse(**payload)
                 )
@@ -1710,12 +1714,16 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        # Ensure the non-streaming path always constructs payloads with stream=False,
+        # even if self.streaming or default params would otherwise enable streaming.
+        request_kwargs = dict(kwargs)
+        request_kwargs["stream"] = False
+        payload = self._get_request_payload(messages, stop=stop, **request_kwargs)
         generation_info = None
         raw_response = None
         try:
             if "response_format" in payload:
-                payload.pop("stream")
+                payload.pop("stream", None)
                 raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
                     **payload
                 )
