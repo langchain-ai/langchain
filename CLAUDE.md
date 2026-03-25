@@ -251,3 +251,42 @@ When adding a new partner package, update these files:
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
 - **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)
+
+
+## Supabase Agent Skills
+
+This repository includes Supabase Postgres Best Practices as agent skills in `.agents/skills/supabase-postgres-best-practices/`.
+
+### When to Apply
+
+Reference these guidelines when:
+- Writing SQL queries or designing schemas for the Supabase-backed tables
+- Implementing indexes or query optimization
+- Reviewing database performance issues
+- Configuring connection pooling or scaling
+- Working with Row-Level Security (RLS)
+
+### Supabase Configuration
+
+- **Project URL:** `https://ewkrubluzctsfnkxnmsj.supabase.co`
+- **Database:** `postgresql://postgres:***@db.ewkrubluzctsfnkxnmsj.supabase.co:5432/postgres`
+- **Environment variables:** `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY`, `DATABASE_URL`
+- **Supabase Python client:** Used in `agents/seo_agent/tools/supabase_tools.py`
+
+### Skill Structure
+
+```
+.agents/skills/supabase-postgres-best-practices/
+  SKILL.md       # Main skill file - read this first
+  AGENTS.md      # Navigation guide
+  references/    # 35 detailed reference files covering:
+                 #   query-*    Query Performance (CRITICAL)
+                 #   conn-*     Connection Management (CRITICAL)
+                 #   security-* Security & RLS (CRITICAL)
+                 #   schema-*   Schema Design (HIGH)
+                 #   lock-*     Concurrency & Locking (MEDIUM-HIGH)
+                 #   data-*     Data Access Patterns (MEDIUM)
+                 #   monitor-*  Monitoring & Diagnostics (LOW-MEDIUM)
+                 #   advanced-* Advanced Features (LOW)
+```
+
