@@ -766,12 +766,14 @@ def main() -> None:
 
 if __name__ == "__main__":
     # Startup diagnostics for Railway deploy logs
+    raw_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    clean_token = raw_token.strip()
     print("[BOOT] telegram_bot.py starting...")
     print(f"[BOOT] Python: {sys.version}")
-    print(f"[BOOT] TELEGRAM_BOT_TOKEN: {'SET' if os.environ.get('TELEGRAM_BOT_TOKEN') else 'MISSING'}")
+    print(f"[BOOT] TELEGRAM_BOT_TOKEN: len={len(raw_token)} stripped={len(clean_token)} has_newline={chr(10) in raw_token}")
     print(f"[BOOT] OPENROUTER_API_KEY: {'SET' if os.environ.get('OPENROUTER_API_KEY') else 'MISSING'}")
     print(f"[BOOT] SUPABASE_URL: {'SET' if os.environ.get('SUPABASE_URL') else 'MISSING'}")
+    print(f"[BOOT] SUPABASE_SERVICE_KEY: {'SET' if os.environ.get('SUPABASE_SERVICE_KEY') else 'MISSING'}")
     print(f"[BOOT] CWD: {os.getcwd()}")
-    print(f"[BOOT] Files in CWD: {os.listdir('.')}")
     sys.stdout.flush()
     main()
