@@ -118,7 +118,7 @@ class ChatOpenRouter(BaseChatModel):
         | `timeout` | `int | None` | Timeout in milliseconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
-        | `app_categories` | `list[str] | None` | Marketplace categories. |
+        | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -186,13 +186,14 @@ class ChatOpenRouter(BaseChatModel):
     )
     """Marketplace categories for OpenRouter attribution.
 
-    Maps to `X-OpenRouter-Categories` header. Pass a list of category strings,
+    Maps to `X-OpenRouter-Categories` header. Pass a list of lowercase,
+    hyphen-separated category strings (max 30 characters each),
     e.g. `['cli-agent', 'programming-app']`.
 
     Only recognized categories are accepted (unrecognized values are silently
     dropped by OpenRouter).
 
-    See https://openrouter.ai/docs/app-attribution for the full list.
+    See https://openrouter.ai/docs/app-attribution for recognized categories.
     """
 
     request_timeout: int | None = Field(default=None, alias="timeout")
@@ -323,8 +324,11 @@ class ChatOpenRouter(BaseChatModel):
         return values
 
     def _build_client(self) -> Any:
-        """Build and return an `openrouter.OpenRouter` SDK client."""
-        import httpx  # noqa: PLC0415
+        """Build and return an `openrouter.OpenRouter` SDK client.
+
+        Returns:
+            An `openrouter.OpenRouter` SDK client instance.
+        """
         import openrouter  # noqa: PLC0415
         from openrouter.utils import (  # noqa: PLC0415
             BackoffStrategy,
@@ -341,6 +345,13 @@ class ChatOpenRouter(BaseChatModel):
         if self.app_title:
             client_kwargs["x_title"] = self.app_title
         if self.app_categories:
+            # The SDK lacks a native constructor param for X-OpenRouter-Categories,
+            # so inject the header via custom httpx clients. The SDK sets its own
+            # headers (Authorization, HTTP-Referer, X-Title) per-request, and httpx
+            # merges client-default headers with per-request headers, so nothing is
+            # lost.
+            import httpx  # noqa: PLC0415
+
             extra_headers = {
                 "X-OpenRouter-Categories": ",".join(self.app_categories),
             }
@@ -377,13 +388,14 @@ class ChatOpenRouter(BaseChatModel):
 
         if not self.client:
             try:
-                self.client = self._build_client()
+                import openrouter  # noqa: PLC0415, F401
             except ImportError as e:
                 msg = (
                     "Could not import the `openrouter` Python SDK. "
                     "Please install it with: pip install openrouter"
                 )
                 raise ImportError(msg) from e
+            self.client = self._build_client()
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
