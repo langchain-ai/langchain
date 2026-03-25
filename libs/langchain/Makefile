@@ -9,6 +9,7 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
@@ -22,10 +23,10 @@ coverage:
 		$(TEST_FILE)
 
 test tests:
-	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
-	uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --disable-warnings tests/unit_tests

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -11,8 +12,8 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import override
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self, override
 
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
@@ -32,7 +33,10 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
-from langchain_core.language_models.model_profile import ModelProfile
+from langchain_core.language_models.model_profile import (
+    ModelProfile,
+    _warn_unknown_profile_keys,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -357,6 +361,54 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         arbitrary_types_allowed=True,
     )
 
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        """Return the default model profile, or `None` if unavailable.
+
+        Override this in subclasses instead of `_set_model_profile`. The base
+        validator calls it automatically and handles assignment. This avoids
+        coupling partner code to Pydantic validator mechanics.
+
+        Each partner needs its own override because things can vary per-partner,
+        such as the attribute that identifies the model (e.g., `model`,
+        `model_name`, `model_id`, `deployment_name`) and the partner-local
+        `_get_default_model_profile` function that reads from each partner's own
+        profile data.
+        """
+        # TODO: consider adding a `_model_identifier` property on BaseChatModel
+        # to standardize how partners identify their model, which could allow a
+        # default implementation here that calls a shared
+        # profile-loading mechanism.
+        return None
+
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Populate `profile` from `_resolve_model_profile` if not provided.
+
+        Partners should override `_resolve_model_profile` rather than this
+        validator. Overriding this with a new `@model_validator` replaces the
+        base validator (Pydantic v2 behavior), bypassing the standard resolution
+        path. A plain method override does not prevent the base validator from
+        running.
+        """
+        if self.profile is None:
+            # Suppress errors from partner overrides (e.g., missing profile
+            # files, broken imports) so model construction never fails over an
+            # optional field.
+            with contextlib.suppress(Exception):
+                self.profile = self._resolve_model_profile()
+        return self
+
+    # NOTE: _check_profile_keys must be defined AFTER _set_model_profile.
+    # Pydantic v2 runs mode="after" validators in definition order.
+    @model_validator(mode="after")
+    def _check_profile_keys(self) -> Self:
+        """Warn on unrecognized profile keys."""
+        # isinstance guard: ModelProfile is a TypedDict (always a dict), but
+        # protects against unexpected types from partner overrides.
+        if self.profile and isinstance(self.profile, dict):
+            _warn_unknown_profile_keys(self.profile)
+        return self
+
     @cached_property
     def _serialized(self) -> dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
@@ -504,8 +556,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
             inheritable_metadata = {
+                **self._get_metadata_invocation_params(params),
                 **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -632,8 +685,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
+            **self._get_metadata_invocation_params(params),
             **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -785,6 +839,18 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params["stop"] = stop
         return {**params, **kwargs}
 
+    def _get_metadata_invocation_params(
+        self,
+        invocation_params: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Filter invocation params for inclusion in run metadata."""
+        secret_keys = set(self.lc_secrets.keys())
+        return {
+            k: v
+            for k, v in invocation_params.items()
+            if v is not None and k not in secret_keys and k != "tools"
+        }
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
@@ -825,6 +891,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
             ls_params["ls_max_tokens"] = self.max_tokens
 
+        return ls_params
+
+    def _get_ls_params_with_defaults(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Wrap _get_ls_params to always include ls_integration."""
+        ls_params = self._get_ls_params(stop=stop, **kwargs)
+        ls_params["ls_integration"] = "langchain_chat_model"
         return ls_params
 
     def _get_llm_string(self, stop: list[str] | None = None, **kwargs: Any) -> str:
@@ -898,8 +974,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
+            **self._get_metadata_invocation_params(params),
             **(metadata or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
 
         callback_manager = CallbackManager.configure(
@@ -1021,8 +1098,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
+            **self._get_metadata_invocation_params(params),
             **(metadata or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
 
         callback_manager = AsyncCallbackManager.configure(

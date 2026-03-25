@@ -373,7 +373,25 @@ def resolve_detector(pii_type: str, detector: Detector | str | None) -> Detector
             ]
 
         return regex_detector
-    return detector
+
+    # Wrap the custom callable to normalize its output.
+    # Custom detectors may return dicts with "text" instead of "value"
+    # and may omit "type".  Map them to proper PIIMatch objects so that
+    # downstream strategies (hash, mask) can access match["value"].
+    raw_detector = detector
+
+    def _normalizing_detector(content: str) -> list[PIIMatch]:
+        return [
+            PIIMatch(
+                type=m.get("type", pii_type),
+                value=m.get("value", m.get("text", "")),
+                start=m["start"],
+                end=m["end"],
+            )
+            for m in raw_detector(content)
+        ]
+
+    return _normalizing_detector
 
 
 @dataclass(frozen=True)
