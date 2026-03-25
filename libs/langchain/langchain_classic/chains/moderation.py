@@ -71,8 +71,8 @@ class OpenAIModerationChain(Chain):
             if values["openai_pre_1_0"]:
                 values["client"] = openai.Moderation
             else:
-                values["client"] = openai.OpenAI(api_key=openai_api_key)
-                values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
+                values["client"] = openai.OpenAI(api_key=openai_api_key, timeout=60.0, max_retries=3)
+                values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key, timeout=60.0, max_retries=3)
 
         except ImportError as e:
             msg = (
