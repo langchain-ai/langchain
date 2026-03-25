@@ -1,34 +1,13 @@
-# Git
-.git
-.github
-
-# Python
-__pycache__
+# Ignore the full LangChain monorepo libs — we only need agents/
+libs/
+.git/
+.github/
+.vscode/
+.devcontainer/
+tests/
+output/
 *.pyc
-*.pyo
-.venv
-.mypy_cache
-.pytest_cache
-.ruff_cache
-*.egg-info
-.tox
-
-# IDE
-.idea
-.vscode
-
-# Worktree
-worktree
-
-# Test artifacts
-.coverage
-htmlcov
-coverage.xml
-
-# Build artifacts
-dist
-build
-
-# Misc
-*.log
-.DS_Store
+__pycache__
+.env
+.agents/
+node_modules/

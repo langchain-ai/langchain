@@ -1,0 +1,12 @@
+[build]
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# No fixed start command — this is a CLI/worker, not a web server.
+# Override the start command per Railway service or use railway run.
+startCommand = "python -m agents.seo_agent.run --help"
+# No health check needed for a worker/CLI service
+healthcheckPath = ""
+# Restart on failure
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
