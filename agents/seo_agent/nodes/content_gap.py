@@ -155,7 +155,7 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
         gap_record: dict[str, Any] = {
             "keyword": keyword_text,
             "volume": gap.get("volume", 0),
-            "kd": gap.get("kd", 0),
+            "kd": gap.get("difficulty") or gap.get("kd") or 0,
             "funnel_stage": funnel_stage,
             "competitors_ranking": gap.get("competitors_ranking", []),
             "top_url": gap.get("top_url", ""),

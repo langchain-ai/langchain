@@ -130,8 +130,9 @@ def run_keyword_research(state: SEOAgentState) -> dict[str, Any]:
 
         for kw in ideas:
             keyword_text = kw.get("keyword", "").lower()
-            volume = kw.get("volume", 0)
-            kd = kw.get("kd", 100)
+            volume = kw.get("volume", 0) or 0
+            # Ahrefs v3 returns "difficulty", not "kd"
+            kd = kw.get("difficulty") or kw.get("kd") or 0
 
             # Apply filtering thresholds
             if kd >= _MAX_KD:
