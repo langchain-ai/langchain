@@ -12,6 +12,7 @@ from langchain_core.language_models._utils import (
 )
 from langchain_core.messages import AIMessageChunk
 from langchain_core.messages import content as types
+from langchain_core.messages.base import _extract_reasoning_from_additional_kwargs
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -1050,9 +1051,17 @@ def translate_content(message: AIMessage) -> list[types.ContentBlock]:
         The derived content blocks.
     """
     if isinstance(message.content, str):
-        return _convert_to_v1_from_chat_completions(message)
-    message = _convert_from_v03_ai_message(message)
-    return _convert_to_v1_from_responses(message)
+        blocks = _convert_to_v1_from_chat_completions(message)
+    else:
+        message = _convert_from_v03_ai_message(message)
+        blocks = _convert_to_v1_from_responses(message)
+
+    if not any(block.get("type") == "reasoning" for block in blocks) and (
+        reasoning_block := _extract_reasoning_from_additional_kwargs(message)
+    ):
+        blocks.insert(0, reasoning_block)
+
+    return blocks
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
@@ -1065,9 +1074,17 @@ def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]
         The derived content blocks.
     """
     if isinstance(message.content, str):
-        return _convert_to_v1_from_chat_completions_chunk(message)
-    message = _convert_from_v03_ai_message(message)  # type: ignore[assignment]
-    return _convert_to_v1_from_responses(message)
+        blocks = _convert_to_v1_from_chat_completions_chunk(message)
+    else:
+        message = _convert_from_v03_ai_message(message)  # type: ignore[assignment]
+        blocks = _convert_to_v1_from_responses(message)
+
+    if not any(block.get("type") == "reasoning" for block in blocks) and (
+        reasoning_block := _extract_reasoning_from_additional_kwargs(message)
+    ):
+        blocks.insert(0, reasoning_block)
+
+    return blocks
 
 
 def _register_openai_translator() -> None:

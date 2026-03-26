@@ -4,9 +4,10 @@
 
         `ChatOpenAI` targets
         [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-        only. Non-standard response fields added by third-party providers (e.g.,
-        `reasoning_content`, `reasoning_details`) are **not** extracted or
-        preserved. If you are pointing `base_url` at a provider such as
+        only. Non-standard response fields added by third-party providers are not
+        standardized by this integration. Some raw compatibility fields, such as
+        `reasoning_content`, may still be preserved in `additional_kwargs`, but if
+        you are pointing `base_url` at a provider such as
         OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
         LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 """
@@ -189,6 +190,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = reasoning_content
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -408,6 +411,8 @@ def _convert_delta_to_message_chunk(
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -556,9 +561,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     This base class targets
     [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-    only. Non-standard response fields added by third-party providers (e.g.,
-    `reasoning_content`) are not extracted. Use a provider-specific subclass for
-    full provider support.
+    only. Non-standard response fields added by third-party providers are not
+    standardized. Some raw compatibility fields, such as `reasoning_content`, may be
+    preserved in `additional_kwargs`, but provider-specific subclasses still offer the
+    best support.
     """
 
     client: Any = Field(default=None, exclude=True)
@@ -2355,9 +2361,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         `ChatOpenAI` targets
         [official OpenAI API specifications](https://github.com/openai/openai-openapi)
-        only. Non-standard response fields added by third-party providers (e.g.,
-        `reasoning_content`, `reasoning_details`) are **not** extracted or
-        preserved. If you are pointing `base_url` at a provider such as
+        only. Non-standard response fields added by third-party providers are not
+        standardized by this integration. Some raw compatibility fields, such as
+        `reasoning_content`, may still be preserved in `additional_kwargs`, but if
+        you are pointing `base_url` at a provider such as
         OpenRouter, vLLM, or DeepSeek, use the corresponding provider-specific
         LangChain package instead (e.g., `ChatDeepSeek`, `ChatOpenRouter`).
 

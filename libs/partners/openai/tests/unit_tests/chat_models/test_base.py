@@ -197,6 +197,19 @@ def test__convert_dict_to_message_ai() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    message = {
+        "role": "assistant",
+        "content": "</think>final answer",
+        "reasoning_content": "<think>step by step",
+    }
+    result = _convert_dict_to_message(message)
+    assert result == AIMessage(
+        content="</think>final answer",
+        additional_kwargs={"reasoning_content": "<think>step by step"},
+    )
+
+
 def test__convert_dict_to_message_ai_with_name() -> None:
     message = {"role": "assistant", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
@@ -314,6 +327,65 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+def test_convert_chunk_to_generation_chunk_preserves_reasoning_content() -> None:
+    llm = ChatOpenAI(model="gpt-4.1-mini", api_key="test")
+
+    first = llm._convert_chunk_to_generation_chunk(
+        {
+            "choices": [
+                {
+                    "delta": {
+                        "role": "assistant",
+                        "reasoning_content": "<think>step ",
+                    }
+                }
+            ]
+        },
+        AIMessageChunk,
+        None,
+    )
+    second = llm._convert_chunk_to_generation_chunk(
+        {
+            "choices": [
+                {
+                    "delta": {
+                        "reasoning_content": "by step",
+                    }
+                }
+            ]
+        },
+        AIMessageChunk,
+        None,
+    )
+    third = llm._convert_chunk_to_generation_chunk(
+        {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "</think>final answer",
+                    }
+                }
+            ]
+        },
+        AIMessageChunk,
+        None,
+    )
+
+    assert first is not None
+    assert second is not None
+    assert third is not None
+
+    full = first.message + second.message + third.message
+
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"] == "<think>step by step"
+    assert full.content == "</think>final answer"
+    assert full.content_blocks == [
+        {"type": "reasoning", "reasoning": "<think>step by step"},
+        {"type": "text", "text": "</think>final answer"},
+    ]
 
 
 class MockAsyncContextManager:
