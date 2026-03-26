@@ -161,12 +161,12 @@ def _is_mock() -> bool:
 
 
 class AhrefsClient:
-    """Thin wrapper around the Ahrefs REST API with retry logic."""
+    """Thin wrapper around the Ahrefs REST API v3 with retry logic."""
 
-    BASE_URL = "https://api.ahrefs.com/v4"
+    BASE_URL = "https://api.ahrefs.com/v3"
 
     def __init__(self) -> None:
-        self.api_key = os.getenv("AHREFS_API_KEY", "")
+        self.api_key = "".join(os.getenv("AHREFS_API_KEY", "").split())
         self._client = httpx.Client(
             base_url=self.BASE_URL,
             headers={"Authorization": f"Bearer {self.api_key}"},
@@ -246,14 +246,15 @@ def get_keyword_overview(
             for k in keywords
         ]
     client = _get_client()
-    results = []
-    for kw in keywords:
-        data = client.get(
-            "/keywords-explorer/overview",
-            {"keyword": kw, "country": country},
-        )
-        results.append(data)
-    return results
+    data = client.get(
+        "/keywords-explorer/overview",
+        {
+            "keywords": ",".join(keywords),
+            "country": country,
+            "select": "keyword,volume,difficulty,cpc,traffic_potential",
+        },
+    )
+    return data.get("keywords", [data]) if "keywords" in data else [data]
 
 
 @tool
@@ -279,10 +280,16 @@ def get_keyword_ideas(
             )
         ] or _MOCK_KEYWORDS
     client = _get_client()
-    return client.get(
+    data = client.get(
         "/keywords-explorer/related-terms",
-        {"keyword": seed_keyword, "country": country},
-    ).get("keywords", [])
+        {
+            "keywords": seed_keyword,
+            "country": country,
+            "select": "keyword,volume,difficulty,cpc,traffic_potential",
+            "limit": 50,
+        },
+    )
+    return data.get("keywords", [])
 
 
 @tool
@@ -298,10 +305,15 @@ def get_competing_domains(target: str) -> list[dict[str, Any]]:
     if _is_mock():
         return _MOCK_COMPETITORS
     client = _get_client()
-    return client.get(
-        "/site-explorer/competing-domains",
-        {"target": target},
-    ).get("domains", [])
+    data = client.get(
+        "/site-explorer/organic-competitors",
+        {
+            "target": target,
+            "select": "domain,common_keywords,organic_traffic",
+            "limit": 20,
+        },
+    )
+    return data.get("organic_competitors", [])
 
 
 @tool
@@ -320,22 +332,35 @@ def get_content_gap(
     if _is_mock():
         return _MOCK_CONTENT_GAP
     client = _get_client()
-    return client.get(
-        "/site-explorer/content-gap",
-        {"target": target, "competitors": ",".join(competitors)},
-    ).get("keywords", [])
+    # Ahrefs v3: use organic-keywords on each competitor, compare
+    # There's no direct content-gap endpoint in v3, so we get competitor keywords
+    all_keywords = []
+    for comp in competitors[:3]:  # Limit to avoid burning API units
+        data = client.get(
+            "/site-explorer/organic-keywords",
+            {
+                "target": comp,
+                "select": "keyword,volume,difficulty,position,traffic",
+                "limit": 50,
+                "where": f"position<=10 AND volume>=100",
+            },
+        )
+        for kw in data.get("organic_keywords", []):
+            kw["competitor_source"] = comp
+            all_keywords.append(kw)
+    return all_keywords
 
 
 @tool
 def get_backlinks(
-    target: str, dr_min: int = 30, mode: str = "dofollow"
+    target: str, dr_min: int = 30, mode: str = "live"
 ) -> list[dict[str, Any]]:
     """Get backlinks for a domain from Ahrefs.
 
     Args:
         target: The domain to check backlinks for.
         dr_min: Minimum domain rating filter.
-        mode: Link type — ``dofollow`` or ``all``.
+        mode: Link history mode — ``live``, ``recent``, or ``all``.
 
     Returns:
         List of backlink dicts.
@@ -343,10 +368,18 @@ def get_backlinks(
     if _is_mock():
         return [bl for bl in _MOCK_BACKLINKS if bl["dr"] >= dr_min]
     client = _get_client()
-    return client.get(
-        "/site-explorer/backlinks",
-        {"target": target, "dr_min": dr_min, "mode": mode},
-    ).get("backlinks", [])
+    data = client.get(
+        "/site-explorer/all-backlinks",
+        {
+            "target": target,
+            "mode": "domain",
+            "select": "url_from,url_to,anchor,url_rating_source,domain_rating_source,traffic_domain",
+            "limit": 50,
+            "where": f"domain_rating_source>={dr_min}",
+            "history": mode,
+        },
+    )
+    return data.get("backlinks", [])
 
 
 @tool
@@ -362,45 +395,89 @@ def get_broken_backlinks(target: str) -> list[dict[str, Any]]:
     if _is_mock():
         return _MOCK_BROKEN_BACKLINKS
     client = _get_client()
-    return client.get(
+    data = client.get(
         "/site-explorer/broken-backlinks",
-        {"target": target},
-    ).get("backlinks", [])
+        {
+            "target": target,
+            "mode": "domain",
+            "select": "url_from,url_to,anchor,domain_rating_source,traffic_domain",
+            "limit": 50,
+        },
+    )
+    return data.get("backlinks", [])
 
 
 @tool
-def get_rank_tracking(target: str) -> list[dict[str, Any]]:
-    """Get rank tracking data for a domain from Ahrefs.
+def get_domain_rating(target: str) -> dict[str, Any]:
+    """Get domain rating for a domain from Ahrefs.
 
     Args:
-        target: The domain to track rankings for.
+        target: The domain to check.
 
     Returns:
-        List of rank tracking dicts with keyword, position, etc.
+        Dict with domain_rating and ahrefs_rank.
+    """
+    if _is_mock():
+        return {"domain_rating": 0.0, "ahrefs_rank": None}
+    from datetime import date
+    client = _get_client()
+    return client.get(
+        "/site-explorer/domain-rating",
+        {"target": target, "date": date.today().isoformat()},
+    ).get("domain_rating", {})
+
+
+@tool
+def get_organic_keywords(
+    target: str, country: str = "gb", limit: int = 50
+) -> list[dict[str, Any]]:
+    """Get organic keywords a domain ranks for.
+
+    Args:
+        target: The domain to check.
+        country: Two-letter country code.
+        limit: Max keywords to return.
+
+    Returns:
+        List of organic keyword dicts.
     """
     if _is_mock():
         return _MOCK_RANK_TRACKING
     client = _get_client()
-    return client.get(
-        "/rank-tracker/keywords",
-        {"target": target},
-    ).get("keywords", [])
+    data = client.get(
+        "/site-explorer/organic-keywords",
+        {
+            "target": target,
+            "country": country,
+            "select": "keyword,position,volume,traffic,difficulty,url",
+            "limit": limit,
+        },
+    )
+    return data.get("organic_keywords", [])
 
 
 @tool
-def search_content_explorer(query: str) -> list[dict[str, Any]]:
-    """Search Ahrefs Content Explorer for pages matching a query.
+def get_pages_by_traffic(
+    target: str, limit: int = 20
+) -> list[dict[str, Any]]:
+    """Get top pages by organic traffic for a domain.
 
     Args:
-        query: The search query string.
+        target: The domain to check.
+        limit: Max pages to return.
 
     Returns:
-        List of content result dicts with title, url, dr, traffic, etc.
+        List of page dicts sorted by traffic.
     """
     if _is_mock():
         return _MOCK_CONTENT_EXPLORER
     client = _get_client()
-    return client.get(
-        "/content-explorer/search",
-        {"query": query},
-    ).get("results", [])
+    data = client.get(
+        "/site-explorer/top-pages",
+        {
+            "target": target,
+            "select": "url,traffic,keywords,position",
+            "limit": limit,
+        },
+    )
+    return data.get("pages", [])
