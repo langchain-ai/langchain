@@ -222,8 +222,44 @@ async def _execute_heartbeat_inner() -> None:
             keywords = query_table("seo_keyword_opportunities", limit=50, order_by="volume", order_desc=True)
             untargeted = [k for k in keywords if k.get("keyword", "").lower() not in existing_topics]
 
-            if untargeted:
-                kw = untargeted[0]
+            # --- Topic diversity: skip keywords too similar to recent posts ---
+            _STOP_WORDS = {
+                "uk", "free", "online", "best", "how", "to", "a", "the",
+                "for", "in", "of", "your", "and", "with", "guide", "ideas", "tips",
+            }
+
+            def _significant_words(text: str) -> set:
+                return {w for w in text.lower().split() if w not in _STOP_WORDS and len(w) > 2}
+
+            recent_slugs: list[str] = []
+            try:
+                from agents.seo_agent.tools.github_tools import list_blog_posts
+                recent_posts = list_blog_posts("freeroomplanner")
+                recent_slugs = [p.get("name", "").replace(".html", "") for p in recent_posts[:5]]
+            except Exception:
+                pass
+
+            recent_topics = [_significant_words(slug.replace("-", " ")) for slug in recent_slugs[:3]]
+
+            diverse_keywords: list[dict] = []
+            for _kw in untargeted:
+                kw_words = _significant_words(_kw.get("keyword", ""))
+                too_similar = False
+                for recent in recent_topics:
+                    if recent and kw_words:
+                        overlap = len(kw_words & recent) / max(len(kw_words), 1)
+                        if overlap > 0.5:
+                            too_similar = True
+                            break
+                if not too_similar:
+                    diverse_keywords.append(_kw)
+
+            # Fall back to unfiltered list if everything got filtered out
+            selected = diverse_keywords if diverse_keywords else untargeted
+            # --- End topic diversity ---
+
+            if selected:
+                kw = selected[0]
                 site = kw.get("target_site", "freeroomplanner")
                 kw_text = kw.get("keyword", "")
 
@@ -275,6 +311,21 @@ async def _execute_heartbeat_inner() -> None:
     except Exception as e:
         logger.error("Heartbeat task failed: %s", traceback.format_exc())
         report_lines.append(f"Error: {str(e)[:200]}")
+
+    # Always check ranking changes at the end of each heartbeat
+    try:
+        from agents.seo_agent.tools.crm_tools import get_ranking_movers
+        for site_key in active_sites:
+            movers = get_ranking_movers(site_key, limit=5)
+            winners = movers.get("winners", [])
+            if winners:
+                for w in winners[:3]:
+                    if (w.get("change") or 0) >= 3:  # Only report significant moves
+                        report_lines.append(
+                            f"📈 {w['keyword']}: position {w.get('previous_position')} → {w.get('position')} (+{w['change']})"
+                        )
+    except Exception:
+        pass
 
     # Send progress report
     if report_lines:

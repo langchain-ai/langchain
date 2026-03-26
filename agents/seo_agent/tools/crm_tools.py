@@ -331,6 +331,25 @@ def get_content_performance_history(url: str, days: int = 90) -> list[dict]:
     )
 
 
+def add_tracked_keyword(target_site: str, keyword: str, target_url: str = "") -> None:
+    """Add a keyword to our active tracking watchlist after publishing content for it."""
+    try:
+        upsert_record(
+            "seo_our_rankings",
+            {
+                "target_site": target_site,
+                "keyword": keyword.lower(),
+                "url": target_url,
+                "position": None,  # Unknown until first snapshot
+                "snapshot_date": date.today().isoformat(),
+                "notes": "auto-tracked after content publish",
+            },
+            on_conflict="keyword,target_site,snapshot_date",
+        )
+    except Exception:
+        logger.warning("Failed to add tracked keyword: %s", keyword, exc_info=True)
+
+
 def get_top_performing_content(target_site: str, limit: int = 20) -> list[dict]:
     """Get top-performing content by traffic."""
     rows = query_table(

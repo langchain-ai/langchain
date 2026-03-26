@@ -110,6 +110,21 @@ WEEKLY_PLAYBOOK: list[dict[str, str]] = [
 
 # Content priority: keywords sorted by opportunity score
 # Score = volume / (difficulty + 1) * intent_multiplier
+CONTENT_RULES: dict[str, Any] = {
+    "max_same_topic_in_row": 1,   # Never publish 2+ posts on the same topic cluster consecutively
+    "topic_cooldown_days": 7,     # Wait at least 7 days before revisiting a topic cluster
+    "category_targets": {         # Aim for this distribution
+        "room_planning": 0.30,    # 30% room planning / floor plans
+        "kitchen": 0.25,          # 25% kitchen content
+        "bathroom": 0.15,         # 15% bathroom content
+        "bedroom": 0.10,          # 10% bedroom content
+        "extensions": 0.10,       # 10% extensions / renovations
+        "general": 0.10,          # 10% general home improvement
+    },
+}
+
+# Content priority: keywords sorted by opportunity score
+# Score = volume / (difficulty + 1) * intent_multiplier
 INTENT_MULTIPLIERS: dict[str, float] = {
     "transactional": 3.0,
     "commercial": 2.5,

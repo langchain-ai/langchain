@@ -171,11 +171,20 @@ def publish_blog_post(
     if site == "freeroomplanner":
         _update_blog_index(repo, branch, slug, title, meta_description)
 
+    published_url = domain_map.get(site, "")
+
+    # Auto-track the target keyword for ranking monitoring
+    try:
+        from agents.seo_agent.tools.crm_tools import add_tracked_keyword
+        add_tracked_keyword(site, title, published_url)
+    except Exception:
+        logger.debug("Failed to auto-track keyword after publish", exc_info=True)
+
     return {
         "commit_url": commit_url,
         "file_path": file_path,
         "slug": slug,
-        "published_url": domain_map.get(site, ""),
+        "published_url": published_url,
         "repo": repo,
     }
 
