@@ -167,6 +167,10 @@ def publish_blog_post(
     commit_url = result.get("commit", {}).get("html_url", "")
     logger.info("Published blog post: %s to %s (%s)", title, file_path, commit_url)
 
+    # Update the blog index page for freeroomplanner
+    if site == "freeroomplanner":
+        _update_blog_index(repo, branch, slug, title, meta_description)
+
     return {
         "commit_url": commit_url,
         "file_path": file_path,
@@ -174,6 +178,93 @@ def publish_blog_post(
         "published_url": domain_map.get(site, ""),
         "repo": repo,
     }
+
+
+def _categorize_post(title: str) -> str:
+    """Determine the category tag for a blog post based on title keywords."""
+    lower = title.lower()
+    if "kitchen" in lower:
+        return "Kitchen Planning"
+    if "bathroom" in lower:
+        return "Bathroom Planning"
+    if "bedroom" in lower:
+        return "Bedroom Planning"
+    if "living room" in lower:
+        return "Room Planning"
+    if "extension" in lower:
+        return "Extensions"
+    if "floor plan" in lower:
+        return "Room Planning"
+    return "Home Renovation"
+
+
+def _update_blog_index(
+    repo: str, branch: str, slug: str, title: str, meta_description: str
+) -> None:
+    """Insert a card for a new post into the blog index page.
+
+    This fetches client/public/blog/index.html, inserts a post card at the top
+    of the "Latest articles" section, and commits the update. If anything fails,
+    the error is logged but not raised — the blog post itself is already live.
+    """
+    index_path = "client/public/blog/index.html"
+    try:
+        client = _get_client()
+
+        # Fetch current index.html
+        resp = client.get(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}?ref={branch}"
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        sha = data["sha"]
+        current_content = base64.b64decode(data["content"]).decode()
+
+        # Find the "Latest articles" section and the first <article tag after it
+        marker = "Latest articles"
+        marker_pos = current_content.find(marker)
+        if marker_pos == -1:
+            logger.warning("Could not find 'Latest articles' in blog index")
+            return
+
+        article_pos = current_content.find("<article", marker_pos)
+        if article_pos == -1:
+            logger.warning("Could not find <article> tag after 'Latest articles'")
+            return
+
+        # Build the new card HTML
+        category_tag = _categorize_post(title)
+        # Detect indentation of the existing <article tag
+        line_start = current_content.rfind("\n", 0, article_pos)
+        indent = current_content[line_start + 1 : article_pos] if line_start != -1 else "    "
+        new_card = (
+            f'{indent}<article class="post-card" itemscope itemtype="https://schema.org/BlogPosting">\n'
+            f"{indent}    <span class=\"post-card__tag\">{category_tag}</span>\n"
+            f"{indent}    <h2 class=\"post-card__title\" itemprop=\"headline\">"
+            f'<a href="/blog/{slug}">{title}</a></h2>\n'
+            f"{indent}    <p class=\"post-card__excerpt\" itemprop=\"description\">"
+            f"{meta_description}</p>\n"
+            f"{indent}</article>\n"
+        )
+
+        # Insert the new card before the first existing article
+        updated_content = current_content[:article_pos] + new_card + current_content[article_pos:]
+
+        # Commit the updated index
+        encoded = base64.b64encode(updated_content.encode()).decode()
+        put_resp = client.put(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}",
+            json={
+                "message": f"blog index: add {title}",
+                "content": encoded,
+                "sha": sha,
+                "branch": branch,
+            },
+        )
+        put_resp.raise_for_status()
+        logger.info("Updated blog index with new post: %s", title)
+    except Exception:
+        logger.error("Failed to update blog index for '%s'", title, exc_info=True)
 
 
 def list_blog_posts(site: str) -> list[dict[str, str]]:
