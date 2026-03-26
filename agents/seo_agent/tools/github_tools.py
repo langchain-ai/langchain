@@ -36,7 +36,7 @@ SITE_REPOS: dict[str, dict[str, str]] = {
     "kitchen_estimator": {
         "repo": "benshevlane/KitchenCostEstimator",
         "blog_path": "src/content/blog",
-        "file_ext": ".mdx",
+        "file_ext": ".ts",
         "branch": "main",
     },
     "ralf_seo": {
@@ -143,6 +143,8 @@ def publish_blog_post(
         category = kwargs.get("category", "Field Report")
         what_i_learned = kwargs.get("what_i_learned", [])
         file_content = _build_ralf_blog_post(title, content, meta_description, slug, date_str, category, what_i_learned)
+    elif site == "kitchen_estimator":
+        file_content = _build_ts_blog_post(title, content, meta_description, slug, date_str)
     elif ext == ".html":
         file_content = _build_html_blog_post(title, content, meta_description, slug, site, date_str)
     elif ext == ".mdx":
@@ -195,6 +197,8 @@ def publish_blog_post(
     elif site == "ralf_seo":
         category = kwargs.get("category", "Field Report")
         _update_ralf_blog_index(repo, branch, slug, title, meta_description, date_str, category)
+    elif site == "kitchen_estimator":
+        _update_kce_blog_index(repo, branch, slug)
 
     published_url = domain_map.get(site, "")
 
@@ -448,6 +452,75 @@ def _update_ralf_blog_index(
         logger.error("Failed to update ralf-seo blog index for '%s'", title, exc_info=True)
 
 
+def _update_kce_blog_index(repo: str, branch: str, slug: str) -> None:
+    """Update KitchenCostEstimator's src/content/blog/index.ts to import and register a new post.
+
+    Fetches the index.ts file, adds an import for the new post, and appends
+    the export name to the allBlogPosts array. If anything fails, the error
+    is logged but not raised — the blog post itself is already live.
+    """
+    index_path = "src/content/blog/index.ts"
+    # Convert slug to camelCase export name (same logic as _build_ts_blog_post)
+    parts = slug.replace('-', ' ').split()
+    export_name = parts[0].lower() + ''.join(p.capitalize() for p in parts[1:])
+
+    try:
+        client = _get_client()
+
+        # Fetch current index.ts
+        resp = client.get(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}?ref={branch}"
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        sha = data["sha"]
+        current_content = base64.b64decode(data["content"]).decode()
+
+        # Skip if this export is already imported (prevent duplicates)
+        if export_name in current_content:
+            logger.info("Export '%s' already in KCE blog index, skipping", export_name)
+            return
+
+        # Add import line after the last existing import
+        import_line = f"import {{ {export_name} }} from './{slug}';"
+        lines = current_content.split('\n')
+        last_import_idx = -1
+        for i, line in enumerate(lines):
+            if line.startswith('import '):
+                last_import_idx = i
+        if last_import_idx >= 0:
+            lines.insert(last_import_idx + 1, import_line)
+        else:
+            # No imports found — add at the top
+            lines.insert(0, import_line)
+
+        updated_content = '\n'.join(lines)
+
+        # Add the export name to the allBlogPosts array
+        import re
+        updated_content = re.sub(
+            r'(const\s+allBlogPosts\s*:\s*BlogPost\[\]\s*=\s*\[)',
+            rf'\1{export_name}, ',
+            updated_content,
+        )
+
+        # Commit the updated index
+        encoded = base64.b64encode(updated_content.encode()).decode()
+        put_resp = client.put(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}",
+            json={
+                "message": f"blog index: register {slug}",
+                "content": encoded,
+                "sha": sha,
+                "branch": branch,
+            },
+        )
+        put_resp.raise_for_status()
+        logger.info("Updated KCE blog index with new post: %s", slug)
+    except Exception:
+        logger.error("Failed to update KCE blog index for '%s'", slug, exc_info=True)
+
+
 def list_blog_posts(site: str) -> list[dict[str, str]]:
     """List existing blog posts in a site's repo.
 
@@ -572,6 +645,65 @@ slug: "{slug}"
 ---
 
 {content}
+"""
+
+
+def _build_ts_blog_post(title: str, content: str, meta_description: str, slug: str, date_str: str) -> str:
+    """Build a TypeScript blog post file for KitchenCostEstimator."""
+    # Convert slug to camelCase export name
+    parts = slug.replace('-', ' ').split()
+    export_name = parts[0].lower() + ''.join(p.capitalize() for p in parts[1:])
+
+    # Estimate reading time (200 words per minute)
+    word_count = len(content.split())
+    reading_time = max(1, round(word_count / 200))
+
+    # Extract potential tags from title
+    tags = []
+    title_lower = title.lower()
+    if 'uk' in title_lower: tags.append('UK')
+    if 'cost' in title_lower or 'price' in title_lower: tags.append('kitchen cost')
+    if '2026' in title_lower: tags.append('2026')
+    if 'renovation' in title_lower: tags.append('renovation')
+    if not tags: tags = ['kitchen', 'guide']
+
+    # The content should be markdown. If it contains HTML tags, convert basic ones.
+    import re
+    md_content = content
+    md_content = re.sub(r'<h2[^>]*>(.*?)</h2>', r'## \1', md_content)
+    md_content = re.sub(r'<h3[^>]*>(.*?)</h3>', r'### \1', md_content)
+    md_content = re.sub(r'<p[^>]*>(.*?)</p>', r'\1\n', md_content)
+    md_content = re.sub(r'<strong>(.*?)</strong>', r'**\1**', md_content)
+    md_content = re.sub(r'<em>(.*?)</em>', r'*\1*', md_content)
+    md_content = re.sub(r'<li[^>]*>(.*?)</li>', r'- \1', md_content)
+    md_content = re.sub(r'</?[uo]l[^>]*>', '', md_content)
+    md_content = re.sub(r'<a href="([^"]*)"[^>]*>(.*?)</a>', r'[\2](\1)', md_content)
+    md_content = re.sub(r'</?[^>]+>', '', md_content)  # strip remaining HTML
+    md_content = re.sub(r'\n{3,}', '\n\n', md_content)  # collapse multiple newlines
+
+    # Escape backticks in content for the template literal
+    md_content = md_content.replace('`', '\\`').replace('${', '\\${')
+
+    # Escape quotes in title and description for the TS string
+    safe_title = title.replace("'", "\\'")
+    safe_desc = meta_description.replace("'", "\\'")
+    tags_str = ', '.join(f"'{t}'" for t in tags)
+
+    return f"""import type {{ BlogPost }} from './types';
+
+export const {export_name}: BlogPost = {{
+  title: '{safe_title}',
+  slug: '{slug}',
+  description: '{safe_desc}',
+  date: '{date_str}',
+  author: {{
+    name: 'Kitchen Cost Estimator',
+    role: 'Editorial',
+  }},
+  tags: [{tags_str}],
+  readingTime: {reading_time},
+  content: `{md_content}`,
+}};
 """
 
 
