@@ -4,6 +4,7 @@ SITE_PROFILES: dict[str, dict] = {
     "kitchensdirectory": {
         "domain": "kitchensdirectory.co.uk",
         "gsc_property": "https://www.kitchensdirectory.co.uk",
+        "status": "upcoming",  # Not yet actively doing SEO — focus on freeroomplanner first
         "primary_topic": "UK kitchen makers and manufacturers directory",
         "description": (
             "The independent directory of Britain's handmade kitchen makers. "
@@ -56,6 +57,7 @@ SITE_PROFILES: dict[str, dict] = {
     "freeroomplanner": {
         "domain": "freeroomplanner.com",
         "gsc_property": "https://www.freeroomplanner.com",
+        "status": "active",  # Primary focus site
         "primary_topic": "free online room planning tool",
         "description": (
             "Free browser-based floor planner for homeowners. Draw walls with snap-to-grid "
@@ -107,6 +109,7 @@ SITE_PROFILES: dict[str, dict] = {
     "kitchen_estimator": {
         "domain": "kitchencostestimator.com",
         "gsc_property": "https://www.kitchencostestimator.com",
+        "status": "upcoming",  # Not yet actively doing SEO — focus on freeroomplanner first
         "primary_topic": "kitchen price estimator and cost guide",
         "description": (
             "Interactive kitchen renovation cost estimator for UK, US, and Canada. "

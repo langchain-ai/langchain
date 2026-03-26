@@ -99,6 +99,9 @@ async def _execute_heartbeat_inner() -> None:
 
     logger.info("Heartbeat starting...")
 
+    # Only work on active sites
+    active_sites = {k: v for k, v in SITE_PROFILES.items() if v.get("status") == "active"}
+
     # Check budget
     spend = get_weekly_spend()
     cap = float(os.getenv("MAX_WEEKLY_SPEND_USD", str(MAX_WEEKLY_SPEND_USD)))
@@ -135,7 +138,7 @@ async def _execute_heartbeat_inner() -> None:
         # Priority 1: No keywords → run keyword research
         if kw_count == 0:
             await send_telegram("Starting keyword research for all sites...")
-            for site in SITE_PROFILES:
+            for site in active_sites:
                 try:
                     result = run_task("keyword_research", target_site=site)
                     opps = result.get("keyword_opportunities", [])
@@ -244,7 +247,7 @@ async def _execute_heartbeat_inner() -> None:
             else:
                 report_lines.append("All discovered keywords have content. Running fresh keyword research.")
                 # Refresh keywords
-                for site in SITE_PROFILES:
+                for site in active_sites:
                     try:
                         result = run_task("keyword_research", target_site=site)
                         opps = result.get("keyword_opportunities", [])
@@ -258,7 +261,7 @@ async def _execute_heartbeat_inner() -> None:
             from agents.seo_agent.tools.ahrefs_tools import get_organic_keywords
             from agents.seo_agent.tools.crm_tools import snapshot_our_rankings
 
-            for site_key, profile in SITE_PROFILES.items():
+            for site_key, profile in active_sites.items():
                 domain = profile.get("domain", "")
                 if domain:
                     try:
