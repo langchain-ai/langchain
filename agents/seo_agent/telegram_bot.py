@@ -469,6 +469,40 @@ CRITICAL RULES:
 """
 
 
+def _build_strategy_context() -> str:
+    """Build a dynamic strategy context string from the database."""
+    try:
+        from agents.seo_agent.tools.supabase_tools import query_table
+        from agents.seo_agent.strategy import generate_next_steps, get_strategy_summary
+
+        keywords = query_table("seo_keyword_opportunities", limit=1)
+        briefs = query_table("seo_content_briefs", limit=1)
+        prospects = query_table("seo_backlink_prospects", limit=1)
+        gaps = query_table("seo_content_gaps", limit=1)
+
+        # Count totals
+        all_kw = query_table("seo_keyword_opportunities", limit=500)
+        all_briefs = query_table("seo_content_briefs", limit=500)
+        all_prospects = query_table("seo_backlink_prospects", limit=500)
+        all_gaps = query_table("seo_content_gaps", limit=500)
+
+        next_steps = generate_next_steps(
+            existing_keywords=len(all_kw),
+            existing_content=len(all_briefs),
+            existing_prospects=len(all_prospects),
+            existing_gaps=len(all_gaps),
+        )
+
+        context = f"\n\nCURRENT STATE: {len(all_kw)} keywords, {len(all_briefs)} content pieces, {len(all_gaps)} content gaps, {len(all_prospects)} prospects in database."
+        context += "\n\nPRIORITISED NEXT STEPS (suggest these proactively):"
+        for i, step in enumerate(next_steps, 1):
+            context += f"\n{i}. {step}"
+        context += f"\n\n{get_strategy_summary()}"
+        return context
+    except Exception:
+        return ""
+
+
 def _call_openrouter_sync(
     messages: list[dict[str, str]],
     system: str,
@@ -854,11 +888,17 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             # Send typing indicator
             await update.message.chat.send_action("typing")
 
+            # Build strategy-aware system prompt
+            strategy_context = await asyncio.get_event_loop().run_in_executor(
+                None, _build_strategy_context
+            )
+            full_prompt = _NL_SYSTEM_PROMPT + strategy_context
+
             # Call LLM to interpret intent
             loop = asyncio.get_event_loop()
             llm_response = await loop.run_in_executor(
                 None,
-                partial(_call_openrouter_sync, messages, _NL_SYSTEM_PROMPT),
+                partial(_call_openrouter_sync, messages, full_prompt),
             )
             logger.info("NL router response: %s", llm_response[:200])
         except Exception as e:
