@@ -59,8 +59,9 @@ def sanitize_content(text: str) -> str:
     # Strip IP addresses
     text = re.sub(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', '[ip-redacted]', text)
 
-    # Strip phone numbers (various formats)
+    # Strip phone numbers (US, UK, and international formats)
     text = re.sub(r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b', '[phone-redacted]', text)
+    text = re.sub(r'\+?\d{1,3}[-.\s]?\d{3,4}[-.\s]?\d{3}[-.\s]?\d{3,4}\b', '[phone-redacted]', text)
 
     # Replace owner name references (case insensitive, whole word)
     for name in _OWNER_NAMES:
