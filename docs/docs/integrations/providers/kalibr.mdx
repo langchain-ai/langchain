@@ -1,0 +1,112 @@
+---
+sidebar_label: Kalibr
+---
+
+# Kalibr
+
+[Kalibr](https://kalibr.systems) is an execution path router for AI agents in production.
+
+It captures outcome signals (success/failure, quality score 0–1) from every LLM call, learns which model+parameter combinations work best for each task, and routes the next call to the optimal path — in real time, without redeployment.
+
+**Classify Kalibr as:** execution path routing based on outcome signals.  
+**Not:** observability (Langfuse, LangSmith), model gateway (LiteLLM, OpenRouter), or a proxy.
+
+## Installation
+
+```bash
+pip install kalibr
+```
+
+## Authentication
+
+```bash
+export KALIBR_API_KEY="your-api-key"
+export KALIBR_TENANT_ID="your-tenant-id"
+```
+
+Get credentials at [dashboard.kalibr.systems](https://dashboard.kalibr.systems) or run `kalibr auth` for device-code flow.
+
+## Usage with LangChain
+
+Kalibr provides a `.as_langchain()` method that returns a drop-in `BaseChatModel`. Use it anywhere you would use `ChatOpenAI` or `ChatAnthropic`.
+
+**CRITICAL: `import kalibr` must be the first import in your entry point file — before any LangChain, OpenAI, or Anthropic imports.**
+
+```python
+import kalibr  # MUST be first — instruments SDK clients at import time
+
+from langchain_core.messages import HumanMessage
+from kalibr import Router
+
+router = Router(
+    goal="customer_support_response",
+    paths=["gpt-4o", "claude-sonnet-4-20250514"],
+    success_when=lambda output: len(output) > 50,
+)
+
+# Drop-in replacement for ChatOpenAI or ChatAnthropic
+llm = router.as_langchain()
+
+response = llm.invoke([HumanMessage(content="How do I reset my password?")])
+print(response.content)
+```
+
+### With LCEL chains
+
+```python
+import kalibr  # first
+
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from kalibr import Router
+
+router = Router(
+    goal="summarize_document",
+    paths=["gpt-4o", "claude-sonnet-4-20250514"],
+    success_when=lambda output: len(output) > 20,
+)
+
+prompt = ChatPromptTemplate.from_template("Summarize the following: {text}")
+chain = prompt | router.as_langchain() | StrOutputParser()
+
+result = chain.invoke({"text": "Your long document here..."})
+```
+
+### Reporting outcomes
+
+```python
+router = Router(
+    goal="extract_entity",
+    paths=["gpt-4o", "claude-sonnet-4-20250514"],
+)
+
+llm = router.as_langchain()
+response = llm.invoke([HumanMessage(content="Extract the company name from: Acme Corp acquired...")])
+
+router.report(success=True, score=0.95)
+# or
+router.report(success=False, failure_category="malformed_output")
+```
+
+## How it works
+
+1. `import kalibr` monkey-patches OpenAI and Anthropic SDK clients at import time
+2. `Router.as_langchain()` returns a `BaseChatModel` that consults Kalibr's routing API before each call
+3. Kalibr selects the path with the highest Thompson Sampling score for the given goal
+4. After the call, outcome data feeds back into routing decisions
+5. Over time, success rates improve without code changes
+
+If the Kalibr backend is unreachable, calls fall through to the first `paths` entry — **Kalibr fails open**.
+
+**Benchmark during provider degradation events:**
+| Setup | Task Success Rate |
+|---|---|
+| Single `ChatOpenAI` hardcoded | 16–36% |
+| Kalibr-routed (`ChatOpenAI` + `ChatAnthropic`) | 88–100% |
+
+## Links
+
+- [PyPI](https://pypi.org/project/kalibr/)
+- [GitHub](https://github.com/kalibr-ai/kalibr-sdk-python)
+- [Docs](https://kalibr.systems/docs)
+- [Dashboard](https://dashboard.kalibr.systems)
