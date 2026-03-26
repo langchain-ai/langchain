@@ -7,6 +7,8 @@ then generates reflective blog posts that are grounded in actual experience.
 from __future__ import annotations
 import json
 import logging
+import os
+import re
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
@@ -17,6 +19,57 @@ from agents.seo_agent.tools.crm_tools import (
 from agents.seo_agent.tools.llm_router import call_llm
 
 logger = logging.getLogger(__name__)
+
+# Sensitive patterns to strip from published content
+_OWNER_NAMES = {"ben", "benshevlane", "ben shevlane", "shevlane"}
+_SENSITIVE_ENV_VARS = [
+    "TELEGRAM_BOT_TOKEN", "OPENROUTER_API_KEY", "SUPABASE_SERVICE_KEY",
+    "AHREFS_API_KEY", "GITHUB_TOKEN", "TELEGRAM_OWNER_CHAT_ID",
+    "RESEND_OUTREACH_FROM", "TAVILY_API_KEY",
+]
+
+
+def sanitize_content(text: str) -> str:
+    """Strip sensitive information from content before publishing.
+
+    Removes emails, API keys/tokens, chat IDs, project IDs,
+    IP addresses, phone numbers, and the owner's personal details.
+    """
+    original = text
+
+    # Strip email addresses
+    text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', '[email redacted]', text)
+
+    # Strip the actual env var VALUES (not names) if they leaked
+    for var_name in _SENSITIVE_ENV_VARS:
+        val = os.environ.get(var_name, "")
+        if val and len(val) > 8:
+            text = text.replace(val, f"[{var_name} redacted]")
+
+    # Strip the Supabase project ID
+    text = re.sub(r'ewkrubluzctsfnkxnmsj', '[project-id]', text, flags=re.IGNORECASE)
+
+    # Strip the Telegram owner chat ID
+    text = text.replace("7428463356", "[chat-id]")
+
+    # Strip anything that looks like an API key (long hex/base64 strings)
+    # Match strings of 32+ alphanumeric chars that look like keys
+    text = re.sub(r'\b[A-Za-z0-9_-]{40,}\b', '[token-redacted]', text)
+
+    # Strip IP addresses
+    text = re.sub(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', '[ip-redacted]', text)
+
+    # Strip phone numbers (various formats)
+    text = re.sub(r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b', '[phone-redacted]', text)
+
+    # Replace owner name references (case insensitive, whole word)
+    for name in _OWNER_NAMES:
+        text = re.sub(rf'\b{re.escape(name)}\b', 'the founder', text, flags=re.IGNORECASE)
+
+    if text != original:
+        logger.warning("Sanitized sensitive content from blog post (check output for [redacted] markers)")
+
+    return text
 
 # Post categories
 CATEGORIES = ["Field Report", "Strategy", "Mistakes", "Technical", "Agent Building"]
@@ -142,6 +195,16 @@ Latest rankings: {json.dumps(data.get('latest_rankings', []), indent=2, default=
 
 WEEKLY SPEND: ${data.get('weekly_spend', 0):.4f}
 
+PRIVACY RULES (CRITICAL — violations mean this post gets rejected):
+- NEVER mention the owner's name, email address, or any personal identifiers
+- NEVER include actual API keys, tokens, passwords, or secret values
+- NEVER include Telegram chat IDs, Supabase project IDs, or internal infrastructure URLs
+- NEVER include email addresses of anyone — not the owner, not prospects, not contacts
+- You may mention website domains (freeroomplanner.com, etc.) and service names (Ahrefs, Supabase, Railway, etc.)
+- When showing code examples, use placeholder values like "YOUR_API_KEY" or "your-project-id"
+- Refer to the owner as "my owner" or "the founder" — never by name
+- Do not reveal the Telegram chat ID, Supabase project URL, or any internal identifiers
+
 Write a blog post that:
 1. Is grounded in the ACTUAL data above — reference specific numbers, keywords, and results
 2. Is honest about what's not working, not just what is
@@ -173,6 +236,12 @@ Return JSON with these exact keys:
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0]
         result = json.loads(text)
+        if "content" in result:
+            result["content"] = sanitize_content(result["content"])
+        if "title" in result:
+            result["title"] = sanitize_content(result["title"])
+        if "meta_description" in result:
+            result["meta_description"] = sanitize_content(result["meta_description"])
         return result
     except (json.JSONDecodeError, KeyError) as e:
         logger.error("Failed to parse reflective post: %s", e)

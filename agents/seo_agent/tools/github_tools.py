@@ -128,6 +128,15 @@ def publish_blog_post(
     branch = repo_config["branch"]
     file_path = f"{blog_path}/{slug}{ext}"
 
+    # Sanitize content before publishing to prevent sensitive data leaks
+    try:
+        from agents.seo_agent.tools.reflection_engine import sanitize_content
+        content = sanitize_content(content)
+        title = sanitize_content(title)
+        meta_description = sanitize_content(meta_description)
+    except ImportError:
+        pass
+
     # Build the file content based on site type
     if site == "ralf_seo":
         # Ralf's personal blog uses a different template

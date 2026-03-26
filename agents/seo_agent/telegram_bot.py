@@ -498,6 +498,7 @@ CRITICAL RULES:
 10. When the user gives you INSTRUCTIONS about how to work (e.g., "save results before calling APIs", "don't burn API tokens", "be more careful with X"), acknowledge the instruction conversationally. Do NOT re-run a task. Just confirm you understand and will change your approach.
     Example: User says "save the keyword results so you don't keep using the Ahrefs API" → respond "Got it — I'll check our cached results before hitting Ahrefs from now on. The keywords I just found are already saved." Do NOT run keyword_research again.
 11. CONTENT DIVERSITY: Never write 2+ blog posts on the same topic in a row. Mix it up — if we just wrote about kitchens, the next post should be about bathrooms, room planning, bedrooms, or extensions. Check what was recently published before choosing the next topic.
+12. PRIVACY: Never include personal information (owner's name, email addresses, API keys, tokens, chat IDs, project IDs, or internal URLs) in any content that will be published publicly — blog posts, outreach emails, or any external-facing text. Refer to the owner as "the founder" in public content. You may mention website domains and service names.
 
 OUTREACH STRATEGY (use this when discussing backlinks, outreach, or prospecting):
 - Kitchen/bathroom providers: PARTNERSHIP approach. Offer free room planner embed for their website. Their customers plan before visiting = better conversion for them.
@@ -830,6 +831,8 @@ Requirements:
 - Format as HTML body content (no <html>, <head>, or <body> tags — just the article content)
 - Include <p>, <h2>, <h3>, <ul>, <li>, <ol>, <strong>, <em> tags as needed
 - Do NOT include any markdown formatting — use only HTML
+- NEVER include personal names, email addresses, API keys, tokens, or internal identifiers
+- Refer to the site owner as "the team" or use passive voice — never use personal names
 
 Return your response in this exact JSON format:
 {{{{
