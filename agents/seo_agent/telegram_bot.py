@@ -1352,15 +1352,22 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     search_results = await asyncio.get_event_loop().run_in_executor(
                         None, partial(_run_web_search, query)
                     )
+                    if not search_results:
+                        msg = f"Search returned no results for '{query}'. Try a different query?"
+                        await update.message.reply_text(msg)
+                        history.append({"role": "assistant", "content": msg})
+                        return
                     # Send results to Claude for a natural summary
                     summary = await asyncio.get_event_loop().run_in_executor(
                         None, partial(_summarise_search_results, query, search_results, list(history))
                     )
                     await update.message.reply_text(summary)
-                    history.append({"role": "assistant", "content": summary[:300]})
+                    history.append({"role": "assistant", "content": f"[Searched: {query}] {summary[:250]}"})
                 except Exception as e:
                     logger.error("Web search failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Search failed: {str(e)[:200]}")
+                    err_msg = f"Search failed: {str(e)[:200]}"
+                    await update.message.reply_text(err_msg)
+                    history.append({"role": "assistant", "content": f"[Search failed for: {query}] {err_msg}"})
                 return
 
             # Run the agent task
