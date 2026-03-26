@@ -458,6 +458,8 @@ Available actions and their parameters:
 - web_search: {query} — Search the internet for any information
 - review_site: {url} — Fetch and review a website's content
 - recall: {topic} — Look up past results from the database (keywords, prospects, briefs, etc.)
+- publish_blog: {site, title, keyword} — Write and publish a blog post to a site's GitHub repo
+- list_blogs: {site} — List existing blog posts for a site
 
 Site keys: "kitchensdirectory", "freeroomplanner", "kitchen_estimator", "all"
 
@@ -704,6 +706,97 @@ def _recall_from_database(topic: str) -> str:
     return "\n".join(results_parts)
 
 
+def _generate_blog_post(site: str, title: str, keyword: str) -> dict[str, str]:
+    """Generate a full SEO-optimised blog post using Claude (Sonnet)."""
+    from agents.seo_agent.tools.llm_router import (
+        _get_openrouter_client, _use_openrouter, _resolve_model_id, _SONNET,
+        _get_anthropic_client,
+    )
+    from agents.seo_agent.config import SITE_PROFILES
+
+    profile = SITE_PROFILES.get(site, {})
+    site_desc = profile.get("description", "")
+    audience = profile.get("target_audience", "")
+
+    prompt = f"""Write a complete, SEO-optimised blog post for the website {profile.get('domain', site)}.
+
+Site context: {site_desc}
+Target audience: {audience}
+
+Topic/Title: {title}
+Target keyword: {keyword}
+
+Requirements:
+- Write 1500-2500 words of high-quality, original content
+- Use the target keyword naturally 3-5 times
+- Include an engaging introduction
+- Use H2 and H3 subheadings (as HTML tags: <h2>, <h3>)
+- Include bullet points and numbered lists where appropriate
+- Add a FAQ section with 3-5 questions using <h3> tags
+- Include internal linking opportunities (mention related tools/pages on the site)
+- Write in a helpful, authoritative but approachable tone
+- Use UK English spelling
+- Format as HTML body content (no <html>, <head>, or <body> tags — just the article content)
+- Include <p>, <h2>, <h3>, <ul>, <li>, <ol>, <strong>, <em> tags as needed
+- Do NOT include any markdown formatting — use only HTML
+
+Return your response in this exact JSON format:
+{{{{
+  "title": "The SEO-optimised title",
+  "meta_description": "A compelling 150-160 character meta description",
+  "content": "<h2>First section</h2><p>Content here...</p>..."
+}}}}
+
+Return ONLY the JSON, no other text."""
+
+    messages = [{"role": "user", "content": prompt}]
+
+    if _use_openrouter():
+        client = _get_openrouter_client()
+        response = client.chat.completions.create(
+            model=_resolve_model_id(_SONNET),
+            max_tokens=4000,
+            messages=[{"role": "system", "content": "You are an expert SEO content writer."}, *messages],
+        )
+        text = response.choices[0].message.content or ""
+    else:
+        client = _get_anthropic_client()
+        response = client.messages.create(
+            model=_resolve_model_id(_SONNET),
+            max_tokens=4000,
+            system="You are an expert SEO content writer.",
+            messages=messages,
+        )
+        text = "".join(b.text for b in response.content if b.type == "text")
+
+    # Parse the JSON response
+    try:
+        # Try direct parse
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        # Try extracting from code block
+        if "```" in text:
+            for block in text.split("```"):
+                block = block.strip()
+                if block.startswith("json"):
+                    block = block[4:].strip()
+                try:
+                    data = json.loads(block)
+                    break
+                except json.JSONDecodeError:
+                    continue
+            else:
+                data = {"title": title, "meta_description": "", "content": text}
+        else:
+            data = {"title": title, "meta_description": "", "content": text}
+
+    return {
+        "title": data.get("title", title),
+        "meta_description": data.get("meta_description", ""),
+        "content": data.get("content", text),
+    }
+
+
 def _run_web_search(query: str) -> list[dict]:
     """Run a Tavily web search synchronously."""
     from agents.seo_agent.tools.web_search_tools import search
@@ -798,6 +891,59 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Recall failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
+                return
+            if action == "publish_blog":
+                site = params.get("site", "freeroomplanner")
+                title = params.get("title", "")
+                keyword = params.get("keyword", title)
+                if not title and not keyword:
+                    await update.message.reply_text("What should the blog post be about? Give me a title or keyword.")
+                    return
+                await update.message.reply_text(f"Writing blog post: {title or keyword}...\nThis may take a minute.")
+                try:
+                    # Step 1: Generate content via LLM
+                    blog_content = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_generate_blog_post, site, title or keyword, keyword)
+                    )
+                    # Step 2: Publish to GitHub
+                    from agents.seo_agent.tools.github_tools import publish_blog_post
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(publish_blog_post,
+                            site=site,
+                            title=blog_content["title"],
+                            content=blog_content["content"],
+                            meta_description=blog_content["meta_description"],
+                        )
+                    )
+                    msg = (
+                        f"Blog post published:\n\n"
+                        f"Title: {blog_content['title']}\n"
+                        f"URL: {result.get('published_url', 'N/A')}\n"
+                        f"Commit: {result.get('commit_url', 'N/A')}\n\n"
+                        f"It will be live after the site redeploys (1-2 minutes)."
+                    )
+                    await update.message.reply_text(msg)
+                    history.append({"role": "assistant", "content": msg[:300]})
+                except Exception as e:
+                    logger.error("Blog publish failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Publishing failed: {str(e)[:300]}")
+                return
+            if action == "list_blogs":
+                site = params.get("site", "freeroomplanner")
+                try:
+                    from agents.seo_agent.tools.github_tools import list_blog_posts
+                    posts = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(list_blog_posts, site)
+                    )
+                    if posts:
+                        lines = [f"Blog posts for {site} ({len(posts)}):"]
+                        for p in posts:
+                            lines.append(f"\u2022 {p['name']}")
+                        await update.message.reply_text("\n".join(lines))
+                    else:
+                        await update.message.reply_text(f"No blog posts found for {site}.")
+                except Exception as e:
+                    await update.message.reply_text(f"Failed to list posts: {str(e)[:200]}")
                 return
             if action in ("web_search", "review_site"):
                 query = params.get("query") or params.get("url") or user_text
