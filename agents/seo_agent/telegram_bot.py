@@ -774,6 +774,19 @@ def main() -> None:
     # Natural language handler — catches all non-command text messages
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_natural_language))
 
+    # Global error handler — catches all unhandled exceptions
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        logger.error("Unhandled exception: %s", context.error, exc_info=context.error)
+        if isinstance(update, Update) and update.message:
+            try:
+                await update.message.reply_text(
+                    f"Internal error: {str(context.error)[:300]}"
+                )
+            except Exception:
+                pass
+
+    app.add_error_handler(error_handler)
+
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
