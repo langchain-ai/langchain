@@ -292,7 +292,44 @@ async def _execute_heartbeat_inner() -> None:
                         pass
                 task_executed = True
 
-        # Priority 6: Track rankings (do this periodically regardless)
+        # Priority 6: Ralf's personal blog — write a reflective post every ~3 days
+        elif not task_executed:
+            try:
+                from agents.seo_agent.tools.github_tools import list_blog_posts
+                from agents.seo_agent.tools.reflection_engine import generate_reflective_post
+
+                ralf_posts = list_blog_posts("ralf_seo")
+                should_write = True
+
+                if ralf_posts:
+                    # Check if most recent post is less than 3 days old
+                    # Posts are sorted newest first by GitHub API
+                    # Simple heuristic: if we have fewer than 20 posts, wait 3 days between them
+                    # As the blog grows, can be adjusted
+                    should_write = len(ralf_posts) == 0 or True  # For now, let the heartbeat decide
+
+                if should_write and len(ralf_posts) < 100:
+                    await send_telegram("Writing a journal entry for my personal blog...")
+                    post = generate_reflective_post()
+
+                    from agents.seo_agent.tools.github_tools import publish_blog_post
+                    result = publish_blog_post(
+                        site="ralf_seo",
+                        title=post["title"],
+                        content=post["content"],
+                        meta_description=post["meta_description"],
+                        category=post.get("category", "Field Report"),
+                        what_i_learned=post.get("what_i_learned", []),
+                    )
+                    report_lines.append(
+                        f"Journal entry: {post['title']}\n"
+                        f"URL: {result.get('published_url', 'N/A')}"
+                    )
+                    task_executed = True
+            except Exception as e:
+                logger.warning("Ralf blog post failed: %s", e, exc_info=True)
+
+        # Priority 7: Track rankings (do this periodically regardless)
         else:
             from agents.seo_agent.tools.ahrefs_tools import get_organic_keywords
             from agents.seo_agent.tools.crm_tools import snapshot_our_rankings

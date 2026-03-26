@@ -106,6 +106,13 @@ SITE_PROFILES: dict[str, dict] = {
             "kitchen_estimator": "How much will it cost? → estimator CTA",
         },
     },
+    "ralf_seo": {
+        "domain": "ralf-seo.vercel.app",  # placeholder until custom domain
+        "status": "active",
+        "description": "Ralf's personal SEO field journal",
+        "seed_keywords": [],  # Not doing keyword-targeted SEO for this site
+        "competitors": [],
+    },
     "kitchen_estimator": {
         "domain": "kitchencostestimator.com",
         "gsc_property": "https://www.kitchencostestimator.com",

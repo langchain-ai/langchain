@@ -473,10 +473,11 @@ Actions:
 - track_rankings: {target_site} — snapshot current rankings from Ahrefs
 - learn: {topic} — research a topic online and add to the knowledge base
 - knowledge: {query} — search the knowledge base for specific SEO/AEO info
+- journal: {category?} — write a reflective blog post on Ralf's personal blog
 - audit: {target_site} — run full SEO audit (scores 0-100 across 8 categories)
 - audit_page: {url} — audit a specific URL
 
-Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, all
+Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, ralf_seo, all
 
 CRITICAL RULES:
 0. If the user sends casual feedback ("great job", "nice", "thanks", "ok", "cool", "perfect",
@@ -1225,6 +1226,37 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Blog publish failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Publishing failed: {str(e)[:300]}")
+                return
+            if action == "journal":
+                category = params.get("category")
+                await update.message.reply_text("Writing a journal entry...")
+                try:
+                    from agents.seo_agent.tools.reflection_engine import generate_reflective_post
+                    from agents.seo_agent.tools.github_tools import publish_blog_post
+
+                    post = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(generate_reflective_post, category=category)
+                    )
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(publish_blog_post,
+                            site="ralf_seo",
+                            title=post["title"],
+                            content=post["content"],
+                            meta_description=post["meta_description"],
+                            category=post.get("category", "Field Report"),
+                            what_i_learned=post.get("what_i_learned", []),
+                        )
+                    )
+                    report = f"Published: {post['title']}\n\nCategory: {post.get('category')}\n\n"
+                    report += f"URL: {result.get('published_url', 'N/A')}\n\n"
+                    report += "What I learned:\n"
+                    for item in post.get("what_i_learned", []):
+                        report += f"\u2022 {item}\n"
+                    await update.message.reply_text(report)
+                    history.append({"role": "assistant", "content": report[:300]})
+                except Exception as e:
+                    logger.error("Journal failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Journal entry failed: {str(e)[:300]}")
                 return
             if action == "list_blogs":
                 site = params.get("site", "freeroomplanner")

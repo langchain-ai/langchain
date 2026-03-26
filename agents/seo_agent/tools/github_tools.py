@@ -39,6 +39,12 @@ SITE_REPOS: dict[str, dict[str, str]] = {
         "file_ext": ".mdx",
         "branch": "main",
     },
+    "ralf_seo": {
+        "repo": "benshevlane/ralf-seo",
+        "blog_path": "posts",
+        "file_ext": ".html",
+        "branch": "master",
+    },
 }
 
 
@@ -84,6 +90,7 @@ def publish_blog_post(
     content: str,
     meta_description: str = "",
     author: str = "",
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """Publish a blog post by committing it to the site's GitHub repo.
 
@@ -122,7 +129,12 @@ def publish_blog_post(
     file_path = f"{blog_path}/{slug}{ext}"
 
     # Build the file content based on site type
-    if ext == ".html":
+    if site == "ralf_seo":
+        # Ralf's personal blog uses a different template
+        category = kwargs.get("category", "Field Report")
+        what_i_learned = kwargs.get("what_i_learned", [])
+        file_content = _build_ralf_blog_post(title, content, meta_description, slug, date_str, category, what_i_learned)
+    elif ext == ".html":
         file_content = _build_html_blog_post(title, content, meta_description, slug, site, date_str)
     elif ext == ".mdx":
         file_content = _build_mdx_blog_post(title, content, meta_description, slug, date_str, author)
@@ -162,6 +174,7 @@ def publish_blog_post(
         "freeroomplanner": f"https://freeroomplanner.com/blog/{slug}",
         "kitchen_estimator": f"https://kitchencostestimator.com/blog/{slug}",
         "kitchensdirectory": f"https://kitchensdirectory.co.uk/blog/{slug}",
+        "ralf_seo": f"https://ralf-seo.vercel.app/posts/{slug}",
     }
 
     commit_url = result.get("commit", {}).get("html_url", "")
@@ -170,6 +183,9 @@ def publish_blog_post(
     # Update the blog index page for freeroomplanner
     if site == "freeroomplanner":
         _update_blog_index(repo, branch, slug, title, meta_description)
+    elif site == "ralf_seo":
+        category = kwargs.get("category", "Field Report")
+        _update_ralf_blog_index(repo, branch, slug, title, meta_description, date_str, category)
 
     published_url = domain_map.get(site, "")
 
@@ -274,6 +290,146 @@ def _update_blog_index(
         logger.info("Updated blog index with new post: %s", title)
     except Exception:
         logger.error("Failed to update blog index for '%s'", title, exc_info=True)
+
+
+def _build_ralf_blog_post(title: str, content: str, meta_description: str, slug: str, date_str: str, category: str, what_i_learned: list) -> str:
+    """Build an HTML blog post for Ralf's personal blog."""
+    learned_html = "\n".join(f"<li>{item}</li>" for item in what_i_learned)
+
+    return f"""<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<!-- Perplexity Computer Attribution -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Ralf">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title} — Ralf</title>
+<meta name="description" content="{meta_description}">
+<link rel="canonical" href="https://ralf-seo.vercel.app/posts/{slug}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{meta_description}">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/base.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo"><span class="nav__logo-icon">R</span> ralf</a>
+    <div class="nav__links">
+      <a href="/">home</a>
+      <a href="/about">about</a>
+      <button class="theme-toggle" aria-label="Toggle theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">☽</button>
+    </div>
+  </div>
+</nav>
+
+<main class="post">
+  <article class="post__article">
+    <header class="post__header">
+      <div class="post__meta">
+        <time datetime="{date_str}">{date_str}</time>
+        <span class="post__category">{category}</span>
+      </div>
+      <h1 class="post__title">{title}</h1>
+    </header>
+
+    <div class="post__content">
+      {content}
+    </div>
+
+    <aside class="post__learned">
+      <h2>// what_i_learned</h2>
+      <ul>
+        {learned_html}
+      </ul>
+    </aside>
+  </article>
+
+  <nav class="post__nav">
+    <a href="/">← back to all entries</a>
+  </nav>
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <span>ralf — autonomous seo agent</span>
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+  </div>
+</footer>
+</body>
+</html>"""
+
+
+def _update_ralf_blog_index(
+    repo: str, branch: str, slug: str, title: str,
+    meta_description: str, date_str: str, category: str,
+) -> None:
+    """Insert a card for a new post into Ralf's blog index page.
+
+    Fetches the root index.html, inserts a post card after the
+    <!-- POSTS_START --> marker, and commits the update.
+    """
+    index_path = "index.html"
+    try:
+        client = _get_client()
+
+        # Fetch current index.html
+        resp = client.get(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}?ref={branch}"
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        sha = data["sha"]
+        current_content = base64.b64decode(data["content"]).decode()
+
+        # Find the POSTS_START marker or first post-card
+        marker = "<!-- POSTS_START -->"
+        marker_pos = current_content.find(marker)
+
+        if marker_pos != -1:
+            insert_pos = marker_pos + len(marker)
+        else:
+            # Fallback: find the first post-card article
+            insert_pos = current_content.find('<article class="post-card"')
+            if insert_pos == -1:
+                logger.warning("Could not find insertion point in ralf-seo index.html")
+                return
+
+        # Build the new card HTML
+        new_card = f"""
+<article class="post-card" data-category="{category}">
+  <div class="post-card__meta">
+    <time datetime="{date_str}">{date_str}</time>
+    <span class="post-card__category">{category}</span>
+  </div>
+  <h2 class="post-card__title"><a href="/posts/{slug}">{title}</a></h2>
+  <p class="post-card__excerpt">{meta_description}</p>
+</article>"""
+
+        # Insert the new card
+        updated_content = current_content[:insert_pos] + new_card + current_content[insert_pos:]
+
+        # Commit the updated index
+        encoded = base64.b64encode(updated_content.encode()).decode()
+        put_resp = client.put(
+            f"/repos/{repo}/contents/{quote(index_path, safe='/')}",
+            json={
+                "message": f"blog index: add {title}",
+                "content": encoded,
+                "sha": sha,
+                "branch": branch,
+            },
+        )
+        put_resp.raise_for_status()
+        logger.info("Updated ralf-seo blog index with new post: %s", title)
+    except Exception:
+        logger.error("Failed to update ralf-seo blog index for '%s'", title, exc_info=True)
 
 
 def list_blog_posts(site: str) -> list[dict[str, str]]:
