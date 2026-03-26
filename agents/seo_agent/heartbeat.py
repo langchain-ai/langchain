@@ -215,11 +215,44 @@ async def _execute_heartbeat_inner() -> None:
         # Priority 5: Content exists, write more
         elif content_count < 30:
             from agents.seo_agent.tools.supabase_tools import query_table
+
+            # --- Site rotation: alternate between freeroomplanner and kitchen_estimator ---
+            # ralf_seo uses reflection engine, not keyword-targeted posts — exclude it here
+            blog_sites = [s for s in active_sites if s != "ralf_seo" and active_sites[s].get("seed_keywords")]
+            target_site_for_post = "freeroomplanner"  # default fallback
+
+            if len(blog_sites) >= 2:
+                from agents.seo_agent.tools.github_tools import list_blog_posts as _list_posts
+                latest_per_site: dict[str, int] = {}
+                for _bs in blog_sites:
+                    try:
+                        _posts = _list_posts(_bs)
+                        latest_per_site[_bs] = len(_posts)
+                    except Exception:
+                        latest_per_site[_bs] = 0
+
+                # Write for the site with FEWER posts (simple round-robin)
+                target_site_for_post = min(latest_per_site, key=latest_per_site.get)
+                logger.info(
+                    "Site rotation — post counts: %s → writing for %s",
+                    latest_per_site,
+                    target_site_for_post,
+                )
+            elif blog_sites:
+                target_site_for_post = blog_sites[0]
+            # --- End site rotation ---
+
             # Find keywords we haven't written about yet
             existing_briefs = query_table("seo_content_briefs", limit=500)
             existing_topics = {b.get("keyword", "").lower() for b in existing_briefs}
 
-            keywords = query_table("seo_keyword_opportunities", limit=50, order_by="volume", order_desc=True)
+            keywords = query_table(
+                "seo_keyword_opportunities",
+                filters={"target_site": target_site_for_post},
+                limit=50,
+                order_by="volume",
+                order_desc=True,
+            )
             untargeted = [k for k in keywords if k.get("keyword", "").lower() not in existing_topics]
 
             # --- Topic diversity: skip keywords too similar to recent posts ---
@@ -234,14 +267,17 @@ async def _execute_heartbeat_inner() -> None:
             recent_slugs: list[str] = []
             try:
                 from agents.seo_agent.tools.github_tools import list_blog_posts
-                recent_posts = list_blog_posts("freeroomplanner")
+                recent_posts = list_blog_posts(target_site_for_post)
                 recent_slugs = [p.get("name", "").replace(".html", "") for p in recent_posts[:5]]
             except Exception:
                 pass
 
+            logger.info("Recent slugs for %s: %s", target_site_for_post, recent_slugs)
+
             recent_topics = [_significant_words(slug.replace("-", " ")) for slug in recent_slugs[:3]]
 
             diverse_keywords: list[dict] = []
+            filtered_out: list[str] = []
             for _kw in untargeted:
                 kw_words = _significant_words(_kw.get("keyword", ""))
                 too_similar = False
@@ -251,8 +287,13 @@ async def _execute_heartbeat_inner() -> None:
                         if overlap > 0.5:
                             too_similar = True
                             break
-                if not too_similar:
+                if too_similar:
+                    filtered_out.append(_kw.get("keyword", ""))
+                else:
                     diverse_keywords.append(_kw)
+
+            if filtered_out:
+                logger.info("Diversity filter removed %d keywords: %s", len(filtered_out), filtered_out[:10])
 
             # Fall back to unfiltered list if everything got filtered out
             selected = diverse_keywords if diverse_keywords else untargeted
@@ -260,9 +301,10 @@ async def _execute_heartbeat_inner() -> None:
 
             if selected:
                 kw = selected[0]
-                site = kw.get("target_site", "freeroomplanner")
+                site = target_site_for_post
                 kw_text = kw.get("keyword", "")
 
+                logger.info("Selected keyword for %s: %s", site, kw_text)
                 await send_telegram(f"Writing new post: \"{kw_text}\" for {site}...")
 
                 try:
@@ -282,8 +324,8 @@ async def _execute_heartbeat_inner() -> None:
                 task_executed = True
             else:
                 report_lines.append("All discovered keywords have content. Running fresh keyword research.")
-                # Refresh keywords
-                for site in active_sites:
+                # Refresh keywords for blog sites only (not ralf_seo)
+                for site in blog_sites:
                     try:
                         result = run_task("keyword_research", target_site=site)
                         opps = result.get("keyword_opportunities", [])

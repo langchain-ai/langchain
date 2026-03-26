@@ -116,7 +116,7 @@ SITE_PROFILES: dict[str, dict] = {
     "kitchen_estimator": {
         "domain": "kitchencostestimator.com",
         "gsc_property": "https://www.kitchencostestimator.com",
-        "status": "upcoming",  # Not yet actively doing SEO — focus on freeroomplanner first
+        "status": "active",
         "primary_topic": "kitchen price estimator and cost guide",
         "description": (
             "Interactive kitchen renovation cost estimator for UK, US, and Canada. "
@@ -139,12 +139,13 @@ SITE_PROFILES: dict[str, dict] = {
             "regional_cost_pages",
         ],
         "seed_keywords": [
+            "kitchen cost UK",
             "how much does a kitchen cost",
-            "kitchen prices UK",
-            "fitted kitchen cost",
-            "kitchen installation cost",
-            "kitchen renovation cost calculator",
-            "average kitchen cost UK 2026",
+            "kitchen renovation cost",
+            "kitchen price calculator",
+            "average kitchen cost 2026",
+            "kitchen fitting cost",
+            "new kitchen cost",
         ],
         "geo_focus": "UK primary, US and Canada secondary",
         "monetisation": "high-intent lead capture → premium pricing for leads",
