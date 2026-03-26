@@ -4122,3 +4122,22 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_experimental_markdown_syntax_text_splitter_unclosed_code_block() -> None:
+    """Unclosed code blocks must not silently discard their content.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36186:
+    _resolve_code_chunk returned "" instead of the accumulated content when the
+    closing fence was missing, causing silent data loss.
+    """
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+
+    # Markdown with an unclosed code block
+    text = "# Header\n\nSome text\n\n```python\nprint('hello')\n"
+    docs = markdown_splitter.split_text(text)
+
+    # The code block content must be preserved, not silently dropped
+    code_docs = [d for d in docs if "Code" in d.metadata]
+    assert len(code_docs) == 1, "Unclosed code block chunk should be preserved"
+    assert "print('hello')" in code_docs[0].page_content
