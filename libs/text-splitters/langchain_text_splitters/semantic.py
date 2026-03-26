@@ -19,7 +19,7 @@ def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
         vec_b: Second embedding vector.
 
     Returns:
-        Cosine similarity score in range [-1, 1].
+        Similarity score in range [-1, 1].
     """
     dot = sum(a * b for a, b in zip(vec_a, vec_b))
     norm_a = sum(a * a for a in vec_a) ** 0.5
@@ -33,12 +33,11 @@ def _split_sentences(text: str) -> list[str]:
     """Split text into individual sentences using a regex heuristic.
 
     Args:
-        text: The raw input text to split into sentences.
+        text: The raw input text.
 
     Returns:
         A list of non-empty sentence strings.
     """
-    # Split on sentence-ending punctuation followed by whitespace/end-of-string.
     sentence_endings = re.compile(r"(?<=[.!?])\s+")
     sentences = sentence_endings.split(text.strip())
     return [s.strip() for s in sentences if s.strip()]
@@ -54,10 +53,10 @@ class SemanticSimilarityTextSplitter(TextSplitter):
     This is especially useful for RAG (Retrieval-Augmented Generation) pipelines
     where coherent, topic-focused chunks improve retrieval precision.
 
-    !!! note
-        This splitter ignores `chunk_size` and `chunk_overlap` parameters inherited
-        from `TextSplitter`. Chunk boundaries are determined purely by semantic
-        breakpoints derived from the `breakpoint_threshold_type` strategy.
+    This splitter respects the `chunk_size` parameter. If a semantically
+    identified chunk exceeds `chunk_size`, the splitter hierarchically finds
+    the next most significant semantic breakpoints within that chunk until
+    the size constraint is met or no further splits (sentences) are available.
 
     Example:
         .. code-block:: python
@@ -81,32 +80,22 @@ class SemanticSimilarityTextSplitter(TextSplitter):
         sentence_split_regex: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new `SemanticSimilarityTextSplitter`.
+        """Create a new semantic similarity text splitter.
 
         Args:
-            embeddings: A `langchain_core.embeddings.Embeddings` instance used to
-                embed sentences. Any compatible provider (OpenAI, HuggingFace, Ollama,
-                etc.) can be used.
+            embeddings: Embedding model used to vectorize sentences.
             breakpoint_threshold_type: Strategy to determine breakpoint thresholds
-                from the distribution of cosine similarity scores.
-
-                - `"percentile"`: Break where similarity drops below the Nth
-                  percentile. Default `breakpoint_threshold_amount` is `95`.
-                - `"standard_deviation"`: Break where similarity drops more than N
-                  standard deviations below the mean. Default is `3`.
-                - `"interquartile"`: Break where similarity drops below
-                  Q1 - N * IQR. Default is `1.5`.
+                from the distribution of cosine similarity scores. Choices include
+                percentile, standard_deviation, and interquartile.
             breakpoint_threshold_amount: Numeric threshold for the chosen strategy.
-                If `None`, a sensible default for each strategy is used.
+                If None, a built-in default for each strategy is applied.
             sentence_split_regex: Custom regex pattern used to split text into
-                sentences before embedding. If `None`, a built-in heuristic
-                (split on sentence-ending punctuation) is used.
-            **kwargs: Additional keyword arguments forwarded to `TextSplitter`.
+                sentences before embedding. If None, uses a punctuation-based heuristic.
+            **kwargs: Additional keyword arguments forwarded to the base class.
 
         Raises:
-            ValueError: If `breakpoint_threshold_type` is not one of the supported
-                values.
-            ValueError: If provided `breakpoint_threshold_amount` is negative.
+            ValueError: If an unsupported threshold type is provided.
+            ValueError: If the threshold amount is negative.
         """
         super().__init__(**kwargs)
         self._embeddings = embeddings
@@ -137,25 +126,18 @@ class SemanticSimilarityTextSplitter(TextSplitter):
             raise ValueError(msg)
         self._breakpoint_threshold_amount = resolved_amount
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def split_text(self, text: str) -> list[str]:
         """Split the input text into semantically coherent chunks.
 
-        Steps:
-        1. Sentence-split the text.
-        2. Embed each sentence.
-        3. Compute cosine similarity between adjacent sentences.
-        4. Identify breakpoints where similarity falls below the threshold.
-        5. Aggregate sentences into final chunks.
+        Steps include sentence-splitting the text, embedding each sentence,
+        and computing similarities. Large chunks are refined recursively.
 
         Args:
             text: The input text to split.
 
         Returns:
-            A list of text chunks, each representing a coherent semantic unit.
+            A list of text chunks that respect the size constraint.
         """
         sentences = self._split_into_sentences(text)
         if len(sentences) <= 1:
@@ -163,16 +145,68 @@ class SemanticSimilarityTextSplitter(TextSplitter):
 
         embeddings = self._embeddings.embed_documents(sentences)
         similarities = self._compute_similarities(embeddings)
-        breakpoint_threshold = self._calculate_threshold(similarities)
-        breakpoints = self._find_breakpoints(similarities, breakpoint_threshold)
-        return self._build_chunks(sentences, breakpoints)
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
+        breakpoint_threshold = self._calculate_threshold(similarities)
+        breakpoints = set(self._find_breakpoints(similarities, breakpoint_threshold))
+
+        final_breakpoints = self._hierarchical_refine(
+            sentences, similarities, breakpoints
+        )
+
+        return self._build_chunks(sentences, final_breakpoints)
+
+
+    def _hierarchical_refine(
+        self,
+        sentences: list[str],
+        similarities: list[float],
+        breakpoints: set[int],
+    ) -> list[int]:
+        """Recursively refine breakpoints until chunks meet the size limit.
+
+        Args:
+            sentences: List of original sentences.
+            similarities: Adjacent sentence similarities.
+            breakpoints: Current set of split indices.
+
+        Returns:
+            Sorted list of all breakpoints.
+        """
+        while True:
+            sorted_breakpoints = sorted(list(breakpoints))
+            chunk_ranges = []
+            start = 0
+            for breakpoint_idx in sorted_breakpoints:
+                chunk_ranges.append((start, breakpoint_idx))
+                start = breakpoint_idx + 1
+            chunk_ranges.append((start, len(sentences) - 1))
+
+            split_occurred = False
+            for start_idx, end_idx in chunk_ranges:
+                chunk_text = " ".join(sentences[start_idx : end_idx + 1])
+                if (
+                    len(chunk_text) > self._chunk_size
+                    and (end_idx - start_idx) > 0
+                ):
+                    sub_similarities = similarities[start_idx:end_idx]
+                    if not sub_similarities:
+                        continue
+
+                    min_sim = min(sub_similarities)
+                    sub_breakpoint_idx = start_idx + sub_similarities.index(min_sim)
+
+                    if sub_breakpoint_idx not in breakpoints:
+                        breakpoints.add(sub_breakpoint_idx)
+                        split_occurred = True
+                        break
+
+            if not split_occurred:
+                break
+
+        return sorted(list(breakpoints))
 
     def _split_into_sentences(self, text: str) -> list[str]:
-        """Split text into sentences using the configured regex or built-in heuristic.
+        """Split text into sentences using regex or built-in heuristic.
 
         Args:
             text: Raw input text.
@@ -189,13 +223,13 @@ class SemanticSimilarityTextSplitter(TextSplitter):
     def _compute_similarities(
         self, embeddings: list[list[float]]
     ) -> list[float]:
-        """Compute cosine similarity between each pair of adjacent sentence embeddings.
+        """Compute cosine similarity between each adjacent sentence pair.
 
         Args:
-            embeddings: A list of embedding vectors, one per sentence.
+            embeddings: List of embedding vectors.
 
         Returns:
-            A list of similarity scores of length `len(embeddings) - 1`.
+            Similarity scores of length n-1.
         """
         return [
             _cosine_similarity(embeddings[i], embeddings[i + 1])
@@ -203,13 +237,13 @@ class SemanticSimilarityTextSplitter(TextSplitter):
         ]
 
     def _calculate_threshold(self, similarities: list[float]) -> float:
-        """Calculate the breakpoint similarity threshold from the distribution.
+        """Calculate the breakpoint threshold from the distribution.
 
         Args:
-            similarities: List of cosine similarity scores between adjacent sentences.
+            similarities: List of cosine similarity scores.
 
         Returns:
-            The numeric threshold below which a breakpoint is placed.
+            The threshold below which a breakpoint is placed.
         """
         n = len(similarities)
         if n == 0:
@@ -218,8 +252,6 @@ class SemanticSimilarityTextSplitter(TextSplitter):
         sorted_sims = sorted(similarities)
 
         if self._breakpoint_threshold_type == "percentile":
-            # Lower percentile -> more splits; N=95 keeps only clear breaks.
-            # We invert: threshold is the (100 - amount)th percentile.
             pct = 100.0 - self._breakpoint_threshold_amount
             idx = int(pct / 100.0 * (n - 1))
             return sorted_sims[max(0, min(idx, n - 1))]
@@ -230,7 +262,6 @@ class SemanticSimilarityTextSplitter(TextSplitter):
             std = variance ** 0.5
             return mean - self._breakpoint_threshold_amount * std
 
-        # interquartile
         q1_idx = int(0.25 * (n - 1))
         q3_idx = int(0.75 * (n - 1))
         q1 = sorted_sims[q1_idx]
@@ -243,16 +274,25 @@ class SemanticSimilarityTextSplitter(TextSplitter):
     ) -> list[int]:
         """Find sentence indices after which a chunk break should occur.
 
-        A break is placed after sentence `i` when the similarity between sentence `i`
-        and sentence `i+1` covers or falls below `threshold`.
+        A break is placed after sentence `i` when the similarity between `i`
+        and `i+1` falls below the threshold. Ensures the threshold is strictly
+        less than the maximum similarity in the document.
 
         Args:
-            similarities: List of per-adjacent-pair cosine similarities.
+            similarities: List of adjacent-pair similarities.
             threshold: The maximum similarity score to trigger a split.
 
         Returns:
-            Sorted list of sentence indices after which a new chunk begins.
+            Sentence indices after which a new chunk begins.
         """
+        unique_sims = sorted(list(set(similarities)))
+        if len(unique_sims) <= 1:
+            return []
+
+        max_sim = unique_sims[-1]
+        if threshold >= max_sim:
+            threshold = unique_sims[-2]
+
         return [i for i, sim in enumerate(similarities) if sim <= threshold]
 
     def _build_chunks(
@@ -269,12 +309,11 @@ class SemanticSimilarityTextSplitter(TextSplitter):
         """
         chunks: list[str] = []
         start = 0
-        for bp in breakpoints:
-            chunk = " ".join(sentences[start : bp + 1])
+        for breakpoint_idx in breakpoints:
+            chunk = " ".join(sentences[start : breakpoint_idx + 1])
             if chunk:
                 chunks.append(chunk)
-            start = bp + 1
-        # Append remaining sentences as the final chunk.
+            start = breakpoint_idx + 1
         final_chunk = " ".join(sentences[start:])
         if final_chunk:
             chunks.append(final_chunk)

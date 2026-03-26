@@ -15,31 +15,22 @@ from langchain_text_splitters.semantic import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers / Fixtures
-# ---------------------------------------------------------------------------
-
-
 def _make_fake_embeddings(
     similarities: list[float],
 ) -> Any:
-    """Build a mock `Embeddings` whose `embed_documents` returns vectors that
-    produce the requested pairwise cosine similarities.
+    """Build a mock embedding model.
 
-    Strategy: use N-dimensional orthonormal basis vectors and blend them so
-    that adjacent pairs have the desired similarity.  For simplicity here we
-    just return pre-built numeric vectors that the real cosine function will
-    score correctly.
+    Produces vectors that result in the requested pairwise cosine similarities
+    between adjacent vectors.
 
-    For unit tests, we manufacture vectors directly by returning
-    `[[1, 0, 0, ...], [cos, sin, 0, ...], ...]` where each pair has the
-    given similarity by construction.
+    Args:
+        similarities: Target similarities between neighbors.
+
+    Returns:
+        Mock object with embed_documents method.
     """
     import math
 
-    # Build vectors so that dot(v[i], v[i+1]) == similarities[i].
-    # Use 2-D plane rotation trick: v[i+1] = cos_angle * x_hat + sin_angle * y_hat
-    # We need N+1 vectors for N similarities.
     n = len(similarities) + 1
     vectors: list[list[float]] = []
     for i in range(n):
@@ -65,12 +56,8 @@ class _FixedEmbeddings:
         return self._vectors[0]
 
 
-# ---------------------------------------------------------------------------
-# _cosine_similarity
-# ---------------------------------------------------------------------------
-
-
 class TestCosineSimilarity:
+    """Test the internal cosine similarity calculation."""
     def test_identical_vectors(self) -> None:
         assert _cosine_similarity([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
 
@@ -84,17 +71,12 @@ class TestCosineSimilarity:
         assert _cosine_similarity([0.0, 0.0], [1.0, 2.0]) == 0.0
 
     def test_general_case(self) -> None:
-        # [1, 1] and [1, 0] → cos(45°) ≈ 0.7071
         result = _cosine_similarity([1.0, 1.0], [1.0, 0.0])
         assert result == pytest.approx(0.7071, abs=1e-3)
 
 
-# ---------------------------------------------------------------------------
-# _split_sentences
-# ---------------------------------------------------------------------------
-
-
 class TestSplitSentences:
+    """Test the built-in sentence splitting heuristic."""
     def test_basic_sentences(self) -> None:
         text = "Hello world. How are you? I am fine!"
         result = _split_sentences(text)
@@ -115,12 +97,8 @@ class TestSplitSentences:
         assert all(s == s.strip() for s in result)
 
 
-# ---------------------------------------------------------------------------
-# SemanticSimilarityTextSplitter – construction
-# ---------------------------------------------------------------------------
-
-
 class TestSemanticSplitterInit:
+    """Test Initialization and parameter validation."""
     def test_default_construction(self) -> None:
         mock_emb = MagicMock()
         splitter = SemanticSimilarityTextSplitter(embeddings=mock_emb)
@@ -168,12 +146,8 @@ class TestSemanticSplitterInit:
             )
 
 
-# ---------------------------------------------------------------------------
-# SemanticSimilarityTextSplitter – split_text
-# ---------------------------------------------------------------------------
-
-
 class TestSemanticSplitterSplitText:
+    """Test core splitting logic with various thresholds."""
     def test_empty_text_returns_empty(self) -> None:
         mock_emb = MagicMock()
         splitter = SemanticSimilarityTextSplitter(embeddings=mock_emb)
@@ -187,13 +161,11 @@ class TestSemanticSplitterSplitText:
         assert "Just one sentence here" in result[0]
 
     def test_high_similarity_keeps_sentences_together(self) -> None:
-        # All consecutive sentences are very similar (sim = 1.0), so no splits.
         sentences = [
             "The cat sat on the mat.",
             "The cat rested on the mat.",
             "The cat lay on the mat.",
         ]
-        # Use identical vectors → similarity = 1.0 everywhere
         vectors = [[1.0, 0.0]] * len(sentences)
         emb = _FixedEmbeddings(vectors)
         splitter = SemanticSimilarityTextSplitter(
@@ -202,16 +174,11 @@ class TestSemanticSplitterSplitText:
             breakpoint_threshold_amount=95.0,
         )
         result = splitter.split_text(" ".join(sentences))
-        # All sentences similar → should produce 1 chunk
         assert len(result) == 1
 
     def test_topic_shift_produces_two_chunks(self) -> None:
-        # Two clearly distinct topic blocks: first two sentences are about
-        # dogs, last two are about astronomy.  We fake low similarity between
-        # sentence 2 and 3, high within each group.
         import math
 
-        # Vectors: 0° for group A, 90° for group B → sim(A,B) = cos(90°) = 0
         group_a = [1.0, 0.0]
         group_b = [0.0, 1.0]
         vectors = [group_a, group_a, group_b, group_b]
@@ -220,7 +187,7 @@ class TestSemanticSplitterSplitText:
         splitter = SemanticSimilarityTextSplitter(
             embeddings=emb,
             breakpoint_threshold_type="percentile",
-            breakpoint_threshold_amount=50.0,  # aggressive split
+            breakpoint_threshold_amount=50.0,
         )
         text = (
             "Dogs are loyal animals. "
@@ -232,7 +199,6 @@ class TestSemanticSplitterSplitText:
         assert len(result) == 2
 
     def test_custom_sentence_split_regex(self) -> None:
-        # Split on semicolons instead of punctuation.
         vectors = [[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]]
         emb = _FixedEmbeddings(vectors)
         splitter = SemanticSimilarityTextSplitter(
@@ -240,7 +206,6 @@ class TestSemanticSplitterSplitText:
             sentence_split_regex=r";",
         )
         text = "First part; Second part; Third part"
-        # All high-similarity → 1 chunk, but it should not crash.
         result = splitter.split_text(text)
         assert isinstance(result, list)
 
@@ -267,7 +232,49 @@ class TestSemanticSplitterSplitText:
         emb = _FixedEmbeddings(vectors)
         splitter = SemanticSimilarityTextSplitter(
             embeddings=emb,
-            breakpoint_threshold_type=threshold_type,  # type: ignore[arg-type]
+            breakpoint_threshold_type=threshold_type,
         )
         result = splitter.split_text("Sentence one. Sentence two. Sentence three.")
         assert isinstance(result, list)
+
+
+class TestHierarchicalSemanticSplitting:
+    """Test recursive size-based splitting fallback."""
+    def test_topic_break_respected_first(self) -> None:
+
+        vectors = [[1.0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1], [0, 0, 1]]
+        emb = _FixedEmbeddings(vectors)
+        splitter = SemanticSimilarityTextSplitter(
+            embeddings=emb, chunk_size=1000, breakpoint_threshold_amount=50
+        )
+        text = "S1. S2. S3. S4. S5. S6."
+        result = splitter.split_text(text)
+        assert len(result) == 3
+
+    def test_recursive_split_on_size_violation(self) -> None:
+        vectors = [[1.0, 0.0]] * 6
+        emb = _FixedEmbeddings(vectors)
+        splitter = SemanticSimilarityTextSplitter(
+            embeddings=emb, chunk_size=8, chunk_overlap=0, breakpoint_threshold_amount=95
+        )
+        text = "S1. S2. S3. S4. S5. S6."
+        result = splitter.split_text(text)
+        assert len(result) >= 3
+        for chunk in result:
+            assert len(chunk) <= 8
+
+    def test_does_not_split_single_sentence_even_if_oversized(self) -> None:
+        emb = _FixedEmbeddings([[1.0, 0.0]])
+        splitter = SemanticSimilarityTextSplitter(
+            embeddings=emb, chunk_size=10, chunk_overlap=0
+        )
+        text = "This is a very long sentence."
+        result = splitter.split_text(text)
+        assert len(result) == 1
+        assert result[0] == text
+
+    def test_handles_redundant_similarities(self) -> None:
+        emb = _FixedEmbeddings([[1.0, 0.0]] * 4)
+        splitter = SemanticSimilarityTextSplitter(embeddings=emb, chunk_size=1000)
+        result = splitter.split_text("S1. S2. S3. S4.")
+        assert len(result) == 1
