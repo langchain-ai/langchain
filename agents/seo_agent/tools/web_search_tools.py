@@ -60,7 +60,11 @@ _MOCK_UNLINKED_MENTIONS = [
 
 
 def _is_mock() -> bool:
-    return os.getenv("TAVILY_MOCK", "true").lower() in ("true", "1", "yes")
+    # Default to mock only if TAVILY_API_KEY is not set
+    explicit = os.getenv("TAVILY_MOCK")
+    if explicit is not None:
+        return explicit.lower() in ("true", "1", "yes")
+    return not bool(os.getenv("TAVILY_API_KEY"))
 
 
 def _get_tavily_client() -> Any:

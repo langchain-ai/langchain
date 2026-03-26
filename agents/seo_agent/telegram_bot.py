@@ -440,6 +440,8 @@ Available actions and their parameters:
 - outreach_report: {target_site:"all"} — Outreach summary
 - cost_report: (no params, handled directly)
 - status: (no params, handled directly)
+- web_search: {query} — Search the internet for any information
+- review_site: {url} — Fetch and review a website's content
 
 Site keys: "kitchensdirectory", "freeroomplanner", "kitchen_estimator", "all"
 
@@ -625,6 +627,28 @@ async def _format_task_result(action: str, result: dict) -> str:
     return "\n".join(parts) if parts else "Task completed with no output."
 
 
+def _run_web_search(query: str) -> list[dict]:
+    """Run a Tavily web search synchronously."""
+    from agents.seo_agent.tools.web_search_tools import search
+    return search(query, max_results=8)
+
+
+def _summarise_search_results(
+    query: str, results: list[dict], conversation: list[dict]
+) -> str:
+    """Use Claude to summarise search results into a natural response."""
+    results_text = "\n\n".join(
+        f"Title: {r.get('title', 'N/A')}\nURL: {r.get('url', '')}\nContent: {r.get('content', '')[:300]}"
+        for r in results[:6]
+    )
+    messages = conversation + [{
+        "role": "user",
+        "content": f"Based on these web search results for '{query}', give me a concise summary. "
+        f"Include key findings and relevant URLs.\n\nSearch Results:\n{results_text}"
+    }]
+    return _call_openrouter_sync(messages, _NL_SYSTEM_PROMPT)
+
+
 async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle free-text messages by routing through Claude."""
     try:
@@ -679,6 +703,23 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             if action == "status":
                 await cmd_status(update, context)
                 history.append({"role": "assistant", "content": "[Ran status check]"})
+                return
+            if action in ("web_search", "review_site"):
+                query = params.get("query") or params.get("url") or user_text
+                await update.message.reply_text(f"Searching: {query}...")
+                try:
+                    search_results = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_run_web_search, query)
+                    )
+                    # Send results to Claude for a natural summary
+                    summary = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_summarise_search_results, query, search_results, list(history))
+                    )
+                    await update.message.reply_text(summary)
+                    history.append({"role": "assistant", "content": summary[:300]})
+                except Exception as e:
+                    logger.error("Web search failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Search failed: {str(e)[:200]}")
                 return
 
             # Run the agent task
