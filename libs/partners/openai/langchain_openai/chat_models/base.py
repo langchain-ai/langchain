@@ -1526,7 +1526,10 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
 
-        if self._use_responses_api(payload):
+        use_responses_api = self._use_responses_api(payload) or (
+            self.use_responses_api is None and _messages_require_responses_api(messages)
+        )
+        if use_responses_api:
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
                 payload_to_use = last_messages if previous_response_id else messages
@@ -3939,6 +3942,25 @@ def _use_responses_api(payload: dict) -> bool:
         "truncation",
     }
     return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+
+
+def _messages_require_responses_api(messages: Sequence[BaseMessage]) -> bool:
+    """Return whether message content requires the OpenAI Responses API.
+
+    This currently detects file URL blocks, which are unsupported by Chat
+    Completions but supported by the Responses API.
+    """
+    for message in messages:
+        if not isinstance(message.content, list):
+            continue
+        for block in message.content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "file"
+                and isinstance(block.get("url"), str)
+            ):
+                return True
+    return False
 
 
 def _get_last_messages(

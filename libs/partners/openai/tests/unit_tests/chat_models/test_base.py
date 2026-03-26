@@ -1347,6 +1347,53 @@ def test_output_version_compat() -> None:
     assert llm._use_responses_api({}) is True
 
 
+def test_file_url_content_auto_uses_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="test")
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Summarize this file"},
+                {
+                    "type": "file",
+                    "source_type": "url",
+                    "url": "https://example.com/test.pdf",
+                },
+            ]
+        )
+    ]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    assert "input" in payload
+    assert "messages" not in payload
+    assert payload["input"][0]["content"][1] == {
+        "type": "input_file",
+        "file_url": "https://example.com/test.pdf",
+    }
+
+
+def test_file_url_content_does_not_override_explicit_chat_completions() -> None:
+    llm = ChatOpenAI(
+        model="gpt-4o-mini", use_responses_api=False, api_key="test"
+    )
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Summarize this file"},
+                {
+                    "type": "file",
+                    "source_type": "url",
+                    "url": "https://example.com/test.pdf",
+                },
+            ]
+        )
+    ]
+
+    with pytest.raises(
+        ValueError, match=r"OpenAI Chat Completions does not support file URLs\."
+    ):
+        llm._get_request_payload(messages, stop=None)
+
+
 def test_verbosity_parameter_payload() -> None:
     """Test verbosity parameter is included in request payload for Responses API."""
     llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
