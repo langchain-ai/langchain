@@ -1262,6 +1262,26 @@ def main() -> None:
 
     app.add_error_handler(error_handler)
 
+    # Schedule autonomous heartbeat (every 6 hours)
+    heartbeat_hours = int(os.getenv("HEARTBEAT_INTERVAL_HOURS", "6"))
+    if heartbeat_hours > 0:
+        from agents.seo_agent.heartbeat import execute_heartbeat
+
+        async def _heartbeat_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+            logger.info("Running scheduled heartbeat...")
+            try:
+                await execute_heartbeat()
+            except Exception:
+                logger.error("Heartbeat failed: %s", traceback.format_exc())
+
+        app.job_queue.run_repeating(
+            _heartbeat_job,
+            interval=heartbeat_hours * 3600,
+            first=300,  # First run 5 minutes after startup
+            name="heartbeat",
+        )
+        logger.info("Heartbeat scheduled every %d hours (first run in 5 minutes)", heartbeat_hours)
+
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
