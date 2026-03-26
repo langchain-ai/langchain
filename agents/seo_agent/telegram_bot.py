@@ -442,6 +442,7 @@ Available actions and their parameters:
 - status: (no params, handled directly)
 - web_search: {query} — Search the internet for any information
 - review_site: {url} — Fetch and review a website's content
+- recall: {topic} — Look up past results from the database (keywords, prospects, briefs, etc.)
 
 Site keys: "kitchensdirectory", "freeroomplanner", "kitchen_estimator", "all"
 
@@ -461,6 +462,10 @@ Rules:
    Results from tasks are also saved to the Supabase database and persist across sessions.
 10. Never say you don't have memory or can't remember things. You have conversation
     history and a database backend.
+11. When the user asks about past results, previous analyses, what keywords we found,
+    what prospects we have, etc. — use the "recall" action to query the database.
+12. You can browse the web using "web_search" or "review_site" actions. Never say
+    you can't access websites.
 """
 
 
@@ -627,6 +632,63 @@ async def _format_task_result(action: str, result: dict) -> str:
     return "\n".join(parts) if parts else "Task completed with no output."
 
 
+def _recall_from_database(topic: str) -> str:
+    """Query Supabase for past results matching a topic."""
+    from agents.seo_agent.tools.supabase_tools import query_table
+
+    results_parts = []
+
+    # Check keywords
+    if any(w in topic.lower() for w in ["keyword", "opportunity", "research", "all", "everything"]):
+        keywords = query_table("seo_keyword_opportunities", limit=20)
+        if keywords:
+            results_parts.append(f"Keyword opportunities ({len(keywords)} in DB):")
+            for kw in keywords[:15]:
+                results_parts.append(f"  - {kw.get('keyword')} | vol:{kw.get('volume')} KD:{kw.get('kd')} | site:{kw.get('target_site')}")
+
+    # Check content gaps
+    if any(w in topic.lower() for w in ["gap", "content", "all", "everything"]):
+        gaps = query_table("seo_content_gaps", limit=20)
+        if gaps:
+            results_parts.append(f"\nContent gaps ({len(gaps)} in DB):")
+            for g in gaps[:15]:
+                results_parts.append(f"  - {g.get('keyword')} | vol:{g.get('volume')} | stage:{g.get('funnel_stage')} | site:{g.get('target_site')}")
+
+    # Check prospects
+    if any(w in topic.lower() for w in ["prospect", "backlink", "outreach", "link", "all", "everything"]):
+        prospects = query_table("seo_backlink_prospects", limit=20)
+        if prospects:
+            results_parts.append(f"\nBacklink prospects ({len(prospects)} in DB):")
+            for p in prospects[:15]:
+                results_parts.append(f"  - {p.get('domain')} | DR:{p.get('dr')} | status:{p.get('status')} | site:{p.get('target_site')}")
+
+    # Check briefs
+    if any(w in topic.lower() for w in ["brief", "content brief", "all", "everything"]):
+        briefs = query_table("seo_content_briefs", limit=10)
+        if briefs:
+            results_parts.append(f"\nContent briefs ({len(briefs)} in DB):")
+            for b in briefs[:10]:
+                results_parts.append(f"  - {b.get('title', b.get('keyword'))} | site:{b.get('target_site')}")
+
+    # Check cost log
+    if any(w in topic.lower() for w in ["cost", "spend", "budget", "llm"]):
+        costs = query_table("llm_cost_log", limit=20, order_by="created_at", order_desc=True)
+        if costs:
+            total = sum(c.get("cost_usd", 0) for c in costs)
+            results_parts.append(f"\nLLM costs (last {len(costs)} calls, total: ${total:.4f}):")
+            by_task = {}
+            for c in costs:
+                t = c.get("task_type", "unknown")
+                by_task[t] = by_task.get(t, 0) + c.get("cost_usd", 0)
+            for t, cost in sorted(by_task.items(), key=lambda x: -x[1]):
+                results_parts.append(f"  - {t}: ${cost:.4f}")
+
+    if not results_parts:
+        return f"No data found in the database for topic: {topic}. Try running a task first (keyword research, content gap, etc.)."
+
+    return "\n".join(results_parts)
+
+
 def _run_web_search(query: str) -> list[dict]:
     """Run a Tavily web search synchronously."""
     from agents.seo_agent.tools.web_search_tools import search
@@ -703,6 +765,24 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             if action == "status":
                 await cmd_status(update, context)
                 history.append({"role": "assistant", "content": "[Ran status check]"})
+                return
+            if action == "recall":
+                topic = params.get("topic", user_text)
+                try:
+                    db_results = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_recall_from_database, topic)
+                    )
+                    # Send raw data to Claude for a natural summary
+                    summary = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_call_openrouter_sync,
+                            list(history) + [{"role": "user", "content": f"Here's what I found in our database:\n\n{db_results}\n\nSummarise this for me naturally."}],
+                            _NL_SYSTEM_PROMPT)
+                    )
+                    await update.message.reply_text(summary)
+                    history.append({"role": "assistant", "content": summary[:300]})
+                except Exception as e:
+                    logger.error("Recall failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
                 return
             if action in ("web_search", "review_site"):
                 query = params.get("query") or params.get("url") or user_text
