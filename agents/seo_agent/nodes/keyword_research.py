@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from agents.seo_agent.config import SITE_PROFILES
 from agents.seo_agent.state import SEOAgentState
 from agents.seo_agent.tools import ahrefs_tools, gsc_tools, supabase_tools
+from agents.seo_agent.tools.crm_tools import cache_keyword
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +140,56 @@ def _run_keyword_research_for_site(
             "next_node": "END",
         }
 
+    # --- Cache-first: check for recent keyword opportunities ---
+    try:
+        cached_rows = supabase_tools.query_table(
+            "seo_keyword_opportunities",
+            filters={"target_site": target_site},
+            limit=200,
+        )
+        if cached_rows:
+            # Check freshness — use the most recent created_at
+            now = datetime.now(timezone.utc)
+            newest = max(
+                datetime.fromisoformat(r["created_at"].replace("Z", "+00:00"))
+                for r in cached_rows
+                if r.get("created_at")
+            )
+            age_days = (now - newest).days
+            if age_days < 7:
+                logger.info(
+                    "Using %d cached keyword opportunities for %s (last updated %d day(s) ago)",
+                    len(cached_rows),
+                    target_site,
+                    age_days,
+                )
+                opportunities = [
+                    {
+                        "keyword": r.get("keyword", ""),
+                        "volume": r.get("volume", 0),
+                        "kd": r.get("kd", 0),
+                        "cpc": r.get("cpc", 0.0),
+                        "intent": r.get("intent", "unknown"),
+                        "is_paa": bool(r.get("paa_keywords")),
+                        "target_site": target_site,
+                        "seed_keyword": r.get("seed_keyword", ""),
+                    }
+                    for r in cached_rows
+                ]
+                # Deduplicate before returning
+                seen: set[str] = set()
+                deduped: list[dict[str, Any]] = []
+                for opp in opportunities:
+                    kw_lower = opp["keyword"].lower().strip()
+                    if kw_lower not in seen:
+                        seen.add(kw_lower)
+                        deduped.append(opp)
+                return deduped
+    except Exception:
+        logger.warning("Cache check failed for %s, falling back to Ahrefs", target_site, exc_info=True)
+
+    logger.info("Cache miss — fetching fresh keywords from Ahrefs for %s", target_site)
+
     # Fetch protected queries from GSC to avoid cannibalisation
     gsc_property = profile.get("gsc_property", "")
     protected = _get_protected_queries(gsc_property) if gsc_property else set()
@@ -207,6 +259,22 @@ def _run_keyword_research_for_site(
                 msg = f"Failed to save keyword '{keyword_text}' to Supabase"
                 logger.warning(msg, exc_info=True)
                 errors.append(msg)
+
+            # Also cache in seo_keyword_cache for future lookups
+            try:
+                cache_keyword(keyword_text, "gb", kw)
+            except Exception:
+                logger.debug("Failed to cache keyword '%s'", keyword_text, exc_info=True)
+
+    # Deduplicate by keyword text
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for opp in opportunities:
+        kw_lower = opp["keyword"].lower().strip()
+        if kw_lower not in seen:
+            seen.add(kw_lower)
+            deduped.append(opp)
+    opportunities = deduped
 
     # Log PAA keywords separately for downstream use
     paa_keywords = [opp for opp in opportunities if opp.get("is_paa")]
