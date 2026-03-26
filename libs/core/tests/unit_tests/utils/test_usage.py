@@ -26,6 +26,22 @@ def test_dict_int_op_nested() -> None:
     assert result == {"a": 3, "b": {"c": 3, "d": 3, "e": 4}}
 
 
+def test_dict_int_op_add_with_floats() -> None:
+    left = {"tokens": 10, "cost": 0.05}
+    right = {"tokens": 20, "cost": 0.03}
+    result = _dict_int_op(left, right, operator.add)
+    assert result["tokens"] == 30
+    assert result["cost"] == pytest.approx(0.08)
+
+
+def test_dict_int_op_add_float_with_missing_key() -> None:
+    left = {"tokens": 10, "cost": 0.05}
+    right = {"tokens": 20}
+    result = _dict_int_op(left, right, operator.add)
+    assert result["tokens"] == 30
+    assert result["cost"] == pytest.approx(0.05)
+
+
 def test_dict_int_op_max_depth_exceeded() -> None:
     left = {"a": {"b": {"c": 1}}}
     right = {"a": {"b": {"c": 2}}}
@@ -40,6 +56,6 @@ def test_dict_int_op_invalid_types() -> None:
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported",
+        match="Only dict and numeric values are supported",
     ):
         _dict_int_op(left, right, operator.add)

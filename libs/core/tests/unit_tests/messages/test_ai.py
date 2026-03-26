@@ -143,6 +143,20 @@ def test_add_usage_with_details() -> None:
     assert result["output_token_details"]["reasoning"] == 15
 
 
+def test_add_usage_with_float_total_cost() -> None:
+    usage1 = UsageMetadata(input_tokens=10, output_tokens=20, total_tokens=30)
+    usage1["total_cost"] = 0.005  # type: ignore[typeddict-item]
+    usage2 = UsageMetadata(input_tokens=5, output_tokens=10, total_tokens=15)
+    usage2["total_cost"] = 0.01  # type: ignore[typeddict-item]
+
+    result = add_usage(usage1, usage2)
+
+    assert result["input_tokens"] == 15
+    assert result["output_tokens"] == 30
+    assert result["total_tokens"] == 45
+    assert abs(result["total_cost"] - 0.015) < 1e-12  # type: ignore[typeddict-item]
+
+
 def test_subtract_usage_both_none() -> None:
     result = subtract_usage(None, None)
     assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
