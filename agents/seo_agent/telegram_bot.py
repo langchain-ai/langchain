@@ -462,6 +462,8 @@ Actions:
 - followups: (no params) — show prospects needing follow-up
 - ranking_movers: {target_site} — show biggest ranking changes (winners/losers)
 - track_rankings: {target_site} — snapshot current rankings from Ahrefs
+- learn: {topic} — research a topic online and add to the knowledge base
+- knowledge: {query} — search the knowledge base for specific SEO/AEO info
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, all
 
@@ -513,6 +515,16 @@ def _build_strategy_context() -> str:
         for i, step in enumerate(next_steps, 1):
             context += f"\n{i}. {step}"
         context += f"\n\n{get_strategy_summary()}"
+
+        # Inject knowledge base summary
+        try:
+            from agents.seo_agent.tools.knowledge_tools import get_knowledge_summary
+            kb_summary = get_knowledge_summary()
+            if kb_summary:
+                context += kb_summary
+        except Exception:
+            pass
+
         return context
     except Exception:
         return ""
@@ -1051,6 +1063,56 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Track rankings failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Ranking snapshot failed: {str(e)[:200]}")
+                return
+            if action == "learn":
+                topic = params.get("topic", user_text)
+                await update.message.reply_text(f"Researching: {topic}...")
+                try:
+                    # Search the web for the topic
+                    search_results = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_run_web_search, f"SEO AEO {topic} 2026 best practices")
+                    )
+                    # Summarise and store
+                    results_text = "\n".join(
+                        f"- {r.get('title', '')}: {r.get('content', '')[:200]}" for r in search_results[:5]
+                    )
+                    summary = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_call_openrouter_sync,
+                            [{"role": "user", "content": f"Summarise these search results about '{topic}' into a concise knowledge entry (max 500 words). Focus on actionable SEO/AEO advice.\n\n{results_text}"}],
+                            "You are an SEO expert. Summarise research into actionable knowledge.")
+                    )
+                    # Store in knowledge base
+                    from agents.seo_agent.tools.knowledge_tools import store_knowledge
+                    category = "aeo" if "aeo" in topic.lower() or "ai" in topic.lower() else "industry_trends"
+                    import re
+                    topic_slug = re.sub(r'[^a-z0-9_]', '_', topic.lower()[:80]).strip('_')
+                    store_knowledge(category, topic_slug, summary)
+                    await update.message.reply_text(f"Learned about '{topic}' and saved to knowledge base.\n\nKey points:\n{summary[:500]}")
+                    history.append({"role": "assistant", "content": f"Learned about {topic}"})
+                except Exception as e:
+                    logger.error("Learn failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Research failed: {str(e)[:200]}")
+                return
+            if action == "knowledge":
+                query = params.get("query", user_text)
+                try:
+                    from agents.seo_agent.tools.knowledge_tools import search_knowledge
+                    results = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(search_knowledge, query)
+                    )
+                    if results:
+                        lines = [f"Knowledge base ({len(results)} entries for '{query}'):"]
+                        for r in results[:5]:
+                            lines.append(f"\n[{r.get('category')}] {r.get('topic')}:")
+                            lines.append(r.get('content', '')[:300])
+                        msg = "\n".join(lines)
+                        # Truncate for Telegram
+                        for i in range(0, len(msg), 4000):
+                            await update.message.reply_text(msg[i:i+4000])
+                    else:
+                        await update.message.reply_text(f"Nothing in the knowledge base about '{query}'. Want me to research it?")
+                except Exception as e:
+                    await update.message.reply_text(f"Knowledge search failed: {str(e)[:200]}")
                 return
             if action == "store_content":
                 site = params.get("site", "freeroomplanner")
