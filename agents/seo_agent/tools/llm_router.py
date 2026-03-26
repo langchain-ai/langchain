@@ -304,7 +304,7 @@ def call_llm(
 
     cost = calculate_cost(tier, input_tokens, output_tokens, cached_tokens)
 
-    # Log cost if a logging function is provided
+    # Log cost — use explicit log_fn if provided, otherwise auto-log
     if log_fn is not None:
         try:
             log_fn(
@@ -318,6 +318,20 @@ def call_llm(
             )
         except Exception:
             logger.warning("Failed to log LLM cost", exc_info=True)
+    else:
+        try:
+            from agents.seo_agent.tools.supabase_tools import log_llm_cost
+            log_llm_cost(
+                task_type=task,
+                model=model_id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cached_tokens=cached_tokens,
+                cost_usd=cost,
+                site=site,
+            )
+        except Exception:
+            logger.debug("Auto cost logging failed", exc_info=True)
 
     return {
         "text": result["text"],

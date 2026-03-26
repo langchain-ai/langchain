@@ -572,7 +572,7 @@ def _call_openrouter_sync(
             max_tokens=500,
             messages=oai_messages,
         )
-        return response.choices[0].message.content or ""
+        text = response.choices[0].message.content or ""
     else:
         client = _get_anthropic_client()
         response = client.messages.create(
@@ -581,7 +581,24 @@ def _call_openrouter_sync(
             system=system,
             messages=messages,
         )
-        return "".join(b.text for b in response.content if b.type == "text")
+        text = "".join(b.text for b in response.content if b.type == "text")
+
+    # Log intent classification cost
+    try:
+        from agents.seo_agent.tools.supabase_tools import log_llm_cost
+        log_llm_cost(
+            task_type="intent_classification",
+            model=_resolve_model_id(_HAIKU),
+            input_tokens=0,
+            output_tokens=0,
+            cached_tokens=0,
+            cost_usd=0.001,
+            site="",
+        )
+    except Exception:
+        pass
+
+    return text
 
 
 def _parse_action(text: str) -> dict | None:
@@ -863,6 +880,21 @@ Return ONLY the JSON, no other text."""
         )
         text = "".join(b.text for b in response.content if b.type == "text")
 
+    # Log blog generation cost
+    try:
+        from agents.seo_agent.tools.supabase_tools import log_llm_cost
+        log_llm_cost(
+            task_type="blog_generation",
+            model=_resolve_model_id(_SONNET),
+            input_tokens=0,
+            output_tokens=0,
+            cached_tokens=0,
+            cost_usd=0.02,
+            site=site,
+        )
+    except Exception:
+        pass
+
     # Parse the JSON response — robust extraction with multiple fallbacks
     data = None
     # 1. Try direct parse
@@ -987,6 +1019,17 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
         if action_data:
             action = action_data["action"]
             params = action_data.get("params", {})
+
+            # Strip JSON from visible response — send only conversational text
+            json_start = llm_response.find('{"action"')
+            if json_start == -1:
+                json_start = llm_response.find("{'action")
+            pre_action_text = llm_response[:json_start].strip() if json_start > 0 else ""
+
+            if pre_action_text and len(pre_action_text) > 10:
+                await update.message.reply_text(pre_action_text)
+                history.append({"role": "assistant", "content": pre_action_text[:200]})
+
             logger.info("NL action detected: %s params=%s", action, params)
 
             # Handle special non-graph actions
