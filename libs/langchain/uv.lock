@@ -2423,6 +2423,9 @@ google-vertexai = [
 groq = [
     { name = "langchain-groq" },
 ]
+hpc-ai = [
+    { name = "langchain-hpc-ai" },
+]
 huggingface = [
     { name = "langchain-huggingface" },
 ]
@@ -2516,6 +2519,7 @@ requires-dist = [
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
+    { name = "langchain-hpc-ai", marker = "extra == 'hpc-ai'", editable = "../partners/hpc_ai" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
@@ -2530,7 +2534,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.0.0,<3.0.0" },
     { name = "sqlalchemy", specifier = ">=1.4.0,<3.0.0" },
 ]
-provides-extras = ["anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "hpc-ai", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2598,7 +2602,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.19"
+version = "1.2.22"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2737,6 +2741,36 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-hpc-ai"
+version = "1.0.0"
+source = { editable = "../partners/hpc_ai" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-openai", editable = "../partners/openai" },
+]
+
+[package.metadata.requires-dev]
+dev = []
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "langchain-openai", editable = "../partners/openai" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.4.3,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.2,<1.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-timeout", specifier = ">=2.3.1,<3.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+]
+test-integration = []
+typing = [{ name = "mypy", specifier = ">=1.10.0,<2.0.0" }]
+
+[[package]]
 name = "langchain-huggingface"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2781,7 +2815,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.11"
+version = "1.1.12"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },

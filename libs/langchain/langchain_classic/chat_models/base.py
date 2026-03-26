@@ -115,6 +115,8 @@ def init_chat_model(
             - `deepseek...`                       -> `deepseek`
             - `grok...`                           -> `xai`
             - `sonar...`                          -> `perplexity`
+            - `minimax/...`                       -> `hpc_ai`
+            - `moonshotai/...`                    -> `hpc_ai`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -142,6 +144,7 @@ def init_chat_model(
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `hpc_ai`                  -> [`langchain-hpc-ai`](https://docs.langchain.com/oss/python/integrations/providers/hpc-ai)
         configurable_fields: Which model parameters are configurable at runtime:
 
             - `None`: No configurable fields (i.e., a fixed model).
@@ -474,6 +477,11 @@ def _init_chat_model_helper(
         from langchain_deepseek import ChatDeepSeek
 
         return ChatDeepSeek(model=model, **kwargs)
+    if model_provider == "hpc_ai":
+        _check_pkg("langchain_hpc_ai", "ChatHPCAI", pkg_kebab="langchain-hpc-ai")
+        from langchain_hpc_ai import ChatHPCAI
+
+        return ChatHPCAI(model=model, **kwargs)
     if model_provider == "nvidia":
         _check_pkg("langchain_nvidia_ai_endpoints", "ChatNVIDIA")
         from langchain_nvidia_ai_endpoints import ChatNVIDIA
@@ -524,6 +532,7 @@ _SUPPORTED_PROVIDERS = {
     "bedrock_converse",
     "google_anthropic_vertex",
     "deepseek",
+    "hpc_ai",
     "ibm",
     "xai",
     "perplexity",
@@ -599,6 +608,10 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
     # Upstage models
     if model_lower.startswith("solar"):
         return "upstage"
+
+    # HPC-AI models (OpenAI-compatible inference)
+    if model_lower.startswith(("minimax/", "moonshotai/")):
+        return "hpc_ai"
 
     return None
 

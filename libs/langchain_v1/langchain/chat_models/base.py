@@ -54,6 +54,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "google_genai": ("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
     "google_vertexai": ("langchain_google_vertexai", "ChatVertexAI", _call),
     "groq": ("langchain_groq", "ChatGroq", _call),
+    "hpc_ai": ("langchain_hpc_ai", "ChatHPCAI", _call),
     "huggingface": (
         "langchain_huggingface",
         "ChatHuggingFace",
@@ -255,6 +256,8 @@ def init_chat_model(
             - `grok...`                           -> `xai`
             - `sonar...`                          -> `perplexity`
             - `solar...`                          -> `upstage`
+            - `minimax/...`                       -> `hpc_ai`
+            - `moonshotai/...`                    -> `hpc_ai`
         model_provider: The model provider if not specified as part of the model arg
             (see above).
 
@@ -285,6 +288,7 @@ def init_chat_model(
             - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
+            - `hpc_ai`                  -> [`langchain-hpc-ai`](https://docs.langchain.com/oss/python/integrations/providers/hpc-ai)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
@@ -564,6 +568,10 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
     # Upstage models
     if model_lower.startswith("solar"):
         return "upstage"
+
+    # HPC-AI models (OpenAI-compatible inference)
+    if model_lower.startswith(("minimax/", "moonshotai/")):
+        return "hpc_ai"
 
     return None
 

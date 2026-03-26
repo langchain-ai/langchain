@@ -99,6 +99,8 @@ def test_supported_providers_is_sorted() -> None:
         ("grok-beta", "xai"),
         ("sonar-small", "perplexity"),
         ("solar-pro", "upstage"),
+        ("minimax/minimax-m2.5", "hpc_ai"),
+        ("moonshotai/kimi-k2.5", "hpc_ai"),
     ],
 )
 def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
