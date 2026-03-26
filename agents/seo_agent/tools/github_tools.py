@@ -27,10 +27,11 @@ SITE_REPOS: dict[str, dict[str, str]] = {
         "branch": "main",
     },
     "kitchensdirectory": {
-        "repo": "",  # No repo yet — will need to be added
-        "blog_path": "",
-        "file_ext": ".html",
+        "repo": "benshevlane/kitchensdirectory.co.uk",
+        "blog_path": "supabase:feature_articles",  # Uses Supabase, not file commits
+        "file_ext": ".md",
         "branch": "main",
+        "publish_via": "supabase",  # Flag to use Supabase instead of GitHub
     },
     "kitchen_estimator": {
         "repo": "benshevlane/KitchenCostEstimator",
@@ -97,18 +98,28 @@ def publish_blog_post(
         Dict with commit_url, file_path, slug, and published_url.
     """
     repo_config = SITE_REPOS.get(site)
-    if not repo_config or not repo_config.get("repo"):
+    if not repo_config:
+        raise ValueError(f"No repo configured for site '{site}'")
+
+    slug = slugify(title)
+    now = datetime.now(tz=timezone.utc)
+    date_str = now.strftime("%Y-%m-%d")
+
+    # Kitchensdirectory publishes via Supabase, not GitHub
+    if repo_config.get("publish_via") == "supabase":
+        return _publish_to_supabase(
+            site=site, slug=slug, title=title, content=content,
+            meta_description=meta_description, author=author, date_str=date_str,
+        )
+
+    if not repo_config.get("repo"):
         raise ValueError(f"No GitHub repo configured for site '{site}'")
 
     repo = repo_config["repo"]
     blog_path = repo_config["blog_path"]
     ext = repo_config["file_ext"]
     branch = repo_config["branch"]
-    slug = slugify(title)
     file_path = f"{blog_path}/{slug}{ext}"
-
-    now = datetime.now(tz=timezone.utc)
-    date_str = now.strftime("%Y-%m-%d")
 
     # Build the file content based on site type
     if ext == ".html":
@@ -290,3 +301,44 @@ slug: "{slug}"
 
 {content}
 """
+
+
+def _publish_to_supabase(
+    site: str,
+    slug: str,
+    title: str,
+    content: str,
+    meta_description: str,
+    author: str,
+    date_str: str,
+) -> dict[str, Any]:
+    """Publish a blog post to kitchensdirectory's Supabase feature_articles table."""
+    from agents.seo_agent.tools.supabase_tools import get_client
+
+    client = get_client()
+    record = {
+        "slug": slug,
+        "content_type": "feature",
+        "status": "published",
+        "is_published": True,
+        "is_featured": False,
+        "h1": title,
+        "title_tag": f"{title} | Kitchens Directory",
+        "meta_description": meta_description,
+        "body_html": content,
+        "author_name": author,
+        "published_at": f"{date_str}T00:00:00Z",
+    }
+
+    resp = client.table("feature_articles").insert(record).execute()
+    inserted = resp.data[0] if resp.data else record
+
+    logger.info("Published to Supabase feature_articles: %s", slug)
+
+    return {
+        "commit_url": "",
+        "file_path": f"supabase:feature_articles/{slug}",
+        "slug": slug,
+        "published_url": f"https://kitchensdirectory.co.uk/articles/{slug}",
+        "repo": "supabase",
+    }
