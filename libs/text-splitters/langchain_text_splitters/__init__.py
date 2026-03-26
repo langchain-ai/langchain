@@ -39,6 +39,7 @@ from langchain_text_splitters.python import PythonCodeTextSplitter
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
+from langchain_text_splitters.semantic import SemanticSimilarityTextSplitter
 from langchain_text_splitters.spacy import SpacyTextSplitter
 
 __all__ = [
@@ -61,6 +62,7 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
     "SentenceTransformersTokenTextSplitter",
+    "SemanticSimilarityTextSplitter",
     "SpacyTextSplitter",
     "TextSplitter",
     "TokenTextSplitter",
