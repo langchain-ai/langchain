@@ -107,7 +107,7 @@ SITE_PROFILES: dict[str, dict] = {
         },
     },
     "ralf_seo": {
-        "domain": "ralf-seo.vercel.app",  # placeholder until custom domain
+        "domain": "ralfseo.com",
         "status": "active",
         "description": "Ralf's personal SEO field journal",
         "seed_keywords": [],  # Not doing keyword-targeted SEO for this site

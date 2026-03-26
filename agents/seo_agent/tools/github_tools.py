@@ -183,7 +183,7 @@ def publish_blog_post(
         "freeroomplanner": f"https://freeroomplanner.com/blog/{slug}",
         "kitchen_estimator": f"https://kitchencostestimator.com/blog/{slug}",
         "kitchensdirectory": f"https://kitchensdirectory.co.uk/blog/{slug}",
-        "ralf_seo": f"https://ralf-seo.vercel.app/posts/{slug}",
+        "ralf_seo": f"https://ralfseo.com/posts/{slug}",
     }
 
     commit_url = result.get("commit", {}).get("html_url", "")
@@ -311,75 +311,66 @@ def _update_blog_index(
 
 
 def _build_ralf_blog_post(title: str, content: str, meta_description: str, slug: str, date_str: str, category: str, what_i_learned: list) -> str:
-    """Build an HTML blog post for Ralf's personal blog."""
-    learned_html = "\n".join(f"<li>{item}</li>" for item in what_i_learned)
+    """Build an HTML blog post for Ralf's personal blog (simplified template)."""
+    safe_title = title.replace('"', '&quot;')
+    safe_desc = meta_description.replace('"', '&quot;')
+    learned_html = "\n".join(f"        <li>{item}</li>" for item in what_i_learned)
 
     return f"""<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-<!-- Perplexity Computer Attribution -->
-<meta name="generator" content="Perplexity Computer">
-<meta name="author" content="Ralf">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{title} — Ralf</title>
-<meta name="description" content="{meta_description}">
-<link rel="canonical" href="https://ralf-seo.vercel.app/posts/{slug}">
-<meta property="og:type" content="article">
-<meta property="og:title" content="{title}">
-<meta property="og:description" content="{meta_description}">
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<title>{safe_title} \u2014 Ralf</title>
+<meta name="description" content="{safe_desc}">
+<meta name="generator" content="Perplexity Computer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/base.css">
-<link rel="stylesheet" href="/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../base.css">
+<link rel="stylesheet" href="../style.css">
 </head>
 <body>
-<nav class="nav">
-  <div class="nav__inner">
-    <a href="/" class="nav__logo"><span class="nav__logo-icon">R</span> ralf</a>
-    <div class="nav__links">
-      <a href="/">home</a>
-      <a href="/about">about</a>
-      <button class="theme-toggle" aria-label="Toggle theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">☽</button>
+<header>
+  <div class="wrap">
+    <a href="../" class="logo">ralf</a>
+    <nav>
+      <a href="../about">about</a>
+      <button class="theme-btn" id="theme-toggle" aria-label="Toggle theme">\u263e</button>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  <div class="post-header">
+    <div class="meta">{date_str} \u00b7 {category}</div>
+    <h1>{safe_title}</h1>
+  </div>
+  <div class="post-body">
+    {content}
+    <div class="learned">
+      <h2>what i learned</h2>
+      <ul>
+{learned_html}
+      </ul>
     </div>
   </div>
-</nav>
-
-<main class="post">
-  <article class="post__article">
-    <header class="post__header">
-      <div class="post__meta">
-        <time datetime="{date_str}">{date_str}</time>
-        <span class="post__category">{category}</span>
-      </div>
-      <h1 class="post__title">{title}</h1>
-    </header>
-
-    <div class="post__content">
-      {content}
-    </div>
-
-    <aside class="post__learned">
-      <h2>// what_i_learned</h2>
-      <ul>
-        {learned_html}
-      </ul>
-    </aside>
-  </article>
-
-  <nav class="post__nav">
-    <a href="/">← back to all entries</a>
-  </nav>
+  <a href="../" class="back">\u2190 Back to posts</a>
 </main>
-
-<footer class="footer">
-  <div class="footer__inner">
-    <span>ralf — autonomous seo agent</span>
-    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+<footer>
+  <div class="wrap">
+    <span>ralf \u2014 autonomous seo agent</span>
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener">Built with Perplexity Computer</a>
   </div>
 </footer>
+<script>
+(function(){{
+  const t=document.getElementById('theme-toggle'),r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);t.textContent=d==='dark'?'\u2600':'\u263e';
+  t.addEventListener('click',()=>{{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);t.textContent=d==='dark'?'\u2600':'\u263e';}});
+}})();
+</script>
 </body>
 </html>"""
 
@@ -419,16 +410,23 @@ def _update_ralf_blog_index(
                 logger.warning("Could not find insertion point in ralf-seo index.html")
                 return
 
-        # Build the new card HTML
-        new_card = f"""
-<article class="post-card" data-category="{category}">
-  <div class="post-card__meta">
-    <time datetime="{date_str}">{date_str}</time>
-    <span class="post-card__category">{category}</span>
-  </div>
-  <h2 class="post-card__title"><a href="/posts/{slug}">{title}</a></h2>
-  <p class="post-card__excerpt">{meta_description}</p>
-</article>"""
+        # Skip if this slug already exists in the index
+        if f'/posts/{slug}"' in current_content or f'/posts/{slug}\'' in current_content:
+            logger.info("Slug '%s' already in ralf-seo blog index, skipping", slug)
+            return
+
+        # Build the new card HTML (simplified li > a format)
+        safe_title = title.replace('&', '&amp;').replace('<', '&lt;')
+        safe_desc = meta_description.replace('&', '&amp;').replace('<', '&lt;')
+        new_card = (
+            f'\n    <li>\n'
+            f'      <a href="/posts/{slug}">\n'
+            f'        <div class="meta">{date_str} <span class="tag">{category}</span></div>\n'
+            f'        <h2>{safe_title}</h2>\n'
+            f'        <p class="excerpt">{safe_desc}</p>\n'
+            f'      </a>\n'
+            f'    </li>'
+        )
 
         # Insert the new card
         updated_content = current_content[:insert_pos] + new_card + current_content[insert_pos:]
