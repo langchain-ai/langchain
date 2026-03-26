@@ -80,14 +80,33 @@ def _build_system_prompt(*, tier: str, template: str) -> str:
     """
     template_desc = _TEMPLATE_DESCRIPTIONS.get(template, "")
 
+    # Import outreach strategy for segment-aware emails
+    try:
+        from agents.seo_agent.outreach_strategy import OUTREACH_SEGMENTS, OUTREACH_EMAIL_PROMPT
+        strategy_context = (
+            "\n\nOUTREACH PHILOSOPHY:\n"
+            "- Lead with THEIR benefit, not ours. We are collaborators, not beggars.\n"
+            "- Kitchen/bathroom providers: offer free room planner embed for their customers.\n"
+            "- Bloggers: offer exclusive data, guest post exchange, tool features.\n"
+            "- Influencers: offer free tools for their audience, challenges, cross-promo.\n"
+            "- Resource pages: brief pitch, free tool, no catch.\n"
+            "- Journalists: lead with a story angle and data.\n"
+            "- Sign off as Ben (the owner), not Ralf (the agent).\n"
+        )
+    except ImportError:
+        strategy_context = ""
+
     rules = (
-        "Write a cold outreach email following these rules strictly:\n"
+        "Write a personalised outreach email following these rules strictly:\n"
         "- Address the recipient by their first name if known\n"
         "- Reference a specific page or piece of their content\n"
-        "- Explain the concrete value you are offering\n"
-        "- NEVER use these words: collaboration, synergy, partnership, reach out\n"
+        "- Lead with what's in it for THEM — why linking to us benefits their audience\n"
+        "- Be specific about what we offer in return (free tool, data, cross-promotion)\n"
+        "- NEVER beg for links. Frame it as a collaboration between peers.\n"
         "- Keep the ask low-friction (one click, one reply)\n"
-        "- Write the subject line like internal comms — short, specific, lowercase\n"
+        "- Write the subject line like a human — short, specific, not salesy\n"
+        "- Sign off as 'Ben' not 'Ralf'\n"
+        + strategy_context
     )
 
     if tier == "tier1":

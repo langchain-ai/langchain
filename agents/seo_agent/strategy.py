@@ -171,19 +171,39 @@ def generate_next_steps(
     elif existing_content == 0:
         steps.append(f"We have {existing_keywords} keywords but no content. Create content briefs for the top 5 keywords by opportunity score.")
     elif existing_content < 10:
-        steps.append(f"We have {existing_content} posts. Write 2-3 more targeting our highest-opportunity keywords.")
+        steps.append(f"We have {existing_content} content pieces. Write 2-3 more blog posts targeting our highest-opportunity keywords.")
+    elif existing_content < 30:
+        steps.append(f"{existing_content} posts published. Keep up the pace — target 2 posts/week. Focus on freeroomplanner (highest potential).")
 
     if existing_gaps == 0 and existing_keywords > 0:
         steps.append("Run content gap analysis to find what competitors rank for that we don't.")
 
     if existing_prospects == 0:
-        steps.append("Start backlink prospecting — we need links to build domain authority.")
-    elif existing_prospects > 0:
-        steps.append(f"We have {existing_prospects} prospects. Score them and generate outreach emails for tier 1.")
+        steps.append(
+            "Start backlink prospecting. Priority: kitchen/bathroom providers for room planner embeds "
+            "(partnership approach), then home interior bloggers (content collaboration). "
+            "These give us the most natural, high-value links."
+        )
+    elif existing_prospects > 0 and existing_prospects < 20:
+        steps.append(
+            f"We have {existing_prospects} prospects. Score them, classify by segment "
+            f"(provider/blogger/influencer/resource/PR), then generate tailored outreach emails."
+        )
+    elif existing_prospects >= 20:
+        steps.append(
+            f"{existing_prospects} prospects in pipeline. Check who needs follow-up, "
+            f"generate emails for uncontacted tier-1 prospects, and review any replies."
+        )
+
+    # Always include a strategic reminder
+    if existing_content > 0 and existing_prospects > 0:
+        steps.append(
+            "Track rankings for all sites to measure progress. Compare against "
+            "3-month targets: 5 keywords in top 10, DR 10+ for all sites."
+        )
 
     if not steps:
         steps.append("Review weekly report and compare progress against our 3-month targets.")
-        steps.append("Identify the next batch of keywords to target based on what's working.")
 
     return steps
 
