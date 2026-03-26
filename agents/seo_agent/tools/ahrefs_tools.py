@@ -352,7 +352,7 @@ def get_content_gap(
                 "country": "gb",
                 "select": "keyword,volume,keyword_difficulty,sum_traffic",
                 "limit": 50,
-                "where": "volume>=100",
+                "where": '{"field": "volume", "is": ["gte", 100]}',
             },
         )
         for kw in data.get("keywords", []):
