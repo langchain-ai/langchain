@@ -266,19 +266,28 @@ def _update_blog_index(
             logger.warning("Could not find <article> tag after 'Latest articles'")
             return
 
-        # Build the new card HTML
+        # Skip if this slug already exists in the index (prevent duplicates)
+        if f'/blog/{slug}"' in current_content or f'/blog/{slug}\'' in current_content:
+            logger.info("Slug '%s' already in blog index, skipping update", slug)
+            return
+
+        # Build the new card HTML — hardcoded format matching the blog's card structure
         category_tag = _categorize_post(title)
-        # Detect indentation of the existing <article tag
-        line_start = current_content.rfind("\n", 0, article_pos)
-        indent = current_content[line_start + 1 : article_pos] if line_start != -1 else "    "
+        # HTML-escape the title and description for safe insertion
+        safe_title = title.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        safe_desc = meta_description.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         new_card = (
-            f'{indent}<article class="post-card" itemscope itemtype="https://schema.org/BlogPosting">\n'
-            f"{indent}    <span class=\"post-card__tag\">{category_tag}</span>\n"
-            f"{indent}    <h2 class=\"post-card__title\" itemprop=\"headline\">"
-            f'<a href="/blog/{slug}">{title}</a></h2>\n'
-            f"{indent}    <p class=\"post-card__excerpt\" itemprop=\"description\">"
-            f"{meta_description}</p>\n"
-            f"{indent}</article>\n"
+            f'<article class="post-card fade-in" style="transition-delay:0ms" '
+            f'itemscope itemtype="https://schema.org/BlogPosting">\n'
+            f'  <div class="post-card__body">\n'
+            f'    <div class="post-card__tag" itemprop="keywords">{category_tag}</div>\n'
+            f'    <h2 class="post-card__title" itemprop="headline">'
+            f'<a href="/blog/{slug}">{safe_title}</a></h2>\n'
+            f'    <p class="post-card__excerpt" itemprop="description">'
+            f'{safe_desc}</p>\n'
+            f'    <div class="post-card__meta">5 min read</div>\n'
+            f'  </div>\n'
+            f'</article>'
         )
 
         # Insert the new card before the first existing article
