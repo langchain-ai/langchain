@@ -863,26 +863,50 @@ Return ONLY the JSON, no other text."""
         )
         text = "".join(b.text for b in response.content if b.type == "text")
 
-    # Parse the JSON response
+    # Parse the JSON response — robust extraction with multiple fallbacks
+    data = None
+    # 1. Try direct parse
     try:
-        # Try direct parse
         data = json.loads(text)
     except json.JSONDecodeError:
-        # Try extracting from code block
-        if "```" in text:
-            for block in text.split("```"):
-                block = block.strip()
-                if block.startswith("json"):
-                    block = block[4:].strip()
-                try:
-                    data = json.loads(block)
-                    break
-                except json.JSONDecodeError:
-                    continue
-            else:
-                data = {"title": title, "meta_description": "", "content": text}
-        else:
-            data = {"title": title, "meta_description": "", "content": text}
+        pass
+
+    # 2. Try extracting from markdown code block
+    if data is None and "```" in text:
+        for block in text.split("```"):
+            block = block.strip()
+            if block.startswith("json"):
+                block = block[4:].strip()
+            try:
+                data = json.loads(block)
+                break
+            except json.JSONDecodeError:
+                continue
+
+    # 3. Try regex extraction of content field from partial/truncated JSON
+    if data is None:
+        import re as _re
+        title_m = _re.search(r'"title"\s*:\s*"([^"]+)"', text)
+        meta_m = _re.search(r'"meta_description"\s*:\s*"([^"]+)"', text)
+        content_m = _re.search(r'"content"\s*:\s*"(.+?)"\s*[,}]', text, _re.DOTALL)
+        if content_m:
+            extracted = content_m.group(1).replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\')
+            data = {
+                "title": title_m.group(1) if title_m else title,
+                "meta_description": meta_m.group(1) if meta_m else "",
+                "content": extracted,
+            }
+            logger.info("Extracted blog content via regex fallback (%d chars)", len(extracted))
+
+    # 4. Final fallback — use raw text but strip any JSON/markdown artifacts
+    if data is None:
+        clean = text
+        clean = _re.sub(r'^```json\s*', '', clean)
+        clean = _re.sub(r'```\s*$', '', clean)
+        clean = _re.sub(r'^\{[^}]*"content"\s*:\s*"', '', clean)
+        clean = clean.rstrip('"}` \n')
+        data = {"title": title, "meta_description": "", "content": clean}
+        logger.warning("Blog post JSON parse failed — used raw text fallback")
 
     return {
         "title": data.get("title", title),
