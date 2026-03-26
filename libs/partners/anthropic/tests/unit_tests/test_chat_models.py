@@ -1711,63 +1711,14 @@ def test_cache_control_kwarg() -> None:
 
     messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
     payload = llm._get_request_payload(messages)
+    assert "cache_control" not in payload
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["cache_control"] == {"type": "ephemeral"}
     assert payload["messages"] == [
         {"role": "user", "content": "foo"},
         {"role": "assistant", "content": "bar"},
         {"role": "user", "content": "baz"},
-    ]
-
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-    ]
-    assert isinstance(messages[-1].content, str)  # test no mutation
-
-    messages = [
-        HumanMessage("foo"),
-        AIMessage("bar"),
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux"},
-            ]
-        ),
-    ]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
-            ],
-        },
-    ]
-    assert "cache_control" not in messages[-1].content[-1]  # test no mutation
-
-
-def test_cache_control_kwarg_skips_empty_messages() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)
-
-    messages = [HumanMessage("foo"), AIMessage(content=[])]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-        {"role": "assistant", "content": []},
     ]
 
 

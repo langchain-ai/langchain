@@ -50,7 +50,16 @@ class TestIPValidation:
         """Test cloud metadata IP detection."""
         assert is_cloud_metadata("example.com", "169.254.169.254") is True
         assert is_cloud_metadata("example.com", "169.254.170.2") is True
+        assert is_cloud_metadata("example.com", "169.254.170.23") is True
         assert is_cloud_metadata("example.com", "100.100.100.200") is True
+        assert is_cloud_metadata("example.com", "fd00:ec2::254") is True
+        assert is_cloud_metadata("example.com", "fd00:ec2::23") is True
+        assert is_cloud_metadata("example.com", "fe80::a9fe:a9fe") is True
+
+    def test_is_cloud_metadata_link_local_range(self) -> None:
+        """Test that IPv4 link-local is flagged as cloud metadata."""
+        assert is_cloud_metadata("example.com", "169.254.1.2") is True
+        assert is_cloud_metadata("example.com", "169.254.255.254") is True
 
     def test_is_cloud_metadata_hostnames(self) -> None:
         """Test cloud metadata hostname detection."""
@@ -142,6 +151,16 @@ class TestValidateSafeUrl:
                 "http://169.254.169.254/latest/meta-data/",
                 allow_private=True,
             )
+
+    def test_ipv6_mapped_ipv4_localhost_blocked(self) -> None:
+        """Test that IPv6-mapped IPv4 localhost is blocked."""
+        with pytest.raises(ValueError, match="localhost"):
+            validate_safe_url("http://[::ffff:127.0.0.1]:8080/webhook")
+
+    def test_ipv6_mapped_ipv4_cloud_metadata_blocked(self) -> None:
+        """Test that IPv6-mapped IPv4 cloud metadata is blocked."""
+        with pytest.raises(ValueError, match="metadata"):
+            validate_safe_url("http://[::ffff:169.254.169.254]/latest/meta-data/")
 
     def test_invalid_scheme_blocked(self) -> None:
         """Test that non-HTTP(S) schemes are blocked."""

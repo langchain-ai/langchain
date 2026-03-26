@@ -55,7 +55,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -688,65 +688,6 @@ def _format_messages(
     return system, formatted_messages
 
 
-def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
-    """Collect tool_use IDs that were called by code_execution.
-
-    These blocks cannot have cache_control applied per Anthropic API requirements.
-    """
-    code_execution_tool_ids: set[str] = set()
-
-    for message in formatted_messages:
-        if message.get("role") != "assistant":
-            continue
-        content = message.get("content", [])
-        if not isinstance(content, list):
-            continue
-        for block in content:
-            if not isinstance(block, dict):
-                continue
-            if block.get("type") != "tool_use":
-                continue
-            caller = block.get("caller")
-            if isinstance(caller, dict):
-                caller_type = caller.get("type", "")
-                if caller_type.startswith("code_execution"):
-                    tool_id = block.get("id")
-                    if tool_id:
-                        code_execution_tool_ids.add(tool_id)
-
-    return code_execution_tool_ids
-
-
-def _is_code_execution_related_block(
-    block: dict,
-    code_execution_tool_ids: set[str],
-) -> bool:
-    """Check if a content block is related to code_execution.
-
-    Returns True for blocks that should NOT have cache_control applied.
-    """
-    if not isinstance(block, dict):
-        return False
-
-    block_type = block.get("type")
-
-    # tool_use blocks called by code_execution
-    if block_type == "tool_use":
-        caller = block.get("caller")
-        if isinstance(caller, dict):
-            caller_type = caller.get("type", "")
-            if caller_type.startswith("code_execution"):
-                return True
-
-    # tool_result blocks for code_execution called tools
-    if block_type == "tool_result":
-        tool_use_id = block.get("tool_use_id")
-        if tool_use_id and tool_use_id in code_execution_tool_ids:
-            return True
-
-    return False
-
-
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
 
@@ -1026,18 +967,11 @@ class ChatAnthropic(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model)
-        if (
-            self.profile is not None
-            and self.betas
-            and "context-1m-2025-08-07" in self.betas
-        ):
-            self.profile["max_input_tokens"] = 1_000_000
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        profile = _get_default_model_profile(self.model) or None
+        if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
+            profile["max_input_tokens"] = 1_000_000
+        return profile
 
     @cached_property
     def _client_params(self) -> dict[str, Any]:
@@ -1127,44 +1061,6 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
-        # If cache_control is provided in kwargs, add it to the last eligible message
-        # block (Anthropic requires cache_control to be nested within a message block).
-        # Skip blocks related to code_execution as they cannot have cache_control.
-        cache_control = kwargs.pop("cache_control", None)
-        if cache_control and formatted_messages:
-            # Collect tool IDs called by code_execution
-            code_execution_tool_ids = _collect_code_execution_tool_ids(
-                formatted_messages
-            )
-
-            cache_applied = False
-            for formatted_message in reversed(formatted_messages):
-                if cache_applied:
-                    break
-                content = formatted_message.get("content")
-                if isinstance(content, list) and content:
-                    # Find last eligible block (not code_execution related)
-                    for block in reversed(content):
-                        if isinstance(block, dict):
-                            if _is_code_execution_related_block(
-                                block, code_execution_tool_ids
-                            ):
-                                continue
-                            block["cache_control"] = cache_control
-                            cache_applied = True
-                            break
-                elif isinstance(content, str):
-                    formatted_message["content"] = [
-                        {
-                            "type": "text",
-                            "text": content,
-                            "cache_control": cache_control,
-                        }
-                    ]
-                    cache_applied = True
-            # If we didn't find an eligible block we silently drop the control.
-            # Anthropic would reject a payload with cache_control on
-            # code_execution blocks.
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,

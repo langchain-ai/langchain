@@ -5,8 +5,9 @@ import json
 import re
 import sys
 import tempfile
+import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import httpx
 
@@ -148,6 +149,38 @@ def _apply_overrides(
             if value is not None:
                 merged[key] = value  # noqa: PERF403
     return merged
+
+
+def _warn_undeclared_profile_keys(
+    profiles: dict[str, dict[str, Any]],
+) -> None:
+    """Warn if any profile keys are not declared in `ModelProfile`.
+
+    Args:
+        profiles: Mapping of model IDs to their profile dicts.
+    """
+    try:
+        from langchain_core.language_models.model_profile import ModelProfile
+    except ImportError:
+        # langchain-core may not be installed or importable; skip check.
+        return
+
+    try:
+        declared = set(get_type_hints(ModelProfile).keys())
+    except (TypeError, NameError):
+        # get_type_hints raises NameError on unresolvable forward refs and
+        # TypeError when annotations evaluate to non-type objects.
+        return
+    extra = sorted({k for p in profiles.values() for k in p} - declared)
+    if extra:
+        warnings.warn(
+            f"Profile keys not declared in langchain_core ModelProfile: {extra}. "
+            f"Add these fields to "
+            f"langchain_core.language_models.model_profile.ModelProfile and "
+            f"release langchain-core before publishing partner packages that "
+            f"use these profiles.",
+            stacklevel=2,
+        )
 
 
 def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
@@ -299,6 +332,8 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
         print(f"Adding {len(extra_models)} models from augmentations only...")
     for model_id in sorted(extra_models):
         profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
+
+    _warn_undeclared_profile_keys(profiles)
 
     # Ensure directory exists
     try:

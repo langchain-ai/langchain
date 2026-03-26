@@ -305,12 +305,8 @@ class ChatPerplexity(BaseChatModel):
 
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model) or None
 
     @property
     def _default_params(self) -> dict[str, Any]:
