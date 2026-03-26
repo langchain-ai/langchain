@@ -473,6 +473,8 @@ Actions:
 - track_rankings: {target_site} — snapshot current rankings from Ahrefs
 - learn: {topic} — research a topic online and add to the knowledge base
 - knowledge: {query} — search the knowledge base for specific SEO/AEO info
+- audit: {target_site} — run full SEO audit (scores 0-100 across 8 categories)
+- audit_page: {url} — audit a specific URL
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, all
 
@@ -1075,6 +1077,35 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Track rankings failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Ranking snapshot failed: {str(e)[:200]}")
+                return
+            if action in ("audit", "audit_page"):
+                site = params.get("target_site", "freeroomplanner")
+                url = params.get("url", "")
+                await update.message.reply_text(f"Running SEO audit{' for ' + url if url else ' for ' + site}... this takes a minute.")
+                try:
+                    from agents.seo_agent.tools.seo_audit import audit_site, audit_page, format_audit_report, save_audit
+                    from agents.seo_agent.config import SITE_PROFILES
+
+                    if url:
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(audit_page, url)
+                        )
+                    else:
+                        profile = SITE_PROFILES.get(site, {})
+                        domain = profile.get("domain", site)
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(audit_site, domain)
+                        )
+                        # Save for tracking
+                        save_audit(site, result)
+
+                    report = format_audit_report(result)
+                    for i in range(0, len(report), 4000):
+                        await update.message.reply_text(report[i:i + 4000])
+                    history.append({"role": "assistant", "content": report[:300]})
+                except Exception as e:
+                    logger.error("Audit failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Audit failed: {str(e)[:300]}")
                 return
             if action == "learn":
                 topic = params.get("topic", user_text)
