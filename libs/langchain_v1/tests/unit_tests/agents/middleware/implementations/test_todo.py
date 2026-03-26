@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -805,3 +805,669 @@ async def test_handler_called_with_modified_request_async() -> None:
     assert received_prompt["value"] is not None
     assert "Original" in received_prompt["value"]
     assert "write_todos" in received_prompt["value"]
+
+
+# ==============================================================================
+# keep_only_last_todo_message Tests
+# ==============================================================================
+
+
+def test_keep_only_last_todo_message_disabled_by_default() -> None:
+    """Test that keep_only_last_todo_message is disabled by default."""
+    middleware = TodoListMiddleware()
+    assert middleware.keep_only_last_todo_message is False
+
+
+def test_keep_only_last_todo_message_enabled() -> None:
+    """Test that keep_only_last_todo_message can be enabled."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+    assert middleware.keep_only_last_todo_message is True
+
+
+def test_filter_todo_messages_no_filtering_when_disabled() -> None:
+    """Test that messages are not filtered when keep_only_last_todo_message is False."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=False)
+
+    # Create messages with multiple todo updates
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # All messages should be preserved
+    assert captured_request is not None
+    assert len(captured_request.messages) == 5
+
+
+def test_filter_todo_messages_keeps_only_last_pair() -> None:
+    """Test that only the last write_todos AI/ToolMessage pair is kept."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with multiple todo updates
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Should keep: HumanMessage, last AIMessage with write_todos, last ToolMessage
+    assert captured_request is not None
+    assert len(captured_request.messages) == 3
+    assert isinstance(captured_request.messages[0], HumanMessage)
+    assert isinstance(captured_request.messages[1], AIMessage)
+    assert captured_request.messages[1].tool_calls[0]["id"] == "call_2"
+    assert isinstance(captured_request.messages[2], ToolMessage)
+    assert captured_request.messages[2].tool_call_id == "call_2"
+
+
+def test_filter_todo_messages_preserves_non_todo_messages() -> None:
+    """Test that non-todo messages are preserved during filtering."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with todo updates and other messages
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(content="Regular AI message"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        HumanMessage(content="Task 2"),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+        AIMessage(content="Another regular AI message"),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Should keep: all non-todo messages + last todo pair
+    assert captured_request is not None
+    assert len(captured_request.messages) == 6
+    assert captured_request.messages[0].content == "Task 1"
+    assert captured_request.messages[1].content == "Regular AI message"
+    assert captured_request.messages[2].content == "Task 2"
+    assert captured_request.messages[3].tool_calls[0]["id"] == "call_2"
+    assert captured_request.messages[4].tool_call_id == "call_2"
+    assert captured_request.messages[5].content == "Another regular AI message"
+
+
+def test_filter_todo_messages_with_mixed_tool_calls() -> None:
+    """Test filtering when AI messages have both write_todos and other tool calls."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with mixed tool calls
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(
+            content="Creating todo and calling other tool",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                },
+                {
+                    "name": "other_tool",
+                    "args": {"param": "value"},
+                    "id": "call_other_1",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        ToolMessage(content="Other tool result", tool_call_id="call_other_1"),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # First AI message with mixed tool calls should be removed
+    # Other tool message should be preserved (not a todo message)
+    # Last todo pair should be kept
+    assert captured_request is not None
+    assert len(captured_request.messages) == 4
+    assert isinstance(captured_request.messages[0], HumanMessage)
+    assert isinstance(captured_request.messages[1], ToolMessage)
+    assert captured_request.messages[1].content == "Other tool result"
+    assert isinstance(captured_request.messages[2], AIMessage)
+    assert captured_request.messages[2].tool_calls[0]["id"] == "call_2"
+    assert isinstance(captured_request.messages[3], ToolMessage)
+    assert captured_request.messages[3].tool_call_id == "call_2"
+
+
+def test_filter_todo_messages_no_todo_messages() -> None:
+    """Test filtering when there are no todo messages."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages without any todo updates
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(content="Hi there"),
+        HumanMessage(content="How are you?"),
+        AIMessage(content="I'm doing well"),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # All messages should be preserved
+    assert captured_request is not None
+    assert len(captured_request.messages) == 4
+
+
+def test_filter_todo_messages_single_todo_pair() -> None:
+    """Test filtering when there's only one todo message pair."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with single todo update
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # All messages should be preserved since there's only one todo pair
+    assert captured_request is not None
+    assert len(captured_request.messages) == 3
+
+
+def test_filter_todo_messages_multiple_updates() -> None:
+    """Test filtering with three todo updates (keeps only the last one)."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with three todo updates
+    messages = [
+        HumanMessage(content="Start"),
+        AIMessage(
+            content="First todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        AIMessage(
+            content="Second todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "in_progress"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'in_progress'}]",
+            tool_call_id="call_2",
+        ),
+        AIMessage(
+            content="Third todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_3",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_3",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Should keep only: HumanMessage + last todo pair
+    assert captured_request is not None
+    assert len(captured_request.messages) == 3
+    assert isinstance(captured_request.messages[0], HumanMessage)
+    assert isinstance(captured_request.messages[1], AIMessage)
+    assert captured_request.messages[1].tool_calls[0]["id"] == "call_3"
+    assert isinstance(captured_request.messages[2], ToolMessage)
+    assert captured_request.messages[2].tool_call_id == "call_3"
+
+
+def test_filter_todo_messages_empty_messages_list() -> None:
+    """Test filtering with an empty messages list."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    messages: list[AnyMessage] = []
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Should return empty list
+    assert captured_request is not None
+    assert len(captured_request.messages) == 0
+
+
+async def test_filter_todo_messages_keeps_only_last_pair_async() -> None:
+    """Test async version - only the last write_todos AI/ToolMessage pair is kept."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with multiple todo updates
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    # Should keep: HumanMessage, last AIMessage with write_todos, last ToolMessage
+    assert captured_request is not None
+    assert len(captured_request.messages) == 3
+    assert isinstance(captured_request.messages[0], HumanMessage)
+    assert isinstance(captured_request.messages[1], AIMessage)
+    assert captured_request.messages[1].tool_calls[0]["id"] == "call_2"
+    assert isinstance(captured_request.messages[2], ToolMessage)
+    assert captured_request.messages[2].tool_call_id == "call_2"
+
+
+async def test_filter_todo_messages_preserves_non_todo_messages_async() -> None:
+    """Test async version - non-todo messages are preserved during filtering."""
+    middleware = TodoListMiddleware(keep_only_last_todo_message=True)
+
+    # Create messages with todo updates and other messages
+    messages = [
+        HumanMessage(content="Task 1"),
+        AIMessage(content="Regular AI message"),
+        AIMessage(
+            content="Creating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+            tool_call_id="call_1",
+        ),
+        HumanMessage(content="Task 2"),
+        AIMessage(
+            content="Updating todo",
+            tool_calls=[
+                {
+                    "name": "write_todos",
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "id": "call_2",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage(
+            content="Updated todo list to [{'content': 'Task 1', 'status': 'completed'}]",
+            tool_call_id="call_2",
+        ),
+        AIMessage(content="Another regular AI message"),
+    ]
+
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=messages,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=messages),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    # Should keep: all non-todo messages + last todo pair
+    assert captured_request is not None
+    assert len(captured_request.messages) == 6
+    assert captured_request.messages[0].content == "Task 1"
+    assert captured_request.messages[1].content == "Regular AI message"
+    assert captured_request.messages[2].content == "Task 2"
+    assert captured_request.messages[3].tool_calls[0]["id"] == "call_2"
+    assert captured_request.messages[4].tool_call_id == "call_2"
+    assert captured_request.messages[5].content == "Another regular AI message"
