@@ -242,9 +242,32 @@ async def _execute_heartbeat_inner() -> None:
                 target_site_for_post = blog_sites[0]
             # --- End site rotation ---
 
+            # --- Hard keyword blocklist: topics we've exhausted or shouldn't repeat ---
+            _KEYWORD_BLOCKLIST = {
+                "b&q", "bq", "b&q kitchen", "bq kitchen", "b&q kitchen units",
+                "bq kitchen units", "b and q", "bandq",
+            }
+
+            def _is_blocked(kw_text: str) -> bool:
+                kw_lower = kw_text.lower().strip()
+                for blocked in _KEYWORD_BLOCKLIST:
+                    if blocked in kw_lower:
+                        return True
+                return False
+
             # Find keywords we haven't written about yet
             existing_briefs = query_table("seo_content_briefs", limit=500)
             existing_topics = {b.get("keyword", "").lower() for b in existing_briefs}
+
+            # Also check existing blog file slugs to avoid re-publishing
+            existing_slugs: set[str] = set()
+            try:
+                from agents.seo_agent.tools.github_tools import list_blog_posts, slugify
+                existing_posts = list_blog_posts(target_site_for_post)
+                existing_slugs = {p.get("name", "").replace(".html", "").replace(".mdx", "").replace(".ts", "").lower() for p in existing_posts}
+                logger.info("Existing blog slugs for %s: %d files", target_site_for_post, len(existing_slugs))
+            except Exception:
+                logger.warning("Could not fetch existing blog slugs", exc_info=True)
 
             keywords = query_table(
                 "seo_keyword_opportunities",
@@ -253,7 +276,23 @@ async def _execute_heartbeat_inner() -> None:
                 order_by="volume",
                 order_desc=True,
             )
-            untargeted = [k for k in keywords if k.get("keyword", "").lower() not in existing_topics]
+
+            untargeted = []
+            for k in keywords:
+                kw_text = k.get("keyword", "").lower()
+                # Skip if already in briefs
+                if kw_text in existing_topics:
+                    continue
+                # Skip if blocklisted
+                if _is_blocked(kw_text):
+                    logger.info("Blocked keyword: %s", kw_text)
+                    continue
+                # Skip if a blog with this slug already exists
+                slug = slugify(kw_text) if 'slugify' in dir() else kw_text.replace(' ', '-')
+                if slug in existing_slugs:
+                    logger.info("Slug already exists: %s", slug)
+                    continue
+                untargeted.append(k)
 
             # --- Topic diversity: skip keywords too similar to recent posts ---
             _STOP_WORDS = {
