@@ -1,10 +1,12 @@
 """Fake chat models for testing purposes."""
 
+from __future__ import annotations
+
 import asyncio
 import re
 import time
-from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, cast
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import override
 
@@ -16,6 +18,11 @@ from langchain_core.language_models.chat_models import BaseChatModel, SimpleChat
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableConfig
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.base import LanguageModelInput
+    from langchain_core.runnables import Runnable
+    from langchain_core.tools import BaseTool
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -45,6 +52,17 @@ class FakeMessagesListChatModel(BaseChatModel):
             self.i = 0
         generation = ChatGeneration(message=response)
         return ChatResult(generations=[generation])
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tools to the model."""
+        return self.bind(tools=tools, **kwargs)
 
     @property
     @override
@@ -148,6 +166,17 @@ class FakeListChatModel(SimpleChatModel):
                 message=AIMessageChunk(content=c, chunk_position=chunk_position)
             )
 
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tools to the model."""
+        return self.bind(tools=tools, **kwargs)
+
     @property
     @override
     def _identifying_params(self) -> dict[str, Any]:
@@ -214,6 +243,17 @@ class FakeChatModel(SimpleChatModel):
         message = AIMessage(content=output_str)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tools to the model."""
+        return self.bind(tools=tools, **kwargs)
 
     @property
     def _llm_type(self) -> str:
@@ -366,6 +406,17 @@ class GenericFakeChatModel(BaseChatModel):
                         )
                     yield chunk
 
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tools to the model."""
+        return self.bind(tools=tools, **kwargs)
+
     @property
     def _llm_type(self) -> str:
         return "generic-fake-chat-model"
@@ -390,6 +441,17 @@ class ParrotFakeChatModel(BaseChatModel):
             msg = "messages list cannot be empty."
             raise ValueError(msg)
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tools to the model."""
+        return self.bind(tools=tools, **kwargs)
 
     @property
     def _llm_type(self) -> str:

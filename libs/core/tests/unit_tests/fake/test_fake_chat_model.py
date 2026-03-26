@@ -5,6 +5,8 @@ from itertools import cycle
 from typing import Any, cast
 from uuid import UUID
 
+import pytest
+from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
@@ -14,6 +16,7 @@ from langchain_core.language_models import (
     GenericFakeChatModel,
     ParrotFakeChatModel,
 )
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import (
@@ -253,3 +256,135 @@ def test_fake_messages_list_chat_model_sleep_delay() -> None:
     elapsed = time.time() - start
 
     assert elapsed >= sleep_time
+
+
+# --- Tests for bind_tools and with_structured_output ---
+
+
+class Person(BaseModel):
+    """A person."""
+
+    name: str
+    age: int
+
+
+def _make_fake_model(
+    cls: type,
+) -> (
+    FakeMessagesListChatModel
+    | FakeListChatModel
+    | FakeChatModel
+    | GenericFakeChatModel
+    | ParrotFakeChatModel
+):
+    """Construct a fake model instance for the given class."""
+    if cls is FakeMessagesListChatModel:
+        return FakeMessagesListChatModel(responses=[AIMessage(content="hi")])
+    if cls is FakeListChatModel:
+        return FakeListChatModel(responses=["hi"])
+    if cls is FakeChatModel:
+        return FakeChatModel()
+    if cls is GenericFakeChatModel:
+        return GenericFakeChatModel(messages=iter([AIMessage(content="hi")]))
+    if cls is ParrotFakeChatModel:
+        return ParrotFakeChatModel()
+    msg = f"Unknown fake model class: {cls}"
+    raise ValueError(msg)
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    [
+        FakeMessagesListChatModel,
+        FakeListChatModel,
+        FakeChatModel,
+        GenericFakeChatModel,
+        ParrotFakeChatModel,
+    ],
+)
+def test_fake_chat_model_bind_tools(model_cls: type) -> None:
+    """All fake chat models should support bind_tools without raising."""
+    model = _make_fake_model(model_cls)
+    bound = model.bind_tools([Person])
+    # bind_tools should return a Runnable (RunnableBinding)
+    assert hasattr(bound, "invoke")
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    [
+        FakeMessagesListChatModel,
+        FakeListChatModel,
+        FakeChatModel,
+        GenericFakeChatModel,
+        ParrotFakeChatModel,
+    ],
+)
+def test_fake_chat_model_with_structured_output(model_cls: type) -> None:
+    """All fake chat models should support with_structured_output without raising."""
+    model = _make_fake_model(model_cls)
+    structured = model.with_structured_output(Person)
+    # with_structured_output should return a Runnable chain
+    assert hasattr(structured, "invoke")
+
+
+def test_generic_fake_chat_model_with_structured_output_end_to_end() -> None:
+    """Test that with_structured_output works end-to-end with tool_calls."""
+    response = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "Person",
+                "args": {"name": "Alice", "age": 30},
+                "id": "call_1",
+            }
+        ],
+    )
+    model = GenericFakeChatModel(messages=iter([response]))
+    structured = model.with_structured_output(Person)
+    result = structured.invoke("Who is Alice?")
+    assert isinstance(result, Person)
+    assert result.name == "Alice"
+    assert result.age == 30
+
+
+def test_fake_messages_list_with_structured_output_end_to_end() -> None:
+    """Test that with_structured_output works end-to-end with tool_calls."""
+    response = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "Person",
+                "args": {"name": "Bob", "age": 25},
+                "id": "call_2",
+            }
+        ],
+    )
+    model = FakeMessagesListChatModel(responses=[response])
+    structured = model.with_structured_output(Person)
+    result = structured.invoke("Who is Bob?")
+    assert isinstance(result, Person)
+    assert result.name == "Bob"
+    assert result.age == 25
+
+
+def test_with_structured_output_include_raw() -> None:
+    """Test with_structured_output with include_raw=True."""
+    response = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "Person",
+                "args": {"name": "Charlie", "age": 35},
+                "id": "call_3",
+            }
+        ],
+    )
+    model = GenericFakeChatModel(messages=iter([response]))
+    structured = model.with_structured_output(Person, include_raw=True)
+    result = structured.invoke("Who is Charlie?")
+    assert isinstance(result, dict)
+    assert isinstance(result["parsed"], Person)
+    assert result["parsed"].name == "Charlie"
+    assert result["parsing_error"] is None
+    assert isinstance(result["raw"], AIMessage)
