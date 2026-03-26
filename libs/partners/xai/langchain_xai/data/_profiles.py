@@ -396,9 +396,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
     },
-    "grok-4.20-beta-latest-non-reasoning": {
-        "name": "Grok 4.20 Beta (Non-Reasoning)",
-        "status": "beta",
+    "grok-4.20-0309-non-reasoning": {
+        "name": "Grok 4.20 (Non-Reasoning)",
         "release_date": "2026-03-09",
         "last_updated": "2026-03-09",
         "open_weights": False,
@@ -417,9 +416,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
     },
-    "grok-4.20-beta-latest-reasoning": {
-        "name": "Grok 4.20 Beta (Reasoning)",
-        "status": "beta",
+    "grok-4.20-0309-reasoning": {
+        "name": "Grok 4.20 (Reasoning)",
         "release_date": "2026-03-09",
         "last_updated": "2026-03-09",
         "open_weights": False,
@@ -438,9 +436,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
     },
-    "grok-4.20-multi-agent-beta-latest": {
-        "name": "Grok 4.20 Multi-Agent Beta",
-        "status": "beta",
+    "grok-4.20-multi-agent-0309": {
+        "name": "Grok 4.20 Multi-Agent",
         "release_date": "2026-03-09",
         "last_updated": "2026-03-09",
         "open_weights": False,
@@ -455,7 +452,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
-        "tool_calling": True,
+        "tool_calling": False,
         "attachment": True,
         "temperature": True,
     },

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -18,6 +18,9 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
+
+if TYPE_CHECKING:
+    from langchain_core.language_models import ModelProfile
 
 logger = logging.getLogger(__name__)
 
@@ -701,12 +704,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None and self.deployment_name is not None:
-            self.profile = _get_default_model_profile(self.deployment_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        if self.deployment_name is not None:
+            return _get_default_model_profile(self.deployment_name) or None
+        return None
 
     @property
     def _identifying_params(self) -> dict[str, Any]:
