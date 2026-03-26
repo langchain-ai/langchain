@@ -1324,25 +1324,36 @@ def main() -> None:
 
     app.add_error_handler(error_handler)
 
-    # Schedule autonomous heartbeat (every 6 hours)
+    # Schedule autonomous heartbeat (every N hours)
     heartbeat_hours = int(os.getenv("HEARTBEAT_INTERVAL_HOURS", "6"))
     if heartbeat_hours > 0:
-        from agents.seo_agent.heartbeat import execute_heartbeat
-
         async def _heartbeat_job(context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.info("Running scheduled heartbeat...")
             try:
+                from agents.seo_agent.heartbeat import execute_heartbeat
                 await execute_heartbeat()
             except Exception:
-                logger.error("Heartbeat failed: %s", traceback.format_exc())
+                # NEVER let the heartbeat crash the bot
+                logger.error("Heartbeat failed (non-fatal): %s", traceback.format_exc())
+                try:
+                    import httpx
+                    async with httpx.AsyncClient() as client:
+                        await client.post(
+                            f"https://api.telegram.org/bot{token}/sendMessage",
+                            json={"chat_id": int(os.getenv('TELEGRAM_OWNER_CHAT_ID', '7428463356')),
+                                  "text": f"Heartbeat error (bot still running): {traceback.format_exc()[-300:]}"},
+                            timeout=10,
+                        )
+                except Exception:
+                    pass
 
         app.job_queue.run_repeating(
             _heartbeat_job,
             interval=heartbeat_hours * 3600,
-            first=300,  # First run 5 minutes after startup
+            first=600,  # First run 10 minutes after startup
             name="heartbeat",
         )
-        logger.info("Heartbeat scheduled every %d hours (first run in 5 minutes)", heartbeat_hours)
+        logger.info("Heartbeat scheduled every %d hours (first run in 10 minutes)", heartbeat_hours)
 
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)

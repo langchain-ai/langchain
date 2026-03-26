@@ -76,7 +76,22 @@ def run_task(task_type: str, **kwargs) -> dict:
 
 
 async def execute_heartbeat() -> None:
-    """Run one heartbeat cycle: check state, pick highest priority task, execute, report."""
+    """Run one heartbeat cycle: check state, pick highest priority task, execute, report.
+    
+    This function MUST NOT raise exceptions — all errors are caught and reported.
+    """
+    try:
+        await _execute_heartbeat_inner()
+    except Exception:
+        logger.error("Heartbeat crashed (contained): %s", traceback.format_exc())
+        try:
+            await send_telegram(f"Heartbeat crashed: {traceback.format_exc()[-300:]}")
+        except Exception:
+            pass
+
+
+async def _execute_heartbeat_inner() -> None:
+    """Inner heartbeat logic — may raise exceptions (caught by execute_heartbeat)."""
     from agents.seo_agent.tools.crm_tools import get_dashboard_summary
     from agents.seo_agent.strategy import generate_next_steps
     from agents.seo_agent.config import SITE_PROFILES, MAX_WEEKLY_SPEND_USD
