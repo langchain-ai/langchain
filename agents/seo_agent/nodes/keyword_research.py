@@ -82,16 +82,45 @@ def run_keyword_research(state: SEOAgentState) -> dict[str, Any]:
     opportunities: list[dict[str, Any]] = []
     target_site = state["target_site"]
 
-    profile = SITE_PROFILES.get(target_site)
-    if profile is None:
-        msg = f"No site profile found for '{target_site}'"
-        logger.error(msg)
-        errors.append(msg)
-        return {
-            "keyword_opportunities": [],
-            "errors": errors,
-            "next_node": "END",
-        }
+    # Handle "all" — run for every site profile
+    if target_site == "all":
+        sites_to_run = list(SITE_PROFILES.keys())
+    else:
+        sites_to_run = [target_site]
+
+    for site_key in sites_to_run:
+        profile = SITE_PROFILES.get(site_key)
+        if profile is None:
+            msg = f"No site profile found for '{site_key}'"
+            logger.error(msg)
+            errors.append(msg)
+            continue
+        site_opps = _run_keyword_research_for_site(
+            site_key, profile, state, errors
+        )
+        opportunities.extend(site_opps)
+
+    logger.info(
+        "Keyword research complete: %d opportunities across %s",
+        len(opportunities),
+        sites_to_run,
+    )
+
+    return {
+        "keyword_opportunities": opportunities,
+        "errors": errors,
+        "next_node": "END",
+    }
+
+
+def _run_keyword_research_for_site(
+    target_site: str,
+    profile: dict,
+    state: SEOAgentState,
+    errors: list[str],
+) -> list[dict[str, Any]]:
+    """Run keyword research for a single site profile."""
+    opportunities: list[dict[str, Any]] = []
 
     # Determine seed keywords — use the explicit seed or fall back to profile
     seed_keyword = state.get("seed_keyword")
@@ -182,14 +211,10 @@ def run_keyword_research(state: SEOAgentState) -> dict[str, Any]:
     # Log PAA keywords separately for downstream use
     paa_keywords = [opp for opp in opportunities if opp.get("is_paa")]
     logger.info(
-        "Keyword research complete for %s: %d opportunities (%d PAA)",
+        "Keyword research for %s: %d opportunities (%d PAA)",
         target_site,
         len(opportunities),
         len(paa_keywords),
     )
 
-    return {
-        "keyword_opportunities": opportunities,
-        "errors": errors,
-        "next_node": "END",
-    }
+    return opportunities

@@ -35,65 +35,25 @@ _DECISION_PATTERNS = re.compile(
 
 
 def _classify_funnel_stage(keyword: str) -> str:
-    """Classify a keyword into a marketing funnel stage.
-
-    Uses pattern matching to determine whether the keyword signals
-    awareness, consideration, or decision intent.
-
-    Args:
-        keyword: The keyword string to classify.
-
-    Returns:
-        One of ``"awareness"``, ``"consideration"``, or ``"decision"``.
-    """
+    """Classify a keyword into a marketing funnel stage."""
     if _DECISION_PATTERNS.search(keyword):
         return "decision"
     if _CONSIDERATION_PATTERNS.search(keyword):
         return "consideration"
     if _AWARENESS_PATTERNS.search(keyword):
         return "awareness"
-    # Default to awareness for informational keywords without clear signals
     return "awareness"
 
 
-def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
-    """Identify content gap keywords between the target site and competitors.
-
-    Discovers competing domains via Ahrefs, runs a content gap analysis
-    against the top 5, categorises each keyword by funnel stage, and
-    persists the results to Supabase.
-
-    Args:
-        state: The current SEO agent state.
-
-    Returns:
-        State update with `content_gaps`, `errors`, and `next_node`.
-    """
-    errors: list[str] = list(state.get("errors", []))
+def _run_for_single_site(
+    target_site: str, profile: dict, errors: list[str]
+) -> list[dict[str, Any]]:
+    """Run content gap analysis for a single site."""
     content_gaps: list[dict[str, Any]] = []
-    target_site = state["target_site"]
-
-    profile = SITE_PROFILES.get(target_site)
-    if profile is None:
-        msg = f"No site profile found for '{target_site}'"
-        logger.error(msg)
-        errors.append(msg)
-        return {
-            "content_gaps": [],
-            "errors": errors,
-            "next_node": "END",
-        }
-
     domain = profile.get("domain", "")
     if not domain:
-        msg = f"No domain configured for '{target_site}'"
-        logger.error(msg)
-        errors.append(msg)
-        return {
-            "content_gaps": [],
-            "errors": errors,
-            "next_node": "END",
-        }
+        errors.append(f"No domain configured for '{target_site}'")
+        return content_gaps
 
     # Step 1: Discover competing domains from Ahrefs
     try:
@@ -102,7 +62,6 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
         msg = f"Failed to fetch competing domains for '{domain}'"
         logger.warning(msg, exc_info=True)
         errors.append(msg)
-        # Fall back to competitors listed in the site profile
         competing_domains_raw = [
             {"domain": d} for d in profile.get("competitors", [])
         ]
@@ -114,20 +73,10 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
     ]
 
     if not competitor_domains:
-        msg = f"No competitor domains found for '{target_site}'"
-        logger.warning(msg)
-        errors.append(msg)
-        return {
-            "content_gaps": [],
-            "errors": errors,
-            "next_node": "END",
-        }
+        errors.append(f"No competitor domains found for '{target_site}'")
+        return content_gaps
 
-    logger.info(
-        "Running content gap: %s vs %s",
-        domain,
-        competitor_domains,
-    )
+    logger.info("Running content gap: %s vs %s", domain, competitor_domains)
 
     # Step 2: Run the content gap analysis
     try:
@@ -138,11 +87,7 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
         msg = f"Ahrefs content gap analysis failed for '{domain}'"
         logger.error(msg, exc_info=True)
         errors.append(msg)
-        return {
-            "content_gaps": [],
-            "errors": errors,
-            "next_node": "END",
-        }
+        return content_gaps
 
     # Step 3: Categorise each gap keyword and persist
     for gap in gap_keywords:
@@ -164,7 +109,6 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
         }
         content_gaps.append(gap_record)
 
-        # Save to Supabase
         try:
             supabase_tools.insert_record("seo_content_gaps", gap_record)
         except Exception:
@@ -172,16 +116,43 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
             logger.warning(msg, exc_info=True)
             errors.append(msg)
 
-    # Log summary by funnel stage
+    logger.info(
+        "Content gap for %s: %d gaps found",
+        target_site,
+        len(content_gaps),
+    )
+    return content_gaps
+
+
+def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
+    """Identify content gap keywords between the target site and competitors."""
+    errors: list[str] = list(state.get("errors", []))
+    content_gaps: list[dict[str, Any]] = []
+    target_site = state["target_site"]
+
+    # Handle "all" — run for every site profile
+    if target_site == "all":
+        sites_to_run = list(SITE_PROFILES.keys())
+    else:
+        sites_to_run = [target_site]
+
+    for site_key in sites_to_run:
+        profile = SITE_PROFILES.get(site_key)
+        if profile is None:
+            errors.append(f"No site profile found for '{site_key}'")
+            continue
+        gaps = _run_for_single_site(site_key, profile, errors)
+        content_gaps.extend(gaps)
+
     stage_counts: dict[str, int] = {}
     for gap in content_gaps:
         stage = gap.get("funnel_stage", "unknown")
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
 
     logger.info(
-        "Content gap analysis complete for %s: %d gaps (%s)",
-        target_site,
+        "Content gap complete: %d gaps across %s (%s)",
         len(content_gaps),
+        sites_to_run,
         ", ".join(f"{k}: {v}" for k, v in stage_counts.items()),
     )
 
