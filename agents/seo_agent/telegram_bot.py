@@ -455,6 +455,10 @@ Rules:
    "room planner"), map it to the correct site key.
 8. Default to "kitchensdirectory" if the user doesn't specify a site and the context
    suggests kitchens.
+9. You DO have memory within this conversation — you can reference earlier messages.
+   Results from tasks are also saved to the Supabase database and persist across sessions.
+10. Never say you don't have memory or can't remember things. You have conversation
+    history and a database backend.
 """
 
 

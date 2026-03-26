@@ -108,9 +108,9 @@ def run_content_gap(state: SEOAgentState) -> dict[str, Any]:
         ]
 
     competitor_domains = [
-        entry["domain"]
+        entry.get("competitor_domain") or entry.get("domain", "")
         for entry in competing_domains_raw[:_MAX_COMPETITORS]
-        if entry.get("domain")
+        if entry.get("competitor_domain") or entry.get("domain")
     ]
 
     if not competitor_domains:
