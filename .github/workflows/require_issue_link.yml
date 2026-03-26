@@ -74,30 +74,36 @@ jobs:
               });
             }
 
-            // ── Helper: check if sender is an active org member ─────────────
+            // ── Helper: check if the user who triggered this event (reopened
+            // the PR / removed the label) has write+ access on the repo ───
+            // Uses the repo collaborator permission endpoint instead of the
+            // org membership endpoint. The org endpoint requires the caller
+            // to be an org member, which GITHUB_TOKEN (an app installation
+            // token) never is — so it always returns 403.
             async function senderIsOrgMember() {
               const sender = context.payload.sender?.login;
               if (!sender) {
-                throw new Error('Event has no sender — cannot check org membership');
+                throw new Error('Event has no sender — cannot check permissions');
               }
               try {
-                const { data: membership } = await github.rest.orgs.getMembershipForUser({
-                  org: owner,
-                  username: sender,
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner, repo, username: sender,
                 });
-                if (membership.state === 'active') {
+                const perm = data.permission;
+                if (['admin', 'maintain', 'write'].includes(perm)) {
+                  console.log(`${sender} has ${perm} permission — treating as maintainer`);
                   return { isMember: true, login: sender };
                 }
-                console.log(`${sender} is an org member but state is "${membership.state}"`);
+                console.log(`${sender} has ${perm} permission — not a maintainer`);
                 return { isMember: false, login: sender };
               } catch (e) {
                 if (e.status === 404) {
-                  console.log(`${sender} is not an org member`);
+                  console.log(`Cannot check permissions for ${sender} — treating as non-maintainer`);
                   return { isMember: false, login: sender };
                 }
                 const status = e.status ?? 'unknown';
                 throw new Error(
-                  `Membership check failed for ${sender} (HTTP ${status}): ${e.message}`,
+                  `Permission check failed for ${sender} (HTTP ${status}): ${e.message}`,
                 );
               }
             }
