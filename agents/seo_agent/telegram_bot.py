@@ -413,76 +413,59 @@ async def cmd_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 # Per-user conversation history (last 20 messages)
 _conversation_history: dict[int, deque] = defaultdict(lambda: deque(maxlen=20))
 
-_NL_SYSTEM_PROMPT = """You are Ralf, an SEO assistant bot for a portfolio of three interconnected websites:
+_NL_SYSTEM_PROMPT = """You are Ralf, a proactive SEO agent for three interconnected websites:
 
-1. kitchensdirectory.co.uk — The independent directory of Britain's handmade kitchen makers.
-   159+ verified makers, individually researched (not self-registered). 11 style categories,
-   4 budget tiers (£10k to £55k+). Includes worktop suppliers, cooker brands, inspiration gallery,
-   and buyer FAQs. Monetised via advertising and leads to kitchen companies.
+1. kitchensdirectory.co.uk — Directory of 159+ verified UK handmade kitchen makers. 11 styles, 4 budget tiers. Monetised via ads + leads.
+2. freeroomplanner.com — Free browser floor planner. 30+ furniture items, snap-to-grid, PNG export. No sign-up. Monetised via lead capture.
+3. kitchencostestimator.com — Kitchen cost calculator for UK/US/Canada. 68 cost items, 26 multipliers. Monetised via high-intent leads.
 
-2. freeroomplanner.com — Free browser-based floor planner. Draw walls (snap-to-grid 10cm),
-   30+ furniture items, live measurements, export PNG. No sign-up, no email, no download.
-   Room-specific tools: kitchen, bathroom, bedroom, living room, floor plan maker.
-   Built with React/Canvas. Monetised via lead capture.
+Existing blog posts on freeroomplanner.com:
+- bathroom-planning-mistakes, brief-your-builder, extension-planning,
+  kitchen-layout-guide, open-plan-living, small-bedroom-layouts
 
-3. kitchencostestimator.com — Interactive kitchen renovation cost estimator for UK, US, Canada.
-   Step-by-step wizard with 68 cost items and 26 multipliers from real pricing data.
-   Shows Low/Mid/High ranges with stacked bar chart. Built with Next.js 16, Supabase backend,
-   deployed on Vercel. Monetised via high-intent lead capture.
+All three sites cross-link to each other.
 
-All three sites cross-link: the directory links to the planner and estimator, the planner links
-to the directory and estimator, and the estimator links to the planner and directory.
+YOU ARE AN EXECUTOR, NOT AN ADVISOR. When the user asks you to do something, DO IT immediately.
+Don't explain what you could do — just do it. Don't ask for confirmation unless genuinely ambiguous.
 
-You help the user manage SEO for these sites. You can run the following tasks by
-returning a JSON action block. If the user's message maps to one of these tasks,
-return ONLY a JSON block (no other text) in this exact format:
+ACTION FORMAT: Return ONLY raw JSON (no markdown, no code fences, no explanation):
+{"action": "<type>", "params": {"key": "value"}}
 
-```json
-{"action": "<task_type>", "params": {"target_site": "...", ...}}
-```
+NEVER wrap actions in ```json``` code blocks. NEVER add text before or after the JSON.
+If you need to run an action, your ENTIRE response must be the JSON object and nothing else.
+If you want to chat, respond in plain text with NO JSON.
 
-Available actions and their parameters:
-- keyword_research: {target_site, seed_keyword?} — Find keyword opportunities
-- content_gap: {target_site} — Find content gaps vs competitors
-- content_brief: {target_site, selected_keyword} — Generate a content brief
-- write_content: {target_site, brief_id} — Write content from a brief
-- discover_prospects: {target_site} — Find backlink prospects
-- enrich_prospects: {target_site:"all"} — Enrich prospect data
-- score_prospects: {target_site:"all"} — Score all enriched prospects
-- generate_emails: {target_site:"all"} — Generate outreach emails
-- rank_report: {target_site} — Ranking report
-- weekly_report: {target_site:"all"} — Full weekly SEO report
-- outreach_report: {target_site:"all"} — Outreach summary
-- cost_report: (no params, handled directly)
-- status: (no params, handled directly)
-- web_search: {query} — Search the internet for any information
-- review_site: {url} — Fetch and review a website's content
-- recall: {topic} — Look up past results from the database (keywords, prospects, briefs, etc.)
-- publish_blog: {site, title, keyword} — Write and publish a blog post to a site's GitHub repo
-- list_blogs: {site} — List existing blog posts for a site
+Actions:
+- keyword_research: {target_site, seed_keyword?}
+- content_gap: {target_site}
+- content_brief: {target_site, selected_keyword}
+- discover_prospects: {target_site}
+- score_prospects: {target_site:"all"}
+- generate_emails: {target_site:"all"}
+- rank_report: {target_site}
+- weekly_report: {target_site:"all"}
+- outreach_report: {target_site:"all"}
+- cost_report: (no params)
+- status: (no params)
+- web_search: {query} — search the internet
+- recall: {topic} — query our database for past results
+- list_blogs: {site} — list existing blog posts from GitHub
+- publish_blog: {site, title, keyword} — write and publish a blog post
+- store_content: {site, content_list} — save existing site content to database
 
-Site keys: "kitchensdirectory", "freeroomplanner", "kitchen_estimator", "all"
+Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, all
 
-Rules:
-1. If the user clearly wants to run a task, return the JSON action block ONLY.
-2. If the user asks about costs/spend, return: {"action": "cost_report"}
-3. If the user asks about system status, return: {"action": "status"}
-4. If the user's intent is ambiguous, ask a clarifying question in plain text.
-5. If the user is just chatting, asking questions about SEO strategy, or asking
-   about results you previously shared, respond conversationally in plain text.
-6. Keep responses concise — this is Telegram, not email.
-7. When the user says a site name casually (e.g. "kitchens directory", "the directory",
-   "room planner"), map it to the correct site key.
-8. Default to "kitchensdirectory" if the user doesn't specify a site and the context
-   suggests kitchens.
-9. You DO have memory within this conversation — you can reference earlier messages.
-   Results from tasks are also saved to the Supabase database and persist across sessions.
-10. Never say you don't have memory or can't remember things. You have conversation
-    history and a database backend.
-11. When the user asks about past results, previous analyses, what keywords we found,
-    what prospects we have, etc. — use the "recall" action to query the database.
-12. You can browse the web using "web_search" or "review_site" actions. Never say
-    you can't access websites.
+CRITICAL RULES:
+1. NEVER output JSON inside markdown code blocks. Raw JSON only.
+2. Be proactive. After completing a task, suggest the logical next step.
+   Example: after keyword research, say "Found X keywords. Want me to create content briefs for the top 3?"
+3. When the user says "store" or "save" or "remember" content — that means write it to the database using store_content. Do NOT search the web.
+4. To review OUR OWN sites, use list_blogs (for blog posts) or recall (for database). Do NOT use web_search to look at our own sites — Tavily returns competitor content, not ours.
+5. Keep responses SHORT. This is Telegram. Max 3-4 short paragraphs.
+6. ALWAYS follow through. Never say "give me a sec" or "let me pull that" without actually returning an action. If you need to do something, return the action JSON.
+7. You have full conversation history and a Supabase database. Never say you can't remember or don't have memory.
+8. When mapping site names: "room planner" / "freeroomplanner" = freeroomplanner, "directory" / "kitchens" = kitchensdirectory, "estimator" / "cost" = kitchen_estimator.
+9. Default to freeroomplanner if context is about room/floor planning, kitchensdirectory if about kitchen makers/companies.
 """
 
 
@@ -521,16 +504,21 @@ def _call_openrouter_sync(
 
 
 def _parse_action(text: str) -> dict | None:
-    """Try to extract a JSON action block from the LLM response."""
+    """Try to extract a JSON action block from the LLM response.
+
+    Handles: raw JSON, JSON in code blocks, JSON mixed with text.
+    """
     text = text.strip()
-    # Try direct JSON parse
+
+    # 1. Try direct JSON parse (ideal case)
     try:
         data = json.loads(text)
         if isinstance(data, dict) and "action" in data:
             return data
     except (json.JSONDecodeError, ValueError):
         pass
-    # Try extracting from markdown code block
+
+    # 2. Try extracting from markdown code blocks
     if "```" in text:
         for block in text.split("```"):
             block = block.strip()
@@ -542,6 +530,29 @@ def _parse_action(text: str) -> dict | None:
                     return data
             except (json.JSONDecodeError, ValueError):
                 continue
+
+    # 3. Try finding JSON object anywhere in the text
+    # Find the first { and try parsing from there
+    idx = text.find('{"action"')
+    if idx == -1:
+        idx = text.find("{'action")
+    if idx >= 0:
+        # Find matching closing brace
+        depth = 0
+        for i in range(idx, len(text)):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        data = json.loads(text[idx:i + 1])
+                        if isinstance(data, dict) and "action" in data:
+                            return data
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    break
+
     return None
 
 
@@ -891,6 +902,35 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Recall failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
+                return
+            if action == "store_content":
+                site = params.get("site", "freeroomplanner")
+                await update.message.reply_text(f"Cataloguing existing content for {site}...")
+                try:
+                    from agents.seo_agent.tools.github_tools import list_blog_posts
+                    from agents.seo_agent.tools.supabase_tools import insert_record
+                    posts = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(list_blog_posts, site)
+                    )
+                    stored = 0
+                    for p in posts:
+                        try:
+                            insert_record("seo_content_briefs", {
+                                "keyword": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " "),
+                                "target_site": site,
+                                "title": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " ").title(),
+                                "file_path": p["path"],
+                                "content_type": "existing_published",
+                            })
+                            stored += 1
+                        except Exception:
+                            pass
+                    msg = f"Stored {stored} existing posts for {site} in the database. I'll avoid duplicating these topics in future content."
+                    await update.message.reply_text(msg)
+                    history.append({"role": "assistant", "content": msg})
+                except Exception as e:
+                    logger.error("Store content failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Failed to store content: {str(e)[:200]}")
                 return
             if action == "publish_blog":
                 site = params.get("site", "freeroomplanner")
