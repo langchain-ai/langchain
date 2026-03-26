@@ -83,7 +83,7 @@ def publish_blog_post(
     title: str,
     content: str,
     meta_description: str = "",
-    author: str = "Ralf SEO Agent",
+    author: str = "",
 ) -> dict[str, Any]:
     """Publish a blog post by committing it to the site's GitHub repo.
 
@@ -143,7 +143,7 @@ def publish_blog_post(
         pass
 
     body: dict[str, Any] = {
-        "message": f"blog: {title}\n\nPublished by Ralf SEO Agent",
+        "message": f"blog: {title}",
         "content": encoded_content,
         "branch": branch,
     }
@@ -238,7 +238,7 @@ def _build_html_blog_post(
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{meta_description}">
-<meta name="author" content="Ralf SEO Agent">
+
 <meta name="date" content="{date_str}">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
@@ -271,7 +271,7 @@ def _build_html_blog_post(
     <a href="/">{site_name}</a> &rsaquo; <a href="/blog">Blog</a>
   </header>
   <h1>{title}</h1>
-  <div class="meta">Published {date_str} &middot; by Ralf SEO Agent</div>
+  <div class="meta">Published {date_str}</div>
   <article>
 {content}
   </article>
