@@ -5,74 +5,148 @@ SITE_PROFILES: dict[str, dict] = {
         "domain": "kitchensdirectory.co.uk",
         "gsc_property": "https://www.kitchensdirectory.co.uk",
         "primary_topic": "UK kitchen makers and manufacturers directory",
-        "target_audience": "homeowners looking for kitchen companies in the UK",
+        "description": (
+            "The independent directory of Britain's handmade kitchen makers. "
+            "159+ verified makers listed, individually researched. Covers 11 style "
+            "categories across 4 budget tiers (under £10k to £55k+). Also includes "
+            "worktop suppliers directory, cooker brands (AGA, Rangemaster, Rayburn, Falcon), "
+            "kitchen inspiration gallery, and buyer FAQs. Makers don't self-register — "
+            "every listing meets the same editorial standard."
+        ),
+        "target_audience": (
+            "UK homeowners looking for handmade/bespoke kitchen makers, "
+            "from budget (under £10k) to heritage/ultra-luxury (£55k+)"
+        ),
+        "value_proposition": (
+            "Connects buyers with verified independent makers who lack marketing budgets. "
+            "Handmade kitchens can cost less than equivalent mass-produced ones. "
+            "Transparent pricing by scope of supply."
+        ),
         "content_types": [
             "location_pages",
             "buyer_guides",
             "comparison_articles",
             "listicles",
+            "kitchen_inspiration",
+            "style_guides",
         ],
         "seed_keywords": [
             "kitchen makers UK",
             "kitchen companies near me",
             "bespoke kitchen manufacturers",
             "handmade kitchen companies",
+            "shaker kitchen makers",
+            "kitchen makers Manchester",
+            "kitchen makers London",
         ],
         "geo_focus": "UK",
         "monetisation": "advertising + leads to kitchen companies",
         "competitors": [
-            "houzz.com/uk",
+            "houzz.com",
             "checkatrade.com",
             "trustatrader.com",
             "rated.co.uk",
             "thekitchenspecialist.co.uk",
         ],
+        "cross_links": {
+            "freeroomplanner": "Design Your Kitchen → free room planner CTA",
+            "kitchen_estimator": "How Much Does a Kitchen Cost → cost estimator CTA",
+        },
     },
     "freeroomplanner": {
         "domain": "freeroomplanner.com",
         "gsc_property": "https://www.freeroomplanner.com",
         "primary_topic": "free online room planning tool",
+        "description": (
+            "Free browser-based floor planner for homeowners. Draw walls with snap-to-grid "
+            "(10cm), add 30+ furniture items (drag and resize), live measurements in metres/cm/feet, "
+            "export as PNG. No sign-up, no email, no download required. Room-specific tools: "
+            "kitchen planner, bathroom planner, bedroom planner, living room planner, "
+            "and multi-room floor plan maker. Built with React and Canvas."
+        ),
         "target_audience": (
-            "homeowners planning a kitchen, bathroom or living room renovation"
+            "Homeowners planning a kitchen, bathroom, bedroom, or living room renovation. "
+            "Also used by kitchen makers, bathroom fitters, architects, and contractors "
+            "who receive plans from their clients."
+        ),
+        "value_proposition": (
+            "Completely free — no trial, no credit card, no premium tier. "
+            "Accurate enough to share with professionals (10cm grid snap, real-time measurements). "
+            "No install needed — runs in browser. You arrive with a plan. They arrive prepared."
         ),
         "content_types": [
             "how_to_guides",
             "tool_landing_pages",
+            "room_planning_tutorials",
             "inspiration_articles",
+            "comparison_articles",
         ],
         "seed_keywords": [
             "free room planner",
             "kitchen layout planner",
             "room planning tool online",
             "bathroom planner free",
+            "floor plan maker",
+            "room design tool",
+            "kitchen planner free",
         ],
         "geo_focus": "UK primary, global secondary",
         "monetisation": "lead capture → sell to kitchen/bathroom companies",
         "competitors": [
             "roomsketcher.com",
             "planner5d.com",
-            "ikea.com/gb/en/room-planner",
+            "ikea.com",
             "magicplan.app",
+            "floorplanner.com",
         ],
+        "cross_links": {
+            "kitchensdirectory": "Find a kitchen maker → directory CTA",
+            "kitchen_estimator": "How much will it cost? → estimator CTA",
+        },
     },
     "kitchen_estimator": {
-        "domain": "TBD",
+        "domain": "kitchencostestimator.com",
+        "gsc_property": "https://www.kitchencostestimator.com",
         "primary_topic": "kitchen price estimator and cost guide",
-        "target_audience": "homeowners budgeting for a kitchen renovation",
+        "description": (
+            "Interactive kitchen renovation cost estimator for UK, US, and Canada. "
+            "Step-by-step wizard: country selection (auto-detected by IP), kitchen size and layout "
+            "(with SVG floor plan icons), scope of works checklist, units & finish tier, "
+            "worktop material, per-appliance budget selection, flooring, trade work & extras. "
+            "Shows Low/Mid/High cost range with stacked bar chart and itemised breakdown. "
+            "68 cost items and 26 multipliers from real pricing data. "
+            "Built with Next.js 16, Supabase backend, deployed on Vercel."
+        ),
+        "target_audience": "homeowners budgeting for a kitchen renovation in UK, US, or Canada",
+        "value_proposition": (
+            "Accurate, data-driven kitchen cost estimates in 2 minutes. "
+            "Country-specific pricing, real-time calculation, no sign-up required."
+        ),
         "content_types": [
             "cost_guides",
             "calculator_landing_pages",
             "comparison_articles",
+            "regional_cost_pages",
         ],
         "seed_keywords": [
             "how much does a kitchen cost",
             "kitchen prices UK",
             "fitted kitchen cost",
             "kitchen installation cost",
+            "kitchen renovation cost calculator",
+            "average kitchen cost UK 2026",
         ],
-        "geo_focus": "UK",
+        "geo_focus": "UK primary, US and Canada secondary",
         "monetisation": "high-intent lead capture → premium pricing for leads",
-        "competitors": [],
+        "competitors": [
+            "checkatrade.com",
+            "householdquotes.co.uk",
+            "mybuilder.com",
+        ],
+        "cross_links": {
+            "freeroomplanner": "Plan your layout → free room planner CTA",
+            "kitchensdirectory": "Find a kitchen maker → directory CTA",
+        },
     },
 }
 
