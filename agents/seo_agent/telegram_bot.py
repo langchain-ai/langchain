@@ -452,6 +452,11 @@ Actions:
 - list_blogs: {site} — list existing blog posts from GitHub
 - publish_blog: {site, title, keyword} — write and publish a blog post
 - store_content: {site, content_list} — save existing site content to database
+- dashboard: (no params) — full overview of all data, pipeline, and progress
+- prospect_pipeline: (no params) — show prospect CRM pipeline by stage
+- followups: (no params) — show prospects needing follow-up
+- ranking_movers: {target_site} — show biggest ranking changes (winners/losers)
+- track_rankings: {target_site} — snapshot current rankings from Ahrefs
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, all
 
@@ -470,30 +475,24 @@ CRITICAL RULES:
 
 
 def _build_strategy_context() -> str:
-    """Build a dynamic strategy context string from the database."""
+    """Build a dynamic strategy context from the CRM dashboard."""
     try:
-        from agents.seo_agent.tools.supabase_tools import query_table
+        from agents.seo_agent.tools.crm_tools import get_dashboard_summary
         from agents.seo_agent.strategy import generate_next_steps, get_strategy_summary
 
-        keywords = query_table("seo_keyword_opportunities", limit=1)
-        briefs = query_table("seo_content_briefs", limit=1)
-        prospects = query_table("seo_backlink_prospects", limit=1)
-        gaps = query_table("seo_content_gaps", limit=1)
-
-        # Count totals
-        all_kw = query_table("seo_keyword_opportunities", limit=500)
-        all_briefs = query_table("seo_content_briefs", limit=500)
-        all_prospects = query_table("seo_backlink_prospects", limit=500)
-        all_gaps = query_table("seo_content_gaps", limit=500)
+        dash = get_dashboard_summary()
 
         next_steps = generate_next_steps(
-            existing_keywords=len(all_kw),
-            existing_content=len(all_briefs),
-            existing_prospects=len(all_prospects),
-            existing_gaps=len(all_gaps),
+            existing_keywords=dash["keywords_discovered"],
+            existing_content=dash["content_pieces"],
+            existing_prospects=dash["prospects_total"],
+            existing_gaps=dash["content_gaps"],
         )
 
-        context = f"\n\nCURRENT STATE: {len(all_kw)} keywords, {len(all_briefs)} content pieces, {len(all_gaps)} content gaps, {len(all_prospects)} prospects in database."
+        context = f"\n\nCURRENT STATE: {dash['keywords_discovered']} keywords, {dash['content_pieces']} content, {dash['content_gaps']} gaps, {dash['prospects_total']} prospects, {dash['rankings_tracked']} rankings tracked."
+        if dash.get("prospect_pipeline"):
+            context += f"\nPipeline: {dash['prospect_pipeline']}"
+        context += f"\nWeekly spend: ${dash['weekly_spend']:.4f}"
         context += "\n\nPRIORITISED NEXT STEPS (suggest these proactively):"
         for i, step in enumerate(next_steps, 1):
             context += f"\n{i}. {step}"
@@ -942,6 +941,100 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     logger.error("Recall failed: %s", traceback.format_exc())
                     await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
+                return
+            if action == "dashboard":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_dashboard_summary
+                    dash = await asyncio.get_event_loop().run_in_executor(None, get_dashboard_summary)
+                    lines = ["SEO Dashboard:\n"]
+                    lines.append(f"Keywords: {dash['keywords_discovered']} discovered, {dash['keywords_cached']} cached")
+                    lines.append(f"Content: {dash['content_pieces']} pieces, {dash['content_gaps']} gaps")
+                    lines.append(f"Prospects: {dash['prospects_total']} total")
+                    if dash.get('prospect_pipeline'):
+                        lines.append("Pipeline: " + ", ".join(f"{k}:{v}" for k, v in dash['prospect_pipeline'].items()))
+                    lines.append(f"Rankings tracked: {dash['rankings_tracked']} keywords")
+                    lines.append(f"Weekly spend: ${dash['weekly_spend']:.4f}")
+                    lines.append("\nPer site:")
+                    for site, data in dash.get('sites', {}).items():
+                        lines.append(f"  {site}: {data['keywords']}kw / {data['content']}content / {data['prospects']}prospects")
+                    msg = "\n".join(lines)
+                    await update.message.reply_text(msg)
+                    history.append({"role": "assistant", "content": msg[:300]})
+                except Exception as e:
+                    await update.message.reply_text(f"Dashboard error: {str(e)[:200]}")
+                return
+            if action == "prospect_pipeline":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_prospect_pipeline
+                    pipeline = await asyncio.get_event_loop().run_in_executor(None, get_prospect_pipeline)
+                    lines = ["Prospect Pipeline:\n"]
+                    for stage, prospects_list in pipeline.items():
+                        if prospects_list:
+                            lines.append(f"{stage}: {len(prospects_list)}")
+                            for p in prospects_list[:3]:
+                                lines.append(f"  - {p.get('domain')} (DR:{p.get('dr', '?')})")
+                    if len(lines) == 1:
+                        lines.append("Empty — run discover_prospects first.")
+                    await update.message.reply_text("\n".join(lines))
+                except Exception as e:
+                    await update.message.reply_text(f"Pipeline error: {str(e)[:200]}")
+                return
+            if action == "followups":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_prospects_needing_followup
+                    needs = await asyncio.get_event_loop().run_in_executor(None, get_prospects_needing_followup)
+                    if needs:
+                        lines = [f"{len(needs)} prospects need follow-up:\n"]
+                        for p in needs[:10]:
+                            lines.append(f"- {p.get('domain')} | last contact: {p.get('last_contacted_at', 'N/A')[:10]}")
+                        await update.message.reply_text("\n".join(lines))
+                    else:
+                        await update.message.reply_text("No prospects need follow-up right now.")
+                except Exception as e:
+                    await update.message.reply_text(f"Follow-up check error: {str(e)[:200]}")
+                return
+            if action == "ranking_movers":
+                site = params.get("target_site", "freeroomplanner")
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_ranking_movers
+                    movers = await asyncio.get_event_loop().run_in_executor(None, partial(get_ranking_movers, site))
+                    lines = [f"Ranking movers for {site}:\n"]
+                    if movers.get('winners'):
+                        lines.append("Winners:")
+                        for w in movers['winners'][:5]:
+                            lines.append(f"  +{w.get('change',0)} {w.get('keyword')} (pos {w.get('position')})")
+                    if movers.get('losers'):
+                        lines.append("Losers:")
+                        for l in movers['losers'][:5]:
+                            lines.append(f"  {l.get('change',0)} {l.get('keyword')} (pos {l.get('position')})")
+                    if len(lines) == 1:
+                        lines.append("No ranking data yet — run track_rankings first.")
+                    await update.message.reply_text("\n".join(lines))
+                except Exception as e:
+                    await update.message.reply_text(f"Ranking movers error: {str(e)[:200]}")
+                return
+            if action == "track_rankings":
+                site = params.get("target_site", "freeroomplanner")
+                await update.message.reply_text(f"Snapshotting rankings for {site} from Ahrefs...")
+                try:
+                    from agents.seo_agent.tools.ahrefs_tools import get_organic_keywords
+                    from agents.seo_agent.tools.crm_tools import snapshot_our_rankings
+                    from agents.seo_agent.config import SITE_PROFILES
+                    profile = SITE_PROFILES.get(site, {})
+                    domain = profile.get("domain", "")
+                    if domain:
+                        rankings = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(get_organic_keywords.invoke, domain)
+                        )
+                        saved = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(snapshot_our_rankings, site, rankings)
+                        )
+                        await update.message.reply_text(f"Saved {saved} ranking positions for {site}. Use 'ranking movers' to see changes over time.")
+                    else:
+                        await update.message.reply_text(f"No domain configured for {site}.")
+                except Exception as e:
+                    logger.error("Track rankings failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Ranking snapshot failed: {str(e)[:200]}")
                 return
             if action == "store_content":
                 site = params.get("site", "freeroomplanner")
