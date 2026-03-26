@@ -173,6 +173,12 @@ class AhrefsClient:
             timeout=30.0,
         )
 
+    @staticmethod
+    def _today() -> str:
+        """Return today's date as ISO string for Ahrefs date params."""
+        from datetime import date as _date
+        return _date.today().isoformat()
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -309,11 +315,13 @@ def get_competing_domains(target: str) -> list[dict[str, Any]]:
         "/site-explorer/organic-competitors",
         {
             "target": target,
-            "select": "domain,common_keywords,organic_traffic",
+            "date": client._today(),
+            "country": "gb",
+            "select": "competitor_domain,keywords_common,traffic,domain_rating",
             "limit": 20,
         },
     )
-    return data.get("organic_competitors", [])
+    return data.get("competitors", [])
 
 
 @tool
@@ -340,12 +348,14 @@ def get_content_gap(
             "/site-explorer/organic-keywords",
             {
                 "target": comp,
-                "select": "keyword,volume,difficulty,position,traffic",
+                "date": client._today(),
+                "country": "gb",
+                "select": "keyword,volume,keyword_difficulty,sum_traffic",
                 "limit": 50,
-                "where": f"position<=10 AND volume>=100",
+                "where": "volume>=100",
             },
         )
-        for kw in data.get("organic_keywords", []):
+        for kw in data.get("keywords", []):
             kw["competitor_source"] = comp
             all_keywords.append(kw)
     return all_keywords
@@ -449,11 +459,12 @@ def get_organic_keywords(
         {
             "target": target,
             "country": country,
-            "select": "keyword,position,volume,traffic,difficulty,url",
+            "date": client._today(),
+            "select": "keyword,volume,keyword_difficulty,sum_traffic",
             "limit": limit,
         },
     )
-    return data.get("organic_keywords", [])
+    return data.get("keywords", [])
 
 
 @tool
@@ -476,7 +487,8 @@ def get_pages_by_traffic(
         "/site-explorer/top-pages",
         {
             "target": target,
-            "select": "url,traffic,keywords,position",
+            "date": client._today(),
+            "select": "url,sum_traffic,keywords,top_keyword",
             "limit": limit,
         },
     )
