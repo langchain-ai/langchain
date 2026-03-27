@@ -1,0 +1,89 @@
+# Oris
+
+[Oris](https://useoris.xyz) provides AI agent payment infrastructure. It gives agents a verified
+financial identity (KYA), a non-custodial ERC-4337 wallet, and programmable spending policies
+enforced on every transaction before execution.
+
+## Overview
+
+`langchain-oris` exposes four LangChain tools and an `OrisToolkit` for one-line setup. Every
+payment call goes through KYA identity verification, Redis-cached policy evaluation, and
+real-time OFAC/EU/UN sanctions screening before on-chain execution. The full pipeline completes
+in under 150 milliseconds.
+
+| Class | Package | Serializable | JS support | Package latest |
+|---|---|---|---|---|
+| [OrisToolkit](https://docs.useoris.xyz/langchain) | [langchain-oris](https://pypi.org/project/langchain-oris/) | — | ❌ | ![PyPI](https://img.shields.io/pypi/v/langchain-oris) |
+
+## Setup
+
+Install the package:
+
+```bash
+pip install langchain-oris
+```
+
+Get an API key at [useoris.xyz](https://useoris.xyz), then set credentials:
+
+```bash
+export ORIS_API_KEY="oris_sk_live_..."
+export ORIS_API_SECRET="your_api_secret"
+export ORIS_AGENT_ID="your_agent_uuid"
+```
+
+## Instantiation
+
+```python
+import os
+from oris_langchain import OrisToolkit
+
+toolkit = OrisToolkit(
+    api_key=os.environ["ORIS_API_KEY"],
+    api_secret=os.environ["ORIS_API_SECRET"],
+    agent_id=os.environ["ORIS_AGENT_ID"],
+)
+
+tools = toolkit.get_tools()
+```
+
+Available tools:
+
+| Tool name | Description |
+|---|---|
+| `oris_pay` | Execute a compliant stablecoin payment |
+| `oris_check_balance` | Retrieve wallet balances |
+| `oris_get_spending` | Get payment and spending history |
+| `oris_get_tier_info` | Get KYA compliance tier and limits |
+
+## Use within an agent
+
+```python
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+
+llm = ChatOpenAI(model="gpt-4o")
+agent = create_react_agent(llm, tools)
+
+result = agent.invoke({
+    "messages": [
+        ("user", "Pay 10 USDC to 0xRecipient... for the API subscription.")
+    ]
+})
+print(result["messages"][-1].content)
+```
+
+## Payment pipeline
+
+Each `oris_pay` call passes through four sequential stages before touching the blockchain:
+
+1. **KYA identity check** — verifies the agent is registered (p95 &lt; 5ms)
+2. **Policy evaluation** — checks per-transaction limits and daily caps (p95 &lt; 10ms)
+3. **Sanctions screening** — OFAC, EU, and UN consolidated lists (p95 &lt; 100ms)
+4. **On-chain execution** — ERC-4337 UserOp on Base, Polygon, Arbitrum, and more
+
+If any stage fails or is unreachable, the transaction is blocked and the tool returns a
+structured error string.
+
+## API reference
+
+Full API reference: [docs.useoris.xyz](https://docs.useoris.xyz)
