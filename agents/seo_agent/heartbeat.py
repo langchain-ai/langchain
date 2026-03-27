@@ -147,47 +147,9 @@ async def _execute_heartbeat_inner() -> None:
                     report_lines.append(f"{site}: keyword research failed — {str(e)[:100]}")
             task_executed = True
 
-        # Priority 2: Keywords but no content → create content briefs + write posts
-        elif content_count < 5 and kw_count > 0:
-            # Pick the site with the most keywords
-            site_kw = {s: d["keywords"] for s, d in dash["sites"].items()}
-            best_site = max(site_kw, key=site_kw.get) if any(site_kw.values()) else "freeroomplanner"
-
-            await send_telegram(f"Writing a blog post for {best_site} targeting our best keyword...")
-
-            try:
-                from agents.seo_agent.tools.supabase_tools import query_table
-                keywords = query_table(
-                    "seo_keyword_opportunities",
-                    filters={"target_site": best_site},
-                    limit=5,
-                    order_by="volume",
-                    order_desc=True,
-                )
-                if keywords:
-                    top_kw = keywords[0]
-                    kw_text = top_kw.get("keyword", "room planner guide")
-
-                    # Generate and publish a blog post
-                    from agents.seo_agent.telegram_bot import _generate_blog_post
-                    from agents.seo_agent.tools.github_tools import publish_blog_post
-
-                    blog = _generate_blog_post(best_site, kw_text, kw_text)
-                    result = publish_blog_post(
-                        site=best_site,
-                        title=blog["title"],
-                        content=blog["content"],
-                        meta_description=blog["meta_description"],
-                    )
-                    report_lines.append(
-                        f"Published: {blog['title']}\n"
-                        f"URL: {result.get('published_url', 'N/A')}"
-                    )
-                else:
-                    report_lines.append(f"No keywords found for {best_site} to write about.")
-            except Exception as e:
-                report_lines.append(f"Content creation failed: {str(e)[:150]}")
-            task_executed = True
+        # Priority 2: Keywords but no content → falls through to Priority 5
+        # (Removed: this was a duplicate blog-writing path without blocklist/diversity checks.
+        #  Priority 5 handles all blog writing with proper guards.)
 
         # Priority 3: No content gaps → run gap analysis
         elif gaps_count == 0 and kw_count > 0:
