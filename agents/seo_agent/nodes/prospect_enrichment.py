@@ -219,8 +219,24 @@ def run_prospect_enrichment(state: SEOAgentState) -> dict[str, Any]:
             enrichment["contact_email"] = ""
             enrichment["author_name"] = ""
 
-        # Use existing DR and traffic from Ahrefs data if already present
-        enrichment["dr"] = prospect.get("dr", 0)
+        # Fetch DR from Ahrefs if not already known
+        existing_dr = prospect.get("dr", 0)
+        if not existing_dr or existing_dr == 0:
+            try:
+                from agents.seo_agent.tools.ahrefs_tools import get_domain_rating
+                dr_data = get_domain_rating(prospect.get("domain", ""))
+                if isinstance(dr_data, dict):
+                    enrichment["dr"] = dr_data.get("domain_rating", 0)
+                elif isinstance(dr_data, (int, float)):
+                    enrichment["dr"] = dr_data
+                else:
+                    enrichment["dr"] = 0
+                logger.info("Fetched DR for %s: %s", prospect.get("domain"), enrichment["dr"])
+            except Exception:
+                logger.warning("Failed to fetch DR for %s", prospect.get("domain"), exc_info=True)
+                enrichment["dr"] = 0
+        else:
+            enrichment["dr"] = existing_dr
         enrichment["monthly_traffic"] = prospect.get("monthly_traffic", 0)
 
         # Check if the prospect links to competitors (preserve existing data)
