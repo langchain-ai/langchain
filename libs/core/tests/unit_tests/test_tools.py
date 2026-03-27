@@ -60,6 +60,7 @@ from langchain_core.tools.base import (
     _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -3653,3 +3654,93 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+class TestCreateSchemaFromFunctionInjectedFiltering:
+    """Regression tests for issue #35831.
+
+    Verifies that create_schema_from_function correctly excludes
+    injected args when both filter_args and include_injected=False
+    are provided.
+    """
+
+    @staticmethod
+    def _sample_fn(
+        query: str,
+        secret: Annotated[str, InjectedToolArg],
+    ) -> str:
+        """A test tool with an injected argument."""
+        return query
+
+    def test_filter_args_with_include_injected_false(self) -> None:
+        """Injected args should be excluded even when filter_args is provided."""
+        schema = create_schema_from_function(
+            "MyTool",
+            self._sample_fn,
+            filter_args=["query"],
+            include_injected=False,
+        )
+        schema_props = schema.model_json_schema().get("properties", {})
+        assert "secret" not in schema_props, (
+            "Injected arg 'secret' should be excluded when "
+            "include_injected=False and filter_args is provided"
+        )
+
+    def test_include_injected_false_without_filter_args(self) -> None:
+        """Injected args should be excluded when no filter_args is given."""
+        schema = create_schema_from_function(
+            "MyTool",
+            self._sample_fn,
+            include_injected=False,
+        )
+        schema_props = schema.model_json_schema().get("properties", {})
+        assert "secret" not in schema_props
+        assert "query" in schema_props
+
+    def test_include_injected_true_preserves_injected_args(self) -> None:
+        """With include_injected=True (default), injected args remain."""
+        schema = create_schema_from_function(
+            "MyTool",
+            self._sample_fn,
+            include_injected=True,
+        )
+        schema_props = schema.model_json_schema().get("properties", {})
+        assert "secret" in schema_props
+        assert "query" in schema_props
+
+    def test_filter_args_list_not_mutated(self) -> None:
+        """Caller's filter_args list must not be modified."""
+        original_filter = ["query"]
+        filter_copy = list(original_filter)
+        create_schema_from_function(
+            "MyTool",
+            self._sample_fn,
+            filter_args=original_filter,
+            include_injected=False,
+        )
+        assert original_filter == filter_copy, (
+            "The caller's filter_args list was mutated"
+        )
+
+    def test_filter_args_with_include_injected_false_multiple_injected(
+        self,
+    ) -> None:
+        """Multiple injected args should all be excluded."""
+
+        def multi_injected_fn(
+            query: str,
+            secret: Annotated[str, InjectedToolArg],
+            token: Annotated[str, InjectedToolArg],
+        ) -> str:
+            """Tool with two injected args."""
+            return query
+
+        schema = create_schema_from_function(
+            "MyTool",
+            multi_injected_fn,
+            filter_args=["query"],
+            include_injected=False,
+        )
+        schema_props = schema.model_json_schema().get("properties", {})
+        assert "secret" not in schema_props
+        assert "token" not in schema_props
