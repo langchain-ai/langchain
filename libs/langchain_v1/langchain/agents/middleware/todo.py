@@ -46,7 +46,7 @@ class PlanningState(AgentState[ResponseT]):
 class WriteTodosInput(BaseModel):
     """Input schema for the `write_todos` tool."""
 
-    todos: list[Todo] = Field(description="Updated todo items for the current work session.")
+    todos: list[Todo]
 
 
 WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
