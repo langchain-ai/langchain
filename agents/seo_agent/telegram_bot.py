@@ -484,6 +484,9 @@ Actions:
 - crm_search: {query} — search the CRM for contacts by name, company, city, or category
 - crm_followups: (no params) — show CRM contacts needing follow-up
 - import_makers: {city?} — import kitchen makers from the directory into the CRM
+- scrape_companies: {country, category?} — use Firecrawl to find and extract kitchen/bathroom companies (country: UK, US, or CA)
+- scrape_all: (no params) — run full scrape across all countries
+- scrape_status: (no params) — show CRM contact counts by country and category
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, ralf_seo, all
 
@@ -1468,6 +1471,88 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 except Exception as e:
                     await update.message.reply_text(f"Failed to list posts: {str(e)[:200]}")
                 return
+            if action == "scrape_companies":
+                country = params.get("country", "UK").upper()
+                category = params.get("category", "kitchen_company")
+                await update.message.reply_text(f"Starting Firecrawl scraper for {category} in {country}... this may take a few minutes.")
+                try:
+                    from agents.seo_agent.tools.firecrawl_scraper import run_scraper
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(run_scraper, country=country, category=category, max_queries=10)
+                    )
+                    lines = [
+                        f"Scraping complete for {category} in {country}:\n",
+                        f"Queries run: {result.get('queries_run', 0)}",
+                        f"Company URLs found: {result.get('urls_found', 0)}",
+                        f"Data extracted: {result.get('extracted', 0)}",
+                        f"Added to CRM: {result.get('added_to_crm', 0)}",
+                        f"Skipped (duplicates/invalid): {result.get('skipped', 0)}",
+                    ]
+                    if result.get("error"):
+                        lines.append(f"\nError: {result['error']}")
+                    await update.message.reply_text("\n".join(lines))
+                    history.append({"role": "assistant", "content": f"Scraped {result.get('added_to_crm', 0)} {category} companies in {country}"})
+                except Exception as e:
+                    logger.error("Scraper failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Scraper failed: {str(e)[:300]}")
+                return
+
+            if action == "scrape_all":
+                await update.message.reply_text("Starting full scrape across UK, US, and CA for kitchen + bathroom companies... this will take a while.")
+                try:
+                    from agents.seo_agent.tools.firecrawl_scraper import run_full_scrape
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(run_full_scrape, max_queries_per_country=5)
+                    )
+                    total = result.get("total_added", 0)
+                    lines = [f"Full scrape complete — {total} companies added to CRM:\n"]
+                    for key, data in result.items():
+                        if key == "total_added":
+                            continue
+                        if isinstance(data, dict):
+                            added = data.get("added_to_crm", 0)
+                            found = data.get("urls_found", 0)
+                            lines.append(f"  {key}: {added} added (from {found} found)")
+                    await update.message.reply_text("\n".join(lines))
+                    history.append({"role": "assistant", "content": f"Full scrape: {total} companies added"})
+                except Exception as e:
+                    logger.error("Full scrape failed: %s", traceback.format_exc())
+                    await update.message.reply_text(f"Full scrape failed: {str(e)[:300]}")
+                return
+
+            if action == "scrape_status":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_crm_contacts
+                    contacts = get_crm_contacts(limit=5000)
+                    by_country: dict[str, int] = {}
+                    by_category: dict[str, int] = {}
+                    by_source: dict[str, int] = {}
+                    for c in contacts:
+                        ctry = c.get("country", "?")
+                        by_country[ctry] = by_country.get(ctry, 0) + 1
+                        cat = c.get("category", "?")
+                        by_category[cat] = by_category.get(cat, 0) + 1
+                        src = c.get("source", "?")
+                        by_source[src] = by_source.get(src, 0) + 1
+
+                    lines = [f"CRM: {len(contacts)} total contacts\n"]
+                    if by_country:
+                        lines.append("By country:")
+                        for k, v in sorted(by_country.items(), key=lambda x: -x[1]):
+                            lines.append(f"  {k}: {v}")
+                    if by_category:
+                        lines.append("\nBy category:")
+                        for k, v in sorted(by_category.items(), key=lambda x: -x[1]):
+                            lines.append(f"  {k}: {v}")
+                    if by_source:
+                        lines.append("\nBy source:")
+                        for k, v in sorted(by_source.items(), key=lambda x: -x[1]):
+                            lines.append(f"  {k}: {v}")
+                    await update.message.reply_text("\n".join(lines))
+                except Exception as e:
+                    await update.message.reply_text(f"Status check failed: {str(e)[:200]}")
+                return
+
             if action in ("web_search", "review_site"):
                 query = params.get("query") or params.get("url") or user_text
                 await update.message.reply_text(f"Searching: {query}...")

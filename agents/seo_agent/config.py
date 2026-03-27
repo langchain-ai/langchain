@@ -183,6 +183,8 @@ TOKEN_BUDGETS: dict[str, int] = {
 # Weekly LLM spend cap in USD — agent downgrades models at 80% of this
 MAX_WEEKLY_SPEND_USD: float = 50.00
 
+# Firecrawl scraper — FIRECRAWL_API_KEY must be set in the environment (Railway)
+
 # ---------------------------------------------------------------------------
 # Outreach safety limits — hardcoded, NOT configurable via env vars
 # ---------------------------------------------------------------------------
