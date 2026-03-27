@@ -13,6 +13,8 @@ name: Require Issue Link
 
 on:
   pull_request_target:
+    # NEVER CHECK OUT UNTRUSTED CODE FROM A PR's HEAD IN A pull_request_target JOB.
+    # Doing so would allow attackers to execute arbitrary code in the context of your repository.
     types: [edited, reopened, labeled, unlabeled]
 
 # ──────────────────────────────────────────────────────────────────────────────
