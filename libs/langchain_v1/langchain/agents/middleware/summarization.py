@@ -141,7 +141,7 @@ Example:
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
-    if model._llm_type == "anthropic-chat":  # noqa: SLF001
+    if model._llm_type.startswith("anthropic-chat"):  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
         return partial(
@@ -284,7 +284,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 "Model profile information is required to use fractional token limits, "
                 "and is unavailable for the specified model. Please use absolute token "
                 "counts instead, or pass "
-                '`\n\nChatModel(..., profile={"max_input_tokens": ...})`.\n\n'
+                '`\n\nChatModel(..., profile={"max_input_tokens": ...})`.\'\n\n'
                 "with a desired integer value of the model's maximum input tokens."
             )
             raise ValueError(msg)
