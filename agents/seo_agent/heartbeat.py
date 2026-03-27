@@ -122,6 +122,19 @@ async def _execute_heartbeat_inner() -> None:
 
     kw_count = dash["keywords_discovered"]
     content_count = dash["content_pieces"]
+
+    # Count actual published blog files (not just briefs)
+    try:
+        from agents.seo_agent.tools.github_tools import list_blog_posts
+        actual_post_count = 0
+        for site_key in active_sites:
+            posts = list_blog_posts(site_key)
+            actual_post_count += len(posts)
+        content_count = max(content_count, actual_post_count)
+        logger.info("Actual blog post count: %d (briefs: %d)", actual_post_count, dash["content_pieces"])
+    except Exception:
+        logger.warning("Could not count actual blog posts", exc_info=True)
+
     prospects_count = dash["prospects_total"]
     gaps_count = dash["content_gaps"]
 
@@ -391,6 +404,16 @@ async def _execute_heartbeat_inner() -> None:
     except Exception as e:
         logger.error("Heartbeat task failed: %s", traceback.format_exc())
         report_lines.append(f"Error: {str(e)[:200]}")
+
+    # --- Always: start prospecting if pipeline is empty ---
+    if prospects_count == 0 and kw_count > 5:
+        try:
+            await send_telegram("Also starting backlink prospecting — our pipeline is empty...")
+            result = run_task("discover_prospects", target_site="freeroomplanner")
+            prospects = result.get("backlink_prospects", [])
+            report_lines.append(f"Prospecting: found {len(prospects)} backlink prospects")
+        except Exception as e:
+            report_lines.append(f"Prospecting failed: {str(e)[:100]}")
 
     # Always check ranking changes at the end of each heartbeat
     try:
