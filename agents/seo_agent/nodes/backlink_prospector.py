@@ -1,9 +1,9 @@
 """Backlink prospector node — discovers link-building opportunities.
 
-Runs seven discovery methods (competitor backlink mining, content explorer,
-unlinked mentions, resource pages, broken links, HARO requests, and niche
-blog search via Tavily) and persists all prospects to Supabase with a
-``discovery_method`` tag.
+Runs eight discovery methods (competitor backlink mining, content explorer,
+unlinked mentions, resource pages, broken links, HARO requests, blogger
+discovery via web search, and company/provider discovery) and persists all
+prospects to Supabase with ``discovery_method`` and ``segment`` tags.
 """
 
 from __future__ import annotations
@@ -287,11 +287,11 @@ def _search_haro() -> list[dict[str, Any]]:
     return prospects
 
 
-def _search_niche_blogs(target_site: str) -> list[dict[str, Any]]:
-    """Search for niche blogs relevant to our sites using web search.
+def _discover_bloggers(target_site: str) -> list[dict[str, Any]]:
+    """Discover home interior and renovation bloggers via web search.
 
-    Uses Tavily (cheap) to discover blogs, then fetches DR from Ahrefs
-    only for promising domains.
+    Targets bloggers for content collaboration — guest posts, tool features,
+    cost data sharing. NOT for companies (those use _discover_companies).
     """
     profile = SITE_PROFILES.get(target_site, {})
 
@@ -330,9 +330,10 @@ def _search_niche_blogs(target_site: str) -> list[dict[str, Any]]:
                     "dr": 0,  # Will be fetched during enrichment
                     "monthly_traffic": 0,
                     "discovery_method": "niche_blog_search",
+                    "segment": "blogger",
                 })
     except Exception:
-        logger.warning("Niche blog search failed", exc_info=True)
+        logger.warning("Blogger discovery search failed", exc_info=True)
 
     # Fetch DR for the top prospects (limit Ahrefs calls)
     from agents.seo_agent.tools.ahrefs_tools import get_domain_rating
@@ -346,17 +347,78 @@ def _search_niche_blogs(target_site: str) -> list[dict[str, Any]]:
         except Exception:
             pass  # DR stays at 0, will be retried during enrichment
 
-    logger.info("Niche blog search found %d prospects", len(prospects))
+    logger.info("Blogger discovery found %d prospects", len(prospects))
+    return prospects
+
+
+def _discover_companies(target_site: str) -> list[dict[str, Any]]:
+    """Discover kitchen and bathroom companies for embed partnerships.
+
+    Targets companies that would benefit from embedding a room planner link
+    on their website. Different approach from bloggers — we're offering them
+    a free tool for their customers, not asking for editorial links.
+    """
+    profile = SITE_PROFILES.get(target_site, {})
+    domain = profile.get("domain", "")
+
+    queries = [
+        "kitchen showroom UK website",
+        "fitted kitchen company UK",
+        "bathroom fitters UK website",
+        "kitchen design company UK",
+        "bespoke kitchen makers UK website",
+        "bathroom renovation company UK",
+        "kitchen installation company UK",
+    ]
+
+    prospects: list[dict[str, Any]] = []
+    seen_domains: set[str] = set()
+
+    try:
+        from agents.seo_agent.tools.web_search_tools import search
+        for query in queries[:5]:
+            results = search(query, max_results=5)
+            for r in results:
+                result_domain = _extract_domain(r.get("url", ""))
+                if result_domain in seen_domains:
+                    continue
+                if result_domain == domain or _is_link_farm(result_domain):
+                    continue
+                # Skip major retailers and directories (we want independent companies)
+                skip_domains = {
+                    "bq.co.uk", "diy.com", "ikea.com", "wickes.co.uk",
+                    "howdens.com", "magnet.co.uk", "wren.co.uk",
+                    "checkatrade.com", "mybuilder.com", "trustatrader.com",
+                    "yell.com", "google.com", "facebook.com", "instagram.com",
+                    "pinterest.com", "houzz.co.uk", "bark.com",
+                }
+                if any(result_domain.endswith(d) for d in skip_domains):
+                    continue
+                seen_domains.add(result_domain)
+
+                prospects.append({
+                    "domain": result_domain,
+                    "page_url": r.get("url", ""),
+                    "page_title": r.get("title", ""),
+                    "dr": 0,
+                    "monthly_traffic": 0,
+                    "discovery_method": "company_search",
+                    "segment": "provider",
+                })
+    except Exception:
+        logger.warning("Company search failed", exc_info=True)
+
+    logger.info("Company search found %d prospects", len(prospects))
     return prospects
 
 
 def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
-    """Discover backlink prospects using seven complementary methods.
+    """Discover backlink prospects using eight complementary methods.
 
     Runs competitor backlink mining, content explorer, unlinked mentions,
-    resource pages, broken links, HARO searches, and niche blog search.
-    Deduplicates results, filters link farms, and saves all prospects to
-    Supabase.
+    resource pages, broken links, HARO searches, blogger discovery, and
+    company/provider discovery. Deduplicates results, filters link farms,
+    and saves all prospects to Supabase.
 
     Args:
         state: The current SEO agent state.
@@ -387,7 +449,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
     all_prospects: list[dict[str, Any]] = []
 
     # 1. Competitor Backlink Mining
-    logger.info("Step 1/7: Mining competitor backlinks for %s", target_site)
+    logger.info("Step 1/8: Mining competitor backlinks for %s", target_site)
     try:
         competitor_prospects = _mine_competitor_backlinks(competitors)
         all_prospects.extend(competitor_prospects)
@@ -398,7 +460,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         errors.append(msg)
 
     # 2. Content Explorer
-    logger.info("Step 2/7: Searching content explorer for %s", target_site)
+    logger.info("Step 2/8: Searching content explorer for %s", target_site)
     try:
         content_prospects = _explore_content(target_site)
         all_prospects.extend(content_prospects)
@@ -409,7 +471,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         errors.append(msg)
 
     # 3. Unlinked Mentions
-    logger.info("Step 3/7: Finding unlinked mentions for %s", domain)
+    logger.info("Step 3/8: Finding unlinked mentions for %s", domain)
     try:
         mention_prospects = _find_unlinked_mentions(domain)
         all_prospects.extend(mention_prospects)
@@ -420,7 +482,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         errors.append(msg)
 
     # 4. Resource Pages
-    logger.info("Step 4/7: Searching resource pages for niche '%s'", niche)
+    logger.info("Step 4/8: Searching resource pages for niche '%s'", niche)
     try:
         resource_prospects = _find_resource_pages(niche)
         all_prospects.extend(resource_prospects)
@@ -431,7 +493,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         errors.append(msg)
 
     # 5. Broken Links
-    logger.info("Step 5/7: Checking broken links for competitors")
+    logger.info("Step 5/8: Checking broken links for competitors")
     try:
         broken_prospects = _find_broken_links(competitors)
         all_prospects.extend(broken_prospects)
@@ -442,7 +504,7 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         errors.append(msg)
 
     # 6. HARO Requests
-    logger.info("Step 6/7: Searching HARO requests")
+    logger.info("Step 6/8: Searching HARO requests")
     try:
         haro_prospects = _search_haro()
         all_prospects.extend(haro_prospects)
@@ -452,14 +514,25 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
         logger.error(msg, exc_info=True)
         errors.append(msg)
 
-    # 7. Niche Blog Search (Tavily + Ahrefs DR)
-    logger.info("Step 7/7: Searching for niche blogs relevant to %s", target_site)
+    # 7. Blogger Discovery (web search)
+    logger.info("Step 7/8: Searching for niche bloggers relevant to %s", target_site)
     try:
-        blog_prospects = _search_niche_blogs(target_site)
+        blog_prospects = _discover_bloggers(target_site)
         all_prospects.extend(blog_prospects)
-        logger.info("Found %d niche blog prospects", len(blog_prospects))
+        logger.info("Found %d blogger prospects", len(blog_prospects))
     except Exception as exc:
-        msg = f"Niche blog search failed: {exc}"
+        msg = f"Blogger discovery failed: {exc}"
+        logger.error(msg, exc_info=True)
+        errors.append(msg)
+
+    # 8. Company/Provider Discovery (web search)
+    logger.info("Step 8/8: Searching for kitchen/bathroom companies for partnerships")
+    try:
+        company_prospects = _discover_companies(target_site)
+        all_prospects.extend(company_prospects)
+        logger.info("Found %d company prospects", len(company_prospects))
+    except Exception as exc:
+        msg = f"Company discovery failed: {exc}"
         logger.error(msg, exc_info=True)
         errors.append(msg)
 
@@ -481,6 +554,9 @@ def run_backlink_prospector(state: SEOAgentState) -> dict[str, Any]:
             "dr": prospect.get("dr", 0),
             "monthly_traffic": prospect.get("monthly_traffic", 0),
             "discovery_method": prospect.get("discovery_method", "unknown"),
+            # segment: "blogger", "provider", or "" — helps filter prospect types.
+            # NOTE: seo_backlink_prospects table may need a 'segment' column added.
+            "segment": prospect.get("segment", ""),
             "links_to_competitor": prospect.get("links_to_competitor", False),
             "competitor_names": prospect.get("competitor_names", []),
             "status": "new",
