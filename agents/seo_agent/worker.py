@@ -18,8 +18,10 @@ Usage::
 
 from __future__ import annotations
 
+import html
 import logging
 import os
+import re
 import traceback
 from datetime import datetime, timezone
 from typing import Any
@@ -163,7 +165,7 @@ async def _execute_worker_inner() -> dict[str, Any]:
         try:
             from agents.seo_agent.heartbeat import send_telegram
 
-            await send_telegram(report)
+            await send_telegram(report, parse_mode="HTML")
         except Exception:
             logger.warning("Could not send worker report via Telegram")
 
@@ -217,10 +219,8 @@ async def _execute_skill(
 
     # Default: execute via gateway (LangGraph task)
     if skill and skill.task_type:
-        from functools import partial
-
         return await asyncio.get_event_loop().run_in_executor(
-            None, partial(gw.execute_task, skill.task_type, site=site)
+            None, lambda: gw.execute_task(skill.task_type, site=site)
         )
 
     msg = f"No executor found for skill: {skill_name}"
@@ -506,12 +506,93 @@ def _summarise_result(task_name: str, result: dict[str, Any]) -> str:
     return ", ".join(parts) if parts else "completed"
 
 
+_NOOP_PATTERNS = [
+    re.compile(r"Promoted 0 prospects"),
+    re.compile(r"Consolidated 0 "),
+    re.compile(r"^completed$"),
+]
+
+_ERROR_REWRITES = [
+    (re.compile(r"takes \d+ positional arguments? but \d+ (?:was|were) given"), "Internal routing error"),
+    (re.compile(r"rate.?limit|429|too many requests", re.I), "Rate limited \u2014 will retry next cycle"),
+    (re.compile(r"timed?\s*out|timeout", re.I), "Request timed out"),
+    (re.compile(r"connection.?(?:error|refused|reset)", re.I), "Connection error"),
+]
+
+_URL_RE = re.compile(r"\((https?://[^\s)]+)\)")
+
+# Human-readable labels for each task so the report makes sense at a glance.
+_TASK_LABELS: dict[str, str] = {
+    "publish_blog": "Blog published",
+    "keyword_research": "Keyword research",
+    "keyword_refresh": "Keyword refresh",
+    "content_gap_analysis": "Content gap analysis",
+    "discover_prospects": "Find backlink prospects",
+    "score_prospects": "Score prospects",
+    "promote_to_crm": "Promote to CRM",
+    "track_rankings": "Track search rankings",
+    "journal_entry": "Journal entry",
+    "memory_consolidation": "Memory cleanup",
+}
+
+
+def _is_noop_result(summary: str) -> bool:
+    """Check if a task summary indicates nothing meaningful happened.
+
+    Args:
+        summary: The task summary string.
+
+    Returns:
+        `True` if the result is a no-op.
+    """
+    return any(p.search(summary) for p in _NOOP_PATTERNS)
+
+
+def _friendly_error(raw: str) -> str:
+    """Map a raw Python error to a user-friendly message.
+
+    Args:
+        raw: The raw error string.
+
+    Returns:
+        A short, human-readable error description.
+    """
+    for pattern, friendly in _ERROR_REWRITES:
+        if pattern.search(raw):
+            return friendly
+    # Fallback: take the first line, trimmed, so it's still readable
+    first_line = raw.split("\n")[0].strip()[:80]
+    return first_line if first_line else "Unknown error"
+
+
+def _format_html_summary(task: str, summary: str) -> str:
+    """Convert a task summary to HTML, turning URLs into clickable links.
+
+    Args:
+        task: The task name.
+        summary: The raw summary string.
+
+    Returns:
+        HTML-formatted summary.
+    """
+    if task == "publish_blog" and "Published:" in summary:
+        match = _URL_RE.search(summary)
+        if match:
+            url = match.group(1)
+            title = summary.split("Published: ")[1].split(" (http")[0]
+            return f'Published: <a href="{html.escape(url)}">{html.escape(title)}</a>'
+    return html.escape(summary)
+
+
 def _build_worker_report(
     done: list[dict],
     failed: list[dict],
     ctx: Any,
 ) -> str:
-    """Build a Telegram-friendly worker report.
+    """Build an HTML-formatted Telegram worker report.
+
+    Groups successes and failures, filters out no-op tasks, and converts
+    raw errors to user-friendly messages.
 
     Args:
         done: List of completed task results.
@@ -519,17 +600,51 @@ def _build_worker_report(
         ctx: Execution context.
 
     Returns:
-        Formatted report string.
+        HTML-formatted report string for Telegram.
     """
-    lines = ["Worker update:\n"]
+    meaningful = [r for r in done if not _is_noop_result(r["summary"])]
+    skipped = len(done) - len(meaningful)
+    total = len(done) + len(failed)
 
-    for r in done:
-        lines.append(f"+ {r['task']} ({r['site']}): {r['summary']}")
+    lines: list[str] = [
+        f"\U0001f4cb <b>Worker Report</b> \u2014 {total} task(s) ran",
+    ]
 
-    for r in failed:
-        lines.append(f"X {r['task']} ({r['site']}): {r['error'][:100]}")
+    if meaningful:
+        lines.append("")
+        lines.append("\u2705 <b>Completed</b>")
+        for r in meaningful:
+            label = _TASK_LABELS.get(r["task"], r["task"])
+            summary = _format_html_summary(r["task"], r["summary"])
+            site = html.escape(r["site"])
+            lines.append(f"  \u2022 <b>{label}</b> ({site})")
+            lines.append(f"    {summary}")
 
-    lines.append(f"\nBudget: {ctx.budget_remaining:.0%} remaining")
+    if failed:
+        lines.append("")
+        lines.append("\u274c <b>Failed</b>")
+        by_error: dict[str, list[tuple[str, str]]] = {}
+        for r in failed:
+            friendly = _friendly_error(r["error"])
+            label = _TASK_LABELS.get(r["task"], r["task"])
+            by_error.setdefault(friendly, []).append(
+                (label, html.escape(r["site"]))
+            )
+        for err, task_pairs in by_error.items():
+            # Group tasks sharing the same error on one line
+            task_list = ", ".join(
+                f"{label} ({site})" for label, site in task_pairs
+            )
+            lines.append(f"  \u2022 {task_list}")
+            lines.append(f"    <i>Reason: {html.escape(err)}</i>")
+
+    if skipped:
+        lines.append(f"\n<i>{skipped} task(s) had nothing to do and were skipped.</i>")
+
+    if not meaningful and not failed:
+        lines.append("\nNo tasks needed to run this cycle.")
+
+    lines.append(f"\n\U0001f4b0 Budget: {ctx.budget_remaining:.0%} remaining")
 
     return "\n".join(lines)
 
