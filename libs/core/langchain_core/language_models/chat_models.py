@@ -390,7 +390,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         path. A plain method override does not prevent the base validator from
         running.
         """
-        if self.profile is None:
+        if getattr(self, "profile", None) is None:
             # Suppress errors from partner overrides (e.g., missing profile
             # files, broken imports) so model construction never fails over an
             # optional field.
@@ -405,8 +405,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Warn on unrecognized profile keys."""
         # isinstance guard: ModelProfile is a TypedDict (always a dict), but
         # protects against unexpected types from partner overrides.
-        if self.profile and isinstance(self.profile, dict):
-            _warn_unknown_profile_keys(self.profile)
+        # getattr guards against subclasses that raise AttributeError for
+        # 'profile' via __getattribute__ overrides.
+        profile = getattr(self, "profile", None)
+        if profile and isinstance(profile, dict):
+            _warn_unknown_profile_keys(profile)
         return self
 
     @cached_property

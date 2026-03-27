@@ -398,6 +398,46 @@ def test_summarization_middleware_missing_profile() -> None:
         )
 
 
+def test_summarization_middleware_missing_profile_attribute_error() -> None:
+    """Ensure automatic profile inference falls back when profiles are unavailable.
+
+    Regression test for a bug where model construction crashed with AttributeError
+    instead of letting SummarizationMiddleware raise the expected ValueError.
+    The crash occurred in _set_model_profile when accessing self.profile on a
+    subclass that raises AttributeError via __getattribute__.
+    """
+
+    class ImportErrorProfileModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
+        def __getattribute__(self, name: str) -> Any:
+            if name == "profile":
+                msg = "Profile not available"
+                raise AttributeError(msg)
+            return super().__getattribute__(name)
+
+    with pytest.raises(
+        ValueError,
+        match="Model profile information is required to use fractional token limits",
+    ):
+        _ = SummarizationMiddleware(
+            model=ImportErrorProfileModel(), trigger=("fraction", 0.5), keep=("messages", 1)
+        )
+
+
 def test_summarization_middleware_full_workflow() -> None:
     """Test SummarizationMiddleware complete summarization workflow."""
     with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
