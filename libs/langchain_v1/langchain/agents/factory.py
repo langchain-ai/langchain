@@ -399,11 +399,19 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
-def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
+def _resolve_schema_type_hints(schemas: set[type]) -> dict[type, dict[str, Any]]:
+    return {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+
+
+def _resolve_schema(
+    schema_hints: dict[type, dict[str, Any]],
+    schema_name: str,
+    omit_flag: str | None = None,
+) -> type:
     """Resolve schema by merging schemas and optionally respecting `OmitFromSchema` annotations.
 
     Args:
-        schemas: List of schema types to merge
+        schema_hints: Resolved schema annotations to merge
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
@@ -413,14 +421,11 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
     """
     all_annotations = {}
 
-    for schema in schemas:
-        hints = get_type_hints(schema, include_extras=True)
-
+    for hints in schema_hints.values():
         for field_name, field_type in hints.items():
             should_omit = False
 
             if omit_flag:
-                # Check for omission in the annotation metadata
                 metadata = _extract_metadata(field_type)
                 for meta in metadata:
                     if isinstance(meta, OmitFromSchema) and getattr(meta, omit_flag) is True:
@@ -1009,10 +1014,11 @@ def create_agent(
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
+    state_schema_hints = _resolve_schema_type_hints(state_schemas)
 
-    resolved_state_schema = _resolve_schema(state_schemas, "StateSchema", None)
-    input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
-    output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
+    resolved_state_schema = _resolve_schema(state_schema_hints, "StateSchema", None)
+    input_schema = _resolve_schema(state_schema_hints, "InputSchema", "input")
+    output_schema = _resolve_schema(state_schema_hints, "OutputSchema", "output")
 
     # create graph, add nodes
     graph: StateGraph[
