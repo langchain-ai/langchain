@@ -266,6 +266,23 @@ class TestProviderStrategyBinding:
         assert result.age == 30
         assert result.email == "default@example.com"  # default value
 
+    def test_parse_content_list_prefers_final_answer(self) -> None:
+        """Test parsing prefers the final_answer text block when multiple text parts exist."""
+        schema_spec = _SchemaSpec(schema=_TestModel)
+        tool_binding = ProviderStrategyBinding.from_schema_spec(schema_spec)
+
+        message = AIMessage(
+            content=[
+                {"type": "text", "phase": "commentary", "text": '{"name": "John", "age": 30}'},
+                {"type": "text", "phase": "final_answer", "text": '{"name": "Jane", "age": 25}'},
+            ]
+        )
+        result = tool_binding.parse(message)
+
+        assert isinstance(result, _TestModel)
+        assert result.name == "Jane"
+        assert result.age == 25
+        assert result.email == "default@example.com"  # default value
 
 class TestEdgeCases:
     """Test edge cases and error conditions."""

@@ -436,6 +436,8 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         for c in content:
             if isinstance(c, dict):
                 if c.get("type") == "text" and "text" in c:
+                    if c.get("phase") == "final_answer":
+                        return str(c["text"])
                     parts.append(str(c["text"]))
                 elif "content" in c and isinstance(c["content"], str):
                     parts.append(c["content"])
