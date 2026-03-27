@@ -42,6 +42,7 @@ jobs:
               "langchain-fireworks": "fireworks",
               "langchain-groq": "groq",
               "langchain-huggingface": "huggingface",
+              "langchain-minimax": "minimax",
               "langchain-mistralai": "mistralai",
               "langchain-nomic": "nomic",
               "langchain-ollama": "ollama",
