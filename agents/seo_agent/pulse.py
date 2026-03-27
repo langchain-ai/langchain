@@ -73,9 +73,17 @@ async def _execute_pulse_inner() -> dict[str, Any]:
     spend_usd = spend_pct * cap
 
     if ctx.budget_remaining < 0.05:
-        alerts.append(f"BUDGET EXHAUSTED: ${spend_usd:.2f}/${cap:.2f} ({spend_pct:.0%})")
+        alerts.append(
+            f"I've almost used the entire weekly budget "
+            f"(${spend_usd:.2f} of ${cap:.2f}). "
+            f"I'll pause non-essential tasks until the budget resets."
+        )
     elif ctx.budget_remaining < 0.2:
-        alerts.append(f"Budget warning: ${spend_usd:.2f}/${cap:.2f} ({spend_pct:.0%}) — downgrading models")
+        alerts.append(
+            f"Heads up — I've used most of the weekly budget "
+            f"(${spend_usd:.2f} of ${cap:.2f}). "
+            f"Switching to cheaper models to stay within limits."
+        )
 
     # --- 2. Service health ---
     down_services = [
@@ -87,14 +95,26 @@ async def _execute_pulse_inner() -> dict[str, Any]:
         if s.status == "degraded"
     ]
     if down_services:
-        alerts.append(f"Services DOWN: {', '.join(down_services)}")
+        alerts.append(
+            f"I can't reach {', '.join(down_services)} right now — "
+            f"any tasks that depend on {'it' if len(down_services) == 1 else 'them'} "
+            f"will be skipped until {'it comes' if len(down_services) == 1 else 'they come'} back."
+        )
     if degraded_services:
-        sections.append(f"Degraded: {', '.join(degraded_services)}")
+        svc_names = ", ".join(degraded_services)
+        alerts.append(
+            f"{svc_names} {'is' if len(degraded_services) == 1 else 'are'} "
+            f"responding slowly or intermittently. Some tasks may take longer or fail."
+        )
 
     # --- 3. Rate limits ---
     active_limits = gw.rate_limiter.active_limits()
     if active_limits:
-        alerts.append(f"Rate limited: {', '.join(active_limits.keys())}")
+        limited_names = ", ".join(active_limits.keys())
+        alerts.append(
+            f"I'm being rate-limited by {limited_names}, "
+            f"so I'm backing off to avoid getting blocked."
+        )
 
     # --- 4. Ranking movers ---
     try:
@@ -109,16 +129,16 @@ async def _execute_pulse_inner() -> dict[str, Any]:
                 change = w.get("change", 0)
                 if change >= 3:
                     sections.append(
-                        f"+ {w['keyword']}: #{w.get('previous_position', '?')} -> "
-                        f"#{w.get('position', '?')} (+{change})"
+                        f"'{w['keyword']}' climbed {change} spots "
+                        f"(#{w.get('previous_position', '?')} → #{w.get('position', '?')})"
                     )
 
             for l in losers[:2]:
                 change = abs(l.get("change", 0))
                 if change >= 5:
                     sections.append(
-                        f"- {l['keyword']}: #{l.get('previous_position', '?')} -> "
-                        f"#{l.get('position', '?')} (-{change})"
+                        f"'{l['keyword']}' dropped {change} spots "
+                        f"(#{l.get('previous_position', '?')} → #{l.get('position', '?')}) — worth keeping an eye on"
                     )
     except Exception:
         logger.warning("Could not fetch ranking movers", exc_info=True)
@@ -137,7 +157,23 @@ async def _execute_pulse_inner() -> dict[str, Any]:
                     failed_tasks += 1
 
         if completed_tasks or failed_tasks:
-            sections.append(f"Recent: {completed_tasks} tasks done, {failed_tasks} failed")
+            total = completed_tasks + failed_tasks
+            if failed_tasks == 0:
+                sections.append(
+                    f"I completed {completed_tasks} "
+                    f"{'task' if completed_tasks == 1 else 'tasks'} recently "
+                    f"with no issues."
+                )
+            elif completed_tasks == 0:
+                sections.append(
+                    f"Last {total} {'task' if total == 1 else 'tasks'} all failed — "
+                    f"something may be wrong."
+                )
+            else:
+                sections.append(
+                    f"I ran {total} tasks recently: {completed_tasks} succeeded "
+                    f"and {failed_tasks} failed."
+                )
     except Exception:
         pass
 
@@ -150,12 +186,12 @@ async def _execute_pulse_inner() -> dict[str, Any]:
             if "escalate" in str(m.get("tags", []))
         ]
         for m in escalation_memories[:2]:
-            alerts.append(f"Needs attention: {m.get('content', '')[:100]}")
+            alerts.append(f"Something I noticed: {m.get('content', '')[:120]}")
 
         # Surface recent learnings
         learnings = memory.recall(category="learning", limit=3)
         for m in learnings[:1]:
-            sections.append(f"Insight: {m.get('content', '')[:100]}")
+            sections.append(f"I noticed a pattern: {m.get('content', '')[:120]}")
     except Exception:
         pass
 
@@ -164,10 +200,13 @@ async def _execute_pulse_inner() -> dict[str, Any]:
         from agents.seo_agent.tools.crm_tools import get_dashboard_summary
 
         dash = get_dashboard_summary()
+        kw = dash.get("keywords_discovered", 0)
+        posts = dash.get("content_pieces", 0)
+        prospects = dash.get("prospects_total", 0)
         sections.append(
-            f"Pipeline: {dash.get('keywords_discovered', 0)} keywords, "
-            f"{dash.get('content_pieces', 0)} posts, "
-            f"{dash.get('prospects_total', 0)} prospects"
+            f"Currently tracking {kw} keywords, "
+            f"{posts} {'post' if posts == 1 else 'posts'} in the pipeline, "
+            f"and {prospects} link-building {'prospect' if prospects == 1 else 'prospects'}."
         )
     except Exception:
         pass
@@ -175,7 +214,7 @@ async def _execute_pulse_inner() -> dict[str, Any]:
     # Build and send the pulse message
     if not alerts and not sections:
         logger.info("Pulse: nothing to report")
-        return {"status": "quiet", "message": "Nothing to report"}
+        return {"status": "quiet", "message": "All quiet — nothing new to report."}
 
     message = _format_pulse(alerts, sections, spend_usd, cap, ctx.budget_remaining)
     await send_telegram(message)
@@ -205,9 +244,8 @@ def _format_pulse(
     lines: list[str] = []
 
     if alerts:
-        lines.append("ALERTS:")
         for a in alerts:
-            lines.append(f"  ! {a}")
+            lines.append(f"⚠️ {a}")
         lines.append("")
 
     if sections:
@@ -215,7 +253,7 @@ def _format_pulse(
             lines.append(s)
         lines.append("")
 
-    lines.append(f"Spend: ${spend:.2f}/${cap:.2f} ({budget_remaining:.0%} left)")
+    lines.append(f"Budget: ${spend:.2f} of ${cap:.2f} used this week ({budget_remaining:.0%} left).")
 
     return "\n".join(lines)
 

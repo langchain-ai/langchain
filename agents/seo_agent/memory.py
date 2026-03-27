@@ -283,8 +283,8 @@ class Memory:
             if len(task_failures) >= 3:
                 self.store(
                     "learning",
-                    f"Task '{task}' has failed {len(task_failures)} times recently. "
-                    f"May need investigation or temporary skip.",
+                    f"The '{task}' task has failed {len(task_failures)} times recently. "
+                    f"This might need a look — I can skip it for now if you'd like.",
                     importance=8,
                     source="auto_learn",
                     related_site=site,
