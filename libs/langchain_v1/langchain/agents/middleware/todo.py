@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
+from pydantic import BaseModel, Field
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain.agents.middleware.types import (
@@ -45,6 +46,12 @@ class PlanningState(AgentState[ResponseT]):
 
     todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
+
+
+class WriteTodosInput(BaseModel):
+    """Input schema for the `write_todos` tool."""
+
+    todos: list[Todo] = Field(description="Updated todo items for the current work session.")
 
 
 WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -182,7 +189,11 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         self.tool_description = tool_description
 
         # Dynamically create the write_todos tool with the custom description
-        @tool(description=self.tool_description)
+        @tool(
+            description=self.tool_description,
+            infer_schema=False,
+            args_schema=WriteTodosInput,
+        )
         def write_todos(
             todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
         ) -> Command[Any]:
