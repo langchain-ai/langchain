@@ -38,7 +38,8 @@ def _extract_reasoning_from_additional_kwargs(
     additional_kwargs = getattr(message, "additional_kwargs", {})
 
     reasoning_content = additional_kwargs.get("reasoning_content")
-    if reasoning_content is not None and isinstance(reasoning_content, str):
+    # Check for non-empty string to avoid creating empty reasoning blocks
+    if reasoning_content and isinstance(reasoning_content, str):
         return {"type": "reasoning", "reasoning": reasoning_content}
 
     return None
