@@ -500,6 +500,82 @@ class Memory:
         except Exception:
             return []
 
+    def promote_to_learned_lessons(self) -> list[dict[str, Any]]:
+        """Promote high-value memories into a structured learned-lessons format.
+
+        Identifies memories that are high-importance AND frequently recalled
+        (i.e. the system keeps needing them), and returns them as structured
+        lessons. These can be written to a ``LEARNED-LESSONS.md`` file or
+        injected into the system prompt.
+
+        Criteria for promotion:
+        - importance >= 7 AND recall_count >= 2
+        - OR category is "correction" or "learning" with importance >= 6
+        - Not already promoted (no "promoted" tag)
+
+        Returns:
+            List of promoted memory dicts with a ``lesson`` field added.
+        """
+        memories = self._get_all_active()
+
+        promotable = []
+        for m in memories:
+            importance = m.get("importance", 0)
+            recall_count = m.get("recall_count", 0)
+            category = m.get("category", "")
+            tags = m.get("tags", [])
+
+            if "promoted" in tags:
+                continue
+
+            is_high_value = importance >= 7 and recall_count >= 2
+            is_key_learning = category in ("correction", "learning") and importance >= 6
+
+            if is_high_value or is_key_learning:
+                promotable.append(m)
+
+        # Mark promoted memories
+        for m in promotable:
+            try:
+                from agents.seo_agent.tools.supabase_tools import upsert_record
+
+                existing_tags = m.get("tags", [])
+                upsert_record(
+                    "ralf_memory",
+                    {"id": m["id"], "tags": existing_tags + ["promoted"]},
+                    on_conflict="id",
+                )
+            except Exception:
+                pass
+
+        if promotable:
+            logger.info("Promoted %d memories to learned lessons", len(promotable))
+            self._cache = None
+
+        return promotable
+
+    def get_learned_lessons(self) -> str:
+        """Get all promoted memories formatted as a learned-lessons block.
+
+        Returns:
+            Formatted string suitable for injection into system prompts,
+            or empty string if no lessons exist.
+        """
+        memories = self._get_all_active()
+        lessons = [m for m in memories if "promoted" in m.get("tags", [])]
+
+        if not lessons:
+            return ""
+
+        lines = ["\n--- Learned Lessons ---"]
+        for m in lessons:
+            cat = m.get("category", "")
+            content = m.get("content", "")
+            lines.append(f"[{cat}] {content}")
+        lines.append("--- End Lessons ---\n")
+
+        return "\n".join(lines)
+
     def _increment_recall(self, memory_id: str) -> None:
         """Bump the recall count for a memory."""
         if not memory_id:

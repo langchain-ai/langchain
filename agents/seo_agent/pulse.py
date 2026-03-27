@@ -53,7 +53,7 @@ async def _execute_pulse_inner() -> dict[str, Any]:
     """Inner pulse logic."""
     from agents.seo_agent.config import MAX_WEEKLY_SPEND_USD
     from agents.seo_agent.gateway import Gateway
-    from agents.seo_agent.heartbeat import send_telegram
+    from agents.seo_agent.heartbeat import _get_heartbeat_thread_id, send_telegram
     from agents.seo_agent.memory import Memory
     from agents.seo_agent.wal import WAL
 
@@ -217,7 +217,7 @@ async def _execute_pulse_inner() -> dict[str, Any]:
         return {"status": "quiet", "message": "All quiet — nothing new to report."}
 
     message = _format_pulse(alerts, sections, spend_usd, cap, ctx.budget_remaining)
-    await send_telegram(message)
+    await send_telegram(message, thread_id=_get_heartbeat_thread_id())
 
     return {"status": "sent", "alerts": len(alerts), "sections": len(sections)}
 

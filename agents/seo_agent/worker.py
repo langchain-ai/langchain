@@ -163,9 +163,9 @@ async def _execute_worker_inner() -> dict[str, Any]:
     if done_tasks or failed_tasks:
         report = _build_worker_report(done_tasks, failed_tasks, ctx)
         try:
-            from agents.seo_agent.heartbeat import send_telegram
+            from agents.seo_agent.heartbeat import _get_heartbeat_thread_id, send_telegram
 
-            await send_telegram(report, parse_mode="HTML")
+            await send_telegram(report, parse_mode="HTML", thread_id=_get_heartbeat_thread_id())
         except Exception:
             logger.warning("Could not send worker report via Telegram")
 
@@ -216,6 +216,13 @@ async def _execute_skill(
 
         consolidated = Memory().consolidate()
         return {"consolidated": consolidated}
+
+    if skill_name == "memory_promotion":
+        from agents.seo_agent.memory import Memory
+
+        memory = Memory()
+        promoted = memory.promote_to_learned_lessons()
+        return {"promoted": len(promoted), "lessons": [m.get("content", "")[:100] for m in promoted]}
 
     # Default: execute via gateway (LangGraph task)
     if skill and skill.task_type:
