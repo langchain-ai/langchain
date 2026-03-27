@@ -253,6 +253,95 @@ When adding a new partner package, update these files:
 - **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)
 
 
+## SEO blog standards
+
+These standards apply to **all blog posts for all websites** managed by the SEO agent. They are enforced by the template builders in `agents/seo_agent/tools/github_tools.py` and the per-site config in `agents/seo_agent/config.py` (`BLOG_CONFIG`).
+
+### File naming
+
+- Blog posts go in the site's configured `blog_path` (e.g. `client/public/blog/` for freeroomplanner)
+- URL slugs must be **2-5 words**, hyphen-separated, keyword-focused (e.g. `kitchen-planner-guide`, `small-bedroom-layouts`)
+- The `slugify()` function enforces this and logs a warning for over-long slugs
+
+### Required head elements (all sites)
+
+Every HTML blog post must include these in the `<head>`, in order:
+
+1. Analytics script (site-specific, e.g. Ahrefs for freeroomplanner)
+2. `<meta name="author">` with site name
+3. `<meta charset="UTF-8">`
+4. `<meta name="viewport">`
+5. `<title>` ending with the site's title suffix (e.g. `| Free Room Planner Blog`)
+6. `<meta name="description">` (150-160 chars, includes primary keyword)
+7. `<link rel="canonical">` with full URL
+8. Open Graph tags: `og:type`, `og:site_name`, `og:title`, `og:description`, `og:url`, `og:image`, `og:image:width`, `og:image:height`
+9. Twitter Card tags: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+10. Favicon links: `favicon.ico`, `favicon-32x32.png`, `favicon-16x16.png`, `apple-touch-icon.png`, `site.webmanifest`
+11. `<meta name="theme-color">`
+12. Font preload with lazy loading (`media="print" onload="this.media='all'"` pattern + noscript fallback)
+13. External stylesheet link (no inline `<style>` blocks)
+
+### Required body structure (HTML sites)
+
+- **Header**: Site-specific header with logo, nav links, theme toggle (moon/sun SVGs), mobile nav toggle, CTA button
+- **Breadcrumb**: `<nav class="breadcrumb">` with Home > Blog > Post label
+- **Article**: `<article itemscope itemtype="https://schema.org/BlogPosting">` with:
+  - Hero section: category badge, `<h1 itemprop="headline">` (no site name in H1), read time, CTA
+  - Article body: `<div itemprop="articleBody">`
+  - CTA box after body
+- **Related articles**: 3 related posts in a grid layout
+- **Final CTA section**: Closing call-to-action
+- **JSON-LD**: Both `BlogPosting` and `BreadcrumbList` schemas (see below)
+- **Footer**: Site-specific footer with nav columns
+- **Script**: External JS file (e.g. `/rs.js`) before `</body>`
+
+### Required JSON-LD structured data
+
+Every blog post must include two `<script type="application/ld+json">` blocks:
+
+1. **BlogPosting**: headline, description, image, datePublished, dateModified (update on every edit), keywords, url, author (Organization), publisher (Organization with logo ImageObject)
+2. **BreadcrumbList**: Home > Blog > Post label (no item URL for current page)
+
+### Content SEO rules
+
+- **Heading hierarchy**: Exactly one `<h1>` per page (in hero section). `<h2>` for main sections, `<h3>` for subsections. Never skip levels.
+- **Internal linking**: Every post must include:
+  - At least 1 link to a planner tool page (if the site has planner pages)
+  - At least 2 links to related blog posts within the article body
+  - Descriptive anchor text with target keywords
+- **External links**: Use `rel="noopener noreferrer" target="_blank"` on all external links. Minimise external links.
+- **Categories**: Use established categories from `BLOG_CONFIG[site]["categories"]`
+
+### Post-creation automation
+
+The `publish_blog_post()` function automatically handles:
+
+1. **Blog index update**: Inserts a post card into the site's blog index page
+2. **Sitemap update**: Adds a `<url>` entry to `sitemap.xml` with `<changefreq>monthly` and `<priority>0.7`
+3. **Backlink insertion**: Adds contextual links to the new post in 1-2 related existing posts
+4. **Keyword tracking**: Auto-tracks the target keyword for ranking monitoring
+
+### Self-check before finishing a blog post
+
+- File uses a short, keyword-focused slug (2-5 words)
+- Head has ALL required tags (analytics, OG with image, Twitter with image, favicons, font preload)
+- Title ends with site-specific suffix
+- H1 does NOT contain the site name or pipe character
+- Proper heading hierarchy (h1 > h2 > h3)
+- At least 1 internal link to a tool page (if applicable)
+- At least 2 internal links to related blog posts
+- BlogPosting JSON-LD includes datePublished, dateModified, publisher with logo
+- BreadcrumbList JSON-LD is present
+- Standard header and footer (not simplified versions)
+- External CSS/JS (no inline styles)
+- Post added to sitemap.xml (automated)
+- Post card added to blog index (automated)
+- Backlinks inserted in related posts (automated)
+
+### Site-specific config
+
+All per-site blog configuration lives in `BLOG_CONFIG` in `agents/seo_agent/config.py`. This includes: site name, domain, title suffix, analytics script, OG image URL/dimensions, theme colour, CSS/JS paths, categories, planner pages, nav links, CTA buttons, footer columns, and sitemap path.
+
 ## Supabase Agent Skills
 
 This repository includes Supabase Postgres Best Practices as agent skills in `.agents/skills/supabase-postgres-best-practices/`.
