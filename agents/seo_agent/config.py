@@ -176,6 +176,8 @@ TOKEN_BUDGETS: dict[str, int] = {
     "write_followup_email": 250,
     "generate_pr_angles": 600,
     "weekly_report": 1000,
+    "enrich_crm_contact": 100,
+    "generate_crm_outreach_email": 400,
 }
 
 # Weekly LLM spend cap in USD — agent downgrades models at 80% of this

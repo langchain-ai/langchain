@@ -375,6 +375,375 @@ def get_top_performing_content(target_site: str, limit: int = 20) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Outreach CRM — kitchen/bathroom companies, interior designers
+# ---------------------------------------------------------------------------
+
+CRM_CATEGORIES: list[str] = [
+    "kitchen_company",
+    "bathroom_company",
+    "interior_designer",
+]
+
+CRM_SUBCATEGORIES: dict[str, list[str]] = {
+    "kitchen_company": ["showroom", "manufacturer", "fitter", "supplier", "bespoke_maker"],
+    "bathroom_company": ["showroom", "fitter", "supplier", "designer"],
+    "interior_designer": ["freelance", "studio", "firm"],
+}
+
+CRM_OUTREACH_STATUSES: list[str] = [
+    "not_contacted",
+    "contacted",
+    "replied",
+    "partnership_active",
+    "declined",
+    "blocked",
+]
+
+
+def add_crm_contact(
+    company_name: str,
+    category: str,
+    *,
+    contact_name: str = "",
+    contact_role: str = "",
+    email: str = "",
+    phone: str = "",
+    website: str = "",
+    city: str = "",
+    region: str = "",
+    postcode: str = "",
+    country: str = "GB",
+    subcategory: str = "",
+    instagram: str = "",
+    facebook: str = "",
+    linkedin: str = "",
+    outreach_segment: str = "",
+    score: int = 0,
+    tier: str = "",
+    backlink_prospect_id: str = "",
+    source: str = "manual",
+    tags: list[str] | None = None,
+    notes: str = "",
+) -> dict:
+    """Add a new contact to the outreach CRM.
+
+    Args:
+        company_name: Company or business name.
+        category: One of ``CRM_CATEGORIES`` (kitchen_company, bathroom_company,
+            interior_designer).
+        contact_name: Name of the primary contact person.
+        contact_role: Role/title of the contact.
+        email: Email address.
+        phone: Phone number.
+        website: Company website URL.
+        city: City where the company is based.
+        region: Region or county.
+        postcode: Postal code.
+        country: ISO country code.
+        subcategory: Finer classification within the category.
+        instagram: Instagram handle or URL.
+        facebook: Facebook page URL.
+        linkedin: LinkedIn profile or company page URL.
+        outreach_segment: Key from ``OUTREACH_SEGMENTS`` in outreach_strategy.
+        score: Outreach priority score.
+        tier: Tier classification (tier_1, tier_2, tier_3).
+        backlink_prospect_id: Optional link to ``seo_backlink_prospects``.
+        source: How this contact was found.
+        tags: Flexible tags for categorization.
+        notes: Free-text notes.
+
+    Returns:
+        The inserted record dict.
+    """
+    now = datetime.now(tz=timezone.utc).isoformat()
+    record: dict[str, Any] = {
+        "company_name": company_name,
+        "category": category,
+        "contact_name": contact_name,
+        "contact_role": contact_role,
+        "email": email,
+        "phone": phone,
+        "website": website,
+        "city": city,
+        "region": region,
+        "postcode": postcode,
+        "country": country,
+        "subcategory": subcategory,
+        "instagram": instagram,
+        "facebook": facebook,
+        "linkedin": linkedin,
+        "outreach_status": "not_contacted",
+        "outreach_segment": outreach_segment,
+        "score": score,
+        "tier": tier,
+        "source": source,
+        "tags": tags or [],
+        "notes": notes,
+        "created_at": now,
+        "updated_at": now,
+    }
+    if backlink_prospect_id:
+        record["backlink_prospect_id"] = backlink_prospect_id
+    return insert_record("crm_contacts", record)
+
+
+def update_crm_contact(contact_id: str, **fields: Any) -> dict:
+    """Update fields on an existing CRM contact.
+
+    Args:
+        contact_id: UUID of the contact to update.
+        **fields: Column names and their new values.
+
+    Returns:
+        The updated record dict.
+    """
+    fields["updated_at"] = datetime.now(tz=timezone.utc).isoformat()
+    return upsert_record("crm_contacts", {"id": contact_id, **fields})
+
+
+def get_crm_contacts(
+    *,
+    category: str | None = None,
+    city: str | None = None,
+    outreach_status: str | None = None,
+    outreach_segment: str | None = None,
+    limit: int = 100,
+) -> list[dict]:
+    """Query CRM contacts with optional filters.
+
+    Args:
+        category: Filter by category (kitchen_company, bathroom_company,
+            interior_designer).
+        city: Filter by city.
+        outreach_status: Filter by outreach status.
+        outreach_segment: Filter by outreach segment.
+        limit: Maximum rows to return.
+
+    Returns:
+        List of matching contact dicts.
+    """
+    filters: dict[str, Any] = {}
+    if category:
+        filters["category"] = category
+    if city:
+        filters["city"] = city
+    if outreach_status:
+        filters["outreach_status"] = outreach_status
+    if outreach_segment:
+        filters["outreach_segment"] = outreach_segment
+    return query_table("crm_contacts", filters=filters, limit=limit)
+
+
+def search_crm_contacts(query_text: str, *, limit: int = 50) -> list[dict]:
+    """Search CRM contacts by company name or city.
+
+    Args:
+        query_text: Text to search for (case-insensitive partial match).
+        limit: Maximum rows to return.
+
+    Returns:
+        List of matching contact dicts.
+    """
+    if os.getenv("SUPABASE_MOCK", "false").lower() in ("true", "1", "yes"):
+        from agents.seo_agent.tools.supabase_tools import _mock_store
+
+        rows = _mock_store.get("crm_contacts", [])
+        q = query_text.lower()
+        return [
+            r for r in rows
+            if q in (r.get("company_name", "") or "").lower()
+            or q in (r.get("city", "") or "").lower()
+        ][:limit]
+
+    client = get_client()
+    resp = (
+        client.table("crm_contacts")
+        .select("*")
+        .ilike("company_name", f"%{query_text}%")
+        .limit(limit)
+        .execute()
+    )
+    return resp.data or []
+
+
+def log_crm_interaction(
+    contact_id: str,
+    interaction_type: str,
+    *,
+    direction: str = "outbound",
+    channel: str = "email",
+    subject: str = "",
+    body_preview: str = "",
+    performed_by: str = "ralf",
+) -> dict:
+    """Log an interaction with a CRM contact.
+
+    Args:
+        contact_id: UUID of the contact.
+        interaction_type: Type of interaction (email_sent, email_received,
+            phone_call, meeting, note, social_dm).
+        direction: Direction of the interaction (outbound, inbound, internal).
+        channel: Communication channel.
+        subject: Subject line or title.
+        body_preview: Short preview of the message body.
+        performed_by: Agent or person who performed this action.
+
+    Returns:
+        The inserted interaction record.
+    """
+    return insert_record("crm_interactions", {
+        "contact_id": contact_id,
+        "interaction_type": interaction_type,
+        "direction": direction,
+        "channel": channel,
+        "subject": subject,
+        "body_preview": body_preview[:500] if body_preview else "",
+        "status": "logged",
+        "performed_by": performed_by,
+        "created_at": datetime.now(tz=timezone.utc).isoformat(),
+    })
+
+
+def get_crm_interaction_history(contact_id: str, *, limit: int = 50) -> list[dict]:
+    """Get all interactions for a CRM contact.
+
+    Args:
+        contact_id: UUID of the contact.
+        limit: Maximum rows to return.
+
+    Returns:
+        List of interaction dicts, newest first.
+    """
+    return query_table(
+        "crm_interactions",
+        filters={"contact_id": contact_id},
+        limit=limit,
+        order_by="created_at",
+        order_desc=True,
+    )
+
+
+def update_crm_outreach_status(
+    contact_id: str, new_status: str, *, notes: str = ""
+) -> dict:
+    """Update a CRM contact's outreach status.
+
+    Args:
+        contact_id: UUID of the contact.
+        new_status: New status (must be in ``CRM_OUTREACH_STATUSES``).
+        notes: Optional note to log alongside the status change.
+
+    Returns:
+        The updated contact record.
+    """
+    if new_status not in CRM_OUTREACH_STATUSES:
+        msg = f"Invalid CRM outreach status: {new_status!r}. Must be one of {CRM_OUTREACH_STATUSES}"
+        raise ValueError(msg)
+
+    update_data: dict[str, Any] = {
+        "outreach_status": new_status,
+        "updated_at": datetime.now(tz=timezone.utc).isoformat(),
+    }
+    if new_status == "contacted":
+        update_data["last_contacted_at"] = datetime.now(tz=timezone.utc).isoformat()
+
+    result = upsert_record("crm_contacts", {"id": contact_id, **update_data})
+
+    if notes:
+        log_crm_interaction(
+            contact_id,
+            "note",
+            direction="internal",
+            channel="system",
+            subject=f"Status changed to {new_status}",
+            body_preview=notes,
+        )
+
+    return result
+
+
+def get_crm_pipeline() -> dict[str, list[dict]]:
+    """Group all CRM contacts by outreach status.
+
+    Returns:
+        Dict mapping each status to its list of contacts.
+    """
+    all_contacts = query_table("crm_contacts", limit=1000)
+    pipeline: dict[str, list[dict]] = {status: [] for status in CRM_OUTREACH_STATUSES}
+    for c in all_contacts:
+        status = c.get("outreach_status", "not_contacted")
+        if status in pipeline:
+            pipeline[status].append(c)
+        else:
+            pipeline["not_contacted"].append(c)
+    return pipeline
+
+
+def import_kitchen_makers_to_crm(city: str | None = None) -> int:
+    """Import kitchen makers from the ``kitchen_makers`` table into the CRM.
+
+    Args:
+        city: Optional city filter. Imports all makers if None.
+
+    Returns:
+        Number of contacts imported.
+    """
+    from agents.seo_agent.tools.supabase_tools import get_makers_by_location
+
+    makers = get_makers_by_location(city or "")
+    imported = 0
+    for maker in makers:
+        try:
+            add_crm_contact(
+                company_name=maker.get("name", "Unknown"),
+                category="kitchen_company",
+                subcategory="bespoke_maker",
+                email=maker.get("email", ""),
+                phone=maker.get("phone", ""),
+                website=maker.get("website", ""),
+                city=maker.get("city", ""),
+                region=maker.get("region", ""),
+                postcode=maker.get("postcode", ""),
+                country=maker.get("country", "GB"),
+                source="kitchen_makers_import",
+                notes=maker.get("description", ""),
+            )
+            imported += 1
+        except Exception:
+            logger.warning(
+                "Failed to import kitchen maker: %s", maker.get("name"), exc_info=True
+            )
+    return imported
+
+
+def get_crm_contacts_needing_followup(days_since_contact: int = 7) -> list[dict]:
+    """Find CRM contacts that were contacted but need a follow-up.
+
+    Args:
+        days_since_contact: Number of days since last contact before
+            a follow-up is due.
+
+    Returns:
+        List of contacts needing follow-up.
+    """
+    cutoff = (datetime.now(tz=timezone.utc) - timedelta(days=days_since_contact)).isoformat()
+    contacted = query_table(
+        "crm_contacts",
+        filters={"outreach_status": "contacted"},
+        limit=200,
+    )
+    return [
+        c for c in contacted
+        if c.get("last_contacted_at") and c["last_contacted_at"] < cutoff
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Unified dashboard — everything Ralf needs to know at a glance
+# ---------------------------------------------------------------------------
+
+
 def get_dashboard_summary() -> dict[str, Any]:
     """Generate a complete dashboard summary of the SEO operation."""
     from agents.seo_agent.tools.supabase_tools import get_weekly_spend
@@ -394,6 +763,15 @@ def get_dashboard_summary() -> dict[str, Any]:
         if prospects_in_stage
     }
 
+    # CRM stats
+    crm_contacts = query_table("crm_contacts", limit=1000)
+    crm_pipeline = get_crm_pipeline()
+    crm_pipeline_summary = {
+        status: len(contacts)
+        for status, contacts in crm_pipeline.items()
+        if contacts
+    }
+
     return {
         "keywords_discovered": len(keywords),
         "keywords_cached": len(cached_kw),
@@ -403,6 +781,12 @@ def get_dashboard_summary() -> dict[str, Any]:
         "prospect_pipeline": pipeline_summary,
         "rankings_tracked": len(set(r.get("keyword", "") for r in rankings)),
         "weekly_spend": spend,
+        "crm_contacts_total": len(crm_contacts),
+        "crm_pipeline": crm_pipeline_summary,
+        "crm_by_category": {
+            cat: len([c for c in crm_contacts if c.get("category") == cat])
+            for cat in CRM_CATEGORIES
+        },
         "sites": {
             "freeroomplanner": {
                 "keywords": len([k for k in keywords if k.get("target_site") == "freeroomplanner"]),
