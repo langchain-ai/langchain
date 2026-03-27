@@ -1476,7 +1476,7 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 category = params.get("category", "kitchen_company")
                 await update.message.reply_text(f"Starting Firecrawl scraper for {category} in {country}... this may take a few minutes.")
                 try:
-                    from agents.seo_agent.tools.firecrawl_scraper import run_scraper
+                    from agents.scraper_agent.tools.firecrawl_client import run_scraper
                     result = await asyncio.get_event_loop().run_in_executor(
                         None, partial(run_scraper, country=country, category=category, max_queries=10)
                     )
@@ -1500,7 +1500,7 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             if action == "scrape_all":
                 await update.message.reply_text("Starting full scrape across UK, US, and CA for kitchen + bathroom companies... this will take a while.")
                 try:
-                    from agents.seo_agent.tools.firecrawl_scraper import run_full_scrape
+                    from agents.scraper_agent.tools.firecrawl_client import run_full_scrape
                     result = await asyncio.get_event_loop().run_in_executor(
                         None, partial(run_full_scrape, max_queries_per_country=5)
                     )

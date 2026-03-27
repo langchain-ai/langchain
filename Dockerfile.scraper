@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+# Cache bust: 2026-03-27-scraper-v1
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY agents/ agents/
+
+CMD ["python", "-m", "agents.scraper_agent.telegram_bot"]
