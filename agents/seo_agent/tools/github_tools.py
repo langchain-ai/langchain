@@ -16,6 +16,8 @@ from urllib.parse import quote
 
 import httpx
 
+from agents.seo_agent.config import BLOG_CONFIG
+
 logger = logging.getLogger(__name__)
 
 # Repo mapping: site key → GitHub repo and blog path
@@ -72,16 +74,31 @@ def _get_client() -> httpx.Client:
 def slugify(title: str) -> str:
     """Convert a title to a URL-friendly slug.
 
+    Produces short, keyword-focused slugs (2-5 words). Logs a warning if the
+    raw slug exceeds 5 words and truncates intelligently.
+
     Args:
         title: The blog post title.
 
     Returns:
-        A lowercase, hyphenated slug.
+        A lowercase, hyphenated slug of 2-5 words.
     """
     slug = title.lower().strip()
     slug = re.sub(r"[^a-z0-9\s-]", "", slug)
     slug = re.sub(r"[\s-]+", "-", slug)
-    return slug.strip("-")[:80]
+    slug = slug.strip("-")
+
+    parts = slug.split("-")
+    if len(parts) > 5:
+        logger.warning(
+            "Slug '%s' has %d words — truncating to 5 for SEO best practice",
+            slug,
+            len(parts),
+        )
+        # Keep the most keyword-rich first 5 words
+        slug = "-".join(parts[:5])
+
+    return slug[:80]
 
 
 def publish_blog_post(
@@ -137,16 +154,29 @@ def publish_blog_post(
     except ImportError:
         pass
 
+    # Auto-detect category
+    category = kwargs.get("category", "") or _categorize_post(title)
+
     # Build the file content based on site type
     if site == "ralf_seo":
-        # Ralf's personal blog uses a different template
-        category = kwargs.get("category", "Field Report")
         what_i_learned = kwargs.get("what_i_learned", [])
-        file_content = _build_ralf_blog_post(title, content, meta_description, slug, date_str, category, what_i_learned)
+        file_content = _build_ralf_blog_post(
+            title, content, meta_description, slug, date_str, category, what_i_learned,
+        )
     elif site == "kitchen_estimator":
         file_content = _build_ts_blog_post(title, content, meta_description, slug, date_str)
     elif ext == ".html":
-        file_content = _build_html_blog_post(title, content, meta_description, slug, site, date_str)
+        # Fetch related articles for the related section
+        related_slugs = _fetch_related_slugs(repo, branch, blog_path, slug, category)
+        related_articles = [
+            {"slug": s, "title": s.replace("-", " ").title(), "category": category, "excerpt": ""}
+            for s in related_slugs
+        ]
+        file_content = _build_html_blog_post(
+            title, content, meta_description, slug, site, date_str,
+            category=category,
+            related_articles=related_articles,
+        )
     elif ext == ".mdx":
         file_content = _build_mdx_blog_post(title, content, meta_description, slug, date_str, author)
     else:
@@ -191,14 +221,26 @@ def publish_blog_post(
     commit_url = result.get("commit", {}).get("html_url", "")
     logger.info("Published blog post: %s to %s (%s)", title, file_path, commit_url)
 
-    # Update the blog index page for freeroomplanner
+    # Update the blog index page
     if site == "freeroomplanner":
         _update_blog_index(repo, branch, slug, title, meta_description)
     elif site == "ralf_seo":
-        category = kwargs.get("category", "Field Report")
         _update_ralf_blog_index(repo, branch, slug, title, meta_description, date_str, category)
     elif site == "kitchen_estimator":
         _update_kce_blog_index(repo, branch, slug)
+
+    # Update sitemap.xml with the new post URL
+    blog_config = BLOG_CONFIG.get(site, {})
+    sitemap_path = blog_config.get("sitemap_path", "")
+    domain = blog_config.get("domain", "")
+    if sitemap_path and domain:
+        blog_url_prefix = "/posts" if site == "ralf_seo" else "/blog"
+        _update_sitemap(repo, branch, sitemap_path, slug, domain, date_str, blog_url_prefix)
+
+    # Insert backlinks in related existing posts
+    if ext == ".html":
+        related_for_backlinks = _fetch_related_slugs(repo, branch, blog_path, slug, category)
+        _insert_backlinks(repo, branch, blog_path, related_for_backlinks, slug, title, ext)
 
     published_url = domain_map.get(site, "")
 
@@ -314,24 +356,79 @@ def _update_blog_index(
         logger.error("Failed to update blog index for '%s'", title, exc_info=True)
 
 
-def _build_ralf_blog_post(title: str, content: str, meta_description: str, slug: str, date_str: str, category: str, what_i_learned: list) -> str:
-    """Build an HTML blog post for Ralf's personal blog (simplified template)."""
+def _build_ralf_blog_post(
+    title: str,
+    content: str,
+    meta_description: str,
+    slug: str,
+    date_str: str,
+    category: str,
+    what_i_learned: list[str],
+) -> str:
+    """Build an HTML blog post for Ralf's personal blog.
+
+    Includes proper SEO elements: OG tags, Twitter Card, JSON-LD structured
+    data, breadcrumb navigation, and canonical URL alongside the existing
+    minimal design.
+
+    Args:
+        title: Post title.
+        content: Article body HTML.
+        meta_description: SEO meta description.
+        slug: URL slug.
+        date_str: Publication date (YYYY-MM-DD).
+        category: Post category (e.g. Field Report, SEO).
+        what_i_learned: List of key takeaways.
+
+    Returns:
+        Complete HTML document string.
+    """
+    config = BLOG_CONFIG.get("ralf_seo", {})
     safe_title = title.replace('"', '&quot;')
     safe_desc = meta_description.replace('"', '&quot;')
     learned_html = "\n".join(f"        <li>{item}</li>" for item in what_i_learned)
 
+    domain = config.get("domain", "ralfseo.com")
+    og_image = config.get("og_image", f"https://{domain}/assets/og-image.png")
+    og_w = config.get("og_image_width", 1200)
+    og_h = config.get("og_image_height", 630)
+    canonical = f"https://{domain}/posts/{slug}"
+
+    json_ld = _build_json_ld(
+        config, title, meta_description, slug,
+        date_published=date_str,
+        date_modified=date_str,
+        category=category,
+        breadcrumb_label=title if len(title) <= 40 else " ".join(title.split()[:5]) + "...",
+        blog_url_prefix="/posts",
+    )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="author" content="Ralf SEO">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{safe_title} \u2014 Ralf</title>
 <meta name="description" content="{safe_desc}">
-<meta name="generator" content="Perplexity Computer">
+<link rel="canonical" href="{canonical}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Ralf">
+<meta property="og:title" content="{safe_title}">
+<meta property="og:description" content="{safe_desc}">
+<meta property="og:url" content="{canonical}">
+<meta property="og:image" content="{og_image}">
+<meta property="og:image:width" content="{og_w}">
+<meta property="og:image:height" content="{og_h}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{safe_title}">
+<meta name="twitter:description" content="{safe_desc}">
+<meta name="twitter:image" content="{og_image}">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<meta name="theme-color" content="#1a1a2e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
 <link rel="stylesheet" href="../base.css">
 <link rel="stylesheet" href="../style.css">
 </head>
@@ -345,26 +442,32 @@ def _build_ralf_blog_post(title: str, content: str, meta_description: str, slug:
     </nav>
   </div>
 </header>
+<nav class="breadcrumb wrap" aria-label="Breadcrumb">
+  <a href="../">Home</a> &rsaquo; <span>{safe_title}</span>
+</nav>
 <main class="wrap">
-  <div class="post-header">
-    <div class="meta">{date_str} \u00b7 {category}</div>
-    <h1>{safe_title}</h1>
-  </div>
-  <div class="post-body">
-    {content}
-    <div class="learned">
-      <h2>what i learned</h2>
-      <ul>
-{learned_html}
-      </ul>
+  <article itemscope itemtype="https://schema.org/BlogPosting">
+    <div class="post-header">
+      <div class="meta">{date_str} \u00b7 {category}</div>
+      <h1 itemprop="headline">{safe_title}</h1>
     </div>
-  </div>
+    <div class="post-body" itemprop="articleBody">
+      {content}
+      <div class="learned">
+        <h2>what i learned</h2>
+        <ul>
+{learned_html}
+        </ul>
+      </div>
+    </div>
+  </article>
   <a href="../" class="back">\u2190 Back to posts</a>
 </main>
+{json_ld}
 <footer>
   <div class="wrap">
     <span>ralf \u2014 autonomous seo agent</span>
-    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener">Built with Perplexity Computer</a>
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Built with Perplexity Computer</a>
   </div>
 </footer>
 <script>
@@ -521,6 +624,235 @@ def _update_kce_blog_index(repo: str, branch: str, slug: str) -> None:
         logger.error("Failed to update KCE blog index for '%s'", slug, exc_info=True)
 
 
+def _update_sitemap(
+    repo: str,
+    branch: str,
+    sitemap_path: str,
+    slug: str,
+    domain: str,
+    date_str: str,
+    blog_url_prefix: str = "/blog",
+) -> None:
+    """Add a new URL entry to the site's sitemap.xml.
+
+    Fetches the sitemap, inserts a ``<url>`` entry for the new blog post
+    with ``<changefreq>monthly</changefreq>`` and ``<priority>0.7</priority>``,
+    and commits the update. Errors are logged but not raised.
+
+    Args:
+        repo: GitHub repo (owner/name).
+        branch: Target branch.
+        sitemap_path: Path to sitemap.xml in the repo.
+        slug: Blog post URL slug.
+        domain: Site domain (e.g. freeroomplanner.com).
+        date_str: Publication date (YYYY-MM-DD) for ``<lastmod>``.
+        blog_url_prefix: URL path prefix for blog posts.
+    """
+    if not sitemap_path:
+        return
+
+    try:
+        client = _get_client()
+
+        resp = client.get(
+            f"/repos/{repo}/contents/{quote(sitemap_path, safe='/')}?ref={branch}"
+        )
+        if resp.status_code != 200:
+            logger.warning("Sitemap not found at %s — skipping update", sitemap_path)
+            return
+
+        data = resp.json()
+        sha = data["sha"]
+        current_content = base64.b64decode(data["content"]).decode()
+
+        blog_url = f"https://{domain}{blog_url_prefix}/{slug}"
+
+        # Skip if URL already in sitemap
+        if blog_url in current_content:
+            logger.info("URL '%s' already in sitemap, skipping", blog_url)
+            return
+
+        new_entry = (
+            f"  <url>\n"
+            f"    <loc>{blog_url}</loc>\n"
+            f"    <lastmod>{date_str}</lastmod>\n"
+            f"    <changefreq>monthly</changefreq>\n"
+            f"    <priority>0.7</priority>\n"
+            f"  </url>\n"
+        )
+
+        # Insert before the closing </urlset> tag
+        close_tag = "</urlset>"
+        close_pos = current_content.rfind(close_tag)
+        if close_pos == -1:
+            logger.warning("No </urlset> found in sitemap — skipping")
+            return
+
+        updated = current_content[:close_pos] + new_entry + current_content[close_pos:]
+
+        encoded = base64.b64encode(updated.encode()).decode()
+        put_resp = client.put(
+            f"/repos/{repo}/contents/{quote(sitemap_path, safe='/')}",
+            json={
+                "message": f"sitemap: add {slug}",
+                "content": encoded,
+                "sha": sha,
+                "branch": branch,
+            },
+        )
+        put_resp.raise_for_status()
+        logger.info("Updated sitemap with: %s", blog_url)
+    except Exception:
+        logger.error("Failed to update sitemap for '%s'", slug, exc_info=True)
+
+
+def _insert_backlinks(
+    repo: str,
+    branch: str,
+    blog_path: str,
+    related_slugs: list[str],
+    new_slug: str,
+    new_title: str,
+    file_ext: str = ".html",
+) -> None:
+    """Insert a contextual backlink to the new post in related existing posts.
+
+    For each related slug, fetches the blog post HTML, finds a safe insertion
+    point within the article body, and adds an inline link. Commits each
+    update individually. Errors are logged but not raised.
+
+    Args:
+        repo: GitHub repo (owner/name).
+        branch: Target branch.
+        blog_path: Directory path containing blog posts.
+        related_slugs: Slugs of existing posts to add backlinks in (1-2).
+        new_slug: The new post's slug.
+        new_title: The new post's title (used as anchor text).
+        file_ext: File extension for blog post files.
+    """
+    if not related_slugs:
+        return
+
+    try:
+        client = _get_client()
+    except RuntimeError:
+        logger.warning("No GitHub token — skipping backlink insertion")
+        return
+
+    for related_slug in related_slugs[:2]:
+        try:
+            file_path = f"{blog_path}/{related_slug}{file_ext}"
+            resp = client.get(
+                f"/repos/{repo}/contents/{quote(file_path, safe='/')}?ref={branch}"
+            )
+            if resp.status_code != 200:
+                logger.debug("Related post not found: %s", file_path)
+                continue
+
+            data = resp.json()
+            sha = data["sha"]
+            content = base64.b64decode(data["content"]).decode()
+
+            # Skip if backlink already exists
+            if f"/blog/{new_slug}" in content:
+                logger.debug("Backlink to '%s' already in '%s'", new_slug, related_slug)
+                continue
+
+            # Find a safe insertion point: before the last </p> in the article body
+            # Look for the closing article body marker or last paragraph
+            article_body_end = content.rfind("</div>", 0, content.rfind("</article>"))
+            if article_body_end == -1:
+                # Fallback: find last </p> before </article>
+                article_end = content.rfind("</article>")
+                if article_end == -1:
+                    logger.debug("No article tag in '%s', skipping backlink", related_slug)
+                    continue
+                article_body_end = content.rfind("</p>", 0, article_end)
+                if article_body_end == -1:
+                    continue
+
+            safe_title = new_title.replace("&", "&amp;").replace("<", "&lt;")
+            link_html = (
+                f'\n<p>You might also find our guide on '
+                f'<a href="/blog/{new_slug}">{safe_title}</a> useful.</p>\n'
+            )
+
+            updated = content[:article_body_end] + link_html + content[article_body_end:]
+
+            encoded = base64.b64encode(updated.encode()).decode()
+            put_resp = client.put(
+                f"/repos/{repo}/contents/{quote(file_path, safe='/')}",
+                json={
+                    "message": f"blog: add backlink to {new_slug} in {related_slug}",
+                    "content": encoded,
+                    "sha": sha,
+                    "branch": branch,
+                },
+            )
+            put_resp.raise_for_status()
+            logger.info("Added backlink to '%s' in '%s'", new_slug, related_slug)
+        except Exception:
+            logger.error(
+                "Failed to insert backlink in '%s'", related_slug, exc_info=True
+            )
+
+
+def _fetch_related_slugs(
+    repo: str,
+    branch: str,
+    blog_path: str,
+    current_slug: str,
+    category: str,
+) -> list[str]:
+    """Fetch slugs of related blog posts from the repo's blog directory.
+
+    Lists files in the blog directory and returns up to 3 slugs that are
+    not the current post, preferring posts from the same category cluster
+    based on keyword matching.
+
+    Args:
+        repo: GitHub repo (owner/name).
+        branch: Target branch.
+        blog_path: Directory path containing blog posts.
+        current_slug: Slug of the current post (to exclude).
+        category: Category of the current post for relevance matching.
+
+    Returns:
+        List of up to 3 related blog post slugs.
+    """
+    try:
+        client = _get_client()
+        resp = client.get(
+            f"/repos/{repo}/contents/{quote(blog_path, safe='/')}?ref={branch}"
+        )
+        if resp.status_code != 200:
+            return []
+
+        files = resp.json()
+        slugs = [
+            f["name"].rsplit(".", 1)[0]
+            for f in files
+            if f["type"] == "file"
+            and f["name"] != "index.html"
+            and f["name"].endswith(".html")
+            and f["name"].rsplit(".", 1)[0] != current_slug
+        ]
+
+        # Simple relevance: prefer slugs that share words with the category
+        cat_words = set(category.lower().split())
+        scored = []
+        for s in slugs:
+            slug_words = set(s.split("-"))
+            overlap = len(cat_words & slug_words)
+            scored.append((overlap, s))
+        scored.sort(key=lambda x: x[0], reverse=True)
+
+        return [s for _, s in scored[:3]]
+    except Exception:
+        logger.debug("Failed to fetch related slugs", exc_info=True)
+        return []
+
+
 def list_blog_posts(site: str) -> list[dict[str, str]]:
     """List existing blog posts in a site's repo.
 
@@ -553,81 +885,484 @@ def list_blog_posts(site: str) -> list[dict[str, str]]:
         return []
 
 
-def _build_html_blog_post(
-    title: str, content: str, meta_description: str, slug: str, site: str, date_str: str
-) -> str:
-    """Build a full HTML blog post page for static sites."""
-    domain = {
-        "freeroomplanner": "freeroomplanner.com",
-        "kitchensdirectory": "kitchensdirectory.co.uk",
-    }.get(site, "example.com")
+def _estimate_read_time(content: str) -> int:
+    """Estimate reading time in minutes from content.
 
-    site_name = {
-        "freeroomplanner": "Free Room Planner",
-        "kitchensdirectory": "Kitchens Directory",
-    }.get(site, "Blog")
+    Args:
+        content: The article HTML or text content.
+
+    Returns:
+        Reading time in minutes (minimum 1).
+    """
+    text = re.sub(r"<[^>]+>", "", content)
+    word_count = len(text.split())
+    return max(1, round(word_count / 200))
+
+
+def _build_head_tags(
+    config: dict[str, Any],
+    title: str,
+    meta_description: str,
+    slug: str,
+    blog_url_prefix: str = "/blog",
+) -> str:
+    """Build all required ``<head>`` tags from blog config.
+
+    Produces: analytics script, meta author, charset, viewport, title with
+    suffix, meta description, canonical URL, full OG tags (with image dims),
+    full Twitter Card tags (with image), favicon links, theme-color, font
+    preload (preconnect + lazy-load + noscript fallback), and CSS link.
+
+    Args:
+        config: The site's ``BLOG_CONFIG`` entry.
+        title: Blog post title (without site suffix).
+        meta_description: SEO meta description (150-160 chars).
+        slug: URL slug for the post.
+        blog_url_prefix: URL path prefix for blog posts.
+
+    Returns:
+        Complete ``<head>`` inner HTML string.
+    """
+    domain = config["domain"]
+    site_name = config["site_name"]
+    suffix = config["title_suffix"]
+    og_image = config["og_image"]
+    og_w = config["og_image_width"]
+    og_h = config["og_image_height"]
+    theme_color = config["theme_color"]
+    css_path = config.get("css_path", "")
+    analytics = config.get("analytics_script", "")
+    author = config.get("meta_author", site_name)
+    canonical = f"https://{domain}{blog_url_prefix}/{slug}"
+
+    safe_title = title.replace('"', "&quot;")
+    safe_desc = meta_description.replace('"', "&quot;")
+
+    parts: list[str] = []
+
+    # 1. Analytics
+    if analytics:
+        parts.append(analytics)
+
+    # 2-4. Author, charset, viewport
+    parts.append(f'<meta name="author" content="{author}">')
+    parts.append('<meta charset="UTF-8">')
+    parts.append('<meta name="viewport" content="width=device-width, initial-scale=1.0">')
+
+    # 5. Title
+    parts.append(f"<title>{safe_title} {suffix}</title>")
+
+    # 6. Meta description
+    parts.append(f'<meta name="description" content="{safe_desc}">')
+
+    # 7. Canonical
+    parts.append(f'<link rel="canonical" href="{canonical}">')
+
+    # 8. Open Graph tags
+    parts.append('<meta property="og:type" content="article">')
+    parts.append(f'<meta property="og:site_name" content="{site_name}">')
+    parts.append(f'<meta property="og:title" content="{safe_title}">')
+    parts.append(f'<meta property="og:description" content="{safe_desc}">')
+    parts.append(f'<meta property="og:url" content="{canonical}">')
+    parts.append(f'<meta property="og:image" content="{og_image}">')
+    parts.append(f'<meta property="og:image:width" content="{og_w}">')
+    parts.append(f'<meta property="og:image:height" content="{og_h}">')
+
+    # 9. Twitter Card tags
+    parts.append('<meta name="twitter:card" content="summary_large_image">')
+    parts.append(f'<meta name="twitter:title" content="{safe_title}">')
+    parts.append(f'<meta name="twitter:description" content="{safe_desc}">')
+    parts.append(f'<meta name="twitter:image" content="{og_image}">')
+
+    # 10. Favicon links
+    parts.append('<link rel="icon" href="/favicon.ico" sizes="any">')
+    parts.append('<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">')
+    parts.append('<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">')
+    parts.append('<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">')
+    parts.append('<link rel="manifest" href="/site.webmanifest">')
+
+    # 11. Theme colour
+    parts.append(f'<meta name="theme-color" content="{theme_color}">')
+
+    # 12. Font preload (General Sans via Fontshare)
+    parts.append('<link rel="preconnect" href="https://api.fontshare.com">')
+    parts.append(
+        '<link rel="preload" as="style" '
+        'href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap">'
+    )
+    parts.append(
+        '<link rel="stylesheet" '
+        'href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" '
+        "media=\"print\" onload=\"this.media='all'\">"
+    )
+    parts.append("<noscript>")
+    parts.append(
+        '<link rel="stylesheet" '
+        'href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap">'
+    )
+    parts.append("</noscript>")
+
+    # 13. Main stylesheet
+    if css_path:
+        parts.append(f'<link rel="stylesheet" href="{css_path}">')
+
+    return "\n".join(parts)
+
+
+def _build_json_ld(
+    config: dict[str, Any],
+    title: str,
+    meta_description: str,
+    slug: str,
+    date_published: str,
+    date_modified: str,
+    category: str,
+    breadcrumb_label: str,
+    blog_url_prefix: str = "/blog",
+) -> str:
+    """Build BlogPosting and BreadcrumbList JSON-LD structured data.
+
+    Args:
+        config: The site's ``BLOG_CONFIG`` entry.
+        title: Post title (no site suffix).
+        meta_description: Meta description text.
+        slug: URL slug.
+        date_published: ISO date string (YYYY-MM-DD).
+        date_modified: ISO date string (YYYY-MM-DD).
+        category: Category badge text.
+        breadcrumb_label: Short label for the breadcrumb trail.
+        blog_url_prefix: URL path prefix for blog posts.
+
+    Returns:
+        Two ``<script type="application/ld+json">`` blocks as a single string.
+    """
+    domain = config["domain"]
+    site_name = config["site_name"]
+    og_image = config["og_image"]
+    canonical = f"https://{domain}{blog_url_prefix}/{slug}"
+
+    blog_posting = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": title,
+        "description": meta_description,
+        "image": og_image,
+        "datePublished": date_published,
+        "dateModified": date_modified,
+        "keywords": category,
+        "url": canonical,
+        "author": {
+            "@type": "Organization",
+            "name": site_name,
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": site_name,
+            "logo": {
+                "@type": "ImageObject",
+                "url": og_image,
+            },
+        },
+    }
+
+    breadcrumb_list = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": f"https://{domain}/",
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Blog",
+                "item": f"https://{domain}{blog_url_prefix}",
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": breadcrumb_label,
+            },
+        ],
+    }
+
+    bp_json = json.dumps(blog_posting, indent=2)
+    bc_json = json.dumps(breadcrumb_list, indent=2)
+
+    return (
+        f'<script type="application/ld+json">\n{bp_json}\n</script>\n'
+        f'<script type="application/ld+json">\n{bc_json}\n</script>'
+    )
+
+
+def _build_frp_header(config: dict[str, Any]) -> str:
+    """Build the freeroomplanner header HTML.
+
+    Includes SVG logo, navigation links, theme toggle with moon/sun SVGs,
+    mobile nav toggle button, and CTA button.
+
+    Args:
+        config: The site's ``BLOG_CONFIG`` entry.
+
+    Returns:
+        Complete header HTML string.
+    """
+    nav_items = "".join(
+        f'<a href="{link["href"]}">{link["label"]}</a>'
+        for link in config.get("nav_links", [])
+    )
+    cta = config.get("cta_button") or {}
+    cta_label = cta.get("label", "Start planning")
+    cta_href = cta.get("href", "/app")
+
+    return f"""<header class="header">
+  <div class="container header__inner">
+    <a href="/" class="header__logo" aria-label="Free Room Planner home">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#0d9488"/>
+        <path d="M8 8h16v16H8z" fill="none" stroke="#fff" stroke-width="2"/>
+        <path d="M8 16h8v8" fill="none" stroke="#fff" stroke-width="2"/>
+        <path d="M20 8v8" fill="none" stroke="#fff" stroke-width="2"/>
+      </svg>
+      <span>Free Room Planner</span>
+    </a>
+    <nav class="header__nav" id="main-nav">
+      {nav_items}
+    </nav>
+    <div class="header__actions">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <a href="{cta_href}" class="btn btn--primary header__cta">{cta_label}</a>
+    </div>
+  </div>
+</header>
+<style>
+  .icon-sun {{ display: none; }}
+  [data-theme="dark"] .icon-moon {{ display: none; }}
+  [data-theme="dark"] .icon-sun {{ display: block; }}
+</style>"""
+
+
+def _build_frp_footer(config: dict[str, Any]) -> str:
+    """Build the freeroomplanner footer HTML.
+
+    Includes brand with SVG logo, Planners/Resources/Use cases columns,
+    and copyright line.
+
+    Args:
+        config: The site's ``BLOG_CONFIG`` entry.
+
+    Returns:
+        Complete footer HTML string.
+    """
+    columns_html = ""
+    for col_title, links in config.get("footer_columns", {}).items():
+        items = "".join(
+            f'<li><a href="{link["href"]}">{link["label"]}</a></li>'
+            for link in links
+        )
+        columns_html += f"""    <div class="footer__col">
+      <h4>{col_title}</h4>
+      <ul>{items}</ul>
+    </div>
+"""
+
+    brand_desc = config.get("footer_brand_description", "")
+
+    return f"""<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <a href="/" aria-label="Free Room Planner home">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="#0d9488"/>
+          <path d="M8 8h16v16H8z" fill="none" stroke="#fff" stroke-width="2"/>
+          <path d="M8 16h8v8" fill="none" stroke="#fff" stroke-width="2"/>
+          <path d="M20 8v8" fill="none" stroke="#fff" stroke-width="2"/>
+        </svg>
+      </a>
+      <p>{brand_desc}</p>
+    </div>
+{columns_html}  </div>
+  <div class="container footer__copy">
+    <p>&copy; {datetime.now(tz=timezone.utc).year} Free Room Planner. All rights reserved.</p>
+  </div>
+</footer>"""
+
+
+def _build_related_articles(
+    related: list[dict[str, str]],
+) -> str:
+    """Build the related articles section with 3 card links.
+
+    Args:
+        related: List of dicts with ``slug``, ``title``, ``category``, and
+            ``excerpt`` keys. Up to 3 articles.
+
+    Returns:
+        Related articles HTML section, or empty string if no articles.
+    """
+    if not related:
+        return ""
+
+    cards = ""
+    for article in related[:3]:
+        safe_title = article.get("title", "").replace("&", "&amp;").replace("<", "&lt;")
+        category = article.get("category", "")
+        excerpt = article.get("excerpt", "").replace("&", "&amp;").replace("<", "&lt;")
+        slug = article.get("slug", "")
+        cards += f"""  <a href="/blog/{slug}" class="card">
+    <span class="badge">{category}</span>
+    <h3>{safe_title}</h3>
+    <p>{excerpt}</p>
+  </a>
+"""
+
+    return f"""<section class="related-articles">
+  <div class="container">
+    <h2>Related articles</h2>
+    <div class="grid-3">
+{cards}    </div>
+  </div>
+</section>"""
+
+
+def _build_html_blog_post(
+    title: str,
+    content: str,
+    meta_description: str,
+    slug: str,
+    site: str,
+    date_str: str,
+    *,
+    category: str = "",
+    related_articles: list[dict[str, str]] | None = None,
+) -> str:
+    """Build a full HTML blog post page following SEO standards.
+
+    Produces a complete HTML document with: analytics, full meta tags,
+    OG + Twitter Card tags, favicons, font preloading, external CSS,
+    schema.org BlogPosting article wrapper, breadcrumbs, hero section,
+    CTA boxes, related articles, JSON-LD structured data, full
+    header/footer, and external JS.
+
+    Args:
+        title: Blog post title (no site suffix).
+        content: Article body HTML content.
+        meta_description: SEO meta description (150-160 chars).
+        slug: URL slug for the post.
+        site: Site key from ``BLOG_CONFIG``.
+        date_str: Publication date as YYYY-MM-DD.
+        category: Post category badge text. Auto-detected if empty.
+        related_articles: List of related article dicts for the related
+            articles section. Each dict needs ``slug``, ``title``,
+            ``category``, and ``excerpt`` keys.
+
+    Returns:
+        Complete HTML document string.
+    """
+    config = BLOG_CONFIG.get(site, BLOG_CONFIG.get("freeroomplanner", {}))
+
+    if not category:
+        category = _categorize_post(title)
+
+    read_time = _estimate_read_time(content)
+    breadcrumb_label = title if len(title) <= 40 else " ".join(title.split()[:5]) + "..."
+    safe_title = title.replace('"', "&quot;").replace("&", "&amp;").replace("<", "&lt;")
+
+    head_tags = _build_head_tags(config, title, meta_description, slug)
+    json_ld = _build_json_ld(
+        config, title, meta_description, slug,
+        date_published=date_str,
+        date_modified=date_str,
+        category=category,
+        breadcrumb_label=breadcrumb_label,
+    )
+
+    # Site-specific header/footer
+    if site == "freeroomplanner":
+        header_html = _build_frp_header(config)
+        footer_html = _build_frp_footer(config)
+    else:
+        # Generic header/footer for other HTML sites
+        site_name = config.get("site_name", "Blog")
+        header_html = f"""<header class="header">
+  <div class="container header__inner">
+    <a href="/" class="header__logo">{site_name}</a>
+    <nav class="header__nav"><a href="/blog">Blog</a></nav>
+  </div>
+</header>"""
+        footer_html = f"""<footer class="footer">
+  <div class="container footer__copy">
+    <p>&copy; {datetime.now(tz=timezone.utc).year} {site_name}. All rights reserved.</p>
+    <p><a href="/">Home</a> &middot; <a href="/blog">Blog</a></p>
+  </div>
+</footer>"""
+
+    # Breadcrumb
+    breadcrumb_safe = breadcrumb_label.replace("&", "&amp;").replace("<", "&lt;")
+    breadcrumb_html = f"""<nav class="breadcrumb container" aria-label="Breadcrumb">
+  <a href="/">Home</a> &rsaquo; <a href="/blog">Blog</a> &rsaquo; <span>{breadcrumb_safe}</span>
+</nav>"""
+
+    # CTA box after article
+    cta = config.get("cta_button") or {}
+    cta_href = cta.get("href", "/app")
+    cta_box_html = f"""<div class="cta-box">
+    <h2>Draw your own floor plan &mdash; free</h2>
+    <p>Plan your room with accurate measurements. No sign-up required.</p>
+    <a href="{cta_href}" class="btn btn--primary">Open Free Room Planner free</a>
+  </div>"""
+
+    # Related articles
+    related_html = _build_related_articles(related_articles or [])
+
+    # Final CTA section
+    final_cta_html = f"""<section class="final-cta">
+  <div class="container">
+    <h2>Ready to plan your room?</h2>
+    <p>Free. No account. Works in your browser.</p>
+    <a href="{cta_href}" class="btn btn--primary">Start planning free</a>
+  </div>
+</section>"""
+
+    js_path = config.get("js_path", "")
+    js_tag = f'\n<script src="{js_path}" defer></script>' if js_path else ""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{title} | {site_name} Blog</title>
-<meta name="description" content="{meta_description}">
-<link rel="canonical" href="https://{domain}/blog/{slug}">
-<meta property="og:type" content="article">
-<meta property="og:site_name" content="{site_name}">
-<meta property="og:title" content="{title}">
-<meta property="og:description" content="{meta_description}">
-<meta property="og:url" content="https://{domain}/blog/{slug}">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{title}">
-<meta name="twitter:description" content="{meta_description}">
-
-<meta name="date" content="{date_str}">
-<link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
-<style>
-  :root {{ --accent: #0d9488; --text: #1a1a2e; --muted: #64748b; --bg: #faf9f6; --surface: #fff; }}
-  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ font-family: 'General Sans', system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; }}
-  .container {{ max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }}
-  header {{ padding: 1rem 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; }}
-  header a {{ color: var(--accent); text-decoration: none; font-weight: 600; }}
-  h1 {{ font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.5rem; }}
-  .meta {{ color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }}
-  article h2 {{ font-size: 1.4rem; font-weight: 600; margin: 2rem 0 0.75rem; }}
-  article h3 {{ font-size: 1.15rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }}
-  article p {{ margin-bottom: 1rem; }}
-  article ul, article ol {{ margin: 0 0 1rem 1.5rem; }}
-  article li {{ margin-bottom: 0.4rem; }}
-  article a {{ color: var(--accent); }}
-  article table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }}
-  article th, article td {{ padding: 0.6rem; border: 1px solid #e2e8f0; text-align: left; }}
-  article th {{ background: #f8fafc; font-weight: 600; }}
-  .cta {{ background: var(--accent); color: #fff; padding: 1.5rem; border-radius: 8px; text-align: center; margin: 2rem 0; }}
-  .cta a {{ color: #fff; font-weight: 600; text-decoration: underline; }}
-  footer {{ margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; color: var(--muted); font-size: 0.85rem; }}
-</style>
+{head_tags}
 </head>
 <body>
-<div class="container">
-  <header>
-    <a href="/">{site_name}</a> &rsaquo; <a href="/blog">Blog</a>
-  </header>
-  <h1>{title}</h1>
-  <div class="meta">Published {date_str}</div>
-  <article>
+{header_html}
+{breadcrumb_html}
+<article itemscope itemtype="https://schema.org/BlogPosting">
+  <section class="hero">
+    <div class="container">
+      <span class="badge">{category}</span>
+      <h1 itemprop="headline">{safe_title}</h1>
+      <div class="meta">{read_time} min read</div>
+      <a href="{cta_href}" class="btn btn--primary">{cta.get("label", "Start planning")}</a>
+    </div>
+  </section>
+  <div class="prose fade-in container" itemprop="articleBody">
 {content}
-  </article>
-  <div class="cta">
-    <p>Ready to plan your room? <a href="https://freeroomplanner.com">Start planning for free</a> — no sign-up required.</p>
   </div>
-  <footer>
-    <p>&copy; 2026 {site_name}. All rights reserved.</p>
-    <p><a href="/">Home</a> &middot; <a href="/blog">Blog</a></p>
-  </footer>
-</div>
+  {cta_box_html}
+</article>
+{related_html}
+{final_cta_html}
+{json_ld}
+{footer_html}
+{js_tag}
 </body>
 </html>"""
 
@@ -648,8 +1383,28 @@ slug: "{slug}"
 """
 
 
-def _build_ts_blog_post(title: str, content: str, meta_description: str, slug: str, date_str: str) -> str:
-    """Build a TypeScript blog post file for KitchenCostEstimator."""
+def _build_ts_blog_post(
+    title: str, content: str, meta_description: str, slug: str, date_str: str
+) -> str:
+    """Build a TypeScript blog post file for KitchenCostEstimator.
+
+    Includes SEO metadata fields (canonicalUrl, ogImage, jsonLd) for the
+    React app to render into the page ``<head>``.
+
+    Args:
+        title: Post title.
+        content: Article body (HTML or markdown).
+        meta_description: SEO meta description.
+        slug: URL slug.
+        date_str: Publication date (YYYY-MM-DD).
+
+    Returns:
+        TypeScript source file content.
+    """
+    config = BLOG_CONFIG.get("kitchen_estimator", {})
+    domain = config.get("domain", "kitchencostestimator.com")
+    og_image = config.get("og_image", f"https://{domain}/og-image.png")
+
     # Convert slug to camelCase export name
     parts = slug.replace('-', ' ').split()
     export_name = parts[0].lower() + ''.join(p.capitalize() for p in parts[1:])
@@ -659,16 +1414,20 @@ def _build_ts_blog_post(title: str, content: str, meta_description: str, slug: s
     reading_time = max(1, round(word_count / 200))
 
     # Extract potential tags from title
-    tags = []
+    tags: list[str] = []
     title_lower = title.lower()
-    if 'uk' in title_lower: tags.append('UK')
-    if 'cost' in title_lower or 'price' in title_lower: tags.append('kitchen cost')
-    if '2026' in title_lower: tags.append('2026')
-    if 'renovation' in title_lower: tags.append('renovation')
-    if not tags: tags = ['kitchen', 'guide']
+    if 'uk' in title_lower:
+        tags.append('UK')
+    if 'cost' in title_lower or 'price' in title_lower:
+        tags.append('kitchen cost')
+    if '2026' in title_lower:
+        tags.append('2026')
+    if 'renovation' in title_lower:
+        tags.append('renovation')
+    if not tags:
+        tags = ['kitchen', 'guide']
 
-    # The content should be markdown. If it contains HTML tags, convert basic ones.
-    import re
+    # Convert HTML content to markdown
     md_content = content
     md_content = re.sub(r'<h2[^>]*>(.*?)</h2>', r'## \1', md_content)
     md_content = re.sub(r'<h3[^>]*>(.*?)</h3>', r'### \1', md_content)
@@ -678,8 +1437,8 @@ def _build_ts_blog_post(title: str, content: str, meta_description: str, slug: s
     md_content = re.sub(r'<li[^>]*>(.*?)</li>', r'- \1', md_content)
     md_content = re.sub(r'</?[uo]l[^>]*>', '', md_content)
     md_content = re.sub(r'<a href="([^"]*)"[^>]*>(.*?)</a>', r'[\2](\1)', md_content)
-    md_content = re.sub(r'</?[^>]+>', '', md_content)  # strip remaining HTML
-    md_content = re.sub(r'\n{3,}', '\n\n', md_content)  # collapse multiple newlines
+    md_content = re.sub(r'</?[^>]+>', '', md_content)
+    md_content = re.sub(r'\n{3,}', '\n\n', md_content)
 
     # Escape backticks in content for the template literal
     md_content = md_content.replace('`', '\\`').replace('${', '\\${')
@@ -702,6 +1461,24 @@ export const {export_name}: BlogPost = {{
   }},
   tags: [{tags_str}],
   readingTime: {reading_time},
+  canonicalUrl: 'https://{domain}/blog/{slug}',
+  ogImage: '{og_image}',
+  jsonLd: {{
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: '{safe_title}',
+    description: '{safe_desc}',
+    image: '{og_image}',
+    datePublished: '{date_str}',
+    dateModified: '{date_str}',
+    url: 'https://{domain}/blog/{slug}',
+    author: {{ '@type': 'Organization', name: 'Kitchen Cost Estimator' }},
+    publisher: {{
+      '@type': 'Organization',
+      name: 'Kitchen Cost Estimator',
+      logo: {{ '@type': 'ImageObject', url: '{og_image}' }},
+    }},
+  }},
   content: `{md_content}`,
 }};
 """
@@ -716,8 +1493,47 @@ def _publish_to_supabase(
     author: str,
     date_str: str,
 ) -> dict[str, Any]:
-    """Publish a blog post to kitchensdirectory's Supabase feature_articles table."""
+    """Publish a blog post to kitchensdirectory's Supabase feature_articles table.
+
+    Includes SEO metadata: canonical URL, OG image, and BlogPosting JSON-LD
+    structured data for the front-end to render.
+
+    Args:
+        site: Site key.
+        slug: URL slug.
+        title: Post title.
+        content: Article body HTML.
+        meta_description: SEO meta description.
+        author: Author name.
+        date_str: Publication date (YYYY-MM-DD).
+
+    Returns:
+        Dict with commit_url, file_path, slug, published_url, and repo.
+    """
     from agents.seo_agent.tools.supabase_tools import get_client
+
+    config = BLOG_CONFIG.get("kitchensdirectory", {})
+    domain = config.get("domain", "kitchensdirectory.co.uk")
+    og_image = config.get("og_image", f"https://{domain}/og-image.png")
+    site_name = config.get("site_name", "Kitchens Directory")
+    canonical = f"https://{domain}/articles/{slug}"
+
+    json_ld = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": title,
+        "description": meta_description,
+        "image": og_image,
+        "datePublished": date_str,
+        "dateModified": date_str,
+        "url": canonical,
+        "author": {"@type": "Organization", "name": site_name},
+        "publisher": {
+            "@type": "Organization",
+            "name": site_name,
+            "logo": {"@type": "ImageObject", "url": og_image},
+        },
+    }
 
     client = get_client()
     record = {
@@ -727,11 +1543,14 @@ def _publish_to_supabase(
         "is_published": True,
         "is_featured": False,
         "h1": title,
-        "title_tag": f"{title} | Kitchens Directory",
+        "title_tag": f"{title} | {site_name}",
         "meta_description": meta_description,
         "body_html": content,
         "author_name": author,
         "published_at": f"{date_str}T00:00:00Z",
+        "canonical_url": canonical,
+        "og_image": og_image,
+        "json_ld": json.dumps(json_ld),
     }
 
     resp = client.table("feature_articles").insert(record).execute()
@@ -743,6 +1562,6 @@ def _publish_to_supabase(
         "commit_url": "",
         "file_path": f"supabase:feature_articles/{slug}",
         "slug": slug,
-        "published_url": f"https://kitchensdirectory.co.uk/articles/{slug}",
+        "published_url": f"https://{domain}/articles/{slug}",
         "repo": "supabase",
     }

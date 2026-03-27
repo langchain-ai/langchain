@@ -161,6 +161,157 @@ SITE_PROFILES: dict[str, dict] = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Blog publishing configuration — per-site SEO standards and template data
+# ---------------------------------------------------------------------------
+BLOG_CONFIG: dict[str, dict] = {
+    "freeroomplanner": {
+        "site_name": "Free Room Planner",
+        "domain": "freeroomplanner.com",
+        "title_suffix": "| Free Room Planner Blog",
+        "meta_author": "Free Room Planner",
+        "analytics_script": (
+            '<script src="https://analytics.ahrefs.com/analytics.js" '
+            'data-key="MsX/2VW6nY/D19aSN0t29Q" async></script>'
+        ),
+        "og_image": "https://freeroomplanner.com/og-image.png",
+        "og_image_width": 1200,
+        "og_image_height": 630,
+        "theme_color": "#0d9488",
+        "css_path": "/rs.css",
+        "js_path": "/rs.js",
+        "blog_path": "client/public/blog",
+        "sitemap_path": "client/public/sitemap.xml",
+        "categories": [
+            "Kitchen Planning",
+            "Bathroom Planning",
+            "Bedroom Planning",
+            "Room Planning",
+            "Home Renovation",
+            "Extensions",
+        ],
+        "planner_pages": [
+            "/kitchen-planner",
+            "/bathroom-planner",
+            "/bedroom-planner",
+            "/living-room-planner",
+            "/room-planner",
+            "/floor-plan-maker",
+        ],
+        "nav_links": [
+            {"label": "How it works", "href": "/#how-it-works"},
+            {"label": "Features", "href": "/#features"},
+            {"label": "FAQ", "href": "/#faq"},
+            {"label": "For businesses", "href": "/for-businesses"},
+        ],
+        "cta_button": {"label": "Start planning", "href": "/app"},
+        "footer_brand_description": (
+            "Plan any room with accurate measurements. "
+            "Free, no sign-up, works in your browser."
+        ),
+        "footer_columns": {
+            "Planners": [
+                {"label": "Room", "href": "/room-planner"},
+                {"label": "Kitchen", "href": "/kitchen-planner"},
+                {"label": "Bathroom", "href": "/bathroom-planner"},
+                {"label": "Bedroom", "href": "/bedroom-planner"},
+            ],
+            "Resources": [
+                {"label": "How it works", "href": "/#how-it-works"},
+                {"label": "Blog", "href": "/blog"},
+                {"label": "Open the planner", "href": "/app"},
+            ],
+            "Use cases": [
+                {"label": "Kitchen renovations", "href": "/kitchen-planner"},
+                {"label": "Bathroom refits", "href": "/bathroom-planner"},
+                {"label": "Room rearrangements", "href": "/room-planner"},
+                {"label": "Extensions & new builds", "href": "/floor-plan-maker"},
+            ],
+        },
+    },
+    "ralf_seo": {
+        "site_name": "Ralf",
+        "domain": "ralfseo.com",
+        "title_suffix": "\u2014 Ralf",
+        "meta_author": "Ralf SEO",
+        "analytics_script": "",
+        "og_image": "https://ralfseo.com/assets/og-image.png",
+        "og_image_width": 1200,
+        "og_image_height": 630,
+        "theme_color": "#1a1a2e",
+        "css_path": "../base.css",
+        "js_path": "",
+        "blog_path": "posts",
+        "sitemap_path": "sitemap.xml",
+        "categories": [
+            "Field Report",
+            "SEO",
+            "Technical",
+            "Strategy",
+            "Case Study",
+        ],
+        "planner_pages": [],
+        "nav_links": [{"label": "about", "href": "../about"}],
+        "cta_button": None,
+        "footer_brand_description": "autonomous seo agent",
+        "footer_columns": {},
+    },
+    "kitchen_estimator": {
+        "site_name": "Kitchen Cost Estimator",
+        "domain": "kitchencostestimator.com",
+        "title_suffix": "| Kitchen Cost Estimator Blog",
+        "meta_author": "Kitchen Cost Estimator",
+        "analytics_script": "",
+        "og_image": "https://kitchencostestimator.com/og-image.png",
+        "og_image_width": 1200,
+        "og_image_height": 630,
+        "theme_color": "#2563eb",
+        "css_path": "",
+        "js_path": "",
+        "blog_path": "src/content/blog",
+        "sitemap_path": "",
+        "categories": [
+            "Kitchen Cost",
+            "Renovation",
+            "Budget",
+            "Guide",
+        ],
+        "planner_pages": [],
+        "nav_links": [],
+        "cta_button": {"label": "Estimate your kitchen cost", "href": "/"},
+        "footer_brand_description": "Data-driven kitchen cost estimates.",
+        "footer_columns": {},
+    },
+    "kitchensdirectory": {
+        "site_name": "Kitchens Directory",
+        "domain": "kitchensdirectory.co.uk",
+        "title_suffix": "| Kitchens Directory",
+        "meta_author": "Kitchens Directory",
+        "analytics_script": "",
+        "og_image": "https://kitchensdirectory.co.uk/og-image.png",
+        "og_image_width": 1200,
+        "og_image_height": 630,
+        "theme_color": "#16a34a",
+        "css_path": "",
+        "js_path": "",
+        "blog_path": "supabase:feature_articles",
+        "sitemap_path": "",
+        "categories": [
+            "Kitchen Makers",
+            "Buyer Guide",
+            "Style Guide",
+            "Kitchen Cost",
+        ],
+        "planner_pages": [],
+        "nav_links": [],
+        "cta_button": {"label": "Find a kitchen maker", "href": "/makers"},
+        "footer_brand_description": (
+            "The independent directory of Britain's handmade kitchen makers."
+        ),
+        "footer_columns": {},
+    },
+}
+
 # Token budgets — never exceed these per task call
 TOKEN_BUDGETS: dict[str, int] = {
     "classify_prospect": 50,
