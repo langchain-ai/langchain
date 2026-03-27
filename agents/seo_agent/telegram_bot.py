@@ -534,7 +534,7 @@ Monthly goals: 20 provider partnerships, 15 blogger collabs, 5 influencers, 10 r
 
 
 def _build_strategy_context() -> str:
-    """Build a dynamic strategy context from the CRM dashboard."""
+    """Build a dynamic strategy context from the CRM dashboard and episodic memory."""
     try:
         from agents.seo_agent.tools.crm_tools import get_dashboard_summary
         from agents.seo_agent.strategy import generate_next_steps, get_strategy_summary
@@ -556,6 +556,17 @@ def _build_strategy_context() -> str:
         for i, step in enumerate(next_steps, 1):
             context += f"\n{i}. {step}"
         context += f"\n\n{get_strategy_summary()}"
+
+        # Inject episodic memory (corrections, preferences, learnings)
+        try:
+            from agents.seo_agent.memory import Memory
+
+            memory = Memory()
+            memory_context = memory.recall_for_prompt(topic="seo strategy")
+            if memory_context:
+                context += memory_context
+        except Exception:
+            pass
 
         # Inject knowledge base summary
         try:
@@ -988,6 +999,81 @@ def _summarise_search_results(
         f"Include key findings and relevant URLs.\n\nSearch Results:\n{results_text}"
     }]
     return _call_openrouter_sync(messages, _NL_SYSTEM_PROMPT)
+
+
+# ---------------------------------------------------------------------------
+# Episodic memory helpers
+# ---------------------------------------------------------------------------
+
+# Patterns that indicate the user is correcting Ralf's behaviour
+_CORRECTION_PATTERNS = [
+    r"(?:stop|don'?t|quit|never)\s+(?:writing|posting|doing|making|publishing|sending)\b",
+    r"(?:why do you keep|you keep|stop)\s+\w+",
+    r"(?:i told you|i already said|i said)\b",
+    r"(?:that'?s wrong|incorrect|not right|bad|terrible)\b",
+    r"(?:don'?t|never|stop)\s+(?:do that|repeat|mention)\b",
+]
+
+# Patterns that indicate user preferences
+_PREFERENCE_PATTERNS = [
+    r"(?:i prefer|i like|i want|always|from now on|going forward)\b",
+    r"(?:keep it|make it|be more|be less)\s+(?:short|brief|concise|detailed|verbose)\b",
+    r"(?:focus on|prioriti[sz]e|concentrate on)\b",
+]
+
+
+def _store_memory_from_message(user_text: str, bot_response: str) -> None:
+    """Detect corrections and preferences in user messages and store to memory.
+
+    This runs in the background after every conversational exchange.
+    It's non-critical — failures are silently ignored.
+
+    Args:
+        user_text: The user's message.
+        bot_response: Ralf's response (used for context).
+    """
+    import re
+
+    text_lower = user_text.lower()
+
+    # Skip very short messages (greetings, acknowledgements)
+    if len(user_text.strip()) < 15:
+        return
+
+    from agents.seo_agent.memory import Memory
+
+    memory = Memory()
+
+    # Check for corrections
+    for pattern in _CORRECTION_PATTERNS:
+        if re.search(pattern, text_lower):
+            memory.store_correction(
+                f"User said: {user_text[:200]}",
+                source="telegram",
+            )
+            logger.info("Stored correction from user: %s", user_text[:80])
+            return  # One memory per message
+
+    # Check for preferences
+    for pattern in _PREFERENCE_PATTERNS:
+        if re.search(pattern, text_lower):
+            memory.store_user_preference(
+                f"User said: {user_text[:200]}",
+                source="telegram",
+            )
+            logger.info("Stored preference from user: %s", user_text[:80])
+            return
+
+    # Check for strategic decisions (longer messages about what to do)
+    decision_signals = ["let's", "we should", "change strategy", "new plan", "going forward", "from now on"]
+    if any(sig in text_lower for sig in decision_signals) and len(user_text) > 30:
+        memory.store(
+            "decision",
+            f"User decided: {user_text[:300]}",
+            importance=7,
+            source="telegram",
+        )
+        logger.info("Stored decision from user: %s", user_text[:80])
 
 
 async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1634,6 +1720,12 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             else:
                 await update.message.reply_text("On it.")
 
+            # --- Episodic memory: detect and store corrections/preferences ---
+            try:
+                _store_memory_from_message(user_text, clean_response)
+            except Exception:
+                pass  # Memory storage is non-critical
+
     except Exception as e:
         logger.error("handle_natural_language crashed: %s", traceback.format_exc())
         try:
@@ -1714,36 +1806,55 @@ def main() -> None:
 
     app.add_error_handler(error_handler)
 
-    # Schedule autonomous heartbeat (every N hours)
-    heartbeat_hours = int(os.getenv("HEARTBEAT_INTERVAL_HOURS", "6"))
-    if heartbeat_hours > 0:
-        async def _heartbeat_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-            logger.info("Running scheduled heartbeat...")
+    # Schedule autonomous worker (heavy background tasks — every N hours)
+    worker_hours = int(os.getenv("WORKER_INTERVAL_HOURS", os.getenv("HEARTBEAT_INTERVAL_HOURS", "3")))
+    if worker_hours > 0:
+        async def _worker_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+            logger.info("Running scheduled worker...")
             try:
-                from agents.seo_agent.heartbeat import execute_heartbeat
-                await execute_heartbeat()
+                from agents.seo_agent.worker import execute_worker_cycle
+                await execute_worker_cycle()
             except Exception:
-                # NEVER let the heartbeat crash the bot
-                logger.error("Heartbeat failed (non-fatal): %s", traceback.format_exc())
+                # NEVER let the worker crash the bot
+                logger.error("Worker failed (non-fatal): %s", traceback.format_exc())
                 try:
                     import httpx
                     async with httpx.AsyncClient() as client:
                         await client.post(
                             f"https://api.telegram.org/bot{token}/sendMessage",
                             json={"chat_id": int(os.getenv('TELEGRAM_OWNER_CHAT_ID', '7428463356')),
-                                  "text": f"Heartbeat error (bot still running): {traceback.format_exc()[-300:]}"},
+                                  "text": f"Worker error (bot still running): {traceback.format_exc()[-300:]}"},
                             timeout=10,
                         )
                 except Exception:
                     pass
 
         app.job_queue.run_repeating(
-            _heartbeat_job,
-            interval=heartbeat_hours * 3600,
+            _worker_job,
+            interval=worker_hours * 3600,
             first=600,  # First run 10 minutes after startup
-            name="heartbeat",
+            name="worker",
         )
-        logger.info("Heartbeat scheduled every %d hours (first run in 10 minutes)", heartbeat_hours)
+        logger.info("Worker scheduled every %d hours (first run in 10 minutes)", worker_hours)
+
+    # Schedule autonomous pulse (lightweight check-in — every N minutes)
+    pulse_minutes = int(os.getenv("PULSE_INTERVAL_MINUTES", "60"))
+    if pulse_minutes > 0:
+        async def _pulse_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+            logger.info("Running scheduled pulse...")
+            try:
+                from agents.seo_agent.pulse import execute_pulse
+                await execute_pulse()
+            except Exception:
+                logger.error("Pulse failed (non-fatal): %s", traceback.format_exc())
+
+        app.job_queue.run_repeating(
+            _pulse_job,
+            interval=pulse_minutes * 60,
+            first=300,  # First pulse 5 minutes after startup
+            name="pulse",
+        )
+        logger.info("Pulse scheduled every %d minutes (first run in 5 minutes)", pulse_minutes)
 
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
