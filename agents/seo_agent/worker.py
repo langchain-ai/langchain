@@ -521,6 +521,20 @@ _ERROR_REWRITES = [
 
 _URL_RE = re.compile(r"\((https?://[^\s)]+)\)")
 
+# Human-readable labels for each task so the report makes sense at a glance.
+_TASK_LABELS: dict[str, str] = {
+    "publish_blog": "Blog published",
+    "keyword_research": "Keyword research",
+    "keyword_refresh": "Keyword refresh",
+    "content_gap_analysis": "Content gap analysis",
+    "discover_prospects": "Find backlink prospects",
+    "score_prospects": "Score prospects",
+    "promote_to_crm": "Promote to CRM",
+    "track_rankings": "Track search rankings",
+    "journal_entry": "Journal entry",
+    "memory_consolidation": "Memory cleanup",
+}
+
 
 def _is_noop_result(summary: str) -> bool:
     """Check if a task summary indicates nothing meaningful happened.
@@ -546,7 +560,9 @@ def _friendly_error(raw: str) -> str:
     for pattern, friendly in _ERROR_REWRITES:
         if pattern.search(raw):
             return friendly
-    return raw.split("\n")[0][:80]
+    # Fallback: take the first line, trimmed, so it's still readable
+    first_line = raw.split("\n")[0].strip()[:80]
+    return first_line if first_line else "Unknown error"
 
 
 def _format_html_summary(task: str, summary: str) -> str:
@@ -588,32 +604,45 @@ def _build_worker_report(
     """
     meaningful = [r for r in done if not _is_noop_result(r["summary"])]
     skipped = len(done) - len(meaningful)
+    total = len(done) + len(failed)
 
-    lines: list[str] = ["\U0001f4cb <b>Worker Report</b>"]
+    lines: list[str] = [
+        f"\U0001f4cb <b>Worker Report</b> \u2014 {total} task(s) ran",
+    ]
 
     if meaningful:
         lines.append("")
         lines.append("\u2705 <b>Completed</b>")
         for r in meaningful:
+            label = _TASK_LABELS.get(r["task"], r["task"])
             summary = _format_html_summary(r["task"], r["summary"])
             site = html.escape(r["site"])
-            lines.append(f"  \u2022 <b>{site}</b> \u2014 {summary}")
+            lines.append(f"  \u2022 <b>{label}</b> ({site})")
+            lines.append(f"    {summary}")
 
     if failed:
         lines.append("")
         lines.append("\u274c <b>Failed</b>")
-        by_error: dict[str, list[str]] = {}
+        by_error: dict[str, list[tuple[str, str]]] = {}
         for r in failed:
             friendly = _friendly_error(r["error"])
+            label = _TASK_LABELS.get(r["task"], r["task"])
             by_error.setdefault(friendly, []).append(
-                f"{html.escape(r['task'])} ({html.escape(r['site'])})"
+                (label, html.escape(r["site"]))
             )
-        for err, tasks in by_error.items():
-            lines.append(f"  \u2022 {', '.join(tasks)}")
-            lines.append(f"    <i>{html.escape(err)}</i>")
+        for err, task_pairs in by_error.items():
+            # Group tasks sharing the same error on one line
+            task_list = ", ".join(
+                f"{label} ({site})" for label, site in task_pairs
+            )
+            lines.append(f"  \u2022 {task_list}")
+            lines.append(f"    <i>Reason: {html.escape(err)}</i>")
 
     if skipped:
-        lines.append(f"\n<i>{skipped} no-op task(s) skipped</i>")
+        lines.append(f"\n<i>{skipped} task(s) had nothing to do and were skipped.</i>")
+
+    if not meaningful and not failed:
+        lines.append("\nNo tasks needed to run this cycle.")
 
     lines.append(f"\n\U0001f4b0 Budget: {ctx.budget_remaining:.0%} remaining")
 
