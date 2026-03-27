@@ -118,6 +118,7 @@ class ChatOpenRouter(BaseChatModel):
         | `timeout` | `int | None` | Timeout in milliseconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
+        | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -154,24 +155,45 @@ class ChatOpenRouter(BaseChatModel):
     app_url: str | None = Field(
         default_factory=from_env(
             "OPENROUTER_APP_URL",
-            default="https://docs.langchain.com/oss",
+            default="https://docs.langchain.com",
         ),
     )
     """Application URL for OpenRouter attribution.
 
     Maps to `HTTP-Referer` header.
 
+    Defaults to LangChain docs URL. Set this to your app's URL to get
+    attribution for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
     """
 
     app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default="langchain"),
+        default_factory=from_env("OPENROUTER_APP_TITLE", default="LangChain"),
     )
     """Application title for OpenRouter attribution.
 
     Maps to `X-Title` header.
 
+    Defaults to `'LangChain'`. Set this to your app's name to get attribution
+    for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
+    """
+
+    app_categories: list[str] | None = Field(
+        default=None,
+    )
+    """Marketplace categories for OpenRouter attribution.
+
+    Maps to `X-OpenRouter-Categories` header. Pass a list of lowercase,
+    hyphen-separated category strings (max 30 characters each),
+    e.g. `['cli-agent', 'programming-app']`.
+
+    Only recognized categories are accepted (unrecognized values are silently
+    dropped by OpenRouter).
+
+    See https://openrouter.ai/docs/app-attribution for recognized categories.
     """
 
     request_timeout: int | None = Field(default=None, alias="timeout")
@@ -301,6 +323,59 @@ class ChatOpenRouter(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
+    def _build_client(self) -> Any:
+        """Build and return an `openrouter.OpenRouter` SDK client.
+
+        Returns:
+            An `openrouter.OpenRouter` SDK client instance.
+        """
+        import openrouter  # noqa: PLC0415
+        from openrouter.utils import (  # noqa: PLC0415
+            BackoffStrategy,
+            RetryConfig,
+        )
+
+        client_kwargs: dict[str, Any] = {
+            "api_key": self.openrouter_api_key.get_secret_value(),  # type: ignore[union-attr]
+        }
+        if self.openrouter_api_base:
+            client_kwargs["server_url"] = self.openrouter_api_base
+        if self.app_url:
+            client_kwargs["http_referer"] = self.app_url
+        if self.app_title:
+            client_kwargs["x_title"] = self.app_title
+        if self.app_categories:
+            # The SDK lacks a native constructor param for X-OpenRouter-Categories,
+            # so inject the header via custom httpx clients. The SDK sets its own
+            # headers (Authorization, HTTP-Referer, X-Title) per-request, and httpx
+            # merges client-default headers with per-request headers, so nothing is
+            # lost.
+            import httpx  # noqa: PLC0415
+
+            extra_headers = {
+                "X-OpenRouter-Categories": ",".join(self.app_categories),
+            }
+            client_kwargs["client"] = httpx.Client(
+                headers=extra_headers, follow_redirects=True
+            )
+            client_kwargs["async_client"] = httpx.AsyncClient(
+                headers=extra_headers, follow_redirects=True
+            )
+        if self.request_timeout is not None:
+            client_kwargs["timeout_ms"] = self.request_timeout
+        if self.max_retries > 0:
+            client_kwargs["retry_config"] = RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(
+                    initial_interval=500,
+                    max_interval=60000,
+                    exponent=1.5,
+                    max_elapsed_time=self.max_retries * 150_000,
+                ),
+                retry_connection_errors=True,
+            )
+        return openrouter.OpenRouter(**client_kwargs)
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
@@ -313,41 +388,14 @@ class ChatOpenRouter(BaseChatModel):
 
         if not self.client:
             try:
-                import openrouter  # noqa: PLC0415
-                from openrouter.utils import (  # noqa: PLC0415
-                    BackoffStrategy,
-                    RetryConfig,
-                )
+                import openrouter  # noqa: PLC0415, F401
             except ImportError as e:
                 msg = (
                     "Could not import the `openrouter` Python SDK. "
                     "Please install it with: pip install openrouter"
                 )
                 raise ImportError(msg) from e
-
-            client_kwargs: dict[str, Any] = {
-                "api_key": self.openrouter_api_key.get_secret_value(),
-            }
-            if self.openrouter_api_base:
-                client_kwargs["server_url"] = self.openrouter_api_base
-            if self.app_url:
-                client_kwargs["http_referer"] = self.app_url
-            if self.app_title:
-                client_kwargs["x_title"] = self.app_title
-            if self.request_timeout is not None:
-                client_kwargs["timeout_ms"] = self.request_timeout
-            if self.max_retries > 0:
-                client_kwargs["retry_config"] = RetryConfig(
-                    strategy="backoff",
-                    backoff=BackoffStrategy(
-                        initial_interval=500,
-                        max_interval=60000,
-                        exponent=1.5,
-                        max_elapsed_time=self.max_retries * 150_000,
-                    ),
-                    retry_connection_errors=True,
-                )
-            self.client = openrouter.OpenRouter(**client_kwargs)
+            self.client = self._build_client()
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:

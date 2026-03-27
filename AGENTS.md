@@ -44,7 +44,7 @@ This monorepo uses `uv` for dependency management. Local development uses editab
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
 
-Before running your tests, setup all packages by running:
+Before running your tests, set up all packages by running:
 
 ```bash
 # For all groups
