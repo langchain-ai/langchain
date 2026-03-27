@@ -152,6 +152,13 @@ def _write_todos(
     )
 
 
+async def _awrite_todos(
+    runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
+) -> Command[Any]:
+    """Create and manage a structured task list for your current work session."""
+    return _write_todos(runtime, todos)
+
+
 class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, ResponseT]):
     """Middleware that provides todo list management capabilities to agents.
 
