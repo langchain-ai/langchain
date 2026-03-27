@@ -193,7 +193,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output = context.run(
                         runnable.invoke,
                         input,
-                        config,
+                        child_config,
                         **kwargs,
                     )
             except self.exceptions_to_handle as e:
