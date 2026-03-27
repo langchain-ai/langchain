@@ -2,7 +2,10 @@
 
 import os
 
-# Firecrawl
+# Scraper uses Tavily for search (cheap, already available) and
+# Firecrawl for contact extraction (targeted). If FIRECRAWL_API_KEY
+# is not set, falls back to basic regex email extraction.
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "").strip()
 FIRECRAWL_API_KEY = os.environ.get("FIRECRAWL_API_KEY", "").strip()
 
 # Supabase (shared with SEO agent)

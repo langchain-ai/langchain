@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "Scraper agent online. I find kitchen and bathroom companies using Firecrawl "
-        "and add them to the shared CRM.\n\n"
+        "Scraper agent online. I find kitchen and bathroom companies using "
+        "Tavily search + Firecrawl extraction, and add them to the shared CRM.\n\n"
         "Commands:\n"
         "/scrape <country> [category] — run a scrape (UK, US, CA)\n"
         "/scrape_all — scrape all countries\n"
@@ -149,7 +149,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await cmd_today(update, context)
     else:
         await update.message.reply_text(
-            "I'm the scraper agent — I find companies using Firecrawl.\n"
+            "I'm the scraper agent — I find companies using Tavily + Firecrawl.\n"
             "Try: /scrape UK, /batch, /status, or /today"
         )
 

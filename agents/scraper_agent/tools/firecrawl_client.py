@@ -1,14 +1,18 @@
-"""Firecrawl-powered scraper for finding kitchen & bathroom companies.
+"""Hybrid scraper for finding kitchen & bathroom companies.
 
-Uses the Firecrawl Search API to discover company websites and the Extract API
-to pull structured contact data, then feeds results into the shared CRM.
+Uses Tavily for cheap company discovery (search phase) and Firecrawl Extract API
+for pulling structured contact data from found websites.  Falls back to basic
+regex extraction when FIRECRAWL_API_KEY is not set.
 
-Requires ``FIRECRAWL_API_KEY`` environment variable.
+Requires ``TAVILY_API_KEY`` environment variable.  ``FIRECRAWL_API_KEY`` is
+optional but recommended for higher-quality contact extraction.
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import re
 import time
 from typing import Any
 from urllib.parse import urlparse
@@ -22,16 +26,12 @@ logger = logging.getLogger(__name__)
 FIRECRAWL_BASE = "https://api.firecrawl.dev/v2"
 
 
-def _get_api_key() -> str:
+def _headers() -> dict:
     key = FIRECRAWL_API_KEY
     if not key:
         raise ValueError("FIRECRAWL_API_KEY not set")
-    return key
-
-
-def _headers() -> dict:
     return {
-        "Authorization": f"Bearer {_get_api_key()}",
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
     }
 
@@ -42,46 +42,49 @@ def _should_skip(url: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Search
+# Search — Tavily (cheap discovery)
 # ---------------------------------------------------------------------------
 
 
 def search_companies(query: str, country: str = "US", limit: int = 20) -> list[dict]:
-    """Search for companies using Firecrawl Search API.
+    """Search for companies using Tavily (cheap discovery phase).
 
     Returns list of {url, title, description} dicts.
     """
-    with httpx.Client(timeout=60) as client:
-        resp = client.post(
-            f"{FIRECRAWL_BASE}/search",
-            headers=_headers(),
-            json={
-                "query": query,
-                "limit": min(limit, 100),
-                "country": country,
-                "sources": [{"type": "web"}],
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        from tavily import TavilyClient
+        api_key = os.environ.get("TAVILY_API_KEY", "").strip()
+        if not api_key:
+            raise ValueError("TAVILY_API_KEY not set")
 
-    results = []
-    for item in data.get("data", {}).get("web", []):
-        url = item.get("url", "")
-        if not url:
-            continue
-        results.append({
-            "url": url,
-            "title": item.get("title", ""),
-            "description": item.get("description", ""),
-        })
+        client = TavilyClient(api_key=api_key)
 
-    logger.info("Firecrawl search '%s' (country=%s): %d results", query, country, len(results))
-    return results
+        # Add country context to query
+        country_suffix = {"UK": "UK", "US": "United States", "CA": "Canada"}.get(country, "")
+        full_query = f"{query} {country_suffix}".strip()
+
+        response = client.search(query=full_query, max_results=min(limit, 20))
+
+        results = []
+        for item in response.get("results", []):
+            url = item.get("url", "")
+            if url:
+                results.append({
+                    "url": url,
+                    "title": item.get("title", ""),
+                    "description": item.get("content", "")[:300],
+                })
+
+        logger.info("Tavily search '%s': %d results", full_query, len(results))
+        return results
+
+    except Exception as e:
+        logger.warning("Tavily search failed for '%s': %s", query, e)
+        return []
 
 
 # ---------------------------------------------------------------------------
-# Extract
+# Extract — Firecrawl with basic fallback
 # ---------------------------------------------------------------------------
 
 _EXTRACT_SCHEMA = {
@@ -97,66 +100,109 @@ _EXTRACT_SCHEMA = {
     "required": ["company_name"],
 }
 
+_EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
+_JUNK_EMAIL_PARTS = ("noreply", "no-reply", "example", "test", "wixpress", "sentry", "facebook")
+
+
+def _extract_basic(urls: list[str]) -> list[dict]:
+    """Basic fallback extraction without Firecrawl — just fetch page and regex for emails."""
+    results = []
+
+    for url in urls:
+        try:
+            with httpx.Client(timeout=15, follow_redirects=True) as client:
+                resp = client.get(url, headers={"User-Agent": "Mozilla/5.0"})
+                text = resp.text[:50000]  # Limit to 50KB
+
+            emails = list(set(_EMAIL_PATTERN.findall(text)))
+            # Filter out common non-contact emails
+            emails = [e for e in emails if not any(x in e.lower() for x in _JUNK_EMAIL_PARTS)]
+
+            # Try to extract title from HTML
+            title_match = re.search(r'<title[^>]*>(.*?)</title>', text, re.IGNORECASE | re.DOTALL)
+            title = title_match.group(1).strip()[:200] if title_match else ""
+
+            results.append({
+                "company_name": title,
+                "email": emails[0] if emails else "",
+                "phone": "",
+                "city": "",
+                "region": "",
+                "description": "",
+            })
+        except Exception:
+            results.append({})
+
+    return results
+
 
 def extract_company_data(urls: list[str]) -> list[dict]:
-    """Extract structured company data from URLs using Firecrawl Extract API.
+    """Extract structured company data from URLs.
 
-    Sends URLs to Firecrawl extract endpoint with a schema for company_name,
-    email, phone, city, region, description.  Since extract is async, polls for
-    results.
-
-    Returns list of extracted company dicts.
+    Uses Firecrawl Extract API if available, falls back to basic regex extraction.
     """
     if not urls:
         return []
 
-    with httpx.Client(timeout=120) as client:
-        resp = client.post(
-            f"{FIRECRAWL_BASE}/extract",
-            headers=_headers(),
-            json={
-                "urls": urls,
-                "prompt": (
-                    "Extract the company name, contact email address, phone number, "
-                    "city, and region from this business website. Focus on the contact "
-                    "page, about page, and footer."
-                ),
-                "schema": _EXTRACT_SCHEMA,
-                "enableWebSearch": False,
-            },
-        )
-        resp.raise_for_status()
-        job = resp.json()
+    firecrawl_key = os.environ.get("FIRECRAWL_API_KEY", "").strip()
 
-        if not job.get("success"):
-            logger.warning("Firecrawl extract failed: %s", job)
-            return []
+    if not firecrawl_key:
+        logger.info("No FIRECRAWL_API_KEY — using basic extraction for %d URLs", len(urls))
+        return _extract_basic(urls)
 
-        job_id = job.get("id")
-        if not job_id:
-            # Synchronous response
-            return job.get("data", [])
-
-        # Poll for results (async job) — max ~5 minutes
-        for _attempt in range(30):
-            time.sleep(10)
-            poll_resp = client.get(
-                f"{FIRECRAWL_BASE}/extract/{job_id}",
+    # Use Firecrawl Extract API
+    try:
+        with httpx.Client(timeout=120) as client:
+            resp = client.post(
+                f"{FIRECRAWL_BASE}/extract",
                 headers=_headers(),
+                json={
+                    "urls": urls,
+                    "prompt": (
+                        "Extract the company name, contact email address, phone number, "
+                        "city, and region from this business website. Focus on the contact "
+                        "page, about page, and footer."
+                    ),
+                    "schema": _EXTRACT_SCHEMA,
+                    "enableWebSearch": False,
+                },
             )
-            poll_resp.raise_for_status()
-            poll_data = poll_resp.json()
+            resp.raise_for_status()
+            job = resp.json()
 
-            status = poll_data.get("status", "")
-            if status == "completed":
-                return poll_data.get("data", [])
-            if status == "failed":
-                logger.error("Firecrawl extract job failed: %s", poll_data)
-                return []
-            # still processing, continue polling
+            if not job.get("success"):
+                logger.warning("Firecrawl extract failed: %s", job)
+                return _extract_basic(urls)
 
-    logger.warning("Firecrawl extract timed out for job %s", job_id)
-    return []
+            job_id = job.get("id")
+            if not job_id:
+                # Synchronous response
+                return job.get("data", [])
+
+            # Poll for results (async job) — max ~5 minutes
+            for _attempt in range(30):
+                time.sleep(10)
+                poll_resp = client.get(
+                    f"{FIRECRAWL_BASE}/extract/{job_id}",
+                    headers=_headers(),
+                )
+                poll_resp.raise_for_status()
+                poll_data = poll_resp.json()
+
+                status = poll_data.get("status", "")
+                if status == "completed":
+                    return poll_data.get("data", [])
+                elif status == "failed":
+                    logger.error("Firecrawl extract job failed: %s", poll_data)
+                    return _extract_basic(urls)
+                # still processing, continue polling
+
+        logger.warning("Firecrawl extract timed out for job %s", job_id)
+        return _extract_basic(urls)
+
+    except Exception as e:
+        logger.warning("Firecrawl extract error: %s — falling back to basic", e)
+        return _extract_basic(urls)
 
 
 # ---------------------------------------------------------------------------
