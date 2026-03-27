@@ -502,14 +502,15 @@ async def _execute_heartbeat_legacy_inner() -> None:
             for w in winners[:3]:
                 if (w.get("change") or 0) >= 3:
                     report_lines.append(
-                        f"+ {w['keyword']}: #{w.get('previous_position')} -> #{w.get('position')} (+{w['change']})"
+                        f"'{w['keyword']}' climbed {w['change']} spots "
+                        f"(#{w.get('previous_position')} → #{w.get('position')})"
                     )
     except Exception:
         pass
 
     if report_lines:
-        report = "Heartbeat update:\n\n" + "\n".join(report_lines)
-        report += f"\n\nSpend: ${spend:.4f} / ${cap:.2f}"
+        report = "Here's what happened:\n\n" + "\n".join(report_lines)
+        report += f"\n\nBudget: ${spend:.2f} of ${cap:.2f} used this week."
         await send_telegram(report)
     elif not task_executed:
         logger.info("Nothing to do this cycle.")
