@@ -480,6 +480,10 @@ Actions:
 - journal: {category?} — write a reflective blog post on Ralf's personal blog
 - audit: {target_site} — run full SEO audit (scores 0-100 across 8 categories)
 - audit_page: {url} — audit a specific URL
+- crm_pipeline: (no params) — show the CRM outreach pipeline (companies and designers)
+- crm_search: {query} — search the CRM for contacts by name, company, city, or category
+- crm_followups: (no params) — show CRM contacts needing follow-up
+- import_makers: {city?} — import kitchen makers from the directory into the CRM
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, ralf_seo, all
 
@@ -1079,6 +1083,18 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     lines.append("\nPer site:")
                     for site, data in dash.get('sites', {}).items():
                         lines.append(f"  {site}: {data['keywords']}kw / {data['content']}content / {data['prospects']}prospects")
+                    # Add CRM stats
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_crm_pipeline
+                        crm = get_crm_pipeline()
+                        crm_total = sum(len(v) for v in crm.values())
+                        if crm_total > 0:
+                            lines.append(f"\nCRM: {crm_total} contacts")
+                            for crm_status, contacts in crm.items():
+                                if contacts:
+                                    lines.append(f"  {crm_status}: {len(contacts)}")
+                    except Exception:
+                        pass
                     msg = "\n".join(lines)
                     await update.message.reply_text(msg)
                     history.append({"role": "assistant", "content": msg[:300]})
@@ -1131,6 +1147,91 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                         await update.message.reply_text("No prospects need follow-up right now.")
                 except Exception as e:
                     await update.message.reply_text(f"Follow-up check error: {str(e)[:200]}")
+                return
+            if action == "crm_pipeline":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_crm_pipeline
+                    pipeline = await asyncio.get_event_loop().run_in_executor(None, get_crm_pipeline)
+                    lines = ["CRM Pipeline:\n"]
+                    total = 0
+                    for status, contacts in pipeline.items():
+                        if contacts:
+                            total += len(contacts)
+                            lines.append(f"\n{status}: {len(contacts)}")
+                            for c in contacts[:8]:
+                                name = c.get("company_name", "?")
+                                cat = c.get("category", "")
+                                city = c.get("city", "")
+                                email = c.get("email", "")
+                                detail = f"  - {name}"
+                                if cat:
+                                    detail += f" ({cat})"
+                                if city:
+                                    detail += f" — {city}"
+                                if email:
+                                    detail += f" [{email}]"
+                                lines.append(detail)
+                            if len(contacts) > 8:
+                                lines.append(f"  ...and {len(contacts) - 8} more")
+                    if total == 0:
+                        lines.append("No contacts yet. Use import_makers or add contacts via discover_prospects.")
+                    else:
+                        lines.append(f"\nTotal: {total} contacts")
+                    await update.message.reply_text("\n".join(lines))
+                except Exception as e:
+                    await update.message.reply_text(f"CRM error: {str(e)[:200]}")
+                return
+            if action == "crm_search":
+                query_text = params.get("query", user_text)
+                try:
+                    from agents.seo_agent.tools.crm_tools import search_crm_contacts
+                    results = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(search_crm_contacts, query_text)
+                    )
+                    if results:
+                        lines = [f"Found {len(results)} contacts:\n"]
+                        for c in results[:10]:
+                            name = c.get("company_name", "?")
+                            cat = c.get("category", "")
+                            city = c.get("city", "")
+                            crm_status = c.get("outreach_status", "")
+                            lines.append(f"- {name} ({cat}) — {city} [{crm_status}]")
+                        await update.message.reply_text("\n".join(lines))
+                    else:
+                        await update.message.reply_text(f"No contacts found for '{query_text}'.")
+                except Exception as e:
+                    await update.message.reply_text(f"Search failed: {str(e)[:200]}")
+                return
+            if action == "crm_followups":
+                try:
+                    from agents.seo_agent.tools.crm_tools import get_crm_contacts_needing_followup
+                    needs = await asyncio.get_event_loop().run_in_executor(None, get_crm_contacts_needing_followup)
+                    if needs:
+                        lines = [f"{len(needs)} contacts need follow-up:\n"]
+                        for c in needs[:10]:
+                            name = c.get("company_name", "?")
+                            last = c.get("last_contacted_at", "never")
+                            if isinstance(last, str) and len(last) > 10:
+                                last = last[:10]
+                            lines.append(f"- {name} (last contact: {last})")
+                        await update.message.reply_text("\n".join(lines))
+                    else:
+                        await update.message.reply_text("No contacts need follow-up right now.")
+                except Exception as e:
+                    await update.message.reply_text(f"Follow-up check failed: {str(e)[:200]}")
+                return
+            if action == "import_makers":
+                city = params.get("city")
+                await update.message.reply_text(f"Importing kitchen makers{' from ' + city if city else ''}...")
+                try:
+                    from agents.seo_agent.tools.crm_tools import import_kitchen_makers_to_crm
+                    count = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(import_kitchen_makers_to_crm, city)
+                    )
+                    await update.message.reply_text(f"Imported {count} kitchen makers into the CRM.")
+                    history.append({"role": "assistant", "content": f"Imported {count} makers into CRM"})
+                except Exception as e:
+                    await update.message.reply_text(f"Import failed: {str(e)[:200]}")
                 return
             if action == "ranking_movers":
                 site = params.get("target_site", "freeroomplanner")

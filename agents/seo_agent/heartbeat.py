@@ -403,6 +403,50 @@ async def _execute_heartbeat_inner() -> None:
         except Exception:
             pass
 
+    # --- Always: promote enriched prospects to CRM contacts ---
+    try:
+        from agents.seo_agent.tools.crm_tools import add_crm_contact, get_crm_contacts
+        from agents.seo_agent.tools.supabase_tools import query_table
+
+        # Get prospects that are scored but not yet in the CRM
+        scored_prospects = query_table(
+            "seo_backlink_prospects",
+            filters={"status": "scored"},
+            limit=20,
+        )
+
+        # Get existing CRM domains to avoid duplicates
+        existing_crm = get_crm_contacts(limit=500)
+        existing_domains = {c.get("website", "").replace("https://", "").replace("http://", "").rstrip("/") for c in existing_crm}
+
+        promoted = 0
+        for p in scored_prospects:
+            domain = p.get("domain", "")
+            if domain in existing_domains or not domain:
+                continue
+
+            segment = p.get("segment", p.get("discovery_method", ""))
+            category = "kitchen_company" if "provider" in segment or "company" in segment else "blogger"
+
+            try:
+                add_crm_contact(
+                    company_name=p.get("page_title", domain)[:100] or domain,
+                    category=category,
+                    website=f"https://{domain}",
+                    city="",
+                    notes=f"Auto-imported from prospect pipeline. DR: {p.get('dr', 0)}. Method: {p.get('discovery_method', '')}",
+                    source="prospect_pipeline",
+                    outreach_segment=segment,
+                )
+                promoted += 1
+            except Exception:
+                pass
+
+        if promoted:
+            report_lines.append(f"Added {promoted} prospects to CRM")
+    except Exception:
+        pass
+
     # --- Always: write a ralf journal entry every ~3 days ---
     try:
         from agents.seo_agent.tools.github_tools import list_blog_posts as _lbp_ralf
