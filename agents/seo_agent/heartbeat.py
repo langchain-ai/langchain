@@ -348,42 +348,8 @@ async def _execute_heartbeat_inner() -> None:
                         pass
                 task_executed = True
 
-        # Priority 6: Ralf's personal blog — write a reflective post every ~3 days
-        elif not task_executed:
-            try:
-                from agents.seo_agent.tools.github_tools import list_blog_posts
-                from agents.seo_agent.tools.reflection_engine import generate_reflective_post
-
-                ralf_posts = list_blog_posts("ralf_seo")
-                should_write = True
-
-                if ralf_posts:
-                    # Check if most recent post is less than 3 days old
-                    # Posts are sorted newest first by GitHub API
-                    # Simple heuristic: if we have fewer than 20 posts, wait 3 days between them
-                    # As the blog grows, can be adjusted
-                    should_write = len(ralf_posts) == 0 or True  # For now, let the heartbeat decide
-
-                if should_write and len(ralf_posts) < 100:
-                    await send_telegram("Writing a journal entry for my personal blog...")
-                    post = generate_reflective_post()
-
-                    from agents.seo_agent.tools.github_tools import publish_blog_post
-                    result = publish_blog_post(
-                        site="ralf_seo",
-                        title=post["title"],
-                        content=post["content"],
-                        meta_description=post["meta_description"],
-                        category=post.get("category", "Field Report"),
-                        what_i_learned=post.get("what_i_learned", []),
-                    )
-                    report_lines.append(
-                        f"Journal entry: {post['title']}\n"
-                        f"URL: {result.get('published_url', 'N/A')}"
-                    )
-                    task_executed = True
-            except Exception as e:
-                logger.warning("Ralf blog post failed: %s", e, exc_info=True)
+        # Priority 6: Ralf's personal blog — moved to "always run" section below
+        # so it triggers regardless of task_executed state.
 
         # Priority 7: Track rankings (do this periodically regardless)
         else:
@@ -414,6 +380,62 @@ async def _execute_heartbeat_inner() -> None:
             report_lines.append(f"Prospecting: found {len(prospects)} backlink prospects")
         except Exception as e:
             report_lines.append(f"Prospecting failed: {str(e)[:100]}")
+
+    # --- Always: enrich and score prospects if we have unscored ones ---
+    if prospects_count > 0:
+        try:
+            from agents.seo_agent.tools.supabase_tools import query_table
+            new_prospects = query_table(
+                "seo_backlink_prospects",
+                filters={"status": "new"},
+                limit=20,
+            )
+            if new_prospects:
+                await send_telegram(f"Enriching {len(new_prospects)} new prospects...")
+                try:
+                    result = run_task("score_prospects", target_site="all")
+                    scored = result.get("scored_prospects", [])
+                    tier1 = sum(1 for p in scored if p.get("tier") == "tier1")
+                    tier2 = sum(1 for p in scored if p.get("tier") == "tier2")
+                    report_lines.append(f"Scored {len(scored)} prospects: {tier1} tier-1, {tier2} tier-2")
+                except Exception as e:
+                    report_lines.append(f"Enrichment failed: {str(e)[:100]}")
+        except Exception:
+            pass
+
+    # --- Always: write a ralf journal entry every ~3 days ---
+    try:
+        from agents.seo_agent.tools.github_tools import list_blog_posts as _lbp_ralf
+        ralf_posts = _lbp_ralf("ralf_seo")
+        should_write_journal = len(ralf_posts) < 3  # First few posts, write eagerly
+
+        if not should_write_journal and ralf_posts:
+            # Check if most recent post is 3+ days old
+            # Posts come sorted by GitHub API, most recent first
+            # Use a simple heuristic: check if we have fewer than (days_since_start / 3) posts
+            from datetime import datetime, timezone
+            post_count = len(ralf_posts)
+            days_active = max(1, (datetime.now(timezone.utc) - datetime(2026, 3, 26, tzinfo=timezone.utc)).days)
+            expected_posts = days_active // 3
+            should_write_journal = post_count < expected_posts + 3  # +3 for seed posts
+
+        if should_write_journal:
+            from agents.seo_agent.tools.reflection_engine import generate_reflective_post
+            await send_telegram("Writing a journal entry for ralfseo.com...")
+            post = generate_reflective_post()
+
+            from agents.seo_agent.tools.github_tools import publish_blog_post as _pbp_ralf
+            result = _pbp_ralf(
+                site="ralf_seo",
+                title=post["title"],
+                content=post["content"],
+                meta_description=post["meta_description"],
+                category=post.get("category", "Field Report"),
+                what_i_learned=post.get("what_i_learned", []),
+            )
+            report_lines.append(f"Journal: {post['title']}\nURL: {result.get('published_url', 'N/A')}")
+    except Exception as e:
+        logger.warning("Ralf journal failed: %s", e, exc_info=True)
 
     # Always check ranking changes at the end of each heartbeat
     try:

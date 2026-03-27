@@ -1090,13 +1090,30 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     from agents.seo_agent.tools.crm_tools import get_prospect_pipeline
                     pipeline = await asyncio.get_event_loop().run_in_executor(None, get_prospect_pipeline)
                     lines = ["Prospect Pipeline:\n"]
+                    total = 0
                     for stage, prospects_list in pipeline.items():
                         if prospects_list:
-                            lines.append(f"{stage}: {len(prospects_list)}")
-                            for p in prospects_list[:3]:
-                                lines.append(f"  - {p.get('domain')} (DR:{p.get('dr', '?')})")
-                    if len(lines) == 1:
+                            total += len(prospects_list)
+                            lines.append(f"\n{stage}: {len(prospects_list)}")
+                            for p in prospects_list[:10]:
+                                dr = p.get('dr', 0)
+                                domain = p.get('domain', '?')
+                                method = p.get('discovery_method', '?')
+                                traffic = p.get('monthly_traffic', 0)
+                                title = p.get('page_title', '')[:40]
+                                detail = f"  - {domain} (DR:{dr}"
+                                if traffic:
+                                    detail += f", {traffic:,} visits/mo"
+                                detail += f", via {method})"
+                                if title:
+                                    detail += f"\n    {title}"
+                                lines.append(detail)
+                            if len(prospects_list) > 10:
+                                lines.append(f"  ...and {len(prospects_list) - 10} more")
+                    if total == 0:
                         lines.append("Empty — run discover_prospects first.")
+                    else:
+                        lines.append(f"\nTotal: {total} prospects")
                     await update.message.reply_text("\n".join(lines))
                 except Exception as e:
                     await update.message.reply_text(f"Pipeline error: {str(e)[:200]}")
