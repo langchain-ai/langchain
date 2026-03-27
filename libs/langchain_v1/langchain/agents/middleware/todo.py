@@ -24,7 +24,7 @@ from langchain.agents.middleware.types import (
     OmitFromInput,
     ResponseT,
 )
-from langchain.tools import InjectedToolCallId
+from langchain.tools import InjectedToolCallId, ToolRuntime
 
 
 class Todo(TypedDict):
@@ -195,14 +195,17 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             args_schema=WriteTodosInput,
         )
         def write_todos(
-            todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
+            todos: list[Todo],
+            runtime: ToolRuntime[ContextT, PlanningState[ResponseT]],
         ) -> Command[Any]:
             """Create and manage a structured task list for your current work session."""
             return Command(
                 update={
                     "todos": todos,
                     "messages": [
-                        ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)
+                        ToolMessage(
+                            f"Updated todo list to {todos}", tool_call_id=runtime.tool_call_id
+                        )
                     ],
                 }
             )
