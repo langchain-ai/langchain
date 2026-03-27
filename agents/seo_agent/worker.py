@@ -124,6 +124,15 @@ async def _execute_worker_inner() -> dict[str, Any]:
                 site=site,
             )
 
+            # Log activity for recall
+            memory.log_activity(
+                action_type=task_name,
+                summary=summary,
+                site=site,
+                details=result if isinstance(result, dict) else {},
+                source="worker",
+            )
+
             # Record skill execution for cooldown
             skill = registry.get(task_name)
             if skill:
@@ -208,8 +217,10 @@ async def _execute_skill(
 
     # Default: execute via gateway (LangGraph task)
     if skill and skill.task_type:
+        from functools import partial
+
         return await asyncio.get_event_loop().run_in_executor(
-            None, gw.execute_task, skill.task_type, site
+            None, partial(gw.execute_task, skill.task_type, site=site)
         )
 
     msg = f"No executor found for skill: {skill_name}"
