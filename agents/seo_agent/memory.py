@@ -47,6 +47,7 @@ MEMORY_CATEGORIES = [
     "decision",
     "context",
     "routine",
+    "activity",
 ]
 
 # How many memories to include in prompts (to avoid blowing up context)
@@ -197,6 +198,15 @@ class Memory:
             if m.get("category") in ("correction", "user_preference"):
                 score += 2.0
 
+            # Boost activity memories when topic suggests a "what have you done?" query
+            _activity_signals = {
+                "done", "written", "published", "did", "activities",
+                "history", "recent", "blog", "posts",
+            }
+            if topic and m.get("category") == "activity":
+                if topic_words & _activity_signals:
+                    score += 3.0
+
             scored.append((score, m))
 
         scored.sort(key=lambda x: x[0], reverse=True)
@@ -303,6 +313,87 @@ class Memory:
             tags=["preference"],
         )
 
+    def log_activity(
+        self,
+        action_type: str,
+        summary: str,
+        *,
+        site: str = "",
+        details: dict[str, Any] | None = None,
+        source: str = "worker",
+    ) -> dict[str, Any]:
+        """Log a completed activity for later recall.
+
+        Activities record what the agent did, enabling it to answer questions
+        like "what blog posts have you written?"
+
+        Args:
+            action_type: e.g. "blog_published", "keyword_research".
+            summary: Human-readable one-liner of what happened.
+            site: Related site key.
+            details: Optional structured data (title, URL, keyword, etc.).
+            source: Where this activity originated.
+
+        Returns:
+            The stored memory record.
+        """
+        content = summary
+        if details:
+            detail_parts = [f"{k}={v}" for k, v in details.items() if v]
+            if detail_parts:
+                content += f" | {', '.join(detail_parts[:5])}"
+
+        tags = [action_type]
+        if site:
+            tags.append(site)
+
+        return self.store(
+            "activity",
+            content[:500],
+            importance=3,
+            source=source,
+            related_site=site,
+            tags=tags,
+        )
+
+    def recall_activities(
+        self,
+        *,
+        action_type: str | None = None,
+        site: str | None = None,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Recall past activities, optionally filtered by type and site.
+
+        Args:
+            action_type: Filter to a specific action (e.g. "blog_published").
+            site: Filter to a specific site.
+            limit: Max results.
+
+        Returns:
+            List of activity memory dicts, most recent first.
+        """
+        from agents.seo_agent.tools.supabase_tools import query_table
+
+        filters: dict[str, Any] = {"category": "activity"}
+        if site:
+            filters["related_site"] = site
+
+        try:
+            rows = query_table(
+                "ralf_memory",
+                filters=filters,
+                limit=limit,
+                order_by="created_at",
+                order_desc=True,
+            )
+            if action_type:
+                rows = [r for r in rows if action_type in r.get("tags", [])]
+            return [r for r in rows if not r.get("superseded_by")]
+        except Exception:
+            logger.warning("Activity recall failed", exc_info=True)
+            return []
+
     def store_correction(self, correction: str, *, source: str = "telegram") -> None:
         """Store a behavioural correction from the user.
 
@@ -340,6 +431,18 @@ class Memory:
             if m.get("created_at", "") < cutoff
             and m.get("importance", 5) < 7
         ]
+
+        # Activities consolidate faster (7 days instead of 30)
+        activity_cutoff = (
+            datetime.now(timezone.utc) - timedelta(days=7)
+        ).isoformat()
+        old_activities = [
+            m for m in memories
+            if m.get("category") == "activity"
+            and m.get("created_at", "") < activity_cutoff
+            and m not in old_memories
+        ]
+        old_memories.extend(old_activities)
 
         if len(old_memories) < 5:
             return 0
