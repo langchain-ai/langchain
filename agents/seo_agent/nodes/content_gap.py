@@ -34,6 +34,49 @@ _DECISION_PATTERNS = re.compile(
 )
 
 
+# Competitor brand names to filter out
+_COMPETITOR_BRANDS = {
+    "bathshack", "bath shack", "dfs", "ikea", "wickes", "howdens", "wren",
+    "magnet", "b&q", "bq", "screwfix", "plumbworld", "toolstation",
+    "topps tiles", "bathstore", "victorian plumbing", "soak.com",
+    "dunelm", "habitat", "made.com", "wayfair", "argos",
+}
+
+
+def _is_relevant_gap(keyword: str, target_site: str) -> bool:
+    """Check if a content gap keyword is relevant to our site, not just a competitor brand."""
+    kw_lower = keyword.lower().strip()
+
+    # Filter out pure brand terms
+    for brand in _COMPETITOR_BRANDS:
+        if kw_lower == brand or kw_lower.startswith(brand + " ") or kw_lower.endswith(" " + brand):
+            return False
+        # Filter "brand + location" patterns like "bathshack antrim"
+        if brand in kw_lower and len(kw_lower.split()) <= 3:
+            return False
+
+    # Must have SOME relevance to our topics
+    relevant_terms = {
+        "kitchen", "bathroom", "room", "planner", "plan", "layout", "design",
+        "floor", "renovation", "remodel", "cost", "price", "fitter", "install",
+        "cabinet", "worktop", "tile", "shower", "bath", "sink", "oven",
+        "appliance", "extension", "bedroom", "living", "space", "house",
+        "home", "interior", "furniture", "measure", "architect", "builder",
+        "contractor", "estimate", "quote", "diy", "how to", "guide", "ideas",
+    }
+
+    # If the keyword contains at least one relevant term, keep it
+    words = set(kw_lower.split())
+    if words & relevant_terms:
+        return True
+
+    # Also keep if it's a long-tail question (likely informational)
+    if any(kw_lower.startswith(q) for q in ["how", "what", "why", "where", "when", "can", "should"]):
+        return True
+
+    return False
+
+
 def _classify_funnel_stage(keyword: str) -> str:
     """Classify a keyword into a marketing funnel stage."""
     if _DECISION_PATTERNS.search(keyword):
@@ -93,6 +136,11 @@ def _run_for_single_site(
     for gap in gap_keywords:
         keyword_text = gap.get("keyword", "")
         if not keyword_text:
+            continue
+
+        # Filter irrelevant gaps (competitor brands, unrelated terms)
+        if not _is_relevant_gap(keyword_text, target_site):
+            logger.debug("Filtered irrelevant gap keyword: %s", keyword_text)
             continue
 
         funnel_stage = _classify_funnel_stage(keyword_text)

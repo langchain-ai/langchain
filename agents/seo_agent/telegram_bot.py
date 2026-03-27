@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 import os
+import re as _re
 import sys
 import traceback
 from collections import defaultdict, deque
@@ -495,8 +496,15 @@ CRITICAL RULES:
    "looking forward to it", emoji, or brief acknowledgement), respond naturally like a human would.
    "Cheers!", "Thanks!", "Nice one.", "Glad you like it." Do NOT start a new task.
 1. NEVER output JSON inside markdown code blocks. Raw JSON only.
-2. Be proactive. After completing a task, EXECUTE the logical next step immediately.
-   Example: after keyword research, create content briefs for the top 5 keywords, then start writing.
+2. Be proactive. When the user asks what to do next, MAKE THE DECISION AND DO IT.
+   Do NOT list options and ask them to choose. Do NOT dump a list of files or keywords.
+   Example: User asks "what should I write about?" → Pick the best keyword (highest volume,
+   not yet covered, relevant to the site) and START WRITING immediately. Say "Writing about
+   [keyword] — it has [volume] monthly searches and we haven't covered it yet." Then return
+   the publish_blog action.
+   WRONG: listing 31 blog files and asking "which one?"
+   RIGHT: "Our best untapped keyword is X. Writing it now."
+   After completing a task, EXECUTE the logical next step immediately.
    DON'T ask permission for obvious next steps. DON'T end with "What should I focus on?" or "What's the priority?"
    Just do it and report what you did.
 3. When the user says "store" or "save" or "remember" content — that means write it to the database using store_content. Do NOT search the web.
@@ -511,6 +519,7 @@ CRITICAL RULES:
     Example: User says "save the keyword results so you don't keep using the Ahrefs API" → respond "Got it — I'll check our cached results before hitting Ahrefs from now on. The keywords I just found are already saved." Do NOT run keyword_research again.
 11. CONTENT DIVERSITY: Never write 2+ blog posts on the same topic in a row. Mix it up — if we just wrote about kitchens, the next post should be about bathrooms, room planning, bedrooms, or extensions. Check what was recently published before choosing the next topic.
 12. PRIVACY: Never include personal information (owner's name, email addresses, API keys, tokens, chat IDs, project IDs, or internal URLs) in any content that will be published publicly — blog posts, outreach emails, or any external-facing text. Refer to the owner as "the founder" in public content. You may mention website domains and service names.
+13. When listing existing content, NEVER dump the full file list. Summarize: "We have 31 posts covering kitchen planning, bathroom planning, room planning, etc." If the user specifically asks for the full list, then show it. Otherwise, keep it brief and focus on what's MISSING.
 
 OUTREACH STRATEGY (use this when discussing backlinks, outreach, or prospecting):
 - Kitchen/bathroom providers: PARTNERSHIP approach. Offer free room planner embed for their website. Their customers plan before visiting = better conversion for them.
@@ -1039,8 +1048,15 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             pre_action_text = llm_response[:json_start].strip() if json_start > 0 else ""
 
             if pre_action_text and len(pre_action_text) > 10:
-                await update.message.reply_text(pre_action_text)
-                history.append({"role": "assistant", "content": pre_action_text[:200]})
+                # Strip XML artifacts
+                pre_action_text = _re.sub(r'<function_calls>.*?</function_calls>', '', pre_action_text, flags=_re.DOTALL)
+                pre_action_text = _re.sub(r'</?function_calls>', '', pre_action_text)
+                pre_action_text = _re.sub(r'<invoke[^>]*>.*?</invoke>', '', pre_action_text, flags=_re.DOTALL)
+                pre_action_text = _re.sub(r'</?antml:[^>]+>', '', pre_action_text)
+                pre_action_text = pre_action_text.strip()
+                if pre_action_text:
+                    await update.message.reply_text(pre_action_text)
+                    history.append({"role": "assistant", "content": pre_action_text[:200]})
 
             logger.info("NL action detected: %s params=%s", action, params)
 
@@ -1604,9 +1620,19 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             history.append({"role": "assistant", "content": summary})
 
         else:
-            # Pure conversational response
-            await update.message.reply_text(llm_response)
-            history.append({"role": "assistant", "content": llm_response})
+            # Pure conversational response — strip any XML/function call artifacts
+            clean_response = llm_response
+            clean_response = _re.sub(r'<function_calls>.*?</function_calls>', '', clean_response, flags=_re.DOTALL)
+            clean_response = _re.sub(r'</?function_calls>', '', clean_response)
+            clean_response = _re.sub(r'<invoke[^>]*>.*?</invoke>', '', clean_response, flags=_re.DOTALL)
+            clean_response = _re.sub(r'</?antml:[^>]+>', '', clean_response)
+            clean_response = clean_response.strip()
+
+            if clean_response:
+                await update.message.reply_text(clean_response)
+                history.append({"role": "assistant", "content": clean_response})
+            else:
+                await update.message.reply_text("On it.")
 
     except Exception as e:
         logger.error("handle_natural_language crashed: %s", traceback.format_exc())
