@@ -189,6 +189,42 @@ OUTREACH_SEGMENTS: dict[str, dict[str, Any]] = {
             "HARO home improvement",
         ],
     },
+    "interior_designers": {
+        "description": "Interior designers — freelance, studios, and firms",
+        "sites": ["freeroomplanner", "kitchensdirectory"],
+        "approach": "tool_partnership",
+        "value_proposition": (
+            "Our free room planner lets your clients sketch layouts before your first "
+            "consultation — they arrive with clear ideas, you save time on initial scoping. "
+            "No cost, no sign-up, no branding requirements. Some designers embed the link "
+            "on their website as a 'plan your room' tool for prospective clients."
+        ),
+        "what_we_offer": [
+            "Free room planner tool their clients can use before consultations",
+            "Featured listing on kitchensdirectory.co.uk designer section (if applicable)",
+            "Cross-promotion to homeowners actively planning renovations",
+            "Optional co-branded landing page for high-volume partners",
+        ],
+        "what_we_ask": [
+            "Add a 'Plan Your Room' link on their website or client resources page",
+            "Recommend freeroomplanner.com to clients during the planning phase",
+            "Optional: backlink from their portfolio or resources page",
+        ],
+        "email_tone": "professional, design-aware, respect their creative expertise",
+        "subject_templates": [
+            "Free tool for your clients — room layout planner",
+            "Help clients arrive prepared — free room planner",
+            "Partnership idea: free planning tool for {company} clients",
+        ],
+        "discovery_queries": [
+            "interior designer UK website",
+            "interior design studio London",
+            "residential interior designer portfolio",
+            "kitchen interior designer UK",
+            "bathroom interior designer UK",
+            "interior design firm resources",
+        ],
+    },
 }
 
 
@@ -240,6 +276,7 @@ MONTHLY_OUTREACH_GOALS: dict[str, int] = {
     "home_improvement_influencers": 5,  # Influencer partnerships
     "resource_page_targets": 10,       # Resource page inclusions
     "pr_journalists": 5,              # PR/media outreach
+    "interior_designers": 15,          # Designer partnerships
 }
 
 

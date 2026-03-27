@@ -225,6 +225,70 @@ TABLE_SCHEMAS: dict[str, str] = {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     """,
+    "crm_contacts": """
+        CREATE TABLE IF NOT EXISTS crm_contacts (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_name TEXT NOT NULL,
+            contact_name TEXT,
+            contact_role TEXT,
+            email TEXT,
+            phone TEXT,
+            website TEXT,
+            city TEXT,
+            region TEXT,
+            postcode TEXT,
+            country TEXT DEFAULT 'GB',
+            category TEXT NOT NULL,
+            subcategory TEXT,
+            instagram TEXT,
+            facebook TEXT,
+            linkedin TEXT,
+            outreach_status TEXT DEFAULT 'not_contacted',
+            outreach_segment TEXT,
+            score INTEGER DEFAULT 0,
+            tier TEXT,
+            backlink_prospect_id UUID,
+            source TEXT,
+            tags JSONB DEFAULT '[]',
+            notes TEXT,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now(),
+            last_contacted_at TIMESTAMPTZ
+        );
+    """,
+    "crm_interactions": """
+        CREATE TABLE IF NOT EXISTS crm_interactions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            contact_id UUID NOT NULL,
+            interaction_type TEXT NOT NULL,
+            direction TEXT DEFAULT 'outbound',
+            channel TEXT DEFAULT 'email',
+            subject TEXT,
+            body_preview TEXT,
+            status TEXT DEFAULT 'logged',
+            performed_by TEXT DEFAULT 'ralf',
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "kitchen_makers": """
+        CREATE TABLE IF NOT EXISTS kitchen_makers (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name TEXT NOT NULL,
+            city TEXT,
+            region TEXT,
+            postcode TEXT,
+            country TEXT DEFAULT 'GB',
+            founded INTEGER,
+            website TEXT,
+            email TEXT,
+            phone TEXT,
+            description TEXT,
+            style_categories JSONB DEFAULT '[]',
+            budget_tier TEXT,
+            verified BOOLEAN DEFAULT false,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
 }
 
 
