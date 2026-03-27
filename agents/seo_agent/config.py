@@ -207,3 +207,21 @@ WARMUP_SCHEDULE: dict[str, int] = {
 
 # Bounce rate threshold — pause all sends if exceeded
 MAX_BOUNCE_RATE_PERCENT: float = 3.0
+
+# ---------------------------------------------------------------------------
+# Proactive agent infrastructure
+# ---------------------------------------------------------------------------
+
+# Worker runs heavy tasks silently; pulse sends lightweight check-ins
+WORKER_INTERVAL_HOURS: int = 3
+PULSE_INTERVAL_MINUTES: int = 60
+
+# Memory consolidation: merge old low-importance memories after this many days
+MEMORY_CONSOLIDATION_DAYS: int = 30
+MAX_MEMORIES_IN_PROMPT: int = 15
+
+# Content target: worker writes new posts until this count is reached
+CONTENT_TARGET: int = 30
+
+# Journal entry cooldown (days between reflective posts)
+JOURNAL_COOLDOWN_DAYS: int = 3

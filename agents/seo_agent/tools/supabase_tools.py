@@ -289,6 +289,44 @@ TABLE_SCHEMAS: dict[str, str] = {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     """,
+    # --- Proactive agent infrastructure tables ---
+    "heartbeat_wal": """
+        CREATE TABLE IF NOT EXISTS heartbeat_wal (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            cycle_id TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'running',
+            started_at TIMESTAMPTZ DEFAULT now(),
+            completed_at TIMESTAMPTZ,
+            resumed_from TEXT,
+            tasks_json JSONB DEFAULT '[]',
+            notes_json JSONB DEFAULT '[]',
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "working_buffer": """
+        CREATE TABLE IF NOT EXISTS working_buffer (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            key TEXT NOT NULL UNIQUE,
+            value_json JSONB,
+            expires_at TIMESTAMPTZ,
+            updated_at TIMESTAMPTZ DEFAULT now(),
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "ralf_memory": """
+        CREATE TABLE IF NOT EXISTS ralf_memory (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            category TEXT NOT NULL,
+            content TEXT NOT NULL,
+            importance INTEGER DEFAULT 5,
+            source TEXT DEFAULT 'heartbeat',
+            related_site TEXT,
+            tags JSONB DEFAULT '[]',
+            recall_count INTEGER DEFAULT 0,
+            superseded_by UUID,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
 }
 
 
