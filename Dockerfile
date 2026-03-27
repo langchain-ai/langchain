@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Cache bust: 2026-03-25-v2
+# Cache bust: 2026-03-27-v1-bq-blocklist
 WORKDIR /app
 
 # Install dependencies first (cached layer)
