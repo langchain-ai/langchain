@@ -556,7 +556,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
             inheritable_metadata = {
-                **self._get_metadata_invocation_params(params),
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
@@ -685,7 +684,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
-            **self._get_metadata_invocation_params(params),
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
@@ -839,18 +837,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params["stop"] = stop
         return {**params, **kwargs}
 
-    def _get_metadata_invocation_params(
-        self,
-        invocation_params: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Filter invocation params for inclusion in run metadata."""
-        secret_keys = set(self.lc_secrets.keys())
-        return {
-            k: v
-            for k, v in invocation_params.items()
-            if v is not None and k not in secret_keys and k != "tools"
-        }
-
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
@@ -974,7 +960,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
-            **self._get_metadata_invocation_params(params),
             **(metadata or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
@@ -1098,7 +1083,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
         inheritable_metadata = {
-            **self._get_metadata_invocation_params(params),
             **(metadata or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
