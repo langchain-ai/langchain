@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import InjectedToolCallId, StructuredTool, tool
 from langgraph.runtime import Runtime
 from langgraph.types import Command
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain.agents.middleware.types import (
