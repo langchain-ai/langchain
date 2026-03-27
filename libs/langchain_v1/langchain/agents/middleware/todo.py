@@ -210,6 +210,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
                 name="write_todos",
                 description=tool_description,
                 func=_write_todos,
+                coroutine=_awrite_todos,
                 args_schema=WriteTodosInput,
                 infer_schema=False,
             )
