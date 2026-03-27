@@ -1,0 +1,16 @@
+{
+  "jobs": [
+    {
+      "id": "worker",
+      "interval_hours": 3,
+      "first_delay_seconds": 600,
+      "description": "Heavy background tasks: content writing, keyword research, prospect enrichment, blog publishing"
+    },
+    {
+      "id": "pulse",
+      "interval_minutes": 60,
+      "first_delay_seconds": 300,
+      "description": "Lightweight check-in: ranking movers, budget alerts, blocker escalation, progress summary"
+    }
+  ]
+}

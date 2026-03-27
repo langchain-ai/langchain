@@ -95,25 +95,94 @@ async def _run_agent_task(
     task_type: str,
     **kwargs,
 ) -> dict:
-    """Run an agent task and handle errors gracefully."""
-    await update.message.reply_text(f"⏳ Running `{task_type}`...", parse_mode="Markdown")
+    """Run an agent task with progress indicator and edit-on-complete."""
+    # Send initial progress message that we'll edit when done
+    progress_msg = await update.message.reply_text(f"⏳ Running `{task_type}`...", parse_mode="Markdown")
+    start_time = asyncio.get_event_loop().time()
+
     try:
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None, partial(_run_graph_sync, task_type, **kwargs)
         )
+
+        elapsed = asyncio.get_event_loop().time() - start_time
+
         if result.get("errors"):
             error_text = "\n".join(str(e) for e in result["errors"][:3])
-            await update.message.reply_text(f"⚠️ Completed with errors:\n```\n{error_text}\n```", parse_mode="Markdown")
+            # Edit the progress message to show completion with errors
+            try:
+                await progress_msg.edit_text(
+                    f"⚠️ `{task_type}` done in {elapsed:.0f}s with errors:\n```\n{error_text}\n```",
+                    parse_mode="Markdown",
+                )
+            except Exception:
+                await update.message.reply_text(f"⚠️ Completed with errors:\n```\n{error_text}\n```", parse_mode="Markdown")
+        else:
+            # Edit progress message to show success
+            try:
+                await progress_msg.edit_text(f"✅ `{task_type}` done in {elapsed:.0f}s", parse_mode="Markdown")
+            except Exception:
+                pass
+
+        # Log the turn
+        _log_agent_turn(
+            turn_type="user",
+            input_text=f"{task_type} {kwargs}",
+            output_text=str(result.get("errors", "ok"))[:500],
+            duration_ms=int(elapsed * 1000),
+        )
+
         return result
     except Exception as e:
         tb = traceback.format_exc()
         logger.error("Agent task %s failed: %s", task_type, tb)
-        await update.message.reply_text(
-            f"❌ `{task_type}` failed:\n```\n{str(e)[:500]}\n```",
-            parse_mode="Markdown",
-        )
+        # Edit progress message to show failure
+        try:
+            await progress_msg.edit_text(
+                f"❌ `{task_type}` failed:\n```\n{str(e)[:500]}\n```",
+                parse_mode="Markdown",
+            )
+        except Exception:
+            await update.message.reply_text(
+                f"❌ `{task_type}` failed:\n```\n{str(e)[:500]}\n```",
+                parse_mode="Markdown",
+            )
         return {}
+
+
+def _log_agent_turn(
+    *,
+    turn_type: str,
+    input_text: str = "",
+    output_text: str = "",
+    duration_ms: int = 0,
+    model: str = "",
+    tokens_used: int = 0,
+) -> None:
+    """Log an agent turn to the agent_turns table (non-blocking, non-fatal).
+
+    Args:
+        turn_type: The type of turn (user, cron, pulse, worker).
+        input_text: What triggered the turn.
+        output_text: Summary of the output.
+        duration_ms: How long the turn took.
+        model: The LLM model used.
+        tokens_used: Total tokens consumed.
+    """
+    try:
+        from agents.seo_agent.tools.supabase_tools import insert_record
+
+        insert_record("agent_turns", {
+            "turn_type": turn_type,
+            "input": input_text[:1000],
+            "output": output_text[:1000],
+            "duration_ms": duration_ms,
+            "model": model,
+            "tokens_used": tokens_used,
+        })
+    except Exception:
+        logger.debug("Agent turn logging failed (non-fatal)", exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -128,18 +197,24 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "👋 *Ralf SEO Bot*\n\n"
         "I'm your SEO agent for kitchensdirectory, freeroomplanner, and kitchen estimator.\n\n"
-        "*Commands:*\n"
-        "/keyword\\_research `<site>` `[seed]` — Find keyword opportunities\n"
-        "/content\\_gap `<site>` — Find content gaps vs competitors\n"
-        "/content\\_brief `<site>` `<keyword>` — Generate a content brief\n"
-        "/discover\\_prospects `<site>` — Find backlink prospects\n"
-        "/score\\_prospects — Score all enriched prospects\n"
-        "/generate\\_emails — Generate outreach emails\n"
-        "/outreach\\_report — Weekly outreach summary\n"
+        "*Quick views (no LLM cost):*\n"
+        "/dashboard — Full pipeline overview\n"
+        "/pipeline — Prospect pipeline by stage\n"
         "/cost\\_report — LLM spend this week\n"
-        "/rank\\_report `[site]` — Ranking report\n"
-        "/weekly\\_report — Full weekly SEO report\n"
-        "/status — Quick system check\n\n"
+        "/memory — Recent episodic memories\n"
+        "/skills — Skill registry status\n"
+        "/cron — Cron schedule and history\n"
+        "/status — System health check\n\n"
+        "*Tasks (uses LLM):*\n"
+        "/keyword\\_research `<site>` `[seed]` — Find keywords\n"
+        "/content\\_gap `<site>` — Content gaps vs competitors\n"
+        "/content\\_brief `<site>` `<keyword>` — Content brief\n"
+        "/discover\\_prospects `<site>` — Backlink prospects\n"
+        "/score\\_prospects — Score prospects\n"
+        "/generate\\_emails — Outreach emails\n"
+        "/rank\\_report `[site]` — Rankings\n"
+        "/weekly\\_report — Full weekly report\n"
+        "/outreach\\_report — Outreach summary\n\n"
         "Sites: `kitchensdirectory`, `freeroomplanner`, `kitchen_estimator`",
         parse_mode="Markdown",
     )
@@ -420,11 +495,9 @@ _NL_SYSTEM_PROMPT = """You are Ralf, a proactive SEO agent for three interconnec
 2. freeroomplanner.com — Free browser floor planner. 30+ furniture items, snap-to-grid, PNG export. No sign-up. Monetised via lead capture.
 3. kitchencostestimator.com — Kitchen cost calculator for UK/US/Canada. 68 cost items, 26 multipliers. Monetised via high-intent leads.
 
-Existing blog posts on freeroomplanner.com:
-- bathroom-planning-mistakes, brief-your-builder, extension-planning,
-  kitchen-layout-guide, open-plan-living, small-bedroom-layouts
-
 All three sites cross-link to each other.
+
+(The agent dynamically loads the current blog post list and pipeline state via _build_strategy_context.)
 
 SITE STATUS:
 - freeroomplanner.com = ACTIVE (primary focus, all SEO work goes here first)
@@ -549,7 +622,30 @@ def _build_strategy_context() -> str:
             existing_gaps=dash["content_gaps"],
         )
 
-        context = f"\n\nCURRENT STATE: {dash['keywords_discovered']} keywords, {dash['content_pieces']} content, {dash['content_gaps']} gaps, {dash['prospects_total']} prospects, {dash['rankings_tracked']} rankings tracked."
+        # Inject live blog post list per site
+        try:
+            from agents.seo_agent.tools.github_tools import list_blog_posts
+            from agents.seo_agent.config import SITE_PROFILES
+
+            blog_context_parts = []
+            for site_key, profile in SITE_PROFILES.items():
+                if profile.get("status") == "active" and profile.get("seed_keywords"):
+                    try:
+                        posts = list_blog_posts(site_key)
+                        if posts:
+                            slugs = [p.get("name", "").replace(".html", "").replace(".mdx", "") for p in posts[:20]]
+                            blog_context_parts.append(f"{profile.get('domain', site_key)}: {len(posts)} posts ({', '.join(slugs[:8])}{'...' if len(slugs) > 8 else ''})")
+                    except Exception:
+                        pass
+            if blog_context_parts:
+                blog_summary = "\n".join(blog_context_parts)
+            else:
+                blog_summary = "No blog posts found yet."
+        except Exception:
+            blog_summary = ""
+
+        context = f"\n\nEXISTING BLOG POSTS:\n{blog_summary}" if blog_summary else ""
+        context += f"\n\nCURRENT STATE: {dash['keywords_discovered']} keywords, {dash['content_pieces']} content, {dash['content_gaps']} gaps, {dash['prospects_total']} prospects, {dash['rankings_tracked']} rankings tracked."
         if dash.get("prospect_pipeline"):
             context += f"\nPipeline: {dash['prospect_pipeline']}"
         context += f"\nWeekly spend: ${dash['weekly_spend']:.4f}"
@@ -566,6 +662,11 @@ def _build_strategy_context() -> str:
             memory_context = memory.recall_for_prompt(topic="seo strategy")
             if memory_context:
                 context += memory_context
+
+            # Inject promoted learned lessons (always present, not topic-filtered)
+            lessons = memory.get_learned_lessons()
+            if lessons:
+                context += lessons
         except Exception:
             pass
 
@@ -1789,6 +1890,167 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
 
 
 # ---------------------------------------------------------------------------
+# Deterministic slash commands — pure Python, zero LLM cost
+# ---------------------------------------------------------------------------
+
+
+async def cmd_dashboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /dashboard — full pipeline overview with zero LLM cost."""
+    if not await _check_auth(update):
+        return
+    try:
+        from agents.seo_agent.tools.crm_tools import get_dashboard_summary
+
+        dash = get_dashboard_summary()
+        lines = ["SEO Dashboard\n"]
+        lines.append(f"Keywords: {dash['keywords_discovered']} discovered, {dash['keywords_cached']} cached")
+        lines.append(f"Content: {dash['content_pieces']} pieces, {dash['content_gaps']} gaps")
+        lines.append(f"Prospects: {dash['prospects_total']} total")
+        if dash.get("prospect_pipeline"):
+            lines.append("Pipeline: " + ", ".join(f"{k}: {v}" for k, v in dash["prospect_pipeline"].items()))
+        lines.append(f"Rankings: {dash['rankings_tracked']} tracked")
+        lines.append(f"Spend: ${dash['weekly_spend']:.4f}")
+
+        # Per-site breakdown
+        for site, data in dash.get("sites", {}).items():
+            lines.append(f"\n  {site}: {data['keywords']}kw / {data['content']}content / {data['prospects']}prospects")
+
+        # CRM stats
+        try:
+            from agents.seo_agent.tools.crm_tools import get_crm_pipeline
+
+            crm = get_crm_pipeline()
+            crm_total = sum(len(v) for v in crm.values())
+            if crm_total > 0:
+                lines.append(f"\nCRM: {crm_total} contacts")
+                for crm_status, contacts in crm.items():
+                    if contacts:
+                        lines.append(f"  {crm_status}: {len(contacts)}")
+        except Exception:
+            pass
+
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Dashboard error: {str(e)[:300]}")
+
+
+async def cmd_pipeline(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /pipeline — prospect pipeline by stage, zero LLM cost."""
+    if not await _check_auth(update):
+        return
+    try:
+        from agents.seo_agent.tools.crm_tools import get_prospect_pipeline
+
+        pipeline = get_prospect_pipeline()
+        lines = ["Prospect Pipeline\n"]
+        total = 0
+        for stage, prospects_list in pipeline.items():
+            if prospects_list:
+                total += len(prospects_list)
+                lines.append(f"\n{stage}: {len(prospects_list)}")
+                for p in prospects_list[:8]:
+                    dr = p.get("dr", 0)
+                    domain = p.get("domain", "?")
+                    lines.append(f"  - {domain} (DR:{dr})")
+                if len(prospects_list) > 8:
+                    lines.append(f"  ...and {len(prospects_list) - 8} more")
+        if total == 0:
+            lines.append("Empty. Run /discover_prospects first.")
+        else:
+            lines.append(f"\nTotal: {total} prospects")
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Pipeline error: {str(e)[:300]}")
+
+
+async def cmd_skills(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /skills — list all skills and their status, zero LLM cost."""
+    if not await _check_auth(update):
+        return
+    try:
+        from agents.seo_agent.skills import SkillRegistry
+        from agents.seo_agent.tools.crm_tools import get_dashboard_summary
+        from agents.seo_agent.wal import WorkingBuffer
+
+        registry = SkillRegistry()
+        dash = get_dashboard_summary()
+        buffer = WorkingBuffer()
+
+        lines = ["Skill Registry\n"]
+        for skill in registry.skills:
+            should_fire, reason = skill.should_fire(dash, buffer)
+            status = "READY" if should_fire else "skip"
+            lines.append(
+                f"  [{status}] {skill.name} (p={skill.priority}, cost={skill.cost_tier}, cd={skill.cooldown_hours}h)"
+            )
+            if should_fire and reason:
+                lines.append(f"         reason: {reason[:80]}")
+
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Skills error: {str(e)[:300]}")
+
+
+async def cmd_memory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /memory — show recent episodic memories, zero LLM cost."""
+    if not await _check_auth(update):
+        return
+    try:
+        from agents.seo_agent.memory import Memory
+
+        memory = Memory()
+        all_memories = memory.recall(limit=20)
+
+        if not all_memories:
+            await update.message.reply_text("No memories stored yet.")
+            return
+
+        lines = [f"Episodic Memory ({len(all_memories)} entries)\n"]
+        for m in all_memories[:15]:
+            cat = m.get("category", "?")
+            content = m.get("content", "")[:80]
+            importance = m.get("importance", 0)
+            lines.append(f"  [{cat}] (i={importance}) {content}")
+
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Memory error: {str(e)[:300]}")
+
+
+async def cmd_cron(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /cron — show cron schedule and recent executions, zero LLM cost."""
+    if not await _check_auth(update):
+        return
+    try:
+        from agents.seo_agent.cron import CronTracker, load_schedule
+
+        schedule = load_schedule()
+        tracker = CronTracker()
+
+        lines = ["Cron Schedule\n"]
+        for job_id, cfg in schedule.items():
+            interval = cfg.get("interval_hours") or cfg.get("interval_minutes")
+            unit = "h" if "interval_hours" in cfg else "m"
+            lines.append(f"  {job_id}: every {interval}{unit} — {cfg.get('description', '')[:60]}")
+
+        lines.append("\nRecent Executions:")
+        for job_id in schedule:
+            recent = tracker.recent_executions(job_id, limit=3)
+            if recent:
+                for r in recent:
+                    status = r.get("status", "?")
+                    fired = r.get("fired_at", "?")[:19]
+                    tasks = r.get("tasks_executed", 0)
+                    lines.append(f"  {job_id} | {fired} | {status} | {tasks} tasks")
+            else:
+                lines.append(f"  {job_id} | no executions yet")
+
+        await update.message.reply_text("\n".join(lines))
+    except Exception as e:
+        await update.message.reply_text(f"Cron error: {str(e)[:300]}")
+
+
+# ---------------------------------------------------------------------------
 # Bot setup and main
 # ---------------------------------------------------------------------------
 
@@ -1798,13 +2060,18 @@ async def post_init(application: Application) -> None:
     commands = [
         BotCommand("start", "Show help and available commands"),
         BotCommand("status", "System health check"),
+        BotCommand("dashboard", "Full pipeline overview (no LLM cost)"),
+        BotCommand("pipeline", "Prospect pipeline by stage (no LLM cost)"),
+        BotCommand("cost_report", "LLM spend this week (no LLM cost)"),
+        BotCommand("memory", "Recent episodic memories (no LLM cost)"),
+        BotCommand("skills", "Skill registry status (no LLM cost)"),
+        BotCommand("cron", "Cron schedule and history (no LLM cost)"),
         BotCommand("keyword_research", "Find keyword opportunities"),
         BotCommand("content_gap", "Find content gaps vs competitors"),
         BotCommand("content_brief", "Generate a content brief"),
         BotCommand("discover_prospects", "Find backlink prospects"),
         BotCommand("score_prospects", "Score enriched prospects"),
         BotCommand("generate_emails", "Generate outreach emails"),
-        BotCommand("cost_report", "LLM spend this week"),
         BotCommand("rank_report", "Ranking report"),
         BotCommand("weekly_report", "Full weekly SEO report"),
         BotCommand("outreach_report", "Outreach summary"),
@@ -1830,6 +2097,11 @@ def main() -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_start))
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("dashboard", cmd_dashboard))
+    app.add_handler(CommandHandler("pipeline", cmd_pipeline))
+    app.add_handler(CommandHandler("skills", cmd_skills))
+    app.add_handler(CommandHandler("memory", cmd_memory))
+    app.add_handler(CommandHandler("cron", cmd_cron))
     app.add_handler(CommandHandler("keyword_research", cmd_keyword_research))
     app.add_handler(CommandHandler("content_gap", cmd_content_gap))
     app.add_handler(CommandHandler("content_brief", cmd_content_brief))
@@ -1860,24 +2132,38 @@ def main() -> None:
 
     app.add_error_handler(error_handler)
 
+    # Cron tracker for deduplication and execution logging
+    from agents.seo_agent.cron import CronTracker, load_schedule
+
+    _cron_tracker = CronTracker()
+    _schedule = load_schedule()
+
     # Schedule autonomous worker (heavy background tasks — every N hours)
-    worker_hours = int(os.getenv("WORKER_INTERVAL_HOURS", os.getenv("HEARTBEAT_INTERVAL_HOURS", "3")))
+    worker_cfg = _schedule.get("worker", {})
+    worker_hours = worker_cfg.get("interval_hours", int(os.getenv("WORKER_INTERVAL_HOURS", os.getenv("HEARTBEAT_INTERVAL_HOURS", "3"))))
+    worker_first = worker_cfg.get("first_delay_seconds", 600)
     if worker_hours > 0:
         async def _worker_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+            if not _cron_tracker.acquire_lock("worker"):
+                logger.info("Worker skipped — previous run still in progress")
+                return
             logger.info("Running scheduled worker...")
             try:
                 from agents.seo_agent.worker import execute_worker_cycle
                 await execute_worker_cycle()
+                _cron_tracker.release_lock("worker", status="completed", message_sent=True)
             except Exception:
                 # NEVER let the worker crash the bot
-                logger.error("Worker failed (non-fatal): %s", traceback.format_exc())
+                error_msg = traceback.format_exc()
+                logger.error("Worker failed (non-fatal): %s", error_msg)
+                _cron_tracker.release_lock("worker", status="failed", error=error_msg[-500:])
                 try:
                     import httpx
                     async with httpx.AsyncClient() as client:
                         await client.post(
                             f"https://api.telegram.org/bot{token}/sendMessage",
                             json={"chat_id": int(os.getenv('TELEGRAM_OWNER_CHAT_ID', '7428463356')),
-                                  "text": f"Worker error (bot still running): {traceback.format_exc()[-300:]}"},
+                                  "text": f"Worker error (bot still running): {error_msg[-300:]}"},
                             timeout=10,
                         )
                 except Exception:
@@ -1886,29 +2172,45 @@ def main() -> None:
         app.job_queue.run_repeating(
             _worker_job,
             interval=worker_hours * 3600,
-            first=600,  # First run 10 minutes after startup
+            first=worker_first,
             name="worker",
         )
-        logger.info("Worker scheduled every %d hours (first run in 10 minutes)", worker_hours)
+        logger.info("Worker scheduled every %d hours (first run in %ds)", worker_hours, worker_first)
 
     # Schedule autonomous pulse (lightweight check-in — every N minutes)
-    pulse_minutes = int(os.getenv("PULSE_INTERVAL_MINUTES", "60"))
+    pulse_cfg = _schedule.get("pulse", {})
+    pulse_minutes = pulse_cfg.get("interval_minutes", int(os.getenv("PULSE_INTERVAL_MINUTES", "60")))
+    pulse_first = pulse_cfg.get("first_delay_seconds", 300)
     if pulse_minutes > 0:
         async def _pulse_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+            if not _cron_tracker.acquire_lock("pulse", max_age_minutes=pulse_minutes):
+                logger.info("Pulse skipped — previous run still in progress")
+                return
             logger.info("Running scheduled pulse...")
             try:
                 from agents.seo_agent.pulse import execute_pulse
                 await execute_pulse()
+                _cron_tracker.release_lock("pulse", status="completed", message_sent=True)
             except Exception:
-                logger.error("Pulse failed (non-fatal): %s", traceback.format_exc())
+                error_msg = traceback.format_exc()
+                logger.error("Pulse failed (non-fatal): %s", error_msg)
+                _cron_tracker.release_lock("pulse", status="failed", error=error_msg[-500:])
 
         app.job_queue.run_repeating(
             _pulse_job,
             interval=pulse_minutes * 60,
-            first=300,  # First pulse 5 minutes after startup
+            first=pulse_first,
             name="pulse",
         )
-        logger.info("Pulse scheduled every %d minutes (first run in 5 minutes)", pulse_minutes)
+        logger.info("Pulse scheduled every %d minutes (first run in %ds)", pulse_minutes, pulse_first)
+
+    # Start health API server for Railway health checks
+    try:
+        from agents.seo_agent.api import start_health_server
+
+        start_health_server()
+    except Exception:
+        logger.warning("Health API failed to start (non-fatal)", exc_info=True)
 
     logger.info("RalfSEObot is running — polling for messages...")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)

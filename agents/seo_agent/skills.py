@@ -365,6 +365,17 @@ _BUILTIN_SKILLS: list[Skill] = [
         consumes=[],
     ),
     Skill(
+        name="memory_promotion",
+        description="Promote high-value, frequently recalled memories into permanent learned lessons",
+        category="maintenance",
+        priority=15,
+        cost_tier="none",
+        cooldown_hours=168,  # Weekly
+        preconditions=[],
+        produces=["learned_lessons"],
+        consumes=[],
+    ),
+    Skill(
         name="keyword_refresh",
         description="Re-run keyword research when all keywords have content",
         category="content",

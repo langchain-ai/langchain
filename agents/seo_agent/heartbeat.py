@@ -46,8 +46,21 @@ logger = logging.getLogger("heartbeat")
 OWNER_CHAT_ID = int(os.getenv("TELEGRAM_OWNER_CHAT_ID", "7428463356"))
 
 
-async def send_telegram(message: str, parse_mode: str = "") -> None:
-    """Send a message to the owner via Telegram."""
+async def send_telegram(
+    message: str,
+    parse_mode: str = "",
+    *,
+    thread_id: int | None = None,
+) -> None:
+    """Send a message to the owner via Telegram.
+
+    Args:
+        message: The message text.
+        parse_mode: Telegram parse mode (e.g. "HTML", "Markdown").
+        thread_id: Optional message_thread_id for sending to a specific
+            topic/thread. Uses ``TELEGRAM_HEARTBEAT_THREAD_ID`` env var
+            by default for heartbeat messages.
+    """
     token = "".join(os.environ.get("TELEGRAM_BOT_TOKEN", "").split())
     if not token:
         logger.error("No TELEGRAM_BOT_TOKEN set")
@@ -56,9 +69,11 @@ async def send_telegram(message: str, parse_mode: str = "") -> None:
     import httpx
 
     async with httpx.AsyncClient() as client:
-        payload = {"chat_id": OWNER_CHAT_ID, "text": message}
+        payload: dict = {"chat_id": OWNER_CHAT_ID, "text": message}
         if parse_mode:
             payload["parse_mode"] = parse_mode
+        if thread_id:
+            payload["message_thread_id"] = thread_id
         try:
             resp = await client.post(
                 f"https://api.telegram.org/bot{token}/sendMessage",
@@ -69,6 +84,25 @@ async def send_telegram(message: str, parse_mode: str = "") -> None:
                 logger.error("Telegram send failed: %s", resp.text[:200])
         except Exception as e:
             logger.error("Telegram send error: %s", e)
+
+
+def _get_heartbeat_thread_id() -> int | None:
+    """Get the Telegram thread ID for heartbeat/pulse messages.
+
+    Set ``TELEGRAM_HEARTBEAT_THREAD_ID`` in the environment to route
+    proactive messages to a dedicated topic thread, keeping them separate
+    from conversational messages.
+
+    Returns:
+        The thread ID as an int, or ``None`` to use the main chat.
+    """
+    raw = os.getenv("TELEGRAM_HEARTBEAT_THREAD_ID", "")
+    if raw.strip():
+        try:
+            return int(raw.strip())
+        except ValueError:
+            pass
+    return None
 
 
 def run_task(task_type: str, **kwargs) -> dict:
