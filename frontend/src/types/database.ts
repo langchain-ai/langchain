@@ -136,3 +136,16 @@ export interface ScheduleEntry {
   description: string
   active: boolean
 }
+
+export interface RankingEntry {
+  id: string
+  target_site: string
+  keyword: string
+  position: number
+  url: string
+  previous_position: number | null
+  change: number
+  volume: number
+  snapshot_date: string
+  created_at: string
+}

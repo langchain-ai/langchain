@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Bot, CalendarClock, Network, Users } from 'lucide-react'
+import { Bot, CalendarClock, Network, Users, Search } from 'lucide-react'
 
 const links = [
   { to: '/agents', label: 'Agents', icon: Bot },
   { to: '/schedules', label: 'Schedules', icon: CalendarClock },
   { to: '/org-chart', label: 'Org Chart', icon: Network },
   { to: '/crm', label: 'CRM', icon: Users },
+  { to: '/keywords', label: 'Keywords', icon: Search },
 ]
 
 export function Sidebar() {
