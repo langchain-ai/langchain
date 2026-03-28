@@ -1324,6 +1324,84 @@ def test_convert_to_openai_image_block() -> None:
         assert result == expected
 
 
+def test_convert_to_openai_image_block_detail() -> None:
+    """Test that the detail field is forwarded from image content blocks."""
+    expected_url_with_detail = {
+        "type": "image_url",
+        "image_url": {"url": "https://...", "detail": "high"},
+    }
+    expected_b64_with_detail = {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/jpeg;base64,<base64 data>",
+            "detail": "high",
+        },
+    }
+
+    # URL: detail at top level
+    result = convert_to_openai_image_block(
+        {"type": "image", "url": "https://...", "detail": "high"}
+    )
+    assert result == expected_url_with_detail
+
+    # URL: detail in extras
+    result = convert_to_openai_image_block(
+        {"type": "image", "url": "https://...", "extras": {"detail": "high"}}
+    )
+    assert result == expected_url_with_detail
+
+    # URL: detail in metadata (backwards compat)
+    result = convert_to_openai_image_block(
+        {"type": "image", "url": "https://...", "metadata": {"detail": "high"}}
+    )
+    assert result == expected_url_with_detail
+
+    # Base64: detail at top level
+    result = convert_to_openai_image_block(
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "detail": "high",
+        }
+    )
+    assert result == expected_b64_with_detail
+
+    # Base64: detail in extras
+    result = convert_to_openai_image_block(
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "extras": {"detail": "high"},
+        }
+    )
+    assert result == expected_b64_with_detail
+
+    # Base64: detail in metadata (backwards compat)
+    result = convert_to_openai_image_block(
+        {
+            "type": "image",
+            "base64": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "metadata": {"detail": "high"},
+        }
+    )
+    assert result == expected_b64_with_detail
+
+    # v0 source_type format: detail at top level
+    result = convert_to_openai_image_block(
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/jpeg",
+            "detail": "high",
+        }
+    )
+    assert result == expected_b64_with_detail
+
+
 def test_known_block_types() -> None:
     expected = {
         bt

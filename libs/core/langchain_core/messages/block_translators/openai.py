@@ -19,6 +19,34 @@ if TYPE_CHECKING:
     from langchain_core.messages import AIMessage
 
 
+def _extract_detail(block: dict[str, Any]) -> str | None:
+    """Extract the optional ``detail`` field from an image content block.
+
+    Checks top-level, ``extras``, and ``metadata`` (backwards compat).
+
+    Args:
+        block: The image content block.
+
+    Returns:
+        The detail value if found, otherwise ``None``.
+    """
+    if detail := block.get("detail"):
+        return detail
+    if (
+        (extras := block.get("extras"))
+        and isinstance(extras, dict)
+        and (detail := extras.get("detail"))
+    ):
+        return detail
+    if (
+        (metadata := block.get("metadata"))
+        and isinstance(metadata, dict)
+        and (detail := metadata.get("detail"))
+    ):
+        return detail
+    return None
+
+
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions.
 
@@ -33,11 +61,12 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
         The formatted image content block.
     """
     if "url" in block:
+        image_url: dict[str, Any] = {"url": block["url"]}
+        if detail := _extract_detail(block):
+            image_url["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
+            "image_url": image_url,
         }
     if "base64" in block or block.get("source_type") == "base64":
         if "mime_type" not in block:
@@ -45,11 +74,12 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
             raise ValueError(error_message)
         mime_type = block["mime_type"]
         base64_data = block["data"] if "data" in block else block["base64"]
+        image_url = {"url": f"data:{mime_type};base64,{base64_data}"}
+        if detail := _extract_detail(block):
+            image_url["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
+            "image_url": image_url,
         }
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)

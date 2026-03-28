@@ -603,3 +603,79 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_openai_data_block_image_detail() -> None:
+    """Test that detail field is forwarded through convert_to_openai_data_block."""
+    # Chat Completions — URL with detail
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "high"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Chat Completions — base64 with detail
+    block = {
+        "type": "image",
+        "base64": "<base64 string>",
+        "mime_type": "image/png",
+        "detail": "low",
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/png;base64,<base64 string>",
+            "detail": "low",
+        },
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Responses — URL with detail
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    expected = {
+        "type": "input_image",
+        "image_url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Responses — base64 with detail
+    block = {
+        "type": "image",
+        "base64": "<base64 string>",
+        "mime_type": "image/png",
+        "detail": "auto",
+    }
+    expected = {
+        "type": "input_image",
+        "image_url": "data:image/png;base64,<base64 string>",
+        "detail": "auto",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Chat Completions — detail in extras
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "extras": {"detail": "high"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "high"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
