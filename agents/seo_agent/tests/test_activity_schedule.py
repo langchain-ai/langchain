@@ -289,6 +289,24 @@ class TestUpdateSchedule:
         updated = next(r for r in updated_rows if r["id"] == entry["id"])
         assert updated["active"] is False
 
+    def test_partial_update_preserves_skill(self) -> None:
+        """Regression: partial update must not null out the ``skill`` column."""
+        from agents.seo_agent.strategy import seed_schedule, update_schedule_entry
+        from agents.seo_agent.tools.supabase_tools import query_table
+
+        seed_schedule()
+        rows = query_table("ralf_schedule", limit=500)
+        entry = rows[0]
+        original_skill = entry["skill"]
+
+        # Update only cadence — skill must survive.
+        update_schedule_entry(entry["id"], cadence="weekly")
+
+        updated_rows = query_table("ralf_schedule", limit=500)
+        updated = next(r for r in updated_rows if r["id"] == entry["id"])
+        assert updated["cadence"] == "weekly"
+        assert updated["skill"] == original_skill
+
 
 # ---------------------------------------------------------------------------
 # Tests: SkillRegistry.evaluate() with schedule boost

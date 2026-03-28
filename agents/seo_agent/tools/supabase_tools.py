@@ -442,6 +442,48 @@ def upsert_record(
     return resp.data[0] if resp.data else data
 
 
+def update_record(
+    table: str, record_id: str, data: dict[str, Any], id_column: str = "id"
+) -> dict[str, Any]:
+    """Update an existing record by ID (partial update).
+
+    Unlike `upsert_record`, this only modifies the specified fields and
+    leaves all other columns unchanged.
+
+    Args:
+        table: Table name.
+        record_id: Value of the ID column to match.
+        data: Fields to update (only specified fields are changed).
+        id_column: Name of the ID column.
+
+    Returns:
+        The updated record dict.
+
+    Raises:
+        ValueError: If no record with the given ID exists.
+    """
+    if _is_mock():
+        store = _mock_store.get(table, [])
+        for i, row in enumerate(store):
+            if row.get(id_column) == record_id:
+                store[i] = {**row, **data}
+                return store[i]
+        msg = f"No record with {id_column}={record_id} in {table}"
+        raise ValueError(msg)
+
+    client = get_client()
+    resp = (
+        client.table(table)
+        .update(data)
+        .eq(id_column, record_id)
+        .execute()
+    )
+    if not resp.data:
+        msg = f"No record with {id_column}={record_id} in {table}"
+        raise ValueError(msg)
+    return resp.data[0]
+
+
 def query_table(
     table: str,
     filters: dict[str, Any] | None = None,
