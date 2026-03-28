@@ -1242,3 +1242,74 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+class TestParseGoogleDocstring:
+    """Tests for _parse_google_docstring continuation-line handling."""
+
+    def test_continuation_line_with_colon(self) -> None:
+        """Continuation lines containing colons should not be treated as new args."""
+        from langchain_core.utils.function_calling import _parse_google_docstring
+
+        # inspect.getdoc() returns dedented docstrings, so match that format
+        docstring = (
+            "Search the knowledge base.\n"
+            "\n"
+            "Args:\n"
+            "    query: The search query to use\n"
+            "        for finding things: important ones\n"
+            "    top_k: Number of results to return"
+        )
+        desc, args = _parse_google_docstring(docstring, ["query", "top_k"])
+        assert "query" in args
+        assert "top_k" in args
+        assert len(args) == 2
+        assert "for finding things: important ones" in args["query"]
+
+    def test_simple_args_still_work(self) -> None:
+        """Basic single-line argument descriptions should still parse correctly."""
+        from langchain_core.utils.function_calling import _parse_google_docstring
+
+        docstring = (
+            "Do something.\n"
+            "\n"
+            "Args:\n"
+            "    x: The x value\n"
+            "    y: The y value"
+        )
+        desc, args = _parse_google_docstring(docstring, ["x", "y"])
+        assert args == {"x": "The x value", "y": "The y value"}
+
+    def test_continuation_line_without_colon(self) -> None:
+        """Continuation lines without colons should be appended to current arg."""
+        from langchain_core.utils.function_calling import _parse_google_docstring
+
+        docstring = (
+            "Do something.\n"
+            "\n"
+            "Args:\n"
+            "    name: A very long description that\n"
+            "        spans multiple lines\n"
+            "    age: The age"
+        )
+        desc, args = _parse_google_docstring(docstring, ["name", "age"])
+        assert "spans multiple lines" in args["name"]
+        assert args["age"] == "The age"
+
+    def test_multiple_continuation_lines_with_colons(self) -> None:
+        """Multiple continuation lines with colons should all be appended."""
+        from langchain_core.utils.function_calling import _parse_google_docstring
+
+        docstring = (
+            "Process data.\n"
+            "\n"
+            "Args:\n"
+            "    config: Configuration string in format\n"
+            "        key1: value1\n"
+            "        key2: value2\n"
+            "    verbose: Enable verbose output"
+        )
+        desc, args = _parse_google_docstring(docstring, ["config", "verbose"])
+        assert "key1: value1" in args["config"]
+        assert "key2: value2" in args["config"]
+        assert args["verbose"] == "Enable verbose output"
