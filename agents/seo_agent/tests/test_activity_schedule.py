@@ -381,3 +381,76 @@ class TestFormatSchedule:
 
         output = format_schedule_for_display([])
         assert "No schedule" in output
+
+
+# ---------------------------------------------------------------------------
+# Tests: _parse_day_of_week
+# ---------------------------------------------------------------------------
+
+
+class TestParseDayOfWeek:
+    """Tests for _parse_day_of_week helper in telegram_bot."""
+
+    def _parse(self, value: str | int) -> int:
+        from agents.seo_agent.strategy import parse_day_of_week
+
+        return parse_day_of_week(value)
+
+    # --- Numeric inputs ---
+
+    def test_int_zero(self) -> None:
+        assert self._parse(0) == 0
+
+    def test_int_six(self) -> None:
+        assert self._parse(6) == 6
+
+    def test_string_zero(self) -> None:
+        assert self._parse("0") == 0
+
+    def test_string_six(self) -> None:
+        assert self._parse("6") == 6
+
+    # --- Full day names (case-insensitive) ---
+
+    def test_monday(self) -> None:
+        assert self._parse("Monday") == 0
+
+    def test_friday_lower(self) -> None:
+        assert self._parse("friday") == 4
+
+    def test_sunday_upper(self) -> None:
+        assert self._parse("SUNDAY") == 6
+
+    # --- 3-letter abbreviations ---
+
+    def test_mon(self) -> None:
+        assert self._parse("Mon") == 0
+
+    def test_wed_lower(self) -> None:
+        assert self._parse("wed") == 2
+
+    def test_sat_upper(self) -> None:
+        assert self._parse("SAT") == 5
+
+    # --- Whitespace tolerance ---
+
+    def test_padded_string(self) -> None:
+        assert self._parse("  Tuesday  ") == 1
+
+    # --- Error cases ---
+
+    def test_out_of_range_int(self) -> None:
+        with pytest.raises(ValueError):
+            self._parse(7)
+
+    def test_out_of_range_string(self) -> None:
+        with pytest.raises(ValueError):
+            self._parse("9")
+
+    def test_invalid_name(self) -> None:
+        with pytest.raises(ValueError):
+            self._parse("Notaday")
+
+    def test_negative_int(self) -> None:
+        with pytest.raises(ValueError):
+            self._parse(-1)
