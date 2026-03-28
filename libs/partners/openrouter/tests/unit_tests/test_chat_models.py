@@ -300,7 +300,7 @@ class TestChatOpenRouterInstantiation:
             assert call_kwargs["http_referer"] == "https://myapp.com"
 
     def test_app_title_passed_to_client(self) -> None:
-        """Test that app_title is passed to the SDK client."""
+        """Test that app_title is passed as x_title to the SDK client."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -309,12 +309,7 @@ class TestChatOpenRouterInstantiation:
                 app_title="My App",
             )
             call_kwargs = mock_cls.call_args[1]
-            title_key = (
-                "x_open_router_title"
-                if "x_open_router_title" in call_kwargs
-                else "x_title"
-            )
-            assert call_kwargs[title_key] == "My App"
+            assert call_kwargs["x_title"] == "My App"
 
     def test_default_attribution_headers(self) -> None:
         """Test that default attribution headers are sent when not overridden."""
@@ -326,12 +321,7 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == ("https://docs.langchain.com")
-            title_key = (
-                "x_open_router_title"
-                if "x_open_router_title" in call_kwargs
-                else "x_title"
-            )
-            assert call_kwargs[title_key] == "LangChain"
+            assert call_kwargs["x_title"] == "LangChain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
@@ -345,12 +335,7 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == "https://my-custom-app.com"
-            title_key = (
-                "x_open_router_title"
-                if "x_open_router_title" in call_kwargs
-                else "x_title"
-            )
-            assert call_kwargs[title_key] == "My Custom App"
+            assert call_kwargs["x_title"] == "My Custom App"
 
     def test_app_categories_passed_to_client(self) -> None:
         """Test that app_categories injects custom httpx clients with header."""
@@ -413,19 +398,80 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == "https://myapp.com"
-            title_key = (
-                "x_open_router_title"
-                if "x_open_router_title" in call_kwargs
-                else "x_title"
+            assert call_kwargs["x_title"] == "My App"
+            assert "client" in call_kwargs
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+
+    def test_build_client_new_sdk_uses_x_open_router_title(self) -> None:
+        """Test that x_open_router_title is used when the SDK has that param."""
+        captured: dict[str, Any] = {}
+
+        class _FakeNewSDK:
+            def __init__(
+                self, *, api_key: str = "", x_open_router_title: str = "", **kw: Any
+            ) -> None:
+                captured.update(
+                    api_key=api_key, x_open_router_title=x_open_router_title, **kw
+                )
+
+        with patch("openrouter.OpenRouter", _FakeNewSDK):
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_title="My App",
             )
-            assert call_kwargs[title_key] == "My App"
-            # Categories passed via httpx headers (old SDK) or native param
-            if "x_open_router_categories" in call_kwargs:
-                assert call_kwargs["x_open_router_categories"] == "cli-agent"
-            else:
-                assert "client" in call_kwargs
-                sync_headers = call_kwargs["client"].headers
-                assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+            assert captured["x_open_router_title"] == "My App"
+            assert "x_title" not in captured
+
+    def test_build_client_new_sdk_uses_x_open_router_categories(self) -> None:
+        """Test that categories are passed as a kwarg when SDK supports it."""
+        captured: dict[str, Any] = {}
+
+        class _FakeNewSDK:
+            def __init__(
+                self,
+                *,
+                api_key: str = "",
+                x_open_router_title: str = "",
+                x_open_router_categories: str = "",
+                **kw: Any,
+            ) -> None:
+                captured.update(
+                    api_key=api_key,
+                    x_open_router_title=x_open_router_title,
+                    x_open_router_categories=x_open_router_categories,
+                    **kw,
+                )
+
+        with patch("openrouter.OpenRouter", _FakeNewSDK):
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["cli-agent", "programming-app"],
+            )
+            assert captured["x_open_router_categories"] == ("cli-agent,programming-app")
+            assert "client" not in captured
+            assert "async_client" not in captured
+
+    def test_build_client_old_sdk_uses_x_title(self) -> None:
+        """Test that x_title is used when the SDK lacks x_open_router_title."""
+        captured: dict[str, Any] = {}
+
+        class _FakeOldSDK:
+            def __init__(
+                self, *, api_key: str = "", x_title: str = "", **kw: Any
+            ) -> None:
+                captured.update(api_key=api_key, x_title=x_title, **kw)
+
+        with patch("openrouter.OpenRouter", _FakeOldSDK):
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_title="My App",
+            )
+            assert captured["x_title"] == "My App"
+            assert "x_open_router_title" not in captured
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
