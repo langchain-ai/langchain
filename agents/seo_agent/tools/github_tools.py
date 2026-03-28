@@ -154,6 +154,29 @@ def publish_blog_post(
     except ImportError:
         pass
 
+    # Run autonomous content quality review before publishing
+    try:
+        from agents.seo_agent.tools.content_review import review_before_publish
+        from agents.seo_agent.tools.file_tools import write_quality_log
+
+        review = review_before_publish(
+            title=title,
+            content=content,
+            keyword=kwargs.get("keyword", ""),
+            site=site,
+            meta_description=meta_description,
+        )
+        content = review["content"]  # May be revised
+        write_quality_log(
+            title=title,
+            score=review["score"],
+            verdict=review["verdict"],
+            issues=review["issues"],
+            fixed=review["fixed"],
+        )
+    except Exception:
+        logger.warning("Content review skipped due to error", exc_info=True)
+
     # Auto-detect category
     category = kwargs.get("category", "") or _categorize_post(title)
 
