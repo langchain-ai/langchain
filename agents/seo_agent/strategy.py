@@ -421,8 +421,8 @@ def get_full_schedule() -> list[dict[str, Any]]:
     rows = _load_schedule_rows()
     rows.sort(key=lambda r: (
         {"daily": 0, "weekly": 1, "monthly": 2}.get(r.get("cadence", ""), 3),
-        r.get("day_of_week", 0),
-        r.get("day_of_month", 0),
+        r.get("day_of_week") or 0,
+        r.get("day_of_month") or 0,
     ))
     return rows
 
@@ -552,13 +552,13 @@ def format_schedule_for_display(rows: list[dict[str, Any]]) -> str:
         status = "" if active else " [PAUSED]"
 
         if cadence == "daily":
-            day = _DAY_NAMES[row.get("day_of_week", 0)]
+            day = _DAY_NAMES[row.get("day_of_week") or 0]
             lines.append(f"  {day}: {skill} (+{boost}){status}")
         elif cadence == "weekly":
-            day = _DAY_NAMES[row.get("day_of_week", 0)]
+            day = _DAY_NAMES[row.get("day_of_week") or 0]
             lines.append(f"  Every {day}: {skill} (+{boost}){status}")
         elif cadence == "monthly":
-            dom = row.get("day_of_month", 1)
+            dom = row.get("day_of_month") or 1
             suffix = "th" if 4 <= dom <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(dom % 10, "th")
             lines.append(f"  {dom}{suffix} of month: {skill} (+{boost}){status}")
 

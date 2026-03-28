@@ -347,6 +347,44 @@ class TestUpdateSchedule:
         matched_skills = {r["skill"] for r in matches}
         assert "keyword_research" in matched_skills
 
+    def test_sort_handles_none_day_values(self) -> None:
+        """Regression: get_full_schedule must not crash when day fields are None."""
+        from agents.seo_agent.strategy import get_full_schedule, seed_schedule, update_schedule_entry
+        from agents.seo_agent.tools.supabase_tools import _mock_store
+
+        seed_schedule()
+        rows = get_full_schedule()
+
+        # Simulate a DB row where day_of_week is explicitly None (as happens
+        # when cadence is changed without setting a new day value).
+        entry = next(r for r in rows if r["cadence"] == "daily")
+        _mock_store["ralf_schedule"] = [
+            {**r, "day_of_week": None} if r["id"] == entry["id"] else r
+            for r in _mock_store["ralf_schedule"]
+        ]
+
+        # Must not raise TypeError
+        result = get_full_schedule()
+        assert len(result) > 0
+
+    def test_display_handles_none_day_values(self) -> None:
+        """Regression: format_schedule_for_display must not crash on None days."""
+        from agents.seo_agent.strategy import format_schedule_for_display, get_full_schedule, seed_schedule
+        from agents.seo_agent.tools.supabase_tools import _mock_store
+
+        seed_schedule()
+
+        # Set a daily entry's day_of_week to None
+        for row in _mock_store["ralf_schedule"]:
+            if row["cadence"] == "daily":
+                row["day_of_week"] = None
+                break
+
+        # Must not raise TypeError or KeyError
+        rows = get_full_schedule()
+        output = format_schedule_for_display(rows)
+        assert isinstance(output, str)
+
 
 # ---------------------------------------------------------------------------
 # Tests: SkillRegistry.evaluate() with schedule boost
