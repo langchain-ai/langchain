@@ -333,7 +333,7 @@ class ChatOpenRouter(BaseChatModel):
             if self.app_url:
                 client_kwargs["http_referer"] = self.app_url
             if self.app_title:
-                client_kwargs["x_title"] = self.app_title
+                client_kwargs["x_open_router_title"] = self.app_title
             if self.request_timeout is not None:
                 client_kwargs["timeout_ms"] = self.request_timeout
             if self.max_retries > 0:
