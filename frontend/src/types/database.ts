@@ -124,3 +124,15 @@ export interface CronJob {
   first_delay_seconds: number
   description: string
 }
+
+export interface ScheduleEntry {
+  id: string
+  cadence: 'daily' | 'weekly' | 'monthly'
+  day_of_week?: number
+  day_of_month?: number
+  skill: string
+  boost_amount: number
+  label: string
+  description: string
+  active: boolean
+}

@@ -1,5 +1,6 @@
 import { CronJobCard } from './CronJobCard'
 import { ExecutionTimeline } from './ExecutionTimeline'
+import { SkillSchedulePanel } from './SkillSchedulePanel'
 import { UpcomingRuns } from './UpcomingRuns'
 import type { CronJob } from '../../types/database'
 
@@ -27,6 +28,9 @@ export function ScheduleDashboard() {
           <CronJobCard key={job.id} job={job} />
         ))}
       </div>
+
+      {/* Skill schedule with descriptions and frequency controls */}
+      <SkillSchedulePanel />
 
       {/* Upcoming + Timeline side by side */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

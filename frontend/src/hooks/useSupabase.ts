@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, isConfigured } from '../lib/supabase'
+import { supabase, isConfigured } from '../utils/supabase'
 
 interface UseSupabaseOptions {
   table: string
