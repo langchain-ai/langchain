@@ -307,6 +307,46 @@ class TestUpdateSchedule:
         assert updated["cadence"] == "weekly"
         assert updated["skill"] == original_skill
 
+    def test_fuzzy_match_resolves_natural_language_skill(self) -> None:
+        """Fuzzy fallback should match 'rankings' to 'track_rankings'."""
+        from agents.seo_agent.strategy import seed_schedule
+        from agents.seo_agent.tools.supabase_tools import query_table
+
+        seed_schedule()
+        rows = query_table("ralf_schedule", limit=500)
+
+        # Simulate the fuzzy fallback logic from schedule_edit handler
+        query = "rankings"
+        matches = [
+            r for r in rows
+            if query in r.get("skill", "").lower().replace("_", " ")
+            or query in r.get("label", "").lower()
+            or query in r.get("description", "").lower()
+        ]
+        assert len(matches) > 0
+        matched_skills = {r["skill"] for r in matches}
+        assert "track_rankings" in matched_skills
+
+    def test_fuzzy_match_by_description(self) -> None:
+        """Fuzzy fallback should match on description text too."""
+        from agents.seo_agent.strategy import seed_schedule
+        from agents.seo_agent.tools.supabase_tools import query_table
+
+        seed_schedule()
+        rows = query_table("ralf_schedule", limit=500)
+
+        # "keyword" appears in keyword_research description/skill
+        query = "keyword"
+        matches = [
+            r for r in rows
+            if query in r.get("skill", "").lower().replace("_", " ")
+            or query in r.get("label", "").lower()
+            or query in r.get("description", "").lower()
+        ]
+        assert len(matches) > 0
+        matched_skills = {r["skill"] for r in matches}
+        assert "keyword_research" in matched_skills
+
 
 # ---------------------------------------------------------------------------
 # Tests: SkillRegistry.evaluate() with schedule boost

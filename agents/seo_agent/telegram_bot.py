@@ -658,6 +658,19 @@ def _build_strategy_context() -> str:
             context += f"\n{i}. {step}"
         context += f"\n\n{get_strategy_summary()}"
 
+        # Inject schedule skill names for accurate action parsing
+        try:
+            from agents.seo_agent.strategy import get_full_schedule
+
+            rows = get_full_schedule()
+            skill_set = {r["skill"] for r in rows if r.get("active", True)}
+            if skill_set:
+                context += "\n\nSCHEDULED SKILLS (use these exact names for schedule_edit):"
+                for s in sorted(skill_set):
+                    context += f"\n- {s}"
+        except Exception:
+            pass
+
         # Inject episodic memory (corrections, preferences, learnings)
         try:
             from agents.seo_agent.memory import Memory
@@ -1777,8 +1790,19 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     rows = get_full_schedule()
                     matches = [r for r in rows if r.get("skill") == skill]
                     if not matches:
+                        # Fuzzy fallback: substring match on skill name, label, or description
+                        query = skill.lower().replace("_", " ")
+                        matches = [
+                            r for r in rows
+                            if query in r.get("skill", "").lower().replace("_", " ")
+                            or query in r.get("label", "").lower()
+                            or query in r.get("description", "").lower()
+                        ]
+                    if not matches:
+                        skill_names = sorted({r["skill"] for r in rows})
                         await update.message.reply_text(
-                            f"No schedule entry found for skill '{skill}'."
+                            f"No schedule entry found for '{skill}'.\n"
+                            f"Available skills: {', '.join(skill_names)}"
                         )
                         return
 
