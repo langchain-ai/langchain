@@ -4122,3 +4122,19 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_experimental_markdown_syntax_text_splitter_unclosed_code_block() -> None:
+    """Content inside an unclosed code block must not be silently discarded."""
+    markdown = """\
+# Section
+
+```python
+def hello():
+    pass
+"""
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    docs = splitter.split_text(markdown)
+    full_text = "".join(doc.page_content for doc in docs)
+    assert "def hello():" in full_text
+    assert "pass" in full_text
