@@ -520,11 +520,16 @@ PERSONALITY: You're Ralf — direct, warm, and competent. Talk like a sharp coll
 - If the user asks "what have you been doing?", give a concise summary and IMMEDIATELY state your next action. Don't wait for permission.
 - When the user points out a problem ("why do you keep doing X?"), acknowledge it directly. Don't deflect or claim it didn't happen. Say "you're right, I did X — here's why and here's what I'm changing."
 
-ACTION FORMAT: Return ONLY raw JSON (no markdown, no code fences, no explanation):
+ACTION FORMAT: Return raw JSON (no markdown, no code fences, no explanation):
 {"action": "<type>", "params": {"key": "value"}}
 
+For MULTIPLE actions (e.g. updating several schedule entries at once), return each JSON object on its own line:
+{"action": "schedule_edit", "params": {"skill": "keyword_research", "cadence": "weekly"}}
+{"action": "schedule_edit", "params": {"skill": "track_rankings", "cadence": "weekly"}}
+{"action": "schedule_edit", "params": {"skill": "score_prospects", "cadence": "weekly"}}
+
 NEVER wrap actions in ```json``` code blocks. NEVER add text before or after the JSON.
-If you need to run an action, your ENTIRE response must be the JSON object and nothing else.
+If you need to run an action, your ENTIRE response must be the JSON object(s) and nothing else.
 If you want to chat, respond in plain text with NO JSON.
 
 Actions:
@@ -803,6 +808,69 @@ def _parse_action(text: str) -> dict | None:
                     break
 
     return None
+
+
+def _parse_all_actions(text: str) -> list[dict]:
+    """Extract all JSON action blocks from the LLM response.
+
+    Supports multiple ``{"action": ...}`` objects on separate lines,
+    a JSON array of actions, or a single action block.
+    """
+    text = text.strip()
+    actions: list[dict] = []
+
+    # 1. Try parsing as a JSON array of actions
+    try:
+        data = json.loads(text)
+        if isinstance(data, list):
+            for item in data:
+                if isinstance(item, dict) and "action" in item:
+                    actions.append(item)
+            if actions:
+                return actions
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # 2. Find all {"action" ...} blocks in the text
+    search_start = 0
+    while search_start < len(text):
+        idx = text.find('{"action"', search_start)
+        if idx == -1:
+            idx = text.find("{'action", search_start)
+        if idx == -1:
+            break
+
+        # Find matching closing brace
+        depth = 0
+        end = -1
+        for i in range(idx, len(text)):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+
+        if end == -1:
+            break
+
+        try:
+            data = json.loads(text[idx:end + 1])
+            if isinstance(data, dict) and "action" in data:
+                actions.append(data)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+        search_start = end + 1
+
+    # 3. Fallback: use single-action parser
+    if not actions:
+        single = _parse_action(text)
+        if single:
+            actions.append(single)
+
+    return actions
 
 
 async def _format_task_result(action: str, result: dict) -> str:
@@ -1239,13 +1307,10 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
             )
             return
 
-        # Check if the LLM returned an action
-        action_data = _parse_action(llm_response)
+        # Check if the LLM returned one or more actions
+        all_actions = _parse_all_actions(llm_response)
 
-        if action_data:
-            action = action_data["action"]
-            params = action_data.get("params", {})
-
+        if all_actions:
             # Strip JSON from visible response — send only conversational text
             json_start = llm_response.find('{"action"')
             if json_start == -1:
@@ -1263,760 +1328,763 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     await update.message.reply_text(pre_action_text)
                     history.append({"role": "assistant", "content": pre_action_text[:200]})
 
-            logger.info("NL action detected: %s params=%s", action, params)
+            for action_data in all_actions:
+                action = action_data["action"]
+                params = action_data.get("params", {})
+                logger.info("NL action detected: %s params=%s", action, params)
 
-            # Handle special non-graph actions
-            if action == "cost_report":
-                await cmd_cost_report(update, context)
-                history.append({"role": "assistant", "content": "[Ran cost report]"})
-                return
-            if action == "status":
-                await cmd_status(update, context)
-                history.append({"role": "assistant", "content": "[Ran status check]"})
-                return
-            if action == "recall":
-                topic = params.get("topic", user_text)
-                try:
-                    db_results = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_recall_from_database, topic)
-                    )
-                    # Send raw data to Claude for a natural summary
-                    summary = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_call_openrouter_sync,
-                            list(history) + [{"role": "user", "content": f"Here's what I found in our database:\n\n{db_results}\n\nSummarise this for me naturally."}],
-                            _NL_SYSTEM_PROMPT)
-                    )
-                    await update.message.reply_text(summary)
-                    history.append({"role": "assistant", "content": summary[:300]})
-                except Exception as e:
-                    logger.error("Recall failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
-                return
-            if action == "dashboard":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_dashboard_summary
-                    dash = await asyncio.get_event_loop().run_in_executor(None, get_dashboard_summary)
-                    lines = ["SEO Dashboard:\n"]
-                    lines.append(f"Keywords: {dash['keywords_discovered']} discovered, {dash['keywords_cached']} cached")
-                    lines.append(f"Content: {dash['content_pieces']} pieces, {dash['content_gaps']} gaps")
-                    lines.append(f"Prospects: {dash['prospects_total']} total")
-                    if dash.get('prospect_pipeline'):
-                        lines.append("Pipeline: " + ", ".join(f"{k}:{v}" for k, v in dash['prospect_pipeline'].items()))
-                    lines.append(f"Rankings tracked: {dash['rankings_tracked']} keywords")
-                    lines.append(f"Weekly spend: ${dash['weekly_spend']:.4f}")
-                    lines.append("\nPer site:")
-                    for site, data in dash.get('sites', {}).items():
-                        lines.append(f"  {site}: {data['keywords']}kw / {data['content']}content / {data['prospects']}prospects")
-                    # Add CRM stats
+                # Handle special non-graph actions
+                if action == "cost_report":
+                    await cmd_cost_report(update, context)
+                    history.append({"role": "assistant", "content": "[Ran cost report]"})
+                    continue
+                if action == "status":
+                    await cmd_status(update, context)
+                    history.append({"role": "assistant", "content": "[Ran status check]"})
+                    continue
+                if action == "recall":
+                    topic = params.get("topic", user_text)
+                    try:
+                        db_results = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_recall_from_database, topic)
+                        )
+                        # Send raw data to Claude for a natural summary
+                        summary = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_call_openrouter_sync,
+                                list(history) + [{"role": "user", "content": f"Here's what I found in our database:\n\n{db_results}\n\nSummarise this for me naturally."}],
+                                _NL_SYSTEM_PROMPT)
+                        )
+                        await update.message.reply_text(summary)
+                        history.append({"role": "assistant", "content": summary[:300]})
+                    except Exception as e:
+                        logger.error("Recall failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Couldn't retrieve data: {str(e)[:200]}")
+                    continue
+                if action == "dashboard":
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_dashboard_summary
+                        dash = await asyncio.get_event_loop().run_in_executor(None, get_dashboard_summary)
+                        lines = ["SEO Dashboard:\n"]
+                        lines.append(f"Keywords: {dash['keywords_discovered']} discovered, {dash['keywords_cached']} cached")
+                        lines.append(f"Content: {dash['content_pieces']} pieces, {dash['content_gaps']} gaps")
+                        lines.append(f"Prospects: {dash['prospects_total']} total")
+                        if dash.get('prospect_pipeline'):
+                            lines.append("Pipeline: " + ", ".join(f"{k}:{v}" for k, v in dash['prospect_pipeline'].items()))
+                        lines.append(f"Rankings tracked: {dash['rankings_tracked']} keywords")
+                        lines.append(f"Weekly spend: ${dash['weekly_spend']:.4f}")
+                        lines.append("\nPer site:")
+                        for site, data in dash.get('sites', {}).items():
+                            lines.append(f"  {site}: {data['keywords']}kw / {data['content']}content / {data['prospects']}prospects")
+                        # Add CRM stats
+                        try:
+                            from agents.seo_agent.tools.crm_tools import get_crm_pipeline
+                            crm = get_crm_pipeline()
+                            crm_total = sum(len(v) for v in crm.values())
+                            if crm_total > 0:
+                                lines.append(f"\nCRM: {crm_total} contacts")
+                                for crm_status, contacts in crm.items():
+                                    if contacts:
+                                        lines.append(f"  {crm_status}: {len(contacts)}")
+                        except Exception:
+                            pass
+                        msg = "\n".join(lines)
+                        await update.message.reply_text(msg)
+                        history.append({"role": "assistant", "content": msg[:300]})
+                    except Exception as e:
+                        await update.message.reply_text(f"Dashboard error: {str(e)[:200]}")
+                    continue
+                if action == "prospect_pipeline":
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_prospect_pipeline
+                        pipeline = await asyncio.get_event_loop().run_in_executor(None, get_prospect_pipeline)
+                        lines = ["Prospect Pipeline:\n"]
+                        total = 0
+                        for stage, prospects_list in pipeline.items():
+                            if prospects_list:
+                                total += len(prospects_list)
+                                lines.append(f"\n{stage}: {len(prospects_list)}")
+                                for p in prospects_list[:10]:
+                                    dr = p.get('dr', 0)
+                                    domain = p.get('domain', '?')
+                                    method = p.get('discovery_method', '?')
+                                    traffic = p.get('monthly_traffic', 0)
+                                    title = p.get('page_title', '')[:40]
+                                    detail = f"  - {domain} (DR:{dr}"
+                                    if traffic:
+                                        detail += f", {traffic:,} visits/mo"
+                                    detail += f", via {method})"
+                                    if title:
+                                        detail += f"\n    {title}"
+                                    lines.append(detail)
+                                if len(prospects_list) > 10:
+                                    lines.append(f"  ...and {len(prospects_list) - 10} more")
+                        if total == 0:
+                            lines.append("Empty — run discover_prospects first.")
+                        else:
+                            lines.append(f"\nTotal: {total} prospects")
+                        await update.message.reply_text("\n".join(lines))
+                    except Exception as e:
+                        await update.message.reply_text(f"Pipeline error: {str(e)[:200]}")
+                    continue
+                if action == "followups":
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_prospects_needing_followup
+                        needs = await asyncio.get_event_loop().run_in_executor(None, get_prospects_needing_followup)
+                        if needs:
+                            lines = [f"{len(needs)} prospects need follow-up:\n"]
+                            for p in needs[:10]:
+                                lines.append(f"- {p.get('domain')} | last contact: {p.get('last_contacted_at', 'N/A')[:10]}")
+                            await update.message.reply_text("\n".join(lines))
+                        else:
+                            await update.message.reply_text("No prospects need follow-up right now.")
+                    except Exception as e:
+                        await update.message.reply_text(f"Follow-up check error: {str(e)[:200]}")
+                    continue
+                if action == "crm_pipeline":
                     try:
                         from agents.seo_agent.tools.crm_tools import get_crm_pipeline
-                        crm = get_crm_pipeline()
-                        crm_total = sum(len(v) for v in crm.values())
-                        if crm_total > 0:
-                            lines.append(f"\nCRM: {crm_total} contacts")
-                            for crm_status, contacts in crm.items():
-                                if contacts:
-                                    lines.append(f"  {crm_status}: {len(contacts)}")
-                    except Exception:
-                        pass
-                    msg = "\n".join(lines)
-                    await update.message.reply_text(msg)
-                    history.append({"role": "assistant", "content": msg[:300]})
-                except Exception as e:
-                    await update.message.reply_text(f"Dashboard error: {str(e)[:200]}")
-                return
-            if action == "prospect_pipeline":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_prospect_pipeline
-                    pipeline = await asyncio.get_event_loop().run_in_executor(None, get_prospect_pipeline)
-                    lines = ["Prospect Pipeline:\n"]
-                    total = 0
-                    for stage, prospects_list in pipeline.items():
-                        if prospects_list:
-                            total += len(prospects_list)
-                            lines.append(f"\n{stage}: {len(prospects_list)}")
-                            for p in prospects_list[:10]:
-                                dr = p.get('dr', 0)
-                                domain = p.get('domain', '?')
-                                method = p.get('discovery_method', '?')
-                                traffic = p.get('monthly_traffic', 0)
-                                title = p.get('page_title', '')[:40]
-                                detail = f"  - {domain} (DR:{dr}"
-                                if traffic:
-                                    detail += f", {traffic:,} visits/mo"
-                                detail += f", via {method})"
-                                if title:
-                                    detail += f"\n    {title}"
-                                lines.append(detail)
-                            if len(prospects_list) > 10:
-                                lines.append(f"  ...and {len(prospects_list) - 10} more")
-                    if total == 0:
-                        lines.append("Empty — run discover_prospects first.")
-                    else:
-                        lines.append(f"\nTotal: {total} prospects")
-                    await update.message.reply_text("\n".join(lines))
-                except Exception as e:
-                    await update.message.reply_text(f"Pipeline error: {str(e)[:200]}")
-                return
-            if action == "followups":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_prospects_needing_followup
-                    needs = await asyncio.get_event_loop().run_in_executor(None, get_prospects_needing_followup)
-                    if needs:
-                        lines = [f"{len(needs)} prospects need follow-up:\n"]
-                        for p in needs[:10]:
-                            lines.append(f"- {p.get('domain')} | last contact: {p.get('last_contacted_at', 'N/A')[:10]}")
+                        pipeline = await asyncio.get_event_loop().run_in_executor(None, get_crm_pipeline)
+                        lines = ["CRM Pipeline:\n"]
+                        total = 0
+                        for status, contacts in pipeline.items():
+                            if contacts:
+                                total += len(contacts)
+                                lines.append(f"\n{status}: {len(contacts)}")
+                                for c in contacts[:8]:
+                                    name = c.get("company_name", "?")
+                                    cat = c.get("category", "")
+                                    city = c.get("city", "")
+                                    email = c.get("email", "")
+                                    detail = f"  - {name}"
+                                    if cat:
+                                        detail += f" ({cat})"
+                                    if city:
+                                        detail += f" — {city}"
+                                    if email:
+                                        detail += f" [{email}]"
+                                    lines.append(detail)
+                                if len(contacts) > 8:
+                                    lines.append(f"  ...and {len(contacts) - 8} more")
+                        if total == 0:
+                            lines.append("No contacts yet. Use import_makers or add contacts via discover_prospects.")
+                        else:
+                            lines.append(f"\nTotal: {total} contacts")
                         await update.message.reply_text("\n".join(lines))
-                    else:
-                        await update.message.reply_text("No prospects need follow-up right now.")
-                except Exception as e:
-                    await update.message.reply_text(f"Follow-up check error: {str(e)[:200]}")
-                return
-            if action == "crm_pipeline":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_crm_pipeline
-                    pipeline = await asyncio.get_event_loop().run_in_executor(None, get_crm_pipeline)
-                    lines = ["CRM Pipeline:\n"]
-                    total = 0
-                    for status, contacts in pipeline.items():
-                        if contacts:
-                            total += len(contacts)
-                            lines.append(f"\n{status}: {len(contacts)}")
-                            for c in contacts[:8]:
+                    except Exception as e:
+                        await update.message.reply_text(f"CRM error: {str(e)[:200]}")
+                    continue
+                if action == "crm_search":
+                    query_text = params.get("query", user_text)
+                    try:
+                        from agents.seo_agent.tools.crm_tools import search_crm_contacts
+                        results = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(search_crm_contacts, query_text)
+                        )
+                        if results:
+                            lines = [f"Found {len(results)} contacts:\n"]
+                            for c in results[:10]:
                                 name = c.get("company_name", "?")
                                 cat = c.get("category", "")
                                 city = c.get("city", "")
-                                email = c.get("email", "")
-                                detail = f"  - {name}"
-                                if cat:
-                                    detail += f" ({cat})"
-                                if city:
-                                    detail += f" — {city}"
-                                if email:
-                                    detail += f" [{email}]"
-                                lines.append(detail)
-                            if len(contacts) > 8:
-                                lines.append(f"  ...and {len(contacts) - 8} more")
-                    if total == 0:
-                        lines.append("No contacts yet. Use import_makers or add contacts via discover_prospects.")
-                    else:
-                        lines.append(f"\nTotal: {total} contacts")
-                    await update.message.reply_text("\n".join(lines))
-                except Exception as e:
-                    await update.message.reply_text(f"CRM error: {str(e)[:200]}")
-                return
-            if action == "crm_search":
-                query_text = params.get("query", user_text)
-                try:
-                    from agents.seo_agent.tools.crm_tools import search_crm_contacts
-                    results = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(search_crm_contacts, query_text)
-                    )
-                    if results:
-                        lines = [f"Found {len(results)} contacts:\n"]
-                        for c in results[:10]:
-                            name = c.get("company_name", "?")
-                            cat = c.get("category", "")
-                            city = c.get("city", "")
-                            crm_status = c.get("outreach_status", "")
-                            lines.append(f"- {name} ({cat}) — {city} [{crm_status}]")
-                        await update.message.reply_text("\n".join(lines))
-                    else:
-                        await update.message.reply_text(f"No contacts found for '{query_text}'.")
-                except Exception as e:
-                    await update.message.reply_text(f"Search failed: {str(e)[:200]}")
-                return
-            if action == "crm_followups":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_crm_contacts_needing_followup
-                    needs = await asyncio.get_event_loop().run_in_executor(None, get_crm_contacts_needing_followup)
-                    if needs:
-                        lines = [f"{len(needs)} contacts need follow-up:\n"]
-                        for c in needs[:10]:
-                            name = c.get("company_name", "?")
-                            last = c.get("last_contacted_at", "never")
-                            if isinstance(last, str) and len(last) > 10:
-                                last = last[:10]
-                            lines.append(f"- {name} (last contact: {last})")
-                        await update.message.reply_text("\n".join(lines))
-                    else:
-                        await update.message.reply_text("No contacts need follow-up right now.")
-                except Exception as e:
-                    await update.message.reply_text(f"Follow-up check failed: {str(e)[:200]}")
-                return
-            if action == "import_makers":
-                city = params.get("city")
-                await update.message.reply_text(f"Importing kitchen makers{' from ' + city if city else ''}...")
-                try:
-                    from agents.seo_agent.tools.crm_tools import import_kitchen_makers_to_crm
-                    count = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(import_kitchen_makers_to_crm, city)
-                    )
-                    await update.message.reply_text(f"Imported {count} kitchen makers into the CRM.")
-                    history.append({"role": "assistant", "content": f"Imported {count} makers into CRM"})
-                except Exception as e:
-                    await update.message.reply_text(f"Import failed: {str(e)[:200]}")
-                return
-            if action == "ranking_movers":
-                site = params.get("target_site", "freeroomplanner")
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_ranking_movers
-                    movers = await asyncio.get_event_loop().run_in_executor(None, partial(get_ranking_movers, site))
-                    lines = [f"Ranking movers for {site}:\n"]
-                    if movers.get('winners'):
-                        lines.append("Winners:")
-                        for w in movers['winners'][:5]:
-                            lines.append(f"  +{w.get('change',0)} {w.get('keyword')} (pos {w.get('position')})")
-                    if movers.get('losers'):
-                        lines.append("Losers:")
-                        for l in movers['losers'][:5]:
-                            lines.append(f"  {l.get('change',0)} {l.get('keyword')} (pos {l.get('position')})")
-                    if len(lines) == 1:
-                        lines.append("No ranking data yet — run track_rankings first.")
-                    await update.message.reply_text("\n".join(lines))
-                except Exception as e:
-                    await update.message.reply_text(f"Ranking movers error: {str(e)[:200]}")
-                return
-            if action == "track_rankings":
-                site = params.get("target_site", "freeroomplanner")
-                await update.message.reply_text(f"Snapshotting rankings for {site} from Ahrefs...")
-                try:
-                    from agents.seo_agent.tools.ahrefs_tools import get_organic_keywords
-                    from agents.seo_agent.tools.crm_tools import snapshot_our_rankings
-                    from agents.seo_agent.config import SITE_PROFILES
-                    profile = SITE_PROFILES.get(site, {})
-                    domain = profile.get("domain", "")
-                    if domain:
-                        rankings = await asyncio.get_event_loop().run_in_executor(
-                            None, partial(get_organic_keywords.invoke, domain)
-                        )
-                        saved = await asyncio.get_event_loop().run_in_executor(
-                            None, partial(snapshot_our_rankings, site, rankings)
-                        )
-                        await update.message.reply_text(f"Saved {saved} ranking positions for {site}. Use 'ranking movers' to see changes over time.")
-                    else:
-                        await update.message.reply_text(f"No domain configured for {site}.")
-                except Exception as e:
-                    logger.error("Track rankings failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Ranking snapshot failed: {str(e)[:200]}")
-                return
-            if action in ("audit", "audit_page"):
-                site = params.get("target_site", "freeroomplanner")
-                url = params.get("url", "")
-                await update.message.reply_text(f"Running SEO audit{' for ' + url if url else ' for ' + site}... this takes a minute.")
-                try:
-                    from agents.seo_agent.tools.seo_audit import audit_site, audit_page, format_audit_report, save_audit
-                    from agents.seo_agent.config import SITE_PROFILES
-
-                    if url:
-                        result = await asyncio.get_event_loop().run_in_executor(
-                            None, partial(audit_page, url)
-                        )
-                    else:
-                        profile = SITE_PROFILES.get(site, {})
-                        domain = profile.get("domain", site)
-                        result = await asyncio.get_event_loop().run_in_executor(
-                            None, partial(audit_site, domain)
-                        )
-                        # Save for tracking
-                        save_audit(site, result)
-
-                    report = format_audit_report(result)
-                    for i in range(0, len(report), 4000):
-                        await update.message.reply_text(report[i:i + 4000])
-                    history.append({"role": "assistant", "content": report[:300]})
-                except Exception as e:
-                    logger.error("Audit failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Audit failed: {str(e)[:300]}")
-                return
-            if action == "learn":
-                topic = params.get("topic", user_text)
-                await update.message.reply_text(f"Researching: {topic}...")
-                try:
-                    # Search the web for the topic
-                    search_results = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_run_web_search, f"SEO AEO {topic} 2026 best practices")
-                    )
-                    # Summarise and store
-                    results_text = "\n".join(
-                        f"- {r.get('title', '')}: {r.get('content', '')[:200]}" for r in search_results[:5]
-                    )
-                    summary = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_call_openrouter_sync,
-                            [{"role": "user", "content": f"Summarise these search results about '{topic}' into a concise knowledge entry (max 500 words). Focus on actionable SEO/AEO advice.\n\n{results_text}"}],
-                            "You are an SEO expert. Summarise research into actionable knowledge.")
-                    )
-                    # Store in knowledge base
-                    from agents.seo_agent.tools.knowledge_tools import store_knowledge
-                    category = "aeo" if "aeo" in topic.lower() or "ai" in topic.lower() else "industry_trends"
-                    import re
-                    topic_slug = re.sub(r'[^a-z0-9_]', '_', topic.lower()[:80]).strip('_')
-                    store_knowledge(category, topic_slug, summary)
-                    await update.message.reply_text(f"Learned about '{topic}' and saved to knowledge base.\n\nKey points:\n{summary[:500]}")
-                    history.append({"role": "assistant", "content": f"Learned about {topic}"})
-                except Exception as e:
-                    logger.error("Learn failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Research failed: {str(e)[:200]}")
-                return
-            if action == "knowledge":
-                query = params.get("query", user_text)
-                try:
-                    from agents.seo_agent.tools.knowledge_tools import search_knowledge
-                    results = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(search_knowledge, query)
-                    )
-                    if results:
-                        lines = [f"Knowledge base ({len(results)} entries for '{query}'):"]
-                        for r in results[:5]:
-                            lines.append(f"\n[{r.get('category')}] {r.get('topic')}:")
-                            lines.append(r.get('content', '')[:300])
-                        msg = "\n".join(lines)
-                        # Truncate for Telegram
-                        for i in range(0, len(msg), 4000):
-                            await update.message.reply_text(msg[i:i+4000])
-                    else:
-                        await update.message.reply_text(f"Nothing in the knowledge base about '{query}'. Want me to research it?")
-                except Exception as e:
-                    await update.message.reply_text(f"Knowledge search failed: {str(e)[:200]}")
-                return
-            if action == "store_content":
-                site = params.get("site", "freeroomplanner")
-                await update.message.reply_text(f"Cataloguing existing content for {site}...")
-                try:
-                    from agents.seo_agent.tools.github_tools import list_blog_posts
-                    from agents.seo_agent.tools.supabase_tools import insert_record
-                    posts = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(list_blog_posts, site)
-                    )
-                    stored = 0
-                    for p in posts:
-                        try:
-                            insert_record("seo_content_briefs", {
-                                "keyword": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " "),
-                                "target_site": site,
-                                "title": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " ").title(),
-                                "file_path": p["path"],
-                                "content_type": "existing_published",
-                            })
-                            stored += 1
-                        except Exception:
-                            pass
-                    msg = f"Stored {stored} existing posts for {site} in the database. I'll avoid duplicating these topics in future content."
-                    await update.message.reply_text(msg)
-                    history.append({"role": "assistant", "content": msg})
-                except Exception as e:
-                    logger.error("Store content failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Failed to store content: {str(e)[:200]}")
-                return
-            if action == "publish_blog":
-                site = params.get("site", "freeroomplanner")
-                title = params.get("title", "")
-                keyword = params.get("keyword", title)
-                if not title and not keyword:
-                    await update.message.reply_text("What should the blog post be about? Give me a title or keyword.")
-                    return
-                await update.message.reply_text(f"Writing blog post: {title or keyword}...\nThis may take a minute.")
-                try:
-                    # Step 1: Generate content via LLM
-                    blog_content = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_generate_blog_post, site, title or keyword, keyword)
-                    )
-                    # Step 2: Publish to GitHub
-                    from agents.seo_agent.tools.github_tools import publish_blog_post
-                    result = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(publish_blog_post,
-                            site=site,
-                            title=blog_content["title"],
-                            content=blog_content["content"],
-                            meta_description=blog_content["meta_description"],
-                        )
-                    )
-                    msg = (
-                        f"Blog post published:\n\n"
-                        f"Title: {blog_content['title']}\n"
-                        f"URL: {result.get('published_url', 'N/A')}\n"
-                        f"Commit: {result.get('commit_url', 'N/A')}\n\n"
-                        f"It will be live after the site redeploys (1-2 minutes)."
-                    )
-                    await update.message.reply_text(msg)
-                    history.append({"role": "assistant", "content": msg[:300]})
-                    try:
-                        from agents.seo_agent.memory import Memory
-                        Memory().log_activity(
-                            action_type="blog_published",
-                            summary=f"Published blog: {blog_content['title']} for {site}",
-                            site=site,
-                            details={
-                                "title": blog_content["title"],
-                                "keyword": keyword,
-                                "url": result.get("published_url", ""),
-                            },
-                            source="telegram",
-                        )
-                    except Exception:
-                        pass
-                except Exception as e:
-                    logger.error("Blog publish failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Publishing failed: {str(e)[:300]}")
-                return
-            if action == "journal":
-                category = params.get("category")
-                await update.message.reply_text("Writing a journal entry...")
-                try:
-                    from agents.seo_agent.tools.reflection_engine import generate_reflective_post
-                    from agents.seo_agent.tools.github_tools import publish_blog_post
-
-                    post = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(generate_reflective_post, category=category)
-                    )
-                    result = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(publish_blog_post,
-                            site="ralf_seo",
-                            title=post["title"],
-                            content=post["content"],
-                            meta_description=post["meta_description"],
-                            category=post.get("category", "Field Report"),
-                            what_i_learned=post.get("what_i_learned", []),
-                        )
-                    )
-                    report = f"Published: {post['title']}\n\nCategory: {post.get('category')}\n\n"
-                    report += f"URL: {result.get('published_url', 'N/A')}\n\n"
-                    report += "What I learned:\n"
-                    for item in post.get("what_i_learned", []):
-                        report += f"\u2022 {item}\n"
-                    await update.message.reply_text(report)
-                    history.append({"role": "assistant", "content": report[:300]})
-                    try:
-                        from agents.seo_agent.memory import Memory
-                        Memory().log_activity(
-                            action_type="journal_published",
-                            summary=f"Journal: {post['title']}",
-                            site="ralf_seo",
-                            details={
-                                "title": post["title"],
-                                "category": post.get("category", ""),
-                                "url": result.get("published_url", ""),
-                            },
-                            source="telegram",
-                        )
-                    except Exception:
-                        pass
-                except Exception as e:
-                    logger.error("Journal failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Journal entry failed: {str(e)[:300]}")
-                return
-            if action == "recall_activities":
-                action_type = params.get("action_type")
-                site = params.get("site")
-                try:
-                    from agents.seo_agent.memory import Memory
-                    activities = Memory().recall_activities(
-                        action_type=action_type,
-                        site=site,
-                        limit=15,
-                    )
-                    if activities:
-                        lines = []
-                        for a in activities:
-                            ts = a.get("created_at", "")[:10]
-                            lines.append(f"- [{ts}] {a.get('content', '')}")
-                        msg = "Here's what I've been up to:\n\n" + "\n".join(lines)
-                    else:
-                        msg = "No activities found matching that filter."
-                    await update.message.reply_text(msg[:4000])
-                    history.append({"role": "assistant", "content": msg[:300]})
-                except Exception as e:
-                    await update.message.reply_text(f"Couldn't recall activities: {str(e)[:200]}")
-                return
-            if action == "schedule_show":
-                try:
-                    from agents.seo_agent.strategy import (
-                        format_schedule_for_display,
-                        get_full_schedule,
-                    )
-
-                    rows = get_full_schedule()
-                    msg = format_schedule_for_display(rows)
-                    await update.message.reply_text(msg[:4000])
-                    history.append({"role": "assistant", "content": msg[:300]})
-                except Exception as e:
-                    await update.message.reply_text(f"Couldn't load schedule: {str(e)[:200]}")
-                return
-            if action == "schedule_today":
-                try:
-                    from agents.seo_agent.strategy import (
-                        get_todays_log,
-                        get_todays_schedule,
-                    )
-
-                    schedule = get_todays_schedule()
-                    today_log = get_todays_log()
-                    done_skills = {
-                        r["skill"] for r in today_log if r.get("status") == "done"
-                    }
-                    failed_skills = {
-                        r["skill"] for r in today_log if r.get("status") == "failed"
-                    }
-
-                    lines = [f"Today: {schedule['label']}", schedule["description"], ""]
-                    for skill_name in schedule["boost_skills"]:
-                        if skill_name in done_skills:
-                            lines.append(f"  done — {skill_name}")
-                        elif skill_name in failed_skills:
-                            lines.append(f"  failed — {skill_name}")
+                                crm_status = c.get("outreach_status", "")
+                                lines.append(f"- {name} ({cat}) — {city} [{crm_status}]")
+                            await update.message.reply_text("\n".join(lines))
                         else:
-                            lines.append(f"  pending — {skill_name}")
-
-                    if schedule["weekly_due"]:
-                        lines.append(f"\nWeekly due: {', '.join(schedule['weekly_due'])}")
-                    if schedule["monthly_due"]:
-                        lines.append(f"Monthly due: {', '.join(schedule['monthly_due'])}")
-
-                    msg = "\n".join(lines)
-                    await update.message.reply_text(msg[:4000])
-                    history.append({"role": "assistant", "content": msg[:300]})
-                except Exception as e:
-                    await update.message.reply_text(f"Couldn't load today's schedule: {str(e)[:200]}")
-                return
-            if action == "schedule_edit":
-                try:
-                    from agents.seo_agent.strategy import get_full_schedule, parse_day_of_week, update_schedule_entry
-
-                    skill = params.get("skill", "")
-                    if not skill:
-                        await update.message.reply_text("Please specify which skill to update.")
-                        return
-
-                    rows = get_full_schedule()
-                    matches = [r for r in rows if r.get("skill") == skill]
-                    if not matches:
-                        # Fuzzy fallback: substring match on skill name, label, or description
-                        query = skill.lower().replace("_", " ")
-                        matches = [
-                            r for r in rows
-                            if query in r.get("skill", "").lower().replace("_", " ")
-                            or query in r.get("label", "").lower()
-                            or query in r.get("description", "").lower()
-                        ]
-                    if not matches:
-                        skill_names = sorted({r["skill"] for r in rows})
-                        await update.message.reply_text(
-                            f"No schedule entry found for '{skill}'.\n"
-                            f"Available skills: {', '.join(skill_names)}"
+                            await update.message.reply_text(f"No contacts found for '{query_text}'.")
+                    except Exception as e:
+                        await update.message.reply_text(f"Search failed: {str(e)[:200]}")
+                    continue
+                if action == "crm_followups":
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_crm_contacts_needing_followup
+                        needs = await asyncio.get_event_loop().run_in_executor(None, get_crm_contacts_needing_followup)
+                        if needs:
+                            lines = [f"{len(needs)} contacts need follow-up:\n"]
+                            for c in needs[:10]:
+                                name = c.get("company_name", "?")
+                                last = c.get("last_contacted_at", "never")
+                                if isinstance(last, str) and len(last) > 10:
+                                    last = last[:10]
+                                lines.append(f"- {name} (last contact: {last})")
+                            await update.message.reply_text("\n".join(lines))
+                        else:
+                            await update.message.reply_text("No contacts need follow-up right now.")
+                    except Exception as e:
+                        await update.message.reply_text(f"Follow-up check failed: {str(e)[:200]}")
+                    continue
+                if action == "import_makers":
+                    city = params.get("city")
+                    await update.message.reply_text(f"Importing kitchen makers{' from ' + city if city else ''}...")
+                    try:
+                        from agents.seo_agent.tools.crm_tools import import_kitchen_makers_to_crm
+                        count = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(import_kitchen_makers_to_crm, city)
                         )
-                        return
-
-                    updates: dict[str, Any] = {}
-                    if "day_of_week" in params:
-                        try:
-                            updates["day_of_week"] = parse_day_of_week(params["day_of_week"])
-                        except ValueError:
-                            await update.message.reply_text(
-                                "Which day should I schedule that? (Monday-Sunday)"
-                            )
-                            return
-                    if "day_of_month" in params:
-                        updates["day_of_month"] = int(params["day_of_month"])
-                    if "boost_amount" in params:
-                        updates["boost_amount"] = int(params["boost_amount"])
-                    if "cadence" in params:
-                        cadence = str(params["cadence"]).strip().lower()
-                        if cadence not in ("daily", "weekly", "monthly"):
-                            await update.message.reply_text(
-                                "Should that be daily, weekly, or monthly?"
-                            )
-                            return
-                        updates["cadence"] = cadence
-                    if "active" in params:
-                        updates["active"] = bool(params["active"])
-
-                    updated = 0
-                    for row in matches:
-                        update_schedule_entry(row["id"], **updates)
-                        updated += 1
-
-                    msg = f"Updated {updated} schedule entries for '{skill}'."
-                    await update.message.reply_text(msg)
-                    history.append({"role": "assistant", "content": msg})
-                except Exception as e:
-                    await update.message.reply_text(f"Schedule edit failed: {str(e)[:200]}")
-                return
-            if action == "schedule_history":
-                try:
-                    from agents.seo_agent.strategy import get_schedule_history
-
-                    days_back = int(params.get("days_back", 7))
-                    entries = get_schedule_history(days_back)
-                    if entries:
-                        lines = [f"Schedule history (last {days_back} days):", ""]
-                        current_date = ""
-                        for e in entries:
-                            date = e.get("schedule_date", "")[:10]
-                            if date != current_date:
-                                current_date = date
-                                lines.append(f"\n{date}:")
-                            status = e.get("status", "?")
-                            skill_name = e.get("skill", "?")
-                            site = e.get("site", "")
-                            summary = e.get("summary", "")[:60]
-                            site_label = f" ({site})" if site else ""
-                            lines.append(f"  [{status}] {skill_name}{site_label}: {summary}")
-                        msg = "\n".join(lines)
-                    else:
-                        msg = f"No schedule activity in the last {days_back} days."
-                    await update.message.reply_text(msg[:4000])
-                    history.append({"role": "assistant", "content": msg[:300]})
-                except Exception as e:
-                    await update.message.reply_text(f"Couldn't load history: {str(e)[:200]}")
-                return
-            if action == "list_blogs":
-                site = params.get("site", "freeroomplanner")
-                try:
-                    from agents.seo_agent.tools.github_tools import list_blog_posts
-                    posts = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(list_blog_posts, site)
-                    )
-                    if posts:
-                        lines = [f"Blog posts for {site} ({len(posts)}):"]
-                        for p in posts:
-                            lines.append(f"\u2022 {p['name']}")
+                        await update.message.reply_text(f"Imported {count} kitchen makers into the CRM.")
+                        history.append({"role": "assistant", "content": f"Imported {count} makers into CRM"})
+                    except Exception as e:
+                        await update.message.reply_text(f"Import failed: {str(e)[:200]}")
+                    continue
+                if action == "ranking_movers":
+                    site = params.get("target_site", "freeroomplanner")
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_ranking_movers
+                        movers = await asyncio.get_event_loop().run_in_executor(None, partial(get_ranking_movers, site))
+                        lines = [f"Ranking movers for {site}:\n"]
+                        if movers.get('winners'):
+                            lines.append("Winners:")
+                            for w in movers['winners'][:5]:
+                                lines.append(f"  +{w.get('change',0)} {w.get('keyword')} (pos {w.get('position')})")
+                        if movers.get('losers'):
+                            lines.append("Losers:")
+                            for l in movers['losers'][:5]:
+                                lines.append(f"  {l.get('change',0)} {l.get('keyword')} (pos {l.get('position')})")
+                        if len(lines) == 1:
+                            lines.append("No ranking data yet — run track_rankings first.")
                         await update.message.reply_text("\n".join(lines))
-                    else:
-                        await update.message.reply_text(f"No blog posts found for {site}.")
-                except Exception as e:
-                    await update.message.reply_text(f"Failed to list posts: {str(e)[:200]}")
-                return
-            if action == "scrape_companies":
-                country = params.get("country", "UK").upper()
-                category = params.get("category", "kitchen_company")
-                await update.message.reply_text(f"Starting Firecrawl scraper for {category} in {country}... this may take a few minutes.")
-                try:
-                    from agents.scraper_agent.tools.firecrawl_client import run_scraper
-                    result = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(run_scraper, country=country, category=category, max_queries=10)
-                    )
-                    lines = [
-                        f"Scraping complete for {category} in {country}:\n",
-                        f"Queries run: {result.get('queries_run', 0)}",
-                        f"Company URLs found: {result.get('urls_found', 0)}",
-                        f"Data extracted: {result.get('extracted', 0)}",
-                        f"Added to CRM: {result.get('added_to_crm', 0)}",
-                        f"Skipped (duplicates/invalid): {result.get('skipped', 0)}",
-                    ]
-                    if result.get("error"):
-                        lines.append(f"\nError: {result['error']}")
-                    await update.message.reply_text("\n".join(lines))
-                    history.append({"role": "assistant", "content": f"Scraped {result.get('added_to_crm', 0)} {category} companies in {country}"})
-                except Exception as e:
-                    logger.error("Scraper failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Scraper failed: {str(e)[:300]}")
-                return
+                    except Exception as e:
+                        await update.message.reply_text(f"Ranking movers error: {str(e)[:200]}")
+                    continue
+                if action == "track_rankings":
+                    site = params.get("target_site", "freeroomplanner")
+                    await update.message.reply_text(f"Snapshotting rankings for {site} from Ahrefs...")
+                    try:
+                        from agents.seo_agent.tools.ahrefs_tools import get_organic_keywords
+                        from agents.seo_agent.tools.crm_tools import snapshot_our_rankings
+                        from agents.seo_agent.config import SITE_PROFILES
+                        profile = SITE_PROFILES.get(site, {})
+                        domain = profile.get("domain", "")
+                        if domain:
+                            rankings = await asyncio.get_event_loop().run_in_executor(
+                                None, partial(get_organic_keywords.invoke, domain)
+                            )
+                            saved = await asyncio.get_event_loop().run_in_executor(
+                                None, partial(snapshot_our_rankings, site, rankings)
+                            )
+                            await update.message.reply_text(f"Saved {saved} ranking positions for {site}. Use 'ranking movers' to see changes over time.")
+                        else:
+                            await update.message.reply_text(f"No domain configured for {site}.")
+                    except Exception as e:
+                        logger.error("Track rankings failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Ranking snapshot failed: {str(e)[:200]}")
+                    continue
+                if action in ("audit", "audit_page"):
+                    site = params.get("target_site", "freeroomplanner")
+                    url = params.get("url", "")
+                    await update.message.reply_text(f"Running SEO audit{' for ' + url if url else ' for ' + site}... this takes a minute.")
+                    try:
+                        from agents.seo_agent.tools.seo_audit import audit_site, audit_page, format_audit_report, save_audit
+                        from agents.seo_agent.config import SITE_PROFILES
 
-            if action == "scrape_all":
-                await update.message.reply_text("Starting full scrape across UK, US, and CA for kitchen + bathroom companies... this will take a while.")
-                try:
-                    from agents.scraper_agent.tools.firecrawl_client import run_full_scrape
-                    result = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(run_full_scrape, max_queries_per_country=5)
-                    )
-                    total = result.get("total_added", 0)
-                    lines = [f"Full scrape complete — {total} companies added to CRM:\n"]
-                    for key, data in result.items():
-                        if key == "total_added":
-                            continue
-                        if isinstance(data, dict):
-                            added = data.get("added_to_crm", 0)
-                            found = data.get("urls_found", 0)
-                            lines.append(f"  {key}: {added} added (from {found} found)")
-                    await update.message.reply_text("\n".join(lines))
-                    history.append({"role": "assistant", "content": f"Full scrape: {total} companies added"})
-                except Exception as e:
-                    logger.error("Full scrape failed: %s", traceback.format_exc())
-                    await update.message.reply_text(f"Full scrape failed: {str(e)[:300]}")
-                return
+                        if url:
+                            result = await asyncio.get_event_loop().run_in_executor(
+                                None, partial(audit_page, url)
+                            )
+                        else:
+                            profile = SITE_PROFILES.get(site, {})
+                            domain = profile.get("domain", site)
+                            result = await asyncio.get_event_loop().run_in_executor(
+                                None, partial(audit_site, domain)
+                            )
+                            # Save for tracking
+                            save_audit(site, result)
 
-            if action == "scrape_status":
-                try:
-                    from agents.seo_agent.tools.crm_tools import get_crm_contacts
-                    contacts = get_crm_contacts(limit=5000)
-                    by_country: dict[str, int] = {}
-                    by_category: dict[str, int] = {}
-                    by_source: dict[str, int] = {}
-                    for c in contacts:
-                        ctry = c.get("country", "?")
-                        by_country[ctry] = by_country.get(ctry, 0) + 1
-                        cat = c.get("category", "?")
-                        by_category[cat] = by_category.get(cat, 0) + 1
-                        src = c.get("source", "?")
-                        by_source[src] = by_source.get(src, 0) + 1
-
-                    lines = [f"CRM: {len(contacts)} total contacts\n"]
-                    if by_country:
-                        lines.append("By country:")
-                        for k, v in sorted(by_country.items(), key=lambda x: -x[1]):
-                            lines.append(f"  {k}: {v}")
-                    if by_category:
-                        lines.append("\nBy category:")
-                        for k, v in sorted(by_category.items(), key=lambda x: -x[1]):
-                            lines.append(f"  {k}: {v}")
-                    if by_source:
-                        lines.append("\nBy source:")
-                        for k, v in sorted(by_source.items(), key=lambda x: -x[1]):
-                            lines.append(f"  {k}: {v}")
-                    await update.message.reply_text("\n".join(lines))
-                except Exception as e:
-                    await update.message.reply_text(f"Status check failed: {str(e)[:200]}")
-                return
-
-            if action in ("web_search", "review_site"):
-                query = params.get("query") or params.get("url") or user_text
-                await update.message.reply_text(f"Searching: {query}...")
-                try:
-                    search_results = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_run_web_search, query)
-                    )
-                    if not search_results:
-                        msg = f"Search returned no results for '{query}'. Try a different query?"
+                        report = format_audit_report(result)
+                        for i in range(0, len(report), 4000):
+                            await update.message.reply_text(report[i:i + 4000])
+                        history.append({"role": "assistant", "content": report[:300]})
+                    except Exception as e:
+                        logger.error("Audit failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Audit failed: {str(e)[:300]}")
+                    continue
+                if action == "learn":
+                    topic = params.get("topic", user_text)
+                    await update.message.reply_text(f"Researching: {topic}...")
+                    try:
+                        # Search the web for the topic
+                        search_results = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_run_web_search, f"SEO AEO {topic} 2026 best practices")
+                        )
+                        # Summarise and store
+                        results_text = "\n".join(
+                            f"- {r.get('title', '')}: {r.get('content', '')[:200]}" for r in search_results[:5]
+                        )
+                        summary = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_call_openrouter_sync,
+                                [{"role": "user", "content": f"Summarise these search results about '{topic}' into a concise knowledge entry (max 500 words). Focus on actionable SEO/AEO advice.\n\n{results_text}"}],
+                                "You are an SEO expert. Summarise research into actionable knowledge.")
+                        )
+                        # Store in knowledge base
+                        from agents.seo_agent.tools.knowledge_tools import store_knowledge
+                        category = "aeo" if "aeo" in topic.lower() or "ai" in topic.lower() else "industry_trends"
+                        import re
+                        topic_slug = re.sub(r'[^a-z0-9_]', '_', topic.lower()[:80]).strip('_')
+                        store_knowledge(category, topic_slug, summary)
+                        await update.message.reply_text(f"Learned about '{topic}' and saved to knowledge base.\n\nKey points:\n{summary[:500]}")
+                        history.append({"role": "assistant", "content": f"Learned about {topic}"})
+                    except Exception as e:
+                        logger.error("Learn failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Research failed: {str(e)[:200]}")
+                    continue
+                if action == "knowledge":
+                    query = params.get("query", user_text)
+                    try:
+                        from agents.seo_agent.tools.knowledge_tools import search_knowledge
+                        results = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(search_knowledge, query)
+                        )
+                        if results:
+                            lines = [f"Knowledge base ({len(results)} entries for '{query}'):"]
+                            for r in results[:5]:
+                                lines.append(f"\n[{r.get('category')}] {r.get('topic')}:")
+                                lines.append(r.get('content', '')[:300])
+                            msg = "\n".join(lines)
+                            # Truncate for Telegram
+                            for i in range(0, len(msg), 4000):
+                                await update.message.reply_text(msg[i:i+4000])
+                        else:
+                            await update.message.reply_text(f"Nothing in the knowledge base about '{query}'. Want me to research it?")
+                    except Exception as e:
+                        await update.message.reply_text(f"Knowledge search failed: {str(e)[:200]}")
+                    continue
+                if action == "store_content":
+                    site = params.get("site", "freeroomplanner")
+                    await update.message.reply_text(f"Cataloguing existing content for {site}...")
+                    try:
+                        from agents.seo_agent.tools.github_tools import list_blog_posts
+                        from agents.seo_agent.tools.supabase_tools import insert_record
+                        posts = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(list_blog_posts, site)
+                        )
+                        stored = 0
+                        for p in posts:
+                            try:
+                                insert_record("seo_content_briefs", {
+                                    "keyword": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " "),
+                                    "target_site": site,
+                                    "title": p["name"].replace(".html", "").replace(".mdx", "").replace("-", " ").title(),
+                                    "file_path": p["path"],
+                                    "content_type": "existing_published",
+                                })
+                                stored += 1
+                            except Exception:
+                                pass
+                        msg = f"Stored {stored} existing posts for {site} in the database. I'll avoid duplicating these topics in future content."
                         await update.message.reply_text(msg)
                         history.append({"role": "assistant", "content": msg})
-                        return
-                    # Send results to Claude for a natural summary
-                    summary = await asyncio.get_event_loop().run_in_executor(
-                        None, partial(_summarise_search_results, query, search_results, list(history))
+                    except Exception as e:
+                        logger.error("Store content failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Failed to store content: {str(e)[:200]}")
+                    continue
+                if action == "publish_blog":
+                    site = params.get("site", "freeroomplanner")
+                    title = params.get("title", "")
+                    keyword = params.get("keyword", title)
+                    if not title and not keyword:
+                        await update.message.reply_text("What should the blog post be about? Give me a title or keyword.")
+                        continue
+                    await update.message.reply_text(f"Writing blog post: {title or keyword}...\nThis may take a minute.")
+                    try:
+                        # Step 1: Generate content via LLM
+                        blog_content = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_generate_blog_post, site, title or keyword, keyword)
+                        )
+                        # Step 2: Publish to GitHub
+                        from agents.seo_agent.tools.github_tools import publish_blog_post
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(publish_blog_post,
+                                site=site,
+                                title=blog_content["title"],
+                                content=blog_content["content"],
+                                meta_description=blog_content["meta_description"],
+                            )
+                        )
+                        msg = (
+                            f"Blog post published:\n\n"
+                            f"Title: {blog_content['title']}\n"
+                            f"URL: {result.get('published_url', 'N/A')}\n"
+                            f"Commit: {result.get('commit_url', 'N/A')}\n\n"
+                            f"It will be live after the site redeploys (1-2 minutes)."
+                        )
+                        await update.message.reply_text(msg)
+                        history.append({"role": "assistant", "content": msg[:300]})
+                        try:
+                            from agents.seo_agent.memory import Memory
+                            Memory().log_activity(
+                                action_type="blog_published",
+                                summary=f"Published blog: {blog_content['title']} for {site}",
+                                site=site,
+                                details={
+                                    "title": blog_content["title"],
+                                    "keyword": keyword,
+                                    "url": result.get("published_url", ""),
+                                },
+                                source="telegram",
+                            )
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        logger.error("Blog publish failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Publishing failed: {str(e)[:300]}")
+                    continue
+                if action == "journal":
+                    category = params.get("category")
+                    await update.message.reply_text("Writing a journal entry...")
+                    try:
+                        from agents.seo_agent.tools.reflection_engine import generate_reflective_post
+                        from agents.seo_agent.tools.github_tools import publish_blog_post
+
+                        post = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(generate_reflective_post, category=category)
+                        )
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(publish_blog_post,
+                                site="ralf_seo",
+                                title=post["title"],
+                                content=post["content"],
+                                meta_description=post["meta_description"],
+                                category=post.get("category", "Field Report"),
+                                what_i_learned=post.get("what_i_learned", []),
+                            )
+                        )
+                        report = f"Published: {post['title']}\n\nCategory: {post.get('category')}\n\n"
+                        report += f"URL: {result.get('published_url', 'N/A')}\n\n"
+                        report += "What I learned:\n"
+                        for item in post.get("what_i_learned", []):
+                            report += f"\u2022 {item}\n"
+                        await update.message.reply_text(report)
+                        history.append({"role": "assistant", "content": report[:300]})
+                        try:
+                            from agents.seo_agent.memory import Memory
+                            Memory().log_activity(
+                                action_type="journal_published",
+                                summary=f"Journal: {post['title']}",
+                                site="ralf_seo",
+                                details={
+                                    "title": post["title"],
+                                    "category": post.get("category", ""),
+                                    "url": result.get("published_url", ""),
+                                },
+                                source="telegram",
+                            )
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        logger.error("Journal failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Journal entry failed: {str(e)[:300]}")
+                    continue
+                if action == "recall_activities":
+                    action_type = params.get("action_type")
+                    site = params.get("site")
+                    try:
+                        from agents.seo_agent.memory import Memory
+                        activities = Memory().recall_activities(
+                            action_type=action_type,
+                            site=site,
+                            limit=15,
+                        )
+                        if activities:
+                            lines = []
+                            for a in activities:
+                                ts = a.get("created_at", "")[:10]
+                                lines.append(f"- [{ts}] {a.get('content', '')}")
+                            msg = "Here's what I've been up to:\n\n" + "\n".join(lines)
+                        else:
+                            msg = "No activities found matching that filter."
+                        await update.message.reply_text(msg[:4000])
+                        history.append({"role": "assistant", "content": msg[:300]})
+                    except Exception as e:
+                        await update.message.reply_text(f"Couldn't recall activities: {str(e)[:200]}")
+                    continue
+                if action == "schedule_show":
+                    try:
+                        from agents.seo_agent.strategy import (
+                            format_schedule_for_display,
+                            get_full_schedule,
+                        )
+
+                        rows = get_full_schedule()
+                        msg = format_schedule_for_display(rows)
+                        await update.message.reply_text(msg[:4000])
+                        history.append({"role": "assistant", "content": msg[:300]})
+                    except Exception as e:
+                        await update.message.reply_text(f"Couldn't load schedule: {str(e)[:200]}")
+                    continue
+                if action == "schedule_today":
+                    try:
+                        from agents.seo_agent.strategy import (
+                            get_todays_log,
+                            get_todays_schedule,
+                        )
+
+                        schedule = get_todays_schedule()
+                        today_log = get_todays_log()
+                        done_skills = {
+                            r["skill"] for r in today_log if r.get("status") == "done"
+                        }
+                        failed_skills = {
+                            r["skill"] for r in today_log if r.get("status") == "failed"
+                        }
+
+                        lines = [f"Today: {schedule['label']}", schedule["description"], ""]
+                        for skill_name in schedule["boost_skills"]:
+                            if skill_name in done_skills:
+                                lines.append(f"  done — {skill_name}")
+                            elif skill_name in failed_skills:
+                                lines.append(f"  failed — {skill_name}")
+                            else:
+                                lines.append(f"  pending — {skill_name}")
+
+                        if schedule["weekly_due"]:
+                            lines.append(f"\nWeekly due: {', '.join(schedule['weekly_due'])}")
+                        if schedule["monthly_due"]:
+                            lines.append(f"Monthly due: {', '.join(schedule['monthly_due'])}")
+
+                        msg = "\n".join(lines)
+                        await update.message.reply_text(msg[:4000])
+                        history.append({"role": "assistant", "content": msg[:300]})
+                    except Exception as e:
+                        await update.message.reply_text(f"Couldn't load today's schedule: {str(e)[:200]}")
+                    continue
+                if action == "schedule_edit":
+                    try:
+                        from agents.seo_agent.strategy import get_full_schedule, parse_day_of_week, update_schedule_entry
+
+                        skill = params.get("skill", "")
+                        if not skill:
+                            await update.message.reply_text("Please specify which skill to update.")
+                            continue
+
+                        rows = get_full_schedule()
+                        matches = [r for r in rows if r.get("skill") == skill]
+                        if not matches:
+                            # Fuzzy fallback: substring match on skill name, label, or description
+                            query = skill.lower().replace("_", " ")
+                            matches = [
+                                r for r in rows
+                                if query in r.get("skill", "").lower().replace("_", " ")
+                                or query in r.get("label", "").lower()
+                                or query in r.get("description", "").lower()
+                            ]
+                        if not matches:
+                            skill_names = sorted({r["skill"] for r in rows})
+                            await update.message.reply_text(
+                                f"No schedule entry found for '{skill}'.\n"
+                                f"Available skills: {', '.join(skill_names)}"
+                            )
+                            continue
+
+                        updates: dict[str, Any] = {}
+                        if "day_of_week" in params:
+                            try:
+                                updates["day_of_week"] = parse_day_of_week(params["day_of_week"])
+                            except ValueError:
+                                await update.message.reply_text(
+                                    "Which day should I schedule that? (Monday-Sunday)"
+                                )
+                                continue
+                        if "day_of_month" in params:
+                            updates["day_of_month"] = int(params["day_of_month"])
+                        if "boost_amount" in params:
+                            updates["boost_amount"] = int(params["boost_amount"])
+                        if "cadence" in params:
+                            cadence = str(params["cadence"]).strip().lower()
+                            if cadence not in ("daily", "weekly", "monthly"):
+                                await update.message.reply_text(
+                                    "Should that be daily, weekly, or monthly?"
+                                )
+                                continue
+                            updates["cadence"] = cadence
+                        if "active" in params:
+                            updates["active"] = bool(params["active"])
+
+                        updated = 0
+                        for row in matches:
+                            update_schedule_entry(row["id"], **updates)
+                            updated += 1
+
+                        msg = f"Updated {updated} schedule entries for '{skill}'."
+                        await update.message.reply_text(msg)
+                        history.append({"role": "assistant", "content": msg})
+                    except Exception as e:
+                        await update.message.reply_text(f"Schedule edit failed: {str(e)[:200]}")
+                    continue
+                if action == "schedule_history":
+                    try:
+                        from agents.seo_agent.strategy import get_schedule_history
+
+                        days_back = int(params.get("days_back", 7))
+                        entries = get_schedule_history(days_back)
+                        if entries:
+                            lines = [f"Schedule history (last {days_back} days):", ""]
+                            current_date = ""
+                            for e in entries:
+                                date = e.get("schedule_date", "")[:10]
+                                if date != current_date:
+                                    current_date = date
+                                    lines.append(f"\n{date}:")
+                                status = e.get("status", "?")
+                                skill_name = e.get("skill", "?")
+                                site = e.get("site", "")
+                                summary = e.get("summary", "")[:60]
+                                site_label = f" ({site})" if site else ""
+                                lines.append(f"  [{status}] {skill_name}{site_label}: {summary}")
+                            msg = "\n".join(lines)
+                        else:
+                            msg = f"No schedule activity in the last {days_back} days."
+                        await update.message.reply_text(msg[:4000])
+                        history.append({"role": "assistant", "content": msg[:300]})
+                    except Exception as e:
+                        await update.message.reply_text(f"Couldn't load history: {str(e)[:200]}")
+                    continue
+                if action == "list_blogs":
+                    site = params.get("site", "freeroomplanner")
+                    try:
+                        from agents.seo_agent.tools.github_tools import list_blog_posts
+                        posts = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(list_blog_posts, site)
+                        )
+                        if posts:
+                            lines = [f"Blog posts for {site} ({len(posts)}):"]
+                            for p in posts:
+                                lines.append(f"\u2022 {p['name']}")
+                            await update.message.reply_text("\n".join(lines))
+                        else:
+                            await update.message.reply_text(f"No blog posts found for {site}.")
+                    except Exception as e:
+                        await update.message.reply_text(f"Failed to list posts: {str(e)[:200]}")
+                    continue
+                if action == "scrape_companies":
+                    country = params.get("country", "UK").upper()
+                    category = params.get("category", "kitchen_company")
+                    await update.message.reply_text(f"Starting Firecrawl scraper for {category} in {country}... this may take a few minutes.")
+                    try:
+                        from agents.scraper_agent.tools.firecrawl_client import run_scraper
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(run_scraper, country=country, category=category, max_queries=10)
+                        )
+                        lines = [
+                            f"Scraping complete for {category} in {country}:\n",
+                            f"Queries run: {result.get('queries_run', 0)}",
+                            f"Company URLs found: {result.get('urls_found', 0)}",
+                            f"Data extracted: {result.get('extracted', 0)}",
+                            f"Added to CRM: {result.get('added_to_crm', 0)}",
+                            f"Skipped (duplicates/invalid): {result.get('skipped', 0)}",
+                        ]
+                        if result.get("error"):
+                            lines.append(f"\nError: {result['error']}")
+                        await update.message.reply_text("\n".join(lines))
+                        history.append({"role": "assistant", "content": f"Scraped {result.get('added_to_crm', 0)} {category} companies in {country}"})
+                    except Exception as e:
+                        logger.error("Scraper failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Scraper failed: {str(e)[:300]}")
+                    continue
+
+                if action == "scrape_all":
+                    await update.message.reply_text("Starting full scrape across UK, US, and CA for kitchen + bathroom companies... this will take a while.")
+                    try:
+                        from agents.scraper_agent.tools.firecrawl_client import run_full_scrape
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(run_full_scrape, max_queries_per_country=5)
+                        )
+                        total = result.get("total_added", 0)
+                        lines = [f"Full scrape complete — {total} companies added to CRM:\n"]
+                        for key, data in result.items():
+                            if key == "total_added":
+                                continue
+                            if isinstance(data, dict):
+                                added = data.get("added_to_crm", 0)
+                                found = data.get("urls_found", 0)
+                                lines.append(f"  {key}: {added} added (from {found} found)")
+                        await update.message.reply_text("\n".join(lines))
+                        history.append({"role": "assistant", "content": f"Full scrape: {total} companies added"})
+                    except Exception as e:
+                        logger.error("Full scrape failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Full scrape failed: {str(e)[:300]}")
+                    continue
+
+                if action == "scrape_status":
+                    try:
+                        from agents.seo_agent.tools.crm_tools import get_crm_contacts
+                        contacts = get_crm_contacts(limit=5000)
+                        by_country: dict[str, int] = {}
+                        by_category: dict[str, int] = {}
+                        by_source: dict[str, int] = {}
+                        for c in contacts:
+                            ctry = c.get("country", "?")
+                            by_country[ctry] = by_country.get(ctry, 0) + 1
+                            cat = c.get("category", "?")
+                            by_category[cat] = by_category.get(cat, 0) + 1
+                            src = c.get("source", "?")
+                            by_source[src] = by_source.get(src, 0) + 1
+
+                        lines = [f"CRM: {len(contacts)} total contacts\n"]
+                        if by_country:
+                            lines.append("By country:")
+                            for k, v in sorted(by_country.items(), key=lambda x: -x[1]):
+                                lines.append(f"  {k}: {v}")
+                        if by_category:
+                            lines.append("\nBy category:")
+                            for k, v in sorted(by_category.items(), key=lambda x: -x[1]):
+                                lines.append(f"  {k}: {v}")
+                        if by_source:
+                            lines.append("\nBy source:")
+                            for k, v in sorted(by_source.items(), key=lambda x: -x[1]):
+                                lines.append(f"  {k}: {v}")
+                        await update.message.reply_text("\n".join(lines))
+                    except Exception as e:
+                        await update.message.reply_text(f"Status check failed: {str(e)[:200]}")
+                    continue
+
+                if action in ("web_search", "review_site"):
+                    query = params.get("query") or params.get("url") or user_text
+                    await update.message.reply_text(f"Searching: {query}...")
+                    try:
+                        search_results = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_run_web_search, query)
+                        )
+                        if not search_results:
+                            msg = f"Search returned no results for '{query}'. Try a different query?"
+                            await update.message.reply_text(msg)
+                            history.append({"role": "assistant", "content": msg})
+                            continue
+                        # Send results to Claude for a natural summary
+                        summary = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(_summarise_search_results, query, search_results, list(history))
+                        )
+                        await update.message.reply_text(summary)
+                        history.append({"role": "assistant", "content": f"[Searched: {query}] {summary[:250]}"})
+                    except Exception as e:
+                        logger.error("Web search failed: %s", traceback.format_exc())
+                        err_msg = f"Search failed: {str(e)[:200]}"
+                        await update.message.reply_text(err_msg)
+                        history.append({"role": "assistant", "content": f"[Search failed for: {query}] {err_msg}"})
+                    continue
+
+                # Run the agent task
+                await update.message.reply_text(f"On it \u2014 running {action.replace('_', ' ')}...")
+
+                result = {}
+                try:
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, partial(_run_graph_sync, action, **params)
                     )
-                    await update.message.reply_text(summary)
-                    history.append({"role": "assistant", "content": f"[Searched: {query}] {summary[:250]}"})
                 except Exception as e:
-                    logger.error("Web search failed: %s", traceback.format_exc())
-                    err_msg = f"Search failed: {str(e)[:200]}"
-                    await update.message.reply_text(err_msg)
-                    history.append({"role": "assistant", "content": f"[Search failed for: {query}] {err_msg}"})
-                return
+                    logger.error("Agent task %s failed: %s", action, traceback.format_exc())
+                    await update.message.reply_text(f"That didn't work: {str(e)[:300]}")
+                    history.append({"role": "assistant", "content": f"[Task {action} failed: {str(e)[:100]}]"})
+                    continue
 
-            # Run the agent task
-            await update.message.reply_text(f"On it \u2014 running {action.replace('_', ' ')}...")
+                # Format and send results
+                formatted = await _format_task_result(action, result)
 
-            result = {}
-            try:
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, partial(_run_graph_sync, action, **params)
-                )
-            except Exception as e:
-                logger.error("Agent task %s failed: %s", action, traceback.format_exc())
-                await update.message.reply_text(f"That didn't work: {str(e)[:300]}")
-                history.append({"role": "assistant", "content": f"[Task {action} failed: {str(e)[:100]}]"})
-                return
+                # Telegram 4096 char limit
+                for i in range(0, len(formatted), 4000):
+                    await update.message.reply_text(formatted[i:i + 4000])
 
-            # Format and send results
-            formatted = await _format_task_result(action, result)
-
-            # Telegram 4096 char limit
-            for i in range(0, len(formatted), 4000):
-                await update.message.reply_text(formatted[i:i + 4000])
-
-            # Store a summary in conversation history
-            summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
-            history.append({"role": "assistant", "content": summary})
+                # Store a summary in conversation history
+                summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
+                history.append({"role": "assistant", "content": summary})
 
         else:
             # Pure conversational response — strip any XML/function call artifacts
