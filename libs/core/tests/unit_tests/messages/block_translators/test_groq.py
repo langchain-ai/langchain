@@ -138,3 +138,38 @@ def test_parse_code_json() -> None:
     # Test invalid format raises ValueError
     with pytest.raises(ValueError, match="Could not extract Python code"):
         _parse_code_json('{"invalid": "format"}')
+
+
+def test_extract_reasoning_ignores_empty_string() -> None:
+    """Test that _extract_reasoning_from_additional_kwargs ignores empty strings."""
+    # Empty string should return None
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is None
+
+
+def test_extract_reasoning_ignores_whitespace_only() -> None:
+    """Test that _extract_reasoning_from_additional_kwargs ignores whitespace."""
+    # Whitespace-only string should return None
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": "   \n\t  "},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is None
+
+
+def test_extract_reasoning_preserves_valid_content() -> None:
+    """Test that _extract_reasoning_from_additional_kwargs preserves content."""
+    # Valid reasoning content should be preserved
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": "Let me think about this..."},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is not None
+    assert result["type"] == "reasoning"
+    assert result["reasoning"] == "Let me think about this..."
