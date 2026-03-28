@@ -2418,6 +2418,32 @@ def test__construct_responses_api_input_tool_message_conversion() -> None:
     assert result[0]["call_id"] == "call_123"
 
 
+def test__construct_responses_api_input_tool_message_content_blocks_are_stringified() -> (
+    None
+):
+    """Tool message block content must be serialized to string for function tools."""
+    messages = [
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "Temperature is 72F"},
+                {"type": "text", "text": "Condition is sunny"},
+            ],
+            tool_call_id="call_123",
+        )
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call_output"
+    assert isinstance(result[0]["output"], str)
+    assert json.loads(result[0]["output"]) == [
+        {"type": "input_text", "text": "Temperature is 72F"},
+        {"type": "input_text", "text": "Condition is sunny"},
+    ]
+    assert result[0]["call_id"] == "call_123"
+
+
 def test__construct_responses_api_input_multiple_message_types() -> None:
     """Test conversion of a conversation with multiple message types."""
     messages = [

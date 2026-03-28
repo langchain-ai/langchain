@@ -4118,7 +4118,7 @@ def _convert_chat_completions_blocks_to_responses(
     return block
 
 
-def _ensure_valid_tool_message_content(tool_output: Any) -> str | list[dict]:
+def _ensure_valid_tool_message_content(tool_output: Any) -> str:
     if isinstance(tool_output, str):
         return tool_output
     if isinstance(tool_output, list) and all(
@@ -4134,10 +4134,11 @@ def _ensure_valid_tool_message_content(tool_output: Any) -> str | list[dict]:
         )
         for block in tool_output
     ):
-        return [
+        converted_blocks = [
             _convert_chat_completions_blocks_to_responses(block)
             for block in tool_output
         ]
+        return _stringify(converted_blocks)
     return _stringify(tool_output)
 
 
