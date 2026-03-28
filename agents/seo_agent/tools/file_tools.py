@@ -104,6 +104,48 @@ def read_brief(keyword: str) -> str | None:
     return None
 
 
+def write_quality_log(
+    title: str,
+    score: int,
+    verdict: str,
+    issues: list[str],
+    fixed: list[str],
+) -> str:
+    """Append a quality review verdict to the quality log.
+
+    Args:
+        title: Blog post title.
+        score: Overall quality score (0-10).
+        verdict: Review verdict (approved, needs_revision, approved_after_revision).
+        issues: List of issues found.
+        fixed: List of issues that were auto-fixed.
+
+    Returns:
+        The absolute file path of the quality log.
+    """
+    from datetime import datetime, timezone
+
+    log_path = OUTPUT_ROOT / "quality-log.md"
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+
+    now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    fixed_text = f" Fixed: {', '.join(fixed)}." if fixed else ""
+    flagged_text = (
+        f" Flagged: {', '.join(issues)}." if issues else " No issues flagged."
+    )
+
+    entry = (
+        f"\n**[{now}] {title}** — Score: {score}/10, Verdict: {verdict}."
+        f"{fixed_text}{flagged_text}\n"
+    )
+
+    with open(log_path, "a", encoding="utf-8") as fh:
+        fh.write(entry)
+
+    logger.info("Quality log updated: %s (%d/10, %s)", title, score, verdict)
+    return str(log_path)
+
+
 def list_output_files(subdir: str = "briefs") -> list[str]:
     """List all files in an output subdirectory.
 

@@ -323,6 +323,7 @@ TOKEN_BUDGETS: dict[str, int] = {
     "write_tier2_email": 300,
     "write_tier1_email": 400,
     "write_blog_post": 2500,
+    "review_blog_post": 800,
     "write_location_page": 1500,
     "write_followup_email": 250,
     "generate_pr_angles": 600,

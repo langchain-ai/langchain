@@ -39,6 +39,7 @@ TASK_MODEL_MAP: dict[str, str] = {
     "summarise_page": _HAIKU,
     "check_reply_intent": _HAIKU,
     "filter_keywords": _HAIKU,
+    "review_blog_post": _HAIKU,
     # Sonnet — drafting, analysis, briefs (mid-cost, default)
     "write_content_brief": _SONNET,
     "write_blog_post": _SONNET,
