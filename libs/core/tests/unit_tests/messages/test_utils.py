@@ -2958,3 +2958,19 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+def test_convert_to_openai_messages_empty_reasoning_content_ignored() -> None:
+    """Empty string reasoning_content should not produce a reasoning block.
+
+    Intermediate stream chunks from models like DeepSeek/Tongyi may send
+    reasoning_content="" before the actual reasoning arrives. These must not
+    be surfaced as a ReasoningContentBlock.
+    """
+    msg = AIMessage(
+        content="hello",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    result = convert_to_openai_messages(msg)
+    # No reasoning block should appear in the output
+    assert result == {"role": "assistant", "content": "hello"}
