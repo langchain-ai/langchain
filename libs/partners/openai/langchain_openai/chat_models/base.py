@@ -4118,21 +4118,27 @@ def _convert_chat_completions_blocks_to_responses(
     return block
 
 
+def _is_valid_tool_content_block(block: Any) -> bool:
+    if not isinstance(block, dict):
+        return False
+    block_type = block.get("type")
+    if block_type in ("input_text", "input_image", "input_file"):
+        return True
+    if block_type == "text":
+        return "text" in block
+    if block_type == "image_url":
+        image_url = block.get("image_url")
+        return isinstance(image_url, dict) and "url" in image_url
+    if block_type == "file":
+        return isinstance(block.get("file"), dict)
+    return False
+
+
 def _ensure_valid_tool_message_content(tool_output: Any) -> str:
     if isinstance(tool_output, str):
         return tool_output
     if isinstance(tool_output, list) and all(
-        isinstance(block, dict)
-        and block.get("type")
-        in (
-            "input_text",
-            "input_image",
-            "input_file",
-            "text",
-            "image_url",
-            "file",
-        )
-        for block in tool_output
+        _is_valid_tool_content_block(block) for block in tool_output
     ):
         converted_blocks = [
             _convert_chat_completions_blocks_to_responses(block)
