@@ -27,6 +27,35 @@ def test_extract_reasoning_from_additional_kwargs_exists() -> None:
     assert callable(_extract_reasoning_from_additional_kwargs)
 
 
+def test_extract_reasoning_from_additional_kwargs_empty_string() -> None:
+    """Test that empty reasoning_content strings are ignored."""
+    # Test with empty string - should return None
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is None
+
+    # Test with whitespace-only string - should return None
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": "   "},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is None
+
+    # Test with valid reasoning - should return the block
+    message = AIMessage(
+        content="Final answer",
+        additional_kwargs={"reasoning_content": "Let me think..."},
+    )
+    result = _extract_reasoning_from_additional_kwargs(message)
+    assert result is not None
+    assert result["type"] == "reasoning"
+    assert result["reasoning"] == "Let me think..."
+
+
 def test_groq_translate_content_basic() -> None:
     """Test basic groq content translation."""
     # Test with simple text message
