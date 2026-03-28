@@ -19,6 +19,21 @@ if TYPE_CHECKING:
     from langchain_core.messages import AIMessage
 
 
+def _resolve_detail(block: dict[str, Any]) -> str | None:
+    """Extract the ``detail`` field from an image content block.
+
+    Checks the top-level dict first, then ``extras``, then ``metadata``
+    (for backwards compatibility).
+    """
+    if "detail" in block:
+        return block["detail"]
+    if (extras := block.get("extras")) and "detail" in extras:
+        return extras["detail"]
+    if (meta := block.get("metadata")) and "detail" in meta:
+        return meta["detail"]
+    return None
+
+
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions.
 
@@ -32,12 +47,15 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     Returns:
         The formatted image content block.
     """
+    detail = _resolve_detail(block)
+
     if "url" in block:
+        image_url: dict[str, Any] = {"url": block["url"]}
+        if detail:
+            image_url["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
+            "image_url": image_url,
         }
     if "base64" in block or block.get("source_type") == "base64":
         if "mime_type" not in block:
@@ -45,11 +63,12 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
             raise ValueError(error_message)
         mime_type = block["mime_type"]
         base64_data = block["data"] if "data" in block else block["base64"]
+        image_url = {"url": f"data:{mime_type};base64,{base64_data}"}
+        if detail:
+            image_url["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
+            "image_url": image_url,
         }
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)

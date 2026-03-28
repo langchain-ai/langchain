@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.openai import (
     convert_to_openai_data_block,
+    convert_to_openai_image_block,
 )
 from tests.unit_tests.language_models.chat_models.test_base import (
     _content_blocks_equal_ignore_id,
@@ -603,3 +604,91 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    "input_block, expected",
+    [
+        # detail at top level — url
+        (
+            {"type": "image", "url": "https://img.png", "detail": "high"},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "high"}},
+        ),
+        # detail in extras — url
+        (
+            {"type": "image", "url": "https://img.png", "extras": {"detail": "low"}},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "low"}},
+        ),
+        # detail in metadata — url
+        (
+            {"type": "image", "url": "https://img.png", "metadata": {"detail": "auto"}},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "auto"}},
+        ),
+        # detail at top level — base64
+        (
+            {"type": "image", "base64": "abc", "mime_type": "image/png", "detail": "high"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc", "detail": "high"}},
+        ),
+        # detail in extras — base64
+        (
+            {"type": "image", "base64": "abc", "mime_type": "image/png", "extras": {"detail": "low"}},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc", "detail": "low"}},
+        ),
+        # no detail — url (should remain unchanged)
+        (
+            {"type": "image", "url": "https://img.png"},
+            {"type": "image_url", "image_url": {"url": "https://img.png"}},
+        ),
+        # no detail — base64 (should remain unchanged)
+        (
+            {"type": "image", "base64": "abc", "mime_type": "image/png"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ),
+    ],
+)
+def test_convert_to_openai_image_block_detail(
+    input_block: dict, expected: dict
+) -> None:
+    assert convert_to_openai_image_block(input_block) == expected
+
+
+@pytest.mark.parametrize(
+    "input_block, expected_chat, expected_responses",
+    [
+        # detail at top level
+        (
+            {"type": "image", "url": "https://img.png", "detail": "high"},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "high"}},
+            {"type": "input_image", "image_url": "https://img.png", "detail": "high"},
+        ),
+        # detail in extras
+        (
+            {"type": "image", "url": "https://img.png", "extras": {"detail": "low"}},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "low"}},
+            {"type": "input_image", "image_url": "https://img.png", "detail": "low"},
+        ),
+        # detail in metadata
+        (
+            {"type": "image", "url": "https://img.png", "metadata": {"detail": "auto"}},
+            {"type": "image_url", "image_url": {"url": "https://img.png", "detail": "auto"}},
+            {"type": "input_image", "image_url": "https://img.png", "detail": "auto"},
+        ),
+        # base64 with detail
+        (
+            {"type": "image", "base64": "abc", "mime_type": "image/png", "detail": "high"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc", "detail": "high"}},
+            {"type": "input_image", "image_url": "data:image/png;base64,abc", "detail": "high"},
+        ),
+        # no detail — stays unchanged
+        (
+            {"type": "image", "url": "https://img.png"},
+            {"type": "image_url", "image_url": {"url": "https://img.png"}},
+            {"type": "input_image", "image_url": "https://img.png"},
+        ),
+    ],
+)
+def test_convert_to_openai_data_block_detail(
+    input_block: dict, expected_chat: dict, expected_responses: dict
+) -> None:
+    assert convert_to_openai_data_block(input_block) == expected_chat
+    assert convert_to_openai_data_block(input_block, api="responses") == expected_responses
