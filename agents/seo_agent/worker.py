@@ -78,7 +78,17 @@ async def _execute_worker_inner() -> dict[str, Any]:
         logger.error("Dashboard unavailable: %s", e)
         return {"status": "dashboard_error", "error": str(e)}
 
-    # Evaluate skills
+    # Reference today's schedule
+    from agents.seo_agent.strategy import get_todays_schedule
+
+    schedule = get_todays_schedule()
+    logger.info(
+        "Today's focus: %s — boosting %s",
+        schedule["label"],
+        list(schedule["boost_skills"].keys()),
+    )
+
+    # Evaluate skills (schedule boosts applied inside evaluate)
     registry = SkillRegistry()
     actionable = registry.evaluate(dashboard, ctx.buffer, budget_remaining=ctx.budget_remaining)
 
@@ -135,6 +145,17 @@ async def _execute_worker_inner() -> dict[str, Any]:
                 source="worker",
             )
 
+            # Tick off on the schedule log
+            from agents.seo_agent.strategy import log_schedule_completion
+
+            log_schedule_completion(
+                task_name,
+                site=site,
+                summary=summary,
+                heartbeat_id=cycle.cycle_id if hasattr(cycle, "cycle_id") else "",
+                status="done",
+            )
+
             # Record skill execution for cooldown
             skill = registry.get(task_name)
             if skill:
@@ -152,6 +173,17 @@ async def _execute_worker_inner() -> dict[str, Any]:
                 success=False,
                 details=error_msg,
                 site=site,
+            )
+
+            # Log failure on the schedule log
+            from agents.seo_agent.strategy import log_schedule_completion
+
+            log_schedule_completion(
+                task_name,
+                site=site,
+                summary=error_msg[:200],
+                heartbeat_id=cycle.cycle_id if hasattr(cycle, "cycle_id") else "",
+                status="failed",
             )
 
     cycle.complete()

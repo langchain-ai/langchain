@@ -67,6 +67,38 @@ async def _execute_pulse_inner() -> dict[str, Any]:
     sections: list[str] = []
     alerts: list[str] = []
 
+    # --- 0. Today's schedule ---
+    try:
+        from agents.seo_agent.strategy import get_todays_log, get_todays_schedule
+
+        schedule = get_todays_schedule()
+        today_log = get_todays_log()
+
+        done_skills = {
+            r["skill"] for r in today_log if r.get("status") == "done"
+        }
+        failed_skills = {
+            r["skill"] for r in today_log if r.get("status") == "failed"
+        }
+
+        focus_lines = [f"Today's focus: {schedule['label']}"]
+        for skill_name in schedule["boost_skills"]:
+            if skill_name in done_skills:
+                focus_lines.append(f"  done: {skill_name}")
+            elif skill_name in failed_skills:
+                focus_lines.append(f"  failed: {skill_name}")
+            else:
+                focus_lines.append(f"  pending: {skill_name}")
+
+        if schedule["weekly_due"]:
+            focus_lines.append(f"Weekly tasks due: {', '.join(schedule['weekly_due'])}")
+        if schedule["monthly_due"]:
+            focus_lines.append(f"Monthly tasks due: {', '.join(schedule['monthly_due'])}")
+
+        sections.append("\n".join(focus_lines))
+    except Exception:
+        logger.warning("Could not load schedule for pulse", exc_info=True)
+
     # --- 1. Budget check ---
     spend_pct = 1.0 - ctx.budget_remaining
     cap = float(os.getenv("MAX_WEEKLY_SPEND_USD", str(MAX_WEEKLY_SPEND_USD)))

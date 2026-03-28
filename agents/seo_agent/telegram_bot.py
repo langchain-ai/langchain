@@ -542,6 +542,10 @@ Actions:
 - web_search: {query} — search the internet
 - recall: {topic} — query our database for past results
 - recall_activities: {action_type?, site?} — recall what I've done (blog posts written, tasks completed, etc.)
+- schedule_show: (no params) — show my full weekly/monthly activity schedule
+- schedule_today: (no params) — show what's on today's schedule and what's been completed
+- schedule_edit: {skill, day_of_week?, day_of_month?, boost_amount?, active?} — update my schedule (e.g. move a skill to a different day, pause it, change boost)
+- schedule_history: {days_back?} — show what I did over the past N days (default 7)
 - list_blogs: {site} — list existing blog posts from GitHub
 - publish_blog: {site, title, keyword} — write and publish a blog post
 - store_content: {site, content_list} — save existing site content to database
@@ -1710,6 +1714,122 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                     history.append({"role": "assistant", "content": msg[:300]})
                 except Exception as e:
                     await update.message.reply_text(f"Couldn't recall activities: {str(e)[:200]}")
+                return
+            if action == "schedule_show":
+                try:
+                    from agents.seo_agent.strategy import (
+                        format_schedule_for_display,
+                        get_full_schedule,
+                    )
+
+                    rows = get_full_schedule()
+                    msg = format_schedule_for_display(rows)
+                    await update.message.reply_text(msg[:4000])
+                    history.append({"role": "assistant", "content": msg[:300]})
+                except Exception as e:
+                    await update.message.reply_text(f"Couldn't load schedule: {str(e)[:200]}")
+                return
+            if action == "schedule_today":
+                try:
+                    from agents.seo_agent.strategy import (
+                        get_todays_log,
+                        get_todays_schedule,
+                    )
+
+                    schedule = get_todays_schedule()
+                    today_log = get_todays_log()
+                    done_skills = {
+                        r["skill"] for r in today_log if r.get("status") == "done"
+                    }
+                    failed_skills = {
+                        r["skill"] for r in today_log if r.get("status") == "failed"
+                    }
+
+                    lines = [f"Today: {schedule['label']}", schedule["description"], ""]
+                    for skill_name in schedule["boost_skills"]:
+                        if skill_name in done_skills:
+                            lines.append(f"  done — {skill_name}")
+                        elif skill_name in failed_skills:
+                            lines.append(f"  failed — {skill_name}")
+                        else:
+                            lines.append(f"  pending — {skill_name}")
+
+                    if schedule["weekly_due"]:
+                        lines.append(f"\nWeekly due: {', '.join(schedule['weekly_due'])}")
+                    if schedule["monthly_due"]:
+                        lines.append(f"Monthly due: {', '.join(schedule['monthly_due'])}")
+
+                    msg = "\n".join(lines)
+                    await update.message.reply_text(msg[:4000])
+                    history.append({"role": "assistant", "content": msg[:300]})
+                except Exception as e:
+                    await update.message.reply_text(f"Couldn't load today's schedule: {str(e)[:200]}")
+                return
+            if action == "schedule_edit":
+                try:
+                    from agents.seo_agent.strategy import get_full_schedule, update_schedule_entry
+
+                    skill = params.get("skill", "")
+                    if not skill:
+                        await update.message.reply_text("Please specify which skill to update.")
+                        return
+
+                    rows = get_full_schedule()
+                    matches = [r for r in rows if r.get("skill") == skill]
+                    if not matches:
+                        await update.message.reply_text(
+                            f"No schedule entry found for skill '{skill}'."
+                        )
+                        return
+
+                    updates: dict[str, Any] = {}
+                    if "day_of_week" in params:
+                        updates["day_of_week"] = int(params["day_of_week"])
+                    if "day_of_month" in params:
+                        updates["day_of_month"] = int(params["day_of_month"])
+                    if "boost_amount" in params:
+                        updates["boost_amount"] = int(params["boost_amount"])
+                    if "active" in params:
+                        updates["active"] = bool(params["active"])
+
+                    updated = 0
+                    for row in matches:
+                        update_schedule_entry(row["id"], **updates)
+                        updated += 1
+
+                    msg = f"Updated {updated} schedule entries for '{skill}'."
+                    await update.message.reply_text(msg)
+                    history.append({"role": "assistant", "content": msg})
+                except Exception as e:
+                    await update.message.reply_text(f"Schedule edit failed: {str(e)[:200]}")
+                return
+            if action == "schedule_history":
+                try:
+                    from agents.seo_agent.strategy import get_schedule_history
+
+                    days_back = int(params.get("days_back", 7))
+                    entries = get_schedule_history(days_back)
+                    if entries:
+                        lines = [f"Schedule history (last {days_back} days):", ""]
+                        current_date = ""
+                        for e in entries:
+                            date = e.get("schedule_date", "")[:10]
+                            if date != current_date:
+                                current_date = date
+                                lines.append(f"\n{date}:")
+                            status = e.get("status", "?")
+                            skill_name = e.get("skill", "?")
+                            site = e.get("site", "")
+                            summary = e.get("summary", "")[:60]
+                            site_label = f" ({site})" if site else ""
+                            lines.append(f"  [{status}] {skill_name}{site_label}: {summary}")
+                        msg = "\n".join(lines)
+                    else:
+                        msg = f"No schedule activity in the last {days_back} days."
+                    await update.message.reply_text(msg[:4000])
+                    history.append({"role": "assistant", "content": msg[:300]})
+                except Exception as e:
+                    await update.message.reply_text(f"Couldn't load history: {str(e)[:200]}")
                 return
             if action == "list_blogs":
                 site = params.get("site", "freeroomplanner")

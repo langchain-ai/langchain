@@ -1,14 +1,21 @@
 """SEO strategy engine — gives Ralf goals, priorities, and initiative.
 
 This module defines the overall SEO strategy, tracks progress against goals,
-and generates prioritised next-step recommendations. Ralf consults this
-before every conversation to know what matters most right now.
+and generates prioritised next-step recommendations. It also manages the
+activity schedule that Ralf follows on every heartbeat.
+
+The schedule is stored in Supabase (``ralf_schedule`` table) so it can be
+edited via Telegram.  On first boot the table is seeded from
+``DEFAULT_SCHEDULE``.
 """
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Strategic goals — what we're trying to achieve
@@ -68,41 +75,452 @@ GOALS: list[dict[str, Any]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# SEO playbook — the recurring process Ralf follows
+# Activity schedule — the recurring cadences Ralf follows
 # ---------------------------------------------------------------------------
+#
+# The canonical schedule lives in the ``ralf_schedule`` Supabase table so it
+# can be edited via Telegram.  ``DEFAULT_SCHEDULE`` below is the seed data
+# that populates the table on first boot.
+#
+# Cadences:
+#   daily   — boosted every matching day-of-week (0=Mon … 6=Sun)
+#   weekly  — boosted once per week on a specific day
+#   monthly — boosted once per month around a specific day (±1 day)
 
-WEEKLY_PLAYBOOK: list[dict[str, str]] = [
+_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+DEFAULT_SCHEDULE: list[dict[str, Any]] = [
+    # --- Daily focus rotation ---
     {
-        "day": "Monday",
-        "task": "keyword_research",
-        "description": "Run keyword research for all sites. Identify new opportunities. Compare against existing content to find gaps.",
-        "output": "New keyword opportunities saved to database",
+        "cadence": "daily",
+        "day_of_week": 0,
+        "skill": "keyword_research",
+        "boost_amount": 30,
+        "label": "Keyword Research Day",
+        "description": "Discover keyword opportunities and analyse content gaps.",
     },
     {
-        "day": "Tuesday",
-        "task": "content_planning",
-        "description": "Review keyword opportunities. Generate content briefs for top 3-5 unaddressed keywords. Prioritise by volume/difficulty ratio.",
-        "output": "Content briefs ready for writing",
+        "cadence": "daily",
+        "day_of_week": 0,
+        "skill": "keyword_refresh",
+        "boost_amount": 30,
+        "label": "Keyword Research Day",
+        "description": "Discover keyword opportunities and analyse content gaps.",
     },
     {
-        "day": "Wednesday",
-        "task": "content_writing",
-        "description": "Write and publish 1-2 blog posts from the content briefs. Target the highest-opportunity keywords first.",
-        "output": "Blog posts published to sites",
+        "cadence": "daily",
+        "day_of_week": 0,
+        "skill": "content_gap_analysis",
+        "boost_amount": 30,
+        "label": "Keyword Research Day",
+        "description": "Discover keyword opportunities and analyse content gaps.",
     },
     {
-        "day": "Thursday",
-        "task": "backlink_prospecting",
-        "description": "Discover new backlink prospects. Enrich and score existing prospects. Generate outreach emails for tier 1 prospects.",
-        "output": "Outreach emails ready for review",
+        "cadence": "daily",
+        "day_of_week": 1,
+        "skill": "publish_blog",
+        "boost_amount": 30,
+        "label": "Content Writing Day",
+        "description": "Write and publish blog posts from top keywords.",
     },
     {
-        "day": "Friday",
-        "task": "reporting",
-        "description": "Generate weekly report: rankings, traffic, content published, backlinks acquired, spend. Compare to goals.",
-        "output": "Weekly report sent",
+        "cadence": "daily",
+        "day_of_week": 2,
+        "skill": "publish_blog",
+        "boost_amount": 30,
+        "label": "Content Writing Day",
+        "description": "Continue publishing blog content.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 3,
+        "skill": "discover_prospects",
+        "boost_amount": 30,
+        "label": "Backlink Prospecting Day",
+        "description": "Find, score, and promote backlink prospects.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 3,
+        "skill": "score_prospects",
+        "boost_amount": 30,
+        "label": "Backlink Prospecting Day",
+        "description": "Find, score, and promote backlink prospects.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 3,
+        "skill": "promote_to_crm",
+        "boost_amount": 30,
+        "label": "Backlink Prospecting Day",
+        "description": "Find, score, and promote backlink prospects.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 4,
+        "skill": "track_rankings",
+        "boost_amount": 30,
+        "label": "Reporting & Analytics Day",
+        "description": "Track rankings, write journal, review weekly progress.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 4,
+        "skill": "journal_entry",
+        "boost_amount": 30,
+        "label": "Reporting & Analytics Day",
+        "description": "Track rankings, write journal, review weekly progress.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 5,
+        "skill": "internal_linking",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Internal linking audit and memory cleanup.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 5,
+        "skill": "memory_consolidation",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Internal linking audit and memory cleanup.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 5,
+        "skill": "memory_promotion",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Internal linking audit and memory cleanup.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 6,
+        "skill": "internal_linking",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Light maintenance and memory promotion.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 6,
+        "skill": "memory_consolidation",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Light maintenance and memory promotion.",
+    },
+    {
+        "cadence": "daily",
+        "day_of_week": 6,
+        "skill": "memory_promotion",
+        "boost_amount": 25,
+        "label": "Maintenance Day",
+        "description": "Light maintenance and memory promotion.",
+    },
+    # --- Weekly tasks ---
+    {
+        "cadence": "weekly",
+        "day_of_week": 5,
+        "skill": "internal_linking",
+        "boost_amount": 40,
+        "label": "Weekly Link Audit",
+        "description": "Audit internal links across all sites.",
+    },
+    {
+        "cadence": "weekly",
+        "day_of_week": 6,
+        "skill": "memory_consolidation",
+        "boost_amount": 40,
+        "label": "Weekly Memory Cleanup",
+        "description": "Merge old low-importance memories.",
+    },
+    {
+        "cadence": "weekly",
+        "day_of_week": 6,
+        "skill": "memory_promotion",
+        "boost_amount": 40,
+        "label": "Weekly Memory Promotion",
+        "description": "Promote high-value learnings to permanent lessons.",
+    },
+    # --- Monthly tasks ---
+    {
+        "cadence": "monthly",
+        "day_of_month": 1,
+        "skill": "keyword_refresh",
+        "boost_amount": 40,
+        "label": "Monthly Keyword Refresh",
+        "description": "Full keyword refresh across all sites on the 1st.",
+    },
+    {
+        "cadence": "monthly",
+        "day_of_month": 15,
+        "skill": "content_gap_analysis",
+        "boost_amount": 40,
+        "label": "Mid-month Gap Analysis",
+        "description": "Mid-month content gap analysis vs competitors.",
     },
 ]
+
+
+# ---------------------------------------------------------------------------
+# Schedule helpers — read/write the DB-backed schedule
+# ---------------------------------------------------------------------------
+
+
+def seed_schedule() -> int:
+    """Populate ``ralf_schedule`` from ``DEFAULT_SCHEDULE`` if the table is empty.
+
+    Returns:
+        Number of rows inserted (0 if already seeded).
+    """
+    from agents.seo_agent.tools.supabase_tools import insert_record, query_table
+
+    existing = query_table("ralf_schedule", limit=1)
+    if existing:
+        return 0
+
+    count = 0
+    for entry in DEFAULT_SCHEDULE:
+        row = {**entry}
+        row.setdefault("active", True)
+        insert_record("ralf_schedule", row)
+        count += 1
+    logger.info("Seeded ralf_schedule with %d entries", count)
+    return count
+
+
+def get_todays_schedule(now: datetime | None = None) -> dict[str, Any]:
+    """Return the combined schedule for today (daily + weekly + monthly boosts).
+
+    Reads from Supabase ``ralf_schedule`` table, falling back to
+    ``DEFAULT_SCHEDULE`` if the table is empty.  Merges daily focus boosts
+    with any weekly/monthly tasks due today into a single dict with
+    ``boost_skills`` mapping skill names to their total boost.
+
+    Args:
+        now: Override for current time (useful for testing).
+
+    Returns:
+        Dict with ``label``, ``description``, ``boost_skills`` (dict of
+        skill name to boost amount), and ``weekly_due`` / ``monthly_due`` lists.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+
+    rows = _load_schedule_rows()
+
+    boosts: dict[str, int] = {}
+    label = ""
+    description = ""
+    weekly_due: list[str] = []
+    monthly_due: list[str] = []
+
+    for row in rows:
+        if not row.get("active", True):
+            continue
+
+        cadence = row.get("cadence", "")
+        skill = row.get("skill", "")
+        boost = row.get("boost_amount", 30)
+
+        if cadence == "daily" and row.get("day_of_week") == now.weekday():
+            boosts[skill] = max(boosts.get(skill, 0), boost)
+            if not label:
+                label = row.get("label", "")
+                description = row.get("description", "")
+
+        elif cadence == "weekly" and row.get("day_of_week") == now.weekday():
+            boosts[skill] = max(boosts.get(skill, 0), boost)
+            weekly_due.append(skill)
+
+        elif cadence == "monthly":
+            target_day = row.get("day_of_month", 1)
+            if abs(now.day - target_day) <= 1:
+                boosts[skill] = max(boosts.get(skill, 0), boost)
+                monthly_due.append(skill)
+
+    if not label:
+        label = f"{_DAY_NAMES[now.weekday()]} (no focus set)"
+        description = "No specific focus scheduled for today."
+
+    return {
+        "label": label,
+        "description": description,
+        "boost_skills": boosts,
+        "weekly_due": weekly_due,
+        "monthly_due": monthly_due,
+    }
+
+
+def _load_schedule_rows() -> list[dict[str, Any]]:
+    """Load schedule rows from Supabase, seeding defaults if empty.
+
+    Returns:
+        List of active schedule entry dicts.
+    """
+    from agents.seo_agent.tools.supabase_tools import query_table
+
+    rows = query_table("ralf_schedule", limit=200)
+    if not rows:
+        seed_schedule()
+        rows = query_table("ralf_schedule", limit=200)
+    # Filter active entries (handles both bool and string representations)
+    return [r for r in rows if r.get("active", True) is not False]
+
+
+def get_full_schedule() -> list[dict[str, Any]]:
+    """Return all active schedule entries, grouped by cadence and day.
+
+    Returns:
+        List of schedule entry dicts sorted by cadence then day.
+    """
+    rows = _load_schedule_rows()
+    rows.sort(key=lambda r: (
+        {"daily": 0, "weekly": 1, "monthly": 2}.get(r.get("cadence", ""), 3),
+        r.get("day_of_week", 0),
+        r.get("day_of_month", 0),
+    ))
+    return rows
+
+
+def update_schedule_entry(entry_id: str, **updates: Any) -> dict[str, Any]:
+    """Update a schedule row in the database.
+
+    Args:
+        entry_id: UUID of the schedule entry.
+        **updates: Fields to update (e.g. ``day_of_week=2``, ``active=False``).
+
+    Returns:
+        The updated record dict.
+    """
+    from agents.seo_agent.tools.supabase_tools import upsert_record
+
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    return upsert_record("ralf_schedule", {"id": entry_id, **updates})
+
+
+def log_schedule_completion(
+    skill: str,
+    *,
+    site: str = "",
+    summary: str = "",
+    heartbeat_id: str = "",
+    status: str = "done",
+    schedule_date: str | None = None,
+) -> dict[str, Any]:
+    """Record a completed (or failed/skipped) schedule activity.
+
+    Args:
+        skill: Skill name that was executed.
+        site: Target site key.
+        summary: Short description of what was done.
+        heartbeat_id: WAL cycle ID for correlation.
+        status: Completion status (``done``, ``failed``, ``skipped``).
+        schedule_date: ISO date string; defaults to today UTC.
+
+    Returns:
+        The inserted log record.
+    """
+    from agents.seo_agent.tools.supabase_tools import insert_record
+
+    if not schedule_date:
+        schedule_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    data: dict[str, Any] = {
+        "schedule_date": schedule_date,
+        "skill": skill,
+        "status": status,
+        "site": site,
+        "summary": summary,
+        "heartbeat_id": heartbeat_id,
+    }
+    if status == "done":
+        data["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+    return insert_record("ralf_schedule_log", data)
+
+
+def get_schedule_history(days_back: int = 7) -> list[dict[str, Any]]:
+    """Query recent schedule completion history.
+
+    Args:
+        days_back: How many days to look back (default 7).
+
+    Returns:
+        List of schedule log entries, newest first.
+    """
+    from datetime import timedelta
+
+    from agents.seo_agent.tools.supabase_tools import query_table
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
+
+    # query_table only supports equality filters, so we fetch more and filter
+    rows = query_table(
+        "ralf_schedule_log",
+        limit=500,
+        order_by="created_at",
+        order_desc=True,
+    )
+    return [r for r in rows if r.get("schedule_date", "") >= cutoff]
+
+
+def get_todays_log() -> list[dict[str, Any]]:
+    """Return today's schedule log entries.
+
+    Returns:
+        List of log entries for today, newest first.
+    """
+    from agents.seo_agent.tools.supabase_tools import query_table
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return query_table(
+        "ralf_schedule_log",
+        filters={"schedule_date": today},
+        limit=50,
+        order_by="created_at",
+        order_desc=True,
+    )
+
+
+def format_schedule_for_display(rows: list[dict[str, Any]]) -> str:
+    """Format schedule entries as a human-readable string for Telegram.
+
+    Args:
+        rows: Schedule entries from ``get_full_schedule()``.
+
+    Returns:
+        Formatted schedule string.
+    """
+    lines: list[str] = []
+    current_cadence = ""
+
+    for row in rows:
+        cadence = row.get("cadence", "")
+        if cadence != current_cadence:
+            current_cadence = cadence
+            lines.append(f"\n{'Daily' if cadence == 'daily' else cadence.title()} Schedule:")
+            lines.append("-" * 30)
+
+        skill = row.get("skill", "")
+        boost = row.get("boost_amount", 0)
+        active = row.get("active", True)
+        status = "" if active else " [PAUSED]"
+
+        if cadence == "daily":
+            day = _DAY_NAMES[row.get("day_of_week", 0)]
+            lines.append(f"  {day}: {skill} (+{boost}){status}")
+        elif cadence == "weekly":
+            day = _DAY_NAMES[row.get("day_of_week", 0)]
+            lines.append(f"  Every {day}: {skill} (+{boost}){status}")
+        elif cadence == "monthly":
+            dom = row.get("day_of_month", 1)
+            suffix = "th" if 4 <= dom <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(dom % 10, "th")
+            lines.append(f"  {dom}{suffix} of month: {skill} (+{boost}){status}")
+
+    return "\n".join(lines) if lines else "No schedule entries found."
 
 # ---------------------------------------------------------------------------
 # Priority scoring — what to work on next
