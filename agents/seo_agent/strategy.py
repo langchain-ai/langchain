@@ -437,10 +437,10 @@ def update_schedule_entry(entry_id: str, **updates: Any) -> dict[str, Any]:
     Returns:
         The updated record dict.
     """
-    from agents.seo_agent.tools.supabase_tools import upsert_record
+    from agents.seo_agent.tools.supabase_tools import update_record
 
     updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-    return upsert_record("ralf_schedule", {"id": entry_id, **updates})
+    return update_record("ralf_schedule", entry_id, updates)
 
 
 def log_schedule_completion(
