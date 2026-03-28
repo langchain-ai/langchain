@@ -88,6 +88,48 @@ GOALS: list[dict[str, Any]] = [
 #   monthly — boosted once per month around a specific day (±1 day)
 
 _DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+_DAY_ABBRS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+
+def parse_day_of_week(value: str | int) -> int:
+    """Convert a day-of-week value to an integer 0-6 (Monday-Sunday).
+
+    Accepts:
+      - int or numeric string: 0-6
+      - Full day name: "Monday", "tuesday" (case-insensitive)
+      - 3-letter abbreviation: "Mon", "tue" (case-insensitive)
+
+    Args:
+        value: The day-of-week value to parse.
+
+    Returns:
+        Integer 0 (Monday) through 6 (Sunday).
+
+    Raises:
+        ValueError: If the value cannot be parsed as a valid day.
+    """
+    if isinstance(value, int):
+        if 0 <= value <= 6:
+            return value
+        msg = f"day_of_week must be 0-6, got {value}"
+        raise ValueError(msg)
+
+    s = str(value).strip()
+    if s.isdigit():
+        n = int(s)
+        if 0 <= n <= 6:
+            return n
+        msg = f"day_of_week must be 0-6, got {s}"
+        raise ValueError(msg)
+
+    lower = s.lower()
+    for i, name in enumerate(_DAY_NAMES):
+        if lower == name.lower() or lower == _DAY_ABBRS[i]:
+            return i
+
+    msg = f"Unrecognised day_of_week: {value!r}"
+    raise ValueError(msg)
+
 
 DEFAULT_SCHEDULE: list[dict[str, Any]] = [
     # --- Daily focus rotation ---

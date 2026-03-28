@@ -544,7 +544,7 @@ Actions:
 - recall_activities: {action_type?, site?} — recall what I've done (blog posts written, tasks completed, etc.)
 - schedule_show: (no params) — show my full weekly/monthly activity schedule
 - schedule_today: (no params) — show what's on today's schedule and what's been completed
-- schedule_edit: {skill, day_of_week?, day_of_month?, boost_amount?, active?} — update my schedule (e.g. move a skill to a different day, pause it, change boost)
+- schedule_edit: {skill, cadence?, day_of_week?, day_of_month?, boost_amount?, active?} — update my schedule (e.g. change cadence to daily/weekly/monthly, move a skill to a different day, pause it, change boost). day_of_week accepts 0-6 or day names like "Monday".
 - schedule_history: {days_back?} — show what I did over the past N days (default 7)
 - list_blogs: {site} — list existing blog posts from GitHub
 - publish_blog: {site, title, keyword} — write and publish a blog post
@@ -1767,7 +1767,7 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 return
             if action == "schedule_edit":
                 try:
-                    from agents.seo_agent.strategy import get_full_schedule, update_schedule_entry
+                    from agents.seo_agent.strategy import get_full_schedule, parse_day_of_week, update_schedule_entry
 
                     skill = params.get("skill", "")
                     if not skill:
@@ -1784,11 +1784,25 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
 
                     updates: dict[str, Any] = {}
                     if "day_of_week" in params:
-                        updates["day_of_week"] = int(params["day_of_week"])
+                        try:
+                            updates["day_of_week"] = parse_day_of_week(params["day_of_week"])
+                        except ValueError:
+                            await update.message.reply_text(
+                                "Which day should I schedule that? (Monday-Sunday)"
+                            )
+                            return
                     if "day_of_month" in params:
                         updates["day_of_month"] = int(params["day_of_month"])
                     if "boost_amount" in params:
                         updates["boost_amount"] = int(params["boost_amount"])
+                    if "cadence" in params:
+                        cadence = str(params["cadence"]).strip().lower()
+                        if cadence not in ("daily", "weekly", "monthly"):
+                            await update.message.reply_text(
+                                "Should that be daily, weekly, or monthly?"
+                            )
+                            return
+                        updates["cadence"] = cadence
                     if "active" in params:
                         updates["active"] = bool(params["active"])
 
