@@ -174,3 +174,35 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_azure_client_caching() -> None:
+    """AzureChatOpenAI instances with identical settings should share the same
+    underlying httpx client, enabling connection pooling."""
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+        api_key="xyz",  # type: ignore[arg-type]
+        azure_endpoint="https://example.openai.azure.com/",
+        azure_deployment="gpt-4o-mini",
+        openai_api_version="2024-05-01-preview",
+    )
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+        api_key="xyz",  # type: ignore[arg-type]
+        azure_endpoint="https://example.openai.azure.com/",
+        azure_deployment="gpt-4o-mini",
+        openai_api_version="2024-05-01-preview",
+    )
+    assert llm1.root_client._client is llm2.root_client._client
+
+    # A custom http_client must not be shared with the default cached client.
+    import httpx
+
+    custom_client = httpx.Client()
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]
+        api_key="xyz",  # type: ignore[arg-type]
+        azure_endpoint="https://example.openai.azure.com/",
+        azure_deployment="gpt-4o-mini",
+        openai_api_version="2024-05-01-preview",
+        http_client=custom_client,
+    )
+    assert llm3.root_client._client is custom_client
+    assert llm3.root_client._client is not llm1.root_client._client
