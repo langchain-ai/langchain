@@ -268,7 +268,7 @@ class TestFileOperations:
 
         args = {
             "command": "rename",
-            "old_path": "/memories/old.txt",
+            "path": "/memories/old.txt",
             "new_path": "/memories/new.txt",
         }
         result = middleware._handle_rename(args, state, "test_id")
@@ -449,3 +449,50 @@ class TestSystemMessageHandling:
         assert captured_request.system_message is not None
         assert "Existing instructions." in captured_request.system_message.text
         assert custom_prompt in captured_request.system_message.text
+
+
+class TestRenameUsesPathKey:
+    """_handle_rename must read args['path'], matching the dispatch dict built
+    in the tool function body, not args['old_path'] which was never set there."""
+
+    def test_state_middleware_rename_uses_path_key(self) -> None:
+        """StateClaudeMemoryMiddleware._handle_rename reads args['path']."""
+        from langchain_anthropic.middleware.anthropic_tools import (
+            StateClaudeMemoryMiddleware,
+        )
+
+        middleware = StateClaudeMemoryMiddleware()
+        state: AnthropicToolsState = {
+            "messages": [],
+            "memory_files": {
+                "/memories/old.txt": {
+                    "content": ["line1"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                }
+            },
+        }
+        args = {"path": "/memories/old.txt", "new_path": "/memories/new.txt"}
+        result = middleware._handle_rename(args, state, "test_id")
+
+        assert isinstance(result, Command)
+        files = result.update.get("memory_files", {})
+        assert files.get("/memories/old.txt") is None
+        assert files.get("/memories/new.txt") is not None
+
+    def test_state_middleware_rename_raises_keyerror_with_old_path_key(
+        self,
+    ) -> None:
+        """Confirm old_path key is not accepted (documents the breaking change)."""
+        from langchain_anthropic.middleware.anthropic_tools import (
+            StateClaudeMemoryMiddleware,
+        )
+
+        middleware = StateClaudeMemoryMiddleware()
+        state: AnthropicToolsState = {
+            "messages": [],
+            "memory_files": {"/memories/old.txt": {"content": [], "created_at": "", "modified_at": ""}},
+        }
+        args = {"old_path": "/memories/old.txt", "new_path": "/memories/new.txt"}
+        with pytest.raises(KeyError):
+            middleware._handle_rename(args, state, "test_id")
