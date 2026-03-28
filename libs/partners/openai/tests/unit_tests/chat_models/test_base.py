@@ -2418,6 +2418,29 @@ def test__construct_responses_api_input_tool_message_conversion() -> None:
     assert result[0]["call_id"] == "call_123"
 
 
+def test__construct_responses_api_input_tool_message_with_list_content() -> None:
+    """Test that tool messages with list content are properly converted to function_call_output with string output.
+
+    This is a regression test for https://github.com/langchain-ai/langchain/issues/36321
+    where MCP tools return list content that needs to be stringified for the Responses API.
+    """
+    messages = [
+        ToolMessage(
+            content=[{"type": "text", "text": '{"temperature": 72}'}],
+            tool_call_id="call_123",
+        )
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call_output"
+    # The output should be a string, not a list
+    assert isinstance(result[0]["output"], str)
+    assert "72" in result[0]["output"]
+    assert result[0]["call_id"] == "call_123"
+
+
 def test__construct_responses_api_input_multiple_message_types() -> None:
     """Test conversion of a conversation with multiple message types."""
     messages = [

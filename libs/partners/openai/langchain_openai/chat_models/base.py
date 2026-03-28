@@ -4261,6 +4261,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 input_.append(custom_tool_output)
             else:
                 tool_output = _ensure_valid_tool_message_content(tool_output)
+                # Ensure output is always a string for function_call_output
+                # The Responses API requires output to be a string, not a list
+                if isinstance(tool_output, list):
+                    tool_output = _stringify(tool_output)
                 function_call_output = {
                     "type": "function_call_output",
                     "output": tool_output,
