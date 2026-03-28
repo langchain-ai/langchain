@@ -329,11 +329,15 @@ class ChatOpenRouter(BaseChatModel):
         Returns:
             An `openrouter.OpenRouter` SDK client instance.
         """
+        import inspect  # noqa: PLC0415
+
         import openrouter  # noqa: PLC0415
         from openrouter.utils import (  # noqa: PLC0415
             BackoffStrategy,
             RetryConfig,
         )
+
+        sdk_params = set(inspect.signature(openrouter.OpenRouter.__init__).parameters)
 
         client_kwargs: dict[str, Any] = {
             "api_key": self.openrouter_api_key.get_secret_value(),  # type: ignore[union-attr]
@@ -343,24 +347,32 @@ class ChatOpenRouter(BaseChatModel):
         if self.app_url:
             client_kwargs["http_referer"] = self.app_url
         if self.app_title:
-            client_kwargs["x_title"] = self.app_title
+            # >=0.8.0 renamed x_title to x_open_router_title
+            title_key = (
+                "x_open_router_title"
+                if "x_open_router_title" in sdk_params
+                else "x_title"
+            )
+            client_kwargs[title_key] = self.app_title
         if self.app_categories:
-            # The SDK lacks a native constructor param for X-OpenRouter-Categories,
-            # so inject the header via custom httpx clients. The SDK sets its own
-            # headers (Authorization, HTTP-Referer, X-Title) per-request, and httpx
-            # merges client-default headers with per-request headers, so nothing is
-            # lost.
-            import httpx  # noqa: PLC0415
+            if "x_open_router_categories" in sdk_params:
+                # >=0.8.0 supports categories natively
+                client_kwargs["x_open_router_categories"] = ",".join(
+                    self.app_categories
+                )
+            else:
+                # Older SDK: inject the header via custom httpx clients.
+                import httpx  # noqa: PLC0415
 
-            extra_headers = {
-                "X-OpenRouter-Categories": ",".join(self.app_categories),
-            }
-            client_kwargs["client"] = httpx.Client(
-                headers=extra_headers, follow_redirects=True
-            )
-            client_kwargs["async_client"] = httpx.AsyncClient(
-                headers=extra_headers, follow_redirects=True
-            )
+                extra_headers = {
+                    "X-OpenRouter-Categories": ",".join(self.app_categories),
+                }
+                client_kwargs["client"] = httpx.Client(
+                    headers=extra_headers, follow_redirects=True
+                )
+                client_kwargs["async_client"] = httpx.AsyncClient(
+                    headers=extra_headers, follow_redirects=True
+                )
         if self.request_timeout is not None:
             client_kwargs["timeout_ms"] = self.request_timeout
         if self.max_retries > 0:

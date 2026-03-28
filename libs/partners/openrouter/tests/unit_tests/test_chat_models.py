@@ -300,7 +300,7 @@ class TestChatOpenRouterInstantiation:
             assert call_kwargs["http_referer"] == "https://myapp.com"
 
     def test_app_title_passed_to_client(self) -> None:
-        """Test that app_title is passed as x_title to the SDK client."""
+        """Test that app_title is passed to the SDK client."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -309,7 +309,12 @@ class TestChatOpenRouterInstantiation:
                 app_title="My App",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["x_title"] == "My App"
+            title_key = (
+                "x_open_router_title"
+                if "x_open_router_title" in call_kwargs
+                else "x_title"
+            )
+            assert call_kwargs[title_key] == "My App"
 
     def test_default_attribution_headers(self) -> None:
         """Test that default attribution headers are sent when not overridden."""
@@ -321,7 +326,12 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == ("https://docs.langchain.com")
-            assert call_kwargs["x_title"] == "LangChain"
+            title_key = (
+                "x_open_router_title"
+                if "x_open_router_title" in call_kwargs
+                else "x_title"
+            )
+            assert call_kwargs[title_key] == "LangChain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
@@ -335,7 +345,12 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == "https://my-custom-app.com"
-            assert call_kwargs["x_title"] == "My Custom App"
+            title_key = (
+                "x_open_router_title"
+                if "x_open_router_title" in call_kwargs
+                else "x_title"
+            )
+            assert call_kwargs[title_key] == "My Custom App"
 
     def test_app_categories_passed_to_client(self) -> None:
         """Test that app_categories injects custom httpx clients with header."""
@@ -398,10 +413,19 @@ class TestChatOpenRouterInstantiation:
             )
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["http_referer"] == "https://myapp.com"
-            assert call_kwargs["x_title"] == "My App"
-            assert "client" in call_kwargs
-            sync_headers = call_kwargs["client"].headers
-            assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+            title_key = (
+                "x_open_router_title"
+                if "x_open_router_title" in call_kwargs
+                else "x_title"
+            )
+            assert call_kwargs[title_key] == "My App"
+            # Categories passed via httpx headers (old SDK) or native param
+            if "x_open_router_categories" in call_kwargs:
+                assert call_kwargs["x_open_router_categories"] == "cli-agent"
+            else:
+                assert "client" in call_kwargs
+                sync_headers = call_kwargs["client"].headers
+                assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
