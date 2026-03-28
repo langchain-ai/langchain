@@ -327,6 +327,34 @@ TABLE_SCHEMAS: dict[str, str] = {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     """,
+    "ralf_schedule": """
+        CREATE TABLE IF NOT EXISTS ralf_schedule (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            cadence TEXT NOT NULL,
+            day_of_week INTEGER,
+            day_of_month INTEGER,
+            skill TEXT NOT NULL,
+            boost_amount INTEGER DEFAULT 30,
+            label TEXT,
+            description TEXT,
+            active BOOLEAN DEFAULT true,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "ralf_schedule_log": """
+        CREATE TABLE IF NOT EXISTS ralf_schedule_log (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            schedule_date DATE NOT NULL,
+            skill TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            site TEXT,
+            summary TEXT,
+            heartbeat_id TEXT,
+            completed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
 }
 
 

@@ -434,6 +434,7 @@ class SkillRegistry:
         *,
         budget_remaining: float = 1.0,
         max_skills: int = 5,
+        now: datetime | None = None,
     ) -> list[tuple[Skill, str]]:
         """Evaluate all skills and return those that should fire now.
 
@@ -446,6 +447,15 @@ class SkillRegistry:
         Returns:
             List of (skill, reason) tuples, sorted by priority descending.
         """
+        # Load today's schedule boosts
+        try:
+            from agents.seo_agent.strategy import get_todays_schedule
+
+            schedule = get_todays_schedule(now)
+            schedule_boosts: dict[str, int] = schedule.get("boost_skills", {})
+        except Exception:
+            schedule_boosts = {}
+
         actionable: list[tuple[Skill, str, int]] = []
 
         for skill in self._skills.values():
@@ -469,6 +479,11 @@ class SkillRegistry:
                     priority += 20
                 if skill.category == "prospecting" and dashboard.get("prospects_total", 0) == 0:
                     priority += 15
+
+                # Schedule boost (daily + weekly + monthly combined)
+                schedule_boost = schedule_boosts.get(skill.name, 0)
+                if schedule_boost:
+                    priority += schedule_boost
 
                 actionable.append((skill, reason, priority))
 
