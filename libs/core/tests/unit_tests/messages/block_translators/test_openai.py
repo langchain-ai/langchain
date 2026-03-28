@@ -479,13 +479,39 @@ def test_compat_responses_v03() -> None:
 def test_convert_to_openai_data_block() -> None:
     # Chat completions
     # Image / url
-    block = {
+    block: dict = {
         "type": "image",
         "url": "https://example.com/test.png",
     }
     expected = {
         "type": "image_url",
         "image_url": {"url": "https://example.com/test.png"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Image / url with detail
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "high"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Image / url with detail in extras
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "extras": {"detail": "low"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "low"},
     }
     result = convert_to_openai_data_block(block)
     assert result == expected
@@ -499,6 +525,23 @@ def test_convert_to_openai_data_block() -> None:
     expected = {
         "type": "image_url",
         "image_url": {"url": "data:image/png;base64,<base64 string>"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Image / base64 with detail in metadata
+    block = {
+        "type": "image",
+        "base64": "<base64 string>",
+        "mime_type": "image/png",
+        "metadata": {"detail": "auto"},
+    }
+    expected = {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/png;base64,<base64 string>",
+            "detail": "auto",
+        },
     }
     result = convert_to_openai_data_block(block)
     assert result == expected
@@ -560,6 +603,20 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
+    # Image / url with detail
+    block = {
+        "type": "image",
+        "url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    expected = {
+        "type": "input_image",
+        "image_url": "https://example.com/test.png",
+        "detail": "high",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
     # Image / base64
     block = {
         "type": "image",
@@ -569,6 +626,21 @@ def test_convert_to_openai_data_block() -> None:
     expected = {
         "type": "input_image",
         "image_url": "data:image/png;base64,<base64 string>",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Image / base64 with detail in metadata
+    block = {
+        "type": "image",
+        "base64": "<base64 string>",
+        "mime_type": "image/png",
+        "metadata": {"detail": "low"},
+    }
+    expected = {
+        "type": "input_image",
+        "image_url": "data:image/png;base64,<base64 string>",
+        "detail": "low",
     }
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
