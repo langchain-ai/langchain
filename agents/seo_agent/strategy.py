@@ -151,14 +151,6 @@ DEFAULT_SCHEDULE: list[dict[str, Any]] = [
     },
     {
         "cadence": "daily",
-        "day_of_week": 0,
-        "skill": "content_gap_analysis",
-        "boost_amount": 30,
-        "label": "Keyword Research Day",
-        "description": "Discover keyword opportunities and analyse content gaps.",
-    },
-    {
-        "cadence": "daily",
         "day_of_week": 1,
         "skill": "publish_blog",
         "boost_amount": 30,
@@ -200,18 +192,10 @@ DEFAULT_SCHEDULE: list[dict[str, Any]] = [
     {
         "cadence": "daily",
         "day_of_week": 4,
-        "skill": "track_rankings",
-        "boost_amount": 30,
-        "label": "Reporting & Analytics Day",
-        "description": "Track rankings, write journal, review weekly progress.",
-    },
-    {
-        "cadence": "daily",
-        "day_of_week": 4,
         "skill": "journal_entry",
         "boost_amount": 30,
         "label": "Reporting & Analytics Day",
-        "description": "Track rankings, write journal, review weekly progress.",
+        "description": "Write journal, review weekly progress.",
     },
     {
         "cadence": "daily",
@@ -264,6 +248,22 @@ DEFAULT_SCHEDULE: list[dict[str, Any]] = [
     # --- Weekly tasks ---
     {
         "cadence": "weekly",
+        "day_of_week": 0,
+        "skill": "content_gap_analysis",
+        "boost_amount": 30,
+        "label": "Weekly Content Gap Analysis",
+        "description": "Analyse content gaps vs competitors.",
+    },
+    {
+        "cadence": "weekly",
+        "day_of_week": 4,
+        "skill": "track_rankings",
+        "boost_amount": 30,
+        "label": "Weekly Ranking Snapshot",
+        "description": "Snapshot current search rankings.",
+    },
+    {
+        "cadence": "weekly",
         "day_of_week": 5,
         "skill": "internal_linking",
         "boost_amount": 40,
@@ -294,14 +294,6 @@ DEFAULT_SCHEDULE: list[dict[str, Any]] = [
         "boost_amount": 40,
         "label": "Monthly Keyword Refresh",
         "description": "Full keyword refresh across all sites on the 1st.",
-    },
-    {
-        "cadence": "monthly",
-        "day_of_month": 15,
-        "skill": "content_gap_analysis",
-        "boost_amount": 40,
-        "label": "Mid-month Gap Analysis",
-        "description": "Mid-month content gap analysis vs competitors.",
     },
 ]
 

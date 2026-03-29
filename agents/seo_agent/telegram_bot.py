@@ -1898,6 +1898,29 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                         if "active" in params:
                             updates["active"] = bool(params["active"])
 
+                        # Guard: when changing cadence, avoid accidentally
+                        # converting entries from other cadences (e.g. changing
+                        # a daily entry to weekly should not also change a
+                        # monthly entry for the same skill).
+                        if "cadence" in updates:
+                            new_cadence = updates["cadence"]
+                            from_cadence = params.get("from_cadence", "")
+                            cadences_found = {r.get("cadence") for r in matches}
+                            if len(cadences_found) > 1:
+                                if from_cadence:
+                                    matches = [r for r in matches if r.get("cadence") == from_cadence]
+                                else:
+                                    # Only update entries not already at the target cadence
+                                    matches = [r for r in matches if r.get("cadence") != new_cadence]
+                                    if len({r.get("cadence") for r in matches}) > 1:
+                                        cadence_list = ", ".join(sorted(cadences_found))
+                                        await update.message.reply_text(
+                                            f"'{skill}' has entries in multiple cadences "
+                                            f"({cadence_list}). Please specify from_cadence "
+                                            f"to indicate which to change."
+                                        )
+                                        continue
+
                         updated = 0
                         for row in matches:
                             update_schedule_entry(row["id"], **updates)
