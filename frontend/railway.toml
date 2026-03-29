@@ -1,6 +1,5 @@
 [build]
 builder = "NIXPACKS"
-nixpacksVersion = "1.38.0"
 
 [build.nixpacks]
 buildCmd = "npm install && npm run build"

@@ -65,7 +65,7 @@ export function KeywordsTable({ data }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-text-muted)]">
-              {COLUMNS.map((col, i) => {
+              {COLUMNS.map((col) => {
                 const isUrl = col.label === 'URL'
                 return (
                   <th
