@@ -44,6 +44,7 @@ from langchain.agents.middleware.types import (
 from langchain.agents.structured_output import (
     AutoStrategy,
     MultipleStructuredOutputsError,
+    NoToolCallError,
     OutputToolBinding,
     ProviderStrategy,
     ProviderStrategyBinding,
@@ -1125,6 +1126,25 @@ def create_agent(
                             ),
                         ],
                     }
+
+        elif (
+            isinstance(effective_response_format, ToolStrategy)
+            and isinstance(output, AIMessage)
+            and not output.tool_calls
+        ):
+            exception = NoToolCallError(output)
+            should_retry, error_message = _handle_structured_output_error(
+                exception, effective_response_format
+            )
+            if not should_retry:
+                raise exception
+
+            return {
+                "messages": [
+                    output,
+                    SystemMessage(content=error_message),
+                ],
+            }
 
         return {"messages": [output]}
 

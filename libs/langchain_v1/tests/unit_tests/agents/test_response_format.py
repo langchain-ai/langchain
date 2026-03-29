@@ -25,6 +25,7 @@ from langchain.agents.middleware.types import (
 )
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
+    NoToolCallError,
     ProviderStrategy,
     StructuredOutputValidationError,
     ToolStrategy,
@@ -683,6 +684,57 @@ class TestResponseFormatAsToolStrategy:
             match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+
+class TestNoToolCallError:
+    def test_no_tool_call_raises_when_handle_errors_false(self) -> None:
+        """Test that NoToolCallError is raised when model returns no tool calls.
+
+        When ToolStrategy is set and the model returns an AIMessage with no tool calls,
+        NoToolCallError should be raised if handle_errors=False.
+        """
+        model = FakeToolCallingModel(tool_calls=[[]])
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(NoToolCallError):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_no_tool_call_retries_when_handle_errors_true(self) -> None:
+        """Test that agent retries when model initially returns no tool calls.
+
+        When ToolStrategy is set and the model returns no tool calls on the first
+        attempt, the agent should send an error message and retry. On the second
+        attempt the model returns the correct tool call.
+        """
+        tool_calls = [
+            [],  # First response: no tool calls
+            [{"name": "WeatherBaseModel", "id": "2", "args": WEATHER_DATA}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=True,
+            ),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # HumanMessage, AIMessage (no tool call), SystemMessage (error), AIMessage, ToolMessage
+        assert len(response["messages"]) == 5
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
 
 class TestResponseFormatAsProviderStrategy:

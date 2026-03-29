@@ -57,6 +57,19 @@ class MultipleStructuredOutputsError(StructuredOutputError):
         )
 
 
+class NoToolCallError(StructuredOutputError):
+    """Raised when a ToolStrategy response format is set but the model returns no tool calls."""
+
+    def __init__(self, ai_message: AIMessage) -> None:
+        """Initialize `NoToolCallError`.
+
+        Args:
+            ai_message: The AI message that contained no tool calls.
+        """
+        self.ai_message = ai_message
+        super().__init__("Model did not make a structured output tool call.")
+
+
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
