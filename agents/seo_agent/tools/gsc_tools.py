@@ -78,6 +78,12 @@ _MOCK_TOP_PAGES = [
     },
 ]
 
+_MOCK_SITE_LIST = [
+    {"siteUrl": "https://www.kitchensdirectory.co.uk", "permissionLevel": "siteOwner"},
+    {"siteUrl": "https://www.freeroomplanner.com", "permissionLevel": "siteOwner"},
+    {"siteUrl": "https://www.kitchencostestimator.com", "permissionLevel": "siteOwner"},
+]
+
 
 def _is_mock() -> bool:
     return os.getenv("GSC_MOCK", "false").lower() in ("true", "1", "yes")
@@ -191,3 +197,62 @@ def get_top_pages(
     rows = get_search_analytics(site_url, start, end, dimensions=["page"])
     rows.sort(key=lambda r: r.get("clicks", 0), reverse=True)
     return rows[:limit]
+
+
+def test_connection() -> dict[str, Any]:
+    """Test the Google Search Console API connection.
+
+    Verifies that credentials are configured, the service can be built,
+    and a lightweight API call (list sites) succeeds. Works in both mock
+    and real modes.
+
+    Returns:
+        A dict with keys:
+            - `ok` (bool): Whether the connection is healthy.
+            - `status` (str): One of `"healthy"`, `"mock"`, or `"error"`.
+            - `detail` (str): Human-readable status message.
+            - `sites` (list[str]): List of accessible GSC property URLs
+              (empty on failure).
+    """
+    if _is_mock():
+        return {
+            "ok": True,
+            "status": "mock",
+            "detail": "GSC running in mock mode",
+            "sites": [s["siteUrl"] for s in _MOCK_SITE_LIST],
+        }
+
+    sa_path = os.getenv("GSC_SERVICE_ACCOUNT_PATH", "")
+    if not sa_path:
+        return {
+            "ok": False,
+            "status": "error",
+            "detail": "GSC_SERVICE_ACCOUNT_PATH not set in environment",
+            "sites": [],
+        }
+
+    try:
+        service = _build_service()
+        response = service.sites().list().execute()
+        site_entries = response.get("siteEntry", [])
+        site_urls = [s["siteUrl"] for s in site_entries]
+        return {
+            "ok": True,
+            "status": "healthy",
+            "detail": f"Connected, {len(site_urls)} site(s) accessible",
+            "sites": site_urls,
+        }
+    except FileNotFoundError as exc:
+        return {
+            "ok": False,
+            "status": "error",
+            "detail": f"Credentials file error: {exc}",
+            "sites": [],
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status": "error",
+            "detail": f"GSC API error: {exc}",
+            "sites": [],
+        }
