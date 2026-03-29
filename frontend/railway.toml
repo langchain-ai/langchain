@@ -1,10 +1,12 @@
 [build]
 builder = "NIXPACKS"
-nixpacksVersion = "1.38.0"
 
 [build.nixpacks]
 buildCmd = "npm install && npm run build"
 startCmd = "npm run start"
+
+[build.nixpacks.envs]
+NIXPACKS_NODE_VERSION = "22.14.0"
 
 [deploy]
 startCommand = "npm run start"
