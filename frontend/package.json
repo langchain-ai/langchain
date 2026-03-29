@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
@@ -17,6 +18,9 @@
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
     "recharts": "^3.8.1"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

@@ -138,7 +138,7 @@ export function ContactsTable() {
           <Table
             columns={columns}
             data={filtered}
-            onRowClick={(row) => setSelectedId(row.id)}
+            onRowClick={(row) => setSelectedId(row.id as string)}
           />
         )}
       </Card>

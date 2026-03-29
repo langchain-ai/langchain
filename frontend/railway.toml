@@ -1,0 +1,14 @@
+[build]
+builder = "NIXPACKS"
+nixpacksVersion = "1.38.0"
+
+[build.nixpacks]
+nixPkgs = ["nodejs_22", "npm-10_x"]
+buildCmd = "npm install && npm run build"
+startCmd = "npm run start"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
