@@ -363,10 +363,13 @@ class Gateway:
             issues.append("No Telegram bot token")
 
         # Check GSC
-        if os.environ.get("GSC_CREDENTIALS"):
-            self.services["gsc"].mark_healthy("Credentials present")
+        from agents.seo_agent.tools.gsc_tools import test_connection as gsc_test_connection
+
+        gsc_result = gsc_test_connection()
+        if gsc_result["ok"]:
+            self.services["gsc"].mark_healthy(gsc_result["detail"])
         else:
-            self.services["gsc"].mark_degraded("No credentials — rank tracking from GSC unavailable")
+            self.services["gsc"].mark_degraded(gsc_result["detail"])
 
         self._booted = True
         logger.info(
