@@ -44,6 +44,7 @@ from langchain.agents.middleware.types import (
 from langchain.agents.structured_output import (
     AutoStrategy,
     MultipleStructuredOutputsError,
+    NoStructuredOutputError,
     OutputToolBinding,
     ProviderStrategy,
     ProviderStrategyBinding,
@@ -1053,78 +1054,95 @@ def create_agent(
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
-        if (
-            isinstance(effective_response_format, ToolStrategy)
-            and isinstance(output, AIMessage)
-            and output.tool_calls
-        ):
-            structured_tool_calls = [
-                tc for tc in output.tool_calls if tc["name"] in structured_output_tools
-            ]
+        if isinstance(effective_response_format, ToolStrategy) and isinstance(output, AIMessage):
+            if output.tool_calls:
+                structured_tool_calls = [
+                    tc for tc in output.tool_calls if tc["name"] in structured_output_tools
+                ]
 
-            if structured_tool_calls:
-                exception: StructuredOutputError | None = None
-                if len(structured_tool_calls) > 1:
-                    # Handle multiple structured outputs error
-                    tool_names = [tc["name"] for tc in structured_tool_calls]
-                    exception = MultipleStructuredOutputsError(tool_names, output)
-                    should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
-                    )
-                    if not should_retry:
-                        raise exception
-
-                    # Add error messages and retry
-                    tool_messages = [
-                        ToolMessage(
-                            content=error_message,
-                            tool_call_id=tc["id"],
-                            name=tc["name"],
+                if structured_tool_calls:
+                    exception: StructuredOutputError | None = None
+                    if len(structured_tool_calls) > 1:
+                        # Handle multiple structured outputs error
+                        tool_names = [tc["name"] for tc in structured_tool_calls]
+                        exception = MultipleStructuredOutputsError(tool_names, output)
+                        should_retry, error_message = _handle_structured_output_error(
+                            exception, effective_response_format
                         )
-                        for tc in structured_tool_calls
-                    ]
-                    return {"messages": [output, *tool_messages]}
+                        if not should_retry:
+                            raise exception
 
-                # Handle single structured output
-                tool_call = structured_tool_calls[0]
-                try:
-                    structured_tool_binding = structured_output_tools[tool_call["name"]]
-                    structured_response = structured_tool_binding.parse(tool_call["args"])
-
-                    tool_message_content = (
-                        effective_response_format.tool_message_content
-                        or f"Returning structured response: {structured_response}"
-                    )
-
-                    return {
-                        "messages": [
-                            output,
-                            ToolMessage(
-                                content=tool_message_content,
-                                tool_call_id=tool_call["id"],
-                                name=tool_call["name"],
-                            ),
-                        ],
-                        "structured_response": structured_response,
-                    }
-                except Exception as exc:
-                    exception = StructuredOutputValidationError(tool_call["name"], exc, output)
-                    should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
-                    )
-                    if not should_retry:
-                        raise exception from exc
-
-                    return {
-                        "messages": [
-                            output,
+                        # Add error messages and retry
+                        tool_messages = [
                             ToolMessage(
                                 content=error_message,
-                                tool_call_id=tool_call["id"],
-                                name=tool_call["name"],
-                            ),
-                        ],
-                    }
+                                tool_call_id=tc["id"],
+                                name=tc["name"],
+                            )
+                            for tc in structured_tool_calls
+                        ]
+                        return {"messages": [output, *tool_messages]}
+
+                    # Handle single structured output
+                    tool_call = structured_tool_calls[0]
+                    try:
+                        structured_tool_binding = structured_output_tools[tool_call["name"]]
+                        structured_response = structured_tool_binding.parse(tool_call["args"])
+
+                        tool_message_content = (
+                            effective_response_format.tool_message_content
+                            or f"Returning structured response: {structured_response}"
+                        )
+
+                        return {
+                            "messages": [
+                                output,
+                                ToolMessage(
+                                    content=tool_message_content,
+                                    tool_call_id=tool_call["id"],
+                                    name=tool_call["name"],
+                                ),
+                            ],
+                            "structured_response": structured_response,
+                        }
+                    except Exception as exc:
+                        exception = StructuredOutputValidationError(tool_call["name"], exc, output)
+                        should_retry, error_message = _handle_structured_output_error(
+                            exception, effective_response_format
+                        )
+                        if not should_retry:
+                            raise exception from exc
+
+                        return {
+                            "messages": [
+                                output,
+                                ToolMessage(
+                                    content=error_message,
+                                    tool_call_id=tool_call["id"],
+                                    name=tool_call["name"],
+                                ),
+                            ],
+                        }
+
+            # No structured output tool calls were made when one was expected
+            if structured_output_tools:
+                exception = NoStructuredOutputError(output)
+                should_retry, error_message = _handle_structured_output_error(
+                    exception, effective_response_format
+                )
+                if not should_retry:
+                    raise exception
+
+                return {
+                    "messages": [
+                        output,
+                        ToolMessage(
+                            content=error_message,
+                            tool_call_id="no_call",
+                            name="no_structured_output",
+                        ),
+                    ],
+                }
 
         return {"messages": [output]}
 
@@ -1708,7 +1726,13 @@ def _make_model_to_tools_edge(
 
         # 3. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
+        # However, if there are structured output tools expected and there are
+        # tool messages after the AI message (indicating error feedback for missing
+        # structured output), we should loop back to the model for retry.
         if len(last_ai_message.tool_calls) == 0:
+            if structured_output_tools and tool_messages:
+                # Error feedback was added for missing structured output, retry
+                return model_destination
             return end_destination
 
         pending_tool_calls = [
