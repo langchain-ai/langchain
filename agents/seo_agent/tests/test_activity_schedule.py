@@ -114,13 +114,22 @@ class TestGetTodaysSchedule:
         assert "discover_prospects" in schedule["boost_skills"]
         assert "score_prospects" in schedule["boost_skills"]
 
-    def test_friday_returns_analytics(self) -> None:
+    def test_friday_returns_journal(self) -> None:
+        from agents.seo_agent.strategy import get_todays_schedule
+
+        friday = _make_datetime(4)
+        schedule = get_todays_schedule(friday)
+
+        assert "journal_entry" in schedule["boost_skills"]
+
+    def test_friday_weekly_track_rankings(self) -> None:
         from agents.seo_agent.strategy import get_todays_schedule
 
         friday = _make_datetime(4)
         schedule = get_todays_schedule(friday)
 
         assert "track_rankings" in schedule["boost_skills"]
+        assert "track_rankings" in schedule["weekly_due"]
 
     def test_saturday_returns_maintenance(self) -> None:
         from agents.seo_agent.strategy import get_todays_schedule
@@ -130,6 +139,15 @@ class TestGetTodaysSchedule:
 
         assert "internal_linking" in schedule["boost_skills"]
         assert "memory_consolidation" in schedule["boost_skills"]
+
+    def test_monday_weekly_content_gap_analysis(self) -> None:
+        from agents.seo_agent.strategy import get_todays_schedule
+
+        monday = _make_datetime(0)
+        schedule = get_todays_schedule(monday)
+
+        assert "content_gap_analysis" in schedule["boost_skills"]
+        assert "content_gap_analysis" in schedule["weekly_due"]
 
     def test_weekly_tasks_appear_on_correct_day(self) -> None:
         from agents.seo_agent.strategy import get_todays_schedule
@@ -550,3 +568,30 @@ class TestParseDayOfWeek:
     def test_negative_int(self) -> None:
         with pytest.raises(ValueError):
             self._parse(-1)
+
+
+# ---------------------------------------------------------------------------
+# Tests: DEFAULT_SCHEDULE integrity
+# ---------------------------------------------------------------------------
+
+
+class TestDefaultScheduleIntegrity:
+    """Verify DEFAULT_SCHEDULE has no duplicate skill+cadence+day entries."""
+
+    def test_no_duplicate_entries(self) -> None:
+        from agents.seo_agent.strategy import DEFAULT_SCHEDULE
+
+        seen: set[tuple[str, str, int | None, int | None]] = set()
+        for entry in DEFAULT_SCHEDULE:
+            key = (
+                entry["skill"],
+                entry["cadence"],
+                entry.get("day_of_week"),
+                entry.get("day_of_month"),
+            )
+            assert key not in seen, (
+                f"Duplicate schedule entry: {entry['skill']} "
+                f"({entry['cadence']}, day_of_week={entry.get('day_of_week')}, "
+                f"day_of_month={entry.get('day_of_month')})"
+            )
+            seen.add(key)
