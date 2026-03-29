@@ -56,7 +56,8 @@ export function CostChart() {
             <Tooltip
               contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#f1f5f9' }}
-              formatter={(value: number, name: string) => [`$${value.toFixed(4)}`, name === 'daily' ? 'Daily' : 'Cumulative']}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={(value: any, name: any) => [`$${Number(value).toFixed(4)}`, name === 'daily' ? 'Daily' : 'Cumulative']}
             />
             <Area type="monotone" dataKey="daily" stroke="#3b82f6" fill="url(#costGrad)" strokeWidth={2} />
           </AreaChart>
