@@ -1629,7 +1629,9 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
-    config: RunnableConfig = {"recursion_limit": 10_000}
+    # Set recursion limit to 9_999
+    # https://github.com/langchain-ai/langgraph/issues/7313
+    config: RunnableConfig = {"recursion_limit": 9_999}
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name
