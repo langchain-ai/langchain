@@ -677,8 +677,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }
