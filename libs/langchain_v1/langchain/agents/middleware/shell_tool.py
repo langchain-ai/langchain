@@ -143,6 +143,8 @@ class ShellSession:
         self._stdout_thread: threading.Thread | None = None
         self._stderr_thread: threading.Thread | None = None
         self._terminated = False
+        # Determine if process groups should be used for termination
+        self._use_process_group = getattr(policy, "create_process_group", True)
 
     def start(self) -> None:
         """Start the shell subprocess and reader threads.
@@ -402,7 +404,7 @@ class ShellSession:
         if not self._process:
             return
 
-        if hasattr(os, "killpg"):
+        if self._use_process_group and hasattr(os, "killpg"):
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(os.getpgid(self._process.pid), signal.SIGKILL)
         else:  # pragma: no cover
