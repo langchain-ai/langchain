@@ -20,7 +20,7 @@
     "recharts": "^3.8.1"
   },
   "engines": {
-    "node": ">=20.19 || >=22.12"
+    "node": ">=20"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
