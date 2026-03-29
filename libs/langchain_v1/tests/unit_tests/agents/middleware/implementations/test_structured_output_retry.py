@@ -1,10 +1,14 @@
 """Tests for StructuredOutputRetryMiddleware functionality."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import pytest
-from langchain_core.messages import HumanMessage
-from langchain_core.tools import tool
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompt_values import PromptValue
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool, tool
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel
 
@@ -69,6 +73,22 @@ class WeatherReport(BaseModel):
 
     temperature: float
     conditions: str
+
+
+class FakeWithStructuredOutput(GenericFakeChatModel):
+    """Fake chat model that supports bind_tools for structured output tests."""
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[
+        PromptValue | str | Sequence[BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]],
+        AIMessage,
+    ]:
+        return self.bind(tools=tools, tool_choice=tool_choice, **kwargs)
 
 
 @tool
@@ -367,3 +387,56 @@ def test_structured_output_retry_preserves_messages() -> None:
     retry_message = human_messages[-1]
     assert "Error:" in retry_message.content
     assert "Please try again" in retry_message.content
+
+
+def test_structured_output_missing_tool_call_raises_without_retries() -> None:
+    """Missing structured output tool calls should raise when retries are disabled."""
+    model = FakeWithStructuredOutput(messages=iter([AIMessage(content="just text")]))
+
+    agent = create_agent(
+        model=model,
+        tools=[get_weather],
+        response_format=ToolStrategy(schema=WeatherReport, handle_errors=False),
+    )
+
+    with pytest.raises(StructuredOutputError, match="did not call the structured output tool"):
+        agent.invoke({"messages": [HumanMessage("What's the weather in Tokyo?")]})
+
+
+def test_structured_output_missing_tool_call_can_be_retried_by_middleware() -> None:
+    """Middleware retries should also handle missing structured output tool calls."""
+    model = FakeWithStructuredOutput(
+        messages=iter(
+            [
+                AIMessage(content="just text"),
+                AIMessage(
+                    content="tool call",
+                    tool_calls=[
+                        {
+                            "name": "WeatherReport",
+                            "id": "1",
+                            "args": {"temperature": 72.5, "conditions": "sunny"},
+                        }
+                    ],
+                ),
+            ]
+        )
+    )
+    retry_middleware = StructuredOutputRetryMiddleware(max_retries=1)
+
+    agent = create_agent(
+        model=model,
+        tools=[get_weather],
+        middleware=[retry_middleware],
+        response_format=ToolStrategy(schema=WeatherReport, handle_errors=False),
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("What's the weather in Tokyo?")]},
+        {"configurable": {"thread_id": "test-missing-tool-call"}},
+    )
+
+    assert isinstance(result["structured_response"], WeatherReport)
+    assert result["structured_response"].temperature == 72.5
+    assert result["structured_response"].conditions == "sunny"

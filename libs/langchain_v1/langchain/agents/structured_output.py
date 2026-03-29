@@ -74,6 +74,21 @@ class StructuredOutputValidationError(StructuredOutputError):
         super().__init__(f"Failed to parse structured output for tool '{tool_name}': {source}.")
 
 
+class NoStructuredOutputError(StructuredOutputError):
+    """Raised when a tool strategy response omits the structured output tool call."""
+
+    def __init__(self, ai_message: AIMessage) -> None:
+        """Initialize `NoStructuredOutputError`.
+
+        Args:
+            ai_message: The AI message that omitted the structured output tool call.
+        """
+        self.ai_message = ai_message
+        super().__init__(
+            "Model did not call the structured output tool when one was required."
+        )
+
+
 def _parse_with_schema(
     schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
 ) -> Any:

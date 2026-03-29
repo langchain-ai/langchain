@@ -44,6 +44,7 @@ from langchain.agents.middleware.types import (
 from langchain.agents.structured_output import (
     AutoStrategy,
     MultipleStructuredOutputsError,
+    NoStructuredOutputError,
     OutputToolBinding,
     ProviderStrategy,
     ProviderStrategyBinding,
@@ -1053,14 +1054,19 @@ def create_agent(
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
-        if (
-            isinstance(effective_response_format, ToolStrategy)
-            and isinstance(output, AIMessage)
-            and output.tool_calls
-        ):
+        if isinstance(effective_response_format, ToolStrategy) and isinstance(output, AIMessage):
             structured_tool_calls = [
                 tc for tc in output.tool_calls if tc["name"] in structured_output_tools
             ]
+
+            if not structured_tool_calls and not output.tool_calls:
+                exception = NoStructuredOutputError(output)
+                should_retry, _ = _handle_structured_output_error(
+                    exception, effective_response_format
+                )
+                if not should_retry:
+                    raise exception
+                return {"messages": [output]}
 
             if structured_tool_calls:
                 exception: StructuredOutputError | None = None
