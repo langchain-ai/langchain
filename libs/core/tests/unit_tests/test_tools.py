@@ -3316,6 +3316,62 @@ def test_filter_injected_args_not_in_schema(
     assert "runtime" not in captured
 
 
+@dataclass
+class _DataclassRuntime(_DirectlyInjectedToolArg):
+    """Dataclass runtime injected at tool call time (mirrors ToolRuntime pattern)."""
+
+    data: dict[str, Any]
+
+
+def test_directly_injected_dataclass_arg_with_inferred_schema() -> None:
+    """Regression test: _DirectlyInjectedToolArg dataclasses should not cause
+    Pydantic validation errors when the schema is inferred via @tool.
+
+    The auto-generated schema uses extra='forbid'. Previously, passing a
+    _DirectlyInjectedToolArg instance would fail Pydantic validation because
+    the field appeared in the schema but Pydantic could not validate the
+    dataclass instance (type=dataclass_type error). This test verifies both:
+    1. The arg is filtered from the inferred schema.
+    2. The tool still receives the injected value correctly.
+    """
+
+    @tool
+    def tool_with_dataclass_runtime(
+        query: str, limit: int, runtime: _DataclassRuntime
+    ) -> str:
+        """Tool with a dataclass _DirectlyInjectedToolArg parameter.
+
+        Args:
+            query: The search query.
+            limit: Max results.
+            runtime: Dataclass runtime (directly injected).
+        """
+        assert runtime.data == {"key": "value"}
+        return f"Query: {query}, Limit: {limit}"
+
+    # The inferred schema should not include the directly injected arg
+    schema_fields = tool_with_dataclass_runtime.get_input_schema().model_fields
+    assert "runtime" not in schema_fields
+    assert "query" in schema_fields
+    assert "limit" in schema_fields
+
+    handler = CallbackHandlerWithInputCapture(captured_inputs=[])
+
+    result = tool_with_dataclass_runtime.invoke(
+        {
+            "query": "test",
+            "limit": 5,
+            "runtime": _DataclassRuntime(data={"key": "value"}),
+        },
+        config={"callbacks": [handler]},
+    )
+
+    assert result == "Query: test, Limit: 5"
+    captured = handler.captured_inputs[0]
+    assert captured == {"query": "test", "limit": 5}
+    assert "runtime" not in captured
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 

@@ -708,7 +708,16 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
+                # Strip _DirectlyInjectedToolArg instances (e.g., ToolRuntime) from
+                # the input before Pydantic validation. These are not included in the
+                # schema (filtered by _filter_schema_args) and would cause validation
+                # errors. They are re-added via _injected_args_keys after validation.
+                tool_input_for_validation = {
+                    k: v
+                    for k, v in tool_input.items()
+                    if not isinstance(v, _DirectlyInjectedToolArg)
+                }
+                result = input_args.model_validate(tool_input_for_validation)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId

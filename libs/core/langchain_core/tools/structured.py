@@ -28,6 +28,7 @@ from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _is_directly_injected_arg_type,
     _is_injected_arg_type,
     create_schema_from_function,
 )
@@ -267,5 +268,10 @@ def _filter_schema_args(func: Callable) -> list[str]:
     filter_args = list(FILTERED_ARGS)
     if config_param := _get_runnable_config_param(func):
         filter_args.append(config_param)
-    # filter_args.extend(_get_non_model_params(type_hints))
+    # Filter _DirectlyInjectedToolArg parameters (e.g., ToolRuntime).
+    # These are injected by the framework at runtime and should not be
+    # part of the tool's Pydantic schema or validated by Pydantic.
+    for param_name, param in signature(func).parameters.items():
+        if _is_directly_injected_arg_type(param.annotation):
+            filter_args.append(param_name)
     return filter_args
