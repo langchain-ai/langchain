@@ -284,6 +284,17 @@ def test_tool_runtime_config_access() -> None:
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.content == "Config accessed for 5"
 
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test config again")]},
+        config={"recursion_limit": 7},
+    )
+
+    assert config_data["recursion_limit"] == 7
+
+    tool_message = result["messages"][2]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "Config accessed for 5"
+
 
 def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
