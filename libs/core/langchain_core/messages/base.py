@@ -336,10 +336,63 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+
+        prints: list[str] = []
+        content = self.content
+        if isinstance(content, str):
+            prints.append(content)
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, str):
+                    prints.append(block)
+                elif isinstance(block, dict):
+                    block_type = block.get("type")
+                    if block_type == "text" and "text" in block:
+                        prints.append(block["text"])
+                    elif block_type == "image_url":
+                        img_url = block.get("image_url", {})
+                        if isinstance(img_url, dict) and "url" in img_url:
+                            u = img_url["url"]
+                            u_str = u if isinstance(u, str) else "..."
+                            prints.append(f"[image: {u_str}]")
+                        elif isinstance(img_url, str):
+                            prints.append(f"[image: {img_url}]")
+                        else:
+                            prints.append(str(block))
+                    elif block_type == "image":
+                        if "url" in block:
+                            prints.append(f"[image: {block['url']}]")
+                        elif "base64" in block:
+                            prints.append("[image: base64 data]")
+                        else:
+                            prints.append("[image]")
+                    elif block_type == "video":
+                        if "url" in block:
+                            prints.append(f"[video: {block['url']}]")
+                        elif "base64" in block:
+                            prints.append("[video: base64 data]")
+                        else:
+                            prints.append("[video]")
+                    elif block_type == "audio":
+                        if "url" in block:
+                            prints.append(f"[audio: {block['url']}]")
+                        elif "base64" in block:
+                            prints.append("[audio: base64 data]")
+                        else:
+                            prints.append("[audio]")
+                    elif block_type == "reasoning" and "reasoning" in block:
+                        prints.append(block["reasoning"])
+                    else:
+                        prints.append(str(block))
+                else:
+                    prints.append(str(block))
+        else:
+            prints.append(str(self.content))
+
+        body = "\n".join(prints)
+        return f"{title}\n\n{body}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
