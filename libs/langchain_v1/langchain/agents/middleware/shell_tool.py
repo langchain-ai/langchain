@@ -403,11 +403,18 @@ class ShellSession:
             return
 
         if hasattr(os, "killpg"):
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(os.getpgid(self._process.pid), signal.SIGKILL)
-        else:  # pragma: no cover
-            with contextlib.suppress(ProcessLookupError):
-                self._process.kill()
+            try:
+                child_pgid = os.getpgid(self._process.pid)
+                # Only group-kill when the child has its own process group.
+                # If it shares ours, killpg would terminate the caller too.
+                if child_pgid != os.getpgrp():
+                    os.killpg(child_pgid, signal.SIGKILL)
+                    return
+            except ProcessLookupError:
+                return
+
+        with contextlib.suppress(ProcessLookupError):
+            self._process.kill()
 
     def _enqueue_stream(self, stream: Any, label: str) -> None:
         for line in iter(stream.readline, ""):

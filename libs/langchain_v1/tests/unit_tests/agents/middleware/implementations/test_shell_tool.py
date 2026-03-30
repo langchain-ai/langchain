@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import gc
+import signal
+import os
 import tempfile
 import time
 from pathlib import Path
 from typing import cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import ToolMessage
@@ -14,6 +17,7 @@ from langgraph.runtime import Runtime
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
+    ShellSession,
     ShellToolMiddleware,
     ShellToolState,
     _SessionResources,
@@ -546,3 +550,55 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def _make_session_with_mock_process(tmp_path: Path, pid: int) -> ShellSession:
+    """Create a ShellSession with a mock process (no real subprocess started)."""
+    session = ShellSession(
+        workspace=tmp_path,
+        policy=HostExecutionPolicy(),
+        command=("/bin/sh",),
+        environment={},
+    )
+    mock_process = MagicMock()
+    mock_process.pid = pid
+    session._process = mock_process
+    return session
+
+
+def test_kill_process_shared_group_uses_single_kill(tmp_path: Path) -> None:
+    """When child shares parent's process group, os.killpg must NOT be called.
+
+    Reproduces the bug from https://github.com/langchain-ai/langchain/issues/36358
+    where create_process_group=False causes the child to share the caller's PGID,
+    but the previous implementation would killpg the shared group (killing the caller).
+    """
+    current_pgid = os.getpgrp()
+    session = _make_session_with_mock_process(tmp_path, pid=current_pgid)
+
+    with (
+        patch("langchain.agents.middleware.shell_tool.os.getpgid", return_value=current_pgid),
+        patch("langchain.agents.middleware.shell_tool.os.getpgrp", return_value=current_pgid),
+        patch("langchain.agents.middleware.shell_tool.os.killpg") as mock_killpg,
+    ):
+        session._kill_process()
+
+    mock_killpg.assert_not_called()
+    session._process.kill.assert_called_once()
+
+
+def test_kill_process_dedicated_group_uses_killpg(tmp_path: Path) -> None:
+    """When child has a dedicated process group, os.killpg must be called with the child's PGID."""
+    current_pgid = os.getpgrp()
+    child_pgid = current_pgid + 1  # different group — child has its own session
+    session = _make_session_with_mock_process(tmp_path, pid=child_pgid)
+
+    with (
+        patch("langchain.agents.middleware.shell_tool.os.getpgid", return_value=child_pgid),
+        patch("langchain.agents.middleware.shell_tool.os.getpgrp", return_value=current_pgid),
+        patch("langchain.agents.middleware.shell_tool.os.killpg") as mock_killpg,
+    ):
+        session._kill_process()
+
+    mock_killpg.assert_called_once_with(child_pgid, signal.SIGKILL)
+    session._process.kill.assert_not_called()
