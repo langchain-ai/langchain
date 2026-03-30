@@ -40,8 +40,10 @@ if TYPE_CHECKING:
     from langchain_core.tools.structured import StructuredTool
     from langchain_core.tools.tier import (
         ModelTier,
+        TierRouter,
         detect_tier,
         get_tier_adapted_tools,
+        to_native_tool,
     )
 
 __all__ = (
@@ -52,6 +54,7 @@ __all__ = (
     "InjectedToolArg",
     "InjectedToolCallId",
     "ModelTier",
+    "TierRouter",
     "RetrieverInput",
     "SchemaAnnotationError",
     "StructuredTool",
@@ -64,6 +67,7 @@ __all__ = (
     "create_schema_from_function",
     "detect_tier",
     "get_tier_adapted_tools",
+    "to_native_tool",
     "render_text_description",
     "render_text_description_and_args",
     "tool",
@@ -90,8 +94,10 @@ _dynamic_imports = {
     "Tool": "simple",
     "StructuredTool": "structured",
     "ModelTier": "tier",
+    "TierRouter": "tier",
     "detect_tier": "tier",
     "get_tier_adapted_tools": "tier",
+    "to_native_tool": "tier",
 }
 
 
