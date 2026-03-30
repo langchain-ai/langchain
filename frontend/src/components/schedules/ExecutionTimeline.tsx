@@ -26,7 +26,7 @@ export function ExecutionTimeline() {
       {loading ? (
         <Spinner />
       ) : error ? (
-        <p className="text-sm text-[var(--color-text-muted)]">{error}</p>
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       ) : data.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">No executions yet</p>
       ) : (

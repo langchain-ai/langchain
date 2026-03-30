@@ -28,7 +28,7 @@ export function SkillSchedulePanel() {
         <CardHeader>
           <CardTitle>Skill Schedule</CardTitle>
         </CardHeader>
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       </Card>
     )
   }

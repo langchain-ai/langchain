@@ -38,7 +38,7 @@ export function CostChart() {
       {loading ? (
         <Spinner />
       ) : error ? (
-        <p className="text-sm text-[var(--color-text-muted)]">{error}</p>
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       ) : chartData.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">No cost data yet</p>
       ) : (

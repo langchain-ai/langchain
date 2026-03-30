@@ -19,7 +19,7 @@ export function PipelineBoard() {
   })
 
   if (loading) return <Spinner />
-  if (error) return <p className="text-sm text-[var(--color-text-muted)]">{error}</p>
+  if (error) return <p className="text-sm text-[var(--color-danger)]">{error}</p>
 
   const byStage: Record<string, CrmContact[]> = {}
   for (const stage of PIPELINE_STAGES) {
@@ -44,7 +44,7 @@ export function PipelineBoard() {
             </div>
 
             {/* Cards */}
-            <div className="max-h-[calc(100vh-16rem)] space-y-2 overflow-y-auto p-3">
+            <div className="max-h-[calc(100dvh-16rem)] space-y-2 overflow-y-auto p-3">
               {contacts.length === 0 ? (
                 <p className="py-4 text-center text-xs text-[var(--color-text-muted)]">Empty</p>
               ) : (
