@@ -390,11 +390,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         path. A plain method override does not prevent the base validator from
         running.
         """
-        if self.profile is None:
-            # Suppress errors from partner overrides (e.g., missing profile
-            # files, broken imports) so model construction never fails over an
-            # optional field.
-            with contextlib.suppress(Exception):
+        # Suppress errors from partner overrides (e.g., missing profile
+        # files, broken imports, or custom __getattribute__ raising AttributeError)
+        # so model construction never fails over an optional field.
+        with contextlib.suppress(Exception):
+            if self.profile is None:
                 self.profile = self._resolve_model_profile()
         return self
 
