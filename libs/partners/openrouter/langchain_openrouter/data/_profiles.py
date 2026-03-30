@@ -1750,7 +1750,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
     },
-    "nvidia/nemotron-3-super-120b-a12b-free": {
+    "nvidia/nemotron-3-super-120b-a12b:free": {
         "name": "Nemotron 3 Super (free)",
         "release_date": "2026-03-11",
         "last_updated": "2026-03-11",

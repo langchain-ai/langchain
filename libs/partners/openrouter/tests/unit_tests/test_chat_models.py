@@ -2507,8 +2507,8 @@ class TestWrapMessagesForSdk:
         ]
         result = _wrap_messages_for_sdk(msgs)
         assert len(result) == 2
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
 
     def test_wrapped_serializes_correctly(self) -> None:
         """Wrapped models should serialize to the correct JSON payload."""
@@ -2565,10 +2565,10 @@ class TestWrapMessagesForSdk:
             {"role": "tool", "content": "result", "tool_call_id": "c1"},
         ]
         result = _wrap_messages_for_sdk(msgs)
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
-        assert isinstance(result[2], components.AssistantMessage)
-        assert isinstance(result[3], components.ToolResponseMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
+        assert isinstance(result[2], components.ChatAssistantMessage)
+        assert isinstance(result[3], components.ChatToolMessage)
 
 
 # ===========================================================================
