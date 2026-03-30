@@ -1,0 +1,213 @@
+# Unified PR labeler — applies size, file-based, title-based, and
+# contributor classification labels in a single sequential workflow.
+#
+# Consolidates pr_labeler_file.yml, pr_labeler_title.yml,
+# pr_size_labeler.yml, and PR-handling from tag-external-contributions.yml
+# into one workflow to eliminate race conditions from concurrent label
+# mutations. tag-external-issues.yml remains active for issue-only
+# labeling. Backfill lives in pr_labeler_backfill.yml.
+#
+# Config and shared logic live in .github/scripts/pr-labeler-config.json
+# and .github/scripts/pr-labeler.js — update those when adding partners.
+#
+# Setup Requirements:
+# 1. Create a GitHub App with permissions:
+#    - Repository: Pull requests (write)
+#    - Repository: Issues (write)
+#    - Organization: Members (read)
+# 2. Install the app on your organization and this repository
+# 3. Add these repository secrets:
+#    - ORG_MEMBERSHIP_APP_ID: Your app's ID
+#    - ORG_MEMBERSHIP_APP_PRIVATE_KEY: Your app's private key
+#
+# The GitHub App token is required to check private organization membership
+# and to propagate label events to downstream workflows.
+
+name: "🏷️ PR Labeler"
+
+on:
+  # Safe since we're not checking out or running the PR's code.
+  # NEVER CHECK OUT UNTRUSTED CODE FROM A PR's HEAD IN A pull_request_target JOB.
+  # Doing so would allow attackers to execute arbitrary code in the context of your repository.
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Separate opened events so external/tier labels are never lost to cancellation
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.event.action == 'opened' && 'opened' || 'update' }}
+  cancel-in-progress: ${{ github.event.action != 'opened' }}
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      # Checks out the BASE branch (safe for pull_request_target — never
+      # the PR head). Needed to load .github/scripts/pr-labeler*.
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        if: github.event.action == 'opened'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Verify App token
+        if: github.event.action == 'opened'
+        run: |
+          if [ -z "${{ steps.app-token.outputs.token }}" ]; then
+            echo "::error::GitHub App token generation failed — cannot classify contributor"
+            exit 1
+          fi
+
+      - name: Check org membership
+        if: github.event.action == 'opened'
+        id: check-membership
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const author = context.payload.sender.login;
+            const { isExternal } = await h.checkMembership(
+              author, context.payload.sender.type,
+            );
+            core.setOutput('is-external', isExternal ? 'true' : 'false');
+
+      - name: Apply PR labels
+        uses: actions/github-script@v8
+        env:
+          IS_EXTERNAL: ${{ steps.check-membership.outputs.is-external }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            const prNumber = pr.number;
+            const action = context.payload.action;
+
+            const toAdd = new Set();
+            const toRemove = new Set();
+
+            const currentLabels = (await github.paginate(
+              github.rest.issues.listLabelsOnIssue,
+              { owner, repo, issue_number: prNumber, per_page: 100 },
+            )).map(l => l.name ?? '');
+
+            // ── Size + file labels (skip on 'edited' — files unchanged) ──
+            if (action !== 'edited') {
+              for (const sl of h.sizeLabels) await h.ensureLabel(sl);
+
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner, repo, pull_number: prNumber, per_page: 100,
+              });
+
+              const { totalChanged, sizeLabel } = h.computeSize(files);
+              toAdd.add(sizeLabel);
+              for (const sl of h.sizeLabels) {
+                if (currentLabels.includes(sl) && sl !== sizeLabel) toRemove.add(sl);
+              }
+              console.log(`Size: ${totalChanged} changed lines → ${sizeLabel}`);
+
+              for (const label of h.matchFileLabels(files)) {
+                toAdd.add(label);
+              }
+            }
+
+            // ── Title-based labels ──
+            const { labels: titleLabels, typeLabel } = h.matchTitleLabels(pr.title || '');
+            for (const label of titleLabels) toAdd.add(label);
+
+            // Remove stale type labels only when a type was detected
+            if (typeLabel) {
+              for (const tl of h.allTypeLabels) {
+                if (currentLabels.includes(tl) && !titleLabels.has(tl)) toRemove.add(tl);
+              }
+            }
+
+            // ── Internal label (only on open, non-external contributors) ──
+            // IS_EXTERNAL is empty string on non-opened events (step didn't
+            // run), so this guard is only true for opened + internal.
+            if (action === 'opened' && process.env.IS_EXTERNAL === 'false') {
+              toAdd.add('internal');
+            }
+
+            // ── Apply changes ──
+            // Ensure all labels we're about to add exist (addLabels returns
+            // 422 if any label in the batch is missing, which would prevent
+            // ALL labels from being applied).
+            for (const name of toAdd) {
+              await h.ensureLabel(name);
+            }
+
+            for (const name of toRemove) {
+              if (toAdd.has(name)) continue;
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: prNumber, name,
+                });
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+            }
+
+            const addList = [...toAdd];
+            if (addList.length > 0) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: prNumber, labels: addList,
+              });
+            }
+
+            const removed = [...toRemove].filter(r => !toAdd.has(r));
+            console.log(`PR #${prNumber}: +[${addList.join(', ')}] -[${removed.join(', ')}]`);
+
+      # Apply tier label BEFORE the external label so that
+      # "trusted-contributor" is already present when the "external" labeled
+      # event fires and triggers require_issue_link.yml.
+      - name: Apply contributor tier label
+        if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            const pr = context.payload.pull_request;
+            await h.applyTierLabel(pr.number, pr.user.login);
+
+      - name: Add external label
+        if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
+        uses: actions/github-script@v8
+        with:
+          # Use App token so the "labeled" event propagates to downstream
+          # workflows (e.g. require_issue_link.yml). Events created by the
+          # default GITHUB_TOKEN do not trigger additional workflow runs.
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+            await h.ensureLabel('external');
+            await github.rest.issues.addLabels({
+              owner, repo,
+              issue_number: prNumber,
+              labels: ['external'],
+            });
+            console.log(`Added 'external' label to PR #${prNumber}`);
