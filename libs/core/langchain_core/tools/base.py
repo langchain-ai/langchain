@@ -546,11 +546,11 @@ class ChildTool(BaseTool):
         @tool(
             tier_descriptions={
                 "small": "Read file",
-                "large": "Read file contents with line numbers, offset, and encoding control",
+                "large": "Read file with offset and encoding control",
             }
         )
         def file_read(path: str, encoding: str = "utf-8") -> str:
-            \"\"\"Read file contents with line numbers, offset, and encoding control.\"\"\"
+            \"\"\"Read file with offset and encoding control.\"\"\"
             ...
         ```
     """
@@ -573,14 +573,18 @@ class ChildTool(BaseTool):
                 "large": ["path", "encoding", "line_numbers"],
             }
         )
-        def file_read(path: str, encoding: str = "utf-8", line_numbers: bool = False) -> str:
+        def file_read(
+            path: str, encoding: str = "utf-8", line_numbers: bool = False
+        ) -> str:
             \"\"\"Read file contents.\"\"\"
             ...
         ```
     """
 
     category: str | None = None
-    """Optional semantic category for grouping related tools (e.g. `'filesystem'`, `'web'`).
+    """Optional semantic category for grouping related tools.
+
+    For example: `'filesystem'`, `'web'`.
 
     Used by tier-aware routing to present related tools together, improving tool
     discovery for smaller models.

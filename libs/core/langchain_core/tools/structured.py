@@ -174,6 +174,11 @@ class StructuredTool(BaseTool):
                 to parse parameter descriptions from Google Style function docstrings.
             error_on_invalid_docstring: if `parse_docstring` is provided, configure
                 whether to raise `ValueError` on invalid Google Style docstrings.
+            tier_descriptions: Optional tier-specific descriptions keyed by model
+                tier name (e.g. `'small'`, `'xlarge'`).
+            tier_params: Optional tier-specific parameter subsets keyed by model
+                tier name.
+            category: Optional semantic category for grouping related tools.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:

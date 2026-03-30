@@ -14,6 +14,8 @@ from collections import Counter
 from math import log
 from typing import TYPE_CHECKING, Any, Literal
 
+from pydantic import BaseModel, create_model
+
 if TYPE_CHECKING:
     from langchain_core.tools.base import BaseTool
 
@@ -24,11 +26,16 @@ if TYPE_CHECKING:
 ModelTier = Literal["small", "medium", "large", "xlarge"]
 """Capability tier for a language model.
 
-- `'small'`:  ≤3B parameters   — up to 4 tools, MCQ/condensed format.
-- `'medium'`: 4B–14B parameters — up to 8 tools, condensed format.
-- `'large'`:  15B–35B parameters — up to 20 tools, ranked format.
-- `'xlarge'`: >35B / frontier   — unlimited tools, full descriptions.
+- `'small'`:  <=3B parameters   - up to 4 tools, MCQ/condensed format.
+- `'medium'`: 4B-14B parameters  - up to 8 tools, condensed format.
+- `'large'`:  15B-35B parameters - up to 20 tools, ranked format.
+- `'xlarge'`: >35B / frontier   - unlimited tools, full descriptions.
 """
+
+# Size thresholds (in billions of parameters) for tier classification.
+_SMALL_MAX_B: float = 3
+_MEDIUM_MAX_B: float = 14
+_LARGE_MAX_B: float = 35
 
 _TIER_ORDER: list[ModelTier] = ["small", "medium", "large", "xlarge"]
 
@@ -130,14 +137,14 @@ def detect_tier(model_name: str) -> ModelTier:
             break
 
     # 1. Extract parameter count from name (most precise)
-    size_match = re.search(r'(?:^|[:\-_.])(\d+(?:\.\d+)?)\s*b(?:\b|_)', name)
+    size_match = re.search(r"(?:^|[:\-_.])(\d+(?:\.\d+)?)\s*b(?:\b|_)", name)
     if size_match:
         size_b = float(size_match.group(1))
-        if size_b <= 3:
+        if size_b <= _SMALL_MAX_B:
             return "small"
-        if size_b <= 14:
+        if size_b <= _MEDIUM_MAX_B:
             return "medium"
-        if size_b <= 35:
+        if size_b <= _LARGE_MAX_B:
             return "large"
         return "xlarge"
 
@@ -146,8 +153,9 @@ def detect_tier(model_name: str) -> ModelTier:
         if pattern in name:
             return tier
 
-    # 3. Provider/format hints → likely local/smaller models
-    if any(hint in model_name.lower() for hint in ["ollama", "local", "gguf", "q4_", "q8_"]):
+    # 3. Provider/format hints - likely local/smaller models
+    _local_hints = ["ollama", "local", "gguf", "q4_", "q8_"]
+    if any(hint in model_name.lower() for hint in _local_hints):
         return "medium"
 
     # 4. Default: xlarge (frontier assumption for unknown model names)
@@ -182,12 +190,11 @@ def get_tier_adapted_tools(
         from langchain_core.tools.tier import get_tier_adapted_tools
 
         @tool(
-            tier_descriptions={"small": "Read file", "xlarge": "Read file with options"},
+            tier_descriptions={"small": "Read file", "xlarge": "Read with options"},
             tier_params={"small": ["path"], "xlarge": ["path", "encoding"]},
         )
         def file_read(path: str, encoding: str = "utf-8") -> str:
             \"\"\"Read file with options.\"\"\"
-            ...
 
         small_tools = get_tier_adapted_tools([file_read], tier="small")
         # small_tools[0].description == "Read file"
@@ -262,7 +269,9 @@ class TierRouter:
         """
         self._tier = tier
         self._config = _TIER_CONFIG[tier]
-        self._max_tools = max_tools if max_tools is not None else self._config["max_tools"]
+        self._max_tools = (
+            max_tools if max_tools is not None else self._config["max_tools"]
+        )
         # Pre-adapt all tools for the tier so description/schema are correct.
         self._tools = get_tier_adapted_tools(tools, tier)
         # Build TF-IDF index over tool names + descriptions.
@@ -353,15 +362,13 @@ def to_native_tool(tool: BaseTool, tier: ModelTier) -> dict[str, Any]:
 
     if schema_cls is not None:
         try:
-            from pydantic import BaseModel
-
             if isinstance(schema_cls, type) and issubclass(schema_cls, BaseModel):
                 parameters = schema_cls.model_json_schema()
             elif isinstance(schema_cls, dict):
                 parameters = schema_cls
             else:
                 parameters = {"type": "object", "properties": {}}
-        except Exception:  # noqa: BLE001
+        except Exception:
             parameters = {"type": "object", "properties": {}}
     else:
         parameters = {"type": "object", "properties": {}}
@@ -418,12 +425,11 @@ def _resolve_tier_schema(tool: BaseTool, tier: ModelTier) -> type | None:
     if params is None:
         return None
 
-    from pydantic import BaseModel, create_model
-
-    if not (isinstance(tool.args_schema, type) and issubclass(tool.args_schema, BaseModel)):
+    schema = tool.args_schema
+    if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
         return None
 
-    original_fields = tool.args_schema.model_fields
+    original_fields = schema.model_fields
     filtered: dict[str, Any] = {
         k: (v.annotation, v)
         for k, v in original_fields.items()
@@ -434,7 +440,7 @@ def _resolve_tier_schema(tool: BaseTool, tier: ModelTier) -> type | None:
         return None
 
     return create_model(  # type: ignore[call-overload]
-        tool.args_schema.__name__,
+        schema.__name__,
         **filtered,
     )
 

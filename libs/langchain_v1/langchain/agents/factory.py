@@ -18,6 +18,7 @@ from typing import (
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
+from langchain_core.tools.tier import detect_tier, get_tier_adapted_tools
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
@@ -682,9 +683,7 @@ def _resolve_model_tier(
     if explicit_tier is not None:
         return explicit_tier
     if isinstance(model, str):
-        from langchain_core.tools.tier import detect_tier
-
-        # Strip provider prefix (e.g., "openai:gpt-4" → "gpt-4").
+        # Strip provider prefix (e.g., "openai:gpt-4" -> "gpt-4").
         model_name = model.split(":", 1)[-1] if ":" in model else model
         return detect_tier(model_name)
     return None
@@ -951,8 +950,6 @@ def create_agent(
     # Apply tier-aware tool adaptation when requested.
     resolved_tier = _resolve_model_tier(model, model_tier)
     if resolved_tier is not None:
-        from langchain_core.tools.tier import get_tier_adapted_tools
-
         tools = [
             *get_tier_adapted_tools(
                 [t for t in tools if isinstance(t, BaseTool)], resolved_tier

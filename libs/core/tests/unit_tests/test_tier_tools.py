@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from langchain_core.tools import tool
@@ -9,12 +11,10 @@ from langchain_core.tools.tier import (
     ModelTier,
     TierRouter,
     _resolve_tier_description,
-    _resolve_tier_schema,
     detect_tier,
     get_tier_adapted_tools,
     to_native_tool,
 )
-
 
 # ---------------------------------------------------------------------------
 # detect_tier — 4-tier scheme with size extraction
@@ -78,9 +78,12 @@ def test_tool_decorator_stores_tier_fields() -> None:
     )
     def file_read(path: str, encoding: str = "utf-8") -> str:
         """Read file contents."""
-        return open(path, encoding=encoding).read()  # noqa: SIM115
+        return Path(path).open(encoding=encoding).read()
 
-    assert file_read.tier_descriptions == {"small": "Short desc", "xlarge": "Long description"}
+    assert file_read.tier_descriptions == {
+        "small": "Short desc",
+        "xlarge": "Long description",
+    }
     assert file_read.tier_params == {"small": ["path"], "xlarge": ["path", "encoding"]}
     assert file_read.category == "filesystem"
 
@@ -168,7 +171,6 @@ def test_adapted_tools_filters_schema_params() -> None:
     @tool(tier_params={"small": ["path"], "xlarge": ["path", "encoding"]})
     def file_read(path: str, encoding: str = "utf-8") -> str:
         """Read a file."""
-        ...
 
     [adapted] = get_tier_adapted_tools([file_read], "small")
     assert adapted.args_schema is not None
@@ -181,7 +183,6 @@ def test_adapted_tools_xlarge_keeps_all_params() -> None:
     @tool(tier_params={"small": ["path"], "xlarge": ["path", "encoding"]})
     def file_read(path: str, encoding: str = "utf-8") -> str:
         """Read a file."""
-        ...
 
     [adapted] = get_tier_adapted_tools([file_read], "xlarge")
     assert adapted is file_read  # no schema change → same object
@@ -192,32 +193,27 @@ def test_adapted_tools_xlarge_keeps_all_params() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_tools() -> list:
     @tool(tier_descriptions={"small": "Read file", "xlarge": "Read file with options"})
     def file_read(path: str) -> str:
         """Read file with options."""
-        ...
 
     @tool
     def web_search(query: str) -> str:
         """Search the web for information."""
-        ...
 
     @tool
     def send_email(to: str, body: str) -> str:
         """Send an email to a recipient."""
-        ...
 
     @tool
     def list_files(directory: str) -> str:
         """List all files in a directory."""
-        ...
 
     @tool
     def delete_file(path: str) -> str:
         """Delete a file from disk."""
-        ...
 
     return [file_read, web_search, send_email, list_files, delete_file]
 
@@ -267,7 +263,6 @@ def test_to_native_tool_structure() -> None:
     @tool(tier_descriptions={"small": "Short", "xlarge": "Full description"})
     def my_tool(path: str, encoding: str = "utf-8") -> str:
         """Full description."""
-        ...
 
     native = to_native_tool(my_tool, "xlarge")
     assert native["type"] == "function"
@@ -283,7 +278,6 @@ def test_to_native_tool_uses_tier_description() -> None:
     @tool(tier_descriptions={"small": "Short desc", "xlarge": "Full description"})
     def my_tool(x: str) -> str:
         """Full description."""
-        ...
 
     native = to_native_tool(my_tool, "small")
     assert native["function"]["description"] == "Short desc"
@@ -293,7 +287,6 @@ def test_to_native_tool_small_hides_parameters() -> None:
     @tool
     def my_tool(path: str, encoding: str = "utf-8") -> str:
         """Read a file."""
-        ...
 
     native = to_native_tool(my_tool, "small")
     # Small tier: show_parameters=False → empty properties
@@ -305,7 +298,6 @@ def test_to_native_tool_truncates_long_description() -> None:
     @tool(tier_descriptions={"small": long_desc})
     def my_tool(x: str) -> str:
         """Default."""
-        ...
 
     native = to_native_tool(my_tool, "small")
     # small tier max_chars=60
