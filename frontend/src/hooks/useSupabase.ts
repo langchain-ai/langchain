@@ -33,7 +33,7 @@ export function useSupabase<T>({
   useEffect(() => {
     if (!isConfigured) {
       setLoading(false)
-      setError('Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local')
+      setError(null)
       return
     }
 

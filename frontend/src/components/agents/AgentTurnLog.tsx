@@ -80,7 +80,7 @@ export function AgentTurnLog() {
       {loading ? (
         <Spinner />
       ) : error ? (
-        <p className="text-sm text-[var(--color-text-muted)]">{error}</p>
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       ) : (
         <Table columns={columns} data={data} />
       )}
