@@ -903,6 +903,26 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
 
+    use_batch_api: bool = False
+    """If ``True``, :meth:`batch` and :meth:`abatch` will use OpenAI's Batch API
+    (``/v1/batches``) instead of making parallel individual requests. This provides
+    a **50% cost discount** but has up to a 24-hour completion window.
+
+    Only supported with the Chat Completions endpoint — not compatible with the
+    Responses API (``use_responses_api=True``).
+
+    When enabled, :meth:`batch` becomes a blocking call that polls until the
+    batch completes or the configured timeout is reached. For non-blocking usage,
+    use :meth:`batch_api_submit` and :meth:`batch_api_retrieve` directly.
+
+    Polling behavior can be configured via the ``configurable`` dict::
+
+        model.batch(inputs, config={"configurable": {
+            "batch_poll_interval": 10,   # initial poll interval in seconds
+            "batch_max_wait": 3600,      # max wait time in seconds
+        }})
+    """
+
     output_version: str | None = Field(
         default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
@@ -2346,6 +2366,418 @@ class BaseChatOpenAI(BaseChatModel):
         return ChatGenerationChunk(
             message=message, generation_info=chat_result.llm_output
         )
+
+    # ------------------------------------------------------------------
+    # OpenAI Batch API integration
+    # ------------------------------------------------------------------
+
+    def _validate_batch_api_compatible(self) -> None:
+        """Raise if the current config is incompatible with the Batch API."""
+        if self.use_responses_api:
+            msg = (
+                "Batch API does not support the Responses API. "
+                "Set use_responses_api=False or use_batch_api=False."
+            )
+            raise ValueError(msg)
+
+    def _build_batch_payloads(
+        self,
+        inputs: list[LanguageModelInput],
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]:
+        """Build request payloads for each input, suitable for batch submission."""
+        self._ensure_sync_client_available()
+        payloads = []
+        for inp in inputs:
+            messages = self._convert_input(inp).to_messages()
+            payload = self._get_request_payload(messages, **kwargs)
+            payload.pop("stream", None)
+            payloads.append(payload)
+        return payloads
+
+    def batch(
+        self,
+        inputs: list[LanguageModelInput],
+        config: Any | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any,
+    ) -> list[Any]:
+        """Run the model on a list of inputs.
+
+        When ``use_batch_api=True``, submits all inputs as a single OpenAI Batch
+        API request for 50% cost savings. This blocks until the batch completes.
+
+        Polling can be configured via ``config["configurable"]``::
+
+            model.batch(inputs, config={"configurable": {
+                "batch_poll_interval": 10,
+                "batch_max_wait": 3600,
+            }})
+
+        Args:
+            inputs: List of model inputs (strings, message lists, or PromptValues).
+            config: Optional RunnableConfig or list of configs.
+            return_exceptions: If True, return exceptions instead of raising.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            List of model outputs, one per input.
+        """
+        if not self.use_batch_api:
+            return super().batch(
+                inputs,
+                config,
+                return_exceptions=return_exceptions,
+                **kwargs,
+            )
+
+        self._validate_batch_api_compatible()
+
+        from langchain_openai.chat_models._batch_api import (
+            BatchResult,
+            build_batch_requests,
+            create_batch_jsonl,
+            poll_batch_status,
+            retrieve_batch_results,
+            upload_and_submit_batch,
+        )
+
+        configurable = {}
+        if isinstance(config, dict):
+            configurable = config.get("configurable", {})
+        elif isinstance(config, list) and config:
+            configurable = (config[0] or {}).get("configurable", {})
+
+        poll_interval = configurable.get("batch_poll_interval", 10.0)
+        max_wait = configurable.get("batch_max_wait", None)
+
+        payloads = self._build_batch_payloads(inputs, **kwargs)
+        requests = build_batch_requests(payloads)
+        jsonl = create_batch_jsonl(requests)
+
+        batch_id = upload_and_submit_batch(self.root_client, jsonl)
+
+        poll_batch_status(
+            self.root_client,
+            batch_id,
+            poll_interval=poll_interval,
+            max_wait=max_wait,
+        )
+
+        result = retrieve_batch_results(self.root_client, batch_id)
+        return self._batch_result_to_outputs(
+            result, requests, return_exceptions=return_exceptions
+        )
+
+    async def abatch(
+        self,
+        inputs: list[LanguageModelInput],
+        config: Any | None = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Any,
+    ) -> list[Any]:
+        """Async run the model on a list of inputs.
+
+        When ``use_batch_api=True``, submits all inputs as a single OpenAI Batch
+        API request for 50% cost savings.
+
+        Args:
+            inputs: List of model inputs.
+            config: Optional RunnableConfig or list of configs.
+            return_exceptions: If True, return exceptions instead of raising.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            List of model outputs, one per input.
+        """
+        if not self.use_batch_api:
+            return await super().abatch(
+                inputs,
+                config,
+                return_exceptions=return_exceptions,
+                **kwargs,
+            )
+
+        self._validate_batch_api_compatible()
+
+        from langchain_openai.chat_models._batch_api import (
+            BatchResult,
+            async_poll_batch_status,
+            async_retrieve_batch_results,
+            async_upload_and_submit_batch,
+            build_batch_requests,
+            create_batch_jsonl,
+        )
+
+        configurable = {}
+        if isinstance(config, dict):
+            configurable = config.get("configurable", {})
+        elif isinstance(config, list) and config:
+            configurable = (config[0] or {}).get("configurable", {})
+
+        poll_interval = configurable.get("batch_poll_interval", 10.0)
+        max_wait = configurable.get("batch_max_wait", None)
+
+        payloads = self._build_batch_payloads(inputs, **kwargs)
+        requests = build_batch_requests(payloads)
+        jsonl = create_batch_jsonl(requests)
+
+        batch_id = await async_upload_and_submit_batch(
+            self.root_async_client, jsonl
+        )
+
+        await async_poll_batch_status(
+            self.root_async_client,
+            batch_id,
+            poll_interval=poll_interval,
+            max_wait=max_wait,
+        )
+
+        result = await async_retrieve_batch_results(
+            self.root_async_client, batch_id
+        )
+        return self._batch_result_to_outputs(
+            result, requests, return_exceptions=return_exceptions
+        )
+
+    def _batch_result_to_outputs(
+        self,
+        result: Any,
+        requests: list[Any],
+        *,
+        return_exceptions: bool = False,
+    ) -> list[Any]:
+        """Map batch results back to outputs in input order."""
+        outputs: list[Any] = []
+        for req in requests:
+            cid = req.custom_id
+            if result.results and cid in result.results:
+                response_body = result.results[cid]
+                if isinstance(response_body, dict) and "choices" in response_body:
+                    try:
+                        chat_result = self._create_chat_result(response_body)
+                        outputs.append(chat_result.generations[0].message)
+                    except Exception as e:
+                        if return_exceptions:
+                            outputs.append(e)
+                        else:
+                            raise
+                elif isinstance(response_body, dict) and "error" in response_body:
+                    err = ValueError(
+                        f"Batch request {cid} failed: "
+                        f"{response_body['error']}"
+                    )
+                    if return_exceptions:
+                        outputs.append(err)
+                    else:
+                        raise err
+                else:
+                    err = ValueError(
+                        f"Unexpected response for {cid}: {response_body}"
+                    )
+                    if return_exceptions:
+                        outputs.append(err)
+                    else:
+                        raise err
+            elif result.errors and cid in result.errors:
+                err = ValueError(
+                    f"Batch request {cid} errored: {result.errors[cid]}"
+                )
+                if return_exceptions:
+                    outputs.append(err)
+                else:
+                    raise err
+            else:
+                err = ValueError(
+                    f"No result found for batch request {cid}"
+                )
+                if return_exceptions:
+                    outputs.append(err)
+                else:
+                    raise err
+        return outputs
+
+    def batch_api_submit(
+        self,
+        inputs: list[LanguageModelInput],
+        *,
+        metadata: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Submit inputs to OpenAI Batch API without waiting for completion.
+
+        Use this for fire-and-forget workflows. Pair with
+        :meth:`batch_api_status` and :meth:`batch_api_retrieve` to get results
+        later.
+
+        Example::
+
+            model = ChatOpenAI(model="gpt-4o-mini")
+            batch_id = model.batch_api_submit([
+                [HumanMessage("Question 1")],
+                [HumanMessage("Question 2")],
+            ])
+            # ... later ...
+            status = model.batch_api_status(batch_id)
+            if status.status == "completed":
+                results = model.batch_api_retrieve(batch_id)
+
+        Args:
+            inputs: List of model inputs (strings, message lists, or PromptValues).
+            metadata: Optional metadata key-value pairs attached to the batch.
+            **kwargs: Additional keyword arguments passed to payload construction.
+
+        Returns:
+            The batch ID string for later retrieval.
+        """
+        self._validate_batch_api_compatible()
+
+        from langchain_openai.chat_models._batch_api import (
+            build_batch_requests,
+            create_batch_jsonl,
+            upload_and_submit_batch,
+        )
+
+        payloads = self._build_batch_payloads(inputs, **kwargs)
+        requests = build_batch_requests(payloads)
+        jsonl = create_batch_jsonl(requests)
+        return upload_and_submit_batch(
+            self.root_client, jsonl, metadata=metadata
+        )
+
+    async def abatch_api_submit(
+        self,
+        inputs: list[LanguageModelInput],
+        *,
+        metadata: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async submit inputs to OpenAI Batch API without waiting.
+
+        Args:
+            inputs: List of model inputs.
+            metadata: Optional metadata key-value pairs attached to the batch.
+            **kwargs: Additional keyword arguments passed to payload construction.
+
+        Returns:
+            The batch ID string for later retrieval.
+        """
+        self._validate_batch_api_compatible()
+
+        from langchain_openai.chat_models._batch_api import (
+            async_upload_and_submit_batch,
+            build_batch_requests,
+            create_batch_jsonl,
+        )
+
+        payloads = self._build_batch_payloads(inputs, **kwargs)
+        requests = build_batch_requests(payloads)
+        jsonl = create_batch_jsonl(requests)
+        return await async_upload_and_submit_batch(
+            self.root_async_client, jsonl, metadata=metadata
+        )
+
+    def batch_api_status(self, batch_id: str) -> Any:
+        """Check the status of a submitted batch.
+
+        Args:
+            batch_id: The batch ID returned by :meth:`batch_api_submit`.
+
+        Returns:
+            A :class:`~langchain_openai.chat_models._batch_api.BatchResult`
+            with current status and progress counts.
+        """
+        self._ensure_sync_client_available()
+        from langchain_openai.chat_models._batch_api import _parse_batch_to_result
+
+        batch = self.root_client.batches.retrieve(batch_id)
+        return _parse_batch_to_result(batch)
+
+    def batch_api_retrieve(self, batch_id: str) -> list[Any]:
+        """Retrieve results for a completed batch.
+
+        Args:
+            batch_id: The batch ID returned by :meth:`batch_api_submit`.
+
+        Returns:
+            List of ``AIMessage`` outputs in submission order.
+
+        Raises:
+            ValueError: If the batch has not completed or failed.
+        """
+        self._ensure_sync_client_available()
+        from langchain_openai.chat_models._batch_api import retrieve_batch_results
+
+        result = retrieve_batch_results(self.root_client, batch_id)
+
+        if not result.results:
+            return []
+
+        outputs = []
+        for cid in sorted(result.results.keys()):
+            response_body = result.results[cid]
+            if isinstance(response_body, dict) and "choices" in response_body:
+                chat_result = self._create_chat_result(response_body)
+                outputs.append(chat_result.generations[0].message)
+            else:
+                outputs.append(response_body)
+        return outputs
+
+    async def abatch_api_retrieve(self, batch_id: str) -> list[Any]:
+        """Async retrieve results for a completed batch.
+
+        Args:
+            batch_id: The batch ID returned by :meth:`abatch_api_submit`.
+
+        Returns:
+            List of ``AIMessage`` outputs in submission order.
+
+        Raises:
+            ValueError: If the batch has not completed or failed.
+        """
+        from langchain_openai.chat_models._batch_api import (
+            async_retrieve_batch_results,
+        )
+
+        result = await async_retrieve_batch_results(
+            self.root_async_client, batch_id
+        )
+
+        if not result.results:
+            return []
+
+        outputs = []
+        for cid in sorted(result.results.keys()):
+            response_body = result.results[cid]
+            if isinstance(response_body, dict) and "choices" in response_body:
+                chat_result = self._create_chat_result(response_body)
+                outputs.append(chat_result.generations[0].message)
+            else:
+                outputs.append(response_body)
+        return outputs
+
+    def batch_api_cancel(self, batch_id: str) -> None:
+        """Cancel an in-progress batch.
+
+        Args:
+            batch_id: The batch ID to cancel.
+        """
+        self._ensure_sync_client_available()
+        from langchain_openai.chat_models._batch_api import cancel_batch
+
+        cancel_batch(self.root_client, batch_id)
+
+    async def abatch_api_cancel(self, batch_id: str) -> None:
+        """Async cancel an in-progress batch.
+
+        Args:
+            batch_id: The batch ID to cancel.
+        """
+        from langchain_openai.chat_models._batch_api import async_cancel_batch
+
+        await async_cancel_batch(self.root_async_client, batch_id)
 
 
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
