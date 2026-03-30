@@ -507,7 +507,8 @@ def _render_content_blocks(content: list[str | dict]) -> str:
     Args:
         content: A list of content blocks, where each block is either a string
             or a dict with a `type` key (e.g. `{"type": "text", "text": "..."}`).
-            Non-text block types are rendered as `[type]` placeholders.
+            Multimodal block types (image, audio, video, etc.) are rendered with
+            relevant metadata. Unknown block types fall back to `[type]` placeholders.
 
     Returns:
         A human-readable string representation of the content blocks.
@@ -518,12 +519,51 @@ def _render_content_blocks(content: list[str | dict]) -> str:
         if isinstance(block, str):
             parts.append(block)
         elif isinstance(block, dict):
-            block_type = block.get("type", "")
-            if block_type == "text":
-                parts.append(str(block.get("text", "")))
-            else:
-                parts.append(f"[{block_type}]")
+            parts.append(_render_block(block))
     return "\n".join(parts)
+
+
+def _render_block(block: dict) -> str:
+    """Render a single content block dict as a human-readable string.
+
+    Args:
+        block: A content block dict with a `type` key.
+
+    Returns:
+        A human-readable string for the block.
+
+    """
+    block_type = block.get("type", "")
+
+    if block_type in ("text", "text-plain"):
+        return str(block.get("text", ""))
+
+    if block_type == "reasoning":
+        text = block.get("reasoning", "")
+        return f"[Reasoning]: {text}" if text else "[Reasoning]"
+
+    if block_type == "image_url":
+        # OpenAI-style legacy format: {"type": "image_url", "image_url": {"url": "..."}}
+        image_url_data = block.get("image_url", {})
+        if isinstance(image_url_data, dict) and (url := image_url_data.get("url")):
+            detail = image_url_data.get("detail")
+            suffix = f", detail={detail}" if detail else ""
+            return f"[Image: {url}{suffix}]"
+        return "[image_url]"
+
+    if block_type in ("image", "video", "audio", "file"):
+        label = block_type.title()
+        if url := block.get("url"):
+            return f"[{label}: {url}]"
+        if file_id := block.get("file_id"):
+            return f"[{label}: file_id={file_id}]"
+        if base64_data := block.get("base64"):
+            mime = block.get("mime_type", "")
+            suffix = f", {mime}" if mime else ""
+            return f"[{label}: base64 ({len(base64_data)} bytes{suffix})]"
+        return f"[{label}]"
+
+    return f"[{block_type}]"
 
 
 def get_msg_title_repr(title: str, *, bold: bool = False) -> str:

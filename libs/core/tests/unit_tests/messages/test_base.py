@@ -1,6 +1,7 @@
 """Tests for BaseMessage.pretty_repr()."""
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages.base import _render_block
 
 
 def test_pretty_repr_string_content() -> None:
@@ -37,7 +38,7 @@ def test_pretty_repr_list_with_text_blocks() -> None:
 
 
 def test_pretty_repr_list_with_non_text_blocks() -> None:
-    """Non-text block types render as [type] placeholders."""
+    """image_url blocks render with their URL, not as a raw dict."""
     msg = AIMessage(
         content=[
             {"type": "text", "text": "Here is an image:"},
@@ -46,7 +47,7 @@ def test_pretty_repr_list_with_non_text_blocks() -> None:
     )
     result = msg.pretty_repr()
     assert "Here is an image:" in result
-    assert "[image_url]" in result
+    assert "[Image: http://example.com/img.png]" in result
 
 
 def test_pretty_repr_mixed_list_content() -> None:
@@ -60,7 +61,7 @@ def test_pretty_repr_mixed_list_content() -> None:
     )
     result = msg.pretty_repr()
     assert "Look at this:" in result
-    assert "[image_url]" in result
+    assert "[Image: http://example.com/img.png]" in result
     assert "What do you see?" in result
 
 
@@ -103,3 +104,103 @@ def test_pretty_repr_unknown_block_type() -> None:
     msg = AIMessage(content=[{"type": "tool_use", "id": "123", "name": "search"}])
     result = msg.pretty_repr()
     assert "[tool_use]" in result
+
+
+# --- _render_block unit tests for multimodal block types ---
+
+
+def test_render_block_image_url_with_url() -> None:
+    """image_url block renders URL."""
+    result = _render_block(
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}}
+    )
+    assert result == "[Image: https://example.com/img.png]"
+
+
+def test_render_block_image_url_with_detail() -> None:
+    """image_url block includes detail when present."""
+    result = _render_block(
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/img.png", "detail": "high"},
+        }
+    )
+    assert result == "[Image: https://example.com/img.png, detail=high]"
+
+
+def test_render_block_image_url_missing_url() -> None:
+    """image_url block without url falls back to placeholder."""
+    result = _render_block({"type": "image_url", "image_url": {}})
+    assert result == "[image_url]"
+
+
+def test_render_block_image_with_url() -> None:
+    """Image block with url renders URL."""
+    result = _render_block({"type": "image", "url": "https://example.com/photo.jpg"})
+    assert result == "[Image: https://example.com/photo.jpg]"
+
+
+def test_render_block_image_with_file_id() -> None:
+    """Image block with file_id renders file_id."""
+    result = _render_block({"type": "image", "file_id": "file-abc123"})
+    assert result == "[Image: file_id=file-abc123]"
+
+
+def test_render_block_image_with_base64() -> None:
+    """Image block with base64 shows byte count and mime type."""
+    result = _render_block(
+        {"type": "image", "base64": "abc123", "mime_type": "image/jpeg"}
+    )
+    assert result == "[Image: base64 (6 bytes, image/jpeg)]"
+
+
+def test_render_block_image_with_base64_no_mime() -> None:
+    """Image block with base64 but no mime_type omits the mime suffix."""
+    result = _render_block({"type": "image", "base64": "abc123"})
+    assert result == "[Image: base64 (6 bytes)]"
+
+
+def test_render_block_image_no_source() -> None:
+    """Image block with no url/file_id/base64 renders as [Image]."""
+    result = _render_block({"type": "image"})
+    assert result == "[Image]"
+
+
+def test_render_block_audio() -> None:
+    """Audio block renders with URL."""
+    result = _render_block(
+        {"type": "audio", "url": "https://example.com/audio.mp3"}
+    )
+    assert result == "[Audio: https://example.com/audio.mp3]"
+
+
+def test_render_block_video() -> None:
+    """Video block renders with URL."""
+    result = _render_block(
+        {"type": "video", "url": "https://example.com/video.mp4"}
+    )
+    assert result == "[Video: https://example.com/video.mp4]"
+
+
+def test_render_block_file_with_file_id() -> None:
+    """File block renders with file_id."""
+    result = _render_block({"type": "file", "file_id": "file-xyz"})
+    assert result == "[File: file_id=file-xyz]"
+
+
+def test_render_block_reasoning() -> None:
+    """Reasoning block renders its text prefixed with [Reasoning]:."""
+    result = _render_block({"type": "reasoning", "reasoning": "Let me think..."})
+    assert result == "[Reasoning]: Let me think..."
+
+
+def test_render_block_reasoning_empty() -> None:
+    """Reasoning block with no text renders as [Reasoning]."""
+    result = _render_block({"type": "reasoning"})
+    assert result == "[Reasoning]"
+
+
+def test_render_block_text_plain() -> None:
+    """text-plain block renders its text content."""
+    result = _render_block({"type": "text-plain", "text": "Plain text content"})
+    assert result == "Plain text content"
