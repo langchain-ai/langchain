@@ -184,6 +184,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> Output:
         for attempt in self._sync_retrying(reraise=True):
+            if attempt.retry_state.attempt_number > 1:
+                run_manager.on_retry(attempt.retry_state)
             with attempt:
                 result = super().invoke(
                     input_,
@@ -208,6 +210,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> Output:
         async for attempt in self._async_retrying(reraise=True):
+            if attempt.retry_state.attempt_number > 1:
+                await run_manager.on_retry(attempt.retry_state)
             with attempt:
                 result = await super().ainvoke(
                     input_,
@@ -237,12 +241,15 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         result = not_set
         try:
             for attempt in self._sync_retrying():
+                # Determine which original indices remain.
+                remaining_indices = [
+                    i for i in range(len(inputs)) if i not in results_map
+                ]
+                if attempt.retry_state.attempt_number > 1:
+                    for i in remaining_indices:
+                        run_manager[i].on_retry(attempt.retry_state)
                 with attempt:
                     # Retry for inputs that have not yet succeeded
-                    # Determine which original indices remain.
-                    remaining_indices = [
-                        i for i in range(len(inputs)) if i not in results_map
-                    ]
                     if not remaining_indices:
                         break
                     pending_inputs = [inputs[i] for i in remaining_indices]
@@ -313,12 +320,15 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         result = not_set
         try:
             async for attempt in self._async_retrying():
+                # Determine which original indices remain.
+                remaining_indices = [
+                    i for i in range(len(inputs)) if i not in results_map
+                ]
+                if attempt.retry_state.attempt_number > 1:
+                    for i in remaining_indices:
+                        await run_manager[i].on_retry(attempt.retry_state)
                 with attempt:
                     # Retry for inputs that have not yet succeeded
-                    # Determine which original indices remain.
-                    remaining_indices = [
-                        i for i in range(len(inputs)) if i not in results_map
-                    ]
                     if not remaining_indices:
                         break
                     pending_inputs = [inputs[i] for i in remaining_indices]

@@ -4044,6 +4044,94 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def test_retry_on_retry_callback() -> None:
+    """Test that on_retry callback fires on each retry attempt."""
+    retry_attempts: list[int] = []
+
+    class RetryHandler(BaseCallbackHandler):
+        def on_retry(self, retry_state: Any, **kwargs: Any) -> Any:  # noqa: ARG002
+            retry_attempts.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    handler = RetryHandler()
+    runnable = RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    )
+    result = runnable.invoke(1, config={"callbacks": [handler]})
+    assert result == 1
+    # on_retry should fire for attempt 2 and attempt 3
+    assert retry_attempts == [2, 3]
+
+
+async def test_async_retry_on_retry_callback() -> None:
+    """Test that on_retry callback fires on each retry attempt (async)."""
+    retry_attempts: list[int] = []
+
+    class RetryHandler(BaseCallbackHandler):
+        async def on_retry(self, retry_state: Any, **kwargs: Any) -> Any:  # noqa: ARG002
+            retry_attempts.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    handler = RetryHandler()
+    runnable = RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    )
+    result = await runnable.ainvoke(1, config={"callbacks": [handler]})
+    assert result == 1
+    assert retry_attempts == [2, 3]
+
+
+def test_retry_batch_on_retry_callback() -> None:
+    """Test that on_retry callback fires during batch retries."""
+    retry_attempts: list[int] = []
+
+    class RetryHandler(BaseCallbackHandler):
+        def on_retry(self, retry_state: Any, **kwargs: Any) -> Any:  # noqa: ARG002
+            retry_attempts.append(retry_state.attempt_number)
+
+    first_fail: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:
+        if x in first_fail:
+            first_fail.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    handler = RetryHandler()
+    runnable = RunnableLambda(sometimes_fail).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=3,
+        wait_exponential_jitter=False,
+    )
+    results = runnable.batch([0, 1, 2], config={"callbacks": [handler]})
+    assert results == [0, 1, 2]
+    # on_retry should fire for the failed input on attempt 2
+    assert retry_attempts == [2]
+
+
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
