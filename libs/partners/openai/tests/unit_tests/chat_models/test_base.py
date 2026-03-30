@@ -3638,3 +3638,90 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_logprobs_with_responses_api_parameter_handling() -> None:
+    """Test that the `logprobs` parameter is correctly handled with the response api."""
+    from openai.types.responses.response_create_params import (
+        ResponseCreateParamsNonStreaming,
+    )
+
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        logprobs=True,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(messages)
+    allowed_keys = set(ResponseCreateParamsNonStreaming.__annotations__.keys())
+    payload_keys = set(payload.keys())
+    assert payload_keys.issubset(allowed_keys)
+    assert "include" in payload
+    assert "message.output_text.logprobs" in payload["include"]
+
+
+def test___construct_lc_result_from_responses_api_logprobs() -> None:
+    """Test that the logprobs are correctly parsed from the response api."""
+    from openai.types.responses.response_output_text import Logprob
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Hello, world!",
+                        annotations=[],
+                        logprobs=[
+                            Logprob(
+                                token="Hello",  # noqa: S106
+                                bytes=[72, 101, 108, 108, 111],
+                                logprob=8e-06,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token=",",  # noqa: S106
+                                bytes=[44],
+                                logprob=3.8e-05,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token="world",  # noqa: S106
+                                bytes=[32, 119, 111, 114, 108, 100],
+                                logprob=-5.3e-05,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token="!",  # noqa: S106
+                                bytes=[33],
+                                logprob=-8e-06,
+                                top_logprobs=[],
+                            ),
+                        ],
+                    ),
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    chat_result = _construct_lc_result_from_responses_api(response)
+    assert "logprobs" in chat_result.generations[0].message.response_metadata
+
+    metadata = chat_result.generations[0].message.response_metadata
+    assert "content" in metadata["logprobs"]
+    assert len(metadata["logprobs"]["content"]) == 4
+    assert metadata["logprobs"]["content"][0]["token"] == "Hello"  # noqa: S105
+    assert metadata["logprobs"]["content"][0]["logprob"] == 8e-06

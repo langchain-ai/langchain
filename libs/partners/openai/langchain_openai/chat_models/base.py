@@ -4071,6 +4071,13 @@ def _construct_responses_api_payload(
         else:
             payload["text"] = {"verbosity": verbosity}
 
+    return_logprobs = payload.pop("logprobs", None)
+    if return_logprobs:
+        if "include" in payload:
+            payload["include"].append("message.output_text.logprobs")
+        else:
+            payload["include"] = ["message.output_text.logprobs"]
+
     return payload
 
 
@@ -4486,6 +4493,22 @@ def _construct_lc_result_from_responses_api(
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
+                    if hasattr(content, "logprobs") and content.logprobs:
+                        if "logprobs" in response_metadata:
+                            # only keep the latest message logprobs
+                            response_metadata["logprobs"]["content"] = [
+                                logprob.model_dump() for logprob in content.logprobs
+                            ]
+                            response_metadata["logprobs"]["refusal"] = (
+                                response_metadata["logprobs"].get("refusal", None)
+                            )
+                        else:
+                            response_metadata["logprobs"] = {
+                                "content": [
+                                    logprob.model_dump() for logprob in content.logprobs
+                                ],
+                                "refusal": None,
+                            }
                 if content.type == "refusal":
                     refusal_block = {
                         "type": "refusal",
