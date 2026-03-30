@@ -1001,11 +1001,11 @@ def _wrap_messages_for_sdk(
         return message_dicts
 
     role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.UserMessage,  # type: ignore[dict-item]
-        "system": components.SystemMessage,  # type: ignore[dict-item]
-        "assistant": components.AssistantMessage,  # type: ignore[dict-item]
-        "tool": components.ToolResponseMessage,  # type: ignore[dict-item]
-        "developer": components.DeveloperMessage,  # type: ignore[dict-item]
+        "user": components.ChatUserMessage,
+        "system": components.ChatSystemMessage,
+        "assistant": components.ChatAssistantMessage,
+        "tool": components.ChatToolMessage,
+        "developer": components.ChatDeveloperMessage,
     }
 
     wrapped: list[Any] = []
