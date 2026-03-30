@@ -2418,6 +2418,18 @@ async def post_init(application: Application) -> None:
     await application.bot.set_my_commands(commands)
     logger.info("Bot commands registered with Telegram")
 
+    # Guard: make sure TELEGRAM_BOT_TOKEN belongs to the SEO bot, not the scraper bot.
+    bot_info = await application.bot.get_me()
+    bot_username = (bot_info.username or "").lower()
+    if "scraper" in bot_username:
+        msg = (
+            f"TELEGRAM_BOT_TOKEN belongs to @{bot_info.username} (scraper bot). "
+            "The SEO bot needs its own token. Set SCRAPER_TELEGRAM_BOT_TOKEN for "
+            "the scraper service and use a separate token for TELEGRAM_BOT_TOKEN."
+        )
+        logger.error(msg)
+        raise SystemExit(msg)
+
 
 def main() -> None:
     """Start the Telegram bot with long polling."""
