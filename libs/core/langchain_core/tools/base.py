@@ -530,6 +530,65 @@ class ChildTool(BaseTool):
         ```
     """
 
+    tier_descriptions: dict[str, str] | None = None
+    """Optional tier-specific descriptions keyed by model tier name.
+
+    Maps model capability tier names (e.g. `'small'`, `'medium'`, `'large'`) to
+    descriptions optimized for that tier. Shorter descriptions reduce token usage
+    for smaller models. Falls back to `description` when the requested tier is not
+    present.
+
+    !!! warning "Experimental"
+        This API is experimental and may change in future releases.
+
+    Example:
+        ```python
+        @tool(
+            tier_descriptions={
+                "small": "Read file",
+                "large": "Read file contents with line numbers, offset, and encoding control",
+            }
+        )
+        def file_read(path: str, encoding: str = "utf-8") -> str:
+            \"\"\"Read file contents with line numbers, offset, and encoding control.\"\"\"
+            ...
+        ```
+    """
+
+    tier_params: dict[str, list[str]] | None = None
+    """Optional tier-specific parameter subsets keyed by model tier name.
+
+    Maps model capability tier names to lists of parameter names to expose for that
+    tier. Smaller models see fewer parameters, reducing token cost and confusion.
+    Falls back to the full parameter set when the requested tier is not present.
+
+    !!! warning "Experimental"
+        This API is experimental and may change in future releases.
+
+    Example:
+        ```python
+        @tool(
+            tier_params={
+                "small": ["path"],
+                "large": ["path", "encoding", "line_numbers"],
+            }
+        )
+        def file_read(path: str, encoding: str = "utf-8", line_numbers: bool = False) -> str:
+            \"\"\"Read file contents.\"\"\"
+            ...
+        ```
+    """
+
+    category: str | None = None
+    """Optional semantic category for grouping related tools (e.g. `'filesystem'`, `'web'`).
+
+    Used by tier-aware routing to present related tools together, improving tool
+    discovery for smaller models.
+
+    !!! warning "Experimental"
+        This API is experimental and may change in future releases.
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool.
 

@@ -38,6 +38,11 @@ if TYPE_CHECKING:
     )
     from langchain_core.tools.simple import Tool
     from langchain_core.tools.structured import StructuredTool
+    from langchain_core.tools.tier import (
+        ModelTier,
+        detect_tier,
+        get_tier_adapted_tools,
+    )
 
 __all__ = (
     "FILTERED_ARGS",
@@ -46,6 +51,7 @@ __all__ = (
     "BaseToolkit",
     "InjectedToolArg",
     "InjectedToolCallId",
+    "ModelTier",
     "RetrieverInput",
     "SchemaAnnotationError",
     "StructuredTool",
@@ -56,6 +62,8 @@ __all__ = (
     "convert_runnable_to_tool",
     "create_retriever_tool",
     "create_schema_from_function",
+    "detect_tier",
+    "get_tier_adapted_tools",
     "render_text_description",
     "render_text_description_and_args",
     "tool",
@@ -81,6 +89,9 @@ _dynamic_imports = {
     "create_retriever_tool": "retriever",
     "Tool": "simple",
     "StructuredTool": "structured",
+    "ModelTier": "tier",
+    "detect_tier": "tier",
+    "get_tier_adapted_tools": "tier",
 }
 
 

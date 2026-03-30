@@ -143,6 +143,9 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
+        tier_descriptions: dict[str, str] | None = None,
+        tier_params: dict[str, list[str]] | None = None,
+        category: str | None = None,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -248,6 +251,9 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
+            tier_descriptions=tier_descriptions,
+            tier_params=tier_params,
+            category=category,
             **kwargs,
         )
 

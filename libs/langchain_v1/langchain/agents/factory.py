@@ -670,6 +670,26 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+def _resolve_model_tier(
+    model: str | BaseChatModel,
+    explicit_tier: str | None,
+) -> str | None:
+    """Return the effective tier string, auto-detecting from model name if needed.
+
+    Returns `None` when tier adaptation should be skipped (e.g., no tier info
+    is available and no explicit tier was given).
+    """
+    if explicit_tier is not None:
+        return explicit_tier
+    if isinstance(model, str):
+        from langchain_core.tools.tier import detect_tier
+
+        # Strip provider prefix (e.g., "openai:gpt-4" → "gpt-4").
+        model_name = model.split(":", 1)[-1] if ":" in model else model
+        return detect_tier(model_name)
+    return None
+
+
 def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
@@ -686,6 +706,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
+    model_tier: str | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -781,6 +802,27 @@ def create_agent(
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        model_tier: Optional model capability tier for adapting tool schemas.
+
+            When provided, `BaseTool` instances with `tier_descriptions` or
+            `tier_params` metadata will have their descriptions and schemas
+            adapted for the specified tier before the agent is built.
+
+            Accepted values: `'small'`, `'medium'`, `'large'`.
+
+            When `model` is a string and `model_tier` is `None`, the tier is
+            auto-detected from the model name via `detect_tier`.
+
+            !!! warning "Experimental"
+                This parameter is experimental and may change in future releases.
+
+            !!! example
+
+                ```python
+                create_agent("ollama:llama3.2:1b", tools=tools, model_tier="small")
+                # or let the tier be auto-detected:
+                create_agent("ollama:llama3.2:1b", tools=tools)
+                ```
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -905,6 +947,18 @@ def create_agent(
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
+
+    # Apply tier-aware tool adaptation when requested.
+    resolved_tier = _resolve_model_tier(model, model_tier)
+    if resolved_tier is not None:
+        from langchain_core.tools.tier import get_tier_adapted_tools
+
+        tools = [
+            *get_tier_adapted_tools(
+                [t for t in tools if isinstance(t, BaseTool)], resolved_tier
+            ),
+            *[t for t in tools if not isinstance(t, BaseTool)],
+        ]
 
     # Setup tools
     tool_node: ToolNode | None = None

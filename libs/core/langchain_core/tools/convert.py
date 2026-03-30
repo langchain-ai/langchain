@@ -24,6 +24,9 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    tier_descriptions: dict[str, str] | None = None,
+    tier_params: dict[str, list[str]] | None = None,
+    category: str | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -40,6 +43,9 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    tier_descriptions: dict[str, str] | None = None,
+    tier_params: dict[str, list[str]] | None = None,
+    category: str | None = None,
 ) -> BaseTool: ...
 
 
@@ -55,6 +61,9 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    tier_descriptions: dict[str, str] | None = None,
+    tier_params: dict[str, list[str]] | None = None,
+    category: str | None = None,
 ) -> BaseTool: ...
 
 
@@ -70,6 +79,9 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    tier_descriptions: dict[str, str] | None = None,
+    tier_params: dict[str, list[str]] | None = None,
+    category: str | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -85,6 +97,9 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    tier_descriptions: dict[str, str] | None = None,
+    tier_params: dict[str, list[str]] | None = None,
+    category: str | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
@@ -150,6 +165,28 @@ def tool(
 
                 For example, Anthropic-specific fields like `cache_control`,
                 `defer_loading`, or `input_examples`.
+        tier_descriptions: Optional tier-specific descriptions keyed by model tier name.
+
+            Maps model capability tiers (`'small'`, `'medium'`, `'large'`) to
+            descriptions optimized for that tier. Used with `get_tier_adapted_tools`
+            to reduce token usage for smaller models.
+
+            !!! warning "Experimental"
+                This parameter is experimental and may change in future releases.
+        tier_params: Optional tier-specific parameter subsets keyed by model tier name.
+
+            Maps model capability tiers to lists of parameter names to expose for that
+            tier. Used with `get_tier_adapted_tools` to simplify schemas for smaller
+            models.
+
+            !!! warning "Experimental"
+                This parameter is experimental and may change in future releases.
+        category: Optional semantic category for grouping related tools.
+
+            Used by tier-aware routing to improve tool discovery for smaller models.
+
+            !!! warning "Experimental"
+                This parameter is experimental and may change in future releases.
 
     Raises:
         ValueError: If too many positional arguments are provided (e.g. violating the
@@ -313,6 +350,9 @@ def tool(
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
                     extras=extras,
+                    tier_descriptions=tier_descriptions,
+                    tier_params=tier_params,
+                    category=category,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
