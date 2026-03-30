@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.openai import (
     convert_to_openai_data_block,
+    convert_to_openai_image_block,
 )
 from tests.unit_tests.language_models.chat_models.test_base import (
     _content_blocks_equal_ignore_id,
@@ -603,3 +604,55 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_openai_image_block_preserves_detail() -> None:
+    """detail field must survive the url and base64 conversion paths (GH #36297)."""
+    # URL image with detail at top level
+    block = {"url": "https://example.com/test.png", "detail": "high"}
+    result = convert_to_openai_image_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "high"},
+    }
+
+    # base64 image with detail at top level
+    block = {
+        "base64": "abc123==",
+        "mime_type": "image/jpeg",
+        "detail": "low",
+    }
+    result = convert_to_openai_image_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "data:image/jpeg;base64,abc123==", "detail": "low"},
+    }
+
+    # detail nested under extras
+    block = {"url": "https://example.com/test.png", "extras": {"detail": "auto"}}
+    result = convert_to_openai_image_block(block)
+    assert result["image_url"]["detail"] == "auto"
+
+    # No detail → key must be absent (not None)
+    block = {"url": "https://example.com/test.png"}
+    result = convert_to_openai_image_block(block)
+    assert "detail" not in result["image_url"]
+
+
+def test_convert_to_openai_data_block_image_preserves_detail() -> None:
+    """detail must flow through convert_to_openai_data_block for both APIs (GH #36297)."""
+    # Chat Completions API
+    block = {"type": "image", "url": "https://example.com/test.png", "detail": "high"}
+    result = convert_to_openai_data_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/test.png", "detail": "high"},
+    }
+
+    # Responses API — detail is top-level on the input_image dict
+    result_responses = convert_to_openai_data_block(block, api="responses")
+    assert result_responses == {
+        "type": "input_image",
+        "image_url": "https://example.com/test.png",
+        "detail": "high",
+    }
