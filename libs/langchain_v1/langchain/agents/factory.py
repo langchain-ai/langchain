@@ -399,8 +399,14 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
-def _resolve_schema_type_hints(schemas: set[type]) -> dict[type, dict[str, Any]]:
-    return {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
+    """Resolve state, input, and output schemas for the given schemas."""
+    schema_hints = {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+    return (
+        _resolve_schema(schema_hints, "StateSchema", None),
+        _resolve_schema(schema_hints, "InputSchema", "input"),
+        _resolve_schema(schema_hints, "OutputSchema", "output"),
+    )
 
 
 def _resolve_schema(
@@ -1014,11 +1020,8 @@ def create_agent(
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
-    state_schema_hints = _resolve_schema_type_hints(state_schemas)
 
-    resolved_state_schema = _resolve_schema(state_schema_hints, "StateSchema", None)
-    input_schema = _resolve_schema(state_schema_hints, "InputSchema", "input")
-    output_schema = _resolve_schema(state_schema_hints, "OutputSchema", "output")
+    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
     # create graph, add nodes
     graph: StateGraph[
