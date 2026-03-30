@@ -336,10 +336,47 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+
+        content = self.content
+        if isinstance(content, list):
+            formatted_content = []
+            for item in content:
+                if isinstance(item, str):
+                    formatted_content.append(item)
+                elif isinstance(item, dict):
+                    item_type = item.get("type")
+                    if item_type == "text":
+                        formatted_content.append(item.get("text", ""))
+                    elif item_type == "image_url":
+                        url = item.get("image_url", {}).get("url")
+                        formatted_content.append(f"Image: {url}")
+                    elif item_type == "image":
+                        url = item.get("url")
+                        if url:
+                            formatted_content.append(f"Image: {url}")
+                        else:
+                            formatted_content.append("Image (base64 data)")
+                    elif item_type == "video":
+                        url = item.get("url")
+                        formatted_content.append(f"Video: {url if url else 'base64 data'}")
+                    elif item_type == "audio":
+                        url = item.get("url")
+                        formatted_content.append(f"Audio: {url if url else 'base64 data'}")
+                    elif item_type == "file":
+                        url = item.get("url")
+                        formatted_content.append(f"File: {url if url else 'base64 data'}")
+                    elif item_type == "reasoning":
+                        reasoning = item.get("reasoning", "")
+                        formatted_content.append(f"Reasoning: {reasoning}")
+                    else:
+                        formatted_content.append(f"[{item_type}] content block")
+                else:
+                    formatted_content.append(str(item))
+            content = "\n".join(formatted_content)
+
+        return f"{title}\n\n{content}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
