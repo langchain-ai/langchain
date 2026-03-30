@@ -201,6 +201,18 @@ def main() -> None:
             BotCommand("help", "Show commands"),
         ])
 
+        # Guard: make sure SCRAPER_TELEGRAM_BOT_TOKEN belongs to the scraper bot.
+        bot_info = await application.bot.get_me()
+        bot_username = (bot_info.username or "").lower()
+        if "seo" in bot_username or "ralf" in bot_username:
+            msg = (
+                f"SCRAPER_TELEGRAM_BOT_TOKEN belongs to @{bot_info.username} "
+                "(SEO bot). The scraper bot needs its own token. Check your "
+                "environment variables."
+            )
+            logger.error(msg)
+            raise SystemExit(msg)
+
         # Schedule periodic batches
         if SCRAPE_INTERVAL_HOURS > 0 and TELEGRAM_OWNER_CHAT_ID:
             application.job_queue.run_repeating(
