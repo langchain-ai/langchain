@@ -336,10 +336,170 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+
+        # Format content based on type
+        content_str = self._format_content_for_pretty_repr(self.content, html=html)
+
+        return f"{title}\n\n{content_str}"
+
+    def _format_content_for_pretty_repr(
+        self,
+        content: str | list[str | dict],
+        html: bool = False,  # noqa: FBT001,FBT002
+        indent: int = 0,
+    ) -> str:
+        """Format message content for pretty representation.
+
+        Handles both string content and multimodal content (list of content blocks).
+
+        Args:
+            content: The message content (string or list of content blocks).
+            html: Whether to format with HTML tags.
+            indent: Current indentation level for nested content.
+
+        Returns:
+            Formatted content string.
+        """
+        if isinstance(content, str):
+            return content
+
+        if not isinstance(content, list):
+            return str(content)
+
+        # Handle list of content blocks
+        formatted_blocks: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                formatted_blocks.append(block)
+            elif isinstance(block, dict):
+                block_type = block.get("type", "unknown")
+                formatted_block = self._format_content_block(block, block_type, html)
+                formatted_blocks.append(formatted_block)
+            else:
+                formatted_blocks.append(str(block))
+
+        return "\n\n".join(formatted_blocks)
+
+    def _format_content_block(
+        self,
+        block: dict,
+        block_type: str,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
+        """Format a single content block for pretty representation.
+
+        Args:
+            block: The content block dictionary.
+            block_type: The type of the content block.
+            html: Whether to format with HTML tags.
+
+        Returns:
+            Formatted block string.
+        """
+        # Handle text blocks
+        if block_type == "text":
+            text = block.get("text", "")
+            if text:
+                return text
+            return "[Text block]"
+
+        # Handle reasoning blocks
+        if block_type == "reasoning":
+            reasoning = block.get("reasoning", "")
+            if reasoning:
+                return f"<thinking>\n{reasoning}\n</thinking>"
+            return "[Reasoning block]"
+
+        # Handle image blocks (v1 format)
+        if block_type == "image":
+            parts: list[str] = []
+            if "url" in block:
+                parts.append(f"URL: {block['url']}")
+            if "base64" in block:
+                parts.append("[Base64 data]")
+            if "file_id" in block:
+                parts.append(f"File ID: {block['file_id']}")
+            if "mime_type" in block:
+                parts.append(f"MIME type: {block['mime_type']}")
+            if parts:
+                return f"[Image: {', '.join(parts)}]"
+            return "[Image block]"
+
+        # Handle image_url blocks (OpenAI format)
+        if block_type == "image_url":
+            image_url = block.get("image_url", {})
+            if isinstance(image_url, dict) and "url" in image_url:
+                return f"[Image URL: {image_url['url']}]"
+            return "[Image URL block]"
+
+        # Handle audio blocks
+        if block_type == "audio":
+            parts = []
+            if "url" in block:
+                parts.append(f"URL: {block['url']}")
+            if "base64" in block:
+                parts.append("[Base64 data]")
+            if "file_id" in block:
+                parts.append(f"File ID: {block['file_id']}")
+            if "mime_type" in block:
+                parts.append(f"MIME type: {block['mime_type']}")
+            if parts:
+                return f"[Audio: {', '.join(parts)}]"
+            return "[Audio block]"
+
+        # Handle video blocks
+        if block_type == "video":
+            parts = []
+            if "url" in block:
+                parts.append(f"URL: {block['url']}")
+            if "base64" in block:
+                parts.append("[Base64 data]")
+            if "file_id" in block:
+                parts.append(f"File ID: {block['file_id']}")
+            if "mime_type" in block:
+                parts.append(f"MIME type: {block['mime_type']}")
+            if parts:
+                return f"[Video: {', '.join(parts)}]"
+            return "[Video block]"
+
+        # Handle file blocks
+        if block_type == "file":
+            parts = []
+            if "url" in block:
+                parts.append(f"URL: {block['url']}")
+            if "base64" in block:
+                parts.append("[Base64 data]")
+            if "file_id" in block:
+                parts.append(f"File ID: {block['file_id']}")
+            if "mime_type" in block:
+                parts.append(f"MIME type: {block['mime_type']}")
+            if parts:
+                return f"[File: {', '.join(parts)}]"
+            return "[File block]"
+
+        # Handle plaintext blocks
+        if block_type == "text-plain":
+            text = block.get("text", "")
+            if text:
+                return f"[Plain text: {text[:100]}{'...' if len(text) > 100 else ''}]"
+            return "[Plain text block]"
+
+        # Handle tool call blocks
+        if block_type == "tool_call":
+            name = block.get("name", "unknown")
+            args = block.get("args", {})
+            block_id = block.get("id", "N/A")
+            return f"[Tool Call: {name}(id={block_id})]\n  Args: {args}"
+
+        # Handle non_standard blocks
+        if block_type == "non_standard":
+            value = block.get("value", {})
+            return f"[Non-standard block: {value}]"
+
+        # Default: return a summary of the block
+        return f"[{block_type.capitalize()} block: {block}]"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
