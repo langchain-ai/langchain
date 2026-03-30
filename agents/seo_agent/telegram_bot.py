@@ -603,6 +603,7 @@ CRITICAL RULES:
 11. CONTENT DIVERSITY: Never write 2+ blog posts on the same topic in a row. Mix it up — if we just wrote about kitchens, the next post should be about bathrooms, room planning, bedrooms, or extensions. Check what was recently published before choosing the next topic.
 12. PRIVACY: Never include personal information (owner's name, email addresses, API keys, tokens, chat IDs, project IDs, or internal URLs) in any content that will be published publicly — blog posts, outreach emails, or any external-facing text. Refer to the owner as "the founder" in public content. You may mention website domains and service names.
 13. When listing existing content, NEVER dump the full file list. Summarize: "We have 31 posts covering kitchen planning, bathroom planning, room planning, etc." If the user specifically asks for the full list, then show it. Otherwise, keep it brief and focus on what's MISSING.
+14. READ BEFORE YOU ACT: For INFORMATIONAL questions about our data ("what keywords are we tracking?", "show me our prospects", "what have we published?", "what's our ranking for X?", "how many contacts do we have?"), use the `recall` action with a descriptive topic. The recall action searches our entire database — keywords, rankings, prospects, drafts, contacts, costs, schedule, and more. Do NOT use rank_report, keyword_research, discover_prospects, or other task actions just to look up stored data — those hit external APIs, cost money, and take longer. Only use task actions when the user explicitly asks to RUN something new (e.g. "run a rank report", "do keyword research", "find new prospects").
 
 OUTREACH STRATEGY (use this when discussing backlinks, outreach, or prospecting):
 - Kitchen/bathroom providers: PARTNERSHIP approach. Offer free room planner embed for their website. Their customers plan before visiting = better conversion for them.
@@ -878,9 +879,7 @@ async def _format_task_result(action: str, result: dict) -> str:
     if not result:
         return "The task didn't return any results."
 
-    if result.get("errors"):
-        error_text = "\n".join(str(e) for e in result["errors"][:3])
-        return f"⚠️ Completed with errors:\n{error_text}"
+    errors = result.get("errors")
 
     parts = []
 
@@ -974,59 +973,150 @@ async def _format_task_result(action: str, result: dict) -> str:
                 elif isinstance(val, str) and len(val) > 10:
                     parts.append(f"{key}: {val[:200]}")
 
+    # Append errors at the end so the user always sees data first
+    if errors:
+        error_text = "\n".join(str(e) for e in errors[:3])
+        if parts:
+            parts.append(f"\n\u26a0\ufe0f Some issues occurred:\n{error_text}")
+        else:
+            return f"\u26a0\ufe0f Completed with errors:\n{error_text}"
+
     return "\n".join(parts) if parts else "Task completed with no output."
 
 
 def _recall_from_database(topic: str) -> str:
-    """Query Supabase for past results matching a topic."""
+    """Query Supabase for past results matching a topic.
+
+    Covers all major SEO tables so that informational questions can be
+    answered from stored data without hitting external APIs.
+
+    Args:
+        topic: Free-text topic string used to decide which tables to query.
+
+    Returns:
+        Formatted string of matching data, or a "no data" message.
+    """
     from agents.seo_agent.tools.supabase_tools import query_table
 
-    results_parts = []
+    results_parts: list[str] = []
+    t = topic.lower()
 
-    # Check keywords
-    if any(w in topic.lower() for w in ["keyword", "opportunity", "research", "all", "everything"]):
+    def _matches(*words: str) -> bool:
+        return any(w in t for w in words) or any(w in t for w in ["all", "everything"])
+
+    # Keyword opportunities
+    if _matches("keyword", "opportunity", "research"):
         keywords = query_table("seo_keyword_opportunities", limit=20)
         if keywords:
             results_parts.append(f"Keyword opportunities ({len(keywords)} in DB):")
             for kw in keywords[:15]:
                 results_parts.append(f"  - {kw.get('keyword')} | vol:{kw.get('volume')} KD:{kw.get('kd')} | site:{kw.get('target_site')}")
 
-    # Check content gaps
-    if any(w in topic.lower() for w in ["gap", "content", "all", "everything"]):
+    # Content gaps
+    if _matches("gap", "content", "missing"):
         gaps = query_table("seo_content_gaps", limit=20)
         if gaps:
             results_parts.append(f"\nContent gaps ({len(gaps)} in DB):")
             for g in gaps[:15]:
                 results_parts.append(f"  - {g.get('keyword')} | vol:{g.get('volume')} | stage:{g.get('funnel_stage')} | site:{g.get('target_site')}")
 
-    # Check prospects
-    if any(w in topic.lower() for w in ["prospect", "backlink", "outreach", "link", "all", "everything"]):
+    # Rank history / tracked keywords
+    if _matches("rank", "ranking", "tracking", "tracked", "position", "serp"):
+        rankings = query_table(
+            "seo_rank_history", limit=50, order_by="date", order_desc=True,
+        )
+        if rankings:
+            # Deduplicate to latest entry per keyword
+            seen: set[str] = set()
+            unique: list[dict] = []
+            for r in rankings:
+                kw = r.get("keyword", "")
+                if kw and kw not in seen:
+                    seen.add(kw)
+                    unique.append(r)
+            results_parts.append(f"\nTracked rankings ({len(unique)} keywords in seo_rank_history):")
+            for r in unique[:20]:
+                pos = r.get("position", "?")
+                prev = r.get("previous_position")
+                change = ""
+                if isinstance(pos, (int, float)) and isinstance(prev, (int, float)):
+                    diff = prev - pos
+                    if diff != 0:
+                        arrow = "\u2191" if diff > 0 else "\u2193"
+                        change = f" ({arrow}{abs(diff):.0f})"
+                results_parts.append(
+                    f"  - {r.get('keyword')} \u2192 pos {pos}{change} | site:{r.get('target_site')} | {r.get('date', '')}"
+                )
+
+    # Backlink prospects
+    if _matches("prospect", "backlink", "outreach", "link"):
         prospects = query_table("seo_backlink_prospects", limit=20)
         if prospects:
             results_parts.append(f"\nBacklink prospects ({len(prospects)} in DB):")
             for p in prospects[:15]:
                 results_parts.append(f"  - {p.get('domain')} | DR:{p.get('dr')} | status:{p.get('status')} | site:{p.get('target_site')}")
 
-    # Check briefs
-    if any(w in topic.lower() for w in ["brief", "content brief", "all", "everything"]):
+    # Content briefs
+    if _matches("brief", "content brief"):
         briefs = query_table("seo_content_briefs", limit=10)
         if briefs:
             results_parts.append(f"\nContent briefs ({len(briefs)} in DB):")
             for b in briefs[:10]:
                 results_parts.append(f"  - {b.get('title', b.get('keyword'))} | site:{b.get('target_site')}")
 
-    # Check cost log
-    if any(w in topic.lower() for w in ["cost", "spend", "budget", "llm"]):
+    # Content drafts
+    if _matches("draft", "written", "article", "post", "blog", "published"):
+        drafts = query_table("seo_content_drafts", limit=15, order_by="created_at", order_desc=True)
+        if drafts:
+            results_parts.append(f"\nContent drafts ({len(drafts)} in DB):")
+            for d in drafts[:10]:
+                results_parts.append(
+                    f"  - {d.get('title', d.get('keyword', 'N/A'))} | status:{d.get('status', '?')} | site:{d.get('target_site')}"
+                )
+
+    # Outreach emails
+    if _matches("email", "outreach", "sent", "campaign"):
+        emails = query_table("seo_outreach_emails", limit=15, order_by="created_at", order_desc=True)
+        if emails:
+            results_parts.append(f"\nOutreach emails ({len(emails)} in DB):")
+            for e in emails[:10]:
+                results_parts.append(
+                    f"  - {e.get('contact_email', e.get('domain', 'N/A'))} | subject:{e.get('subject', '')[:40]} | status:{e.get('status', '?')}"
+                )
+
+    # CRM contacts
+    if _matches("contact", "company", "maker", "crm", "designer"):
+        contacts = query_table("crm_contacts", limit=20)
+        if contacts:
+            results_parts.append(f"\nCRM contacts ({len(contacts)} in DB):")
+            for c in contacts[:15]:
+                results_parts.append(
+                    f"  - {c.get('company_name', '?')} | {c.get('category', '')} | {c.get('city', '')} | status:{c.get('outreach_status', '?')}"
+                )
+
+    # Schedule
+    if _matches("schedule", "task", "routine", "cron"):
+        rows = query_table("ralf_schedule", limit=30)
+        if rows:
+            active = [r for r in rows if r.get("active", True)]
+            results_parts.append(f"\nScheduled tasks ({len(active)} active of {len(rows)} total):")
+            for r in active[:15]:
+                results_parts.append(
+                    f"  - {r.get('skill')} | {r.get('cadence', '?')} | site:{r.get('site', 'all')}"
+                )
+
+    # LLM cost log
+    if _matches("cost", "spend", "budget", "llm"):
         costs = query_table("llm_cost_log", limit=20, order_by="created_at", order_desc=True)
         if costs:
             total = sum(c.get("cost_usd", 0) for c in costs)
             results_parts.append(f"\nLLM costs (last {len(costs)} calls, total: ${total:.4f}):")
-            by_task = {}
+            by_task: dict[str, float] = {}
             for c in costs:
-                t = c.get("task_type", "unknown")
-                by_task[t] = by_task.get(t, 0) + c.get("cost_usd", 0)
-            for t, cost in sorted(by_task.items(), key=lambda x: -x[1]):
-                results_parts.append(f"  - {t}: ${cost:.4f}")
+                task = c.get("task_type", "unknown")
+                by_task[task] = by_task.get(task, 0.0) + c.get("cost_usd", 0.0)
+            for task, cost in sorted(by_task.items(), key=lambda x: -x[1]):
+                results_parts.append(f"  - {task}: ${cost:.4f}")
 
     if not results_parts:
         return f"No data found in the database for topic: {topic}. Try running a task first (keyword research, content gap, etc.)."
@@ -1351,7 +1441,7 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                         # Send raw data to Claude for a natural summary
                         summary = await asyncio.get_event_loop().run_in_executor(
                             None, partial(_call_openrouter_sync,
-                                list(history) + [{"role": "user", "content": f"Here's what I found in our database:\n\n{db_results}\n\nSummarise this for me naturally."}],
+                                list(history) + [{"role": "user", "content": f"The user asked: '{user_text}'\n\nHere's the relevant data from our database:\n\n{db_results}\n\nAnswer their question directly using this data. Be concise — this is Telegram."}],
                                 _NL_SYSTEM_PROMPT)
                         )
                         await update.message.reply_text(summary)
