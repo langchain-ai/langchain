@@ -24,6 +24,7 @@ export function useScheduleEntries() {
   })
 
   const [savingSkill, setSavingSkill] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
 
   const deriveFrequency = useCallback(
     (skillName: string): FrequencyOption => {
@@ -50,15 +51,17 @@ export function useScheduleEntries() {
 
   const updateFrequency = useCallback(
     async (skillName: string, frequency: FrequencyOption, category: string) => {
-      if (!isConfigured) return
+      if (!isConfigured || !supabase) return
       setSavingSkill(skillName)
+      setMutationError(null)
 
       try {
         // Deactivate all existing rows for this skill
-        await supabase
+        const { error: updateErr } = await supabase
           .from('ralf_schedule')
           .update({ active: false, updated_at: new Date().toISOString() })
           .eq('skill', skillName)
+        if (updateErr) throw updateErr
 
         if (frequency === 'off') {
           refetch()
@@ -130,10 +133,14 @@ export function useScheduleEntries() {
         }
 
         if (newRows.length > 0) {
-          await supabase.from('ralf_schedule').insert(newRows)
+          const { error: insertErr } = await supabase.from('ralf_schedule').insert(newRows)
+          if (insertErr) throw insertErr
         }
 
         refetch()
+      } catch (err) {
+        console.error('Failed to update schedule:', err)
+        setMutationError(err instanceof Error ? err.message : String(err))
       } finally {
         setSavingSkill(null)
       }
@@ -141,5 +148,5 @@ export function useScheduleEntries() {
     [refetch],
   )
 
-  return { entries, loading, error, deriveFrequency, updateFrequency, savingSkill }
+  return { entries, loading, error: error || mutationError, deriveFrequency, updateFrequency, savingSkill }
 }

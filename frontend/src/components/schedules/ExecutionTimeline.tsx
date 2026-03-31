@@ -62,8 +62,8 @@ export function ExecutionTimeline() {
                   <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-[var(--color-text-muted)]">
                     <span>{new Date(exec.fired_at).toLocaleString()}</span>
                     {duration && <span>{duration}s</span>}
-                    <span>{exec.tasks_executed} tasks</span>
-                    <span>{exec.tokens_used.toLocaleString()} tokens</span>
+                    <span>{exec.tasks_executed ?? 0} tasks</span>
+                    <span>{(exec.tokens_used ?? 0).toLocaleString()} tokens</span>
                   </div>
                   {exec.error && (
                     <p className="mt-1 rounded bg-red-500/10 px-2 py-1 text-xs text-red-400">

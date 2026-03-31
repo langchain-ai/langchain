@@ -31,17 +31,18 @@ export function useSupabase<T>({
   const refetch = () => setTick((t) => t + 1)
 
   useEffect(() => {
-    if (!isConfigured) {
+    if (!isConfigured || !supabase) {
       setLoading(false)
       setError(null)
       return
     }
 
+    const client = supabase
     let cancelled = false
     setLoading(true)
 
     const run = async () => {
-      let query = supabase.from(table).select(select)
+      let query = client.from(table).select(select)
 
       if (filters) {
         for (const [key, value] of Object.entries(filters)) {

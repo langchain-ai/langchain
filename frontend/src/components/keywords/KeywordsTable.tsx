@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import type { RankingEntry } from '../../types/database'
 
-type SortKey = 'keyword' | 'position' | 'change' | 'volume' | 'snapshot_date'
+type SortKey = 'keyword' | 'position' | 'change' | 'volume' | 'url' | 'snapshot_date'
 
 interface Props {
   data: RankingEntry[]
@@ -15,7 +15,7 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'position', label: 'Position' },
   { key: 'change', label: 'Change' },
   { key: 'volume', label: 'Volume' },
-  { key: 'keyword', label: 'URL' },
+  { key: 'url', label: 'URL' },
   { key: 'snapshot_date', label: 'Date' },
 ]
 

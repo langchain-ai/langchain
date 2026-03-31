@@ -4,6 +4,7 @@ import type { AgentTurn, CronExecution } from '../../types/database'
 import { AgentCard } from './AgentCard'
 import { AgentTurnLog } from './AgentTurnLog'
 import { CostChart } from './CostChart'
+import { Spinner } from '../ui/Spinner'
 
 const AGENTS = [
   { name: 'ralf', description: 'SEO agent — content, outreach, rankings, reporting' },
@@ -13,17 +14,21 @@ const AGENTS = [
 export function AgentDashboard() {
   const todayStr = new Date().toISOString().slice(0, 10)
 
-  const { data: turns } = useSupabase<AgentTurn>({
+  const { data: turns, loading: loadingTurns } = useSupabase<AgentTurn>({
     table: 'agent_turns',
     order: { column: 'created_at', ascending: false },
     limit: 200,
   })
 
-  const { data: executions } = useSupabase<CronExecution>({
+  const { data: executions, loading: loadingExecs } = useSupabase<CronExecution>({
     table: 'cron_executions',
     order: { column: 'fired_at', ascending: false },
     limit: 10,
   })
+
+  if (loadingTurns || loadingExecs) {
+    return <Spinner />
+  }
 
   const agentStats = useMemo(() => {
     const stats: Record<string, { lastActive: string | null; turnsToday: number; tokensToday: number; hasRunning: boolean; hasError: boolean }> = {}

@@ -2,6 +2,7 @@ import { X, Mail, Phone, Globe, MapPin } from 'lucide-react'
 import { useSupabase } from '../../hooks/useSupabase'
 import type { CrmContact, CrmInteraction } from '../../types/database'
 import { Badge } from '../ui/Badge'
+import { Spinner } from '../ui/Spinner'
 
 interface Props {
   contact: CrmContact
@@ -9,7 +10,7 @@ interface Props {
 }
 
 export function ContactDetail({ contact, onClose }: Props) {
-  const { data: interactions } = useSupabase<CrmInteraction>({
+  const { data: interactions, loading: loadingInteractions, error: interactionsError } = useSupabase<CrmInteraction>({
     table: 'crm_interactions',
     filters: { contact_id: contact.id },
     order: { column: 'created_at', ascending: false },
@@ -78,8 +79,14 @@ export function ContactDetail({ contact, onClose }: Props) {
         )}
 
         {/* Interaction timeline */}
-        <h3 className="mb-3 mt-6 text-sm font-semibold">Interactions ({interactions.length})</h3>
-        {interactions.length === 0 ? (
+        <h3 className="mb-3 mt-6 text-sm font-semibold">
+          Interactions {loadingInteractions ? '' : `(${interactions.length})`}
+        </h3>
+        {loadingInteractions ? (
+          <Spinner />
+        ) : interactionsError ? (
+          <p className="text-sm text-[var(--color-danger)]">{interactionsError}</p>
+        ) : interactions.length === 0 ? (
           <p className="text-sm text-[var(--color-text-muted)]">No interactions recorded</p>
         ) : (
           <div className="space-y-3">
