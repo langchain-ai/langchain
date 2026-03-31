@@ -571,6 +571,12 @@ Actions:
 - scrape_companies: {country, category?} — use Firecrawl to find and extract kitchen/bathroom companies (country: UK, US, or CA)
 - scrape_all: (no params) — run full scrape across all countries
 - scrape_status: (no params) — show CRM contact counts by country and category
+- research_outreach: {site_id} — find blogger outreach targets for a site
+- outreach_status: {site_id?} — show outreach pipeline status (targets, emails, replies, links)
+- create_campaign: {site_id, outreach_type} — set up an Instantly campaign for queued targets
+- launch_campaign: {campaign_id} — launch a draft campaign
+- confirm_link: {site_id, target_url, link_url, anchor_text} — record a live backlink
+- outreach_report: {site_id?} — full outreach report across all sites (also available as separate action)
 
 Site keys: kitchensdirectory, freeroomplanner, kitchen_estimator, ralf_seo, all
 
@@ -1074,7 +1080,7 @@ def _recall_from_database(topic: str) -> str:
                     f"  - {d.get('title', d.get('keyword', 'N/A'))} | status:{d.get('status', '?')} | site:{d.get('target_site')}"
                 )
 
-    # Outreach emails
+    # Outreach emails (legacy seo_outreach_emails table)
     if _matches("email", "outreach", "sent", "campaign"):
         emails = query_table("seo_outreach_emails", limit=15, order_by="created_at", order_desc=True)
         if emails:
@@ -1082,6 +1088,30 @@ def _recall_from_database(topic: str) -> str:
             for e in emails[:10]:
                 results_parts.append(
                     f"  - {e.get('contact_email', e.get('domain', 'N/A'))} | subject:{e.get('subject', '')[:40]} | status:{e.get('status', '?')}"
+                )
+
+    # Outreach targets (Instantly system)
+    if _matches("outreach", "target", "campaign", "instantly", "link", "backlink"):
+        ot = query_table("outreach_targets", limit=20, order_by="created_at", order_desc=True)
+        if ot:
+            results_parts.append(f"\nOutreach targets ({len(ot)} in DB):")
+            for t in ot[:12]:
+                results_parts.append(
+                    f"  - {t.get('article_title', t.get('url', 'N/A'))[:50]} | type:{t.get('outreach_type', '?')} | status:{t.get('status', '?')} | site:{t.get('site_id', '?')}"
+                )
+        oe = query_table("outreach_emails", limit=10, order_by="created_at", order_desc=True)
+        if oe:
+            results_parts.append(f"\nInstantly campaigns ({len(oe)} in DB):")
+            for c in oe[:8]:
+                results_parts.append(
+                    f"  - {c.get('instantly_campaign_name', 'N/A')} | type:{c.get('outreach_type', '?')} | added:{c.get('emails_added', 0)} | launched:{c.get('launched', False)}"
+                )
+        ol = query_table("outreach_links", limit=10, order_by="confirmed_at", order_desc=True)
+        if ol:
+            results_parts.append(f"\nConfirmed links ({len(ol)} in DB):")
+            for lnk in ol[:8]:
+                results_parts.append(
+                    f"  - {lnk.get('target_url', 'N/A')[:50]} → {lnk.get('link_url', 'N/A')[:50]} | anchor:{lnk.get('anchor_text', '?')} | live:{lnk.get('is_live', '?')}"
                 )
 
     # CRM contacts
@@ -2149,6 +2179,134 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                         await update.message.reply_text(f"Status check failed: {str(e)[:200]}")
                     continue
 
+                if action == "research_outreach":
+                    site_id = params.get("site_id", "freeroomplanner")
+                    await update.message.reply_text(f"Researching outreach targets for {site_id}...")
+                    try:
+                        from agents.seo_agent.tools.outreach_engine import research_targets
+                        found = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(research_targets, site_id)
+                        )
+                        if found:
+                            lines = [f"Found {len(found)} outreach targets for {site_id}:\n"]
+                            for t in found[:12]:
+                                otype = t.get("outreach_type", "?")
+                                title = t.get("article_title", "")[:50]
+                                lines.append(f"- [{otype}] {title}")
+                            if len(found) > 12:
+                                lines.append(f"\n...and {len(found) - 12} more saved to DB.")
+                            await update.message.reply_text("\n".join(lines))
+                        else:
+                            await update.message.reply_text("No targets found — try different search terms.")
+                        history.append({"role": "assistant", "content": f"Found {len(found)} outreach targets for {site_id}"})
+                    except Exception as e:
+                        logger.error("Research outreach failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Target research failed: {str(e)[:300]}")
+                    continue
+                if action == "outreach_status":
+                    site_id = params.get("site_id")
+                    try:
+                        from agents.seo_agent.tools.outreach_engine import get_outreach_status
+                        status_data = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(get_outreach_status, site_id)
+                        )
+                        lines = [f"Outreach Status{' — ' + site_id if site_id else ''}:\n"]
+                        lines.append(f"Targets: {status_data['total_targets']}")
+                        for s, count in sorted(status_data.get("by_status", {}).items()):
+                            lines.append(f"  {s}: {count}")
+                        lines.append(f"\nCampaigns: {status_data['total_campaigns']} ({status_data['campaigns_launched']} launched)")
+                        lines.append(f"Emails sent: {status_data['total_emails_sent']}")
+                        lines.append(f"Replies: {status_data['total_replies']}")
+                        lines.append(f"Links: {status_data['total_links']} ({status_data['live_links']} live)")
+                        await update.message.reply_text("\n".join(lines))
+                        history.append({"role": "assistant", "content": f"Outreach status: {status_data['total_targets']} targets"})
+                    except Exception as e:
+                        await update.message.reply_text(f"Outreach status failed: {str(e)[:300]}")
+                    continue
+                if action == "create_campaign":
+                    site_id = params.get("site_id", "freeroomplanner")
+                    outreach_type = params.get("outreach_type", "inclusion")
+                    await update.message.reply_text(f"Creating {outreach_type} campaign for {site_id}... generating emails and setting up Instantly.")
+                    try:
+                        from agents.seo_agent.tools.outreach_engine import (
+                            SITE_PROFILES as OUTREACH_PROFILES,
+                            create_outreach_campaign,
+                        )
+                        from agents.seo_agent.tools.supabase_tools import query_table
+                        profile = OUTREACH_PROFILES.get(site_id)
+                        if not profile:
+                            await update.message.reply_text(f"No outreach profile for {site_id}.")
+                            continue
+                        # Get queued targets
+                        targets = query_table(
+                            "outreach_targets",
+                            filters={"site_id": site_id, "status": "queued"},
+                            limit=50,
+                        )
+                        if not targets:
+                            await update.message.reply_text(f"No queued targets for {site_id}. Run research_outreach first.")
+                            continue
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(
+                                create_outreach_campaign,
+                                profile, targets, outreach_type,
+                                launch=False, daily_limit=30,
+                            )
+                        )
+                        if result.get("error"):
+                            await update.message.reply_text(f"Campaign issue: {result['error']}")
+                        else:
+                            msg = (
+                                f"Campaign created: {result.get('campaign_name', 'N/A')}\n"
+                                f"ID: {result.get('campaign_id', 'N/A')}\n"
+                                f"Emails added: {result.get('emails_added', 0)}\n"
+                                f"Status: draft (use launch_campaign to go live)"
+                            )
+                            await update.message.reply_text(msg)
+                        history.append({"role": "assistant", "content": f"Created campaign for {site_id}"})
+                    except Exception as e:
+                        logger.error("Create campaign failed: %s", traceback.format_exc())
+                        await update.message.reply_text(f"Campaign creation failed: {str(e)[:300]}")
+                    continue
+                if action == "launch_campaign":
+                    campaign_id = params.get("campaign_id", "")
+                    if not campaign_id:
+                        await update.message.reply_text("Please provide a campaign_id to launch.")
+                        continue
+                    try:
+                        from agents.seo_agent.tools.instantly_client import launch_campaign as instantly_launch
+                        result = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(instantly_launch, campaign_id)
+                        )
+                        await update.message.reply_text(f"Campaign {campaign_id} launched.")
+                        history.append({"role": "assistant", "content": f"Launched campaign {campaign_id}"})
+                    except Exception as e:
+                        await update.message.reply_text(f"Launch failed: {str(e)[:300]}")
+                    continue
+                if action == "confirm_link":
+                    try:
+                        from agents.seo_agent.tools.outreach_engine import confirm_live_link
+                        record = await asyncio.get_event_loop().run_in_executor(
+                            None, partial(
+                                confirm_live_link,
+                                site_id=params.get("site_id", "freeroomplanner"),
+                                target_url=params.get("target_url", ""),
+                                link_url=params.get("link_url", ""),
+                                anchor_text=params.get("anchor_text", ""),
+                                dr=params.get("dr"),
+                                do_follow=params.get("do_follow", True),
+                            )
+                        )
+                        await update.message.reply_text(
+                            f"Link confirmed and recorded.\n"
+                            f"From: {params.get('target_url', 'N/A')}\n"
+                            f"To: {params.get('link_url', 'N/A')}\n"
+                            f"Anchor: {params.get('anchor_text', 'N/A')}"
+                        )
+                        history.append({"role": "assistant", "content": "Confirmed live link"})
+                    except Exception as e:
+                        await update.message.reply_text(f"Link confirmation failed: {str(e)[:300]}")
+                    continue
                 if action in ("web_search", "review_site"):
                     query = params.get("query") or params.get("url") or user_text
                     await update.message.reply_text(f"Searching: {query}...")

@@ -355,6 +355,68 @@ TABLE_SCHEMAS: dict[str, str] = {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     """,
+    # --- Outreach system tables (Instantly V2 integration) ---
+    "outreach_targets": """
+        CREATE TABLE IF NOT EXISTS outreach_targets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            site_id TEXT NOT NULL,
+            site_name TEXT NOT NULL,
+            url TEXT NOT NULL,
+            contact_email TEXT,
+            contact_name TEXT,
+            article_url TEXT,
+            article_title TEXT,
+            outreach_type TEXT,
+            domain_rating INTEGER,
+            notes TEXT,
+            status TEXT DEFAULT 'queued',
+            created_at TIMESTAMPTZ DEFAULT now(),
+            UNIQUE(url, site_id)
+        );
+    """,
+    "outreach_emails": """
+        CREATE TABLE IF NOT EXISTS outreach_emails (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            site_id TEXT NOT NULL,
+            target_id UUID REFERENCES outreach_targets(id),
+            instantly_campaign_id TEXT,
+            instantly_campaign_name TEXT,
+            outreach_type TEXT,
+            emails_added INTEGER,
+            duplicates_skipped INTEGER,
+            launched BOOLEAN DEFAULT false,
+            daily_limit INTEGER,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "outreach_replies": """
+        CREATE TABLE IF NOT EXISTS outreach_replies (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            site_id TEXT,
+            target_id UUID REFERENCES outreach_targets(id),
+            instantly_campaign_id TEXT,
+            from_address TEXT,
+            subject TEXT,
+            body TEXT,
+            sentiment TEXT,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "outreach_links": """
+        CREATE TABLE IF NOT EXISTS outreach_links (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            site_id TEXT NOT NULL,
+            target_id UUID REFERENCES outreach_targets(id),
+            target_url TEXT NOT NULL,
+            link_url TEXT NOT NULL,
+            anchor_text TEXT,
+            domain_rating INTEGER,
+            do_follow BOOLEAN DEFAULT true,
+            confirmed_at TIMESTAMPTZ DEFAULT now(),
+            last_checked_at TIMESTAMPTZ DEFAULT now(),
+            is_live BOOLEAN DEFAULT true
+        );
+    """,
 }
 
 

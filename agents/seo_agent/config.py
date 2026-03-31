@@ -335,6 +335,9 @@ TOKEN_BUDGETS: dict[str, int] = {
 # Weekly LLM spend cap in USD — agent downgrades models at 80% of this
 MAX_WEEKLY_SPEND_USD: float = 50.00
 
+# Instantly V2 — INSTANTLY_API_KEY must be set in the environment (Railway)
+# Used by the outreach engine for email campaign management via Instantly API.
+
 # Firecrawl scraper — FIRECRAWL_API_KEY must be set in the environment (Railway)
 
 # ---------------------------------------------------------------------------
