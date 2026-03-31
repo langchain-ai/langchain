@@ -2357,6 +2357,13 @@ async def handle_natural_language(update: Update, context: ContextTypes.DEFAULT_
                 summary = formatted[:300] + ("..." if len(formatted) > 300 else "")
                 history.append({"role": "assistant", "content": summary})
 
+                # Log agent turn for the frontend dashboard
+                _log_agent_turn(
+                    turn_type="nl_task",
+                    input_text=user_text,
+                    output_text=formatted[:200],
+                )
+
         else:
             # Pure conversational response — strip any XML/function call artifacts
             clean_response = llm_response

@@ -166,6 +166,20 @@ async def execute_heartbeat() -> None:
         except Exception:
             pass
 
+    # Log execution to cron_executions for the frontend dashboard
+    try:
+        from agents.seo_agent.tools.supabase_tools import insert_record
+
+        insert_record("cron_executions", {
+            "job_id": "heartbeat",
+            "fired_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "status": "completed",
+            "tasks_executed": 1,
+        })
+    except Exception:
+        logger.debug("cron_executions logging failed (non-fatal)", exc_info=True)
+
 
 async def execute_worker_only() -> None:
     """Run only the worker (heavy background tasks)."""
@@ -578,6 +592,20 @@ async def _execute_heartbeat_legacy_inner() -> None:
                     break
     except Exception:
         pass
+
+    # Log execution to cron_executions for the frontend dashboard
+    try:
+        from agents.seo_agent.tools.supabase_tools import insert_record
+
+        insert_record("cron_executions", {
+            "job_id": "heartbeat_legacy",
+            "fired_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "status": "completed",
+            "tasks_executed": len(report_lines),
+        })
+    except Exception:
+        logger.debug("cron_executions logging failed (non-fatal)", exc_info=True)
 
     if report_lines:
         report = "Here's what happened:\n\n" + "\n".join(report_lines)

@@ -417,6 +417,48 @@ TABLE_SCHEMAS: dict[str, str] = {
             is_live BOOLEAN DEFAULT true
         );
     """,
+    "agent_turns": """
+        CREATE TABLE IF NOT EXISTS agent_turns (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            session_id TEXT NOT NULL DEFAULT 'default',
+            agent_name TEXT NOT NULL DEFAULT 'ralf',
+            turn_type TEXT NOT NULL,
+            input TEXT,
+            output TEXT,
+            tokens_used INTEGER DEFAULT 0,
+            model TEXT,
+            duration_ms INTEGER,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "cron_executions": """
+        CREATE TABLE IF NOT EXISTS cron_executions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            job_id TEXT NOT NULL,
+            fired_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            completed_at TIMESTAMPTZ,
+            status TEXT NOT NULL DEFAULT 'running',
+            tasks_executed INTEGER DEFAULT 0,
+            message_sent BOOLEAN DEFAULT false,
+            tokens_used INTEGER DEFAULT 0,
+            error TEXT,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
+    "seo_our_rankings": """
+        CREATE TABLE IF NOT EXISTS seo_our_rankings (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            target_site TEXT NOT NULL,
+            keyword TEXT NOT NULL,
+            position INTEGER,
+            previous_position INTEGER,
+            change INTEGER,
+            url TEXT,
+            volume INTEGER,
+            snapshot_date DATE NOT NULL DEFAULT CURRENT_DATE,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    """,
 }
 
 
