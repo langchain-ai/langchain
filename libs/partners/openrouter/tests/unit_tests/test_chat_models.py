@@ -1130,8 +1130,12 @@ class TestMessageConversion:
         """Test that metadata from later fragments is preserved after merge."""
         details = [
             {"type": "reasoning.text", "text": "thinking...", "index": 0},
-            {"type": "reasoning.text", "text": " done", "index": 0,
-             "signature": "sig_abc123"},
+            {
+                "type": "reasoning.text",
+                "text": " done",
+                "index": 0,
+                "signature": "sig_abc123",
+            },
         ]
         msg = AIMessage(
             content="Answer",
