@@ -542,6 +542,43 @@ async def _execute_heartbeat_legacy_inner() -> None:
     except Exception:
         pass
 
+    # --- Always: check for Instantly replies ---
+    try:
+        from agents.seo_agent.tools.outreach_webhook import poll_instantly_replies
+
+        reply_result = await asyncio.get_event_loop().run_in_executor(None, poll_instantly_replies)
+        new_replies = reply_result.get("new_replies", 0)
+        if new_replies > 0:
+            report_lines.append(f"Outreach: {new_replies} new replies received")
+    except Exception:
+        pass
+
+    # --- Always: auto-research outreach targets if pipeline is low ---
+    try:
+        outreach_targets = query_table("outreach_targets", limit=500)
+        queued_count = sum(1 for t in outreach_targets if t.get("status") == "queued")
+
+        if queued_count < 10:
+            # Need more targets — run research for the site with fewest targets
+            from agents.seo_agent.tools.outreach_engine import research_targets, SITE_PROFILES as OUTREACH_PROFILES
+
+            site_target_counts: dict[str, int] = {}
+            for t in outreach_targets:
+                sid = t.get("site_id", "")
+                site_target_counts[sid] = site_target_counts.get(sid, 0) + 1
+
+            # Find the site with fewest targets
+            for site_id in OUTREACH_PROFILES:
+                if site_id not in site_target_counts or site_target_counts[site_id] < 20:
+                    await send_telegram(f"Researching outreach targets for {site_id}...")
+                    targets = await asyncio.get_event_loop().run_in_executor(
+                        None, lambda sid=site_id: research_targets(sid)
+                    )
+                    report_lines.append(f"Outreach: found {len(targets)} new targets for {site_id}")
+                    break
+    except Exception:
+        pass
+
     if report_lines:
         report = "Here's what happened:\n\n" + "\n".join(report_lines)
         report += f"\n\nBudget: ${spend:.2f} of ${cap:.2f} used this week."
