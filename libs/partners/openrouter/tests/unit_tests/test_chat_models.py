@@ -1079,19 +1079,68 @@ class TestMessageConversion:
         assert result["content"] == "The answer is 42."
         assert result["reasoning"] == "Let me think about this..."
 
-    def test_ai_message_with_reasoning_details_to_dict(self) -> None:
-        """Test that reasoning_details is preserved when converting back to dict."""
+    def test_ai_message_with_fragmented_reasoning_details_merged(self) -> None:
+        """Test that fragmented reasoning_details (from streaming) are merged.
+
+        During streaming, AIMessageChunk.__add__ list-concatenates
+        reasoning_details, fragmenting one entry into many. The serializer
+        merges consecutive same-type/same-index entries back into one.
+        """
         details = [
-            {"type": "reasoning.text", "text": "Step 1: analyze"},
-            {"type": "reasoning.text", "text": "Step 2: solve"},
+            {"type": "reasoning.text", "text": "Step 1: ", "index": 0},
+            {"type": "reasoning.text", "text": "analyze", "index": 0},
         ]
         msg = AIMessage(
             content="Answer",
             additional_kwargs={"reasoning_details": details},
         )
         result = _convert_message_to_dict(msg)
-        assert result["reasoning_details"] == details
-        assert "reasoning" not in result
+        assert len(result["reasoning_details"]) == 1
+        assert result["reasoning_details"][0]["text"] == "Step 1: analyze"
+
+    def test_ai_message_distinct_reasoning_details_preserved(self) -> None:
+        """Test that distinct entries (different index) are NOT merged."""
+        details = [
+            {"type": "reasoning.text", "text": "First thought", "index": 0},
+            {"type": "reasoning.text", "text": "Second thought", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert len(result["reasoning_details"]) == 2
+        assert result["reasoning_details"][0]["text"] == "First thought"
+        assert result["reasoning_details"][1]["text"] == "Second thought"
+
+    def test_ai_message_unindexed_reasoning_details_not_merged(self) -> None:
+        """Test that entries without index are never merged."""
+        details = [
+            {"type": "reasoning.text", "text": "First"},
+            {"type": "reasoning.text", "text": "Second"},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert len(result["reasoning_details"]) == 2
+
+    def test_ai_message_fragment_metadata_preserved(self) -> None:
+        """Test that metadata from later fragments is preserved after merge."""
+        details = [
+            {"type": "reasoning.text", "text": "thinking...", "index": 0},
+            {"type": "reasoning.text", "text": " done", "index": 0,
+             "signature": "sig_abc123"},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert len(result["reasoning_details"]) == 1
+        assert result["reasoning_details"][0]["text"] == "thinking... done"
+        assert result["reasoning_details"][0]["signature"] == "sig_abc123"
 
     def test_ai_message_with_both_reasoning_fields_to_dict(self) -> None:
         """Test that both reasoning_content and reasoning_details are preserved."""

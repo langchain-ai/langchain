@@ -1124,6 +1124,78 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
+def _merge_reasoning_details(
+    details: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge fragmented ``reasoning_details`` from streaming chunk concatenation.
+
+    During streaming, ``AIMessageChunk.__add__`` list-concatenates
+    ``reasoning_details`` in ``additional_kwargs``, fragmenting a single
+    entry into many.  When serialized back to the API via
+    ``_convert_message_to_dict``, these fragments cause
+    ``BadRequestResponseError`` on multi-turn conversations.
+
+    This function merges consecutive entries that share the same ``type``
+    **and** ``index`` (both must be present).  Entries without ``index``
+    or with distinct ``index`` values are preserved as separate items,
+    since non-streaming responses can legitimately contain multiple entries.
+
+    Metadata fields (e.g. ``signature``) from later fragments are preserved
+    by updating the merged entry with non-text fields from each fragment.
+
+    A single-entry list passes through unchanged.
+    """
+    if not isinstance(details, list) or len(details) <= 1:
+        return details
+
+    merged: list[dict[str, Any]] = []
+    i = 0
+    while i < len(details):
+        entry = details[i]
+        if not isinstance(entry, dict):
+            merged.append(entry)
+            i += 1
+            continue
+
+        entry_type = entry.get("type", "")
+        entry_index = entry.get("index")
+        text_key = (
+            "text" if "text" in entry else "content" if "content" in entry else None
+        )
+
+        # Only merge if entry has both a text field and an index.
+        # Without index we cannot distinguish fragments from distinct entries.
+        if text_key is None or entry_index is None:
+            merged.append(entry)
+            i += 1
+            continue
+
+        # Merge consecutive fragments (same type + same index)
+        texts = [entry.get(text_key, "")]
+        base = {k: v for k, v in entry.items() if k != text_key}
+        i += 1
+        while i < len(details):
+            nxt = details[i]
+            if (
+                isinstance(nxt, dict)
+                and nxt.get("type") == entry_type
+                and nxt.get("index") == entry_index
+            ):
+                texts.append(nxt.get(text_key, "") or "")
+                # Preserve metadata from later fragments (e.g. signature)
+                for k, v in nxt.items():
+                    if k != text_key and v is not None:
+                        base[k] = v
+                i += 1
+            else:
+                break
+
+        base[text_key] = "".join(texts)
+        merged.append(base)
+
+    return merged
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Convert a LangChain message to an OpenRouter-compatible dict payload.
 
@@ -1175,14 +1247,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
             ):
                 message_dict["content"] = None
         # Preserve reasoning content for multi-turn conversations (e.g.
-        # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
-        # optional structured details in "reasoning_details".
+        # tool-calling loops). OpenRouter stores reasoning in "reasoning".
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = message.additional_kwargs[
-                "reasoning_details"
-            ]
+            message_dict["reasoning_details"] = _merge_reasoning_details(
+                message.additional_kwargs["reasoning_details"]
+            )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
