@@ -654,7 +654,10 @@ class ChildTool(BaseTool):
     # --- Tool ---
 
     def _parse_input(
-        self, tool_input: str | dict, tool_call_id: str | None
+        self,
+        tool_input: str | dict,
+        tool_call_id: str | None,
+        from_tool_call: bool = False,
     ) -> str | dict[str, Any]:
         """Parse and validate tool input using the args schema.
 
@@ -695,6 +698,24 @@ class ChildTool(BaseTool):
             if isinstance(input_args, dict):
                 return tool_input
             if issubclass(input_args, BaseModel):
+                # When the input originates from a ToolCall, strip any injected
+                # args that the caller may have included in the payload.  Injected
+                # args are runtime-only and must not be controllable by the model
+                # or any external ToolCall payload (fixes hidden-parameter injection).
+                if from_tool_call and isinstance(tool_input, dict):
+                    injected_keys = {
+                        k
+                        for k, v in get_all_basemodel_annotations(input_args).items()
+                        if _is_injected_arg_type(v)
+                        and not _is_injected_arg_type(
+                            v, injected_type=InjectedToolCallId
+                        )
+                    }
+                    tool_input = {
+                        k: v
+                        for k, v in tool_input.items()
+                        if k not in injected_keys
+                    }
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
@@ -711,6 +732,22 @@ class ChildTool(BaseTool):
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
+                # When the input originates from a ToolCall, strip any injected
+                # args (see the BaseModel branch above for rationale).
+                if from_tool_call and isinstance(tool_input, dict):
+                    injected_keys = {
+                        k
+                        for k, v in get_all_basemodel_annotations(input_args).items()
+                        if _is_injected_arg_type(v)
+                        and not _is_injected_arg_type(
+                            v, injected_type=InjectedToolCallId
+                        )
+                    }
+                    tool_input = {
+                        k: v
+                        for k, v in tool_input.items()
+                        if k not in injected_keys
+                    }
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
@@ -756,7 +793,10 @@ class ChildTool(BaseTool):
                         validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
-                if k in tool_input:
+                if k in tool_input and not from_tool_call:
+                    # Only allow injected keys from tool_input when the input did NOT
+                    # originate from a ToolCall (i.e. it came from a trusted runtime
+                    # caller such as ToolsNode that injected the value itself).
                     validated_input[k] = tool_input[k]
                 elif k == "tool_call_id":
                     if tool_call_id is None:
@@ -837,7 +877,10 @@ class ChildTool(BaseTool):
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
 
     def _to_args_and_kwargs(
-        self, tool_input: str | dict, tool_call_id: str | None
+        self,
+        tool_input: str | dict,
+        tool_call_id: str | None,
+        from_tool_call: bool = False,
     ) -> tuple[tuple, dict]:
         """Convert tool input to positional and keyword arguments.
 
@@ -859,7 +902,7 @@ class ChildTool(BaseTool):
         ):
             # StructuredTool with no args
             return (), {}
-        tool_input = self._parse_input(tool_input, tool_call_id)
+        tool_input = self._parse_input(tool_input, tool_call_id, from_tool_call)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
@@ -958,7 +1001,7 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
                 tool_args, tool_kwargs = self._to_args_and_kwargs(
-                    tool_input, tool_call_id
+                    tool_input, tool_call_id, from_tool_call=tool_call_id is not None
                 )
                 if signature(self._run).parameters.get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}

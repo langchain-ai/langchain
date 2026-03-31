@@ -1867,14 +1867,16 @@ def test_tool_inherited_injected_arg() -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    # Injected args in a ToolCall payload MUST be rejected.
+    with pytest.raises(ValidationError):
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        )
     with pytest.raises(ValidationError):
         tool_.invoke({"x": 5})
 
@@ -3653,3 +3655,159 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+# ---------------------------------------------------------------------------
+# Security regression: InjectedToolArg bypass via ToolCall payload
+# ---------------------------------------------------------------------------
+# When a tool with an InjectedToolArg parameter is invoked through a
+# model-style ToolCall dict ({"type": "tool_call", ...}), the injected
+# parameter must be stripped from args BEFORE the tool executes.
+# Previously, callers could override runtime-injected values (e.g. auth
+# context) by including them directly in the ToolCall["args"] dict.
+# ---------------------------------------------------------------------------
+
+
+@tool
+def _sec_read_secret(
+    query: str,
+    auth: Annotated[dict, InjectedToolArg()],
+) -> str:
+    """Return secret data based on auth role."""
+    if auth.get("role") == "admin":
+        return "ADMIN_SECRET"
+    return "PUBLIC_DATA"
+
+
+@tool
+def _sec_read_secret_with_default(
+    query: str,
+    auth: Annotated[dict, InjectedToolArg()] = {"role": "guest"},  # noqa: B006
+) -> str:
+    """Return secret data based on auth role with a safe default."""
+    if auth.get("role") == "admin":
+        return "ADMIN_SECRET"
+    return "PUBLIC_DATA"
+
+
+@tool
+def _sec_echo_call_id(
+    query: str,
+    tool_call_id: Annotated[str, InjectedToolCallId],
+) -> str:
+    """Echo back the injected tool_call_id."""
+    return f"query={query} id={tool_call_id}"
+
+
+def test_injected_arg_excluded_from_tool_call_schema() -> None:
+    """InjectedToolArg must not appear in the schema sent to the model."""
+    schema = _sec_read_secret.tool_call_schema.model_json_schema()
+    props = schema.get("properties", {})
+    assert "query" in props
+    assert "auth" not in props, (
+        "auth (InjectedToolArg) MUST NOT be exposed in tool_call_schema"
+    )
+    assert schema.get("required") == ["query"]
+
+
+def test_injected_arg_not_accepted_from_tool_call_payload() -> None:
+    """Supplying an InjectedToolArg value inside ToolCall['args'] must be ignored.
+
+    The tool must NOT execute with attacker-controlled injected data when
+    the value was embedded in the ToolCall payload (untrusted path).
+    """
+    tool_call: dict[str, Any] = {
+        "type": "tool_call",
+        "name": "_sec_read_secret",
+        "id": "call-attacker-1",
+        "args": {
+            "query": "hello",
+            "auth": {"role": "admin"},  # attacker-supplied injected arg
+        },
+    }
+    # auth is stripped → Pydantic raises ValidationError (missing required field)
+    # OR the tool runs but must not return the privileged value.
+    try:
+        result = _sec_read_secret.invoke(tool_call)
+        content = result.content if hasattr(result, "content") else result
+        assert content != "ADMIN_SECRET", (
+            "SECURITY: attacker-supplied InjectedToolArg was forwarded to the tool"
+        )
+    except Exception:
+        # ValidationError is an acceptable (expected) outcome:
+        # auth was stripped and has no default, so Pydantic rejects the call.
+        pass
+
+
+def test_injected_arg_with_default_not_overrideable_via_tool_call() -> None:
+    """Attacker-supplied injected arg must not override the declared default.
+
+    When the injected parameter has a safe default and the caller embeds
+    a different value in ToolCall['args'], the tool must use the default,
+    not the attacker-supplied value.
+    """
+    tool_call: dict[str, Any] = {
+        "type": "tool_call",
+        "name": "_sec_read_secret_with_default",
+        "id": "call-attacker-2",
+        "args": {
+            "query": "hello",
+            "auth": {"role": "admin"},  # must be stripped; default {"role":"guest"} applies
+        },
+    }
+    result = _sec_read_secret_with_default.invoke(tool_call)
+    content = result.content if hasattr(result, "content") else result
+    assert content != "ADMIN_SECRET", (
+        "SECURITY: attacker overrode the default InjectedToolArg via ToolCall payload"
+    )
+    assert content == "PUBLIC_DATA"
+
+
+def test_injected_arg_honoured_from_trusted_direct_call() -> None:
+    """A plain dict invoke (not a ToolCall) is a trusted runtime path.
+
+    Tools that receive injected args from a trusted orchestrator (e.g.
+    ToolsNode) via a plain dict must still work correctly.
+    """
+    result = _sec_read_secret_with_default.invoke(
+        {"query": "hello", "auth": {"role": "admin"}}
+    )
+    # Plain dict → not a ToolCall → injected arg is honoured
+    content = result if isinstance(result, str) else getattr(result, "content", result)
+    assert content == "ADMIN_SECRET", (
+        "Trusted runtime caller must be able to supply injected args via plain dict"
+    )
+
+
+def test_injected_tool_call_id_populated_from_tool_call_envelope() -> None:
+    """InjectedToolCallId must be auto-populated from ToolCall['id'], not stripped."""
+    tool_call: dict[str, Any] = {
+        "type": "tool_call",
+        "name": "_sec_echo_call_id",
+        "id": "real-call-id-123",
+        "args": {"query": "test"},
+    }
+    result = _sec_echo_call_id.invoke(tool_call)
+    content = result.content if hasattr(result, "content") else result
+    assert "real-call-id-123" in str(content), (
+        "InjectedToolCallId must be populated from the ToolCall envelope id"
+    )
+
+
+def test_injected_tool_call_id_not_overrideable_via_args() -> None:
+    """Attacker-supplied tool_call_id in args must not override the real id."""
+    tool_call: dict[str, Any] = {
+        "type": "tool_call",
+        "name": "_sec_echo_call_id",
+        "id": "real-id-456",
+        "args": {
+            "query": "test",
+            "tool_call_id": "fake-attacker-id",  # must be overwritten by real id
+        },
+    }
+    result = _sec_echo_call_id.invoke(tool_call)
+    content = result.content if hasattr(result, "content") else result
+    assert "real-id-456" in str(content), (
+        "Real ToolCall id must take precedence over attacker-supplied tool_call_id"
+    )
+    assert "fake-attacker-id" not in str(content)
