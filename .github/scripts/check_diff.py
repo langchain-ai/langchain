@@ -91,9 +91,10 @@ def dependents_graph() -> dict:
                 for depline in extended_deps:
                     if depline.startswith("-e "):
                         # editable dependency
-                        assert depline.startswith("-e ../partners/"), (
-                            "Extended test deps should only editable install partner packages"
-                        )
+                        if not depline.startswith("-e ../partners/"):
+                            raise ValueError(
+                                "Extended test deps should only editable install partner packages"
+                            )
                         partner = depline.split("partners/")[1]
                         dep = f"langchain-{partner}"
                     else:
@@ -153,6 +154,13 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.12"
 ) -> List[Dict[str, str]]:
+    # Validate dir_ to prevent path traversal attacks
+    base_dir = Path(".").resolve()
+    target_dir = (base_dir / dir_).resolve()
+    try:
+        target_dir.relative_to(base_dir)
+    except ValueError as e:
+        raise ValueError(f"Invalid directory path: {dir_}") from e
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
     for package in core_uv_lock_data["package"]:
@@ -160,7 +168,7 @@ def _get_pydantic_test_configs(
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
-    with open(f"./{dir_}/uv.lock", "rb") as f:
+    with open(target_dir / "uv.lock", "rb") as f:
         dir_uv_lock_data = tomllib.load(f)
 
     for package in dir_uv_lock_data["package"]:
