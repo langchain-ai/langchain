@@ -385,7 +385,30 @@ def test_init_chat_model_huggingface() -> None:
         RuntimeError,
         ValueError,
     ) as e:
-        # If model download fails in CI, skip the test rather than failing
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+def test_with_structured_output_pydantic() -> None:
+    from pydantic import BaseModel, Field
+
+    class Person(BaseModel):
+        name: str = Field(description="The name of the person")
+        age: int = Field(description="The age of the person")
+
+    llm = Mock(spec=HuggingFaceEndpoint)
+    llm.repo_id = "test/model"
+    llm.model = "test/model"
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        chat = ChatHuggingFace(llm=llm, tokenizer=MagicMock())
+
+        # Should not raise NotImplementedError
+        runnable_json = chat.with_structured_output(Person, method="json_schema")
+        assert runnable_json is not None
+
+        runnable_func = chat.with_structured_output(Person, method="function_calling")
+        assert runnable_func is not None
