@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -1461,6 +1462,92 @@ class TestAsyncWrapModelCall:
 
         assert call_log == ["before", "after"]
         assert result["messages"][1].content == "Async response"
+
+
+class TestModelNodeTracing:
+    """Test callback hierarchy for the agent model node."""
+
+    def test_sync_model_callbacks_are_children_of_model_node(self) -> None:
+        """Test sync model callbacks are nested under `model_node` tracing."""
+
+        class TrackingHandler(BaseCallbackHandler):
+            def __init__(self) -> None:
+                self.chain_run_ids: dict[str, str] = {}
+                self.chat_parent_run_ids: list[str | None] = []
+
+            def on_chain_start(
+                self,
+                serialized: dict[str, Any] | None,
+                inputs: dict[str, Any],
+                *,
+                run_id: Any,
+                parent_run_id: Any | None = None,
+                **kwargs: Any,
+            ) -> None:
+                name = kwargs.get("name")
+                if isinstance(name, str):
+                    self.chain_run_ids[name] = str(run_id)
+
+            def on_chat_model_start(
+                self,
+                serialized: dict[str, Any],
+                messages: list[list[BaseMessage]],
+                *,
+                run_id: Any,
+                parent_run_id: Any | None = None,
+                **kwargs: Any,
+            ) -> None:
+                self.chat_parent_run_ids.append(str(parent_run_id) if parent_run_id else None)
+
+        handler = TrackingHandler()
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model)
+
+        agent.invoke({"messages": [HumanMessage("Test")]}, config={"callbacks": [handler]})
+
+        assert "model_node" in handler.chain_run_ids
+        assert handler.chat_parent_run_ids == [handler.chain_run_ids["model_node"]]
+
+    async def test_async_model_callbacks_are_children_of_model_node(self) -> None:
+        """Test async model callbacks are nested under `model_node` tracing."""
+
+        class TrackingHandler(BaseCallbackHandler):
+            def __init__(self) -> None:
+                self.chain_run_ids: dict[str, str] = {}
+                self.chat_parent_run_ids: list[str | None] = []
+
+            def on_chain_start(
+                self,
+                serialized: dict[str, Any] | None,
+                inputs: dict[str, Any],
+                *,
+                run_id: Any,
+                parent_run_id: Any | None = None,
+                **kwargs: Any,
+            ) -> None:
+                name = kwargs.get("name")
+                if isinstance(name, str):
+                    self.chain_run_ids[name] = str(run_id)
+
+            def on_chat_model_start(
+                self,
+                serialized: dict[str, Any],
+                messages: list[list[BaseMessage]],
+                *,
+                run_id: Any,
+                parent_run_id: Any | None = None,
+                **kwargs: Any,
+            ) -> None:
+                self.chat_parent_run_ids.append(str(parent_run_id) if parent_run_id else None)
+
+        handler = TrackingHandler()
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model)
+
+        await agent.ainvoke({"messages": [HumanMessage("Test")]}, config={"callbacks": [handler]})
+
+        assert "model_node" in handler.chain_run_ids
+        assert handler.chat_parent_run_ids == [handler.chain_run_ids["model_node"]]
 
 
 class TestSyncAsyncInterop:
