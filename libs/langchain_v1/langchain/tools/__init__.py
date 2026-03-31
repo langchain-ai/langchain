@@ -7,12 +7,7 @@ from langchain_core.tools import (
     ToolException,
 )
 
-from langchain.tools.headless import (
-    HEADLESS_TOOL_METADATA_KEY,
-    HeadlessTool,
-    create_headless_tool,
-    tool,
-)
+from langchain.tools.headless import HEADLESS_TOOL_METADATA_KEY, HeadlessTool, tool
 from langchain.tools.tool_node import InjectedState, InjectedStore, ToolRuntime
 
 __all__ = [
@@ -25,6 +20,5 @@ __all__ = [
     "InjectedToolCallId",
     "ToolException",
     "ToolRuntime",
-    "create_headless_tool",
     "tool",
 ]

@@ -10,7 +10,6 @@ EXPECTED_ALL = {
     "InjectedToolCallId",
     "ToolException",
     "ToolRuntime",
-    "create_headless_tool",
     "tool",
 }
 

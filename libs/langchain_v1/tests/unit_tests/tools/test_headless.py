@@ -9,20 +9,15 @@ from unittest.mock import patch
 import pytest
 from pydantic import BaseModel, Field
 
-from langchain.tools import (
-    HEADLESS_TOOL_METADATA_KEY,
-    HeadlessTool,
-    create_headless_tool,
-    tool,
-)
+from langchain.tools import HEADLESS_TOOL_METADATA_KEY, HeadlessTool, tool
 
 
 class _MessageArgs(BaseModel):
     message: str = Field(..., description="A message.")
 
 
-def test_create_headless_tool_properties() -> None:
-    t = create_headless_tool(
+def test_headless_tool_properties() -> None:
+    t = tool(
         name="test_tool",
         description="A test headless tool.",
         args_schema=_MessageArgs,
@@ -55,7 +50,7 @@ def test_tool_normal_still_returns_structured_tool() -> None:
 
 @pytest.mark.asyncio
 async def test_headless_coroutine_calls_interrupt() -> None:
-    ht = create_headless_tool(
+    ht = tool(
         name="interrupt_me",
         description="d",
         args_schema=_MessageArgs,
@@ -81,13 +76,36 @@ async def test_headless_coroutine_calls_interrupt() -> None:
     assert getattr(result, "content", result) == "resumed"
 
 
+def test_headless_sync_invoke_calls_interrupt() -> None:
+    """Sync `invoke` must work (StructuredTool previously had no sync path)."""
+    ht = tool(
+        name="sync_interrupt",
+        description="d",
+        args_schema=_MessageArgs,
+    )
+    with patch("langchain.tools.headless.interrupt") as mock_interrupt:
+        mock_interrupt.return_value = "ok"
+        result = ht.invoke(
+            {
+                "type": "tool_call",
+                "name": "sync_interrupt",
+                "id": "cid-9",
+                "args": {"message": "sync"},
+            }
+        )
+    mock_interrupt.assert_called_once()
+    payload = mock_interrupt.call_args[0][0]
+    assert payload["tool_call"]["id"] == "cid-9"
+    assert getattr(result, "content", result) == "ok"
+
+
 def test_headless_dict_schema_has_metadata() -> None:
     schema: dict[str, Any] = {
         "type": "object",
         "properties": {"q": {"type": "string"}},
         "required": ["q"],
     }
-    ht = create_headless_tool(
+    ht = tool(
         name="dict_tool",
         description="Uses JSON schema.",
         args_schema=schema,
@@ -97,7 +115,7 @@ def test_headless_dict_schema_has_metadata() -> None:
 
 
 def test_invoke_without_graph_context_errors() -> None:
-    ht = create_headless_tool(
+    ht = tool(
         name="t",
         description="d",
         args_schema=_MessageArgs,
