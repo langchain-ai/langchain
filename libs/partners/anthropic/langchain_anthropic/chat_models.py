@@ -1652,7 +1652,7 @@ class ChatAnthropic(BaseChatModel):
         # _get_llm_for_structured_output_when_thinking_is_enabled.
         if (
             self.thinking is not None
-            and self.thinking.get("type") == "enabled"
+            and self.thinking.get("type") in ("enabled", "adaptive")
             and "tool_choice" in kwargs
             and kwargs["tool_choice"].get("type") in ("any", "tool")
         ):
@@ -1781,7 +1781,10 @@ class ChatAnthropic(BaseChatModel):
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
-            if self.thinking is not None and self.thinking.get("type") == "enabled":
+            if self.thinking is not None and self.thinking.get("type") in (
+                "enabled",
+                "adaptive",
+            ):
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
                     schema,
                     formatted_tool,
@@ -1993,7 +1996,7 @@ def _tools_in_params(params: dict) -> bool:
 
 
 def _thinking_in_params(params: dict) -> bool:
-    return params.get("thinking", {}).get("type") == "enabled"
+    return params.get("thinking", {}).get("type") in ("enabled", "adaptive")
 
 
 def _documents_in_params(params: dict) -> bool:

@@ -62,6 +62,9 @@ typing = [
 ]
 dev = ["langchain-core"]
 
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]
+
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
