@@ -23,7 +23,7 @@ classifiers = [
 version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.19,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "tokenizers>=0.15.1,<1.0.0",
     "httpx>=0.25.2,<1.0.0",
     "httpx-sse>=0.3.1,<1.0.0",
@@ -55,6 +55,9 @@ typing = [
     "mypy>=1.10.0,<2.0.0",
     "langchain-core"
 ]
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

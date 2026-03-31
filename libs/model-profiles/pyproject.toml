@@ -69,6 +69,9 @@ typing = [
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]
+
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain_v1", editable = true }

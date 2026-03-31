@@ -44,7 +44,7 @@ This monorepo uses `uv` for dependency management. Local development uses editab
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
 
-Before running your tests, setup all packages by running:
+Before running your tests, set up all packages by running:
 
 ```bash
 # For all groups
@@ -229,10 +229,10 @@ Releases are triggered manually via `.github/workflows/_release.yml` with `worki
 
 **Auto-labeling:**
 
-- `.github/workflows/pr_labeler_file.yml`
-- `.github/workflows/pr_labeler_title.yml`
-- `.github/workflows/auto-label-by-package.yml`
-- `.github/workflows/tag-external-contributions.yml`
+- `.github/workflows/pr_labeler.yml` – Unified PR labeler (size, file, title, external/internal, contributor tier)
+- `.github/workflows/pr_labeler_backfill.yml` – Manual backfill of PR labels on open PRs
+- `.github/workflows/auto-label-by-package.yml` – Issue labeling by package
+- `.github/workflows/tag-external-issues.yml` – Issue external/internal classification
 
 ### Adding a new partner to CI
 
@@ -240,7 +240,7 @@ When adding a new partner package, update these files:
 
 - `.github/ISSUE_TEMPLATE/*.yml` – Add to package dropdown
 - `.github/dependabot.yml` – Add dependency update entry
-- `.github/pr-file-labeler.yml` – Add file-to-label mapping
+- `.github/scripts/pr-labeler-config.json` – Add file rule and scope-to-label mapping
 - `.github/workflows/_release.yml` – Add API key secrets if needed
 - `.github/workflows/auto-label-by-package.yml` – Add package label
 - `.github/workflows/check_diffs.yml` – Add to change detection

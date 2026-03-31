@@ -127,12 +127,23 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.13"]
-    elif dir_ == "libs/core":
+        # CPU simulation (<1% variance, Valgrind-based) is the default.
+        # Partners with heavy SDK inits use walltime instead to keep CI fast.
+        CODSPEED_WALLTIME_DIRS = {
+            "libs/core",
+            "libs/partners/fireworks",  # ~328s under simulation
+            "libs/partners/openai",  # 6 benchmarks, ~6 min under simulation
+        }
+        mode = "walltime" if dir_ in CODSPEED_WALLTIME_DIRS else "simulation"
+        return [
+            {
+                "working-directory": dir_,
+                "python-version": "3.13",
+                "codspeed-mode": mode,
+            }
+        ]
+    if dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    # custom logic for specific directories
-    elif dir_ in {"libs/partners/chroma"}:
-        py_versions = ["3.10", "3.13"]
     else:
         py_versions = ["3.10", "3.14"]
 
