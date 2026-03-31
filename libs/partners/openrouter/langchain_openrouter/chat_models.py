@@ -1183,9 +1183,7 @@ def _merge_reasoning_details(
             ):
                 texts.append(nxt.get(text_key, "") or "")
                 # Preserve metadata from later fragments (e.g. signature)
-                for k, v in nxt.items():
-                    if k != text_key and v is not None:
-                        base[k] = v
+                base.update({k: v for k, v in nxt.items() if k != text_key and v is not None})
                 i += 1
             else:
                 break
