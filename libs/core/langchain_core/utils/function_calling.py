@@ -500,6 +500,7 @@ def convert_to_openai_function(
 _WellKnownOpenAITools = (
     "function",
     "file_search",
+    "computer",
     "computer_use_preview",
     "code_interpreter",
     "mcp",

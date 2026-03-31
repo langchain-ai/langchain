@@ -169,8 +169,8 @@ class AzureOpenAI(BaseOpenAI):
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }

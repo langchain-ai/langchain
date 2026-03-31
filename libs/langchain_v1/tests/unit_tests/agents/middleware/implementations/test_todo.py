@@ -649,6 +649,45 @@ def test_single_write_todos_call_allowed() -> None:
     assert result is None
 
 
+async def test_todo_middleware_agent_creation_with_middleware_async() -> None:
+    """Test async agent execution with the planning middleware."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "in_progress"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [],
+        ]
+    )
+    middleware = TodoListMiddleware()
+    agent = create_agent(model=model, middleware=[middleware])
+
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+    assert result["todos"] == [{"content": "Task 1", "status": "completed"}]
+    assert len(result["messages"]) == 8
+
+
 async def test_parallel_write_todos_calls_rejected_async() -> None:
     """Test async version - parallel write_todos calls are rejected with error messages."""
     middleware = TodoListMiddleware()

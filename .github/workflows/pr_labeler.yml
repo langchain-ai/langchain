@@ -27,7 +27,8 @@ name: "🏷️ PR Labeler"
 
 on:
   # Safe since we're not checking out or running the PR's code.
-  # Never check out the PR's head in a pull_request_target job.
+  # NEVER CHECK OUT UNTRUSTED CODE FROM A PR's HEAD IN A pull_request_target JOB.
+  # Doing so would allow attackers to execute arbitrary code in the context of your repository.
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
 

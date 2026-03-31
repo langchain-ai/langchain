@@ -288,7 +288,7 @@ class TestChatOpenRouterInstantiation:
         assert model.client is client_1
 
     def test_app_url_passed_to_client(self) -> None:
-        """Test that app_url is passed as http_referer to the SDK client."""
+        """Test that app_url is passed as HTTP-Referer header via httpx clients."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -297,10 +297,10 @@ class TestChatOpenRouterInstantiation:
                 app_url="https://myapp.com",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == "https://myapp.com"
+            assert call_kwargs["client"].headers["HTTP-Referer"] == "https://myapp.com"
 
     def test_app_title_passed_to_client(self) -> None:
-        """Test that app_title is passed as x_title to the SDK client."""
+        """Test that app_title is passed as X-Title header via httpx clients."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -309,7 +309,7 @@ class TestChatOpenRouterInstantiation:
                 app_title="My App",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["x_title"] == "My App"
+            assert call_kwargs["client"].headers["X-Title"] == "My App"
 
     def test_default_attribution_headers(self) -> None:
         """Test that default attribution headers are sent when not overridden."""
@@ -320,8 +320,9 @@ class TestChatOpenRouterInstantiation:
                 api_key=SecretStr("test-key"),
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == ("https://docs.langchain.com")
-            assert call_kwargs["x_title"] == "LangChain"
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://docs.langchain.com"
+            assert sync_headers["X-Title"] == "LangChain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
@@ -334,8 +335,9 @@ class TestChatOpenRouterInstantiation:
                 app_title="My Custom App",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == "https://my-custom-app.com"
-            assert call_kwargs["x_title"] == "My Custom App"
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://my-custom-app.com"
+            assert sync_headers["X-Title"] == "My Custom App"
 
     def test_app_categories_passed_to_client(self) -> None:
         """Test that app_categories injects custom httpx clients with header."""
@@ -360,8 +362,8 @@ class TestChatOpenRouterInstantiation:
                 "cli-agent,programming-app"
             )
 
-    def test_app_categories_none_no_custom_clients(self) -> None:
-        """Test that no custom httpx clients are created when categories unset."""
+    def test_app_categories_none_no_categories_header(self) -> None:
+        """Test that no X-OpenRouter-Categories header when categories unset."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -369,11 +371,12 @@ class TestChatOpenRouterInstantiation:
                 api_key=SecretStr("test-key"),
             )
             call_kwargs = mock_cls.call_args[1]
-            assert "client" not in call_kwargs
-            assert "async_client" not in call_kwargs
+            # httpx clients still created for X-Title default
+            sync_headers = call_kwargs["client"].headers
+            assert "X-OpenRouter-Categories" not in sync_headers
 
-    def test_app_categories_empty_list_no_custom_clients(self) -> None:
-        """Test that an empty list does not inject custom httpx clients."""
+    def test_app_categories_empty_list_no_categories_header(self) -> None:
+        """Test that an empty list does not inject categories header."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -382,8 +385,8 @@ class TestChatOpenRouterInstantiation:
                 app_categories=[],
             )
             call_kwargs = mock_cls.call_args[1]
-            assert "client" not in call_kwargs
-            assert "async_client" not in call_kwargs
+            sync_headers = call_kwargs["client"].headers
+            assert "X-OpenRouter-Categories" not in sync_headers
 
     def test_app_categories_with_other_attribution(self) -> None:
         """Test that app_categories coexists with app_url and app_title."""
@@ -397,11 +400,51 @@ class TestChatOpenRouterInstantiation:
                 app_categories=["cli-agent"],
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == "https://myapp.com"
-            assert call_kwargs["x_title"] == "My App"
-            assert "client" in call_kwargs
             sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://myapp.com"
+            assert sync_headers["X-Title"] == "My App"
             assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+
+    def test_app_title_none_no_x_title_header(self) -> None:
+        """Test that X-Title header is omitted when app_title is explicitly None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_title=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert "X-Title" not in sync_headers
+
+    def test_app_url_none_no_referer_header(self) -> None:
+        """Test that HTTP-Referer header is omitted when app_url is explicitly None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert "HTTP-Referer" not in sync_headers
+
+    def test_no_attribution_no_custom_clients(self) -> None:
+        """Test that no httpx clients are created when all attribution is None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
@@ -2464,8 +2507,8 @@ class TestWrapMessagesForSdk:
         ]
         result = _wrap_messages_for_sdk(msgs)
         assert len(result) == 2
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
 
     def test_wrapped_serializes_correctly(self) -> None:
         """Wrapped models should serialize to the correct JSON payload."""
@@ -2522,10 +2565,10 @@ class TestWrapMessagesForSdk:
             {"role": "tool", "content": "result", "tool_call_id": "c1"},
         ]
         result = _wrap_messages_for_sdk(msgs)
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
-        assert isinstance(result[2], components.AssistantMessage)
-        assert isinstance(result[3], components.ToolResponseMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
+        assert isinstance(result[2], components.ChatAssistantMessage)
+        assert isinstance(result[3], components.ChatToolMessage)
 
 
 # ===========================================================================
