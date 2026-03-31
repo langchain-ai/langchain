@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DR Growth Projector — 6-Month Forecast</title>
+  <style>
+    /* ── CSS Custom Properties ──────────────────────────────────────── */
+    :root {
+      --bg:           #0f1117;
+      --bg-card:      #1a1d27;
+      --bg-card-alt:  #1e2132;
+      --border:       rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --text-primary: #edeef2;
+      --text-secondary:#9399aa;
+      --text-muted:   #5c6178;
+      --accent:       #6c8aff;
+      --accent-glow:  rgba(108,138,255,0.15);
+      --green:        #34d399;
+      --green-bg:     rgba(52,211,153,0.10);
+      --green-border: rgba(52,211,153,0.25);
+      --amber:        #fbbf24;
+      --amber-bg:     rgba(251,191,36,0.10);
+      --amber-border: rgba(251,191,36,0.25);
+      --red:          #f87171;
+      --red-bg:       rgba(248,113,113,0.10);
+      --red-border:   rgba(248,113,113,0.25);
+      --bar-track:    rgba(255,255,255,0.06);
+      --bar-fill:     #6c8aff;
+      --radius:       12px;
+      --radius-sm:    8px;
+      --font-mono:    'SF Mono', 'Fira Mono', 'Cascadia Code', 'Consolas', monospace;
+      --font-sans:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --shadow:       0 4px 24px rgba(0,0,0,0.4);
+      --shadow-card:  0 2px 12px rgba(0,0,0,0.3);
+      --transition:   0.18s ease;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg:           #f0f2f8;
+        --bg-card:      #ffffff;
+        --bg-card-alt:  #f7f8fb;
+        --border:       rgba(0,0,0,0.08);
+        --border-hover: rgba(0,0,0,0.16);
+        --text-primary: #111827;
+        --text-secondary:#4b5563;
+        --text-muted:   #9ca3af;
+        --accent-glow:  rgba(108,138,255,0.08);
+        --bar-track:    rgba(0,0,0,0.07);
+        --green-bg:     rgba(16,185,129,0.08);
+        --green-border: rgba(16,185,129,0.25);
+        --amber-bg:     rgba(217,119,6,0.08);
+        --amber-border: rgba(217,119,6,0.25);
+        --red-bg:       rgba(220,38,38,0.08);
+        --red-border:   rgba(220,38,38,0.25);
+        --shadow:       0 4px 24px rgba(0,0,0,0.10);
+        --shadow-card:  0 2px 8px rgba(0,0,0,0.08);
+      }
+    }
+
+    /* ── Reset & Base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────── */
+    .widget {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .widget-header {
+      margin-bottom: 28px;
+    }
+
+    .widget-header h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .widget-header p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* ── Sliders Section ────────────────────────────────────────────── */
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .slider-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      transition: border-color var(--transition);
+    }
+
+    .slider-card:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .slider-label span:first-child {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+
+    .slider-value {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 99px;
+      background: var(--bar-track);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--accent-glow);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      box-shadow: 0 0 0 3px var(--bg-card);
+      cursor: pointer;
+    }
+
+    .slider-range-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .slider-range-labels span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* ── Metric Cards ───────────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--accent);
+      border-radius: 3px 0 0 3px;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-unit {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-family: var(--font-mono);
+    }
+
+    /* ── Verdict Banner ─────────────────────────────────────────────── */
+    .verdict {
+      border-radius: var(--radius);
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      border: 1px solid;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .verdict.green {
+      background: var(--green-bg);
+      border-color: var(--green-border);
+    }
+
+    .verdict.amber {
+      background: var(--amber-bg);
+      border-color: var(--amber-border);
+    }
+
+    .verdict.red {
+      background: var(--red-bg);
+      border-color: var(--red-border);
+    }
+
+    .verdict-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+
+    .verdict.green  .verdict-icon { background: var(--green);  }
+    .verdict.amber  .verdict-icon { background: var(--amber);  }
+    .verdict.red    .verdict-icon { background: var(--red);    }
+
+    .verdict-text {
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .verdict.green  .verdict-text { color: var(--green); }
+    .verdict.amber  .verdict-text { color: var(--amber); }
+    .verdict.red    .verdict-text { color: var(--red);   }
+
+    /* ── Table ──────────────────────────────────────────────────────── */
+    .table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    .table-title {
+      padding: 16px 20px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+
+    thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      background: var(--bg-card-alt);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover { background: var(--bg-card-alt); }
+
+    tbody td {
+      padding: 12px 14px;
+      font-size: 0.845rem;
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    .td-mono {
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+    }
+
+    .month-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid rgba(108,138,255,0.2);
+    }
+
+    .focus-text {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      max-width: 180px;
+    }
+
+    /* ── DR Progress Bar ────────────────────────────────────────────── */
+    .dr-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dr-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--bar-track);
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+
+    .dr-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      transition: width 0.3s ease;
+    }
+
+    .dr-val {
+      font-family: var(--font-mono);
+      font-size: 0.83rem;
+      font-weight: 700;
+      min-width: 30px;
+      text-align: right;
+      color: var(--text-primary);
+    }
+
+    /* ── Footnote ───────────────────────────────────────────────────── */
+    .footnote {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 8px;
+      line-height: 1.6;
+    }
+
+    .footnote::before {
+      content: '* ';
+    }
+
+    /* ── Section spacing ────────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="widget">
+
+  <!-- Header -->
+  <div class="widget-header">
+    <h1>DR Growth Projector</h1>
+    <p>6-month Domain Rating forecast based on outreach parameters</p>
+  </div>
+
+  <!-- Sliders -->
+  <p class="section-label">Parameters</p>
+  <div class="sliders-grid">
+
+    <div class="slider-card">
+      <div class="slider-label">
+        <span>Success Rate</span>
+        <span class="slider-value" id="val-success">5%</span>
+      </div>
+      <input type="range" id="slider-success" min="2" max="15" step="1" value="5"
+             aria-label="Success rate" />
+      <div class="slider-range-labels"><span>2%</span><span>15%</span></div>
+    </div>
+
+    <div class="slider-card">
+      <div class="slider-label">
+        <span>Avg DR of Linking Sites</span>
+        <span class="slider-value" id="val-dr">25</span>
+      </div>
+      <input type="range" id="slider-dr" min="10" max="50" step="1" value="25"
+             aria-label="Average DR of linking sites" />
+      <div class="slider-range-labels"><span>DR 10</span><span>DR 50</span></div>
+    </div>
+
+    <div class="slider-card">
+      <div class="slider-label">
+        <span>Monthly Email Capacity</span>
+        <span class="slider-value" id="val-cap">100</span>
+      </div>
+      <input type="range" id="slider-cap" min="30" max="400" step="10" value="100"
+             aria-label="Monthly email capacity" />
+      <div class="slider-range-labels"><span>30</span><span>400</span></div>
+    </div>
+
+  </div>
+
+  <!-- Metric Cards -->
+  <p class="section-label">Summary Metrics</p>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Total Emails Sent</div>
+      <div class="metric-value" id="m-emails">—</div>
+      <div class="metric-unit">over 6 months</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Est. Links Earned</div>
+      <div class="metric-value" id="m-links">—</div>
+      <div class="metric-unit">referring domains</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Projected DR</div>
+      <div class="metric-value" id="m-dr">—</div>
+      <div class="metric-unit">at month 6</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Cost Per Link</div>
+      <div class="metric-value" id="m-cost">—</div>
+      <div class="metric-unit">per referring domain</div>
+    </div>
+  </div>
+
+  <!-- Verdict Banner -->
+  <div class="verdict" id="verdict" role="status" aria-live="polite">
+    <div class="verdict-icon" id="verdict-icon">—</div>
+    <div class="verdict-text" id="verdict-text">Calculating…</div>
+  </div>
+
+  <!-- Month-by-Month Table -->
+  <div class="table-wrapper">
+    <div class="table-title">Month-by-Month Breakdown</div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Mo.</th>
+            <th>Emails Sent</th>
+            <th>Links Earned</th>
+            <th>Cum. Ref. Domains</th>
+            <th>Est. DR &amp; Progress</th>
+            <th>Monthly Focus</th>
+          </tr>
+        </thead>
+        <tbody id="month-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footnote -->
+  <p class="footnote">Logarithmic DR model. 2–4 week Ahrefs indexing lag. Editorial links punch above weight.</p>
+
+</div>
+
+<script>
+  /* ── Constants ───────────────────────────────────────────────────── */
+  const MULTIPLIERS = [0.5, 1.0, 1.1, 1.2, 1.1, 1.0];
+  const FOCUSES = [
+    'Setup — warm-up, list building, Instantly config',
+    'First full send. Listicle inclusion requests',
+    'Scale up. Guest post pitches to higher-DR targets',
+    'Follow-up sequences from M2–M3. Resource page outreach',
+    'Push volume. Niche retailer and trade blogs',
+    'Harvest replies, chase pending links, audit live backlinks',
+  ];
+
+  /* ── DOM References ─────────────────────────────────────────────── */
+  const sliderSuccess = document.getElementById('slider-success');
+  const sliderDr      = document.getElementById('slider-dr');
+  const sliderCap     = document.getElementById('slider-cap');
+
+  const valSuccess = document.getElementById('val-success');
+  const valDr      = document.getElementById('val-dr');
+  const valCap     = document.getElementById('val-cap');
+
+  const mEmails = document.getElementById('m-emails');
+  const mLinks  = document.getElementById('m-links');
+  const mDr     = document.getElementById('m-dr');
+  const mCost   = document.getElementById('m-cost');
+
+  const verdict     = document.getElementById('verdict');
+  const verdictIcon = document.getElementById('verdict-icon');
+  const verdictText = document.getElementById('verdict-text');
+  const tableBody   = document.getElementById('month-table-body');
+
+  /* ── Core calculation ───────────────────────────────────────────── */
+  function drFormula(cumulativeLinks, avgLinkDR) {
+    return Math.min(
+      Math.log(cumulativeLinks + 1) * 6 * Math.min(avgLinkDR / 30, 1.5),
+      35
+    );
+  }
+
+  function compute() {
+    const successRate = parseFloat(sliderSuccess.value) / 100;
+    const avgLinkDR   = parseFloat(sliderDr.value);
+    const capacity    = parseFloat(sliderCap.value);
+
+    /* Update slider display labels */
+    valSuccess.textContent = `${sliderSuccess.value}%`;
+    valDr.textContent      = `DR ${sliderDr.value}`;
+    valCap.textContent     = sliderCap.value;
+
+    /* Track fill on sliders */
+    updateSliderFill(sliderSuccess, 2, 15);
+    updateSliderFill(sliderDr, 10, 50);
+    updateSliderFill(sliderCap, 30, 400);
+
+    /* Build monthly rows */
+    let totalEmails  = 0;
+    let totalLinks   = 0;
+    const rows = [];
+
+    for (let i = 0; i < 6; i++) {
+      const emailsSent   = Math.round(capacity * MULTIPLIERS[i]);
+      const linksEarned  = Math.round(emailsSent * successRate);
+      totalEmails       += emailsSent;
+      totalLinks        += linksEarned;
+      const dr           = drFormula(totalLinks, avgLinkDR);
+      rows.push({ month: i + 1, emailsSent, linksEarned, cumLinks: totalLinks, dr });
+    }
+
+    const finalDR  = rows[5].dr;
+    const costPer  = (100 / (parseFloat(sliderSuccess.value))).toFixed(1);
+
+    /* ── Update summary cards ── */
+    mEmails.textContent = totalEmails.toLocaleString();
+    mLinks.textContent  = totalLinks.toLocaleString();
+    mDr.textContent     = finalDR.toFixed(1);
+    mCost.textContent   = `${ costPer }×`;
+
+    /* ── Verdict ── */
+    let vClass, vIcon, vMsg;
+    if (finalDR >= 18) {
+      vClass = 'green';
+      vIcon  = '✓';
+      vMsg   = 'DR 20 is achievable at this rate';
+    } else if (finalDR >= 12) {
+      vClass = 'amber';
+      vIcon  = '~';
+      vMsg   = 'Borderline — increase volume or target higher-DR sites';
+    } else {
+      vClass = 'red';
+      vIcon  = '✕';
+      vMsg   = 'Unlikely — raise capacity or improve targeting';
+    }
+
+    verdict.className     = `verdict ${vClass}`;
+    verdictIcon.textContent = vIcon;
+    verdictText.textContent = vMsg;
+
+    /* ── Table ── */
+    tableBody.innerHTML = rows.map(r => {
+      const barPct = Math.min((r.dr / 35) * 100, 100).toFixed(1);
+      return `
+        <tr>
+          <td><span class="month-badge">M${r.month}</span></td>
+          <td class="td-mono">${r.emailsSent.toLocaleString()}</td>
+          <td class="td-mono">${r.linksEarned.toLocaleString()}</td>
+          <td class="td-mono">${r.cumLinks.toLocaleString()}</td>
+          <td>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar-track">
+                <div class="dr-bar-fill" style="width:${barPct}%"></div>
+              </div>
+              <span class="dr-val">${r.dr.toFixed(1)}</span>
+            </div>
+          </td>
+          <td><div class="focus-text">${FOCUSES[r.month - 1]}</div></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ── Slider fill track (CSS gradient trick) ─────────────────────── */
+  function updateSliderFill(input, min, max) {
+    const pct = ((input.value - min) / (max - min)) * 100;
+    const accent = getComputedStyle(document.documentElement)
+      .getPropertyValue('--accent').trim() || '#6c8aff';
+    const track = getComputedStyle(document.documentElement)
+      .getPropertyValue('--bar-track').trim() || 'rgba(255,255,255,0.06)';
+    input.style.background =
+      `linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, ${track} ${pct}%, ${track} 100%)`;
+  }
+
+  /* ── Event listeners ────────────────────────────────────────────── */
+  [sliderSuccess, sliderDr, sliderCap].forEach(s => {
+    s.addEventListener('input', compute);
+  });
+
+  /* ── Initial render ─────────────────────────────────────────────── */
+  compute();
+</script>
+</body>
+</html>
