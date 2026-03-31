@@ -93,7 +93,7 @@ test_integration = [
 
 [tool.uv]
 prerelease = "allow"
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
