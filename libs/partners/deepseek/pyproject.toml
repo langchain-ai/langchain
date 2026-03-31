@@ -53,6 +53,9 @@ dev = []
 typing = ["mypy>=1.10.0,<2.0.0"]
 
 
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]
+
 [tool.uv.sources]
 langchain-openai = { path = "../openai", editable = true }
 langchain-core = { path = "../../core", editable = true }
