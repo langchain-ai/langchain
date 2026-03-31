@@ -349,7 +349,7 @@ jobs:
                 '',
                 'External contributors must be assigned to an issue before opening a PR for it. Please:',
                 '1. Comment on the linked issue to request assignment from a maintainer',
-                '2. Once assigned, edit your PR description and the PR will be reopened automatically',
+                '2. Once assigned, your PR will be reopened automatically',
                 '',
                 '*Maintainers: reopen this PR or remove the `missing-issue-link` label to bypass this check.*',
               ];
