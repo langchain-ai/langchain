@@ -12,7 +12,7 @@ from typing import Any
 
 from agents.seo_agent.config import SITE_PROFILES
 from agents.seo_agent.state import SEOAgentState
-from agents.seo_agent.tools import ahrefs_tools, gsc_tools, supabase_tools
+from agents.seo_agent.tools import ahrefs_tools, crm_tools, gsc_tools, supabase_tools
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +242,14 @@ def run_rank_tracker(state: SEOAgentState) -> dict[str, Any]:
                 )
                 logger.warning(msg, exc_info=True)
                 errors.append(msg)
+
+        # Also populate seo_our_rankings for the frontend dashboard
+        try:
+            crm_tools.snapshot_our_rankings(site_key, merged)
+        except Exception:
+            logger.warning(
+                "Failed to snapshot our rankings for '%s'", site_key, exc_info=True
+            )
 
         all_rank_data.extend(merged)
 

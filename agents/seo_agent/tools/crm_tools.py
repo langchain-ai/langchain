@@ -342,7 +342,6 @@ def add_tracked_keyword(target_site: str, keyword: str, target_url: str = "") ->
                 "url": target_url,
                 "position": None,  # Unknown until first snapshot
                 "snapshot_date": date.today().isoformat(),
-                "notes": "auto-tracked after content publish",
             },
             on_conflict="keyword,target_site,snapshot_date",
         )
