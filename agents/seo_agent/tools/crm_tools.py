@@ -382,12 +382,14 @@ CRM_CATEGORIES: list[str] = [
     "kitchen_company",
     "bathroom_company",
     "interior_designer",
+    "blogger",
 ]
 
 CRM_SUBCATEGORIES: dict[str, list[str]] = {
     "kitchen_company": ["showroom", "manufacturer", "fitter", "supplier", "bespoke_maker"],
     "bathroom_company": ["showroom", "fitter", "supplier", "designer"],
     "interior_designer": ["freelance", "studio", "firm"],
+    "blogger": ["food", "lifestyle", "home_improvement", "diy"],
 }
 
 CRM_OUTREACH_STATUSES: list[str] = [
@@ -695,18 +697,18 @@ def import_kitchen_makers_to_crm(city: str | None = None) -> int:
     for maker in makers:
         try:
             add_crm_contact(
-                company_name=maker.get("name", "Unknown"),
+                company_name=maker.get("name") or "Unknown",
                 category="kitchen_company",
                 subcategory="bespoke_maker",
-                email=maker.get("email", ""),
-                phone=maker.get("phone", ""),
-                website=maker.get("website", ""),
-                city=maker.get("city", ""),
-                region=maker.get("region", ""),
-                postcode=maker.get("postcode", ""),
-                country=maker.get("country", "GB"),
+                email=maker.get("email") or "",
+                phone=maker.get("phone") or "",
+                website=maker.get("website") or "",
+                city=maker.get("city") or "",
+                region=maker.get("region") or "",
+                postcode=maker.get("postcode") or "",
+                country=maker.get("country") or "GB",
                 source="kitchen_makers_import",
-                notes=maker.get("description", ""),
+                notes=maker.get("description") or "",
             )
             imported += 1
         except Exception:

@@ -415,7 +415,7 @@ def _execute_promote_to_crm() -> dict[str, Any]:
         Result dict with count of promoted prospects.
     """
     from agents.seo_agent.tools.crm_tools import add_crm_contact, get_crm_contacts
-    from agents.seo_agent.tools.supabase_tools import query_table
+    from agents.seo_agent.tools.supabase_tools import query_table, update_record
 
     scored_prospects = query_table(
         "seo_backlink_prospects",
@@ -425,18 +425,25 @@ def _execute_promote_to_crm() -> dict[str, Any]:
 
     existing_crm = get_crm_contacts(limit=500)
     existing_domains = {
-        c.get("website", "").replace("https://", "").replace("http://", "").rstrip("/")
+        (c.get("website") or "").replace("https://", "").replace("http://", "").rstrip("/")
         for c in existing_crm
     }
 
     promoted = 0
     for p in scored_prospects:
-        domain = p.get("domain", "")
+        domain = p.get("domain") or ""
         if domain in existing_domains or not domain:
             continue
 
         segment = p.get("segment", p.get("discovery_method", ""))
-        category = "kitchen_company" if "provider" in segment or "company" in segment else "blogger"
+        if "provider" in segment or "company" in segment or "kitchen" in segment:
+            category = "kitchen_company"
+        elif "bathroom" in segment:
+            category = "bathroom_company"
+        elif "designer" in segment or "interior" in segment:
+            category = "interior_designer"
+        else:
+            category = "blogger"
 
         try:
             add_crm_contact(
@@ -448,6 +455,15 @@ def _execute_promote_to_crm() -> dict[str, Any]:
                 source="prospect_pipeline",
                 outreach_segment=segment,
             )
+            # Mark prospect as promoted so it is not re-processed next cycle
+            try:
+                update_record(
+                    "seo_backlink_prospects",
+                    p["id"],
+                    {"status": "promoted"},
+                )
+            except Exception:
+                logger.warning("Could not update prospect status for %s", p.get("id"))
             promoted += 1
         except Exception:
             pass
