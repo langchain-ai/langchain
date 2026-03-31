@@ -2666,8 +2666,14 @@ def main() -> None:
             logger.info("Running scheduled worker...")
             try:
                 from agents.seo_agent.worker import execute_worker_cycle
-                await execute_worker_cycle()
-                _cron_tracker.release_lock("worker", status="completed", message_sent=True)
+                result = await execute_worker_cycle()
+                _cron_tracker.release_lock(
+                    "worker",
+                    status="completed",
+                    tasks_executed=result.get("tasks_done", 0) + result.get("tasks_failed", 0),
+                    tokens_used=result.get("tokens_used", 0),
+                    message_sent=True,
+                )
             except Exception:
                 # NEVER let the worker crash the bot
                 error_msg = traceback.format_exc()
