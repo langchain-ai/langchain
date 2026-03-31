@@ -1140,8 +1140,9 @@ def _merge_reasoning_details(
     or with distinct ``index`` values are preserved as separate items,
     since non-streaming responses can legitimately contain multiple entries.
 
-    Metadata fields (e.g. ``signature``) from later fragments are preserved
-    by updating the merged entry with non-text fields from each fragment.
+    Metadata fields (for example ``format`` and ``signature``) use last-wins
+    semantics, which preserves stable provider metadata without concatenating
+    repeated strings across fragments.
 
     A single-entry list passes through unchanged.
     """
