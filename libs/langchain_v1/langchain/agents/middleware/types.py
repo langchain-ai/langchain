@@ -101,6 +101,7 @@ class ModelRequest(Generic[ContextT]):
     response_format: ResponseFormat[Any] | None
     state: AgentState[Any]
     runtime: Runtime[ContextT]
+    config: Optional[RunnableConfig] = None
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def __init__(

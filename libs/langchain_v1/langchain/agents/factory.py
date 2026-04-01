@@ -1327,7 +1327,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        output = await model_.ainvoke(messages, config=request.config)
         if name:
             output.name = name
 
@@ -1352,6 +1352,7 @@ def create_agent(
             tool_choice=None,
             state=state,
             runtime=runtime,
+            config = runtime.config,
         )
 
         if awrap_model_call_handler is None:
