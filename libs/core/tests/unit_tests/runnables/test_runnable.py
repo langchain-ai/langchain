@@ -4044,6 +4044,144 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def test_retry_fires_on_retry_callback() -> None:
+    """on_retry callback should fire for every failed retry attempt (sync)."""
+    from tenacity import RetryCallState
+
+    retry_attempt_numbers: list[int] = []
+
+    class RetryLogger(BaseCallbackHandler):
+        def on_retry(
+            self, retry_state: RetryCallState, **kwargs: Any
+        ) -> None:
+            retry_attempt_numbers.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    )
+
+    result = runnable.invoke(1, config={"callbacks": [RetryLogger()]})
+    assert result == 1
+    # 2 failures before success → 2 on_retry calls
+    assert len(retry_attempt_numbers) == 2
+    assert retry_attempt_numbers[0] == 1
+    assert retry_attempt_numbers[1] == 2
+
+
+async def test_async_retry_fires_on_retry_callback() -> None:
+    """on_retry callback should fire for every failed retry attempt (async)."""
+    from tenacity import RetryCallState
+
+    retry_attempt_numbers: list[int] = []
+
+    class RetryLogger(BaseCallbackHandler):
+        async def on_retry(
+            self, retry_state: RetryCallState, **kwargs: Any
+        ) -> None:
+            retry_attempt_numbers.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    )
+
+    result = await runnable.ainvoke(1, config={"callbacks": [RetryLogger()]})
+    assert result == 1
+    assert len(retry_attempt_numbers) == 2
+    assert retry_attempt_numbers[0] == 1
+    assert retry_attempt_numbers[1] == 2
+
+
+def test_retry_batch_fires_on_retry_callback() -> None:
+    """on_retry callback should fire during batch retries (sync)."""
+    from tenacity import RetryCallState
+
+    retry_states: list[RetryCallState] = []
+
+    class RetryLogger(BaseCallbackHandler):
+        def on_retry(
+            self, retry_state: RetryCallState, **kwargs: Any
+        ) -> None:
+            retry_states.append(retry_state)
+
+    fail_once: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:
+        if x in fail_once:
+            fail_once.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=3,
+        wait_exponential_jitter=False,
+    )
+
+    results = runnable.batch([0, 1, 2], config={"callbacks": [RetryLogger()]})
+    assert results == [0, 1, 2]
+    # At least one on_retry should have fired for the failed attempt
+    assert len(retry_states) >= 1
+
+
+async def test_async_retry_batch_fires_on_retry_callback() -> None:
+    """on_retry callback should fire during batch retries (async)."""
+    from tenacity import RetryCallState
+
+    retry_states: list[RetryCallState] = []
+
+    class RetryLogger(BaseCallbackHandler):
+        async def on_retry(
+            self, retry_state: RetryCallState, **kwargs: Any
+        ) -> None:
+            retry_states.append(retry_state)
+
+    fail_once: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:
+        if x in fail_once:
+            fail_once.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=3,
+        wait_exponential_jitter=False,
+    )
+
+    results = await runnable.abatch(
+        [0, 1, 2], config={"callbacks": [RetryLogger()]}
+    )
+    assert results == [0, 1, 2]
+    assert len(retry_states) >= 1
+
+
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work

@@ -192,6 +192,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
+            elif attempt.retry_state.outcome and attempt.retry_state.outcome.failed:
+                run_manager.on_retry(attempt.retry_state)
         return result
 
     @override
@@ -216,6 +218,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 )
             if attempt.retry_state.outcome and not attempt.retry_state.outcome.failed:
                 attempt.retry_state.set_result(result)
+            elif attempt.retry_state.outcome and attempt.retry_state.outcome.failed:
+                await run_manager.on_retry(attempt.retry_state)
         return result
 
     @override
@@ -275,6 +279,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     and not attempt.retry_state.outcome.failed
                 ):
                     attempt.retry_state.set_result(result)
+                elif attempt.retry_state.outcome and attempt.retry_state.outcome.failed:
+                    for rm in run_manager:
+                        rm.on_retry(attempt.retry_state)
         except RetryError as e:
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
@@ -350,6 +357,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     and not attempt.retry_state.outcome.failed
                 ):
                     attempt.retry_state.set_result(result)
+                elif attempt.retry_state.outcome and attempt.retry_state.outcome.failed:
+                    for rm in run_manager:
+                        await rm.on_retry(attempt.retry_state)
         except RetryError as e:
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
