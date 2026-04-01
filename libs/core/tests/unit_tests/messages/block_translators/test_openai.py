@@ -603,3 +603,182 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+# ---------------------------------------------------------------------------
+# Tests for detail field forwarding (regression for #36297)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "image", "url": "https://example.com/img.png", "detail": "high"},
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "metadata": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/img.png",
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/img.png",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/img.png",
+            "metadata": {"detail": "high"},
+        },
+    ],
+)
+def test_convert_to_openai_image_block_url_preserves_detail(block: dict) -> None:
+    """convert_to_openai_image_block must forward detail for URL-based images."""
+    from langchain_core.messages.block_translators.openai import (
+        convert_to_openai_image_block,
+    )
+
+    result = convert_to_openai_image_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/img.png", "detail": "high"},
+    }
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {
+            "type": "image",
+            "base64": "<b64>",
+            "mime_type": "image/jpeg",
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "base64": "<b64>",
+            "mime_type": "image/jpeg",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "base64": "<b64>",
+            "mime_type": "image/jpeg",
+            "metadata": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<b64>",
+            "mime_type": "image/jpeg",
+            "detail": "high",
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<b64>",
+            "mime_type": "image/jpeg",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<b64>",
+            "mime_type": "image/jpeg",
+            "metadata": {"detail": "high"},
+        },
+    ],
+)
+def test_convert_to_openai_image_block_base64_preserves_detail(block: dict) -> None:
+    """convert_to_openai_image_block must forward detail for base64 images."""
+    from langchain_core.messages.block_translators.openai import (
+        convert_to_openai_image_block,
+    )
+
+    result = convert_to_openai_image_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {
+            "url": "data:image/jpeg;base64,<b64>",
+            "detail": "high",
+        },
+    }
+
+
+def test_convert_to_openai_image_block_no_detail_omitted() -> None:
+    """When no detail is supplied, the detail key must not appear in output."""
+    from langchain_core.messages.block_translators.openai import (
+        convert_to_openai_image_block,
+    )
+
+    result = convert_to_openai_image_block(
+        {"type": "image", "url": "https://example.com/img.png"}
+    )
+    assert "detail" not in result["image_url"]
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "image", "url": "https://example.com/img.png", "detail": "high"},
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "metadata": {"detail": "high"},
+        },
+    ],
+)
+def test_convert_to_openai_data_block_chat_completions_preserves_detail(
+    block: dict,
+) -> None:
+    """convert_to_openai_data_block (Chat Completions) must include detail."""
+    result = convert_to_openai_data_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/img.png", "detail": "high"},
+    }
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "image", "url": "https://example.com/img.png", "detail": "high"},
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "extras": {"detail": "high"},
+        },
+        {
+            "type": "image",
+            "url": "https://example.com/img.png",
+            "metadata": {"detail": "high"},
+        },
+    ],
+)
+def test_convert_to_openai_data_block_responses_preserves_detail(
+    block: dict,
+) -> None:
+    """convert_to_openai_data_block (Responses API) must include detail."""
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == {
+        "type": "input_image",
+        "image_url": "https://example.com/img.png",
+        "detail": "high",
+    }
