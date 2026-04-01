@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSupabase } from '../../hooks/useSupabase'
+import { isConfigured } from '../../utils/supabase'
 import type { CrmContact } from '../../types/database'
 import { Card, CardHeader, CardTitle } from '../ui/Card'
 import { Badge } from '../ui/Badge'
@@ -130,10 +131,18 @@ export function ContactsTable() {
             </select>
           </div>
         </CardHeader>
-        {loading ? (
+        {!isConfigured ? (
+          <p className="p-4 text-sm text-[var(--color-warning)]">
+            Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable data.
+          </p>
+        ) : loading ? (
           <Spinner />
         ) : error ? (
-          <p className="text-sm text-[var(--color-danger)]">{error}</p>
+          <p className="p-4 text-sm text-[var(--color-danger)]">{error}</p>
+        ) : filtered.length === 0 ? (
+          <p className="p-4 text-sm text-[var(--color-text-muted)]">
+            No contacts found. If data was expected, verify RLS policies allow SELECT for the anon role.
+          </p>
         ) : (
           <Table
             columns={columns}
