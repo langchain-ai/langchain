@@ -97,5 +97,41 @@ def test_criteria_eval_chain_missing_reference() -> None:
         chain.evaluate_strings(prediction="my prediction", input="my input")
 
 
+def test_labeled_criteria_eval_chain() -> None:
+    """Test that LabeledCriteriaEvalChain correctly parses Y/N verdicts."""
+    chain = LabeledCriteriaEvalChain.from_llm(
+        llm=FakeLLM(
+            queries={"text": "The submission does not meet the criteria.\nN"},
+            sequential_responses=True,
+        ),
+        criteria={"correctness": "Is the submission correct?"},
+    )
+    result = chain.evaluate_strings(
+        prediction="my prediction",
+        reference="my reference",
+        input="my input",
+    )
+    assert result["value"] == "N"
+    assert result["score"] == 0
+
+
+def test_labeled_criteria_eval_chain_passing() -> None:
+    """Test that LabeledCriteriaEvalChain scores Y as 1."""
+    chain = LabeledCriteriaEvalChain.from_llm(
+        llm=FakeLLM(
+            queries={"text": "The submission meets the criteria.\nY"},
+            sequential_responses=True,
+        ),
+        criteria={"correctness": "Is the submission correct?"},
+    )
+    result = chain.evaluate_strings(
+        prediction="my prediction",
+        reference="my reference",
+        input="my input",
+    )
+    assert result["value"] == "Y"
+    assert result["score"] == 1
+
+
 def test_implements_string_protocol() -> None:
     assert issubclass(CriteriaEvalChain, StringEvaluator)
