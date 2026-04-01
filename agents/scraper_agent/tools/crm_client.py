@@ -50,7 +50,7 @@ def add_company(
             "notes": description[:500] if description else "",
         })
     except Exception as e:
-        logger.warning("Failed to add %s to CRM: %s", company_name, e)
+        logger.error("Failed to add %s to CRM: %s", company_name, e, exc_info=True)
         return None
 
 

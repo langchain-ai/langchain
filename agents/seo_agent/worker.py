@@ -466,7 +466,12 @@ def _execute_promote_to_crm() -> dict[str, Any]:
                 logger.warning("Could not update prospect status for %s", p.get("id"))
             promoted += 1
         except Exception:
-            pass
+            logger.error(
+                "Failed to promote prospect %s (%s) to CRM",
+                p.get("id"),
+                domain,
+                exc_info=True,
+            )
 
     return {"promoted": promoted}
 
