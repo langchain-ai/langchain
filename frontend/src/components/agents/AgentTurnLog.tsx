@@ -70,6 +70,7 @@ export function AgentTurnLog() {
     table: 'agent_turns',
     order: { column: 'created_at', ascending: false },
     limit: 50,
+    realtime: true,
   })
 
   return (

@@ -10,9 +10,10 @@ interface Props {
 export function KeywordStatsCards({ data }: Props) {
   const stats = useMemo(() => {
     const uniqueKeywords = new Set(data.map((r) => r.keyword)).size
+    const withPosition = data.filter((r) => r.position != null && r.position > 0)
     const avgPosition =
-      data.length > 0
-        ? (data.reduce((sum, r) => sum + (r.position ?? 0), 0) / data.length).toFixed(1)
+      withPosition.length > 0
+        ? (withPosition.reduce((sum, r) => sum + r.position, 0) / withPosition.length).toFixed(1)
         : '—'
     const top10 = data.filter((r) => r.position > 0 && r.position <= 10).length
 

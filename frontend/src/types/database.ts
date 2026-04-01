@@ -149,3 +149,15 @@ export interface RankingEntry {
   snapshot_date: string
   created_at: string
 }
+
+export interface ScheduleLogEntry {
+  id: string
+  skill: string
+  site: string | null
+  summary: string | null
+  status: string
+  heartbeat_id: string | null
+  schedule_date: string
+  completed_at: string | null
+  created_at: string
+}

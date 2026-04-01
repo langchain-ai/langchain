@@ -52,6 +52,8 @@ export function useScheduleEntries() {
   const updateFrequency = useCallback(
     async (skillName: string, frequency: FrequencyOption, category: string) => {
       if (!isConfigured || !supabase) return
+      // Prevent concurrent saves — if already saving, ignore the request
+      if (savingSkill) return
       setSavingSkill(skillName)
       setMutationError(null)
 

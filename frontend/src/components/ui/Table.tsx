@@ -8,6 +8,7 @@ interface Column<T> {
 interface TableProps<T> {
   columns: Column<T>[]
   data: T[]
+  rowKey?: (row: T, index: number) => string
   onRowClick?: (row: T) => void
   emptyMessage?: string
 }
@@ -16,6 +17,7 @@ interface TableProps<T> {
 export function Table<T extends Record<string, any>>({
   columns,
   data,
+  rowKey,
   onRowClick,
   emptyMessage = 'No data',
 }: TableProps<T>) {
@@ -44,7 +46,7 @@ export function Table<T extends Record<string, any>>({
           ) : (
             data.map((row, i) => (
               <tr
-                key={i}
+                key={rowKey ? rowKey(row, i) : (row.id ?? i)}
                 onClick={() => onRowClick?.(row)}
                 className={`border-b border-[var(--color-border)] transition-colors ${
                   onRowClick ? 'cursor-pointer hover:bg-[var(--color-surface-hover)]' : ''
