@@ -48,7 +48,8 @@ export function PipelineBoard() {
               {contacts.length === 0 ? (
                 <p className="py-4 text-center text-xs text-[var(--color-text-muted)]">Empty</p>
               ) : (
-                contacts.slice(0, 30).map((contact) => {
+                <>
+                {contacts.slice(0, 30).map((contact) => {
                   const daysSince = contact.last_contacted_at
                     ? Math.floor((Date.now() - new Date(contact.last_contacted_at).getTime()) / 86400000)
                     : null
@@ -74,7 +75,13 @@ export function PipelineBoard() {
                       </div>
                     </div>
                   )
-                })
+                })}
+                {contacts.length > 30 && (
+                  <p className="py-2 text-center text-xs text-[var(--color-text-muted)]">
+                    +{contacts.length - 30} more
+                  </p>
+                )}
+                </>
               )}
             </div>
           </div>

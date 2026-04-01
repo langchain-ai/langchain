@@ -10,6 +10,7 @@ export function CostChart() {
     table: 'llm_cost_log',
     order: { column: 'created_at', ascending: true },
     limit: 500,
+    realtime: true,
   })
 
   const chartData = useMemo(() => {

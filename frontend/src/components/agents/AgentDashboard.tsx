@@ -1,10 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSupabase } from '../../hooks/useSupabase'
 import type { AgentTurn, CronExecution } from '../../types/database'
 import { AgentCard } from './AgentCard'
 import { AgentTurnLog } from './AgentTurnLog'
+import { ActivityTimeline } from './ActivityTimeline'
 import { CostChart } from './CostChart'
 import { Spinner } from '../ui/Spinner'
+import { useShellContext } from '../layout/Shell'
 
 const AGENTS = [
   { name: 'ralf', description: 'SEO agent — content, outreach, rankings, reporting' },
@@ -12,22 +14,37 @@ const AGENTS = [
 ]
 
 export function AgentDashboard() {
+  const { registerRefetch } = useShellContext()
   const todayStr = new Date().toISOString().slice(0, 10)
 
-  const { data: turns, loading: loadingTurns } = useSupabase<AgentTurn>({
+  const { data: turns, loading: loadingTurns, refetch: refetchTurns } = useSupabase<AgentTurn>({
     table: 'agent_turns',
     order: { column: 'created_at', ascending: false },
     limit: 200,
+    realtime: true,
   })
 
-  const { data: executions, loading: loadingExecs } = useSupabase<CronExecution>({
+  const { data: executions, loading: loadingExecs, refetch: refetchExecs } = useSupabase<CronExecution>({
     table: 'cron_executions',
     order: { column: 'fired_at', ascending: false },
     limit: 10,
+    realtime: true,
   })
+
+  useEffect(() => {
+    const cleanup1 = registerRefetch(refetchTurns)
+    const cleanup2 = registerRefetch(refetchExecs)
+    return () => { cleanup1(); cleanup2() }
+  }, [registerRefetch, refetchTurns, refetchExecs])
 
   if (loadingTurns || loadingExecs) {
     return <Spinner />
+  }
+
+  // Map agent names to the cron job_ids they own
+  const AGENT_JOB_IDS: Record<string, string[]> = {
+    ralf: ['worker', 'pulse'],
+    scraper: ['scraper_batch'],
   }
 
   const agentStats = useMemo(() => {
@@ -36,13 +53,15 @@ export function AgentDashboard() {
     for (const agent of AGENTS) {
       const agentTurns = turns.filter((t) => t.agent_name === agent.name)
       const todayTurns = agentTurns.filter((t) => t.created_at.startsWith(todayStr))
+      const jobIds = AGENT_JOB_IDS[agent.name] ?? []
+      const agentExecs = executions.filter((e) => jobIds.includes(e.job_id))
 
       stats[agent.name] = {
         lastActive: agentTurns[0]?.created_at ?? null,
         turnsToday: todayTurns.length,
         tokensToday: todayTurns.reduce((sum, t) => sum + t.tokens_used, 0),
-        hasRunning: executions.some((e) => e.status === 'running'),
-        hasError: executions.some((e) => e.status === 'failed'),
+        hasRunning: agentExecs.some((e) => e.status === 'running'),
+        hasError: agentExecs.some((e) => e.status === 'failed'),
       }
     }
     return stats
@@ -72,6 +91,9 @@ export function AgentDashboard() {
           />
         ))}
       </div>
+
+      {/* Activity timeline — what the agent actually did */}
+      <ActivityTimeline />
 
       {/* Cost chart */}
       <CostChart />

@@ -21,7 +21,7 @@ export function KeywordsDashboard() {
   const [activeSite, setActiveSite] = useState('')
 
   useEffect(() => {
-    if (sites.length > 0 && !activeSite) {
+    if (sites.length > 0 && (!activeSite || !sites.includes(activeSite))) {
       setActiveSite(sites[0])
     }
   }, [sites, activeSite])
