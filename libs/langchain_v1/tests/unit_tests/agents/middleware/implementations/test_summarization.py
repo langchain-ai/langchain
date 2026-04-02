@@ -388,36 +388,13 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
 
 
 def test_summarization_middleware_missing_profile() -> None:
-    """Ensure automatic profile inference falls back when profiles are unavailable."""
-
-    class ImportErrorProfileModel(BaseChatModel):
-        @override
-        def _generate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: CallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            raise NotImplementedError
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
-        def __getattribute__(self, name: str) -> Any:
-            if name == "profile":
-                msg = "Profile not available"
-                raise AttributeError(msg)
-            return super().__getattribute__(name)
-
+    """Ensure fractional limits fail when model has no profile data."""
     with pytest.raises(
         ValueError,
         match="Model profile information is required to use fractional token limits",
     ):
         _ = SummarizationMiddleware(
-            model=ImportErrorProfileModel(), trigger=("fraction", 0.5), keep=("messages", 1)
+            model=MockChatModel(), trigger=("fraction", 0.5), keep=("messages", 1)
         )
 
 

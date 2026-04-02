@@ -20,11 +20,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.0.2"
+version = "1.0.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.17,<2.0.0",
-    "langchain-text-splitters>=1.1.0,<2.0.0",
+    "langchain-core>=1.2.19,<2.0.0",
+    "langchain-text-splitters>=1.1.1,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
@@ -134,7 +134,7 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.uv]
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.ruff]
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]

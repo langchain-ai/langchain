@@ -37,7 +37,7 @@ env:
   UV_NO_SYNC: "true"
 
 permissions:
-  contents: write # Required for creating GitHub releases
+  contents: read # Job-level overrides grant write only where needed (mark-release)
 
 jobs:
   # Build the distribution package and extract version info

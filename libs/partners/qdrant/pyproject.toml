@@ -24,7 +24,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.15.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
 ]
 
 [project.urls]
@@ -64,6 +64,13 @@ typing = [
     "simsimd>=6.0.0,<7.0.0",
     "langchain-core"
 ]
+
+# CVE-2026-25990: pillow < 12.1.1 is vulnerable to out-of-bounds write when loading PSD images.
+# fastembed 0.7.x caps pillow<12.0. Override to pull in the fix for the lockfile.
+# Remove this override once fastembed releases a version that allows pillow>=12.1.1.
+[tool.uv]
+override-dependencies = ["pillow>=12.1.1"]
+constraint-dependencies = ["pygments>=2.20.0"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

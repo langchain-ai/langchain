@@ -1,0 +1,106 @@
+# Auto-close issues that bypass or ignore the issue template checkboxes.
+#
+# GitHub issue forms enforce `required: true` checkboxes in the web UI,
+# but the API bypasses form validation entirely — bots/scripts can open
+# issues with every box unchecked or skip the template altogether.
+#
+# Rules:
+#   1. Checkboxes present, none checked → close
+#   2. No checkboxes at all → close unless author is an org member or bot
+#
+# Org membership check reuses the shared helper from pr-labeler.js and
+# the same GitHub App used by tag-external-issues.yml.
+
+name: Close Unchecked Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-boxes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Validate issue checkboxes
+        if: steps.app-token.outcome == 'success'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const body = context.payload.issue.body ?? '';
+            const checked = (body.match(/- \[x\]/gi) || []).length;
+
+            if (checked > 0) {
+              console.log(`Found ${checked} checked checkbox(es) — OK`);
+              return;
+            }
+
+            const unchecked = (body.match(/- \[ \]/g) || []).length;
+
+            // No checkboxes at all — allow org members and bots, close everyone else
+            if (unchecked === 0) {
+              const { owner, repo } = context.repo;
+              const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
+
+              const author = context.payload.sender.login;
+              const { isExternal } = await h.checkMembership(
+                author, context.payload.sender.type,
+              );
+
+              if (!isExternal) {
+                console.log(`No checkboxes, but ${author} is internal — OK`);
+                return;
+              }
+              console.log(`No checkboxes and ${author} is external — closing`);
+            } else {
+              console.log(`Found 0 checked and ${unchecked} unchecked checkbox(es) — closing`);
+            }
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+
+            const reason = unchecked > 0
+              ? 'none of the required checkboxes were checked'
+              : 'no issue template was used';
+
+            // Close before commenting — a closed issue without a comment is
+            // less confusing than an open issue with a false "auto-closed" message
+            // if the second API call fails.
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number,
+              state: 'closed',
+              state_reason: 'not_planned',
+            });
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: [
+                `This issue was automatically closed because ${reason}.`,
+                '',
+                `Please use one of the [issue templates](https://github.com/${owner}/${repo}/issues/new/choose) and complete the checklist.`,
+              ].join('\n'),
+            });
