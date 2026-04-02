@@ -1783,7 +1783,7 @@ def _make_tools_to_model_edge(
         if last_ai_message is None:
             return model_destination
 
-        # 2. Exit condition: All executed tools have return_direct=True
+        # 2. Exit condition: All executed tools have return_direct=True and all succeeded
         # Filter to only client-side tools (provider tools are not in tool_node)
         client_side_tool_calls = [
             c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
@@ -1791,7 +1791,14 @@ def _make_tools_to_model_edge(
         if client_side_tool_calls and all(
             tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
-            return end_destination
+            client_side_call_ids = {c["id"] for c in client_side_tool_calls}
+            any_failed = any(
+                m.status == "error"
+                for m in tool_messages
+                if m.tool_call_id in client_side_call_ids
+            )
+            if not any_failed:
+                return end_destination
 
         # 3. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):
