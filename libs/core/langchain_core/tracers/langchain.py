@@ -157,7 +157,7 @@ class LangChainTracer(BaseTracer):
         self.tags = tags or []
         self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
-        self.metadata = metadata
+        self.tracing_metadata = metadata
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:
@@ -410,9 +410,9 @@ class LangChainTracer(BaseTracer):
 
 
 def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
-    if not self.metadata:
+    if not self.tracing_metadata:
         return
     metadata = run.metadata
-    for k, v in self.metadata.items():
+    for k, v in self.tracing_metadata.items():
         if k not in metadata:
             metadata[k] = v
