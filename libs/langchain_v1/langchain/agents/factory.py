@@ -1248,7 +1248,15 @@ def create_agent(
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            is_thinking_enabled = (
+                hasattr(request.model, "thinking")
+                and request.model.thinking is not None
+                and request.model.thinking.get("type") in ("enabled", "adaptive")
+            )
+            if structured_output_tools and not is_thinking_enabled:
+                tool_choice = "any"
+            else:
+                tool_choice = request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings
