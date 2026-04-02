@@ -882,10 +882,10 @@ def test_structured_tool_from_function() -> None:
 
 def test_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
-    expected = "Tool input validation error"
     tool_ = _MockStructuredTool(handle_validation_error=True)
     actual = tool_.run({})
-    assert expected == actual
+    assert "Validation error in tool 'structured_api'" in actual
+    assert "Field:" in actual
 
 
 def test_validation_error_handling_str() -> None:
@@ -948,10 +948,10 @@ def test_validation_error_handling_non_validation_error(
 
 async def test_async_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
-    expected = "Tool input validation error"
     tool_ = _MockStructuredTool(handle_validation_error=True)
     actual = await tool_.arun({})
-    assert expected == actual
+    assert "Validation error in tool 'structured_api'" in actual
+    assert "Field:" in actual
 
 
 async def test_async_validation_error_handling_str() -> None:
@@ -3653,3 +3653,87 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+class TestValidationErrorMessages:
+    """Tests that validation error messages are detailed and actionable."""
+
+    def _make_tool(self) -> BaseTool:
+        class _StrictSchema(BaseModel):
+            name: str
+            age: int = Field(gt=0, le=150)
+
+        class _StrictTool(BaseTool):
+            name: str = "strict_tool"
+            description: str = "A tool with strict validation"
+            args_schema: type[BaseModel] = _StrictSchema
+
+            @override
+            def _run(self, *, name: str, age: int) -> str:
+                return f"{name} is {age}"
+
+        return _StrictTool(handle_validation_error=True)
+
+    @pytest.mark.parametrize(
+        ("tool_input", "expected_fragment"),
+        [
+            pytest.param(
+                {"age": 25},
+                "name",
+                id="missing_required_field",
+            ),
+            pytest.param(
+                {"name": "Alice", "age": "not_a_number"},
+                "age",
+                id="wrong_type",
+            ),
+            pytest.param(
+                {"name": "Alice", "age": -1},
+                "age",
+                id="constraint_violation",
+            ),
+        ],
+    )
+    def test_validation_error_message_content(
+        self,
+        tool_input: dict,
+        expected_fragment: str,
+    ) -> None:
+        """Validation error messages must name the tool and the failing field."""
+        tool_ = self._make_tool()
+        result = tool_.run(tool_input)
+        assert "Validation error in tool 'strict_tool'" in result
+        assert f"Field:" in result
+        assert expected_fragment in result
+
+    @pytest.mark.parametrize(
+        ("tool_input", "expected_fragment"),
+        [
+            pytest.param(
+                {"age": 25},
+                "name",
+                id="missing_required_field",
+            ),
+            pytest.param(
+                {"name": "Alice", "age": "not_a_number"},
+                "age",
+                id="wrong_type",
+            ),
+            pytest.param(
+                {"name": "Alice", "age": -1},
+                "age",
+                id="constraint_violation",
+            ),
+        ],
+    )
+    async def test_async_validation_error_message_content(
+        self,
+        tool_input: dict,
+        expected_fragment: str,
+    ) -> None:
+        """Async path should produce the same detailed messages."""
+        tool_ = self._make_tool()
+        result = await tool_.arun(tool_input)
+        assert "Validation error in tool 'strict_tool'" in result
+        assert f"Field:" in result
+        assert expected_fragment in result

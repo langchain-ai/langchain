@@ -985,7 +985,9 @@ class ChildTool(BaseTool):
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
-                content = _handle_validation_error(e, flag=self.handle_validation_error)
+                content = _handle_validation_error(
+                    e, flag=self.handle_validation_error, tool_name=self.name,
+                )
                 status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
@@ -1115,7 +1117,9 @@ class ChildTool(BaseTool):
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
-                content = _handle_validation_error(e, flag=self.handle_validation_error)
+                content = _handle_validation_error(
+                    e, flag=self.handle_validation_error, tool_name=self.name,
+                )
                 status = "error"
         except ToolException as e:
             if not self.handle_tool_error:
@@ -1147,16 +1151,38 @@ def _is_tool_call(x: Any) -> bool:
     return isinstance(x, dict) and x.get("type") == "tool_call"
 
 
+def _format_validation_errors(
+    e: ValidationError | ValidationErrorV1,
+) -> str:
+    """Build a human-readable summary of individual validation errors.
+
+    Args:
+        e: The validation error to format.
+
+    Returns:
+        A multi-line string describing each validation error.
+    """
+    if isinstance(e, ValidationError):
+        parts: list[str] = []
+        for err in e.errors():
+            loc = " -> ".join(str(l) for l in err["loc"]) if err["loc"] else "<root>"
+            parts.append(f"  Field: {loc}, Error: {err['msg']}")
+        return "\n".join(parts)
+    return str(e)
+
+
 def _handle_validation_error(
     e: ValidationError | ValidationErrorV1,
     *,
     flag: Literal[True] | str | Callable[[ValidationError | ValidationErrorV1], str],
+    tool_name: str | None = None,
 ) -> str:
     """Handle validation errors based on the configured flag.
 
     Args:
         e: The validation error that occurred.
         flag: How to handle the error (`bool`, `str`, or `Callable`).
+        tool_name: The name of the tool that raised the error.
 
     Returns:
         The error message to return.
@@ -1165,7 +1191,12 @@ def _handle_validation_error(
         ValueError: If the flag type is unexpected.
     """
     if isinstance(flag, bool):
-        content = "Tool input validation error"
+        prefix = (
+            f"Validation error in tool '{tool_name}'" if tool_name
+            else "Tool input validation error"
+        )
+        details = _format_validation_errors(e)
+        content = f"{prefix}:\n{details}"
     elif isinstance(flag, str):
         content = flag
     elif callable(flag):
