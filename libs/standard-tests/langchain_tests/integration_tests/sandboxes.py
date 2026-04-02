@@ -1633,7 +1633,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             " | slash /tmp/path and backslash \\\\"
             " | control-ish \\r \\n"
             " | suffix"
-        )  # noqa: RUF001
+        )
         lines = [f"{i:04d}:{line}" for i in range(2500)]
         test_content = "\n".join(lines)
 
@@ -1678,7 +1678,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             " | slash /tmp/path and backslash \\\\"
             " | control-ish \\r \\n"
             " | suffix"
-        )  # noqa: RUF001
+        )
         lines = [f"{i:04d}:{line}" for i in range(2500)]
         test_content = "\n".join(lines)
 
