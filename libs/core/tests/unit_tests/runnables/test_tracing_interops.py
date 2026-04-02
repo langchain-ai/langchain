@@ -4,7 +4,6 @@ import json
 import sys
 import uuid
 from inspect import isasyncgenfunction
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
 
@@ -18,9 +17,7 @@ from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
-
-    from langchain_core.callbacks import BaseCallbackHandler
+    from collections.abc import AsyncGenerator, Callable, Coroutine, Generator, Mapping
 
 
 def _get_posts(client: Client) -> list[dict[str, Any]]:
@@ -598,12 +595,8 @@ class TestTracerMetadataThroughInvoke:
         # Both parent and child should have config metadata (inherited)
         # and tracer metadata (patched in)
         for name, md in name_to_md.items():
-            assert md.get("config_key") == "config_val", (
-                f"{name} missing config_key"
-            )
-            assert md.get("tracer_key") == "tracer_val", (
-                f"{name} missing tracer_key"
-            )
+            assert md.get("config_key") == "config_val", f"{name} missing config_key"
+            assert md.get("tracer_key") == "tracer_val", f"{name} missing tracer_key"
 
     def test_tracer_metadata_not_leaked_to_sibling_handlers(self) -> None:
         """Tracer metadata does not leak to other callback handlers.
@@ -621,9 +614,7 @@ class TestTracerMetadataThroughInvoke:
         class MetadataCapture(BaseCallbackHandler):
             """Callback handler that records metadata from chain events."""
 
-            def on_chain_start(
-                self, *args: Any, **kwargs: Any
-            ) -> None:
+            def on_chain_start(self, *_args: Any, **kwargs: Any) -> None:
                 received_metadata.append(dict(kwargs.get("metadata", {})))
 
         capture = MetadataCapture()

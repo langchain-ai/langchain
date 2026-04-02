@@ -714,15 +714,13 @@ class TestPatchMissingMetadata:
     def _make_run(
         metadata: dict[str, Any] | None = None,
     ) -> Run:
-        run_id = uuid.uuid4()
-        run = Run(
-            id=run_id,
+        return Run(
+            id=uuid.uuid4(),
             name="test",
             inputs={},
             run_type="chain",
             extra={"metadata": metadata or {}},
         )
-        return run
 
     def test_adds_metadata_when_run_has_none(self) -> None:
         """Tracer metadata fills in when the run has no matching keys."""
