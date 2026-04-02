@@ -71,14 +71,6 @@ class SandboxIntegrationTests(BaseStandardTests):
         root = root_dir or self.sandbox_root_dir
         return f"{root.rstrip('/')}/{relative_path.lstrip('/')}"
 
-    def reset_sandbox_root(
-        self, sandbox: SandboxBackendProtocol, *, root_dir: str | None = None
-    ) -> str:
-        """Recreate the configured sandbox test directory and return its path."""
-        root = (root_dir or self.sandbox_root_dir).rstrip("/")
-        sandbox.execute(f"rm -rf {_quote(root)} && mkdir -p {_quote(root)}")
-        return root
-
     @pytest.fixture(scope="class")
     def sandbox_backend(
         self, sandbox: SandboxBackendProtocol
@@ -105,15 +97,12 @@ class SandboxIntegrationTests(BaseStandardTests):
         return True
 
     @pytest.fixture(autouse=True)
-    def sandbox_test_root(
-        self, request: pytest.FixtureRequest, sandbox_backend: SandboxBackendProtocol
-    ) -> str:
+    def sandbox_test_root(self, request: pytest.FixtureRequest) -> str:
         """Create an isolated sandbox root directory for each test case."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
         node_name = request.node.name.replace("/", "_").replace(" ", "_")
-        root_dir = self.sandbox_path(node_name)
-        return self.reset_sandbox_root(sandbox_backend, root_dir=root_dir)
+        return self.sandbox_path(node_name)
 
     def test_write_new_file(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
