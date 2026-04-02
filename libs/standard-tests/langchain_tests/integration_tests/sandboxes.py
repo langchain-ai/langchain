@@ -71,6 +71,14 @@ class SandboxIntegrationTests(BaseStandardTests):
         root = root_dir or self.sandbox_root_dir
         return f"{root.rstrip('/')}/{relative_path.lstrip('/')}"
 
+    def reset_sandbox_root(
+        self, sandbox: SandboxBackendProtocol, *, root_dir: str | None = None
+    ) -> str:
+        """Recreate the configured sandbox test directory and return its path."""
+        root = (root_dir or self.sandbox_root_dir).rstrip("/")
+        sandbox.execute(f"rm -rf {_quote(root)} && mkdir -p {_quote(root)}")
+        return root
+
     @pytest.fixture(scope="class")
     def sandbox_backend(
         self, sandbox: SandboxBackendProtocol
@@ -100,6 +108,7 @@ class SandboxIntegrationTests(BaseStandardTests):
     def sandbox_test_root(
         self, request: pytest.FixtureRequest, sandbox_backend: SandboxBackendProtocol
     ) -> str:
+        """Create an isolated sandbox root directory for each test case."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
         node_name = request.node.name.replace("/", "_").replace(" ", "_")
@@ -570,7 +579,11 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         test_path = self.sandbox_path("special.txt", root_dir=sandbox_test_root)
-        content = "Special chars: $VAR, `command`, $(subshell), 'quotes', \"quotes\"\nTab\there\nBackslash: \\\\"
+        content = (
+            "Special chars: $VAR, `command`, $(subshell), 'quotes', \"quotes\"\n"
+            "Tab\there\n"
+            "Backslash: \\\\"
+        )
 
         result = sandbox_backend.write(test_path, content)
 
@@ -779,7 +792,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         test_path = self.sandbox_path("unicode_read.txt", root_dir=sandbox_test_root)
-        content = "Hello 👋 世界\nПривет мир\nمرحبا العالم"
+        content = "Hello 👋 世界\nПривет мир\nمرحبا العالم"  # noqa: RUF001
         sandbox_backend.write(test_path, content)
 
         result = sandbox_backend.read(test_path)
@@ -837,9 +850,12 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         content = result.file_data["content"] if result.file_data else ""
         error = result.error or ""
-        assert "Line 1" not in content and "Line 1" not in error
-        assert "Line 2" not in content and "Line 2" not in error
-        assert "Line 3" not in content and "Line 3" not in error
+        assert "Line 1" not in content
+        assert "Line 1" not in error
+        assert "Line 2" not in content
+        assert "Line 2" not in error
+        assert "Line 3" not in content
+        assert "Line 3" not in error
 
     def test_read_offset_at_exact_file_length(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -856,8 +872,10 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         text = result.file_data["content"] if result.file_data else ""
         error = result.error or ""
-        assert "Line 1" not in text and "Line 1" not in error
-        assert "Line 5" not in text and "Line 5" not in error
+        assert "Line 1" not in text
+        assert "Line 1" not in error
+        assert "Line 5" not in text
+        assert "Line 5" not in error
 
     def test_read_very_large_file_in_chunks(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1012,7 +1030,7 @@ class SandboxIntegrationTests(BaseStandardTests):
     def test_ls_lists_nested_directories(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Listing should include nested directories and files in the immediate directory."""
+        """Listing should include nested directories and immediate child files."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -1058,7 +1076,11 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         base_dir = self.sandbox_path("ls_large", root_dir=sandbox_test_root)
         sandbox_backend.execute(
-            f"mkdir -p {_quote(base_dir)} && cd {_quote(base_dir)} && for i in $(seq 0 49); do echo content > file_$(printf '%03d' $i).txt; done"
+            f"mkdir -p {_quote(base_dir)} && "
+            f"cd {_quote(base_dir)} && "
+            "for i in $(seq 0 49); do "
+            "echo content > file_$(printf '%03d' $i).txt; "
+            "done"
         )
 
         result = sandbox_backend.ls(base_dir)
@@ -1073,7 +1095,7 @@ class SandboxIntegrationTests(BaseStandardTests):
     def test_ls_path_with_trailing_slash(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Listing a path with a trailing slash should behave like the normalized path."""
+        """Listing a path with a trailing slash should match the normalized path."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -1111,7 +1133,7 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert f"{base_dir}/file-3.txt" in paths
 
     def test_ls_path_is_sanitized(
-        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+        self, sandbox_backend: SandboxBackendProtocol
     ) -> None:
         """Listing an injected path should not execute attacker-controlled code."""
         if not self.has_sync:
@@ -1123,7 +1145,7 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.error is not None or result.entries == []
 
     def test_read_path_is_sanitized(
-        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+        self, sandbox_backend: SandboxBackendProtocol
     ) -> None:
         """Reading an injected path should return an error without executing it."""
         if not self.has_sync:
@@ -1241,7 +1263,8 @@ class SandboxIntegrationTests(BaseStandardTests):
         base_dir = self.sandbox_path("grep_unicode", root_dir=sandbox_test_root)
         sandbox_backend.execute(f"mkdir -p {_quote(base_dir)}")
         sandbox_backend.write(
-            f"{base_dir}/unicode.txt", "Hello 世界\nПривет мир\n测试 pattern"
+            f"{base_dir}/unicode.txt",
+            "Hello 世界\nПривет мир\n测试 pattern",  # noqa: RUF001
         )
 
         result = sandbox_backend.grep("世界", path=base_dir)
