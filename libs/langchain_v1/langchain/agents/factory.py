@@ -1362,7 +1362,7 @@ def create_agent(
         return _build_commands(result.model_response, result.commands)
 
     # Use sync or async based on model capabilities
-    graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
+    graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=True))
 
     # Only add tools node if we have tools
     if tool_node is not None:
