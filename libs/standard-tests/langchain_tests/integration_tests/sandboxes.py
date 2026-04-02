@@ -179,8 +179,12 @@ class SandboxIntegrationTests(BaseStandardTests):
         """Create files and verify `ls()` lists them."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
-        sandbox_backend.write(self.sandbox_path("a.txt", root_dir=sandbox_test_root), "a")
-        sandbox_backend.write(self.sandbox_path("b.txt", root_dir=sandbox_test_root), "b")
+        sandbox_backend.write(
+            self.sandbox_path("a.txt", root_dir=sandbox_test_root), "a"
+        )
+        sandbox_backend.write(
+            self.sandbox_path("b.txt", root_dir=sandbox_test_root), "b"
+        )
         result = sandbox_backend.ls(sandbox_test_root)
         assert result.error is None
         assert result.entries is not None
@@ -194,8 +198,12 @@ class SandboxIntegrationTests(BaseStandardTests):
         """Create files and verify `glob()` returns expected matches."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
-        sandbox_backend.write(self.sandbox_path("x.py", root_dir=sandbox_test_root), "print('x')")
-        sandbox_backend.write(self.sandbox_path("y.txt", root_dir=sandbox_test_root), "y")
+        sandbox_backend.write(
+            self.sandbox_path("x.py", root_dir=sandbox_test_root), "print('x')"
+        )
+        sandbox_backend.write(
+            self.sandbox_path("y.txt", root_dir=sandbox_test_root), "y"
+        )
         result = sandbox_backend.glob("*.py", path=sandbox_test_root)
         assert result.error is None
         assert result.matches is not None
@@ -207,7 +215,10 @@ class SandboxIntegrationTests(BaseStandardTests):
         """Verify `grep()` performs literal matching on special characters."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
-        sandbox_backend.write(self.sandbox_path("grep.txt", root_dir=sandbox_test_root), "a (b)\nstr | int\n")
+        sandbox_backend.write(
+            self.sandbox_path("grep.txt", root_dir=sandbox_test_root),
+            "a (b)\nstr | int\n",
+        )
         result = sandbox_backend.grep("str | int", path=sandbox_test_root)
         assert result.error is None
         assert result.matches is not None
@@ -222,7 +233,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("test_upload_single.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "test_upload_single.txt", root_dir=sandbox_test_root
+        )
         test_content = b"Hello, Sandbox!"
 
         upload_responses = sandbox_backend.upload_files([(test_path, test_content)])
@@ -241,7 +254,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("test_download_single.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "test_download_single.txt", root_dir=sandbox_test_root
+        )
         test_content = b"Download test content"
 
         sandbox_backend.upload_files([(test_path, test_content)])
@@ -281,9 +296,18 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         files = [
-            (self.sandbox_path("test_multi_1.txt", root_dir=sandbox_test_root), b"Content 1"),
-            (self.sandbox_path("test_multi_2.txt", root_dir=sandbox_test_root), b"Content 2"),
-            (self.sandbox_path("test_multi_3.txt", root_dir=sandbox_test_root), b"Content 3"),
+            (
+                self.sandbox_path("test_multi_1.txt", root_dir=sandbox_test_root),
+                b"Content 1",
+            ),
+            (
+                self.sandbox_path("test_multi_2.txt", root_dir=sandbox_test_root),
+                b"Content 2",
+            ),
+            (
+                self.sandbox_path("test_multi_3.txt", root_dir=sandbox_test_root),
+                b"Content 3",
+            ),
         ]
 
         upload_responses = sandbox_backend.upload_files(files)
@@ -304,9 +328,18 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         files = [
-            (self.sandbox_path("test_batch_1.txt", root_dir=sandbox_test_root), b"Batch 1"),
-            (self.sandbox_path("test_batch_2.txt", root_dir=sandbox_test_root), b"Batch 2"),
-            (self.sandbox_path("test_batch_3.txt", root_dir=sandbox_test_root), b"Batch 3"),
+            (
+                self.sandbox_path("test_batch_1.txt", root_dir=sandbox_test_root),
+                b"Batch 1",
+            ),
+            (
+                self.sandbox_path("test_batch_2.txt", root_dir=sandbox_test_root),
+                b"Batch 2",
+            ),
+            (
+                self.sandbox_path("test_batch_3.txt", root_dir=sandbox_test_root),
+                b"Batch 3",
+            ),
         ]
         sandbox_backend.upload_files(files)
 
@@ -370,7 +403,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        missing_path = self.sandbox_path("nonexistent_test_file.txt", root_dir=sandbox_test_root)
+        missing_path = self.sandbox_path(
+            "nonexistent_test_file.txt", root_dir=sandbox_test_root
+        )
 
         responses = sandbox_backend.download_files([missing_path])
 
@@ -453,7 +488,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        dir_path = self.sandbox_path("test_upload_missing_parent_dir", root_dir=sandbox_test_root)
+        dir_path = self.sandbox_path(
+            "test_upload_missing_parent_dir", root_dir=sandbox_test_root
+        )
         path = f"{dir_path}/deepagents_test_upload.txt"
         content = b"nope"
         sandbox_backend.execute(f"rm -rf {dir_path}")
@@ -496,7 +533,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("deep/nested/dir/file.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "deep/nested/dir/file.txt", root_dir=sandbox_test_root
+        )
         content = "Nested file content"
 
         result = sandbox_backend.write(test_path, content)
@@ -563,7 +602,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("dir with spaces/file name.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "dir with spaces/file name.txt", root_dir=sandbox_test_root
+        )
         content = "Content in file with spaces"
 
         result = sandbox_backend.write(test_path, content)
@@ -612,9 +653,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         test_path = self.sandbox_path("very_long.txt", root_dir=sandbox_test_root)
-        content = "\n".join(
-            [f"Line {i} with some content here" for i in range(1000)]
-        )
+        content = "\n".join([f"Line {i} with some content here" for i in range(1000)])
 
         result = sandbox_backend.write(test_path, content)
 
@@ -647,7 +686,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        result = sandbox_backend.read(self.sandbox_path("nonexistent.txt", root_dir=sandbox_test_root))
+        result = sandbox_backend.read(
+            self.sandbox_path("nonexistent.txt", root_dir=sandbox_test_root)
+        )
 
         assert result.error is not None
         assert (
@@ -715,7 +756,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("offset_limit_test.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "offset_limit_test.txt", root_dir=sandbox_test_root
+        )
         content = "\n".join([f"Row_{i}_content" for i in range(1, 21)])
         sandbox_backend.write(test_path, content)
 
@@ -876,7 +919,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        test_path = self.sandbox_path("edit_replace_all.txt", root_dir=sandbox_test_root)
+        test_path = self.sandbox_path(
+            "edit_replace_all.txt", root_dir=sandbox_test_root
+        )
         content = "apple\nbanana\napple\norange\napple"
         sandbox_backend.write(test_path, content)
 
@@ -912,7 +957,11 @@ class SandboxIntegrationTests(BaseStandardTests):
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
-        result = sandbox_backend.edit(self.sandbox_path("nonexistent_edit.txt", root_dir=sandbox_test_root), "old", "new")
+        result = sandbox_backend.edit(
+            self.sandbox_path("nonexistent_edit.txt", root_dir=sandbox_test_root),
+            "old",
+            "new",
+        )
 
         assert result.error is not None
         assert (
@@ -1388,7 +1437,9 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         base_dir = self.sandbox_path("glob_dirs", root_dir=sandbox_test_root)
-        sandbox_backend.execute(f"mkdir -p {_quote(base_dir)}/dir1 {_quote(base_dir)}/dir2")
+        sandbox_backend.execute(
+            f"mkdir -p {_quote(base_dir)}/dir1 {_quote(base_dir)}/dir2"
+        )
         sandbox_backend.write(f"{base_dir}/file.txt", "content")
 
         result = sandbox_backend.glob("*", path=base_dir)
@@ -1469,3 +1520,93 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert "file1.txt" in paths
         assert "file2.txt" in paths
         assert "file10.txt" not in paths
+
+    async def test_awrite_aread_large_text_payload(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async write/read should preserve a large text payload exactly."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        test_path = self.sandbox_path(
+            "large_async_text.txt", root_dir=sandbox_test_root
+        )
+        line = "0123456789abcdef" * 256
+        test_content = "\n".join(line for _ in range(2560))
+
+        write_result = await sandbox_backend.awrite(test_path, test_content)
+        assert write_result.error is None
+        assert write_result.path == test_path
+
+        exec_result = await sandbox_backend.aexecute(f"wc -c {_quote(test_path)}")
+        assert exec_result.exit_code == 0
+        assert str(len(test_content.encode("utf-8"))) in exec_result.output
+
+        read_result = await sandbox_backend.aread(test_path)
+        assert isinstance(read_result, ReadResult)
+        assert read_result.error is None
+        assert read_result.file_data is not None
+        assert read_result.file_data["encoding"] == "utf-8"
+        assert read_result.file_data["content"] == test_content
+
+    async def test_aread_large_text_payload_in_chunks(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async reads with offset/limit should cover a large text payload in chunks."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        test_path = self.sandbox_path(
+            "large_async_chunked.txt", root_dir=sandbox_test_root
+        )
+        lines = [f"Line_{i:04d}_content" for i in range(2500)]
+        test_content = "\n".join(lines)
+
+        write_result = await sandbox_backend.awrite(test_path, test_content)
+        assert write_result.error is None
+
+        first = await sandbox_backend.aread(test_path, offset=0, limit=200)
+        middle = await sandbox_backend.aread(test_path, offset=1000, limit=200)
+        last = await sandbox_backend.aread(test_path, offset=2300, limit=200)
+
+        assert first.error is None
+        assert first.file_data is not None
+        assert first.file_data["content"] == "\n".join(lines[:200])
+
+        assert middle.error is None
+        assert middle.file_data is not None
+        assert middle.file_data["content"] == "\n".join(lines[1000:1200])
+
+        assert last.error is None
+        assert last.file_data is not None
+        assert last.file_data["content"] == "\n".join(lines[2300:2500])
+
+    async def test_aupload_adownload_large_file_roundtrip(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async upload/download should preserve a ~10 MiB payload exactly."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        test_path = self.sandbox_path(
+            "large_async_upload.bin", root_dir=sandbox_test_root
+        )
+        chunk = b"0123456789abcdef" * 1024
+        repeat_count = 640
+        test_content = chunk * repeat_count
+
+        assert len(test_content) == 10 * 1024 * 1024
+
+        upload_responses = await sandbox_backend.aupload_files(
+            [(test_path, test_content)]
+        )
+        assert upload_responses == [FileUploadResponse(path=test_path, error=None)]
+
+        exec_result = await sandbox_backend.aexecute(f"wc -c {_quote(test_path)}")
+        assert exec_result.exit_code == 0
+        assert str(len(test_content)) in exec_result.output
+
+        download_responses = await sandbox_backend.adownload_files([test_path])
+        assert download_responses == [
+            FileDownloadResponse(path=test_path, content=test_content, error=None)
+        ]
