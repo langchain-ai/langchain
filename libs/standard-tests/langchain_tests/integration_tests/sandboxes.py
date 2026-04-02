@@ -152,6 +152,47 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.file_data["encoding"] == "base64"
         assert base64.b64decode(result.file_data["content"]) == raw_bytes
 
+    def test_read_binary_file_100_kib(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Read should return base64 content for a 100 KiB binary file."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        test_path = self.sandbox_path("binary_100kib.png", root_dir=sandbox_test_root)
+        chunk = bytes(range(256))
+        raw_bytes = chunk * 400
+
+        sandbox_backend.upload_files([(test_path, raw_bytes)])
+        result = sandbox_backend.read(test_path)
+
+        assert isinstance(result, ReadResult)
+        assert result.error is None
+        assert result.file_data is not None
+        assert result.file_data["encoding"] == "base64"
+        assert base64.b64decode(result.file_data["content"]) == raw_bytes
+
+    def test_read_binary_file_1_mib_returns_error(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Read should error when a binary file exceeds the preview size limit."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        test_path = self.sandbox_path("binary_1mib.png", root_dir=sandbox_test_root)
+        chunk = bytes(range(256))
+        raw_bytes = chunk * 4096
+
+        sandbox_backend.upload_files([(test_path, raw_bytes)])
+        result = sandbox_backend.read(test_path)
+
+        assert isinstance(result, ReadResult)
+        assert result.file_data is None
+        assert (
+            result.error
+            == f"File '{test_path}': Binary file exceeds maximum preview size of 512000 bytes"
+        )
+
     def test_edit_single_occurrence(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
@@ -1723,6 +1764,53 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.file_data is not None
         assert result.file_data["encoding"] == "base64"
         assert base64.b64decode(result.file_data["content"]) == raw_bytes
+
+    async def test_aread_binary_file_100_kib(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async read should return base64 content for a 100 KiB binary file."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        test_path = self.sandbox_path(
+            "async_binary_100kib.png", root_dir=sandbox_test_root
+        )
+        chunk = bytes(range(256))
+        raw_bytes = chunk * 400
+
+        upload_responses = await sandbox_backend.aupload_files([(test_path, raw_bytes)])
+        assert upload_responses == [FileUploadResponse(path=test_path, error=None)]
+
+        result = await sandbox_backend.aread(test_path)
+        assert isinstance(result, ReadResult)
+        assert result.error is None
+        assert result.file_data is not None
+        assert result.file_data["encoding"] == "base64"
+        assert base64.b64decode(result.file_data["content"]) == raw_bytes
+
+    async def test_aread_binary_file_1_mib_returns_error(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async read should error when a binary file exceeds the preview size limit."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        test_path = self.sandbox_path(
+            "async_binary_1mib.png", root_dir=sandbox_test_root
+        )
+        chunk = bytes(range(256))
+        raw_bytes = chunk * 4096
+
+        upload_responses = await sandbox_backend.aupload_files([(test_path, raw_bytes)])
+        assert upload_responses == [FileUploadResponse(path=test_path, error=None)]
+
+        result = await sandbox_backend.aread(test_path)
+        assert isinstance(result, ReadResult)
+        assert result.file_data is None
+        assert (
+            result.error
+            == f"File '{test_path}': Binary file exceeds maximum preview size of 512000 bytes"
+        )
 
     async def test_aupload_adownload_large_file_roundtrip(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
