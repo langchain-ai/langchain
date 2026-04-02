@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import functools
+import inspect
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
@@ -373,7 +374,7 @@ async def _ahandle_event_for_handler(
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
-            if asyncio.iscoroutinefunction(event):
+            if inspect.iscoroutinefunction(event):
                 await event(*args, **kwargs)
             elif handler.run_inline:
                 event(*args, **kwargs)

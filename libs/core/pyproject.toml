@@ -47,7 +47,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 lint = ["ruff>=0.15.0,<0.16.0"]
 typing = [
-    "mypy>=1.19.1,<1.20.0",
+    "mypy>=1.20.0,<1.21.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
     "langchain-text-splitters",

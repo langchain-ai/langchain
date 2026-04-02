@@ -374,9 +374,7 @@ class Reviver:
         # - Explicit list -> compute from those classes
         if allowed_objects in ("all", "core"):
             self.allowed_class_paths: set[tuple[str, ...]] | None = (
-                _get_default_allowed_class_paths(
-                    cast("Literal['all', 'core']", allowed_objects)
-                ).copy()
+                _get_default_allowed_class_paths(allowed_objects).copy()
             )
             # Add paths from additional_import_mappings to the defaults
             if self.additional_import_mappings:
