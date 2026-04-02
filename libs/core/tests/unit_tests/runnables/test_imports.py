@@ -27,6 +27,7 @@ EXPECTED_ALL = [
     "RunnableSequence",
     "RunnableWithFallbacks",
     "RunnableWithMessageHistory",
+    "RunnableWithOutputVerification",
     "get_config_list",
     "aadd",
     "add",

@@ -59,6 +59,7 @@ if TYPE_CHECKING:
         aadd,
         add,
     )
+    from langchain_core.runnables.verification import RunnableWithOutputVerification
 
 __all__ = (
     "AddableDict",
@@ -83,6 +84,7 @@ __all__ = (
     "RunnableSerializable",
     "RunnableWithFallbacks",
     "RunnableWithMessageHistory",
+    "RunnableWithOutputVerification",
     "aadd",
     "add",
     "chain",
@@ -110,6 +112,7 @@ _dynamic_imports = {
     "run_in_executor": "config",
     "RunnableWithFallbacks": "fallbacks",
     "RunnableWithMessageHistory": "history",
+    "RunnableWithOutputVerification": "verification",
     "RunnableAssign": "passthrough",
     "RunnablePassthrough": "passthrough",
     "RunnablePick": "passthrough",

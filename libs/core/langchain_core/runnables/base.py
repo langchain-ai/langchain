@@ -1921,6 +1921,45 @@ class Runnable(ABC, Generic[Input, Output]):
             exponential_jitter_params=exponential_jitter_params,
         )
 
+    def with_output_verification(
+        self,
+        verify: Callable[[Any], bool],
+        *,
+        step_name: str = "runnable",
+        audit_sink: Any | None = None,
+        on_audit: Callable[[dict[str, Any]], None] | None = None,
+        audit_max_output_len: int = 10_000,
+    ) -> Runnable[Input, Output]:
+        """Wrap this `Runnable` with output verification and optional audit records.
+
+        Args:
+            verify: Return `True` to allow the output through, `False` to raise
+                `OutputVerificationError`.
+            step_name: Stored in audit entries and on the exception.
+            audit_sink: If provided, each verification appends one dict with keys
+                `timestamp`, `step`, `raw_output`, `status` (`VERIFIED` or `BLOCKED`).
+            on_audit: Optional callback invoked with the same dict.
+            audit_max_output_len: Truncate `raw_output` in audit entries.
+
+        Returns:
+            A `RunnableWithOutputVerification` around this runnable.
+
+        """
+        from langchain_core.runnables.verification import (  # noqa: PLC0415
+            RunnableWithOutputVerification,
+        )
+
+        return RunnableWithOutputVerification(
+            bound=self,
+            kwargs={},
+            config={},
+            verify=verify,
+            step_name=step_name,
+            audit_sink=audit_sink,
+            on_audit=on_audit,
+            audit_max_output_len=audit_max_output_len,
+        )
+
     def map(self) -> Runnable[list[Input], list[Output]]:
         """Return a new `Runnable` that maps a list of inputs to a list of outputs.
 
@@ -5950,6 +5989,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
     - `with_types`: Override the input and output types of the underlying
         `Runnable`.
     - `with_retry`: Bind a retry policy to the underlying `Runnable`.
+    - `with_output_verification`: Verify outputs of the underlying `Runnable`.
     - `with_fallbacks`: Bind a fallback policy to the underlying `Runnable`.
 
     Example:
@@ -6094,6 +6134,29 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
     def with_retry(self, **kwargs: Any) -> Runnable[Input, Output]:
         return self.__class__(
             bound=self.bound.with_retry(**kwargs),
+            kwargs=self.kwargs,
+            config=self.config,
+            config_factories=self.config_factories,
+        )
+
+    @override
+    def with_output_verification(
+        self,
+        verify: Callable[[Any], bool],
+        *,
+        step_name: str = "runnable",
+        audit_sink: Any | None = None,
+        on_audit: Callable[[dict[str, Any]], None] | None = None,
+        audit_max_output_len: int = 10_000,
+    ) -> Runnable[Input, Output]:
+        return self.__class__(
+            bound=self.bound.with_output_verification(
+                verify,
+                step_name=step_name,
+                audit_sink=audit_sink,
+                on_audit=on_audit,
+                audit_max_output_len=audit_max_output_len,
+            ),
             kwargs=self.kwargs,
             config=self.config,
             config_factories=self.config_factories,

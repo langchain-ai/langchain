@@ -73,6 +73,28 @@ class ContextOverflowError(LangChainException):
     """
 
 
+class OutputVerificationError(LangChainException):
+    """Raised when a `RunnableWithOutputVerification` rejects an output."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        step_name: str = "",
+        output: Any | None = None,
+    ) -> None:
+        """Create an `OutputVerificationError`.
+
+        Args:
+            message: Human-readable explanation.
+            step_name: Optional step label used in audit entries.
+            output: The runnable output that failed verification, if available.
+        """
+        super().__init__(message)
+        self.step_name = step_name
+        self.output = output
+
+
 class ErrorCode(Enum):
     """Error codes."""
 
