@@ -97,7 +97,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "BasePromptTemplate",
     ),
     ("langchain", "chains", "llm", "LLMChain"): (
-        "langchain",
+        "langchain_classic",
         "chains",
         "llm",
         "LLMChain",
@@ -150,7 +150,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "AgentActionMessageLog",
     ),
     ("langchain", "schema", "agent", "ToolAgentAction"): (
-        "langchain",
+        "langchain_classic",
         "agents",
         "output_parsers",
         "tools",
@@ -181,7 +181,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "Document",
     ),
     ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
-        "langchain",
+        "langchain_classic",
         "output_parsers",
         "fix",
         "OutputFixingParser",
@@ -193,7 +193,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "AIMessagePromptTemplate",
     ),
     ("langchain", "output_parsers", "regex", "RegexParser"): (
-        "langchain",
+        "langchain_classic",
         "output_parsers",
         "regex",
         "RegexParser",
@@ -404,7 +404,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "VertexAI",
     ),
     ("langchain", "output_parsers", "combining", "CombiningOutputParser"): (
-        "langchain",
+        "langchain_classic",
         "output_parsers",
         "combining",
         "CombiningOutputParser",
@@ -460,7 +460,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "ChatPromptValueConcrete",
     ),
     ("langchain", "schema", "runnable", "HubRunnable"): (
-        "langchain",
+        "langchain_classic",
         "runnables",
         "hub",
         "HubRunnable",
@@ -472,7 +472,7 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "RunnableBindingBase",
     ),
     ("langchain", "schema", "runnable", "OpenAIFunctionsRouter"): (
-        "langchain",
+        "langchain_classic",
         "runnables",
         "openai_functions",
         "OpenAIFunctionsRouter",
@@ -591,7 +591,7 @@ _OG_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "ImagePromptTemplate",
     ),
     ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
-        "langchain",
+        "langchain_classic",
         "agents",
         "output_parsers",
         "openai_tools",
