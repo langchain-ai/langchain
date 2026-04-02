@@ -413,6 +413,11 @@ def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
     if not self.tracing_metadata:
         return
     metadata = run.metadata
+    patched = None
     for k, v in self.tracing_metadata.items():
         if k not in metadata:
-            metadata[k] = v
+            if patched is None:
+                # Copy on first miss to avoid mutating the shared dict.
+                patched = {**metadata}
+                run.extra["metadata"] = patched
+            patched[k] = v

@@ -15,6 +15,7 @@ from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
+    _patch_missing_metadata,
 )
 from langchain_core.tracers.schemas import Run
 
@@ -696,3 +697,113 @@ def test_on_chain_error_updates_when_not_defers_inputs() -> None:
     # Should call update (PATCH), not persist (POST) for normal inputs
     assert not persist_called
     assert update_called
+
+
+class TestPatchMissingMetadata:
+    """Tests for `_patch_missing_metadata` and tracer metadata behavior."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    @staticmethod
+    def _make_run(
+        metadata: dict[str, Any] | None = None,
+    ) -> Run:
+        run_id = uuid.uuid4()
+        run = Run(
+            id=run_id,
+            name="test",
+            inputs={},
+            run_type="chain",
+            extra={"metadata": metadata or {}},
+        )
+        return run
+
+    def test_adds_metadata_when_run_has_none(self) -> None:
+        """Tracer metadata fills in when the run has no matching keys."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run()
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "prod"
+        assert run.metadata["service"] == "api"
+
+    def test_does_not_overwrite_existing_keys(self) -> None:
+        """Config metadata takes precedence over tracer metadata."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run(metadata={"env": "staging"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["service"] == "api"
+
+    def test_noop_when_tracer_has_no_metadata(self) -> None:
+        """No-op when the tracer has no metadata configured."""
+        tracer = self._make_tracer(metadata=None)
+        run = self._make_run(metadata={"existing": "value"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"existing": "value"}
+
+    def test_noop_when_all_keys_already_present(self) -> None:
+        """No-op when every tracer key already exists in the run."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run = self._make_run(metadata={"env": "dev"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"env": "dev"}
+
+    def test_merges_disjoint_keys(self) -> None:
+        """Disjoint keys from tracer and config are all present after patching."""
+        tracer = self._make_tracer(metadata={"tracer_key": "tracer_val"})
+        run = self._make_run(metadata={"config_key": "config_val"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {
+            "tracer_key": "tracer_val",
+            "config_key": "config_val",
+        }
+
+    def test_persist_run_single_applies_tracer_metadata(self) -> None:
+        """End-to-end: `_persist_run_single` calls `_patch_missing_metadata`."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata.get("env") == "prod"
+
+    def test_persist_run_single_config_metadata_wins(self) -> None:
+        """Config metadata is not overwritten by tracer metadata during persist."""
+        tracer = self._make_tracer(metadata={"env": "prod", "extra": "from_tracer"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160b")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+            metadata={"env": "staging"},
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["extra"] == "from_tracer"

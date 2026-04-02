@@ -4,6 +4,7 @@ import json
 import sys
 import uuid
 from inspect import isasyncgenfunction
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
 
@@ -12,6 +13,7 @@ from langsmith import Client, RunTree, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.utils import get_env_var
 
+from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
@@ -43,12 +45,15 @@ def _get_posts(client: Client) -> list[dict[str, Any]]:
 def _create_tracer_with_mocked_client(
     project_name: str | None = None,
     tags: list[str] | None = None,
+    metadata: Mapping[str, str] | None = None,
 ) -> LangChainTracer:
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
     )
-    return LangChainTracer(client=mock_client_, project_name=project_name, tags=tags)
+    return LangChainTracer(
+        client=mock_client_, project_name=project_name, tags=tags, metadata=metadata
+    )
 
 
 def test_tracing_context() -> None:
@@ -508,3 +513,177 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     assert "afoo" in kitten_run.tags  # type: ignore[operator]
     assert grandchild_run is not None
     assert kitten_run.dotted_order.startswith(grandchild_run.dotted_order)
+
+
+class TestTracerMetadataThroughInvoke:
+    """Tests for tracer metadata merging through invoke calls."""
+
+    def test_tracer_metadata_applied_to_all_runs(self) -> None:
+        """Tracer metadata appears on every run when no config metadata is set."""
+        tracer = _create_tracer_with_mocked_client(
+            metadata={"env": "prod", "service": "api"}
+        )
+
+        @RunnableLambda
+        def child(x: int) -> int:
+            return x + 1
+
+        @RunnableLambda
+        def parent(x: int) -> int:
+            return child.invoke(x)
+
+        parent.invoke(1, {"callbacks": [tracer]})
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 2
+        for post in posts:
+            md = post.get("extra", {}).get("metadata", {})
+            assert md.get("env") == "prod", f"run {post['name']} missing env"
+            assert md.get("service") == "api", f"run {post['name']} missing service"
+
+    def test_config_metadata_takes_precedence(self) -> None:
+        """Config metadata wins over tracer metadata for overlapping keys."""
+        tracer = _create_tracer_with_mocked_client(
+            metadata={"env": "prod", "tracer_only": "yes"}
+        )
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(
+            1,
+            {
+                "callbacks": [tracer],
+                "metadata": {"env": "staging", "config_only": "yes"},
+            },
+        )
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 1
+        md = posts[0].get("extra", {}).get("metadata", {})
+        # Config wins for overlapping key
+        assert md["env"] == "staging"
+        # Both non-overlapping keys are present
+        assert md["tracer_only"] == "yes"
+        assert md["config_only"] == "yes"
+
+    def test_nested_calls_inherit_config_metadata(self) -> None:
+        """Child runs inherit config metadata; tracer metadata fills gaps."""
+        tracer = _create_tracer_with_mocked_client(
+            metadata={"tracer_key": "tracer_val"}
+        )
+
+        @RunnableLambda
+        def child(x: int) -> int:
+            return x + 1
+
+        @RunnableLambda
+        def parent(x: int) -> int:
+            return child.invoke(x)
+
+        parent.invoke(
+            1,
+            {
+                "callbacks": [tracer],
+                "metadata": {"config_key": "config_val"},
+            },
+        )
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 2
+        name_to_md = {
+            post["name"]: post.get("extra", {}).get("metadata", {}) for post in posts
+        }
+        # Both parent and child should have config metadata (inherited)
+        # and tracer metadata (patched in)
+        for name, md in name_to_md.items():
+            assert md.get("config_key") == "config_val", (
+                f"{name} missing config_key"
+            )
+            assert md.get("tracer_key") == "tracer_val", (
+                f"{name} missing tracer_key"
+            )
+
+    def test_tracer_metadata_not_leaked_to_sibling_handlers(self) -> None:
+        """Tracer metadata does not leak to other callback handlers.
+
+        `_patch_missing_metadata` copies the metadata dict before patching,
+        so the callback manager's shared metadata dict is not mutated.
+        Other handlers should only see config metadata, not tracer metadata.
+        """
+        tracer = _create_tracer_with_mocked_client(
+            metadata={"tracer_key": "tracer_val"}
+        )
+
+        received_metadata: list[dict[str, Any]] = []
+
+        class MetadataCapture(BaseCallbackHandler):
+            """Callback handler that records metadata from chain events."""
+
+            def on_chain_start(
+                self, *args: Any, **kwargs: Any
+            ) -> None:
+                received_metadata.append(dict(kwargs.get("metadata", {})))
+
+        capture = MetadataCapture()
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(
+            1,
+            {
+                "callbacks": [tracer, capture],
+                "metadata": {"shared_key": "shared_val"},
+            },
+        )
+
+        assert len(received_metadata) >= 1
+        for md in received_metadata:
+            assert md["shared_key"] == "shared_val"
+            assert "tracer_key" not in md
+
+        # But the posted run DOES have tracer metadata
+        posts = _get_posts(tracer.client)
+        assert len(posts) >= 1
+        for post in posts:
+            post_md = post.get("extra", {}).get("metadata", {})
+            assert post_md["shared_key"] == "shared_val"
+            assert post_md["tracer_key"] == "tracer_val"
+
+    def test_tracer_metadata_with_no_config_metadata(self) -> None:
+        """When no config metadata is set, tracer metadata is the sole source."""
+        tracer = _create_tracer_with_mocked_client(
+            metadata={"only_from_tracer": "value"}
+        )
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(1, {"callbacks": [tracer]})
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 1
+        md = posts[0].get("extra", {}).get("metadata", {})
+        assert md["only_from_tracer"] == "value"
+
+    def test_empty_tracer_metadata_does_not_interfere(self) -> None:
+        """Tracer with no metadata does not interfere with config metadata."""
+        tracer = _create_tracer_with_mocked_client(metadata=None)
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(
+            1,
+            {"callbacks": [tracer], "metadata": {"config_key": "config_val"}},
+        )
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 1
+        md = posts[0].get("extra", {}).get("metadata", {})
+        assert md["config_key"] == "config_val"
