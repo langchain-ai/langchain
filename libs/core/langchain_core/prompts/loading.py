@@ -96,9 +96,12 @@ def _load_template(
         template_path = Path(config.pop(f"{var_name}_path"))
         if not allow_dangerous_paths:
             _validate_path(template_path)
+        # Resolve symlinks before checking the suffix so that a symlink named
+        # "exploit.txt" pointing to a non-.txt file is caught.
+        resolved_path = template_path.resolve()
         # Load the template.
-        if template_path.suffix == ".txt":
-            template = template_path.read_text(encoding="utf-8")
+        if resolved_path.suffix == ".txt":
+            template = resolved_path.read_text(encoding="utf-8")
         else:
             raise ValueError
         # Set the template variable to the extracted variable.
