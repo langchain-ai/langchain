@@ -19,6 +19,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
+from langgraph.config import get_config
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
@@ -1270,7 +1271,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        output = model_.invoke(messages, get_config())
         if name:
             output.name = name
 
@@ -1318,7 +1319,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        output = await model_.ainvoke(messages, get_config())
         if name:
             output.name = name
 
