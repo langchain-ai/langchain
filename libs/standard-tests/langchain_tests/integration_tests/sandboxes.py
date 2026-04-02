@@ -1536,7 +1536,7 @@ class SandboxIntegrationTests(BaseStandardTests):
     async def test_awrite_aread_large_text_payload(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Async write/read should preserve a large text payload exactly."""
+        """Async write should allow a large text file to be read back non-empty."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -1544,7 +1544,8 @@ class SandboxIntegrationTests(BaseStandardTests):
             "large_async_text.txt", root_dir=sandbox_test_root
         )
         line = "0123456789abcdef" * 256
-        test_content = "\n".join(line for _ in range(2560))
+        lines = [line for _ in range(2560)]
+        test_content = "\n".join(lines)
 
         write_result = await sandbox_backend.awrite(test_path, test_content)
         assert write_result.error is None
@@ -1559,12 +1560,12 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert read_result.error is None
         assert read_result.file_data is not None
         assert read_result.file_data["encoding"] == "utf-8"
-        assert read_result.file_data["content"] == test_content
+        assert read_result.file_data["content"].startswith(lines[0])
 
-    async def test_aread_large_text_payload_in_chunks(
+    async def test_aread_large_text_payload_paginated_roundtrip(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Async reads with offset/limit should cover a large text payload in chunks."""
+        """Async paginated reads should reconstruct the full large text payload."""
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -1577,21 +1578,41 @@ class SandboxIntegrationTests(BaseStandardTests):
         write_result = await sandbox_backend.awrite(test_path, test_content)
         assert write_result.error is None
 
-        first = await sandbox_backend.aread(test_path, offset=0, limit=200)
-        middle = await sandbox_backend.aread(test_path, offset=1000, limit=200)
-        last = await sandbox_backend.aread(test_path, offset=2300, limit=200)
+        parts: list[str] = []
+        for offset in range(0, len(lines), 100):
+            page = await sandbox_backend.aread(test_path, offset=offset, limit=100)
+            assert page.error is None
+            assert page.file_data is not None
+            assert page.file_data["content"] == "\n".join(lines[offset : offset + 100])
+            parts.append(page.file_data["content"])
 
-        assert first.error is None
-        assert first.file_data is not None
-        assert first.file_data["content"] == "\n".join(lines[:200])
+        assert "\n".join(parts) == test_content
 
-        assert middle.error is None
-        assert middle.file_data is not None
-        assert middle.file_data["content"] == "\n".join(lines[1000:1200])
+    async def test_adownload_large_text_payload_roundtrip(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """Async download should preserve the full large text payload exactly."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
 
-        assert last.error is None
-        assert last.file_data is not None
-        assert last.file_data["content"] == "\n".join(lines[2300:2500])
+        test_path = self.sandbox_path(
+            "large_async_download.txt", root_dir=sandbox_test_root
+        )
+        line = "0123456789abcdef" * 256
+        lines = [line for _ in range(2560)]
+        test_content = "\n".join(lines)
+
+        write_result = await sandbox_backend.awrite(test_path, test_content)
+        assert write_result.error is None
+
+        download_responses = await sandbox_backend.adownload_files([test_path])
+        assert download_responses == [
+            FileDownloadResponse(
+                path=test_path,
+                content=test_content.encode("utf-8"),
+                error=None,
+            )
+        ]
 
     async def test_aupload_adownload_large_file_roundtrip(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
