@@ -12,7 +12,7 @@ from functools import cached_property
 from operator import itemgetter
 from typing import Any, Final, Literal, cast
 
-import anthropic
+import anthropicf
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -1988,6 +1988,19 @@ def convert_to_anthropic_tool(
 
 
 def _tools_in_params(params: dict) -> bool:
+    """Check whether any tools are present in the request parameters.
+
+    Looks for tools in three places:
+    - The top-level ``tools`` key
+    - The ``tools`` key nested inside ``extra_body``
+    - The ``mcp_servers`` key (for MCP-based server-side tools)
+
+    Args:
+        params: The request parameters dict passed to the Anthropic API.
+
+    Returns:
+        True if any tool definitions are found, False otherwise.
+    """
     return (
         "tools" in params
         or ("extra_body" in params and params["extra_body"].get("tools"))
@@ -1996,10 +2009,33 @@ def _tools_in_params(params: dict) -> bool:
 
 
 def _thinking_in_params(params: dict) -> bool:
+    """Check whether extended thinking is enabled in the request parameters.
+
+    Extended thinking allows Claude to reason through complex problems before
+    responding. It is active when the ``thinking.type`` field is set to
+    ``"enabled"`` or ``"adaptive"``.
+
+    Args:
+        params: The request parameters dict passed to the Anthropic API.
+
+    Returns:
+        True if thinking is enabled or adaptive, False otherwise.
+    """
     return params.get("thinking", {}).get("type") in ("enabled", "adaptive")
 
-
 def _documents_in_params(params: dict) -> bool:
+    """Check whether any document blocks with citations enabled are in the messages.
+
+    Iterates over all message content blocks and returns True if at least one
+    block is a ``document`` type with ``citations.enabled`` set to True.
+    This is used to determine whether citation-related post-processing is needed.
+
+    Args:
+        params: The request parameters dict passed to the Anthropic API.
+
+    Returns:
+        True if a document block with citations enabled is found, False otherwise.
+    """
     for message in params.get("messages", []):
         if isinstance(message.get("content"), list):
             for block in message["content"]:
@@ -2013,6 +2049,20 @@ def _documents_in_params(params: dict) -> bool:
 
 
 def _compact_in_params(params: dict) -> bool:
+    """Check whether a compact context-management edit is present in the parameters.
+
+    Compact edits instruct Claude to summarise and compress prior conversation
+    context in order to stay within the context window. This helper is used to
+    detect whether such an edit has been requested so that appropriate handling
+    can be applied.
+
+    Args:
+        params: The request parameters dict passed to the Anthropic API.
+
+    Returns:
+        True if any ``context_management.edits`` entry has a type containing
+        ``"compact"``, False otherwise.
+    """
     edits = params.get("context_management", {}).get("edits") or []
 
     return any("compact" in (edit.get("type") or "") for edit in edits)
@@ -2029,6 +2079,19 @@ class _AnthropicToolUse(TypedDict):
 def _lc_tool_calls_to_anthropic_tool_use_blocks(
     tool_calls: list[ToolCall],
 ) -> list[_AnthropicToolUse]:
+    """Convert LangChain tool calls to Anthropic ``tool_use`` content blocks.
+
+    Transforms the LangChain-internal ``ToolCall`` format into the
+    ``_AnthropicToolUse`` TypedDict structure expected by the Anthropic API.
+
+    Args:
+        tool_calls: A list of LangChain ``ToolCall`` dicts, each containing
+            ``name``, ``args``, and ``id`` fields.
+
+    Returns:
+        A list of ``_AnthropicToolUse`` dicts with ``type``, ``name``,
+        ``input``, and ``id`` fields suitable for the Anthropic API.
+    """
     return [
         _AnthropicToolUse(
             type="tool_use",
@@ -2038,7 +2101,6 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
         )
         for tool_call in tool_calls
     ]
-
 
 def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
     """Convert JSON schema, Pydantic model, or `TypedDict` into `output_config.format`.
