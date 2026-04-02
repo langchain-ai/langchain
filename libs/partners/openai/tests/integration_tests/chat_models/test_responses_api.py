@@ -182,13 +182,13 @@ def test_function_calling(output_version: Literal["v0", "responses/v1", "v1"]) -
 
     llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     bound_llm = llm.bind_tools([multiply, {"type": "web_search_preview"}])
-    ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
+    ai_msg = cast(AIMessage, bound_llm.invoke("what's 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
     assert ai_msg.tool_calls[0]["name"] == "multiply"
     assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
 
     full: Any = None
-    for chunk in bound_llm.stream("whats 5 * 4"):
+    for chunk in bound_llm.stream("what's 5 * 4"):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert len(full.tool_calls) == 1
@@ -416,7 +416,7 @@ def test_function_calling_and_structured_output(schema: Any) -> None:
     assert parsed == response.additional_kwargs["parsed"]
 
     # Test function calling
-    ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
+    ai_msg = cast(AIMessage, bound_llm.invoke("what's 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
     assert ai_msg.tool_calls[0]["name"] == "multiply"
     assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
@@ -555,7 +555,7 @@ def test_stream_reasoning_summary(
     )
     message_1 = {
         "role": "user",
-        "content": "What was the third tallest buliding in the year 2000?",
+        "content": "What was the third tallest building in the year 2000?",
     }
     response_1: BaseMessageChunk | None = None
     for chunk in llm.stream([message_1]):

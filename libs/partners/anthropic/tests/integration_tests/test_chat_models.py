@@ -2411,7 +2411,7 @@ def test_fine_grained_tool_streaming() -> None:
 
 @pytest.mark.vcr
 def test_compaction() -> None:
-    """Test the compation beta feature."""
+    """Test the compaction beta feature."""
     llm = ChatAnthropic(
         model="claude-opus-4-6",  # type: ignore[call-arg]
         betas=["compact-2026-01-12"],
@@ -2465,7 +2465,7 @@ def test_compaction() -> None:
 
 @pytest.mark.vcr
 def test_compaction_streaming() -> None:
-    """Test the compation beta feature."""
+    """Test the compaction beta feature."""
     llm = ChatAnthropic(
         model="claude-opus-4-6",  # type: ignore[call-arg]
         betas=["compact-2026-01-12"],
