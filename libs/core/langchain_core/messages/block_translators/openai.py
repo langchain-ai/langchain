@@ -32,12 +32,20 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     Returns:
         The formatted image content block.
     """
+    # Extract detail field from block (can be at top level, in extras, or in metadata)
+    detail = block.get("detail")
+    if detail is None and (extras := block.get("extras")):
+        detail = extras.get("detail")
+    if detail is None and (metadata := block.get("metadata")):
+        detail = metadata.get("detail")
+    
     if "url" in block:
+        image_url: dict[str, Any] = {"url": block["url"]}
+        if detail is not None:
+            image_url["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
+            "image_url": image_url,
         }
     if "base64" in block or block.get("source_type") == "base64":
         if "mime_type" not in block:
@@ -45,11 +53,12 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
             raise ValueError(error_message)
         mime_type = block["mime_type"]
         base64_data = block["data"] if "data" in block else block["base64"]
+        image_url_data: dict[str, Any] = {"url": f"data:{mime_type};base64,{base64_data}"}
+        if detail is not None:
+            image_url_data["detail"] = detail
         return {
             "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
+            "image_url": image_url_data,
         }
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)
