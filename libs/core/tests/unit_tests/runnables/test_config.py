@@ -61,13 +61,83 @@ def test_ensure_config() -> None:
     assert config["configurable"] is not arg["configurable"]
     assert config == {
         "tags": ["tag1", "tag2"],
-        "metadata": {"foo": "bar", "baz": "qux", "something": "else"},
+        "metadata": {"foo": "bar"},
         "callbacks": [arg["callbacks"][0]],
         "recursion_limit": 100,
         "configurable": {"baz": "qux", "something": "else"},
         "max_concurrency": 1,
         "run_id": run_id,
         "run_name": "test",
+    }
+
+
+def test_ensure_config_only_copies_checkpoint_ns_to_metadata() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "thread_id": "th-123",
+                "checkpoint_id": "ckpt-1",
+                "checkpoint_ns": "ns-1",
+                "task_id": "task-1",
+                "run_id": "run-456",
+                "assistant_id": "asst-789",
+                "graph_id": "graph-0",
+                "model": "gpt-4o",
+                "user_id": "uid-1",
+                "cron_id": "cron-1",
+                "langgraph_auth_user_id": "user-1",
+                "some_api_key": "opaque-token",
+                "custom_setting": {"nested": True},
+                "none_value": None,
+            },
+            "metadata": {"nooverride": 18},
+        }
+    )
+
+    assert config["metadata"] == {"nooverride": 18, "checkpoint_ns": "ns-1"}
+    assert config["configurable"] == {
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
+        "checkpoint_ns": "ns-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "model": "gpt-4o",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
+        "some_api_key": "secret",
+        "custom_setting": {"nested": True},
+        "none_value": None,
+    }
+
+
+def test_ensure_config_metadata_is_not_overridden_by_configurable() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "thread_id": "from-configurable",
+                "run_id": None,
+                "checkpoint_ns": "from-configurable",
+            },
+            "metadata": {
+                "thread_id": "from-metadata",
+                "run_id": "from-metadata",
+                "checkpoint_ns": "from-metadata",
+            },
+        }
+    )
+
+    assert config["metadata"] == {
+        "thread_id": "from-metadata",
+        "run_id": "from-metadata",
+        "checkpoint_ns": "from-metadata",
+    }
+    assert config["configurable"] == {
+        "thread_id": "from-configurable",
+        "run_id": None,
+        "checkpoint_ns": "from-configurable",
     }
 
 

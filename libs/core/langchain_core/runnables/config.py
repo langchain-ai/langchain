@@ -138,6 +138,36 @@ COPIABLE_KEYS = [
     "configurable",
 ]
 
+CONFIGURABLE_TO_METADATA_KEYS = frozenset(
+    (
+        "thread_id",
+        "run_id",
+        "task_id",
+        "checkpoint_id",
+        "checkpoint_ns",
+        "assistant_id",
+        "graph_id",
+        "model",
+        "user_id",
+        "cron_id",
+        "langgraph_auth_user_id",
+    )
+)
+
+
+def _get_langsmith_inheritable_metadata_from_config(
+    config: RunnableConfig,
+) -> dict[str, str] | None:
+    """Get LangSmith-only inheritable metadata defaults derived from config."""
+    configurable = config.get("configurable") or {}
+    metadata = {
+        key: value
+        for key in CONFIGURABLE_TO_METADATA_KEYS
+        if isinstance((value := configurable.get(key)), str)
+    }
+    return metadata or None
+
+
 DEFAULT_RECURSION_LIMIT = 25
 
 
@@ -264,14 +294,6 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.get("configurable", {}).items():
-        if (
-            not key.startswith("__")
-            and isinstance(value, (str, int, float, bool))
-            and key not in empty["metadata"]
-            and key != "api_key"
-        ):
-            empty["metadata"][key] = value
     return empty
 
 
@@ -508,6 +530,9 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 
@@ -526,6 +551,9 @@ def get_async_callback_manager_for_config(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 
