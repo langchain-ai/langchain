@@ -220,9 +220,13 @@ class Serializable(BaseModel, ABC):
 
         model_fields = type(self).model_fields
         secrets = {}
-        # Get latest values for kwargs if there is an attribute with same name
+        # Get latest values for kwargs if there is an attribute with same name.
+        # Copy __dict__ before iterating: a concurrent @cached_property write
+        # would otherwise raise RuntimeError (dictionary changed size during
+        # iteration). dict.copy() is atomic under CPython's GIL.
+        # See https://github.com/langchain-ai/langchain/issues/34887.
         lc_kwargs = {}
-        for k, v in self:
+        for k, v in self.__dict__.copy().items():
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
