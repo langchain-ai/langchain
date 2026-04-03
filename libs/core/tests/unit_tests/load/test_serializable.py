@@ -1050,7 +1050,7 @@ class TestClassSpecificValidatorsInLoad:
 
         # May fail at import time if langchain_aws not installed, that's OK.
         # We only care that the init_validator was called before that point.
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ModuleNotFoundError):
             load(
                 payload,
                 allowed_objects="all",
@@ -1058,6 +1058,48 @@ class TestClassSpecificValidatorsInLoad:
             )
 
         assert len(init_validator_called) == 1
+
+    def test_load_blocks_bedrock_llm_via_resolved_path(self) -> None:
+        """Test load() blocks BedrockLLM via resolved import path."""
+        payload = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain_aws", "llms", "bedrock", "BedrockLLM"],
+            "kwargs": {
+                "model_id": "anthropic.claude-v2",
+                "endpoint_url": "http://169.254.169.254/latest/meta-data",
+            },
+        }
+        with pytest.raises(ValueError, match="SSRF"):
+            load(payload, allowed_objects="all")
+
+    def test_load_blocks_chat_bedrock_via_resolved_path(self) -> None:
+        """Test load() blocks ChatBedrock via resolved JS import path."""
+        payload = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain_aws", "chat_models", "ChatBedrock"],
+            "kwargs": {
+                "model_id": "anthropic.claude-v2",
+                "base_url": "http://malicious-site.com",
+            },
+        }
+        with pytest.raises(ValueError, match="SSRF"):
+            load(payload, allowed_objects="all")
+
+    def test_class_validator_fires_with_init_validator_none(self) -> None:
+        """Class-specific validators cannot be bypassed via init_validator=None."""
+        payload = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "chat_models", "bedrock", "ChatBedrock"],
+            "kwargs": {
+                "model_id": "anthropic.claude-v2",
+                "endpoint_url": "http://169.254.169.254/latest/meta-data",
+            },
+        }
+        with pytest.raises(ValueError, match="SSRF"):
+            load(payload, allowed_objects="all", init_validator=None)
 
 
 class TestBedrockValidators:
