@@ -66,6 +66,7 @@ jobs:
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+      vcr-tests: ${{ steps.set-matrix.outputs.vcr-tests }}
   # Run linting only on packages that have changed files
   lint:
     needs: [build]
@@ -118,6 +119,21 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
       fail-fast: false
     uses: ./.github/workflows/_compile_integration_test.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
+  # Run VCR cassette-backed integration tests in playback-only mode (no API keys)
+  vcr-tests:
+    name: "VCR Cassette Tests"
+    needs: [build]
+    if: ${{ needs.build.outputs.vcr-tests != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.vcr-tests) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_vcr.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
       python-version: ${{ matrix.job-configs.python-version }}
@@ -178,6 +194,7 @@ jobs:
         lint,
         test,
         compile-integration-tests,
+        vcr-tests,
         extended-tests,
         test-pydantic,
       ]
