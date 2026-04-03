@@ -19,7 +19,6 @@ primitives.
 """
 
 from typing import TYPE_CHECKING
-
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
@@ -73,6 +72,7 @@ __all__ = (
     "RunnableBinding",
     "RunnableBranch",
     "RunnableConfig",
+    "RunnableFactChecker",
     "RunnableGenerator",
     "RunnableLambda",
     "RunnableMap",
@@ -126,6 +126,10 @@ _dynamic_imports = {
 
 
 def __getattr__(attr_name: str) -> object:
+    if attr_name == "RunnableFactChecker":
+        from langchain_core.runnables.fact_checker import RunnableFactChecker
+        return RunnableFactChecker
+
     module_name = _dynamic_imports.get(attr_name)
     result = import_attr(attr_name, module_name, __spec__.parent)
     globals()[attr_name] = result
