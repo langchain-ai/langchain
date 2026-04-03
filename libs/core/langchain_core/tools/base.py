@@ -1111,7 +1111,7 @@ class ChildTool(BaseTool):
                         error_to_raise = ValueError(msg)
             else:
                 content = response
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:

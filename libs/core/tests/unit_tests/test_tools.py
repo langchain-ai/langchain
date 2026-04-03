@@ -974,6 +974,32 @@ async def test_async_validation_error_handling_callable() -> None:
     assert expected == actual
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+async def test_async_validation_error_handling_pydantic_v1_schema() -> None:
+    """Test async validation handling for tools with Pydantic v1 schemas."""
+
+    class _MockSchemaV1(BaseModelV1):
+        arg1: int
+        arg2: bool
+
+    def foo(arg1: int, arg2: bool) -> str:
+        """Return the arguments directly."""
+        return f"{arg1} {arg2}"
+
+    tool_ = StructuredTool.from_function(
+        foo,
+        args_schema=cast("ArgsSchema", _MockSchemaV1),
+        handle_validation_error=True,
+    )
+
+    expected = "Tool input validation error"
+    assert tool_.run({}) == expected
+    assert await tool_.arun({}) == expected
+
+
 @pytest.mark.parametrize(
     "handler",
     [
