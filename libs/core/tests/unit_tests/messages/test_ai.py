@@ -495,6 +495,16 @@ def test_content_blocks_reasoning_extraction() -> None:
     assert content_blocks[1]["type"] == "text"
     assert content_blocks[1]["text"] == "The answer is 42."
 
+
+    # Test no reasoning extraction when reasoning_content is empty string
+    # Some providers (e.g. ChatTongyi) set reasoning_content="" after reasoning stage
+    message = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    content_blocks = message.content_blocks
+    assert len(content_blocks) == 1
+    assert content_blocks[0]["type"] == "text"
     # Test no reasoning extraction when no reasoning content
     message = AIMessage(
         content="The answer is 42.", additional_kwargs={"other_field": "some value"}
