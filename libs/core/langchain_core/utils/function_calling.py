@@ -62,6 +62,17 @@ _ORIGIN_MAP: dict[type, Any] = {
 if hasattr(types, "UnionType"):
     _ORIGIN_MAP[types.UnionType] = Union
 
+_TYPED_DICT_REQUIREDNESS_MARKERS = {
+    marker
+    for marker in (
+        getattr(typing, "Required", None),
+        getattr(typing, "NotRequired", None),
+        getattr(typing_extensions, "Required", None),
+        getattr(typing_extensions, "NotRequired", None),
+    )
+    if marker is not None
+}
+
 
 class FunctionDescription(TypedDict):
     """Representation of a callable function to send to an LLM."""
@@ -265,6 +276,13 @@ def _convert_any_typed_dicts_to_pydantic(
         return visited[type_]
     if depth >= _MAX_TYPED_DICT_RECURSION:
         return type_
+    if (origin := get_origin(type_)) in _TYPED_DICT_REQUIREDNESS_MARKERS:
+        type_args = get_args(type_)
+        if len(type_args) != 1:
+            return type_
+        return _convert_any_typed_dicts_to_pydantic(
+            type_args[0], depth=depth + 1, visited=visited
+        )
     if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
@@ -279,8 +297,15 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
+        required_keys = getattr(typed_dict, "__required_keys__", frozenset())
+        optional_keys = getattr(typed_dict, "__optional_keys__", frozenset())
         fields: dict = {}
         for arg, arg_type in annotations_.items():
+            is_required = arg in required_keys or (
+                arg not in required_keys
+                and arg not in optional_keys
+                and getattr(typed_dict, "__total__", True)
+            )
             if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
@@ -289,6 +314,8 @@ def _convert_any_typed_dicts_to_pydantic(
                 field_kwargs = dict(
                     zip(("default", "description"), annotated_args[1:], strict=False)
                 )
+                if not is_required and "default" not in field_kwargs:
+                    field_kwargs["default"] = None
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
@@ -305,7 +332,7 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
                 )
-                field_kwargs = {"default": ...}
+                field_kwargs = {"default": ... if is_required else None}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))

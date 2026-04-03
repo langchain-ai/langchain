@@ -11,7 +11,11 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import TypedDict as ExtensionsTypedDict
+from typing_extensions import (
+    NotRequired,
+    Required,
+    TypedDict as ExtensionsTypedDict,
+)
 
 try:
     from typing import Annotated as TypingAnnotated
@@ -1045,6 +1049,38 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
+
+
+@pytest.mark.parametrize(
+    "typed_dict",
+    [ExtensionsTypedDict, TypingTypedDict],
+    ids=["typing_extensions.TypedDict", "typing.TypedDict"],
+)
+def test__convert_typed_dict_to_openai_function_optional_fields(
+    typed_dict: type,
+) -> None:
+    class Tool(typed_dict, total=False):  # type: ignore[misc]
+        """Tool docstring."""
+
+        required_arg: Required[int]
+        optional_arg: str
+        explicit_optional_arg: NotRequired[bool]
+
+    actual = _convert_typed_dict_to_openai_function(Tool)
+
+    assert actual == {
+        "name": "Tool",
+        "description": "Tool docstring.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "required_arg": {"type": "integer"},
+                "optional_arg": {"type": "string"},
+                "explicit_optional_arg": {"type": "boolean"},
+            },
+            "required": ["required_arg"],
+        },
+    }
 
 
 def test_convert_union_type() -> None:
