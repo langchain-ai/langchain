@@ -144,6 +144,29 @@ jobs:
               // Add bypass-issue-check so future triggers skip enforcement
               await ensureAndAddLabel('bypass-issue-check', '0e8a16');
 
+              // Minimize stale enforcement comment (best-effort; must not
+              // abort bypass — sync w/ reopen_on_assignment.yml & step below)
+              try {
+                const marker = '<!-- require-issue-link -->';
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: prNumber, per_page: 100 },
+                );
+                const stale = comments.find(c => c.body && c.body.includes(marker));
+                if (stale) {
+                  await github.graphql(`
+                    mutation($id: ID!) {
+                      minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                        minimizedComment { isMinimized }
+                      }
+                    }
+                  `, { id: stale.node_id });
+                  console.log(`Minimized stale enforcement comment ${stale.id} as outdated`);
+                }
+              } catch (e) {
+                core.warning(`Could not minimize stale comment on PR #${prNumber}: ${e.message}`);
+              }
+
               core.setOutput('has-link', 'true');
               core.setOutput('is-assigned', 'true');
             }
@@ -316,6 +339,29 @@ jobs:
               console.log(`Reopened PR #${prNumber}`);
             }
 
+            // Minimize stale enforcement comment (best-effort;
+            // sync w/ applyMaintainerBypass above & reopen_on_assignment.yml)
+            try {
+              const marker = '<!-- require-issue-link -->';
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: prNumber, per_page: 100 },
+              );
+              const stale = comments.find(c => c.body && c.body.includes(marker));
+              if (stale) {
+                await github.graphql(`
+                  mutation($id: ID!) {
+                    minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                      minimizedComment { isMinimized }
+                    }
+                  }
+                `, { id: stale.node_id });
+                console.log(`Minimized stale enforcement comment ${stale.id} as outdated`);
+              }
+            } catch (e) {
+              core.warning(`Could not minimize stale comment on PR #${prNumber}: ${e.message}`);
+            }
+
       - name: Post comment, close PR, and fail
         if: >-
           env.ENFORCE_ISSUE_LINK == 'true' &&
@@ -349,7 +395,7 @@ jobs:
                 '',
                 'External contributors must be assigned to an issue before opening a PR for it. Please:',
                 '1. Comment on the linked issue to request assignment from a maintainer',
-                '2. Once assigned, edit your PR description and the PR will be reopened automatically',
+                '2. Once assigned, your PR will be reopened automatically',
                 '',
                 '*Maintainers: reopen this PR or remove the `missing-issue-link` label to bypass this check.*',
               ];
