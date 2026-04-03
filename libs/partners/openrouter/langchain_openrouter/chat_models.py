@@ -1389,13 +1389,16 @@ def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     Returns:
         Usage metadata with input/output token details.
     """
+    _input = token_usage.get("prompt_tokens")
     input_tokens = int(
-        token_usage.get("prompt_tokens") or token_usage.get("input_tokens") or 0
+        _input if _input is not None else (token_usage.get("input_tokens") or 0)
     )
+    _output = token_usage.get("completion_tokens")
     output_tokens = int(
-        token_usage.get("completion_tokens") or token_usage.get("output_tokens") or 0
+        _output if _output is not None else (token_usage.get("output_tokens") or 0)
     )
-    total_tokens = int(token_usage.get("total_tokens") or input_tokens + output_tokens)
+    _total = token_usage.get("total_tokens")
+    total_tokens = int(_total if _total is not None else input_tokens + output_tokens)
 
     input_details_dict = (
         token_usage.get("prompt_tokens_details")

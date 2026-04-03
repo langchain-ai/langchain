@@ -3837,9 +3837,12 @@ class OpenAIRefusalError(Exception):
 def _create_usage_metadata(
     oai_token_usage: dict, service_tier: str | None = None
 ) -> UsageMetadata:
-    input_tokens = oai_token_usage.get("prompt_tokens") or 0
-    output_tokens = oai_token_usage.get("completion_tokens") or 0
-    total_tokens = oai_token_usage.get("total_tokens") or input_tokens + output_tokens
+    _input = oai_token_usage.get("prompt_tokens")
+    input_tokens = _input if _input is not None else 0
+    _output = oai_token_usage.get("completion_tokens")
+    output_tokens = _output if _output is not None else 0
+    _total = oai_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""

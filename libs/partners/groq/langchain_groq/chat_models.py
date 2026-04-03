@@ -1576,17 +1576,18 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     """
     # Support both formats: new Responses API uses "input_tokens",
     # Chat Completions API uses "prompt_tokens"
+    _input = groq_token_usage.get("input_tokens")
     input_tokens = (
-        groq_token_usage.get("input_tokens")
-        or groq_token_usage.get("prompt_tokens")
-        or 0
+        _input if _input is not None else (groq_token_usage.get("prompt_tokens") or 0)
     )
+    _output = groq_token_usage.get("output_tokens")
     output_tokens = (
-        groq_token_usage.get("output_tokens")
-        or groq_token_usage.get("completion_tokens")
-        or 0
+        _output
+        if _output is not None
+        else (groq_token_usage.get("completion_tokens") or 0)
     )
-    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+    _total = groq_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
 
     # Support both formats for token details:
     # Responses API uses "*_tokens_details", Chat Completions API might use
