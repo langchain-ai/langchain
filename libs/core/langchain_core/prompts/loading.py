@@ -253,15 +253,17 @@ def _load_prompt_from_file(
     """Load prompt from file."""
     # Convert file to a Path object.
     file_path = Path(file)
+    # Resolve symlinks before checking suffix to prevent symlink bypass (CWE-22).
+    resolved_file_path = file_path.resolve()
     # Load from either json or yaml.
-    if file_path.suffix == ".json":
-        with file_path.open(encoding=encoding) as f:
+    if resolved_file_path.suffix == ".json":
+        with resolved_file_path.open(encoding=encoding) as f:
             config = json.load(f)
-    elif file_path.suffix.endswith((".yaml", ".yml")):
-        with file_path.open(encoding=encoding) as f:
+    elif resolved_file_path.suffix.endswith((".yaml", ".yml")):
+        with resolved_file_path.open(encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
-        msg = f"Got unsupported file type {file_path.suffix}"
+        msg = f"Got unsupported file type {resolved_file_path.suffix}"
         raise ValueError(msg)
     # Load the prompt from the config now.
     return load_prompt_from_config(config, allow_dangerous_paths=allow_dangerous_paths)
