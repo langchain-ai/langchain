@@ -32,7 +32,9 @@ def vcr_config() -> dict:
     """Extend the default configuration coming from langchain_tests."""
     config = base_vcr_config()
     config["match_on"] = [
-        m if m != "body" else "json_body" for m in config.get("match_on", [])
+        m if m != "body" else "json_body"
+        for m in config.get("match_on", [])
+        if m != "uri"
     ]
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
     config["before_record_request"] = remove_request_headers

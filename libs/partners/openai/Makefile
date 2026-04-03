@@ -27,6 +27,11 @@ test tests:
 integration_test integration_tests:
 	uv run --group test --group test_integration pytest -n auto $(TEST_FILE)
 
+# Run VCR cassette-backed integration tests in playback-only mode (no API keys needed).
+# Catches stale cassettes caused by test input changes without re-recording.
+test_vcr:
+	uv run --group test pytest --record-mode=none -m vcr --ignore=tests/integration_tests/chat_models/test_azure_standard.py tests/integration_tests/
+
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
