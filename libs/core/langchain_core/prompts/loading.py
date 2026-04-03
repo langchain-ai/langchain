@@ -117,10 +117,12 @@ def _load_examples(config: dict, *, allow_dangerous_paths: bool = False) -> dict
         path = Path(config["examples"])
         if not allow_dangerous_paths:
             _validate_path(path)
-        with path.open(encoding="utf-8") as f:
-            if path.suffix == ".json":
+        # Resolve symlinks before checking the suffix (same fix as _load_template).
+        resolved_path = path.resolve()
+        with resolved_path.open(encoding="utf-8") as f:
+            if resolved_path.suffix == ".json":
                 examples = json.load(f)
-            elif path.suffix in {".yaml", ".yml"}:
+            elif resolved_path.suffix in {".yaml", ".yml"}:
                 examples = yaml.safe_load(f)
             else:
                 msg = "Invalid file format. Only json or yaml formats are supported."
