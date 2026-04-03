@@ -1575,6 +1575,41 @@ class TestCreateChatResult:
         assert isinstance(usage["output_token_details"]["reasoning"], int)
 
 
+class TestCreateUsageMetadataZeroTotal:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+
+    def test_zero_total_tokens_preserved(self) -> None:
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 0,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["total_tokens"] == 0
+
+    def test_zero_input_tokens_preferred_key(self) -> None:
+        """prompt_tokens=0 must not fall through to input_tokens."""
+        token_usage = {
+            "prompt_tokens": 0,
+            "input_tokens": 50,
+            "completion_tokens": 5,
+            "total_tokens": 55,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["input_tokens"] == 0
+
+    def test_zero_output_tokens_preferred_key(self) -> None:
+        """completion_tokens=0 must not fall through to output_tokens."""
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 0,
+            "output_tokens": 50,
+            "total_tokens": 60,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["output_tokens"] == 0
+
+
 # ===========================================================================
 # Streaming chunk tests
 # ===========================================================================
