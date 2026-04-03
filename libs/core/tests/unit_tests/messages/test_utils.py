@@ -269,6 +269,60 @@ def test_filter_message_exclude_tool_calls_content_blocks() -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_tool_calls_openai_function_call_blocks() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {
+                    "type": "function_call",
+                    "call_id": "1",
+                    "name": "foo",
+                    "arguments": "{}",
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "2",
+                    "name": "bar",
+                    "arguments": "{}",
+                },
+            ],
+            tool_calls=tool_calls,
+            id="2",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="3"),
+        ToolMessage("qux", tool_call_id="2", id="4"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+
+    expected = messages[:2] + messages[-1:]
+    expected[1] = expected[1].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {
+                    "type": "function_call",
+                    "call_id": "2",
+                    "name": "bar",
+                    "arguments": "{}",
+                },
+            ],
+        }
+    )
+
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),

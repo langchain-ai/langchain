@@ -922,8 +922,17 @@ def filter_messages(
                         for content_block in msg.content
                         if (
                             not isinstance(content_block, dict)
-                            or content_block.get("type") != "tool_use"
-                            or content_block.get("id") not in exclude_tool_calls
+                            or (
+                                content_block.get("type") == "tool_use"
+                                and content_block.get("id") not in exclude_tool_calls
+                            )
+                            or (
+                                content_block.get("type") == "function_call"
+                                and content_block.get("call_id")
+                                not in exclude_tool_calls
+                            )
+                            or content_block.get("type")
+                            not in {"tool_use", "function_call"}
                         )
                     ]
 
