@@ -10,6 +10,10 @@ from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
@@ -206,13 +210,13 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             "default_query": self.default_query,
         }
         if not self.client:
-            sync_specific: dict = {"http_client": self.http_client}
+            sync_specific: dict = {"http_client": self.http_client or _get_default_httpx_client(self.openai_api_base, self.request_timeout)}
             self.client = openai.AzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
                 **sync_specific,
             ).embeddings
         if not self.async_client:
-            async_specific: dict = {"http_client": self.http_async_client}
+            async_specific: dict = {"http_client": self.http_async_client or _get_default_async_httpx_client(self.openai_api_base, self.request_timeout)}
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (
