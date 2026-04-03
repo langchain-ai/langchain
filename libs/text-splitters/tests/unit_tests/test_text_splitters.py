@@ -2364,6 +2364,31 @@ def test_experimental_markdown_syntax_text_splitter_header_config_on_multi_files
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_linear_performance() -> None:
+    """Verify split_text scales linearly, not quadratically.
+
+    Regression test for the O(n²) list.pop(0) issue (#36488).
+    A 20k-line document should complete in well under 1 second on any
+    modern machine.  The old O(n²) implementation took several seconds
+    even for 10k lines.
+    """
+    import time
+
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+
+    lines = [f"Line {i}: some content\n" for i in range(20_000)]
+    large_md = "# Header\n" + "".join(lines)
+
+    start = time.perf_counter()
+    result = splitter.split_text(large_md)
+    elapsed = time.perf_counter() - start
+
+    assert len(result) > 0
+    assert elapsed < 2.0, (
+        f"split_text took {elapsed:.2f}s on 20k lines — likely O(n²) regression"
+    )
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
