@@ -60,6 +60,7 @@ from langchain_core.tools.base import (
     _DirectlyInjectedToolArg,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -3653,3 +3654,41 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+def test_create_schema_from_function_include_injected_false_with_filter_args() -> None:
+    """Test that include_injected=False filters injected args even when
+    filter_args is provided. Regression test for #35831."""
+
+    def my_func(
+        x: int, y: str, injected: Annotated[dict, InjectedToolArg]
+    ) -> str:
+        """A test function."""
+        return ""
+
+    # When filter_args is provided AND include_injected=False,
+    # injected args should still be filtered out.
+    schema = create_schema_from_function(
+        "TestSchema",
+        my_func,
+        filter_args=["y"],
+        include_injected=False,
+    )
+    fields = list(schema.model_fields.keys())
+    assert "x" in fields
+    assert "y" not in fields
+    assert "injected" not in fields, (
+        "InjectedToolArg parameter 'injected' should be excluded when "
+        "include_injected=False, even when filter_args is provided"
+    )
+
+    # Also verify that the caller's list is not mutated
+    original_filter: list[str] = ["y"]
+    create_schema_from_function(
+        "TestSchema2",
+        my_func,
+        filter_args=original_filter,
+        include_injected=False,
+    )
+    assert original_filter == ["y"], (
+        "filter_args list should not be mutated by create_schema_from_function"
+    )
