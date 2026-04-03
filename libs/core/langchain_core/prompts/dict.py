@@ -1,4 +1,4 @@
-"""Dict prompt template."""
+"""Dictionary prompt template."""
 
 import warnings
 from functools import cached_property
@@ -16,10 +16,11 @@ from langchain_core.runnables.config import ensure_config
 
 
 class DictPromptTemplate(RunnableSerializable[dict, dict]):
-    """Template represented by a dict.
+    """Template represented by a dictionary.
 
-    Recognizes variables in f-string or mustache formatted string dict values. Does NOT
-    recognize variables in dict keys. Applies recursively.
+    Recognizes variables in f-string or mustache formatted string dict values.
+
+    Does NOT recognize variables in dict keys. Applies recursively.
     """
 
     template: dict[str, Any]

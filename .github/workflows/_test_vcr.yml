@@ -1,0 +1,66 @@
+# Runs VCR cassette-backed integration tests in playback-only mode.
+#
+# No API keys needed — catches stale cassettes caused by test input
+# changes without re-recording.
+#
+# Called as part of check_diffs.yml workflow.
+
+name: "📼 VCR Cassette Tests"
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "true"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: "Python ${{ inputs.python-version }}"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache-suffix: test-vcr-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: "📦 Install Test Dependencies"
+        shell: bash
+        run: uv sync --group test
+
+      - name: "📼 Run VCR Cassette Tests (playback-only)"
+        shell: bash
+        env:
+          OPENAI_API_KEY: sk-fake
+        run: make test_vcr
+
+      - name: "🧹 Verify Clean Working Directory"
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'

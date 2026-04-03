@@ -6,7 +6,8 @@ from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
-from typing_extensions import override
+from pydantic import model_validator
+from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -22,6 +23,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -79,7 +81,7 @@ def _content_blocks_equal_ignore_id(
 
 
 @pytest.fixture
-def messages() -> list:
+def messages() -> list[BaseMessage]:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I am a test user."),
@@ -87,14 +89,14 @@ def messages() -> list:
 
 
 @pytest.fixture
-def messages_2() -> list:
+def messages_2() -> list[BaseMessage]:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I not a test user."),
     ]
 
 
-def test_batch_size(messages: list, messages_2: list) -> None:
+def test_batch_size(messages: list[BaseMessage], messages_2: list[BaseMessage]) -> None:
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
@@ -118,7 +120,9 @@ def test_batch_size(messages: list, messages_2: list) -> None:
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-async def test_async_batch_size(messages: list, messages_2: list) -> None:
+async def test_async_batch_size(
+    messages: list[BaseMessage], messages_2: list[BaseMessage]
+) -> None:
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
@@ -310,7 +314,7 @@ async def test_astream_implementation_uses_astream() -> None:
 class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.traced_run_ids: list = []
+        self.traced_run_ids: list[uuid.UUID] = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
@@ -472,7 +476,7 @@ async def test_disable_streaming_no_streaming_model_async(
 class FakeChatModelStartTracer(FakeTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.messages: list = []
+        self.messages: list[list[list[BaseMessage]]] = []
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         _, messages = args
@@ -1204,6 +1208,13 @@ def test_get_ls_params() -> None:
     ls_params = llm._get_ls_params(temperature=0.2)
     assert ls_params["ls_temperature"] == 0.2
 
+    # Test integer temperature values (regression test for issue #35300)
+    ls_params = llm._get_ls_params(temperature=0)
+    assert ls_params["ls_temperature"] == 0
+
+    ls_params = llm._get_ls_params(temperature=1)
+    assert ls_params["ls_temperature"] == 1
+
     ls_params = llm._get_ls_params(max_tokens=2048)
     assert ls_params["ls_max_tokens"] == 2048
 
@@ -1219,6 +1230,76 @@ def test_model_profiles() -> None:
         messages=iter([]), profile={"max_input_tokens": 100}
     )
     assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+def test_resolve_model_profile_hook_populates_profile() -> None:
+    """_resolve_model_profile is called when profile is None."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]))
+    assert model.profile == {"max_input_tokens": 500}
+
+
+def test_resolve_model_profile_hook_skipped_when_explicit() -> None:
+    """_resolve_model_profile is NOT called when profile is set explicitly."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]), profile={"max_input_tokens": 999})
+    assert model.profile is not None
+    assert model.profile["max_input_tokens"] == 999
+
+
+def test_resolve_model_profile_hook_exception_is_caught() -> None:
+    """Model is still usable if _resolve_model_profile raises."""
+
+    class BrokenProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            msg = "profile file not found"
+            raise RuntimeError(msg)
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        model = BrokenProfileModel(messages=iter([]))
+
+    assert model.profile is None
+
+
+def test_check_profile_keys_runs_despite_partner_override() -> None:
+    """Verify _check_profile_keys fires even when _set_model_profile is overridden.
+
+    Because _check_profile_keys has a distinct validator name from
+    _set_model_profile, a partner override of the latter does not suppress
+    the key-checking validator.
+    """
+
+    class PartnerModel(GenericFakeChatModel):
+        """Simulates a partner that overrides _set_model_profile."""
+
+        @model_validator(mode="after")
+        def _set_model_profile(self) -> Self:
+            if self.profile is None:
+                profile: dict[str, Any] = {
+                    "max_input_tokens": 100,
+                    "partner_only_field": True,
+                }
+                self.profile = profile  # type: ignore[assignment]
+            return self
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model = PartnerModel(messages=iter([]))
+
+    assert model.profile is not None
+    assert model.profile.get("partner_only_field") is True
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 1
+    assert "partner_only_field" in str(profile_warnings[0].message)
 
 
 class MockResponse:

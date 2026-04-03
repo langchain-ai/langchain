@@ -273,10 +273,20 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatGroq",
     ),
+    ("langchain_openrouter", "chat_models", "ChatOpenRouter"): (
+        "langchain_openrouter",
+        "chat_models",
+        "ChatOpenRouter",
+    ),
     ("langchain_xai", "chat_models", "ChatXAI"): (
         "langchain_xai",
         "chat_models",
         "ChatXAI",
+    ),
+    ("langchain_baseten", "chat_models", "ChatBaseten"): (
+        "langchain_baseten",
+        "chat_models",
+        "ChatBaseten",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
@@ -298,6 +308,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "langchain_mistralai",
         "chat_models",
         "ChatMistralAI",
+    ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
     ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",

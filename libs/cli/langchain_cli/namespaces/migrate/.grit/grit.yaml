@@ -1,3 +1,0 @@
-version: 0.0.1
-patterns:
-  - name: github.com/getgrit/stdlib#*

@@ -7,8 +7,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     r"""Merge dictionaries.
 
     Merge many dicts, handling specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    dictionaries but has a value of `None` in `'left'`. In such cases, the method uses
+    the value from `'right'` for that key in the merged dictionary.
 
     Args:
         left: The first dictionary to merge.
@@ -22,11 +22,10 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
         TypeError: If the value has an unsupported type.
 
     Example:
-        If left = {"function_call": {"arguments": None}} and
-        right = {"function_call": {"arguments": "{\n"}}
-        then, after merging, for the key "function_call",
-        the value from 'right' is used,
-        resulting in merged = {"function_call": {"arguments": "{\n"}}.
+        If `left = {"function_call": {"arguments": None}}` and
+        `right = {"function_call": {"arguments": "{\n"}}`, then, after merging, for the
+        key `'function_call'`, the value from `'right'` is used, resulting in
+        `merged = {"function_call": {"arguments": "{\n"}}`.
     """
     merged = left.copy()
     for right in others:
@@ -70,7 +69,14 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif merged[right_k] == right_v:
                 continue
             elif isinstance(merged[right_k], int):
-                merged[right_k] += right_v
+                # Preserve identification and temporal fields using last-wins strategy
+                # instead of summing:
+                # - index: identifies which tool call a chunk belongs to
+                # - created/timestamp: temporal values that shouldn't be accumulated
+                if right_k in {"index", "created", "timestamp"}:
+                    merged[right_k] = right_v
+                else:
+                    merged[right_k] += right_v
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
@@ -81,7 +87,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
 
 
 def merge_lists(left: list | None, *others: list | None) -> list | None:
-    """Add many lists, handling None.
+    """Add many lists, handling `None`.
 
     Args:
         left: The first list to merge.
@@ -111,7 +117,15 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
-                        if "index" in e_left and e_left["index"] == e["index"]
+                        if (
+                            "index" in e_left
+                            and e_left["index"] == e["index"]  # index matches
+                            and (  # IDs not inconsistent
+                                e_left.get("id") in (None, "")
+                                or e.get("id") in (None, "")
+                                or e_left.get("id") == e.get("id")
+                            )
+                        )
                     ]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
@@ -156,9 +170,9 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
 def merge_obj(left: Any, right: Any) -> Any:
     """Merge two objects.
 
-    It handles specific scenarios where a key exists in both
-    dictionaries but has a value of None in 'left'. In such cases, the method uses the
-    value from 'right' for that key in the merged dictionary.
+    It handles specific scenarios where a key exists in both dictionaries but has a
+    value of `None` in `'left'`. In such cases, the method uses the value from `'right'`
+    for that key in the merged dictionary.
 
     Args:
         left: The first object to merge.

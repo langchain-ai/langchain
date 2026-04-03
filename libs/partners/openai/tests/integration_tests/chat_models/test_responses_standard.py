@@ -1,13 +1,11 @@
 """Standard LangChain interface tests for Responses API"""
 
-import base64
 from pathlib import Path
 from typing import cast
 
-import httpx
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain_openai import ChatOpenAI
 from tests.integration_tests.chat_models.test_base_standard import TestOpenAIStandard
@@ -26,6 +24,10 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
     @property
     def supports_image_tool_message(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_tool_message(self) -> bool:
         return True
 
     @pytest.mark.xfail(reason="Unsupported.")
@@ -57,9 +59,8 @@ class TestOpenAIResponses(TestOpenAIStandard):
     @pytest.mark.flaky(retries=3, delay=1)
     def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs."""
-        super().test_openai_pdf_inputs(model)
         # Responses API additionally supports files via URL
-        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        url = "https://www.berkshirehathaway.com/letters/2024ltr.pdf"
 
         message = HumanMessage(
             [
@@ -77,54 +78,6 @@ class TestOpenAIResponses(TestOpenAIStandard):
             ]
         )
         _ = model.invoke([message])
-
-    @property
-    def supports_pdf_tool_message(self) -> bool:
-        # OpenAI requires a filename for PDF inputs
-        # For now, we test with filename in OpenAI-specific tests
-        return False
-
-    def test_openai_pdf_tool_messages(self, model: BaseChatModel) -> None:
-        """Test that the model can process PDF inputs in `ToolMessage` objects."""
-        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
-
-        tool_message = ToolMessage(
-            content_blocks=[
-                {
-                    "type": "file",
-                    "base64": pdf_data,
-                    "mime_type": "application/pdf",
-                    "extras": {"filename": "my-pdf"},  # specify filename
-                },
-            ],
-            tool_call_id="1",
-            name="random_pdf",
-        )
-
-        messages = [
-            HumanMessage(
-                "Get a random PDF using the tool and relay the title verbatim."
-            ),
-            AIMessage(
-                [],
-                tool_calls=[
-                    {
-                        "type": "tool_call",
-                        "id": "1",
-                        "name": "random_pdf",
-                        "args": {},
-                    }
-                ],
-            ),
-            tool_message,
-        ]
-
-        def random_pdf() -> str:
-            """Return a random PDF."""
-            return ""
-
-        _ = model.bind_tools([random_pdf]).invoke(messages)
 
 
 def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:

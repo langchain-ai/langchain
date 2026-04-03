@@ -15,7 +15,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
     """Attempts to split the text along Markdown-formatted headings."""
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize a MarkdownTextSplitter."""
+        """Initialize a `MarkdownTextSplitter`."""
         separators = self.get_separators_for_language(Language.MARKDOWN)
         super().__init__(separators=separators, **kwargs)
 
@@ -30,15 +30,17 @@ class MarkdownHeaderTextSplitter:
         strip_headers: bool = True,  # noqa: FBT001,FBT002
         custom_header_patterns: dict[str, int] | None = None,
     ) -> None:
-        """Create a new MarkdownHeaderTextSplitter.
+        """Create a new `MarkdownHeaderTextSplitter`.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
             strip_headers: Strip split headers from the content of the chunk
             custom_header_patterns: Optional dict mapping header patterns to their
-                levels. For example: {"**": 1, "***": 2} to treat **Header** as
-                level 1 and ***Header*** as level 2 headers.
+                levels.
+
+                For example: `{"**": 1, "***": 2}` to treat `**Header**` as level 1 and
+                `***Header***` as level 2 headers.
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -60,7 +62,7 @@ class MarkdownHeaderTextSplitter:
             sep: The separator pattern to match
 
         Returns:
-            True if the line matches the custom pattern format
+            `True` if the line matches the custom pattern format
         """
         if sep not in self.custom_header_patterns:
             return False
@@ -88,6 +90,9 @@ class MarkdownHeaderTextSplitter:
 
         Args:
             lines: Line of text / associated header metadata
+
+        Returns:
+            List of `Document` objects with common metadata aggregated.
         """
         aggregated_chunks: list[LineType] = []
 
@@ -131,19 +136,28 @@ class MarkdownHeaderTextSplitter:
 
         Args:
             text: Markdown file
+
+        Returns:
+            List of `Document` objects.
         """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
+
         # Final output
         lines_with_metadata: list[LineType] = []
+
         # Content and metadata of the chunk currently being processed
         current_content: list[str] = []
+
         current_metadata: dict[str, str] = {}
+
         # Keep track of the nested header structure
         header_stack: list[HeaderType] = []
+
         initial_metadata: dict[str, str] = {}
 
         in_code_block = False
+
         opening_fence = ""
 
         for line in lines:
@@ -267,14 +281,14 @@ class MarkdownHeaderTextSplitter:
 
 
 class LineType(TypedDict):
-    """Line type as typed dict."""
+    """Line type as `TypedDict`."""
 
     metadata: dict[str, str]
     content: str
 
 
 class HeaderType(TypedDict):
-    """Header type as typed dict."""
+    """Header type as `TypedDict`."""
 
     level: int
     name: str
@@ -286,8 +300,8 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     This splitter aims to retain the exact whitespace of the original text while
     extracting structured metadata, such as headers. It is a re-implementation of the
-    MarkdownHeaderTextSplitter with notable changes to the approach and
-    additional features.
+    `MarkdownHeaderTextSplitter` with notable changes to the approach and additional
+    features.
 
     Key Features:
 
@@ -299,18 +313,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         `headers_to_split_on` parameter.
 
     Example:
-    ```python
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-    ]
-    splitter = ExperimentalMarkdownSyntaxTextSplitter(
-        headers_to_split_on=headers_to_split_on
-    )
-    chunks = splitter.split(text)
-    for chunk in chunks:
-        print(chunk)
-    ```
+        ```python
+        headers_to_split_on = [
+            ("#", "Header 1"),
+            ("##", "Header 2"),
+        ]
+        splitter = ExperimentalMarkdownSyntaxTextSplitter(
+            headers_to_split_on=headers_to_split_on
+        )
+        chunks = splitter.split(text)
+        for chunk in chunks:
+            print(chunk)
+        ```
 
     This class is currently experimental and subject to change based on feedback and
     further development.
@@ -328,14 +342,14 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         chunks based on specified headers and formatting preferences.
 
         Args:
-            headers_to_split_on (Union[list[tuple[str, str]], None]):
-                A list of tuples, where each tuple contains a header tag (e.g., "h1")
-                and its corresponding metadata key. If `None`, default headers are used.
-            return_each_line (bool):
-                Whether to return each line as an individual chunk.
+            headers_to_split_on: A list of tuples, where each tuple contains a header
+                tag (e.g., "h1") and its corresponding metadata key.
+
+                If `None`, default headers are used.
+            return_each_line: Whether to return each line as an individual chunk.
+
                 Defaults to `False`, which aggregates lines into larger chunks.
-            strip_headers (bool):
-                Whether to exclude headers from the resulting chunks.
+            strip_headers: Whether to exclude headers from the resulting chunks.
         """
         self.chunks: list[Document] = []
         self.current_chunk = Document(page_content="")
@@ -359,9 +373,8 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         """Split the input text into structured chunks.
 
         This method processes the input text line by line, identifying and handling
-        specific patterns such as headers, code blocks, and horizontal rules to
-        split it into structured chunks based on headers, code blocks, and
-        horizontal rules.
+        specific patterns such as headers, code blocks, and horizontal rules to split it
+        into structured chunks based on headers, code blocks, and horizontal rules.
 
         Args:
             text: The input text to be split into chunks.
@@ -455,11 +468,13 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             return match
         return None
 
-    def _match_code(self, line: str) -> re.Match[str] | None:
+    @staticmethod
+    def _match_code(line: str) -> re.Match[str] | None:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> re.Match[str] | None:
+    @staticmethod
+    def _match_horz(line: str) -> re.Match[str] | None:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]

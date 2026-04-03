@@ -3,7 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-huggingface?label=%20)](https://pypi.org/project/langchain-huggingface/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-huggingface)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-huggingface)](https://pypistats.org/packages/langchain-huggingface)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain)
 
 Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
@@ -12,6 +12,22 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langc
 ```bash
 pip install langchain-huggingface
 ```
+
+> **Note:** The base install does not include `sentence-transformers` or `transformers`.
+> If you plan to use `HuggingFaceEmbeddings` or `HuggingFacePipeline` for **local inference**,
+> install the `[full]` extra which includes `sentence-transformers>=5.2.0` and `transformers>=5.0.0`:
+>
+> ```bash
+> pip install langchain-huggingface[full]
+> ```
+>
+> **Migrating from `langchain-community`?** Note that `langchain-community` accepted
+> `sentence-transformers>=2.2.0`, but `langchain-huggingface[full]` requires `>=5.2.0`.
+> If your project pins an older version, upgrade it:
+>
+> ```bash
+> pip install "sentence-transformers>=5.2.0"
+> ```
 
 ## 🤔 What is this?
 

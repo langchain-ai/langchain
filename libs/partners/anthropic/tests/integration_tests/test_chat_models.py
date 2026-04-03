@@ -8,10 +8,10 @@ import os
 from base64 import b64encode
 from typing import Literal, cast
 
+import anthropic
 import httpx
 import pytest
 import requests
-from anthropic import BadRequestError
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.callbacks import CallbackManager
@@ -35,7 +35,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-haiku-20241022"
+MODEL_NAME = "claude-haiku-4-5-20251001"
 
 
 def test_stream() -> None:
@@ -454,7 +454,7 @@ async def test_astreaming() -> None:
 
 def test_tool_use() -> None:
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         temperature=0,
     )
     tool_definition = {
@@ -486,14 +486,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"] == tool_call["args"]
 
     # Test streaming
-    llm = ChatAnthropic(
-        model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
-        temperature=0,
-        # Add extra headers to also test token-efficient tools
-        model_kwargs={
-            "extra_headers": {"anthropic-beta": "token-efficient-tools-2025-02-19"},
-        },
-    )
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([tool_definition])
     first = True
     chunks: list[BaseMessage | BaseMessageChunk] = []
@@ -534,15 +527,6 @@ def test_tool_use() -> None:
     assert content_blocks[1]["type"] == "tool_call"
     assert content_blocks[1]["name"] == "get_weather"
     assert content_blocks[1]["args"]
-
-    # Testing token-efficient tools
-    # https://platform.claude.com/docs/en/agents-and-tools/tool-use/token-efficient-tool-use
-    assert gathered.usage_metadata
-    assert response.usage_metadata
-    assert (
-        gathered.usage_metadata["total_tokens"]
-        < response.usage_metadata["total_tokens"]
-    )
 
     # Test passing response back to model
     stream = llm_with_tools.stream(
@@ -727,7 +711,6 @@ class PersonDict(TypedDict):
 def test_response_format(schema: dict | type) -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
     query = "Chester (a.k.a. Chet) is 100 years old."
 
@@ -779,7 +762,6 @@ def test_response_format_in_agent() -> None:
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model="claude-sonnet-4-5",  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
 
     def get_weather(location: str, unit: Literal["C", "F"]) -> str:
@@ -1181,16 +1163,33 @@ def test_structured_output_thinking_force_tool_use() -> None:
     # Structured output currently relies on forced tool use, which is not supported
     # when `thinking` is enabled. When this test fails, it means that the feature
     # is supported and the workarounds in `with_structured_output` should be removed.
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        max_tokens=5_000,  # type: ignore[call-arg]
-        thinking={"type": "enabled", "budget_tokens": 2_000},
-    ).bind_tools(
-        [GenerateUsername],
-        tool_choice="GenerateUsername",
-    )
-    with pytest.raises(BadRequestError):
-        llm.invoke("Generate a username for Sally with green hair")
+    client = anthropic.Anthropic()
+    with pytest.raises(anthropic.BadRequestError):
+        _ = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=5_000,
+            thinking={"type": "enabled", "budget_tokens": 2_000},
+            tool_choice={"type": "tool", "name": "get_weather"},
+            tools=[
+                {
+                    "name": "get_weather",
+                    "description": "Get the weather at a location.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "location": {"type": "string"},
+                        },
+                        "required": ["location"],
+                    },
+                }
+            ],
+            messages=[
+                {
+                    "role": "user",
+                    "content": "What's the weather in San Francisco?",
+                }
+            ],
+        )
 
 
 def test_effort_parameter() -> None:
@@ -1232,7 +1231,7 @@ def test_image_tool_calling() -> None:
         },
     ]
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-    image_data = b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = b64encode(httpx.get(image_url, timeout=10.0).content).decode("utf-8")
     human_content.append(
         {
             "type": "image",
@@ -1656,6 +1655,7 @@ def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution_old.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
@@ -1754,7 +1754,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
@@ -1772,7 +1771,6 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {
             "text",
             "server_tool_use",
-            "text_editor_code_execution_tool_result",
             "bash_code_execution_tool_result",
         }
     else:
@@ -2409,3 +2407,112 @@ def test_fine_grained_tool_streaming() -> None:
     assert write_doc_block is not None
     assert write_doc_block["name"] == "write_document"
     assert "args" in write_doc_block
+
+
+@pytest.mark.vcr
+def test_compaction() -> None:
+    """Test the compaction beta feature."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-6",  # type: ignore[call-arg]
+        betas=["compact-2026-01-12"],
+        max_tokens=4096,
+        context_management={
+            "edits": [
+                {
+                    "type": "compact_20260112",
+                    "trigger": {"type": "input_tokens", "value": 50000},
+                    "pause_after_compaction": True,
+                }
+            ]
+        },
+    )
+
+    input_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
+    }
+    messages: list = [input_message]
+
+    first_response = llm.invoke(messages)
+    messages.append(first_response)
+
+    second_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
+    }
+    messages.append(second_message)
+
+    second_response = llm.invoke(messages)
+    messages.append(second_response)
+
+    content_blocks = second_response.content_blocks
+    compaction_block = next(
+        (block for block in content_blocks if block["type"] == "non_standard"),
+        None,
+    )
+    assert compaction_block
+    assert compaction_block["value"].get("type") == "compaction"
+
+    third_message = {
+        "role": "user",
+        "content": "What are we talking about?",
+    }
+    messages.append(third_message)
+    third_response = llm.invoke(messages)
+    content_blocks = third_response.content_blocks
+    assert [block["type"] for block in content_blocks] == ["text"]
+
+
+@pytest.mark.vcr
+def test_compaction_streaming() -> None:
+    """Test the compaction beta feature."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-6",  # type: ignore[call-arg]
+        betas=["compact-2026-01-12"],
+        max_tokens=4096,
+        context_management={
+            "edits": [
+                {
+                    "type": "compact_20260112",
+                    "trigger": {"type": "input_tokens", "value": 50000},
+                    "pause_after_compaction": False,
+                }
+            ]
+        },
+        streaming=True,
+    )
+
+    input_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'a' * 100000}",
+    }
+    messages: list = [input_message]
+
+    first_response = llm.invoke(messages)
+    messages.append(first_response)
+
+    second_message = {
+        "role": "user",
+        "content": f"Generate a one-sentence summary of this:\n\n{'b' * 100000}",
+    }
+    messages.append(second_message)
+
+    second_response = llm.invoke(messages)
+    messages.append(second_response)
+
+    content_blocks = second_response.content_blocks
+    compaction_block = next(
+        (block for block in content_blocks if block["type"] == "non_standard"),
+        None,
+    )
+    assert compaction_block
+    assert compaction_block["value"].get("type") == "compaction"
+
+    third_message = {
+        "role": "user",
+        "content": "What are we talking about?",
+    }
+    messages.append(third_message)
+    third_response = llm.invoke(messages)
+    content_blocks = third_response.content_blocks
+    assert [block["type"] for block in content_blocks] == ["text"]

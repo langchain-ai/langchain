@@ -20,6 +20,11 @@ NOT instantiated as LC objects.
 
 from typing import Any
 
+from langchain_core.load.serializable import (
+    Serializable,
+    to_json_not_implemented,
+)
+
 _LC_ESCAPED_KEY = "__lc_escaped__"
 """Sentinel key used to mark escaped user dicts during serialization.
 
@@ -73,11 +78,6 @@ def _serialize_value(obj: Any) -> Any:
     Returns:
         The serialized value with user dicts escaped as needed.
     """
-    from langchain_core.load.serializable import (  # noqa: PLC0415
-        Serializable,
-        to_json_not_implemented,
-    )
-
     if isinstance(obj, Serializable):
         # This is an LC object - serialize it properly (not escaped)
         return _serialize_lc_object(obj)
@@ -128,8 +128,6 @@ def _serialize_lc_object(obj: Any) -> dict[str, Any]:
         metadata) that contains `'lc'` keys. Secret fields (from `lc_secrets`) are
         skipped because `to_json()` replaces their values with secret markers.
     """
-    from langchain_core.load.serializable import Serializable  # noqa: PLC0415
-
     if not isinstance(obj, Serializable):
         msg = f"Expected Serializable, got {type(obj)}"
         raise TypeError(msg)

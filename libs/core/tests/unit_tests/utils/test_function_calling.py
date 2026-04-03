@@ -22,7 +22,8 @@ except ImportError:
 from importlib.metadata import version
 
 from packaging.version import parse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.errors import PydanticInvalidForJsonSchema
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -31,6 +32,7 @@ from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_json_schema,
     convert_to_openai_function,
+    convert_to_openai_tool,
     tool_example_to_messages,
 )
 
@@ -1047,8 +1049,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 
 def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # noqa: ARG001
+    def magic_function(value: int | str) -> str:
         """Compute a magic function."""
+        _ = value
         return ""
 
     result = convert_to_openai_function(magic_function)
@@ -1168,3 +1171,87 @@ def test_convert_to_openai_function_strict_required() -> None:
     func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
+
+
+def test_convert_to_openai_function_arbitrary_type_error() -> None:
+    """Test that a helpful error is raised for non-JSON-serializable types.
+
+    When a Pydantic model contains a custom Python class that cannot be
+    serialized to JSON schema, we should raise a PydanticInvalidForJsonSchema
+    with a helpful error message explaining the issue and suggesting solutions.
+
+    See: https://github.com/langchain-ai/langchain/issues/34371
+    """
+
+    # Define a custom Python class that isn't JSON-serializable
+    class CustomClass:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+    class SchemaWithArbitraryType(BaseModel):
+        """Schema with arbitrary type."""
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        custom_obj: CustomClass = Field(..., description="A custom object")
+        name: str = Field(..., description="A name")
+
+    with pytest.raises(PydanticInvalidForJsonSchema) as exc_info:
+        convert_to_openai_function(SchemaWithArbitraryType)
+
+    error_message = str(exc_info.value)
+    # Check that the error message contains helpful information
+    assert "SchemaWithArbitraryType" in error_message
+    assert "JSON-serializable" in error_message
+    assert "Pydantic models" in error_message
+
+
+def test_convert_to_openai_function_strict_defaults() -> None:
+    class MyModel(BaseModel):
+        """Dummy schema."""
+
+        arg1: int = Field(default=3, description="foo")
+        arg2: str | None = Field(default=None, description="bar")
+
+    func = convert_to_openai_function(MyModel, strict=True)
+    assert func["parameters"]["additionalProperties"] is False
+
+
+def test_convert_to_openai_function_json_schema_missing_title_with_type() -> None:
+    """Test error for JSON schema with 'type' but no 'title'."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_properties() -> None:
+    """Test error for JSON schema with 'properties' but no 'title'."""
+    schema_without_title = {
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_includes_schema() -> None:
+    """Test that the error message includes the schema for debugging."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"my_field": {"type": "integer"}},
+    }
+    with pytest.raises(ValueError, match="my_field"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_tool_computer_passthrough() -> None:
+    """Test that the 'computer' tool type is passed through unchanged."""
+    computer_tool = {
+        "type": "computer",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    result = convert_to_openai_tool(computer_tool)
+    assert result == computer_tool

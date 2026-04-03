@@ -40,11 +40,15 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
@@ -71,6 +75,12 @@ from langchain_groq.data._profiles import _PROFILES
 from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+_STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
+    {
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    }
+)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -169,6 +179,29 @@ class ChatGroq(BaseChatModel):
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
+
+    Vision:
+        ```python
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import HumanMessage
+
+        model = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
+
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this image in detail"},
+                {"type": "image_url", "image_url": {"url": "example_url.jpg"}},
+            ]
+        )
+
+        response = model.invoke([message])
+        print(response.content)
+        ```
+
+        See [Groq model docs](https://console.groq.com/docs/vision#supported-models)
+        for the latest available vision models.
+
+        Maximum image size: 20MB per request.
 
     Stream:
         ```python
@@ -323,6 +356,11 @@ class ChatGroq(BaseChatModel):
 
     model_name: str = Field(alias="model")
     """Model name to use."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -505,12 +543,8 @@ class ChatGroq(BaseChatModel):
             raise ImportError(msg) from exc
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     #
     # Serializable class method overrides
@@ -875,6 +909,7 @@ class ChatGroq(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -946,6 +981,16 @@ class ChatGroq(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+            strict:
+                Only used with `method="json_schema"`. When `True`, Groq's Structured
+                Output API uses constrained decoding to guarantee schema compliance.
+                This requires every object to set `additionalProperties: false` and
+                all properties to be listed in `required`. When `False`, schema
+                adherence is best-effort. If `None`, the argument is omitted.
+
+                Strict mode is only supported for `openai/gpt-oss-20b` and
+                `openai/gpt-oss-120b`. For other models, `strict=True` is ignored.
 
             kwargs:
                 Any additional parameters to pass to the `langchain.runnable.Runnable`
@@ -1140,7 +1185,6 @@ class ChatGroq(BaseChatModel):
         ```
 
         """  # noqa: E501
-        _ = kwargs.pop("strict", None)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1178,14 +1222,25 @@ class ChatGroq(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
-            json_schema = convert_to_json_schema(schema)
+            if (
+                strict is True
+                and self.model_name not in _STRICT_STRUCTURED_OUTPUT_MODELS
+            ):
+                # Ignore unsupported strict=True to preserve backward compatibility.
+                strict = None
+            json_schema = convert_to_json_schema(schema, strict=strict)
             schema_name = json_schema.get("title", "")
-            response_format = {
+            response_format: dict[str, Any] = {
                 "type": "json_schema",
                 "json_schema": {"name": schema_name, "schema": json_schema},
             }
+            if strict is not None:
+                response_format["json_schema"]["strict"] = strict
+            ls_format_kwargs: dict[str, Any] = {"method": "json_schema"}
+            if strict is not None:
+                ls_format_kwargs["strict"] = strict
             ls_format_info = {
-                "kwargs": {"method": "json_schema"},
+                "kwargs": ls_format_kwargs,
                 "schema": json_schema,
             }
             llm = self.bind(
@@ -1215,8 +1270,9 @@ class ChatGroq(BaseChatModel):
             )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                "Unrecognized method argument. Expected one of "
+                "'function_calling', 'json_mode', or 'json_schema'. "
+                f"Received: '{method}'"
             )
             raise ValueError(msg)
 
@@ -1239,6 +1295,29 @@ def _is_pydantic_class(obj: Any) -> bool:
 #
 # Type conversion helpers
 #
+def _format_message_content(content: Any) -> Any:
+    """Format message content for Groq API.
+
+    Converts LangChain image content blocks to Groq's expected image_url format.
+
+    Args:
+        content: The message content (string or list of content blocks).
+
+    Returns:
+        Formatted content suitable for Groq API.
+    """
+    if content and isinstance(content, list):
+        formatted: list = []
+        for block in content:
+            # Handle LangChain standard data content blocks (image, audio, file)
+            if isinstance(block, dict) and is_data_content_block(block):
+                formatted.append(convert_to_openai_data_block(block))
+            else:
+                formatted.append(block)
+        return formatted
+    return content
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -1253,7 +1332,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
@@ -1276,7 +1358,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 for block in message.content
                 if isinstance(block, dict) and block.get("type") == "text"
             ]
-            message_dict["content"] = text_blocks if text_blocks else ""
+            message_dict["content"] = text_blocks or ""
 
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
@@ -1494,17 +1576,18 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     """
     # Support both formats: new Responses API uses "input_tokens",
     # Chat Completions API uses "prompt_tokens"
+    _input = groq_token_usage.get("input_tokens")
     input_tokens = (
-        groq_token_usage.get("input_tokens")
-        or groq_token_usage.get("prompt_tokens")
-        or 0
+        _input if _input is not None else (groq_token_usage.get("prompt_tokens") or 0)
     )
+    _output = groq_token_usage.get("output_tokens")
     output_tokens = (
-        groq_token_usage.get("output_tokens")
-        or groq_token_usage.get("completion_tokens")
-        or 0
+        _output
+        if _output is not None
+        else (groq_token_usage.get("completion_tokens") or 0)
     )
-    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+    _total = groq_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
 
     # Support both formats for token details:
     # Responses API uses "*_tokens_details", Chat Completions API might use

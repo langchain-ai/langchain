@@ -384,7 +384,7 @@ class AsIsSelector(BaseExampleSelector):
         raise NotImplementedError
 
     @override
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
         return list(self.examples)
 
 
@@ -479,11 +479,13 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, str]]:
         raise NotImplementedError
 
     @override
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, str]]:
         return list(self.examples)
 
 

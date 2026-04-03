@@ -33,22 +33,23 @@ LANGCHAIN_DIRS = [
     "libs/model-profiles",
 ]
 
+# Packages with VCR cassette-backed integration tests.
+# These get a playback-only CI check to catch stale cassettes.
+VCR_PACKAGES = {
+    "libs/partners/openai",
+}
+
 # When set to True, we are ignoring core dependents
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
 IGNORE_CORE_DEPENDENTS = False
 
-# ignored partners are removed from dependents
-# but still run if directly edited
+# Ignored partners are removed from dependents but still run if directly edited
 IGNORED_PARTNERS = [
     # remove huggingface from dependents because of CI instability
     # specifically in huggingface jobs
-    # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
-    # prompty exhibiting issues with numpy for Python 3.13
-    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
-    "prompty",
 ]
 
 
@@ -56,7 +57,7 @@ def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1]).lstrip("./")
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if "libs/cli" not in path and "libs/standard-tests" not in path
+        if "libs/standard-tests" not in path
     }
 
 
@@ -131,12 +132,23 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.13"]
-    elif dir_ == "libs/core":
+        # CPU simulation (<1% variance, Valgrind-based) is the default.
+        # Partners with heavy SDK inits use walltime instead to keep CI fast.
+        CODSPEED_WALLTIME_DIRS = {
+            "libs/core",
+            "libs/partners/fireworks",  # ~328s under simulation
+            "libs/partners/openai",  # 6 benchmarks, ~6 min under simulation
+        }
+        mode = "walltime" if dir_ in CODSPEED_WALLTIME_DIRS else "simulation"
+        return [
+            {
+                "working-directory": dir_,
+                "python-version": "3.13",
+                "codspeed-mode": mode,
+            }
+        ]
+    if dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    # custom logic for specific directories
-    elif dir_ in {"libs/partners/chroma"}:
-        py_versions = ["3.10", "3.13"]
     else:
         py_versions = ["3.10", "3.14"]
 
@@ -214,6 +226,14 @@ def _get_configs_for_multi_dirs(
         dirs = list(dirs_to_run["extended-test"])
     elif job == "codspeed":
         dirs = list(dirs_to_run["codspeed"])
+    elif job == "vcr-tests":
+        # Only run VCR tests for packages that have cassettes and are affected
+        all_affected = set(
+            add_dependents(
+                dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+            )
+        )
+        dirs = [d for d in VCR_PACKAGES if d in all_affected]
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -286,10 +306,6 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
 
-        elif file.startswith("libs/cli"):
-            dirs_to_run["lint"].add("libs/cli")
-            dirs_to_run["test"].add("libs/cli")
-
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -332,6 +348,7 @@ if __name__ == "__main__":
             "dependencies",
             "test-pydantic",
             "codspeed",
+            "vcr-tests",
         ]
     }
 

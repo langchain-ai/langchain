@@ -17,6 +17,7 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
     """Test reasoning features.
 
     !!! note
+
         `grok-4` does not return `reasoning_content`, but may optionally return
         encrypted reasoning content if `use_encrypted_content` is set to `True`.
     """
@@ -25,17 +26,28 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
         chat_model = ChatXAI(
             model="grok-3-mini",
             reasoning_effort="low",
+            temperature=0,
             output_version=output_version,
         )
     else:
         chat_model = ChatXAI(
             model="grok-3-mini",
             reasoning_effort="low",
+            temperature=0,
         )
     input_message = "What is 3^3?"
     response = chat_model.invoke(input_message)
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
+
+    ## Check output tokens
+    usage_metadata = response.usage_metadata
+    assert usage_metadata
+    reasoning_tokens = usage_metadata.get("output_token_details", {}).get("reasoning")
+    total_tokens = usage_metadata.get("output_tokens")
+    assert total_tokens
+    assert reasoning_tokens
+    assert total_tokens > reasoning_tokens
 
     # Test streaming
     full: BaseMessageChunk | None = None
@@ -43,6 +55,15 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
+
+    ## Check output tokens
+    usage_metadata = full.usage_metadata
+    assert usage_metadata
+    reasoning_tokens = usage_metadata.get("output_token_details", {}).get("reasoning")
+    total_tokens = usage_metadata.get("output_tokens")
+    assert total_tokens
+    assert reasoning_tokens
+    assert total_tokens > reasoning_tokens
 
     # Check that we can access reasoning content blocks
     assert response.content_blocks
@@ -77,21 +98,21 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
 
 
 def test_web_search() -> None:
-    llm = ChatXAI(
-        model=MODEL_NAME,
-        search_parameters={"mode": "on", "max_search_results": 3},
-    )
+    llm = ChatXAI(model=MODEL_NAME, temperature=0).bind_tools([{"type": "web_search"}])
 
     # Test invoke
-    response = llm.invoke("Provide me a digest of world news in the last 24 hours.")
+    response = llm.invoke("Look up the current time in Boston, MA.")
     assert response.content
-    assert response.additional_kwargs["citations"]
-    assert len(response.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in response.content_blocks}
+    assert content_types == {"server_tool_call", "server_tool_result", "text"}
+    assert response.content_blocks[0]["name"] == "web_search"  # type: ignore[typeddict-item]
 
     # Test streaming
-    full = None
-    for chunk in llm.stream("Provide me a digest of world news in the last 24 hours."):
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream("Look up the current time in Boston, MA."):
+        assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    assert full.additional_kwargs["citations"]
-    assert len(full.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in full.content_blocks}
+    assert content_types == {"server_tool_call", "server_tool_result", "text"}
+    assert full.content_blocks[0]["name"] == "web_search"  # type: ignore[typeddict-item]

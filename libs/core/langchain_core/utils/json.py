@@ -13,6 +13,14 @@ if TYPE_CHECKING:
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
+    """Replace newline characters in a regex match with escaped sequences.
+
+    Args:
+        match: Regex match object containing the string to process.
+
+    Returns:
+        String with newlines, carriage returns, tabs, and quotes properly escaped.
+    """
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
@@ -25,10 +33,9 @@ def _replace_new_line(match: re.Match[str]) -> str:
 def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
-    The LLM response for `action_input` may be a multiline
-    string containing unescaped newlines, tabs or quotes. This function
-    replaces those characters with their escaped counterparts.
-    (newlines in JSON must be double-escaped: `\\n`).
+    The LLM response for `action_input` may be a multiline string containing unescaped
+    newlines, tabs or quotes. This function replaces those characters with their escaped
+    counterparts. (newlines in JSON must be double-escaped: `\\n`).
 
     Returns:
         The modified string with escaped newlines, tabs and quotes.
@@ -139,7 +146,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
-        parser: The parser to use. Defaults to `parse_partial_json`.
+        parser: The parser to use.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -162,6 +169,18 @@ _json_strip_chars = " \n\r\t`"
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> Any:
+    """Parse a JSON string, handling special characters and whitespace.
+
+    Strips whitespace, newlines, and backticks from the start and end of the string,
+    then processes special characters before parsing.
+
+    Args:
+        json_str: The JSON string to parse.
+        parser: Optional custom parser function.
+
+    Returns:
+        Parsed JSON object.
+    """
     # Strip whitespace,newlines,backtick from the start and end
     json_str = json_str.strip(_json_strip_chars)
 

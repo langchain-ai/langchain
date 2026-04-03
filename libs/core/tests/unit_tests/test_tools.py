@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -39,7 +40,6 @@ from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
-    Runnable,
     RunnableConfig,
     RunnableLambda,
     ensure_config,
@@ -81,7 +81,7 @@ except ImportError:
     HAS_LANGGRAPH = False
 
 
-def _get_tool_call_json_schema(tool: BaseTool) -> dict:
+def _get_tool_call_json_schema(tool: BaseTool) -> dict[str, Any]:
     tool_schema = tool.tool_call_schema
     if isinstance(tool_schema, dict):
         return tool_schema
@@ -1245,6 +1245,18 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
+    # Test parsing with runtime does not raise error
+    def foo3_runtime(bar: str, baz: int, runtime: Any) -> str:  # noqa: D417
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    _ = tool(foo3_runtime, parse_docstring=True)
+
     # Test parameterless tool does not raise error for missing Args section
     # in docstring.
     def foo4() -> str:
@@ -1494,15 +1506,15 @@ class _MockStructuredToolWithRawOutput(BaseTool):
         self,
         arg1: int,
         arg2: bool,
-        arg3: dict | None = None,
-    ) -> tuple[str, dict]:
+        arg3: dict[str, Any] | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
 @tool("structured_api", response_format="content_and_artifact")
 def _mock_structured_tool_with_artifact(
-    *, arg1: int, arg2: bool, arg3: dict | None = None
-) -> tuple[str, dict]:
+    *, arg1: int, arg2: bool, arg3: dict[str, str] | None = None
+) -> tuple[str, dict[str, Any]]:
     """A Structured Tool."""
     return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
@@ -1511,7 +1523,7 @@ def _mock_structured_tool_with_artifact(
     "tool", [_MockStructuredToolWithRawOutput(), _mock_structured_tool_with_artifact]
 )
 def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
-    tool_call: dict = {
+    tool_call: dict[str, Any] = {
         "name": "structured_api",
         "args": {"arg1": 1, "arg2": True, "arg3": {"img": "base64string..."}},
         "id": "123",
@@ -1540,7 +1552,7 @@ def test_convert_from_runnable_dict() -> None:
     def f(x: Args) -> str:
         return str(x["a"] * max(x["b"]))
 
-    runnable: Runnable = RunnableLambda(f)
+    runnable = RunnableLambda(f)
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
@@ -1572,14 +1584,14 @@ def test_convert_from_runnable_dict() -> None:
         a: int = Field(..., description="Integer")
         b: list[int] = Field(..., description="List of ints")
 
-    runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(GSchema)
-    as_tool.invoke({"a": 3, "b": [1, 2]})
+    runnable2 = RunnableLambda(g)
+    as_tool2 = runnable2.as_tool(GSchema)
+    as_tool2.invoke({"a": 3, "b": [1, 2]})
 
     # Specify via arg_types:
-    runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
-    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    runnable3 = RunnableLambda(g)
+    as_tool3 = runnable3.as_tool(arg_types={"a": int, "b": list[int]})
+    result = as_tool3.invoke({"a": 3, "b": [1, 2]})
     assert result == "6"
 
     # Test with config
@@ -1588,9 +1600,9 @@ def test_convert_from_runnable_dict() -> None:
         assert config["configurable"]["foo"] == "not-bar"
         return str(x["a"] * max(x["b"]))
 
-    runnable = RunnableLambda(h)
-    as_tool = runnable.as_tool(arg_types={"a": int, "b": list[int]})
-    result = as_tool.invoke(
+    runnable4 = RunnableLambda(h)
+    as_tool4 = runnable4.as_tool(arg_types={"a": int, "b": list[int]})
+    result = as_tool4.invoke(
         {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
     )
     assert result == "6"
@@ -1604,7 +1616,7 @@ def test_convert_from_runnable_other() -> None:
     def g(x: str) -> str:
         return x + "z"
 
-    runnable: Runnable = RunnableLambda(f) | g
+    runnable = RunnableLambda(f) | g
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is None
@@ -1619,10 +1631,10 @@ def test_convert_from_runnable_other() -> None:
         assert config["configurable"]["foo"] == "not-bar"
         return x + "a"
 
-    runnable = RunnableLambda(h)
-    as_tool = runnable.as_tool()
-    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
-    assert result == "ba"
+    runnable2 = RunnableLambda(h)
+    as_tool2 = runnable2.as_tool()
+    result2 = as_tool2.invoke("b", config={"configurable": {"foo": "not-bar"}})
+    assert result2 == "ba"
 
 
 @tool("foo", parse_docstring=True)
@@ -1877,7 +1889,7 @@ def test_tool_inherited_injected_arg() -> None:
     }
 
 
-def _get_parametrized_tools() -> list:
+def _get_parametrized_tools() -> list[Callable[..., Any]]:
     def my_tool(x: int, y: str, some_tool: Annotated[Any, InjectedToolArg]) -> str:
         """my_tool."""
         return "my_tool"
@@ -1892,7 +1904,7 @@ def _get_parametrized_tools() -> list:
 
 
 @pytest.mark.parametrize("tool_", _get_parametrized_tools())
-def test_fn_injected_arg_with_schema(tool_: Callable) -> None:
+def test_fn_injected_arg_with_schema(tool_: Callable[..., Any]) -> None:
     assert convert_to_openai_function(tool_) == {
         "name": tool_.__name__,
         "description": "my_tool.",
@@ -2139,10 +2151,16 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A
 
+        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+            pass
+
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
@@ -2192,6 +2210,10 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
+
+    expected = {}
+    actual = get_all_basemodel_annotations(EmptyModel)
     assert actual == expected
 
 
@@ -2611,7 +2633,8 @@ def test_tool_mutate_input() -> None:
     assert my_input == {"x": "hi"}
 
 
-def test_structured_tool_args_schema_dict() -> None:
+def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     args_schema = {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2645,6 +2668,8 @@ def test_structured_tool_args_schema_dict() -> None:
         "a": {"title": "A", "type": "integer"},
         "b": {"title": "B", "type": "integer"},
     }
+    # test that we didn't log an error about failing to get args_schema annotations
+    assert "Failed to get args_schema annotations for filtering" not in caplog.text
 
 
 def test_simple_tool_args_schema_dict() -> None:
@@ -2770,13 +2795,13 @@ def test_tool_decorator_description() -> None:
 
     assert foo_args_jsons_schema.description == "JSON Schema."
     assert (
-        cast("dict", foo_args_jsons_schema.tool_call_schema)["description"]
+        cast("dict[str, Any]", foo_args_jsons_schema.tool_call_schema)["description"]
         == "JSON Schema."
     )
 
     assert foo_args_jsons_schema_with_description.description == "description"
     assert (
-        cast("dict", foo_args_jsons_schema_with_description.tool_call_schema)[
+        cast("dict[str, Any]", foo_args_jsons_schema_with_description.tool_call_schema)[
             "description"
         ]
         == "description"
@@ -3185,6 +3210,112 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
     assert "runtime" not in captured
 
 
+# Custom directly injected arg type (similar to ToolRuntime)
+class _CustomRuntime(_DirectlyInjectedToolArg):
+    """Custom runtime info injected at tool call time."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        self.data = data
+
+
+# Schema that does NOT include the injected arg
+class _ToolArgsSchemaNoRuntime(BaseModel):
+    """Schema with only the non-injected args."""
+
+    query: str
+    limit: int
+
+
+def _tool_func_directly_injected(
+    query: str, limit: int, runtime: _CustomRuntime
+) -> str:
+    """Tool with directly injected runtime not in schema.
+
+    Args:
+        query: The search query.
+        limit: Max results.
+        runtime: Custom runtime (directly injected, not in schema).
+    """
+    return f"Query: {query}, Limit: {limit}"
+
+
+def _tool_func_annotated_injected(
+    query: str, limit: int, runtime: Annotated[Any, InjectedToolArg()]
+) -> str:
+    """Tool with Annotated injected runtime not in schema.
+
+    Args:
+        query: The search query.
+        limit: Max results.
+        runtime: Custom runtime (annotated as injected, not in schema).
+    """
+    return f"Query: {query}, Limit: {limit}"
+
+
+@pytest.mark.parametrize(
+    ("tool_func", "runtime_value", "description"),
+    [
+        pytest.param(
+            _tool_func_directly_injected,
+            _CustomRuntime(data={"foo": "bar"}),
+            "directly injected (_DirectlyInjectedToolArg subclass)",
+            id="directly_injected",
+        ),
+        pytest.param(
+            _tool_func_annotated_injected,
+            {"foo": "bar"},
+            "annotated injected (Annotated[Any, InjectedToolArg()])",
+            id="annotated_injected",
+        ),
+    ],
+)
+def test_filter_injected_args_not_in_schema(
+    tool_func: Callable[..., str], runtime_value: Any, description: str
+) -> None:
+    """Test filtering injected args that are in function signature but not in schema.
+
+    This tests the case where an injected argument (like ToolRuntime) is in the
+    function signature but is not present in the args_schema. The fix ensures
+    we check _injected_args_keys from the function signature, not just the schema.
+
+    Args:
+        tool_func: The tool function with an injected arg.
+        runtime_value: The value to pass for the runtime arg.
+        description: Description of the injection style being tested.
+    """
+    # Create StructuredTool with explicit args_schema that excludes runtime
+    custom_tool = StructuredTool.from_function(
+        func=tool_func,
+        name="custom_tool",
+        description=f"Tool with {description} arg not in schema",
+        args_schema=_ToolArgsSchemaNoRuntime,
+    )
+
+    # Verify _injected_args_keys contains 'runtime'
+    assert "runtime" in custom_tool._injected_args_keys
+
+    handler = CallbackHandlerWithInputCapture(captured_inputs=[])
+
+    result = custom_tool.invoke(
+        {
+            "query": "test",
+            "limit": 5,
+            "runtime": runtime_value,
+        },
+        config={"callbacks": [handler]},
+    )
+
+    assert result == "Query: test, Limit: 5"
+    assert handler.tool_starts == 1
+    assert len(handler.captured_inputs) == 1
+
+    # Verify that runtime is filtered out even though it's not in args_schema
+    captured = handler.captured_inputs[0]
+    assert captured is not None
+    assert captured == {"query": "test", "limit": 5}
+    assert "runtime" not in captured
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 
@@ -3505,3 +3636,20 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_default_factory_not_required() -> None:
+    """Fields with default_factory should not appear in required."""
+
+    class Args(BaseModel):
+        """Hello."""
+
+        names: list[str] = Field(default_factory=list, description="Some names")
+
+    @tool(args_schema=Args)
+    def some_func(names: list[str] | None = None) -> None:
+        """Do something."""
+
+    schema = convert_to_openai_tool(some_func)
+    params = schema["function"]["parameters"]
+    assert "names" not in params.get("required", [])

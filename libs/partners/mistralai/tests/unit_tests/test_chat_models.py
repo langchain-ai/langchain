@@ -373,7 +373,7 @@ def test_retry_with_failure_then_success() -> None:
 
 def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     """
-    Tests wether the conversion of an AIMessage with more than one tool call
+    Tests whether the conversion of an AIMessage with more than one tool call
     to a Mistral assistant message correctly returns each tool call exactly
     once in the final payload.
 

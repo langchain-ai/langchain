@@ -1,4 +1,4 @@
-""":autodoc-options: autoproperty."""
+"""Chat model unit tests."""
 
 from __future__ import annotations
 

@@ -1,9 +1,11 @@
 """Schema definitions for representing agent actions, observations, and return values.
 
 !!! warning
+
     The schema definitions are provided for backwards compatibility.
 
 !!! warning
+
     New agents should be built using the
     [`langchain` library](https://pypi.org/project/langchain/), which provides a
     simpler and more flexible way to define agents.
@@ -21,7 +23,7 @@ A basic agent works in the following manner:
     the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
-The schemas for the agents themselves are defined in langchain.agents.agent.
+The schemas for the agents themselves are defined in `langchain.agents.agent`.
 """
 
 from __future__ import annotations
@@ -47,9 +49,11 @@ class AgentAction(Serializable):
     """
 
     tool: str
-    """The name of the Tool to execute."""
+    """The name of the `Tool` to execute."""
+
     tool_input: str | dict
-    """The input to pass in to the Tool."""
+    """The input to pass in to the `Tool`."""
+
     log: str
     """Additional information to log about the action.
 
@@ -60,6 +64,7 @@ class AgentAction(Serializable):
     useful when `(tool, tool_input)` does not contain full information about the LLM
     prediction (for example, any `thought` before the tool/tool_input).
     """
+
     type: Literal["AgentAction"] = "AgentAction"
 
     # Override init to support instantiation by position for backward compat.
@@ -114,8 +119,8 @@ class AgentActionMessageLog(AgentAction):
     This is again useful if `(tool, tool_input)` cannot be used to fully recreate the
     LLM prediction, and you need that LLM prediction (for future agent iteration).
 
-    Compared to `log`, this is useful when the underlying LLM is a
-    chat model (and therefore returns messages rather than a string).
+    Compared to `log`, this is useful when the underlying LLM is a chat model (and
+    therefore returns messages rather than a string).
     """
     # Ignoring type because we're overriding the type from AgentAction.
     # And this is the correct thing to do in this case.
@@ -128,6 +133,7 @@ class AgentStep(Serializable):
 
     action: AgentAction
     """The `AgentAction` that was executed."""
+
     observation: Any
     """The result of the `AgentAction`."""
 
@@ -145,6 +151,7 @@ class AgentFinish(Serializable):
 
     return_values: dict
     """Dictionary of return values."""
+
     log: str
     """Additional information to log about the return value.
 
@@ -192,7 +199,7 @@ def _convert_agent_action_to_messages(
         agent_action: Agent action to convert.
 
     Returns:
-        AIMessage that corresponds to the original tool invocation.
+        `AIMessage` that corresponds to the original tool invocation.
     """
     if isinstance(agent_action, AgentActionMessageLog):
         return agent_action.message_log

@@ -1,6 +1,5 @@
 """Unit tests for tool emulator middleware."""
 
-import typing
 from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
@@ -47,9 +46,9 @@ class FakeModel(GenericFakeChatModel):
 
     def bind_tools(
         self,
-        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+        **_kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)

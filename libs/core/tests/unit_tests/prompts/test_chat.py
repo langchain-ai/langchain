@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from packaging import version
@@ -115,11 +115,10 @@ def test_create_system_message_prompt_template_from_template_partial() -> None:
     History:
     {history}
     """
-    json_prompt_instructions: dict = {}
     graph_analyst_template = SystemMessagePromptTemplate.from_template(
         template=graph_creator_content,
         input_variables=["history"],
-        partial_variables={"instructions": json_prompt_instructions},
+        partial_variables={"instructions": {}},
     )
     assert graph_analyst_template.format(history="history") == SystemMessage(
         content="\n    Your instructions are:\n    {}\n    History:\n    history\n    "
@@ -1214,46 +1213,43 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
             ("system", "You are an AI assistant named {name}."),
             ("system", [{"text": "You are an AI assistant named {name}."}]),
             SystemMessagePromptTemplate.from_template("you are {foo}"),
-            cast(
-                "tuple",
-                (
-                    "human",
-                    [
-                        "hello",
-                        {"text": "What's in this image?"},
-                        {"type": "text", "text": "What's in this image?"},
-                        {
-                            "type": "text",
-                            "text": "What's in this image?",
-                            "cache_control": {"type": "{foo}"},
+            (
+                "human",
+                [
+                    "hello",
+                    {"text": "What's in this image?"},
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "text",
+                        "text": "What's in this image?",
+                        "cache_control": {"type": "{foo}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/jpeg;base64,{my_image}",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
+                    },
+                    {"type": "image_url", "image_url": "{my_other_image}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "{my_other_image}",
+                            "detail": "medium",
                         },
-                        {
-                            "type": "image_url",
-                            "image_url": "data:image/jpeg;base64,{my_image}",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
-                        },
-                        {"type": "image_url", "image_url": "{my_other_image}"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": "{my_other_image}",
-                                "detail": "medium",
-                            },
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "https://www.langchain.com/image.png"},
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/jpeg;base64,foobar"},
-                        },
-                        {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
-                    ],
-                ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://www.langchain.com/image.png"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                    },
+                    {"image_url": {"url": "data:image/jpeg;base64,foobar"}},
+                ],
             ),
             ("placeholder", "{chat_history}"),
             MessagesPlaceholder("more_history", optional=False),
@@ -1420,7 +1416,7 @@ def test_chat_prompt_template_data_prompt_from_message(
     cache_control_placeholder: str,
     source_data_placeholder: str,
 ) -> None:
-    prompt: dict = {
+    prompt: dict[str, Any] = {
         "type": "image",
         "source_type": "base64",
         "data": f"{source_data_placeholder}",
@@ -1568,9 +1564,15 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": [],
                                     "template_format": "mustache",
-                                    "template": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                    "template": (
+                                        "Here is the expected answer or success "
+                                        "criteria given by the teacher:"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                        "text": (
+                                            "Here is the expected answer or success "
+                                            "criteria given by the teacher:"
+                                        ),
                                     },
                                 },
                             },
@@ -1604,9 +1606,17 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": [],
                                     "template_format": "mustache",
-                                    "template": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    "template": (
+                                        "Note: This may be just one example of many "
+                                        "possible correct ways for the student to "
+                                        "respond.\n"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                        "text": (
+                                            "Note: This may be just one example of "
+                                            "many possible correct ways for the "
+                                            "student to respond.\n"
+                                        )
                                     },
                                 },
                             },
@@ -1622,9 +1632,15 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": [],
                                     "template_format": "mustache",
-                                    "template": "For your evaluation of the student's response:\n",  # noqa: E501
+                                    "template": (
+                                        "For your evaluation of the student's "
+                                        "response:\n"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "For your evaluation of the student's response:\n",  # noqa: E501
+                                        "text": (
+                                            "For your evaluation of the student's "
+                                            "response:\n"
+                                        ),
                                     },
                                 },
                             },
@@ -1640,9 +1656,15 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": [],
                                     "template_format": "mustache",
-                                    "template": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                    "template": (
+                                        "Here is a transcript of the student's "
+                                        "explanation:"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                        "text": (
+                                            "Here is a transcript of the student's "
+                                            "explanation:"
+                                        ),
                                     },
                                 },
                             },
@@ -1676,9 +1698,23 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": ["readingFluencyAnalysis"],
                                     "template_format": "mustache",
-                                    "template": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "template": (
+                                        "{{#readingFluencyAnalysis}} For this task, "
+                                        "the student's reading pronunciation and "
+                                        "fluency were important. "
+                                        "Here is analysis of the student's oral "
+                                        'response: "{{readingFluencyAnalysis}}" '
+                                        "{{/readingFluencyAnalysis}}"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                        "text": (
+                                            "{{#readingFluencyAnalysis}} For this "
+                                            "task, the student's reading pronunciation "
+                                            "and fluency were important. "
+                                            "Here is analysis of the student's oral "
+                                            'response: "{{readingFluencyAnalysis}}" '
+                                            "{{/readingFluencyAnalysis}}"
+                                        ),
                                     },
                                 },
                             },
@@ -1694,9 +1730,20 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": ["readingFluencyAnalysis"],
                                     "template_format": "mustache",
-                                    "template": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "template": (
+                                        "{{#readingFluencyAnalysis}}Root analysis of "
+                                        "the student's response (step 3) in this oral "
+                                        "analysis rather than inconsistencies in the "
+                                        "transcript.{{/readingFluencyAnalysis}}"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                        "text": (
+                                            "{{#readingFluencyAnalysis}}Root analysis "
+                                            "of the student's response (step 3) in "
+                                            "this oral analysis rather than "
+                                            "inconsistencies in the transcript."
+                                            "{{/readingFluencyAnalysis}}"
+                                        ),
                                     },
                                 },
                             },
@@ -1712,9 +1759,19 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": ["readingFluencyAnalysis"],
                                     "template_format": "mustache",
-                                    "template": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                    "template": (
+                                        "{{#readingFluencyAnalysis}}Remember this is a "
+                                        "student, so we care about general fluency - "
+                                        "not voice acting. "
+                                        "{{/readingFluencyAnalysis}}\n"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                        "text": (
+                                            "{{#readingFluencyAnalysis}}Remember this "
+                                            "is a student, so we care about general "
+                                            "fluency - not voice acting. "
+                                            "{{/readingFluencyAnalysis}}\n"
+                                        ),
                                     },
                                 },
                             },
@@ -1730,9 +1787,19 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": ["multipleChoiceAnalysis"],
                                     "template_format": "mustache",
-                                    "template": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                    "template": (
+                                        "{{#multipleChoiceAnalysis}}Here is an "
+                                        "analysis of the student's multiple choice "
+                                        "response: {{multipleChoiceAnalysis}}"
+                                        "{{/multipleChoiceAnalysis}}\n"
+                                    ),
                                     "additional_content_fields": {
-                                        "text": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                        "text": (
+                                            "{{#multipleChoiceAnalysis}}Here is an "
+                                            "analysis of the student's multiple choice "
+                                            "response: {{multipleChoiceAnalysis}}"
+                                            "{{/multipleChoiceAnalysis}}\n"
+                                        ),
                                     },
                                 },
                             },

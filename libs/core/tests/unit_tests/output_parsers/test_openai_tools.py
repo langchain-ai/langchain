@@ -6,6 +6,7 @@ import pydantic
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -20,7 +21,7 @@ from langchain_core.output_parsers.openai_tools import (
 )
 from langchain_core.outputs import ChatGeneration
 
-STREAMED_MESSAGES: list = [
+STREAMED_MESSAGES = [
     AIMessageChunk(content=""),
     AIMessageChunk(
         content="",
@@ -334,7 +335,7 @@ for message in STREAMED_MESSAGES:
         STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
 
 
-EXPECTED_STREAMED_JSON = [
+EXPECTED_STREAMED_JSON: list[dict[str, Any]] = [
     {},
     {"names": ["suz"]},
     {"names": ["suzy"]},
@@ -395,7 +396,7 @@ def test_partial_json_output_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser()
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -407,7 +408,7 @@ async def test_partial_json_output_parser_async(*, use_tool_calls: bool) -> None
     chain = input_iter | JsonOutputToolsParser()
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
     ]
     assert actual == expected
@@ -419,7 +420,7 @@ def test_partial_json_output_parser_return_id(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputToolsParser(return_id=True)
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [
+    expected: list[list[dict[str, Any]]] = [[]] + [
         [
             {
                 "type": "NameCollector",
@@ -438,7 +439,9 @@ def test_partial_json_output_key_parser(*, use_tool_calls: bool) -> None:
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = list(chain.stream(None))
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
@@ -449,7 +452,9 @@ async def test_partial_json_output_parser_key_async(*, use_tool_calls: bool) -> 
     chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
     actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+    expected: list[list[dict[str, Any]]] = [[]] + [
+        [chunk] for chunk in EXPECTED_STREAMED_JSON
+    ]
     assert actual == expected
 
 
@@ -810,7 +815,7 @@ def test_parse_with_different_pydantic_2_v1() -> None:
         temperature: int
         forecast: str
 
-    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # Can't get pydantic to work here due to the odd typing of trying to support
     # both v1 and v2 in the same codebase.
     parser = PydanticToolsParser(tools=[Forecast])
     message = AIMessage(
@@ -843,7 +848,7 @@ def test_parse_with_different_pydantic_2_proper() -> None:
         temperature: int
         forecast: str
 
-    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # Can't get pydantic to work here due to the odd typing of trying to support
     # both v1 and v2 in the same codebase.
     parser = PydanticToolsParser(tools=[Forecast])
     message = AIMessage(
@@ -1419,3 +1424,31 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
+    partial: bool,  # noqa: FBT001
+) -> None:
+    class KnownTool(BaseModel):
+        value: int
+
+    parser = PydanticToolsParser(tools=[KnownTool])
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unknown",
+                "name": "UnknownTool",
+                "args": {"value": 1},
+            }
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    with pytest.raises(OutputParserException) as excinfo:
+        parser.parse_result([generation], partial=partial)
+
+    msg = str(excinfo.value)
+    assert "Unknown tool type" in msg
+    assert "UnknownTool" in msg

@@ -10,7 +10,8 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
-from langchain_core.outputs import LLMResult
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
@@ -124,8 +125,10 @@ def test_log_lock() -> None:
 def test_correct_get_tracer_project(
     envvars: dict[str, str], expected_project_name: str
 ) -> None:
-    get_env_var.cache_clear()
-    get_tracer_project.cache_clear()
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
+    if hasattr(get_tracer_project, "cache_clear"):
+        get_tracer_project.cache_clear()
     with pytest.MonkeyPatch.context() as mp:
         for k, v in envvars.items():
             mp.setenv(k, v)
@@ -152,7 +155,8 @@ def test_correct_get_tracer_project(
 @pytest.mark.parametrize(
     ("generations", "expected"),
     [
-        # Returns usage_metadata when present
+        # Returns None for non-serialized message usage_metadata shape
+        # (earlier regression)
         (
             [
                 [
@@ -164,6 +168,33 @@ def test_correct_get_tracer_project(
                                 "input_tokens": 10,
                                 "output_tokens": 20,
                                 "total_tokens": 30,
+                            },
+                        },
+                    }
+                ]
+            ],
+            None,
+        ),
+        # Returns usage_metadata when message is serialized via dumpd
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Hello!",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     }
@@ -185,22 +216,38 @@ def test_correct_get_tracer_project(
                     {
                         "text": "First",
                         "message": {
-                            "content": "First",
-                            "usage_metadata": {
-                                "input_tokens": 5,
-                                "output_tokens": 10,
-                                "total_tokens": 15,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "First",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 5,
+                                    "output_tokens": 10,
+                                    "total_tokens": 15,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     },
                     {
                         "text": "Second",
                         "message": {
-                            "content": "Second",
-                            "usage_metadata": {
-                                "input_tokens": 50,
-                                "output_tokens": 100,
-                                "total_tokens": 150,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Second",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 50,
+                                    "output_tokens": 100,
+                                    "total_tokens": 150,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     },
@@ -216,11 +263,19 @@ def test_correct_get_tracer_project(
                     {
                         "text": "Has message",
                         "message": {
-                            "content": "Has message",
-                            "usage_metadata": {
-                                "input_tokens": 10,
-                                "output_tokens": 20,
-                                "total_tokens": 30,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Has message",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     }
@@ -230,7 +285,8 @@ def test_correct_get_tracer_project(
         ),
     ],
     ids=[
-        "returns_usage_metadata_when_present",
+        "returns_none_when_non_serialized_message_shape",
+        "returns_usage_metadata_when_message_serialized",
         "returns_none_when_no_usage_metadata",
         "returns_none_when_no_message",
         "returns_none_for_empty_list",
@@ -263,11 +319,57 @@ def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
             [
                 {
                     "text": "Hello!",
-                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
                 }
             ]
         ]
     }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+
+
+def test_on_llm_end_stores_usage_metadata_from_serialized_outputs() -> None:
+    """Store `usage_metadata` from serialized generation message outputs."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("d94d0ff8-cf5a-4100-ab11-1a0efaa8d8d0")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Hello!", usage_metadata=usage_metadata)
+                )
+            ]
+        ]
+    )
+    run = tracer._complete_llm_run(response=response, run_id=run_id)
 
     captured_run = None
 
@@ -294,7 +396,24 @@ def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
 
     run = tracer.run_map[str(run_id)]
     run.outputs = {
-        "generations": [[{"text": "Hello!", "message": {"content": "Hello!"}}]]
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
+                }
+            ]
+        ]
     }
 
     captured_run = None
@@ -332,7 +451,18 @@ def test_on_llm_end_preserves_existing_metadata() -> None:
             [
                 {
                     "text": "Hello!",
-                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
                 }
             ]
         ]
