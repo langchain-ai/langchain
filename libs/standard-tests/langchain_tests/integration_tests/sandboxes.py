@@ -32,6 +32,7 @@ class TestMySandboxStandard(SandboxIntegrationTests):
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import shlex
 from abc import abstractmethod
@@ -188,10 +189,26 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert isinstance(result, ReadResult)
         assert result.file_data is None
-        assert (
-            result.error
-            == f"File '{test_path}': Binary file exceeds maximum preview size of 512000 bytes"
+        expected_error = (
+            f"File '{test_path}': Binary file exceeds maximum preview size of "
+            "512000 bytes"
         )
+        assert result.error == expected_error
+
+    def test_execute_large_stdout_payload(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Execute should handle a command that emits about 500 KiB of stdout."""
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        command = "python -c \"import sys; sys.stdout.write('x' * (500 * 1024))\""
+        result = sandbox_backend.execute(command)
+
+        assert result.exit_code == 0
+        assert result.truncated is False
+        assert len(result.output) >= 500 * 1024
+        assert result.output.startswith("x")
 
     def test_edit_single_occurrence(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1807,10 +1824,32 @@ class SandboxIntegrationTests(BaseStandardTests):
         result = await sandbox_backend.aread(test_path)
         assert isinstance(result, ReadResult)
         assert result.file_data is None
-        assert (
-            result.error
-            == f"File '{test_path}': Binary file exceeds maximum preview size of 512000 bytes"
+        expected_error = (
+            f"File '{test_path}': Binary file exceeds maximum preview size of "
+            "512000 bytes"
         )
+        assert result.error == expected_error
+
+    async def test_aexecute_large_stdout_payload(
+        self, sandbox_backend: SandboxBackendProtocol
+    ) -> None:
+        """Async execute should handle five parallel 500 KiB stdout commands."""
+        if not self.has_async:
+            pytest.skip("Async tests not supported.")
+
+        command = "python -c \"import sys; sys.stdout.write('x' * (500 * 1024))\""
+        tasks: list[asyncio.Task] = []
+        async with asyncio.TaskGroup() as tg:
+            tasks.extend(
+                tg.create_task(sandbox_backend.aexecute(command)) for _ in range(5)
+            )
+
+        for task in tasks:
+            result = task.result()
+            assert result.exit_code == 0
+            assert result.truncated is False
+            assert len(result.output) >= 500 * 1024
+            assert result.output.startswith("x")
 
     async def test_aupload_adownload_large_file_roundtrip(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
