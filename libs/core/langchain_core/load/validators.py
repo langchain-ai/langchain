@@ -1,7 +1,7 @@
 """Init validators for deserialization security.
 
-This module contains extra validators that are called during deserialization, ex.
-to prevent security issues such as SSRF attacks.
+This module contains extra validators that are called during deserialization,
+ex. to prevent security issues such as SSRF attacks.
 
 Each validator is a callable matching the `InitValidator` protocol: it takes a
 class path tuple and kwargs dict, returns `None` on success, and raises
@@ -17,15 +17,15 @@ if TYPE_CHECKING:
 def _bedrock_validator(class_path: tuple[str, ...], kwargs: dict[str, Any]) -> None:
     """Constructor kwargs validator for AWS Bedrock integrations.
 
-    Blocks deserialization if endpoint_url or base_url parameters are present, which
-    could enable SSRF attacks.
+    Blocks deserialization if `endpoint_url` or `base_url` parameters are
+    present, which could enable SSRF attacks.
 
     Args:
         class_path: The class path tuple being deserialized.
         kwargs: The kwargs dict for the class constructor.
 
     Raises:
-        ValueError: If endpoint_url or base_url parameters are present.
+        ValueError: If `endpoint_url` or `base_url` parameters are present.
     """
     dangerous_params = ["endpoint_url", "base_url"]
     found_params = [p for p in dangerous_params if p in kwargs]
