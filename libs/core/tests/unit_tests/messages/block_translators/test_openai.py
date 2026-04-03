@@ -603,3 +603,97 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_openai_data_block_detail_field() -> None:
+    """detail field should be forwarded from image blocks to OpenAI output."""
+
+    # --- Chat Completions API ---
+
+    # detail at top level (url)
+    block: dict = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+        "detail": "high",
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/img.png", "detail": "high"},
+    }
+
+    # detail at top level (base64)
+    block = {
+        "type": "image",
+        "base64": "<b64>",
+        "mime_type": "image/png",
+        "detail": "low",
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == {
+        "type": "image_url",
+        "image_url": {"url": "data:image/png;base64,<b64>", "detail": "low"},
+    }
+
+    # detail in extras
+    block = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+        "extras": {"detail": "auto"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result["image_url"]["detail"] == "auto"
+
+    # detail in metadata
+    block = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+        "metadata": {"detail": "high"},
+    }
+    result = convert_to_openai_data_block(block)
+    assert result["image_url"]["detail"] == "high"
+
+    # no detail => key absent
+    block = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+    }
+    result = convert_to_openai_data_block(block)
+    assert "detail" not in result["image_url"]
+
+    # --- Responses API ---
+
+    # detail at top level (url)
+    block = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+        "detail": "high",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == {
+        "type": "input_image",
+        "image_url": "https://example.com/img.png",
+        "detail": "high",
+    }
+
+    # detail at top level (base64, responses)
+    block = {
+        "type": "image",
+        "base64": "<b64>",
+        "mime_type": "image/png",
+        "detail": "low",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == {
+        "type": "input_image",
+        "image_url": "data:image/png;base64,<b64>",
+        "detail": "low",
+    }
+
+    # no detail => key absent (responses)
+    block = {
+        "type": "image",
+        "url": "https://example.com/img.png",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert "detail" not in result
