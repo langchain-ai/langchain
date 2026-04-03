@@ -399,11 +399,25 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
-def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
+def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
+    """Resolve state, input, and output schemas for the given schemas."""
+    schema_hints = {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+    return (
+        _resolve_schema(schema_hints, "StateSchema", None),
+        _resolve_schema(schema_hints, "InputSchema", "input"),
+        _resolve_schema(schema_hints, "OutputSchema", "output"),
+    )
+
+
+def _resolve_schema(
+    schema_hints: dict[type, dict[str, Any]],
+    schema_name: str,
+    omit_flag: str | None = None,
+) -> type:
     """Resolve schema by merging schemas and optionally respecting `OmitFromSchema` annotations.
 
     Args:
-        schemas: List of schema types to merge
+        schema_hints: Resolved schema annotations to merge
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
@@ -413,14 +427,11 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
     """
     all_annotations = {}
 
-    for schema in schemas:
-        hints = get_type_hints(schema, include_extras=True)
-
+    for hints in schema_hints.values():
         for field_name, field_type in hints.items():
             should_omit = False
 
             if omit_flag:
-                # Check for omission in the annotation metadata
                 metadata = _extract_metadata(field_type)
                 for meta in metadata:
                     if isinstance(meta, OmitFromSchema) and getattr(meta, omit_flag) is True:
@@ -1010,9 +1021,7 @@ def create_agent(
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
 
-    resolved_state_schema = _resolve_schema(state_schemas, "StateSchema", None)
-    input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
-    output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
+    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
     # create graph, add nodes
     graph: StateGraph[
@@ -1629,7 +1638,9 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
-    config: RunnableConfig = {"recursion_limit": 10_000}
+    # Set recursion limit to 9_999
+    # https://github.com/langchain-ai/langgraph/issues/7313
+    config: RunnableConfig = {"recursion_limit": 9_999}
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name

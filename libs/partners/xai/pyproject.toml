@@ -24,7 +24,7 @@ version = "1.2.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-openai>=1.1.7,<2.0.0",
-    "langchain-core>=1.2.7,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
@@ -61,6 +61,9 @@ typing = [
     "langchain-core"
 ]
 dev = ["langchain-core"]
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
