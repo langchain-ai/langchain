@@ -3,8 +3,9 @@
 This module contains extra validators that are called during deserialization, ex.
 to prevent security issues such as SSRF attacks.
 
-Each validator is a callable that takes a class path tuple and kwargs dict, and
-raises an exception if the deserialization should be blocked.
+Each validator is a callable matching the `InitValidator` protocol: it takes a
+class path tuple and kwargs dict, returns `None` on success, and raises
+`ValueError` if the deserialization should be blocked.
 """
 
 from typing import TYPE_CHECKING, Any
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def _bedrock_validator(class_path: tuple[str, ...], kwargs: dict[str, Any]) -> None:
-    """Args input validator for AWS Bedrock integrations.
+    """Constructor kwargs validator for AWS Bedrock integrations.
 
     Blocks deserialization if endpoint_url or base_url parameters are present, which
     could enable SSRF attacks.
@@ -31,7 +32,7 @@ def _bedrock_validator(class_path: tuple[str, ...], kwargs: dict[str, Any]) -> N
 
     if found_params:
         class_name = class_path[-1] if class_path else "Unknown"
-        param_str = " or ".join(found_params)
+        param_str = ", ".join(found_params)
         msg = (
             f"Deserialization of {class_name} with {param_str} is not allowed "
             f"for security reasons. These parameters can enable Server-Side Request "
@@ -42,10 +43,35 @@ def _bedrock_validator(class_path: tuple[str, ...], kwargs: dict[str, Any]) -> N
         raise ValueError(msg)
 
 
-# Registry of class-specific validators, update as needed
+# Keys must cover both serialized IDs (SERIALIZABLE_MAPPING keys) and resolved
+# import paths (SERIALIZABLE_MAPPING values) to prevent bypass via direct paths.
 CLASS_INIT_VALIDATORS: dict[tuple[str, ...], "InitValidator"] = {
+    # Serialized (legacy) keys
+    ("langchain", "chat_models", "bedrock", "BedrockChat"): _bedrock_validator,
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): _bedrock_validator,
+    (
+        "langchain",
+        "chat_models",
+        "anthropic_bedrock",
+        "ChatAnthropicBedrock",
+    ): _bedrock_validator,
     ("langchain_aws", "chat_models", "ChatBedrockConverse"): _bedrock_validator,
     ("langchain", "llms", "bedrock", "Bedrock"): _bedrock_validator,
     ("langchain", "llms", "bedrock", "BedrockLLM"): _bedrock_validator,
+    # Resolved import paths (from ALL_SERIALIZABLE_MAPPINGS values) to defend
+    # against payloads that use the target tuple directly as the "id".
+    (
+        "langchain_aws",
+        "chat_models",
+        "bedrock_converse",
+        "ChatBedrockConverse",
+    ): _bedrock_validator,
+    (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
+    ): _bedrock_validator,
+    ("langchain_aws", "chat_models", "ChatBedrock"): _bedrock_validator,
+    ("langchain_aws", "llms", "bedrock", "BedrockLLM"): _bedrock_validator,
 }

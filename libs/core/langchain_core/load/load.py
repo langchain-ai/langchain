@@ -481,6 +481,19 @@ class Reviver:
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 
+            # We don't need to recurse on kwargs
+            # as json.loads will do that for us.
+            kwargs = value.get("kwargs", {})
+
+            # Run class-specific validators before the general init_validator.
+            # These run before importing to fail fast on security violations.
+            if mapping_key in CLASS_INIT_VALIDATORS:
+                CLASS_INIT_VALIDATORS[mapping_key](mapping_key, kwargs)
+
+            # Also run general init_validator (e.g., jinja2 blocking)
+            if self.init_validator is not None:
+                self.init_validator(mapping_key, kwargs)
+
             mod = importlib.import_module(".".join(import_dir))
 
             cls = getattr(mod, name)
@@ -489,18 +502,6 @@ class Reviver:
             if not issubclass(cls, Serializable):
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
-
-            # We don't need to recurse on kwargs
-            # as json.loads will do that for us.
-            kwargs = value.get("kwargs", {})
-
-            # Run class-specific validators first
-            if mapping_key in CLASS_INIT_VALIDATORS:
-                CLASS_INIT_VALIDATORS[mapping_key](mapping_key, kwargs)
-
-            # Also run general init_validator (e.g., jinja2 blocking)
-            if self.init_validator is not None:
-                self.init_validator(mapping_key, kwargs)
 
             return cls(**kwargs)
 
