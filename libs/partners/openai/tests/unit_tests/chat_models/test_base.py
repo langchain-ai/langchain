@@ -3708,3 +3708,65 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_responses_api_tool_strict_default_preserved() -> None:
+    """Test that tools without explicit strict get strict=False in Responses API.
+
+    In Chat Completions API, omitting `strict` means non-strict mode.
+    In Responses API, omitting `strict` defaults to strict=True.
+    The conversion must explicitly set strict=False to preserve semantics.
+    See: https://github.com/langchain-ai/langchain/issues/35837
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+    payload = {
+        "model": "gpt-4o",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "no_strict",
+                    "description": "Tool without strict set.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"type": "string"}},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "explicit_strict_true",
+                    "description": "Tool with strict=True.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"type": "string"}},
+                    },
+                    "strict": True,
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "explicit_strict_false",
+                    "description": "Tool with strict=False.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"type": "string"}},
+                    },
+                    "strict": False,
+                },
+            },
+        ],
+    }
+    result = _construct_responses_api_payload(messages, payload)
+    tools_by_name = {t["name"]: t for t in result["tools"]}
+
+    # Tool without strict should get strict=False (not omitted)
+    assert tools_by_name["no_strict"]["strict"] is False
+    # Tool with explicit strict=True should keep it
+    assert tools_by_name["explicit_strict_true"]["strict"] is True
+    # Tool with explicit strict=False should keep it
+    assert tools_by_name["explicit_strict_false"]["strict"] is False

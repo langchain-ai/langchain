@@ -3997,8 +3997,15 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
+                func = tool["function"]
+                # In Chat Completions API, omitting `strict` means non-strict.
+                # In Responses API, omitting `strict` defaults to True.
+                # Explicitly set strict=False to preserve Chat Completions
+                # semantics.
+                if "strict" not in func:
+                    func = {**func, "strict": False}
                 extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
-                new_tools.append({"type": "function", **tool["function"], **extra})
+                new_tools.append({"type": "function", **func, **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
