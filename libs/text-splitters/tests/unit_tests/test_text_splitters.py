@@ -1954,6 +1954,39 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_unclosed_code_block() -> None:
+    """Unclosed code blocks should preserve accumulated content, not silently drop it.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36186.
+    """
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+
+    # Code block without a closing fence
+    text = (
+        "# Header\n"
+        "\n"
+        "Some text before code.\n"
+        "\n"
+        "```python\n"
+        "def hello():\n"
+        '    print("world")\n'
+        "\n"
+        "More text after the unclosed code block.\n"
+    )
+    chunks = splitter.split_text(text)
+
+    # Content inside the unclosed code block must be preserved
+    assert len(chunks) == 2
+    assert chunks[0].page_content == "Some text before code.\n\n"
+    assert "```python\n" in chunks[1].page_content
+    assert 'print("world")' in chunks[1].page_content
+
+    # Verify nothing is silently discarded
+    full_text = "".join(c.page_content for c in chunks)
+    assert "def hello():" in full_text
+    assert 'print("world")' in full_text
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENTS = [
     (
         "# My Header 1 From Document 1\n"
