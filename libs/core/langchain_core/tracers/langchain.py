@@ -157,7 +157,24 @@ class LangChainTracer(BaseTracer):
         self.tags = tags or []
         self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
-        self.tracing_metadata = metadata
+        self.tracing_metadata: dict[str, str] | None = (
+            dict(metadata) if metadata is not None else None
+        )
+
+    def set_defaults(self, *, metadata: Mapping[str, str] | None = None) -> None:
+        """Set default tracer values, only filling in keys not already present.
+
+        Args:
+            metadata: Default metadata to include on runs. Keys already present
+                in `tracing_metadata` are not overwritten.
+        """
+        if metadata is not None:
+            if self.tracing_metadata is None:
+                self.tracing_metadata = dict(metadata)
+            else:
+                for k, v in metadata.items():
+                    if k not in self.tracing_metadata:
+                        self.tracing_metadata[k] = v
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:

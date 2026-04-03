@@ -13,6 +13,7 @@ from langsmith.run_helpers import tracing_context
 from langsmith.utils import get_env_var
 
 from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks.manager import CallbackManager
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
@@ -678,3 +679,91 @@ class TestTracerMetadataThroughInvoke:
         assert len(posts) == 1
         md = posts[0].get("extra", {}).get("metadata", {})
         assert md["config_key"] == "config_val"
+
+
+class TestLangsmithMetadataInConfigure:
+    """Tests for `langsmith_metadata` parameter in `CallbackManager.configure()`."""
+
+    def test_langsmith_metadata_applied_via_configure(self) -> None:
+        """langsmith_metadata flows through configure to LangChainTracer."""
+        tracer = _create_tracer_with_mocked_client()
+        cm = CallbackManager.configure(
+            inheritable_callbacks=[tracer],
+            langsmith_metadata={"env": "prod", "service": "api"},
+        )
+        # The tracer should have set_defaults called with the metadata
+        lc_tracers = [h for h in cm.handlers if isinstance(h, LangChainTracer)]
+        assert len(lc_tracers) == 1
+        assert lc_tracers[0].tracing_metadata == {"env": "prod", "service": "api"}
+
+    def test_langsmith_metadata_does_not_overwrite_tracer_metadata(self) -> None:
+        """Tracer's own metadata takes precedence over langsmith_metadata."""
+        tracer = _create_tracer_with_mocked_client(metadata={"env": "staging"})
+        CallbackManager.configure(
+            inheritable_callbacks=[tracer],
+            langsmith_metadata={"env": "prod", "service": "api"},
+        )
+        assert tracer.tracing_metadata == {"env": "staging", "service": "api"}
+
+    def test_langsmith_metadata_end_to_end(self) -> None:
+        """langsmith_metadata in configure propagates to posted runs."""
+        tracer = _create_tracer_with_mocked_client()
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        # Use langsmith_metadata through the config callbacks path
+        cm = CallbackManager.configure(
+            inheritable_callbacks=[tracer],
+            langsmith_metadata={"env": "prod"},
+        )
+        my_func.invoke(1, {"callbacks": cm})
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 1
+        md = posts[0].get("extra", {}).get("metadata", {})
+        assert md["env"] == "prod"
+
+    def test_langsmith_metadata_does_not_affect_non_tracer_handlers(self) -> None:
+        """langsmith_metadata only applies to LangChainTracer, not other handlers."""
+        tracer = _create_tracer_with_mocked_client()
+
+        received_metadata: list[dict[str, Any]] = []
+
+        class MetadataCapture(BaseCallbackHandler):
+            def on_chain_start(self, *_args: Any, **kwargs: Any) -> None:
+                received_metadata.append(dict(kwargs.get("metadata", {})))
+
+        capture = MetadataCapture()
+        cm = CallbackManager.configure(
+            inheritable_callbacks=[tracer, capture],
+            langsmith_metadata={"tracer_only": "yes"},
+        )
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(1, {"callbacks": cm})
+
+        # Non-tracer handler should NOT see langsmith_metadata
+        assert len(received_metadata) >= 1
+        for md in received_metadata:
+            assert "tracer_only" not in md
+
+        # But the tracer's posted runs SHOULD have it
+        posts = _get_posts(tracer.client)
+        assert len(posts) >= 1
+        for post in posts:
+            post_md = post.get("extra", {}).get("metadata", {})
+            assert post_md["tracer_only"] == "yes"
+
+    def test_no_langsmith_metadata_is_noop(self) -> None:
+        """Passing langsmith_metadata=None does not alter tracer state."""
+        tracer = _create_tracer_with_mocked_client()
+        CallbackManager.configure(
+            inheritable_callbacks=[tracer],
+            langsmith_metadata=None,
+        )
+        assert tracer.tracing_metadata is None

@@ -7,7 +7,7 @@ import atexit
 import functools
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
@@ -1614,6 +1614,8 @@ class CallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        langsmith_metadata: Mapping[str, str] | None = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1625,6 +1627,8 @@ class CallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            langsmith_metadata: Default metadata applied to any
+                `LangChainTracer` handlers via `set_defaults`.
 
         Returns:
             The configured callback manager.
@@ -1638,6 +1642,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            langsmith_metadata=langsmith_metadata,
         )
 
 
@@ -2134,6 +2139,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        langsmith_metadata: Mapping[str, str] | None = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -2145,6 +2152,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            langsmith_metadata: Default metadata applied to any
+                `LangChainTracer` handlers via `set_defaults`.
 
         Returns:
             The configured async callback manager.
@@ -2158,6 +2167,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            langsmith_metadata=langsmith_metadata,
         )
 
 
@@ -2304,6 +2314,7 @@ def _configure(
     local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
+    langsmith_metadata: Mapping[str, str] | None = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2316,6 +2327,8 @@ def _configure(
         inheritable_metadata: The inheritable metadata.
         local_metadata: The local metadata.
         verbose: Whether to enable verbose mode.
+        langsmith_metadata: Default metadata applied to any
+            `LangChainTracer` handlers via `set_defaults`.
 
     Raises:
         RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
@@ -2479,6 +2492,10 @@ def _configure(
                 for handler in callback_manager.handlers
             ):
                 callback_manager.add_handler(var_handler, inheritable)
+    if langsmith_metadata:
+        for handler in callback_manager.handlers:
+            if isinstance(handler, LangChainTracer):
+                handler.set_defaults(metadata=langsmith_metadata)
     return callback_manager
 
 

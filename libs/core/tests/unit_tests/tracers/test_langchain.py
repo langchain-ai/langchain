@@ -805,3 +805,40 @@ class TestPatchMissingMetadata:
 
         assert run.metadata["env"] == "staging"
         assert run.metadata["extra"] == "from_tracer"
+
+
+class TestSetDefaults:
+    """Tests for `LangChainTracer.set_defaults()`."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    def test_sets_metadata_when_none(self) -> None:
+        """Fills in metadata when tracer has no prior metadata."""
+        tracer = self._make_tracer()
+        tracer.set_defaults(metadata={"env": "prod"})
+        assert tracer.tracing_metadata == {"env": "prod"}
+
+    def test_does_not_overwrite_existing_keys(self) -> None:
+        """Existing keys are preserved; only missing keys are added."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        tracer.set_defaults(metadata={"env": "prod", "service": "api"})
+        assert tracer.tracing_metadata == {"env": "staging", "service": "api"}
+
+    def test_noop_when_defaults_is_none(self) -> None:
+        """No-op when metadata=None is passed."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        tracer.set_defaults(metadata=None)
+        assert tracer.tracing_metadata == {"env": "prod"}
+
+    def test_multiple_calls_accumulate(self) -> None:
+        """Successive calls fill in disjoint keys."""
+        tracer = self._make_tracer()
+        tracer.set_defaults(metadata={"a": "1"})
+        tracer.set_defaults(metadata={"b": "2", "a": "overwrite"})
+        assert tracer.tracing_metadata == {"a": "1", "b": "2"}
