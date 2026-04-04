@@ -1248,14 +1248,23 @@ def create_agent(
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
-            return (
-                request.model.bind_tools(
-                    final_tools, tool_choice=tool_choice, **request.model_settings
-                ),
-                effective_response_format,
-            )
-
+            #  tool_choice = "any" if structured_output_tools else request.tool_choice
+            #  return (
+            #      request.model.bind_tools(
+            #          final_tools, tool_choice=tool_choice, **request.model_settings
+            #     ),
+            #     effective_response_format,
+            # )
+            
+            # Logic to detect if we should bypass "any" constraint
+            is_anthropic_thinking + ( 
+                getattr(model, "thinking", None) is not None) and 
+                model.thinking.get("type") == "enabled"
+                )
+        if structured_output_tools and is_anthropic_thinking:
+            tool_choice = "any"
+        else:
+            tool_choice = request.tool_choice # Falls back to "auto"
         # No structured output - standard model binding
         if final_tools:
             return (
