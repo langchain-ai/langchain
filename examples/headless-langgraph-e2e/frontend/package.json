@@ -1,0 +1,24 @@
+{
+  "name": "headless-langgraph-e2e-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 8765",
+    "build": "vite build",
+    "preview": "vite preview --port 8765"
+  },
+  "dependencies": {
+    "@langchain/react": "^0.3.2",
+    "langchain": "^1.3.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6",
+    "typescript": "^5.8",
+    "vite": "^8"
+  }
+}
