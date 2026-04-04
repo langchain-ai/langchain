@@ -161,7 +161,7 @@ jobs:
           rm -rf ../langchain-api-docs-html/_build/
 
       # Commit and push changes to langchain-api-docs-html repo
-      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
+      - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
         with:
           cwd: langchain-api-docs-html
           message: "Update API docs build from v0.3 branch"
