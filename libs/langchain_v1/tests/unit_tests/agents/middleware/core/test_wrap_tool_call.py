@@ -14,7 +14,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import ToolCallRequest, wrap_tool_call
+from langchain.agents.middleware.types import AgentState, ToolCallRequest, wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -865,3 +865,19 @@ def test_wrap_tool_call_monitoring_pattern() -> None:
     assert metrics[0]["success"] is True
     assert isinstance(metrics[0]["execution_time"], float)
     assert metrics[0]["execution_time"] >= 0
+
+def test_wrap_tool_call_with_state_schema() -> None:
+    """Test wrap_tool_call decorator with state_schema parameter."""
+
+    class CustomState(AgentState):
+        """Custom state with additional field."""
+        custom_field: str
+
+    @wrap_tool_call(state_schema=CustomState)
+    def wrapper_with_state(
+        request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]]
+    ) -> ToolMessage | Command[Any]:
+        return handler(request)
+
+    # Verify state schema was applied
+    assert wrapper_with_state.state_schema == CustomState

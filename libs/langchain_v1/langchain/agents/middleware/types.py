@@ -1902,6 +1902,7 @@ def wrap_tool_call(
 def wrap_tool_call(
     func: None = None,
     *,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
@@ -1913,6 +1914,7 @@ def wrap_tool_call(
 def wrap_tool_call(
     func: _CallableReturningToolResponse | None = None,
     *,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
@@ -1935,6 +1937,9 @@ def wrap_tool_call(
             `Command`.
 
             Can be sync or async.
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Additional tools to register with this middleware.
         name: Middleware class name.
 
@@ -2022,7 +2027,7 @@ def wrap_tool_call(
                 middleware_name,
                 (AgentMiddleware,),
                 {
-                    "state_schema": AgentState,
+                    "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "awrap_tool_call": async_wrapped,
                 },
@@ -2041,7 +2046,7 @@ def wrap_tool_call(
             middleware_name,
             (AgentMiddleware,),
             {
-                "state_schema": AgentState,
+                "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "wrap_tool_call": wrapped,
             },
