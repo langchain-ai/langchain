@@ -455,6 +455,50 @@ def test_triple_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+def test_empty_nested_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
+    """Test that 3-level nesting works when subgraphs have no internal edges.
+
+    Reproduces https://github.com/langchain-ai/langchain/issues/35492:
+    When every nested subgraph wraps a single node, there are no internal
+    edges at any prefix level, so all subgraph rendering goes through the
+    "empty subgraphs" path. Previously this path only handled 1-level
+    prefixes and silently dropped deeper nesting.
+    """
+    empty_data = BaseModel
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=empty_data, metadata=None
+        ),
+        "parent:child:grandchild": Node(
+            id="parent:child:grandchild",
+            name="grandchild",
+            data=empty_data,
+            metadata=None,
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=empty_data, metadata=None),
+    }
+    edges = [
+        Edge(
+            source="__start__",
+            target="parent:child:grandchild",
+            data=None,
+            conditional=False,
+        ),
+        Edge(
+            source="parent:child:grandchild",
+            target="__end__",
+            data=None,
+            conditional=False,
+        ),
+    ]
+    graph = Graph(nodes, edges)
+    output = graph.draw_mermaid()
+    assert output == snapshot(name="mermaid")
+    # Verify that proper subgraph nesting was generated (not flat IDs)
+    assert "subgraph parent" in output
+    assert "subgraph child" in output
+
+
 def test_single_node_subgraph_mermaid(snapshot: SnapshotAssertion) -> None:
     empty_data = BaseModel
     nodes = {

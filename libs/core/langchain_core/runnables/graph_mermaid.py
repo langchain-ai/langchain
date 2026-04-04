@@ -121,6 +121,15 @@ def draw_mermaid(
         else:
             regular_nodes[key] = node
 
+    # Compute all subgraph prefixes, including intermediate ancestors.
+    # e.g., for subgraph_nodes key "a:b:c", also register "a" and "a:b"
+    # so that add_empty_subgraph can discover every nesting level.
+    all_subgraph_prefixes: set[str] = set()
+    for prefix in subgraph_nodes:
+        parts = prefix.split(":")
+        for i in range(1, len(parts) + 1):
+            all_subgraph_prefixes.add(":".join(parts[:i]))
+
     # Node formatting templates
     default_class_label = "default"
     format_dict = {default_class_label: "{0}({1})"}
@@ -220,8 +229,47 @@ def draw_mermaid(
                 continue
             add_subgraph(edges_, nested_prefix)
 
+        # Also add nested empty subgraphs (with nodes but no internal edges)
+        if with_styles:
+            for nested_prefix in sorted(all_subgraph_prefixes):
+                if not nested_prefix.startswith(prefix + ":"):
+                    continue
+                rest = nested_prefix[len(prefix) + 1 :]
+                if ":" in rest:
+                    continue
+                nested_name = rest
+                if nested_name not in seen_subgraphs:
+                    add_empty_subgraph(nested_prefix)
+
         if prefix and not self_loop:
             mermaid_graph += "\tend\n"
+
+    def add_empty_subgraph(prefix: str) -> None:
+        """Add a subgraph that has no internal edges, recursing into children."""
+        nonlocal mermaid_graph
+        subgraph_name = prefix.rsplit(":", maxsplit=1)[-1]
+        if subgraph_name in seen_subgraphs:
+            return
+        seen_subgraphs.add(subgraph_name)
+        mermaid_graph += f"\tsubgraph {subgraph_name}\n"
+        # Render nodes at this level (if any)
+        if prefix in subgraph_nodes:
+            for key, node in subgraph_nodes[prefix].items():
+                mermaid_graph += render_node(key, node)
+        # Recursively add direct-child subgraphs
+        for child_prefix in sorted(all_subgraph_prefixes):
+            if not child_prefix.startswith(prefix + ":"):
+                continue
+            rest = child_prefix[len(prefix) + 1 :]
+            if ":" in rest:
+                continue
+            child_name = rest
+            if child_name not in seen_subgraphs:
+                if child_prefix in edge_groups:
+                    add_subgraph(edge_groups[child_prefix], child_prefix)
+                else:
+                    add_empty_subgraph(child_prefix)
+        mermaid_graph += "\tend\n"
 
     # Start with the top-level edges (no common prefix)
     add_subgraph(edge_groups.get("", []), "")
@@ -233,18 +281,17 @@ def draw_mermaid(
         add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
 
-    # Add empty subgraphs (subgraphs with no internal edges)
+    # Add empty subgraphs (subgraphs with no internal edges).
+    # Use add_empty_subgraph which recurses into nested children,
+    # so multi-level prefixes (e.g. "parent:child") are handled correctly.
     if with_styles:
-        for prefix, subgraph_node in subgraph_nodes.items():
-            if ":" not in prefix and prefix not in seen_subgraphs:
-                mermaid_graph += f"\tsubgraph {prefix}\n"
-
-                # Add nodes that belong to this subgraph
-                for key, node in subgraph_node.items():
-                    mermaid_graph += render_node(key, node)
-
-                mermaid_graph += "\tend\n"
-                seen_subgraphs.add(prefix)
+        unseen_roots: set[str] = set()
+        for prefix in all_subgraph_prefixes:
+            root = prefix.split(":")[0]
+            if root not in seen_subgraphs:
+                unseen_roots.add(root)
+        for root in sorted(unseen_roots):
+            add_empty_subgraph(root)
 
     # Add custom styles for nodes
     if with_styles:
