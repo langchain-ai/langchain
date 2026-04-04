@@ -10,7 +10,9 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -220,6 +222,82 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    class Joke(BaseModel):
+        """Joke response schema."""
+
+        setup: str
+        punchline: str
+
+    fake_llm = RunnableLambda(
+        lambda _: AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "id": "call_joke",
+                    "name": "Joke",
+                    "args": {
+                        "setup": "Why did the model cross the road?",
+                        "punchline": "To reach the token on the other side.",
+                    },
+                }
+            ],
+        )
+    )
+
+    with patch.object(
+        ChatHuggingFace, "bind_tools", return_value=fake_llm
+    ) as mock_bind_tools:
+        structured_llm = chat_hugging_face.with_structured_output(Joke)
+        result = structured_llm.invoke("Tell me a joke")
+
+    mock_bind_tools.assert_called_once()
+    assert isinstance(result, Joke)
+    assert result.setup == "Why did the model cross the road?"
+    assert result.punchline == "To reach the token on the other side."
+
+
+def test_with_structured_output_pydantic_function_calling_include_raw(
+    chat_hugging_face: Any,
+) -> None:
+    class Joke(BaseModel):
+        """Joke response schema."""
+
+        setup: str
+        punchline: str
+
+    raw_message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_joke",
+                "name": "Joke",
+                "args": {
+                    "setup": "Why did the model cross the road?",
+                    "punchline": "To reach the token on the other side.",
+                },
+            }
+        ],
+    )
+    fake_llm = RunnableLambda(lambda _: raw_message)
+
+    with patch.object(
+        ChatHuggingFace, "bind_tools", return_value=fake_llm
+    ) as mock_bind_tools:
+        structured_llm = chat_hugging_face.with_structured_output(
+            Joke, include_raw=True
+        )
+        result = structured_llm.invoke("Tell me a joke")
+
+    mock_bind_tools.assert_called_once()
+    assert result["raw"] == raw_message
+    assert isinstance(result["parsed"], Joke)
+    assert result["parsed"].setup == "Why did the model cross the road?"
+    assert result["parsing_error"] is None
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:

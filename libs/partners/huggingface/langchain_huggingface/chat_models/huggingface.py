@@ -47,7 +47,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, PydanticToolsParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     make_invalid_tool_call,
@@ -1168,11 +1168,13 @@ class ChatHuggingFace(BaseChatModel):
                 },
             )
             if is_pydantic_schema:
-                msg = "Pydantic schema is not supported for function calling"
-                raise NotImplementedError(msg)
-            output_parser: JsonOutputKeyToolsParser | JsonOutputParser = (
-                JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
-            )
+                output_parser = PydanticToolsParser(
+                    tools=[cast("type[BaseModel]", schema)], first_tool_only=True
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
         elif method == "json_schema":
             if schema is None:
                 msg = (
