@@ -23,6 +23,24 @@ if TYPE_CHECKING:
     from langchain_core.language_models import ModelProfile
 
 logger = logging.getLogger(__name__)
+_shared_http_client = None
+_shared_async_http_client = None
+
+
+def _get_shared_http_client():
+    global _shared_http_client
+    if _shared_http_client is None:
+        import httpx
+        _shared_http_client = httpx.Client()
+    return _shared_http_client
+
+
+def _get_shared_async_http_client():
+    global _shared_async_http_client
+    if _shared_async_http_client is None:
+        import httpx
+        _shared_async_http_client = httpx.AsyncClient()
+    return _shared_async_http_client
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -686,11 +704,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             client_params["max_retries"] = self.max_retries
 
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
+            sync_specific = {
+        "http_client": self.http_client or _get_shared_http_client()
+}
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
+            async_specific = {
+    "http_client": self.http_async_client or _get_shared_async_http_client()
+}
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (
