@@ -526,6 +526,9 @@ class ChatHuggingFace(BaseChatModel):
     """Maximum number of tokens to generate."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+    chat_template_kwargs: dict[str, Any] = Field(default_factory=dict)
+    """Additional keyword arguments to pass to the tokenizer's
+    ``apply_chat_template`` method (e.g. ``{"enable_thinking": True}``)."""
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -958,7 +961,10 @@ class ChatHuggingFace(BaseChatModel):
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
         return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
+            messages_dicts,
+            tokenize=False,
+            add_generation_prompt=True,
+            **self.chat_template_kwargs,
         )
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:

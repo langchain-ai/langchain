@@ -327,6 +327,46 @@ def test_inheritance_with_empty_llm() -> None:
         assert chat.temperature is None
 
 
+def test_to_chat_prompt_with_chat_template_kwargs(mock_llm: Any) -> None:
+    """Test that chat_template_kwargs are forwarded to apply_chat_template."""
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        tokenizer = MagicMock()
+        tokenizer.apply_chat_template.return_value = "Generated chat prompt"
+
+        chat = ChatHuggingFace(
+            llm=mock_llm,
+            tokenizer=tokenizer,
+            chat_template_kwargs={"enable_thinking": True},
+        )
+
+        messages = [HumanMessage(content="Hello")]
+        result = chat._to_chat_prompt(messages)
+
+        assert result == "Generated chat prompt"
+        tokenizer.apply_chat_template.assert_called_once_with(
+            [{"role": "user", "content": "Hello"}],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=True,
+        )
+
+
+def test_to_chat_prompt_empty_chat_template_kwargs(chat_hugging_face: Any) -> None:
+    """Test that empty chat_template_kwargs does not change behavior."""
+    chat_hugging_face.tokenizer.apply_chat_template.return_value = "prompt"
+
+    messages = [HumanMessage(content="Hi")]
+    chat_hugging_face._to_chat_prompt(messages)
+
+    chat_hugging_face.tokenizer.apply_chat_template.assert_called_once_with(
+        [{"role": "user", "content": "Hi"}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
 def test_profile() -> None:
     empty_llm = Mock(spec=HuggingFaceEndpoint)
     empty_llm.repo_id = "test/model"
