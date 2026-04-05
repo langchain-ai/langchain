@@ -9,7 +9,11 @@ from ollama import AsyncClient, Client
 from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
-from langchain_ollama._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -121,7 +125,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
 
     dimensions: int | None = None
-    """Dimension of the embedding vector. If not provided, it will be inferred from the model response."""
+    """Dimension of the embedding vector. If not provided, it will be inferred from
+    the model response."""
 
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
@@ -296,10 +301,17 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         if not self._client:
-            msg = "Ollama sync client is not initialized. Make sure the model was properly constructed."
+            msg = (
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
             raise RuntimeError(msg)
         return self._client.embed(
-            self.model, texts, dimensions=self.dimensions, options=self._default_params, keep_alive=self.keep_alive
+            self.model,
+            texts,
+            dimensions=self.dimensions,
+            options=self._default_params,
+            keep_alive=self.keep_alive,
         )["embeddings"]
 
     def embed_query(self, text: str) -> list[float]:
@@ -309,7 +321,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         if not self._async_client:
-            msg = "Ollama async client is not initialized. Make sure the model was properly constructed."
+            msg = (
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
             raise RuntimeError(msg)
         return (
             await self._async_client.embed(
