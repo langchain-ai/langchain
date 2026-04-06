@@ -641,7 +641,7 @@ class ChatOllama(BaseChatModel):
     """Number of most likely tokens to return at each token position, each with
     an associated log probability. Must be a positive integer.
 
-    `logprobs` must be set to true if this parameter is used.
+    If set without `logprobs=True`, `logprobs` will be enabled automatically.
     """
 
     @field_validator("top_logprobs")
@@ -818,10 +818,19 @@ class ChatOllama(BaseChatModel):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
-        if self.top_logprobs is not None and not self.logprobs:
+        if self.top_logprobs is not None and self.logprobs is not True:
+            if self.logprobs is False:
+                msg = (
+                    "`top_logprobs` is set but `logprobs` is explicitly `False`. "
+                    "Either set `logprobs=True` to use `top_logprobs`, or remove "
+                    "`top_logprobs`."
+                )
+                raise ValueError(msg)
+            # logprobs is None (unset) — auto-enable as convenience
+            self.logprobs = True
             warnings.warn(
-                "`top_logprobs` is set but `logprobs` is not `True`. "
-                "`top_logprobs` will have no effect unless `logprobs=True`.",
+                "`top_logprobs` is set but `logprobs` was not explicitly enabled. "
+                "Setting `logprobs=True` automatically.",
                 UserWarning,
                 stacklevel=2,
             )

@@ -481,7 +481,15 @@ def test_logprobs_params_passed_to_client() -> None:
         assert call_kwargs["logprobs"] is True
         assert call_kwargs["top_logprobs"] == 3
 
-        # Case 3: defaults are None when not set
+        # Case 3: auto-enabled logprobs propagates to client
+        llm = ChatOllama(model=MODEL_NAME, top_logprobs=3)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 3
+
+        # Case 4: defaults are None when not set
         llm = ChatOllama(model=MODEL_NAME)
         llm.invoke([HumanMessage("Hello")])
 
@@ -504,23 +512,31 @@ def test_top_logprobs_validation() -> None:
         assert llm.top_logprobs == 1
 
 
-def test_top_logprobs_without_logprobs_warns() -> None:
-    """Test that setting top_logprobs without logprobs=True emits a warning."""
+def test_top_logprobs_without_logprobs_auto_enables() -> None:
+    """Test that setting top_logprobs without logprobs auto-enables logprobs."""
     with patch("langchain_ollama.chat_models.Client"):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            ChatOllama(model=MODEL_NAME, top_logprobs=5)
+            llm = ChatOllama(model=MODEL_NAME, top_logprobs=5)
+            assert llm.logprobs is True
             assert len(w) == 1
-            assert "`top_logprobs` is set but `logprobs` is not `True`" in str(
-                w[0].message
-            )
+            assert "Setting `logprobs=True` automatically" in str(w[0].message)
 
-        # No warning when logprobs=True
+        # No warning when logprobs=True explicitly
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=5)
             logprobs_warnings = [x for x in w if "top_logprobs" in str(x.message)]
             assert len(logprobs_warnings) == 0
+
+
+def test_top_logprobs_with_logprobs_false_raises() -> None:
+    """Setting top_logprobs with logprobs=False is a contradictory config."""
+    with (
+        patch("langchain_ollama.chat_models.Client"),
+        pytest.raises(ValueError, match=r"logprobs.*explicitly.*False"),
+    ):
+        ChatOllama(model=MODEL_NAME, logprobs=False, top_logprobs=5)
 
 
 def test_create_chat_stream_raises_when_client_none() -> None:
