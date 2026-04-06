@@ -39,7 +39,7 @@ jobs:
 
       - name: "📋 Extract Repository List with yq"
         id: get-unsorted-repos
-        uses: mikefarah/yq@88a31ae8c6b34aad77d2efdecc146113cb3315d0 # master
+        uses: mikefarah/yq@17f66dc6c6a177fafd8b71a6abea6d6340aa1e16 # master
         with:
           cmd: |
             # Extract repos from packages.yml that are in the langchain-ai org
@@ -161,7 +161,7 @@ jobs:
           rm -rf ../langchain-api-docs-html/_build/
 
       # Commit and push changes to langchain-api-docs-html repo
-      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
+      - uses: EndBug/add-and-commit@290ea2c423ad77ca9c62ae0f5b224379612c0321 # v10.0.0
         with:
           cwd: langchain-api-docs-html
           message: "Update API docs build from v0.3 branch"

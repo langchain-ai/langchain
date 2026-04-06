@@ -33,14 +33,19 @@ LANGCHAIN_DIRS = [
     "libs/model-profiles",
 ]
 
+# Packages with VCR cassette-backed integration tests.
+# These get a playback-only CI check to catch stale cassettes.
+VCR_PACKAGES = {
+    "libs/partners/openai",
+}
+
 # When set to True, we are ignoring core dependents
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
 IGNORE_CORE_DEPENDENTS = False
 
-# ignored partners are removed from dependents
-# but still run if directly edited
+# Ignored partners are removed from dependents but still run if directly edited
 IGNORED_PARTNERS = [
     # remove huggingface from dependents because of CI instability
     # specifically in huggingface jobs
@@ -142,11 +147,8 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
                 "codspeed-mode": mode,
             }
         ]
-    elif dir_ == "libs/core":
+    if dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    # custom logic for specific directories
-    elif dir_ in {"libs/partners/chroma"}:
-        py_versions = ["3.10", "3.13"]
     else:
         py_versions = ["3.10", "3.14"]
 
@@ -224,6 +226,14 @@ def _get_configs_for_multi_dirs(
         dirs = list(dirs_to_run["extended-test"])
     elif job == "codspeed":
         dirs = list(dirs_to_run["codspeed"])
+    elif job == "vcr-tests":
+        # Only run VCR tests for packages that have cassettes and are affected
+        all_affected = set(
+            add_dependents(
+                dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+            )
+        )
+        dirs = [d for d in VCR_PACKAGES if d in all_affected]
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -338,6 +348,7 @@ if __name__ == "__main__":
             "dependencies",
             "test-pydantic",
             "codspeed",
+            "vcr-tests",
         ]
     }
 

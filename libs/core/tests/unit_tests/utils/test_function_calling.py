@@ -32,6 +32,7 @@ from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     convert_to_json_schema,
     convert_to_openai_function,
+    convert_to_openai_tool,
     tool_example_to_messages,
 )
 
@@ -1242,3 +1243,15 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
     }
     with pytest.raises(ValueError, match="my_field"):
         convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_tool_computer_passthrough() -> None:
+    """Test that the 'computer' tool type is passed through unchanged."""
+    computer_tool = {
+        "type": "computer",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    result = convert_to_openai_tool(computer_tool)
+    assert result == computer_tool

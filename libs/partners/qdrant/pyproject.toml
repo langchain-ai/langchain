@@ -70,6 +70,7 @@ typing = [
 # Remove this override once fastembed releases a version that allows pillow>=12.1.1.
 [tool.uv]
 override-dependencies = ["pillow>=12.1.1"]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

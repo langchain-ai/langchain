@@ -51,16 +51,16 @@ test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 typing = [
-    "mypy>=1.17.1,<2.0.0",
+    "ty>=0.0.1,<1.0.0",
     "langchain-core"
 ]
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
-
-[tool.mypy]
-disallow_untyped_defs = "True"
 
 [tool.ruff.format]
 docstring-code-format = true
