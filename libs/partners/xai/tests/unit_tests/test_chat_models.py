@@ -1,9 +1,8 @@
 import json
-
+from unittest.mock import MagicMock, patch
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
@@ -167,47 +166,49 @@ def test_stream_usage_metadata() -> None:
     assert model.stream_usage is False
 
 
-def test_response_metadata_model_provider() -> None:
-    """Test that model_provider is correctly set in response_metadata."""
+def test_response_metadata_model_provider_invoke() -> None:
+    """Test that model_provider is correctly set via the public invoke API."""
     llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
-    
-    # Mocking a raw OpenAI-style response dictionary
-    mock_response = {
-        "id": "test-id",
-        "choices": [
-            {
-                "index": 0,
-                "message": {"role": "assistant", "content": "Hello!"},
-                "finish_reason": "stop",
-            }
-        ],
-        "model": MODEL_NAME,
-        "object": "chat.completion",
-    }
-    
-    # We call the private method you saw earlier to see if it injects the metadata
-    res = llm._create_chat_result(mock_response)
-    
-    # Assert that our logic worked
-    assert res.generations[0].message.response_metadata["model_provider"] == "xai"
 
-def test_response_metadata_model_provider_streaming() -> None:
-    """Test that model_provider is correctly set in streaming response_metadata."""
-    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
-    
-    # Mocking a raw streaming chunk
-    mock_chunk = {
-        "choices": [
-            {
-                "index": 0,
-                "delta": {"content": "Hello"},
-                "finish_reason": None,
-            }
-        ],
+    mock_parsed_response = MagicMock()
+    mock_parsed_response.choices = [
+        MagicMock(
+            message=MagicMock(role="assistant", content="Hello!"), finish_reason="stop"
+        )
+    ]
+    mock_parsed_response.id = "test-id"
+    mock_parsed_response.model = MODEL_NAME
+    mock_parsed_response.model_dump.return_value = {
+        "id": "test-id",
+        "model": MODEL_NAME,
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "Hello!"}}],
     }
-    
-    # We call the internal chunk conversion method
-    res = llm._convert_chunk_to_generation_chunk(mock_chunk, AIMessageChunk, None)
-    
-    # Assert that the metadata exists in the chunk
-    assert res.message.response_metadata["model_provider"] == "xai"
+
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = mock_parsed_response
+
+    with patch.object(
+        llm.client.with_raw_response, "create", return_value=mock_raw_response
+    ):
+        res = llm.invoke("Hello")
+        assert res.response_metadata["model_provider"] == "xai"
+
+
+def test_response_metadata_model_provider_stream() -> None:
+    """Test that model_provider is correctly set via the public stream API."""
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
+
+    mock_chunk = MagicMock()
+    mock_chunk.choices = [
+        MagicMock(delta=MagicMock(content="Hello"), finish_reason=None, index=0)
+    ]
+    mock_chunk.model_dump.return_value = {
+        "choices": [{"index": 0, "delta": {"content": "Hello"}, "finish_reason": None}]
+    }
+
+    mock_cm = MagicMock()
+    mock_cm.__enter__.return_value = [mock_chunk]
+
+    with patch.object(llm.client, "create", return_value=mock_cm):
+        res_container = list(llm.stream("Hello"))
+        assert res_container[0].response_metadata["model_provider"] == "xai"
