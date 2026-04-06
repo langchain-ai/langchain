@@ -2,6 +2,7 @@
 
 import json
 import logging
+import warnings
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -445,6 +446,81 @@ def test_reasoning_param_passed_to_client() -> None:
 
         call_kwargs = mock_client.chat.call_args[1]
         assert call_kwargs["think"] is True
+
+
+def test_logprobs_params_passed_to_client() -> None:
+    """Test that logprobs parameters are correctly passed to the Ollama client."""
+    response = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hello!"},
+            "done": True,
+            "done_reason": "stop",
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        # Case 1: logprobs=True, top_logprobs=5 in init
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=5)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 5
+
+        # Case 2: override via invoke kwargs
+        llm = ChatOllama(model=MODEL_NAME)
+        llm.invoke([HumanMessage("Hello")], logprobs=True, top_logprobs=3)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 3
+
+        # Case 3: defaults are None when not set
+        llm = ChatOllama(model=MODEL_NAME)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is None
+        assert call_kwargs["top_logprobs"] is None
+
+
+def test_top_logprobs_validation() -> None:
+    """Test that top_logprobs must be a positive integer."""
+    with patch("langchain_ollama.chat_models.Client"):
+        with pytest.raises(ValueError, match="`top_logprobs` must be a positive"):
+            ChatOllama(model=MODEL_NAME, top_logprobs=0)
+
+        with pytest.raises(ValueError, match="`top_logprobs` must be a positive"):
+            ChatOllama(model=MODEL_NAME, top_logprobs=-1)
+
+        # Valid values should not raise
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=1)
+        assert llm.top_logprobs == 1
+
+
+def test_top_logprobs_without_logprobs_warns() -> None:
+    """Test that setting top_logprobs without logprobs=True emits a warning."""
+    with patch("langchain_ollama.chat_models.Client"):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ChatOllama(model=MODEL_NAME, top_logprobs=5)
+            assert len(w) == 1
+            assert "`top_logprobs` is set but `logprobs` is not `True`" in str(
+                w[0].message
+            )
+
+        # No warning when logprobs=True
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=5)
+            logprobs_warnings = [x for x in w if "top_logprobs" in str(x.message)]
+            assert len(logprobs_warnings) == 0
 
 
 def test_create_chat_stream_raises_when_client_none() -> None:

@@ -44,6 +44,7 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -83,7 +84,7 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message
-from pydantic import BaseModel, PrivateAttr, model_validator
+from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
@@ -627,14 +628,29 @@ class ChatOllama(BaseChatModel):
     """
 
     logprobs: bool | None = None
-    """Whether to return logprobs."""
+    """Whether to return logprobs.
+
+    !!! note
+
+        When streaming, per-token logprobs are only available on the final chunk
+        (via `response_metadata`). Intermediate streaming chunks do not include
+        logprobs data.
+    """
 
     top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with
-    an associated log probability.
+    an associated log probability. Must be a positive integer.
 
     `logprobs` must be set to true if this parameter is used.
     """
+
+    @field_validator("top_logprobs")
+    @classmethod
+    def _validate_top_logprobs(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            msg = "`top_logprobs` must be a positive integer."
+            raise ValueError(msg)
+        return v
 
     stop: list[str] | None = None
     """Sets the stop tokens to use."""
@@ -802,6 +818,14 @@ class ChatOllama(BaseChatModel):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
+        if self.top_logprobs is not None and not self.logprobs:
+            warnings.warn(
+                "`top_logprobs` is set but `logprobs` is not `True`. "
+                "`top_logprobs` will have no effect unless `logprobs=True`.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         client_kwargs = self.client_kwargs or {}
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
