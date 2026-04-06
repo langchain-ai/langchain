@@ -1539,7 +1539,7 @@ class ChatOllama(BaseChatModel):
             )
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
+                    tools=[schema],  # ty: ignore[invalid-argument-type]
                     first_tool_only=True,
                 )
             else:
@@ -1555,7 +1555,7 @@ class ChatOllama(BaseChatModel):
                 },
             )
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                PydanticOutputParser(pydantic_object=schema)  # ty: ignore[invalid-argument-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -1579,7 +1579,7 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)
