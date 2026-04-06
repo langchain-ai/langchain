@@ -3,6 +3,7 @@ import json
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
@@ -164,3 +165,49 @@ def test_stream_usage_metadata() -> None:
 
     model = ChatXAI(model=MODEL_NAME, stream_usage=False)
     assert model.stream_usage is False
+
+
+def test_response_metadata_model_provider() -> None:
+    """Test that model_provider is correctly set in response_metadata."""
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
+    
+    # Mocking a raw OpenAI-style response dictionary
+    mock_response = {
+        "id": "test-id",
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "Hello!"},
+                "finish_reason": "stop",
+            }
+        ],
+        "model": MODEL_NAME,
+        "object": "chat.completion",
+    }
+    
+    # We call the private method you saw earlier to see if it injects the metadata
+    res = llm._create_chat_result(mock_response)
+    
+    # Assert that our logic worked
+    assert res.generations[0].message.response_metadata["model_provider"] == "xai"
+
+def test_response_metadata_model_provider_streaming() -> None:
+    """Test that model_provider is correctly set in streaming response_metadata."""
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
+    
+    # Mocking a raw streaming chunk
+    mock_chunk = {
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"content": "Hello"},
+                "finish_reason": None,
+            }
+        ],
+    }
+    
+    # We call the internal chunk conversion method
+    res = llm._convert_chunk_to_generation_chunk(mock_chunk, AIMessageChunk, None)
+    
+    # Assert that the metadata exists in the chunk
+    assert res.message.response_metadata["model_provider"] == "xai"
