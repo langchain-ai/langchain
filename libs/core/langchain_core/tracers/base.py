@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     """Base interface for tracers."""
 
+    # Opt in to receiving per-invocation tracing_metadata via handle_event.
+    _accepts_tracing_metadata = True
+
     @abstractmethod
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
@@ -59,6 +62,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         parent_run_id: UUID | None = None,
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chat model run.
@@ -77,6 +81,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             parent_run_id: The parent run ID.
             metadata: The metadata for the run.
             name: The name of the run.
+            tracing_metadata: Per-invocation default metadata to merge
+                into the run. Existing run metadata keys are not overwritten.
             **kwargs: Additional arguments.
 
         Returns:
@@ -92,6 +98,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             name=name,
             **kwargs,
         )
+        if tracing_metadata:
+            existing = chat_model_run.extra.get("metadata") or {}
+            chat_model_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
         return chat_model_run
@@ -106,6 +115,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         parent_run_id: UUID | None = None,
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -118,6 +128,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             parent_run_id: The parent run ID.
             metadata: The metadata for the run.
             name: The name of the run.
+            tracing_metadata: Per-invocation default metadata to merge
+                into the run. Existing run metadata keys are not overwritten.
             **kwargs: Additional arguments.
 
         Returns:
@@ -133,6 +145,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             name=name,
             **kwargs,
         )
+        if tracing_metadata:
+            existing = llm_run.extra.get("metadata") or {}
+            llm_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(llm_run)
         self._on_llm_start(llm_run)
         return llm_run
@@ -260,6 +275,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         metadata: dict[str, Any] | None = None,
         run_type: str | None = None,
         name: str | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a chain run.
@@ -273,6 +289,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             metadata: The metadata for the run.
             run_type: The type of the run.
             name: The name of the run.
+            tracing_metadata: Per-invocation default metadata to merge
+                into the run. Existing run metadata keys are not overwritten.
             **kwargs: Additional arguments.
 
         Returns:
@@ -289,6 +307,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             name=name,
             **kwargs,
         )
+        if tracing_metadata:
+            existing = chain_run.extra.get("metadata") or {}
+            chain_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(chain_run)
         self._on_chain_start(chain_run)
         return chain_run
@@ -362,6 +383,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
         inputs: dict[str, Any] | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for a tool run.
@@ -375,6 +397,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             metadata: The metadata for the run.
             name: The name of the run.
             inputs: The inputs for the tool.
+            tracing_metadata: Per-invocation default metadata to merge
+                into the run. Existing run metadata keys are not overwritten.
             **kwargs: Additional arguments.
 
         Returns:
@@ -391,6 +415,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             inputs=inputs,
             **kwargs,
         )
+        if tracing_metadata:
+            existing = tool_run.extra.get("metadata") or {}
+            tool_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(tool_run)
         self._on_tool_start(tool_run)
         return tool_run
@@ -451,6 +478,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Run when the `Retriever` starts running.
@@ -463,6 +491,8 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             tags: The tags for the run.
             metadata: The metadata for the run.
             name: The name of the run.
+            tracing_metadata: Per-invocation default metadata to merge
+                into the run. Existing run metadata keys are not overwritten.
             **kwargs: Additional arguments.
 
         Returns:
@@ -478,6 +508,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             name=name,
             **kwargs,
         )
+        if tracing_metadata:
+            existing = retrieval_run.extra.get("metadata") or {}
+            retrieval_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(retrieval_run)
         self._on_retriever_start(retrieval_run)
         return retrieval_run

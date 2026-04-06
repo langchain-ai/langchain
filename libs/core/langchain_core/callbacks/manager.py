@@ -269,6 +269,8 @@ def handle_event(
         **kwargs: The keyword arguments to pass to the event handler
 
     """
+    # Pop tracing_metadata; only forwarded to handlers that opt in.
+    tracing_metadata = kwargs.pop("_tracing_metadata", None)
     coros: list[Coroutine[Any, Any, Any]] = []
 
     try:
@@ -278,7 +280,16 @@ def handle_event(
                 if ignore_condition_name is None or not getattr(
                     handler, ignore_condition_name
                 ):
-                    event = getattr(handler, event_name)(*args, **kwargs)
+                    handler_kwargs = (
+                        {
+                            **kwargs,
+                            "tracing_metadata": tracing_metadata,
+                        }
+                        if tracing_metadata
+                        and getattr(handler, "_accepts_tracing_metadata", False)
+                        else kwargs
+                    )
+                    event = getattr(handler, event_name)(*args, **handler_kwargs)
                     if asyncio.iscoroutine(event):
                         coros.append(event)
             except NotImplementedError as e:
@@ -370,6 +381,10 @@ async def _ahandle_event_for_handler(
     *args: Any,
     **kwargs: Any,
 ) -> None:
+    # Pop tracing_metadata; only forwarded to handlers that opt in.
+    tracing_metadata = kwargs.pop("_tracing_metadata", None)
+    if tracing_metadata and getattr(handler, "_accepts_tracing_metadata", False):
+        kwargs = {**kwargs, "tracing_metadata": tracing_metadata}
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
@@ -466,6 +481,7 @@ class BaseRunManager(RunManagerMixin):
         inheritable_tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
+        tracing_metadata: Mapping[str, str] | None = None,
     ) -> None:
         """Initialize the run manager.
 
@@ -478,6 +494,8 @@ class BaseRunManager(RunManagerMixin):
             inheritable_tags: The list of inheritable tags.
             metadata: The metadata.
             inheritable_metadata: The inheritable metadata.
+            tracing_metadata: Per-invocation default metadata merged into runs
+                started by tracer handlers.
 
         """
         self.run_id = run_id
@@ -488,6 +506,7 @@ class BaseRunManager(RunManagerMixin):
         self.inheritable_tags = inheritable_tags or []
         self.metadata = metadata or {}
         self.inheritable_metadata = inheritable_metadata or {}
+        self.tracing_metadata: Mapping[str, str] | None = tracing_metadata
 
     @classmethod
     def get_noop_manager(cls) -> Self:
@@ -578,6 +597,7 @@ class ParentRunManager(RunManager):
         manager.set_handlers(self.inheritable_handlers)
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
+        manager.tracing_metadata = self.tracing_metadata
         if tag is not None:
             manager.add_tags([tag], inherit=False)
         return manager
@@ -662,6 +682,7 @@ class AsyncParentRunManager(AsyncRunManager):
         manager.set_handlers(self.inheritable_handlers)
         manager.add_tags(self.inheritable_tags)
         manager.add_metadata(self.inheritable_metadata)
+        manager.tracing_metadata = self.tracing_metadata
         if tag is not None:
             manager.add_tags([tag], inherit=False)
         return manager
@@ -1335,6 +1356,7 @@ class CallbackManager(BaseCallbackManager):
                 parent_run_id=self.parent_run_id,
                 tags=self.tags,
                 metadata=self.metadata,
+                _tracing_metadata=self.tracing_metadata,
                 **kwargs,
             )
 
@@ -1348,6 +1370,7 @@ class CallbackManager(BaseCallbackManager):
                     inheritable_tags=self.inheritable_tags,
                     metadata=self.metadata,
                     inheritable_metadata=self.inheritable_metadata,
+                    tracing_metadata=self.tracing_metadata,
                 )
             )
 
@@ -1389,6 +1412,7 @@ class CallbackManager(BaseCallbackManager):
                 parent_run_id=self.parent_run_id,
                 tags=self.tags,
                 metadata=self.metadata,
+                _tracing_metadata=self.tracing_metadata,
                 **kwargs,
             )
 
@@ -1402,6 +1426,7 @@ class CallbackManager(BaseCallbackManager):
                     inheritable_tags=self.inheritable_tags,
                     metadata=self.metadata,
                     inheritable_metadata=self.inheritable_metadata,
+                    tracing_metadata=self.tracing_metadata,
                 )
             )
 
@@ -1438,6 +1463,7 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -1450,6 +1476,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     @override
@@ -1498,6 +1525,7 @@ class CallbackManager(BaseCallbackManager):
             tags=self.tags,
             metadata=self.metadata,
             inputs=inputs,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -1510,6 +1538,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     @override
@@ -1546,6 +1575,7 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -1558,6 +1588,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     def on_custom_event(
@@ -1615,7 +1646,7 @@ class CallbackManager(BaseCallbackManager):
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
         *,
-        langsmith_metadata: Mapping[str, str] | None = None,
+        tracing_metadata: Mapping[str, str] | None = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1627,8 +1658,8 @@ class CallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
-            langsmith_metadata: Default metadata applied to any
-                `LangChainTracer` handlers via `set_defaults`.
+            tracing_metadata: Default metadata merged into runs started by
+                tracer handlers. Existing run metadata keys are not overwritten.
 
         Returns:
             The configured callback manager.
@@ -1642,7 +1673,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
-            langsmith_metadata=langsmith_metadata,
+            tracing_metadata=tracing_metadata,
         )
 
 
@@ -1831,6 +1862,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                         parent_run_id=self.parent_run_id,
                         tags=self.tags,
                         metadata=self.metadata,
+                        _tracing_metadata=self.tracing_metadata,
                         **kwargs,
                     )
                 )
@@ -1846,6 +1878,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                         parent_run_id=self.parent_run_id,
                         tags=self.tags,
                         metadata=self.metadata,
+                        _tracing_metadata=self.tracing_metadata,
                         **kwargs,
                     )
                 )
@@ -1860,6 +1893,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     inheritable_tags=self.inheritable_tags,
                     metadata=self.metadata,
                     inheritable_metadata=self.inheritable_metadata,
+                    tracing_metadata=self.tracing_metadata,
                 )
             )
 
@@ -1914,6 +1948,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     parent_run_id=self.parent_run_id,
                     tags=self.tags,
                     metadata=self.metadata,
+                    _tracing_metadata=self.tracing_metadata,
                     **kwargs,
                 )
                 if handler.run_inline:
@@ -1931,6 +1966,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                     inheritable_tags=self.inheritable_tags,
                     metadata=self.metadata,
                     inheritable_metadata=self.inheritable_metadata,
+                    tracing_metadata=self.tracing_metadata,
                 )
             )
 
@@ -1975,6 +2011,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -1987,6 +2024,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     @override
@@ -2023,6 +2061,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -2035,6 +2074,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     async def on_custom_event(
@@ -2115,6 +2155,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
+            _tracing_metadata=self.tracing_metadata,
             **kwargs,
         )
 
@@ -2127,6 +2168,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_tags=self.inheritable_tags,
             metadata=self.metadata,
             inheritable_metadata=self.inheritable_metadata,
+            tracing_metadata=self.tracing_metadata,
         )
 
     @classmethod
@@ -2140,7 +2182,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
         *,
-        langsmith_metadata: Mapping[str, str] | None = None,
+        tracing_metadata: Mapping[str, str] | None = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -2152,8 +2194,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
-            langsmith_metadata: Default metadata applied to any
-                `LangChainTracer` handlers via `set_defaults`.
+            tracing_metadata: Default metadata merged into runs started by
+                tracer handlers. Existing run metadata keys are not overwritten.
 
         Returns:
             The configured async callback manager.
@@ -2167,7 +2209,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
-            langsmith_metadata=langsmith_metadata,
+            tracing_metadata=tracing_metadata,
         )
 
 
@@ -2314,7 +2356,7 @@ def _configure(
     local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
-    langsmith_metadata: Mapping[str, str] | None = None,
+    tracing_metadata: Mapping[str, str] | None = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2327,8 +2369,8 @@ def _configure(
         inheritable_metadata: The inheritable metadata.
         local_metadata: The local metadata.
         verbose: Whether to enable verbose mode.
-        langsmith_metadata: Default metadata applied to any
-            `LangChainTracer` handlers via `set_defaults`.
+        tracing_metadata: Default metadata merged into runs started by
+            tracer handlers. Existing run metadata keys are not overwritten.
 
     Raises:
         RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
@@ -2349,7 +2391,7 @@ def _configure(
     from langchain_core.tracers.stdout import ConsoleCallbackHandler  # noqa: PLC0415
 
     tracing_context = get_tracing_context()
-    tracing_metadata = tracing_context["metadata"]
+    context_metadata = tracing_context["metadata"]
     tracing_tags = tracing_context["tags"]
     run_tree: Run | None = tracing_context["parent"]
     parent_run_id = None if run_tree is None else run_tree.id
@@ -2386,6 +2428,7 @@ def _configure(
                 inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
                 metadata=inheritable_callbacks.metadata.copy(),
                 inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
+                tracing_metadata=(inheritable_callbacks.tracing_metadata),
             )
         local_handlers_ = (
             local_callbacks
@@ -2400,8 +2443,8 @@ def _configure(
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, inherit=False)
-    if tracing_metadata:
-        callback_manager.add_metadata(tracing_metadata.copy())
+    if context_metadata:
+        callback_manager.add_metadata(context_metadata.copy())
     if tracing_tags:
         callback_manager.add_tags(tracing_tags.copy())
 
@@ -2492,10 +2535,8 @@ def _configure(
                 for handler in callback_manager.handlers
             ):
                 callback_manager.add_handler(var_handler, inheritable)
-    if langsmith_metadata:
-        for handler in callback_manager.handlers:
-            if isinstance(handler, LangChainTracer):
-                handler.set_defaults(metadata=langsmith_metadata)
+    if tracing_metadata:
+        callback_manager.tracing_metadata = tracing_metadata
     return callback_manager
 
 

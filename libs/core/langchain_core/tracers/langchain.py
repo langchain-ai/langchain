@@ -201,6 +201,7 @@ class LangChainTracer(BaseTracer):
         parent_run_id: UUID | None = None,
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
+        tracing_metadata: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -213,6 +214,7 @@ class LangChainTracer(BaseTracer):
             parent_run_id: The parent run ID.
             metadata: The metadata.
             name: The name.
+            tracing_metadata: Per-invocation default metadata.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -233,6 +235,9 @@ class LangChainTracer(BaseTracer):
             tags=tags,
             name=name,
         )
+        if tracing_metadata:
+            existing = chat_model_run.extra.get("metadata") or {}
+            chat_model_run.extra["metadata"] = {**tracing_metadata, **existing}
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
         return chat_model_run
@@ -427,6 +432,7 @@ class LangChainTracer(BaseTracer):
 
 
 def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
+    # Apply constructor-set tracing_metadata as defaults (fill-not-overwrite).
     if not self.tracing_metadata:
         return
     metadata = run.metadata

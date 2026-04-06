@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
     from uuid import UUID
 
     from tenacity import RetryCallState
@@ -948,6 +948,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         inheritable_tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
+        tracing_metadata: Mapping[str, str] | None = None,
     ) -> None:
         """Initialize callback manager.
 
@@ -959,6 +960,9 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_tags: The inheritable tags.
             metadata: The metadata.
             inheritable_metadata: The inheritable metadata.
+            tracing_metadata: Per-invocation default metadata merged into every run
+                started by this manager. Keys already present in a run's metadata
+                are not overwritten.
         """
         self.handlers: list[BaseCallbackHandler] = handlers
         self.inheritable_handlers: list[BaseCallbackHandler] = (
@@ -969,6 +973,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_tags = inheritable_tags or []
         self.metadata = metadata or {}
         self.inheritable_metadata = inheritable_metadata or {}
+        self.tracing_metadata: Mapping[str, str] | None = tracing_metadata
 
     def copy(self) -> Self:
         """Return a copy of the callback manager."""
@@ -980,6 +985,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             inheritable_tags=self.inheritable_tags.copy(),
             metadata=self.metadata.copy(),
             inheritable_metadata=self.inheritable_metadata.copy(),
+            tracing_metadata=self.tracing_metadata,
         )
 
     def merge(self, other: BaseCallbackManager) -> Self:
