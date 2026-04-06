@@ -820,6 +820,7 @@ class ChatOllama(BaseChatModel):
         Returns:
             List of messages in Ollama format.
         """
+        messages = list(messages)  # shallow copy to avoid mutating caller's list
         for idx, message in enumerate(messages):
             # Handle message content written in v1 format
             if (
