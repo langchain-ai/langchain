@@ -630,9 +630,11 @@ class ChatOllama(BaseChatModel):
     """Whether to return logprobs."""
 
     top_logprobs: int | None = None
-    """Number of most likely tokens to return at each token position, each with an
-    associated log probability. `logprobs` must be set to true if this parameter is
-    used."""
+    """Number of most likely tokens to return at each token position, each with
+    an associated log probability.
+
+    `logprobs` must be set to true if this parameter is used.
+    """
 
     stop: list[str] | None = None
     """Sets the stop tokens to use."""
