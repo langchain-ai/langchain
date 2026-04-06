@@ -68,7 +68,7 @@ def create_stuff_documents_chain(
         prompt = ChatPromptTemplate.from_messages(
             [("system", "What are everyone's favorite colors:\n\n{context}")]
         )
-        model = ChatOpenAI(model="gpt-3.5-turbo")
+        model = ChatOpenAI(model="gpt-5.4-mini")
         chain = create_stuff_documents_chain(model, prompt)
 
         docs = [

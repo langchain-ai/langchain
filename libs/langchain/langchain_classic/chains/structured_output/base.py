@@ -250,7 +250,7 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-5.4-mini")
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are an extraction algorithm. Please extract every possible instance"),
@@ -303,7 +303,7 @@ def create_structured_output_runnable(
         }
 
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-5.4-mini")
         structured_model = create_structured_output_runnable(
             dog_schema,
             model,
@@ -330,7 +330,7 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-5.4-mini")
         structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
         structured_model.invoke("Harry was a chubby brown beagle who loved chicken")
         # -> Dog(name="Harry", color="brown", fav_food="chicken")
@@ -352,7 +352,7 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-5.4-mini")
         structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
         system = '''Extract information about any dogs mentioned in the user input.'''
         prompt = ChatPromptTemplate.from_messages(
@@ -379,7 +379,7 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-5.4-mini")
         structured_model = create_structured_output_runnable(Dog, model, mode="openai-json")
         system = '''You are a world class assistant for extracting information in structured JSON formats. \
 
