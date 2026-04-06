@@ -183,7 +183,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
-        for attempt in self._sync_retrying(reraise=True):
+        def _before_sleep(retry_state: RetryCallState) -> None:
+            run_manager.on_retry(retry_state)
+
+        for attempt in self._sync_retrying(
+            reraise=True,
+            before_sleep=_before_sleep,
+        ):
             with attempt:
                 result = super().invoke(
                     input_,
@@ -207,7 +213,13 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
-        async for attempt in self._async_retrying(reraise=True):
+        async def _before_sleep(retry_state: RetryCallState) -> None:
+            await run_manager.on_retry(retry_state)
+
+        async for attempt in self._async_retrying(
+            reraise=True,
+            before_sleep=_before_sleep,
+        ):
             with attempt:
                 result = await super().ainvoke(
                     input_,
@@ -232,11 +244,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        retry_run_managers: list["CallbackManagerForChainRun"] = []
 
         not_set: list[Output] = []
         result = not_set
         try:
-            for attempt in self._sync_retrying():
+            def _before_sleep(retry_state: RetryCallState) -> None:
+                for manager in retry_run_managers:
+                    manager.on_retry(retry_state)
+
+            for attempt in self._sync_retrying(before_sleep=_before_sleep):
                 with attempt:
                     # Retry for inputs that have not yet succeeded
                     # Determine which original indices remain.
@@ -260,10 +277,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
                     first_exception = None
+                    retry_run_managers = []
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            retry_run_managers.append(pending_run_managers[offset])
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
@@ -308,11 +327,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        retry_run_managers: list["AsyncCallbackManagerForChainRun"] = []
 
         not_set: list[Output] = []
         result = not_set
         try:
-            async for attempt in self._async_retrying():
+            async def _before_sleep(retry_state: RetryCallState) -> None:
+                for manager in retry_run_managers:
+                    await manager.on_retry(retry_state)
+
+            async for attempt in self._async_retrying(before_sleep=_before_sleep):
                 with attempt:
                     # Retry for inputs that have not yet succeeded
                     # Determine which original indices remain.
@@ -335,10 +359,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
                     first_exception = None
+                    retry_run_managers = []
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            retry_run_managers.append(pending_run_managers[offset])
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r

@@ -22,6 +22,7 @@ from packaging import version
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
+from tenacity import RetryCallState
 from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -4042,6 +4043,118 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
     lambda_mock.reset_mock()
+
+
+class RetryCallbackHandler(BaseCallbackHandler):
+    """Capture retry attempt numbers observed through callbacks."""
+
+    def __init__(self) -> None:
+        self.attempt_numbers: list[int] = []
+
+    @override
+    def on_retry(
+        self,
+        retry_state: RetryCallState,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.attempt_numbers.append(retry_state.attempt_number)
+
+
+def test_retry_invoke_fires_on_retry_callback() -> None:
+    attempts = 0
+
+    def flaky(value: int) -> int:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return value
+
+    handler = RetryCallbackHandler()
+    runnable = RunnableLambda(flaky)
+
+    assert (
+        runnable.with_retry(
+            stop_after_attempt=3,
+            wait_exponential_jitter=False,
+            retry_if_exception_type=(ValueError,),
+        ).invoke(1, config={"callbacks": [handler]})
+        == 1
+    )
+    assert handler.attempt_numbers == [1, 2]
+
+
+async def test_retry_ainvoke_fires_on_retry_callback() -> None:
+    attempts = 0
+
+    def flaky(value: int) -> int:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return value
+
+    handler = RetryCallbackHandler()
+    runnable = RunnableLambda(flaky)
+
+    assert (
+        await runnable.with_retry(
+            stop_after_attempt=3,
+            wait_exponential_jitter=False,
+            retry_if_exception_type=(ValueError,),
+        ).ainvoke(1, config={"callbacks": [handler]})
+        == 1
+    )
+    assert handler.attempt_numbers == [1, 2]
+
+
+def test_retry_batch_fires_on_retry_callback_for_failed_inputs_only() -> None:
+    failed_once: set[int] = {1}
+
+    def flaky(value: int) -> int:
+        if value in failed_once:
+            failed_once.remove(value)
+            msg = "transient"
+            raise ValueError(msg)
+        return value
+
+    handlers = [RetryCallbackHandler() for _ in range(3)]
+    configs = [{"callbacks": [handler]} for handler in handlers]
+    runnable = RunnableLambda(flaky)
+
+    assert runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).batch([0, 1, 2], config=configs) == [0, 1, 2]
+    assert [handler.attempt_numbers for handler in handlers] == [[], [1], []]
+
+
+async def test_retry_abatch_fires_on_retry_callback_for_failed_inputs_only() -> None:
+    failed_once: set[int] = {1}
+
+    def flaky(value: int) -> int:
+        if value in failed_once:
+            failed_once.remove(value)
+            msg = "transient"
+            raise ValueError(msg)
+        return value
+
+    handlers = [RetryCallbackHandler() for _ in range(3)]
+    configs = [{"callbacks": [handler]} for handler in handlers]
+    runnable = RunnableLambda(flaky)
+
+    assert await runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).abatch([0, 1, 2], config=configs) == [0, 1, 2]
+    assert [handler.attempt_numbers for handler in handlers] == [[], [1], []]
 
 
 def test_runnable_lambda_stream() -> None:
