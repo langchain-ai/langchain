@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import warnings
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
@@ -667,36 +668,42 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _iter, tokens, indices, token_counts = await run_in_executor(
             None, self._tokenize, texts, _chunk_size
         )
-        batched_embeddings: list[list[float]] = []
-
-        # Process in batches respecting the token limit
+        # Pre-compute all batch boundaries
+        batch_ranges: list[tuple[int, int]] = []
         i = 0
         while i < len(tokens):
-            # Determine how many chunks we can include in this batch
             batch_token_count = 0
             batch_end = i
 
             for j in range(i, min(i + _chunk_size, len(tokens))):
                 chunk_tokens = token_counts[j]
-                # Check if adding this chunk would exceed the limit
                 if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
                     if batch_end == i:
-                        # Single chunk exceeds limit - handle it anyway
                         batch_end = j + 1
                     break
                 batch_token_count += chunk_tokens
                 batch_end = j + 1
 
-            # Make API call with this batch
-            batch_tokens = tokens[i:batch_end]
+            batch_ranges.append((i, batch_end))
+            i = batch_end
+
+        # Fire all batch API calls concurrently
+        async def _embed_batch(start: int, end: int) -> list[list[float]]:
+            batch_tokens = tokens[start:end]
             response = await self.async_client.create(
                 input=batch_tokens, **client_kwargs
             )
             if not isinstance(response, dict):
                 response = response.model_dump()
-            batched_embeddings.extend(r["embedding"] for r in response["data"])
+            return [r["embedding"] for r in response["data"]]
 
-            i = batch_end
+        batch_results = await asyncio.gather(
+            *[_embed_batch(s, e) for s, e in batch_ranges]
+        )
+
+        batched_embeddings: list[list[float]] = []
+        for result in batch_results:
+            batched_embeddings.extend(result)
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -770,14 +777,22 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size_ = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
-            embeddings: list[list[float]] = []
-            for i in range(0, len(texts), chunk_size_):
+
+            async def _embed_chunk(start: int) -> list[list[float]]:
                 response = await self.async_client.create(
-                    input=texts[i : i + chunk_size_], **client_kwargs
+                    input=texts[start : start + chunk_size_], **client_kwargs
                 )
                 if not isinstance(response, dict):
                     response = response.model_dump()
-                embeddings.extend(r["embedding"] for r in response["data"])
+                return [r["embedding"] for r in response["data"]]
+
+            chunk_starts = list(range(0, len(texts), chunk_size_))
+            chunk_results = await asyncio.gather(
+                *[_embed_chunk(s) for s in chunk_starts]
+            )
+            embeddings: list[list[float]] = []
+            for result in chunk_results:
+                embeddings.extend(result)
             return embeddings
 
         # Unconditionally call _get_len_safe_embeddings to handle length safety.

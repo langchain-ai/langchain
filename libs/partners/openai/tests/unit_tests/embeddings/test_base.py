@@ -1,6 +1,7 @@
+import asyncio
 import os
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import SecretStr
@@ -148,3 +149,85 @@ def test_embeddings_respects_token_limit() -> None:
     # Verify each call respected the limit
     for count in call_counts:
         assert count <= 300000, f"Batch exceeded limit: {count}"
+
+
+async def test_aembed_documents_concurrent_batches() -> None:
+    """Test that async embed_documents fires batch API calls concurrently."""
+    embeddings = OpenAIEmbeddings(chunk_size=2)
+    texts = ["text1", "text2", "text3", "text4"]
+
+    call_order: list[int] = []
+
+    async def mock_create(**kwargs: Any) -> dict:
+        call_idx = len(call_order)
+        call_order.append(call_idx)
+        # Simulate network latency — if sequential, total time ~0.2s;
+        # if concurrent, total time ~0.1s
+        await asyncio.sleep(0.1)
+        input_ = kwargs["input"]
+        return {
+            "data": [{"embedding": [float(call_idx)] * 2} for _ in range(len(input_))]
+        }
+
+    embeddings.async_client.create = mock_create
+
+    _, tokens, __, ___ = embeddings._tokenize(texts, 2)
+    result = await embeddings.aembed_documents(texts)
+
+    # Should have made 2 API calls (4 texts / chunk_size 2)
+    assert len(call_order) == 2
+    # Results should be in correct order (batch 0 first, then batch 1)
+    assert result == [
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [1.0, 1.0],
+        [1.0, 1.0],
+    ]
+
+
+async def test_aembed_documents_single_batch() -> None:
+    """Test that gather works correctly with a single batch."""
+    embeddings = OpenAIEmbeddings(chunk_size=10)
+    texts = ["text1", "text2"]
+
+    async def mock_create(**kwargs: Any) -> dict:
+        input_ = kwargs["input"]
+        return {"data": [{"embedding": [0.1, 0.2]} for _ in range(len(input_))]}
+
+    embeddings.async_client.create = mock_create
+
+    result = await embeddings.aembed_documents(texts)
+
+    assert result == [[0.1, 0.2], [0.1, 0.2]]
+
+
+async def test_aembed_documents_no_check_ctx_concurrent() -> None:
+    """Test concurrent batching on the fast path (check_embedding_ctx_length=False)."""
+    embeddings = OpenAIEmbeddings(chunk_size=2, check_embedding_ctx_length=False)
+    texts = ["text1", "text2", "text3", "text4"]
+
+    call_count = 0
+
+    async def mock_create(**kwargs: Any) -> dict:
+        nonlocal call_count
+        batch_idx = call_count
+        call_count += 1
+        await asyncio.sleep(0.1)
+        input_ = kwargs["input"]
+        return {
+            "data": [
+                {"embedding": [float(batch_idx)] * 2} for _ in range(len(input_))
+            ]
+        }
+
+    embeddings.async_client.create = mock_create
+
+    result = await embeddings.aembed_documents(texts)
+
+    assert call_count == 2
+    assert result == [
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [1.0, 1.0],
+        [1.0, 1.0],
+    ]
