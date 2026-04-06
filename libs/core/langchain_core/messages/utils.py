@@ -915,15 +915,21 @@ def filter_messages(
                     continue
 
                 content = msg.content
-                # handle Anthropic content blocks
+                # handle Anthropic and OpenAI content blocks
                 if isinstance(msg.content, list):
                     content = [
                         content_block
                         for content_block in msg.content
                         if (
                             not isinstance(content_block, dict)
-                            or content_block.get("type") != "tool_use"
-                            or content_block.get("id") not in exclude_tool_calls
+                            or (
+                                content_block.get("type") != "tool_use"
+                                or content_block.get("id") not in exclude_tool_calls
+                            )
+                            and (
+                                content_block.get("type") != "function_call"
+                                or content_block.get("call_id") not in exclude_tool_calls
+                            )
                         )
                     ]
 
