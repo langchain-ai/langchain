@@ -632,9 +632,9 @@ class ChatOllama(BaseChatModel):
 
     !!! note
 
-        When streaming, per-token logprobs are only available on the final chunk
-        (via `response_metadata`). Intermediate streaming chunks do not include
-        logprobs data.
+        When streaming, per-token logprobs are available on each intermediate
+        chunk (via `response_metadata["logprobs"]`) and are accumulated into the
+        final aggregated response when using `invoke()`.
     """
 
     top_logprobs: int | None = None
@@ -1141,7 +1141,12 @@ class ChatOllama(BaseChatModel):
                     generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
-                    generation_info = None
+                    chunk_logprobs = stream_resp.get("logprobs")
+                    generation_info = (
+                        {"logprobs": chunk_logprobs}
+                        if chunk_logprobs is not None
+                        else None
+                    )
 
                 additional_kwargs = {}
                 if (
@@ -1218,7 +1223,12 @@ class ChatOllama(BaseChatModel):
                     generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
-                    generation_info = None
+                    chunk_logprobs = stream_resp.get("logprobs")
+                    generation_info = (
+                        {"logprobs": chunk_logprobs}
+                        if chunk_logprobs is not None
+                        else None
+                    )
 
                 additional_kwargs = {}
                 if (

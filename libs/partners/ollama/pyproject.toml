@@ -114,6 +114,7 @@ asyncio_mode = "auto"
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
     "S101",    # Tests need assertions
+    "S105",    # False positive on dict key "token" in logprobs assertions
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "ARG001",  # Unused function arguments in tests (e.g. kwargs)
     "PLR2004", # Magic value in comparisons
