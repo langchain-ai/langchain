@@ -4050,6 +4050,7 @@ class RetryCallbackHandler(BaseCallbackHandler):
 
     def __init__(self) -> None:
         self.attempt_numbers: list[int] = []
+        self.exceptions: list[BaseException] = []
 
     @override
     def on_retry(
@@ -4061,6 +4062,10 @@ class RetryCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         self.attempt_numbers.append(retry_state.attempt_number)
+        if retry_state.outcome is not None and retry_state.outcome.failed:
+            exc = retry_state.outcome.exception()
+            if exc is not None:
+                self.exceptions.append(exc)
 
 
 def test_retry_invoke_fires_on_retry_callback() -> None:
@@ -4155,6 +4160,56 @@ async def test_retry_abatch_fires_on_retry_callback_for_failed_inputs_only() -> 
         retry_if_exception_type=(ValueError,),
     ).abatch([0, 1, 2], config=configs) == [0, 1, 2]
     assert [handler.attempt_numbers for handler in handlers] == [[], [1], []]
+
+
+def test_retry_batch_reports_each_failure_exception_to_matching_callback() -> None:
+    failures = {
+        0: ValueError("value-error"),
+        1: RuntimeError("runtime-error"),
+    }
+
+    def flaky(value: int) -> int:
+        if value in failures:
+            raise failures.pop(value)
+        return value
+
+    handlers = [RetryCallbackHandler() for _ in range(3)]
+    configs = [{"callbacks": [handler]} for handler in handlers]
+    runnable = RunnableLambda(flaky)
+
+    assert runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError, RuntimeError),
+    ).batch([0, 1, 2], config=configs) == [0, 1, 2]
+    assert [type(exc) for exc in handlers[0].exceptions] == [ValueError]
+    assert [type(exc) for exc in handlers[1].exceptions] == [RuntimeError]
+    assert handlers[2].exceptions == []
+
+
+async def test_retry_abatch_reports_each_failure_exception_to_matching_callback() -> None:
+    failures = {
+        0: ValueError("value-error"),
+        1: RuntimeError("runtime-error"),
+    }
+
+    def flaky(value: int) -> int:
+        if value in failures:
+            raise failures.pop(value)
+        return value
+
+    handlers = [RetryCallbackHandler() for _ in range(3)]
+    configs = [{"callbacks": [handler]} for handler in handlers]
+    runnable = RunnableLambda(flaky)
+
+    assert await runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError, RuntimeError),
+    ).abatch([0, 1, 2], config=configs) == [0, 1, 2]
+    assert [type(exc) for exc in handlers[0].exceptions] == [ValueError]
+    assert [type(exc) for exc in handlers[1].exceptions] == [RuntimeError]
+    assert handlers[2].exceptions == []
 
 
 def test_runnable_lambda_stream() -> None:

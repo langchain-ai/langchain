@@ -1,5 +1,4 @@
 """`Runnable` that retries a `Runnable` if it fails."""
-
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -176,6 +175,25 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             for c, rm in zip(config, run_manager, strict=False)
         ]
 
+    @staticmethod
+    def _copy_retry_state(
+        retry_state: RetryCallState,
+        exc: BaseException,
+    ) -> RetryCallState:
+        copied = RetryCallState(
+            retry_object=retry_state.retry_object,
+            fn=retry_state.fn,
+            args=retry_state.args,
+            kwargs=retry_state.kwargs,
+        )
+        copied.start_time = retry_state.start_time
+        copied.attempt_number = retry_state.attempt_number
+        copied.idle_for = retry_state.idle_for
+        copied.next_action = retry_state.next_action
+        copied.upcoming_sleep = retry_state.upcoming_sleep
+        copied.set_exception((type(exc), exc, exc.__traceback__))
+        return copied
+
     def _invoke(
         self,
         input_: Input,
@@ -244,14 +262,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
-        retry_run_managers: list["CallbackManagerForChainRun"] = []
+        retry_failures: list[tuple["CallbackManagerForChainRun", BaseException]] = []
 
         not_set: list[Output] = []
         result = not_set
         try:
             def _before_sleep(retry_state: RetryCallState) -> None:
-                for manager in retry_run_managers:
-                    manager.on_retry(retry_state)
+                for manager, exc in retry_failures:
+                    manager.on_retry(self._copy_retry_state(retry_state, exc))
 
             for attempt in self._sync_retrying(before_sleep=_before_sleep):
                 with attempt:
@@ -277,12 +295,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
                     first_exception = None
-                    retry_run_managers = []
+                    retry_failures = []
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
-                            retry_run_managers.append(pending_run_managers[offset])
+                            retry_failures.append((pending_run_managers[offset], r))
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
@@ -327,14 +345,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
-        retry_run_managers: list["AsyncCallbackManagerForChainRun"] = []
+        retry_failures: list[tuple["AsyncCallbackManagerForChainRun", BaseException]] = []
 
         not_set: list[Output] = []
         result = not_set
         try:
             async def _before_sleep(retry_state: RetryCallState) -> None:
-                for manager in retry_run_managers:
-                    await manager.on_retry(retry_state)
+                for manager, exc in retry_failures:
+                    await manager.on_retry(self._copy_retry_state(retry_state, exc))
 
             async for attempt in self._async_retrying(before_sleep=_before_sleep):
                 with attempt:
@@ -359,12 +377,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
                     first_exception = None
-                    retry_run_managers = []
+                    retry_failures = []
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
-                            retry_run_managers.append(pending_run_managers[offset])
+                            retry_failures.append((pending_run_managers[offset], r))
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
