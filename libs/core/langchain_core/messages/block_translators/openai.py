@@ -33,24 +33,30 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
         The formatted image content block.
     """
     if "url" in block:
-        return {
+        result = {
             "type": "image_url",
             "image_url": {
                 "url": block["url"],
             },
         }
+        if "detail" in block:
+            result["image_url"]["detail"] = block["detail"]
+        return result
     if "base64" in block or block.get("source_type") == "base64":
         if "mime_type" not in block:
             error_message = "mime_type key is required for base64 data."
             raise ValueError(error_message)
         mime_type = block["mime_type"]
         base64_data = block["data"] if "data" in block else block["base64"]
-        return {
+        result = {
             "type": "image_url",
             "image_url": {
                 "url": f"data:{mime_type};base64,{base64_data}",
             },
         }
+        if "detail" in block:
+            result["image_url"]["detail"] = block["detail"]
+        return result
     error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
     raise ValueError(error_message)
 
