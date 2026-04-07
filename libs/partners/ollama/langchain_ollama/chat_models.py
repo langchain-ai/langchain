@@ -865,6 +865,7 @@ class ChatOllama(BaseChatModel):
         Returns:
             List of messages in Ollama format.
         """
+        messages = list(messages)  # shallow copy to avoid mutating caller's list
         for idx, message in enumerate(messages):
             # Handle message content written in v1 format
             if (
@@ -969,10 +970,10 @@ class ChatOllama(BaseChatModel):
                 msg_["tool_calls"] = tool_calls
             if tool_call_id:
                 msg_["tool_call_id"] = tool_call_id
-            if isinstance(message, AIMessage) and (
-                thinking := message.additional_kwargs.get("reasoning_content")
-            ):
-                msg_["thinking"] = thinking
+            if isinstance(message, AIMessage):
+                thinking = message.additional_kwargs.get("reasoning_content")
+                if thinking is not None:
+                    msg_["thinking"] = thinking
             ollama_messages.append(msg_)
 
         return ollama_messages

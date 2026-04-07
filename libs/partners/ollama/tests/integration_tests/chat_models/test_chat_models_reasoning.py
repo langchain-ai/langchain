@@ -234,7 +234,7 @@ def test_reasoning_modes_behavior(model: str) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_content_round_trip(model: str, use_async: bool) -> None:
-    """Smoke test: multi-turn with reasoning_content doesn't error.
+    """Verify multi-turn conversation with reasoning_content round-trips without error.
 
     Serialization correctness is covered by the unit test
     `test_reasoning_content_serialized_as_thinking`. This test verifies the
@@ -267,3 +267,4 @@ async def test_reasoning_content_round_trip(model: str, use_async: bool) -> None
         turn2_result = llm.invoke(turn2_messages)
 
     assert turn2_result.content
+    assert "reasoning_content" in turn2_result.additional_kwargs
