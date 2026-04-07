@@ -70,7 +70,7 @@ typing = [
 ]
 
 [tool.uv]
-constraint-dependencies = ["pygments>=2.20.0"]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }

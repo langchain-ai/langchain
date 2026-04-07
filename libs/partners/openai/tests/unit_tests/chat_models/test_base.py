@@ -1087,6 +1087,19 @@ def test__create_usage_metadata() -> None:
     )
 
 
+def test__create_usage_metadata_zero_total_tokens() -> None:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+    usage_metadata = {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 0,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["total_tokens"] == 0
+
+
 def test__create_usage_metadata_responses() -> None:
     response_usage_metadata = {
         "input_tokens": 100,
