@@ -71,7 +71,7 @@ def test_ensure_config() -> None:
     }
 
 
-def test_ensure_config_only_copies_checkpoint_ns_to_metadata() -> None:
+def test_ensure_config_copies_expected_keys_metadata() -> None:
     config = ensure_config(
         {
             "configurable": {
@@ -94,7 +94,7 @@ def test_ensure_config_only_copies_checkpoint_ns_to_metadata() -> None:
         }
     )
 
-    assert config["metadata"] == {"nooverride": 18, "checkpoint_ns": "ns-1"}
+    assert config["metadata"] == {"nooverride": 18}
     assert config["configurable"] == {
         "thread_id": "th-123",
         "checkpoint_id": "ckpt-1",
@@ -107,7 +107,7 @@ def test_ensure_config_only_copies_checkpoint_ns_to_metadata() -> None:
         "user_id": "uid-1",
         "cron_id": "cron-1",
         "langgraph_auth_user_id": "user-1",
-        "some_api_key": "secret",
+        "some_api_key": "opaque-token",
         "custom_setting": {"nested": True},
         "none_value": None,
     }

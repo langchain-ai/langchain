@@ -2411,8 +2411,6 @@ def _configure(
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, inherit=False)
-    if tracing_metadata:
-        callback_manager.add_metadata(tracing_metadata.copy())
     if tracing_tags:
         callback_manager.add_tags(tracing_tags.copy())
 
@@ -2504,6 +2502,13 @@ def _configure(
                 for handler in callback_manager.handlers
             ):
                 callback_manager.add_handler(var_handler, inheritable)
+
+    if tracing_metadata:
+        langsmith_inheritable_metadata = {
+            **tracing_metadata,
+            **(langsmith_inheritable_metadata or {}),
+        }
+
     if langsmith_inheritable_metadata or langsmith_inheritable_tags:
         callback_manager.handlers = [
             handler.copy_with_metadata_defaults(

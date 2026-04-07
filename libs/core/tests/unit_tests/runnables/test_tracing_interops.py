@@ -879,6 +879,34 @@ class TestLangsmithInheritableTracingDefaultsInConfigure:
         assert tracer.tracing_metadata == {"env": "staging"}
         assert lc_tracer.tracing_metadata == {"env": "staging", "service": "api"}
 
+    def test_tracing_context_metadata_merged_into_langsmith_inheritable_metadata(
+        self,
+    ) -> None:
+        """Tracing-context metadata merges into tracer defaults.
+
+        LangSmith metadata keeps precedence on collisions.
+        """
+        tracer = _create_tracer_with_mocked_client()
+        with tracing_context(
+            enabled=True,
+            client=tracer.client,
+            metadata={"trace_only": "value", "shared": "trace"},
+        ):
+            cm = CallbackManager.configure(
+                inheritable_callbacks=[tracer],
+                langsmith_inheritable_metadata={
+                    "shared": "langsmith",
+                    "tenant": "alpha",
+                },
+            )
+
+        lc_tracer = next(h for h in cm.handlers if isinstance(h, LangChainTracer))
+        assert lc_tracer.tracing_metadata == {
+            "trace_only": "value",
+            "shared": "langsmith",
+            "tenant": "alpha",
+        }
+
     def test_langsmith_inheritable_metadata_end_to_end(self) -> None:
         """langsmith_inheritable_metadata in configure propagates to posted runs."""
         tracer = _create_tracer_with_mocked_client()
