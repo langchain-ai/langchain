@@ -1,7 +1,12 @@
 """Ollama integration tests for reasoning chat models."""
 
 import pytest
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessageChunk,
+    HumanMessage,
+)
 
 from langchain_ollama import ChatOllama
 
@@ -224,3 +229,41 @@ def test_reasoning_modes_behavior(model: str) -> None:
     assert len(result_enabled.additional_kwargs["reasoning_content"]) > 0
     assert "<think>" not in result_enabled.additional_kwargs["reasoning_content"]
     assert "</think>" not in result_enabled.additional_kwargs["reasoning_content"]
+
+
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_reasoning_content_round_trip(model: str, use_async: bool) -> None:
+    """Smoke test: multi-turn with reasoning_content doesn't error.
+
+    Serialization correctness is covered by the unit test
+    `test_reasoning_content_serialized_as_thinking`. This test verifies the
+    end-to-end flow against a real Ollama instance.
+
+    Related: https://github.com/langchain-ai/langchain/issues/36177.
+    """
+    llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
+
+    # Turn 1: get a response with reasoning
+    turn1_msg = HumanMessage(content=SAMPLE)
+    if use_async:
+        turn1_result = await llm.ainvoke([turn1_msg])
+    else:
+        turn1_result = llm.invoke([turn1_msg])
+
+    assert "reasoning_content" in turn1_result.additional_kwargs
+
+    # Turn 2: feed the AIMessage back alongside a follow-up question
+    turn1_ai = AIMessage(
+        content=str(turn1_result.content),
+        additional_kwargs={
+            "reasoning_content": turn1_result.additional_kwargs["reasoning_content"],
+        },
+    )
+    turn2_messages = [turn1_msg, turn1_ai, HumanMessage(content="Now what is 4^4?")]
+    if use_async:
+        turn2_result = await llm.ainvoke(turn2_messages)
+    else:
+        turn2_result = llm.invoke(turn2_messages)
+
+    assert turn2_result.content
