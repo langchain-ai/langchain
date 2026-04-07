@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Annotated
 from unittest.mock import MagicMock, patch
 
@@ -110,6 +111,42 @@ def test_structured_output(method: str) -> None:
             assert isinstance(chunk, dict)
         assert isinstance(chunk, dict)
         assert set(chunk.keys()) == {"setup", "punchline"}
+
+
+@pytest.mark.parametrize(
+    "response_format",
+    [
+        {"type": "json_object"},
+        {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "joke",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "setup": {"type": "string"},
+                        "punchline": {"type": "string"},
+                    },
+                    "required": ["setup", "punchline"],
+                },
+            },
+        },
+    ],
+    ids=["json_object", "json_schema"],
+)
+def test_response_format(response_format: dict) -> None:
+    """Test that OpenAI-style response_format is translated and honored."""
+    llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0)
+    result = llm.invoke(
+        [HumanMessage("Tell me a joke about cats. Return JSON with setup/punchline.")],
+        response_format=response_format,
+    )
+    assert isinstance(result, AIMessage)
+    parsed = json.loads(str(result.content))
+    assert isinstance(parsed, dict)
+    if response_format["type"] == "json_schema":
+        assert "setup" in parsed
+        assert "punchline" in parsed
 
 
 @pytest.mark.parametrize(("model"), [(DEFAULT_MODEL_NAME)])
