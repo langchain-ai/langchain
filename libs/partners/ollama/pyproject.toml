@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.0.1"
+version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "ollama>=0.6.1,<1.0.0",
