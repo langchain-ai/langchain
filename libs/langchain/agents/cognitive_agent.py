@@ -1,5 +1,4 @@
-"""CognitiveSynergyAgent - lightweight AGI-inspired extension for LangChain
-Inspired by OpenCog, Soar/ACT-R, CoALA, AgentGPT, Haystack."""
+"""CognitiveSynergyAgent"""
 
 from langchain.agents import AgentExecutor
 from langchain_core.messages import BaseMessage
@@ -37,10 +36,7 @@ class CognitiveSynergyAgent(AgentExecutor):
         self.memory.add_to_working({"role": "user", "content": input})
         rules = self.memory.retrieve_procedural(self.current_goal or input)
         episodic = self.memory.episodic[-3:] if self.memory.episodic else []
-        context = f"""GOAL: {self.current_goal or input}
-WORKING MEMORY: {self.memory.working_memory[-5:]}
-RECENT EPISODES: {episodic}
-MATCHED RULES: {rules}"""
+        context = f"GOAL: {self.current_goal or input}\nWM: {self.memory.working_memory[-5:]}\nEP: {episodic}"
         response = self.llm.invoke(context + "\nReason step-by-step. Next action or subgoal?")
         if "subgoal" in response.content.lower():
             self.current_goal = response.content.split("subgoal:")[-1].strip()
