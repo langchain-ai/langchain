@@ -185,6 +185,21 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
 
+  # Verify _release.yml dropdown options stay in sync with package directories
+  check-release-options:
+    name: "Validate Release Options"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: "🐍 Setup Python 3.11"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: "📦 Install Dependencies"
+        run: python -m pip install pyyaml pytest
+      - name: "🔍 Check release dropdown matches packages"
+        run: python -m pytest .github/scripts/test_release_options.py -v
+
   # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
     name: "✅ CI Success"
@@ -197,6 +212,7 @@ jobs:
         vcr-tests,
         extended-tests,
         test-pydantic,
+        check-release-options,
       ]
     if: |
       always()
