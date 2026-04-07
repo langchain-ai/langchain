@@ -504,7 +504,10 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     ):
         collected: dict[str, RunTree] = {}
 
-        def collect_run(run: RunTree) -> None:
+        def collect_langsmith_run(run: RunTree) -> None:
+            collected[str(run.id)] = run
+
+        def collect_tracer_run(_: LangChainTracer, run: RunTree) -> None:
             collected[str(run.id)] = run
 
         if parent_type == "ls":
@@ -514,7 +517,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             assert (
-                parent(langsmith_extra={"on_end": collect_run, "run_id": rid}) == "foo"
+                parent(langsmith_extra={"on_end": collect_langsmith_run, "run_id": rid}) == "foo"
             )
             assert collected
 
@@ -525,9 +528,8 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
                 return child.invoke("foo")
 
             tracer = LangChainTracer()
-            tracer._persist_run = collect_run  # type: ignore[method-assign]
-
-            assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore[attr-defined]
+            with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+                assert parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore[attr-defined]
     run = collected.get(str(rid))
 
     assert run is not None
