@@ -292,6 +292,23 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
+    default_headers: dict[str, str] | None = None
+    """Additional HTTP headers to include on every request to OpenRouter.
+
+    Headers set here are merged into the underlying httpx client's default
+    headers and forwarded by OpenRouter to the upstream provider. Useful for
+    upstream provider features that require custom headers — for example,
+    xAI's ``x-grok-conv-id`` for sticky-routing prompt cache hits, or
+    provider-specific authentication, region routing, or A/B test bucketing
+    headers.
+
+    Example: ``{"x-grok-conv-id": "session-abc123"}``
+
+    Headers set via this field are merged with the OpenRouter app-attribution
+    headers (``HTTP-Referer``, ``X-Title``, ``X-OpenRouter-Categories``) — if a
+    key collides, the value from ``default_headers`` takes precedence.
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -348,6 +365,10 @@ class ChatOpenRouter(BaseChatModel):
             extra_headers["X-Title"] = self.app_title
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        # User-supplied headers are merged last so they take precedence over the
+        # built-in app-attribution headers if a key collides.
+        if self.default_headers:
+            extra_headers.update(self.default_headers)
         if extra_headers:
             import httpx  # noqa: PLC0415
 
