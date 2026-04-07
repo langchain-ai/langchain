@@ -16,9 +16,11 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Protocol,
     TypeVar,
     cast,
     get_type_hints,
+    runtime_checkable,
 )
 
 import pytest
@@ -1823,6 +1825,49 @@ def test_tool_injected_arg() -> None:
             "required": ["x"],
         },
     }
+
+
+def test_tool_injected_arg_with_pydantic_incompatible_type() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/32067."""
+
+    @runtime_checkable
+    class StateLike(Protocol):
+        pass
+
+    class InjectedState(InjectedToolArg):
+        pass
+
+    @tool("test_tool", description="test")
+    def handoff_to_agent(
+        state: Annotated[StateLike, InjectedState],
+        x: int,
+    ) -> str:
+        """Handoff.
+
+        Args:
+            state: The state.
+            x: An integer.
+        """
+        return "hello"
+
+    assert _schema(handoff_to_agent.get_input_schema()) == {
+        "title": "test_tool",
+        "description": "Handoff.\n\nArgs:\n    state: The state.\n    x: An integer.",
+        "type": "object",
+        "properties": {
+            "state": {"title": "State"},
+            "x": {"title": "X", "type": "integer"},
+        },
+        "required": ["state", "x"],
+    }
+    assert _schema(handoff_to_agent.tool_call_schema) == {
+        "title": "test_tool",
+        "description": "test",
+        "type": "object",
+        "properties": {"x": {"title": "X", "type": "integer"}},
+        "required": ["x"],
+    }
+    assert handoff_to_agent.invoke({"x": 5, "state": {}}) == "hello"
 
 
 def test_tool_inherited_injected_arg() -> None:
