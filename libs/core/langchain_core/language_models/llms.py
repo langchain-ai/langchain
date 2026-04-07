@@ -311,7 +311,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     @property
     @override
     def OutputType(self) -> type[str]:
-        """Get the input type for this `Runnable`."""
+        """Get the output type for this `Runnable`."""
         return str
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
@@ -351,9 +351,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+        elif hasattr(self, "temperature") and isinstance(
+            self.temperature, (int, float)
+        ):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens
@@ -525,7 +527,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             options = {"stop": stop}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -595,7 +597,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         options = {"stop": stop}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -904,14 +906,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         if (
             isinstance(callbacks, list)
@@ -1171,14 +1173,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         # Create callback managers
         if isinstance(callbacks, list) and (

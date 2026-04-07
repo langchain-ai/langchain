@@ -7,7 +7,7 @@ import os
 import re
 import ssl
 import uuid
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable, Sequence  # noqa: TC003
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -77,7 +77,7 @@ from langchain_mistralai._compat import _convert_from_v1_to_mistral
 from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator
     from contextlib import AbstractAsyncContextManager
 
 logger = logging.getLogger(__name__)
@@ -646,12 +646,8 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model) or None
 
     def _generate(
         self,

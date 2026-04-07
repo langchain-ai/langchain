@@ -15,6 +15,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
@@ -45,27 +46,33 @@ class BasePromptTemplate(
     """A list of the names of the variables whose values are required as inputs to the
     prompt.
     """
+
     optional_variables: list[str] = Field(default=[])
     """A list of the names of the variables for placeholder or `MessagePlaceholder` that
     are optional.
 
     These variables are auto inferred from the prompt and user need not provide them.
     """
+
     input_types: builtins.dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
 
     If not provided, all variables are assumed to be strings.
     """
+
     output_parser: BaseOutputParser | None = None
     """How to parse the output of calling an LLM on this formatted prompt."""
+
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
 
     Partial variables populate the template so that you don't need to pass them in every
     time you call the prompt.
     """
+
     metadata: builtins.dict[str, Any] | None = None
     """Metadata to be used for tracing."""
+
     tags: list[str] | None = None
     """Tags to be used for tracing."""
 
@@ -344,6 +351,12 @@ class BasePromptTemplate(
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save the prompt.
 
@@ -410,20 +423,18 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
 
     First, this pulls information from the document from two sources:
 
-    1. `page_content`:
-        This takes the information from the `document.page_content` and assigns it to a
-        variable named `page_content`.
-    2. `metadata`:
-        This takes information from `document.metadata` and assigns it to variables of
-        the same name.
+    1. `page_content`: This takes the information from the `document.page_content` and
+        assigns it to a variable named `page_content`.
+    2. `metadata`: This takes information from `document.metadata` and assigns it to
+        variables of the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: `Document`, the `page_content` and `metadata` will be used to create
-            the final string.
-        prompt: `BasePromptTemplate`, will be used to format the `page_content`
-            and `metadata` into the final string.
+        doc: `Document`, the `page_content` and `metadata` will be used to create the
+            final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content` and
+            `metadata` into the final string.
 
     Returns:
         String of the document formatted.
@@ -436,7 +447,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
         doc = Document(page_content="This is a joke", metadata={"page": "1"})
         prompt = PromptTemplate.from_template("Page {page}: {page_content}")
         format_document(doc, prompt)
-        >>> "Page 1: This is a joke"
+        # -> "Page 1: This is a joke"
         ```
     """
     return prompt.format(**_get_document_info(doc, prompt))
@@ -447,20 +458,18 @@ async def aformat_document(doc: Document, prompt: BasePromptTemplate[str]) -> st
 
     First, this pulls information from the document from two sources:
 
-    1. `page_content`:
-        This takes the information from the `document.page_content` and assigns it to a
-        variable named `page_content`.
-    2. `metadata`:
-        This takes information from `document.metadata` and assigns it to variables of
-        the same name.
+    1. `page_content`: This takes the information from the `document.page_content` and
+        assigns it to a variable named `page_content`.
+    2. `metadata`: This takes information from `document.metadata` and assigns it to
+        variables of the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: `Document`, the `page_content` and `metadata` will be used to create
-            the final string.
-        prompt: `BasePromptTemplate`, will be used to format the `page_content`
-            and `metadata` into the final string.
+        doc: `Document`, the `page_content` and `metadata` will be used to create the
+            final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content` and
+            `metadata` into the final string.
 
     Returns:
         String of the document formatted.

@@ -273,10 +273,20 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatGroq",
     ),
+    ("langchain_openrouter", "chat_models", "ChatOpenRouter"): (
+        "langchain_openrouter",
+        "chat_models",
+        "ChatOpenRouter",
+    ),
     ("langchain_xai", "chat_models", "ChatXAI"): (
         "langchain_xai",
         "chat_models",
         "ChatXAI",
+    ),
+    ("langchain_baseten", "chat_models", "ChatBaseten"): (
+        "langchain_baseten",
+        "chat_models",
+        "ChatBaseten",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
@@ -299,11 +309,23 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatMistralAI",
     ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
+    ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",
         "chat_models",
         "bedrock",
         "ChatBedrock",
+    ),
+    ("langchain_aws", "chat_models", "ChatBedrockConverse"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock_converse",
+        "ChatBedrockConverse",
     ),
     ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
         "langchain_google_genai",
@@ -359,6 +381,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
+        "langchain_aws",
+        "llms",
+        "bedrock",
+        "BedrockLLM",
+    ),
+    ("langchain", "llms", "bedrock", "BedrockLLM"): (
         "langchain_aws",
         "llms",
         "bedrock",

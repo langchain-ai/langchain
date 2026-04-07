@@ -93,8 +93,8 @@ def _dereference_refs_helper(
     This function processes JSON Schema objects containing $ref properties by resolving
     the references and merging any additional properties. It handles:
 
-    - Pure $ref objects: {"$ref": "#/path/to/definition"}
-    - Mixed $ref objects: {"$ref": "#/path", "title": "Custom Title", ...}
+    - Pure `$ref` objects: `{"$ref": "#/path/to/definition"}`
+    - Mixed `$ref` objects: `{"$ref": "#/path", "title": "Custom Title", ...}`
     - Circular references by breaking cycles and preserving non-ref properties
 
     Args:
@@ -102,10 +102,10 @@ def _dereference_refs_helper(
         full_schema: The complete schema containing all definitions
         processed_refs: Set tracking currently processing refs (for cycle detection)
         skip_keys: Keys under which to skip recursion
-        shallow_refs: If `True`, only break cycles; if False, deep-inline all refs
+        shallow_refs: If `True`, only break cycles; if `False`, deep-inline all refs
 
     Returns:
-        The object with $ref properties resolved and merged with other properties.
+        The object with `$ref` properties resolved and merged with other properties.
     """
     if processed_refs is None:
         processed_refs = set()
@@ -217,6 +217,7 @@ def dereference_refs(
 
     Returns:
         A new dictionary with all $ref references resolved and inlined.
+
             The original `schema_obj` is not modified.
 
     Examples:

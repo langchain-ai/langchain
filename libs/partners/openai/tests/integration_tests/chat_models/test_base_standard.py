@@ -1,13 +1,11 @@
 """Standard LangChain interface tests"""
 
-import base64
 from pathlib import Path
 from typing import Literal, cast
 
-import httpx
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import ChatOpenAI
@@ -84,43 +82,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def supports_pdf_inputs(self) -> bool:
-        # OpenAI requires a filename for PDF inputs
-        # For now, we test with filename in OpenAI-specific tests
-        return False
-
-    @pytest.mark.flaky(retries=3, delay=1)
-    def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
-        """Test that the model can process PDF inputs."""
-        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
-
-        message = HumanMessage(
-            [
-                {"type": "text", "text": "What is the document title, verbatim?"},
-                {
-                    "type": "file",
-                    "mime_type": "application/pdf",
-                    "base64": pdf_data,
-                    "filename": "my-pdf",  # OpenAI requires a filename
-                },
-            ]
-        )
-        _ = model.invoke([message])
-
-        # Test OpenAI Chat Completions format
-        message = HumanMessage(
-            [
-                {"type": "text", "text": "What is the document title, verbatim?"},
-                {
-                    "type": "file",
-                    "file": {
-                        "filename": "test file.pdf",
-                        "file_data": f"data:application/pdf;base64,{pdf_data}",
-                    },
-                },
-            ]
-        )
-        _ = model.invoke([message])
+        return True
 
 
 def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
