@@ -325,6 +325,22 @@ def test_symlink_jinja2_rce_is_blocked(tmp_path: Path) -> None:
         load_prompt_from_config(config, allow_dangerous_paths=True)
 
 
+def test_save_symlink_to_py_is_blocked(tmp_path: Path) -> None:
+    """Test that save() resolves symlinks before checking the file extension."""
+    target = tmp_path / "malicious.py"
+    symlink = tmp_path / "output.json"
+    symlink.symlink_to(target)
+
+    prompt = PromptTemplate(input_variables=["name"], template="Hello {name}")
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="must be json or yaml"),
+    ):
+        prompt.save(symlink)
+
+    assert not target.exists()
+
+
 def test_loading_few_shot_prompt_from_yaml() -> None:
     """Test loading few shot prompt from yaml."""
     with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
