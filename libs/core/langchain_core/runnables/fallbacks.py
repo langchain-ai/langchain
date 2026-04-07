@@ -649,7 +649,25 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 def _returns_runnable(attr: Any) -> bool:
     if not callable(attr):
         return False
-    return_type = typing.get_type_hints(attr).get("return")
+    try:
+        return_type = typing.get_type_hints(attr).get("return")
+    except (NameError, TypeError, AttributeError):
+        # ``typing.get_type_hints`` evaluates string forward references against
+        # the function's ``__globals__``. If a method's return annotation
+        # references a name that isn't importable from that scope (e.g. a
+        # ``Runnable[...]`` forward ref defined further up an inheritance chain
+        # in a module that doesn't import ``Runnable`` directly), the call
+        # raises ``NameError``. ``get_type_hints`` can also raise ``TypeError``
+        # for unsupported callables (some bound methods, classmethods, partial
+        # objects) and ``AttributeError`` if ``__annotations__`` is missing.
+        #
+        # When we can't determine the return type, default to ``False`` — the
+        # attribute will be returned unwrapped instead of being treated as a
+        # ``Runnable``-returning method. This is the safe choice: it preserves
+        # access to the attribute (callers can still invoke it) and just
+        # disables the automatic fallback re-wrapping. Methods that genuinely
+        # return ``Runnable`` and have resolvable annotations are unaffected.
+        return False
     return bool(return_type and _is_runnable_type(return_type))
 
 

@@ -400,3 +400,71 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+class FakeModelWithUnresolvableAnnotation(BaseChatModel):
+    """Model with a method whose return annotation can't be resolved.
+
+    Reproduces the bug where ``_returns_runnable`` crashes with ``NameError``
+    when introspecting a method whose return annotation is a string forward
+    reference that ``typing.get_type_hints`` can't resolve in the function's
+    ``__globals__``.
+
+    Real-world trigger: a ``ChatModel`` (e.g. ``ChatXAI``) inherits a method
+    like ``with_structured_output`` from a base class whose module doesn't
+    have all of the annotation's forward refs in scope. Calling
+    ``with_fallbacks(...).with_structured_output(...)`` then crashes inside
+    ``RunnableWithFallbacks.__getattr__`` → ``_returns_runnable``.
+    """
+
+    foo: int
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[])
+
+    def some_method_with_unresolvable_annotation(
+        self,
+        schema: Any,  # noqa: ARG002
+    ) -> "ThisClassDoesNotExistAnywhere":  # type: ignore[name-defined]  # noqa: F821
+        # The string annotation above is the bug trigger: ``typing.get_type_hints``
+        # tries to ``eval()`` it against this method's ``__globals__`` and raises
+        # ``NameError`` because the name isn't importable from anywhere.
+        return None
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake_unresolvable"
+
+
+def test_fallbacks_getattr_unresolvable_annotation() -> None:
+    """Regression: ``_returns_runnable`` must not crash on unresolvable annotations.
+
+    Before the fix, ``RunnableWithFallbacks.__getattr__`` →
+    ``_returns_runnable`` → ``typing.get_type_hints(attr)`` raised::
+
+        NameError: name 'ThisClassDoesNotExistAnywhere' is not defined
+
+    After the fix, ``_returns_runnable`` catches NameError/TypeError/
+    AttributeError from ``get_type_hints`` and returns ``False``, so the
+    attribute is returned unwrapped. Callers can still invoke it; the only
+    behavior loss is that the method is not automatically re-wrapped to
+    propagate fallbacks (which is the right safe default when we can't
+    determine the return type).
+    """
+    model_with_fallbacks = FakeModelWithUnresolvableAnnotation(foo=3).with_fallbacks(
+        [FakeModel(bar=4)]
+    )
+
+    # Accessing the attribute should not raise NameError. Before the fix it did.
+    method = model_with_fallbacks.some_method_with_unresolvable_annotation
+    assert callable(method)
+    # And calling it should work — it just returns None, since
+    # ``_returns_runnable`` returned False so we got the bare method back.
+    assert method({}) is None
