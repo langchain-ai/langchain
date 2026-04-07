@@ -251,3 +251,39 @@ When adding a new partner package, update these files:
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
 - **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)
+
+## 🚀 CognitiveSynergyAgent (AGI Features 2026)
+**Inspired by** OpenCog, Soar/ACT-R, CoALA, AgentGPT, Haystack.
+
+### Key Additions
+- Multi-memory (working/episodic/procedural + attention allocation)
+- Production rule matching + subgoaling on impasse
+- CoALA-style cognitive cycle with self-reflection
+- Drop-in Haystack RAG helper
+
+### Quick Start
+```python
+from langchain.chat_models import init_chat_model
+from langchain.agents.cognitive_agent import CognitiveSynergyAgent
+
+llm = init_chat_model("openai:gpt-4o")
+agent = CognitiveSynergyAgent(llm=llm, tools=your_tools)
+result = agent.run_autonomous_loop("Your AGI research goal")
+
+## 🚀 CognitiveSynergyAgent (AGI Features 2026)
+**Inspired by** OpenCog, Soar/ACT-R, CoALA, AgentGPT, Haystack.
+
+### Key Additions
+- Multi-memory system with attention
+- Production rules + subgoaling
+- Cognitive cycle with reflection
+- Haystack RAG helper
+
+### Quick Start
+```python
+from langchain.chat_models import init_chat_model
+from langchain.agents.cognitive_agent import CognitiveSynergyAgent
+
+llm = init_chat_model("openai:gpt-4o")
+agent = CognitiveSynergyAgent(llm=llm, tools=your_tools)
+agent.run_autonomous_loop("Test cognitive synergy")
