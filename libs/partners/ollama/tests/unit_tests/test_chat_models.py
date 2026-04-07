@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import ChatMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
@@ -482,7 +482,9 @@ def test_logprobs_params_passed_to_client() -> None:
         assert call_kwargs["top_logprobs"] == 3
 
         # Case 3: auto-enabled logprobs propagates to client
-        llm = ChatOllama(model=MODEL_NAME, top_logprobs=3)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            llm = ChatOllama(model=MODEL_NAME, top_logprobs=3)
         llm.invoke([HumanMessage("Hello")])
 
         call_kwargs = mock_client.chat.call_args[1]
@@ -810,3 +812,104 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_reasoning_content_serialized_as_thinking() -> None:
+    """Test that `reasoning_content` in `AIMessage` is serialized as `'thinking'`.
+
+    When an AIMessage has `reasoning_content` in `additional_kwargs` (set during
+    deserialization of Ollama thinking responses), it should be written back as
+    the 'thinking' field in the outgoing Ollama message dict so the model can
+    see its prior chain-of-thought in multi-turn conversations.
+
+    Reproduces https://github.com/langchain-ai/langchain/issues/36177.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="deepseek-r1")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Solve 2+2"),
+        AIMessage(
+            content="4",
+            additional_kwargs={"reasoning_content": "2+2 equals 4"},
+        ),
+        HumanMessage(content="Now solve 3+3"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assistant_msg = ollama_messages[1]
+    assert assistant_msg["role"] == "assistant"
+    assert assistant_msg.get("thinking") == "2+2 equals 4", (
+        "reasoning_content should be serialized as 'thinking' in the Ollama message"
+    )
+
+
+def test_convert_messages_does_not_mutate_input_list() -> None:
+    """Test that `_convert_messages_to_ollama_messages` does not mutate the input list.
+
+    Previously, the v1 content conversion replaced elements in the input list
+    via `messages[idx] = ...`, which mutated the caller's list in-place.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36564.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    v1_ai_message = AIMessage(
+        content=[{"type": "text", "text": "Hello from v1"}],
+        response_metadata={"output_version": "v1"},
+    )
+    messages: list = [
+        HumanMessage(content="Hi"),
+        v1_ai_message,
+    ]
+
+    # Keep a reference to the original second element
+    original_message = messages[1]
+
+    llm._convert_messages_to_ollama_messages(messages)
+
+    assert messages[1] is original_message, (
+        "_convert_messages_to_ollama_messages should not mutate the caller's list"
+    )
+
+
+def test_reasoning_content_absent_no_thinking_key() -> None:
+    """AIMessage without `reasoning_content` should not produce a `thinking` key."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Hi"),
+        AIMessage(content="Hello"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert "thinking" not in ollama_messages[1]
+
+
+def test_reasoning_content_empty_string_preserved() -> None:
+    """An explicitly set empty-string `reasoning_content` should still round-trip."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Hi"),
+        AIMessage(content="Hello", additional_kwargs={"reasoning_content": ""}),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert ollama_messages[1].get("thinking") == ""
+
+
+def test_non_ai_message_reasoning_content_ignored() -> None:
+    """Non-AIMessage types with `reasoning_content` should not produce `thinking`."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content="Hi",
+            additional_kwargs={"reasoning_content": "should be ignored"},
+        ),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert "thinking" not in ollama_messages[0]

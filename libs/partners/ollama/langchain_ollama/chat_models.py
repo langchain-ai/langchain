@@ -970,6 +970,10 @@ class ChatOllama(BaseChatModel):
                 msg_["tool_calls"] = tool_calls
             if tool_call_id:
                 msg_["tool_call_id"] = tool_call_id
+            if isinstance(message, AIMessage):
+                thinking = message.additional_kwargs.get("reasoning_content")
+                if thinking is not None:
+                    msg_["thinking"] = thinking
             ollama_messages.append(msg_)
 
         return ollama_messages
