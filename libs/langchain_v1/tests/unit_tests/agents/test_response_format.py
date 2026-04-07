@@ -13,7 +13,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.factory import _supports_provider_strategy
@@ -870,6 +870,138 @@ class TestDynamicModelWithResponseFormat:
         # ProviderStrategy doesn't use tool calls - it parses content directly
         assert ai_message.tool_calls == []
         assert ai_message.content == json.dumps(WEATHER_DATA)
+
+    def test_middleware_narrows_tool_strategy_filters_bound_tools(self) -> None:
+        """Middleware-narrowed `ToolStrategy` should only bind the narrowed structured tools.
+
+        Regression test for the bug where `wrap_model_call` middleware overriding
+        `response_format` to a subset `ToolStrategy` was validated against the original
+        spec but never enforced -- the model was still bound with all structured output
+        tools from the original union and could freely choose any of them.
+        """
+
+        bound_tool_names: list[set[str]] = []
+
+        class RecordingModel(FakeToolCallingModel):
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                names: set[str] = set()
+                for t in tools:
+                    if isinstance(t, BaseTool):
+                        names.add(t.name)
+                    elif isinstance(t, dict):
+                        # FakeToolCallingModel returns simplified dict tool specs
+                        if "function" in t and isinstance(t["function"], dict):
+                            name = t["function"].get("name")
+                        else:
+                            name = t.get("name")
+                        if isinstance(name, str):
+                            names.add(name)
+                bound_tool_names.append(names)
+                return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
+        # The model returns a WeatherBaseModel call -- the only tool the middleware
+        # leaves available after narrowing.
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+        model = RecordingModel(tool_calls=tool_calls)
+
+        class NarrowResponseFormatMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                # Narrow the response format from the union to a single variant.
+                narrowed = request.override(
+                    response_format=ToolStrategy(WeatherBaseModel),
+                )
+                return handler(narrowed)
+
+        agent = create_agent(
+            model=model,
+            tools=[],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+            middleware=[NarrowResponseFormatMiddleware()],
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # The model should have been bound exactly once, with only the narrowed
+        # structured output tool. The dropped variant must NOT be bound.
+        assert len(bound_tool_names) == 1
+        assert "WeatherBaseModel" in bound_tool_names[0]
+        assert "LocationResponse" not in bound_tool_names[0]
+
+        # End-to-end behaviour: the narrowed tool's response is parsed correctly.
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_no_middleware_narrowing_keeps_full_tool_strategy_binding(self) -> None:
+        """Without narrowing, every structured output tool from the union must be bound.
+
+        Regression guard: the narrowing fix must not accidentally drop variants when
+        no middleware override is in play.
+        """
+
+        bound_tool_names: list[set[str]] = []
+
+        class RecordingModel(FakeToolCallingModel):
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                names: set[str] = set()
+                for t in tools:
+                    if isinstance(t, BaseTool):
+                        names.add(t.name)
+                    elif isinstance(t, dict):
+                        if "function" in t and isinstance(t["function"], dict):
+                            name = t["function"].get("name")
+                        else:
+                            name = t.get("name")
+                        if isinstance(name, str):
+                            names.add(name)
+                bound_tool_names.append(names)
+                return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+        model = RecordingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model=model,
+            tools=[],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+        )
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(bound_tool_names) == 1
+        # Both variants from the original union should be bound when nothing narrows them.
+        assert "WeatherBaseModel" in bound_tool_names[0]
+        assert "LocationResponse" in bound_tool_names[0]
 
 
 def test_union_of_types() -> None:
