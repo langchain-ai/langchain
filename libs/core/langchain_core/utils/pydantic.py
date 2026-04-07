@@ -55,7 +55,7 @@ PYDANTIC_VERSION = version.parse(pydantic.__version__)
 def get_pydantic_major_version() -> int:
     """DEPRECATED - Get the major version of Pydantic.
 
-    Use PYDANTIC_VERSION.major instead.
+    Use `PYDANTIC_VERSION.major` instead.
 
     Returns:
         The major version of Pydantic.
@@ -242,7 +242,12 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
-        field_info = FieldInfoV2(description=description, default=field.default)
+        field_kwargs: dict[str, Any] = {"description": description}
+        if field.default_factory is not None:
+            field_kwargs["default_factory"] = field.default_factory
+        else:
+            field_kwargs["default"] = field.default
+        field_info = FieldInfoV2(**field_kwargs)
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
@@ -447,6 +452,7 @@ def create_model(
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
@@ -515,13 +521,15 @@ def create_model_v2(
 ) -> type[BaseModel]:
     """Create a Pydantic model with the given field definitions.
 
-    Attention:
-        Please do not use outside of langchain packages. This API
-        is subject to change at any time.
+    !!! warning
+
+        Do not use outside of langchain packages. This API is subject to change at any
+        time.
 
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
         root: Type for a root model (`RootModel`)

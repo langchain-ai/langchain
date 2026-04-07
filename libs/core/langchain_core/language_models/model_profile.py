@@ -1,6 +1,13 @@
 """Model profile types and utilities."""
 
+import logging
+import warnings
+from typing import get_type_hints
+
+from pydantic import ConfigDict
 from typing_extensions import TypedDict
+
+logger = logging.getLogger(__name__)
 
 
 class ModelProfile(TypedDict, total=False):
@@ -14,10 +21,32 @@ class ModelProfile(TypedDict, total=False):
     and supported features.
     """
 
+    __pydantic_config__ = ConfigDict(extra="allow")  # type: ignore[misc]
+
+    # --- Model metadata ---
+
+    name: str
+    """Human-readable model name."""
+
+    status: str
+    """Model status (e.g., `'active'`, `'deprecated'`)."""
+
+    release_date: str
+    """Model release date (ISO 8601 format, e.g., `'2025-06-01'`)."""
+
+    last_updated: str
+    """Date the model was last updated (ISO 8601 format)."""
+
+    open_weights: bool
+    """Whether the model weights are openly available."""
+
     # --- Input constraints ---
 
     max_input_tokens: int
     """Maximum context window (tokens)"""
+
+    text_inputs: bool
+    """Whether text inputs are supported."""
 
     image_inputs: bool
     """Whether image inputs are supported."""
@@ -56,6 +85,9 @@ class ModelProfile(TypedDict, total=False):
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)"""
 
+    text_outputs: bool
+    """Whether text outputs are supported."""
+
     image_outputs: bool
     """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
     are supported."""
@@ -80,6 +112,45 @@ class ModelProfile(TypedDict, total=False):
     """Whether the model supports a native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)
     feature"""
 
+    # --- Other capabilities ---
+
+    attachment: bool
+    """Whether the model supports file attachments."""
+
+    temperature: bool
+    """Whether the model supports a temperature parameter."""
+
 
 ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""
+
+
+def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
+    """Warn if `profile` contains keys not declared on `ModelProfile`.
+
+    Args:
+        profile: The model profile dict to check for undeclared keys.
+    """
+    if not isinstance(profile, dict):
+        return
+
+    try:
+        declared = frozenset(get_type_hints(ModelProfile).keys())
+    except (TypeError, NameError):
+        # get_type_hints raises NameError on unresolvable forward refs and
+        # TypeError when annotations evaluate to non-type objects.
+        logger.debug(
+            "Could not resolve type hints for ModelProfile; "
+            "skipping unknown-key check.",
+            exc_info=True,
+        )
+        return
+
+    extra = sorted(set(profile) - declared)
+    if extra:
+        warnings.warn(
+            f"Unrecognized keys in model profile: {extra}. "
+            f"This may indicate a version mismatch between langchain-core "
+            f"and your provider package. Consider upgrading langchain-core.",
+            stacklevel=2,
+        )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import base64
-from urllib.parse import unquote, urlparse
+from urllib.parse import ParseResult, unquote, urlparse, urlunparse
 
 from httpx import ConnectError
 from ollama import Client, ResponseError
@@ -47,6 +47,33 @@ def validate_model(client: Client, model_name: str) -> None:
         raise ValueError(msg) from e
 
 
+def _build_cleaned_url(parsed: ParseResult) -> str:
+    """Reconstruct a URL from parsed components without userinfo.
+
+    Args:
+        parsed: Parsed URL components.
+
+    Returns:
+        Cleaned URL string with userinfo removed.
+    """
+    hostname = parsed.hostname or ""
+    if ":" in hostname:  # IPv6 — re-add brackets stripped by urlparse
+        hostname = f"[{hostname}]"
+    cleaned_netloc = hostname
+    if parsed.port is not None:
+        cleaned_netloc += f":{parsed.port}"
+    return urlunparse(
+        (
+            parsed.scheme,
+            cleaned_netloc,
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment,
+        )
+    )
+
+
 def parse_url_with_auth(
     url: str | None,
 ) -> tuple[str | None, dict[str, str] | None]:
@@ -54,23 +81,50 @@ def parse_url_with_auth(
 
     Handles URLs of the form: `https://user:password@host:port/path`
 
+    Scheme-less URLs (e.g., `host:port`) are also accepted and will be
+    given a default `http://` scheme.
+
     Args:
         url: The URL to parse.
 
     Returns:
         A tuple of `(cleaned_url, headers_dict)` where:
-        - `cleaned_url` is the URL without authentication credentials if any were
-            found. Otherwise, returns the original URL.
+        - `cleaned_url` is a normalized URL with credentials stripped (if any
+            were present) and a scheme guaranteed (defaulting to `http://` for
+            scheme-less inputs). Returns the original URL unchanged when it
+            already has a valid scheme and no credentials.
         - `headers_dict` contains Authorization header if credentials were found.
     """
     if not url:
         return None, None
 
     parsed = urlparse(url)
-    if not parsed.scheme or not parsed.netloc or not parsed.hostname:
+    needs_reconstruction = False
+    valid = False
+
+    if parsed.scheme in {"http", "https"} and parsed.netloc and parsed.hostname:
+        valid = True
+    elif not (parsed.scheme and parsed.netloc) and ":" in url:
+        # No valid scheme but contains colon — try as scheme-less host:port
+        parsed_with_scheme = urlparse(f"http://{url}")
+        if parsed_with_scheme.netloc and parsed_with_scheme.hostname:
+            parsed = parsed_with_scheme
+            needs_reconstruction = True
+            valid = True
+
+    # Validate port is numeric (urlparse raises ValueError for non-numeric ports)
+    if valid:
+        try:
+            _ = parsed.port
+        except ValueError:
+            valid = False
+
+    if not valid:
         return None, None
+
     if not parsed.username:
-        return url, None
+        cleaned = _build_cleaned_url(parsed) if needs_reconstruction else url
+        return cleaned, None
 
     # Handle case where password might be empty string or None
     password = parsed.password or ""
@@ -82,20 +136,7 @@ def parse_url_with_auth(
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     headers = {"Authorization": f"Basic {encoded_credentials}"}
 
-    # Strip credentials from URL
-    cleaned_netloc = parsed.hostname or ""
-    if parsed.port:
-        cleaned_netloc += f":{parsed.port}"
-
-    cleaned_url = f"{parsed.scheme}://{cleaned_netloc}"
-    if parsed.path:
-        cleaned_url += parsed.path
-    if parsed.query:
-        cleaned_url += f"?{parsed.query}"
-    if parsed.fragment:
-        cleaned_url += f"#{parsed.fragment}"
-
-    return cleaned_url, headers
+    return _build_cleaned_url(parsed), headers
 
 
 def merge_auth_headers(

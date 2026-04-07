@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import random
 import re
 import string
+import textwrap
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -107,7 +109,7 @@ def test_character_text_splitter_longer_words() -> None:
 
 # edge cases
 def test_character_text_splitter_no_separator_in_text() -> None:
-    """Text splitting where there is no seperator but a single word."""
+    """Text splitting where there is no separator but a single word."""
     text = "singleword"
     splitter = CharacterTextSplitter(separator=" ", chunk_size=10, chunk_overlap=0)
     output = splitter.split_text(text)
@@ -621,6 +623,34 @@ def test_svelte_text_splitter() -> None:
         "<style>\n  button {\n    color: blue;\n  }\n</style>",
     ]
     assert [s.strip() for s in splits] == [s.strip() for s in expected_splits]
+
+
+def test_jsx_splitter_separator_not_mutated_across_calls() -> None:
+    """Regression test: repeated split_text() calls must not mutate separators.
+
+    Calling split_text() multiple times on the same JSFrameworkTextSplitter
+    instance must not grow the internal separator list between calls.
+
+    Before the fix, self._separators was overwritten with the full expanded list
+    on every invocation, so a second call would start with the already-expanded
+    list and append even more separators.
+    """
+    splitter = JSFrameworkTextSplitter(chunk_size=30, chunk_overlap=0)
+
+    # Record separator count after constructing (should be 0 - no custom separators)
+    initial_sep_count = len(splitter._separators)
+
+    # Call split_text twice; the results should be identical for identical input
+    splits_first = splitter.split_text(FAKE_JSX_TEXT)
+    splits_second = splitter.split_text(FAKE_JSX_TEXT)
+
+    assert splits_first == splits_second, (
+        "split_text() must return identical results on repeated calls with the "
+        "same input"
+    )
+    assert len(splitter._separators) == initial_sep_count, (
+        "split_text() must not mutate self._separators between calls"
+    )
 
 
 CHUNK_SIZE = 16
@@ -3224,6 +3254,109 @@ def test_split_json_many_calls() -> None:
     assert chunk1 == chunk1_output
 
 
+def test_split_json_with_empty_dict_values() -> None:
+    """Test that empty dicts in JSON values are preserved, not dropped."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "a": "hello",
+        "b": {},
+        "c": "world",
+    }
+    chunks = splitter.split_json(data)
+    # Recombine all chunks into a single dict
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        merged.update(chunk)
+
+    assert merged == {"a": "hello", "b": {}, "c": "world"}
+
+
+def test_split_json_with_nested_empty_dicts() -> None:
+    """Test that nested empty dicts are preserved."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "level1": {
+            "level2a": {},
+            "level2b": "value",
+        }
+    }
+    chunks = splitter.split_json(data)
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        merged.update(chunk)
+
+    assert merged == {"level1": {"level2a": {}, "level2b": "value"}}
+
+
+def test_split_json_empty_dict_only() -> None:
+    """Test splitting a JSON that contains only an empty dict at the top level.
+
+    An empty top-level dict should produce a single empty chunk (or no chunks).
+    """
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {}
+    chunks = splitter.split_json(data)
+    # With nothing to split, result should be empty list
+    assert chunks == []
+
+
+def test_split_json_mixed_empty_and_nonempty_dicts() -> None:
+    """Test a realistic structure mixing empty and non-empty nested dicts."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "config": {},
+        "metadata": {"author": "test", "tags": {}},
+        "content": "some text",
+    }
+    chunks = splitter.split_json(data)
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        for k, v in chunk.items():
+            if k in merged and isinstance(merged[k], dict) and isinstance(v, dict):
+                merged[k].update(v)
+            else:
+                merged[k] = v
+
+    assert merged["config"] == {}
+    assert merged["metadata"] == {"author": "test", "tags": {}}
+    assert merged["content"] == "some text"
+
+
+def test_split_json_empty_dict_value_in_large_payload() -> None:
+    """Test that empty dict values survive chunking in a larger payload."""
+    max_chunk = 200
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    data: dict[str, Any] = {
+        "key0": "x" * 50,
+        "empty": {},
+        "key1": "y" * 50,
+        "nested": {f"k{i}": f"v{i}" for i in range(20)},
+    }
+    chunks = splitter.split_json(data)
+
+    # Verify all chunks are within size limits
+    for chunk in chunks:
+        assert len(json.dumps(chunk)) < max_chunk * 1.05
+
+    # Verify the empty dict is somewhere in the chunks
+    found_empty = False
+    for chunk in chunks:
+        # Walk nested structure to find "empty": {}
+        if "empty" in chunk and chunk["empty"] == {}:
+            found_empty = True
+            break
+        for v in chunk.values():
+            if isinstance(v, dict) and "empty" in v and v["empty"] == {}:
+                found_empty = True
+                break
+    assert found_empty, "Empty dict value was lost during splitting"
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
@@ -3971,6 +4104,79 @@ def test_html_splitter_keep_separator_default() -> None:
     ]
 
     assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserved_elements_reverse_order() -> None:
+    """Test HTML splitter with preserved elements and conflicting placeholders.
+
+    This test validates that preserved elements are reinserted in reverse order
+    to prevent conflicts when one placeholder might be a substring of another.
+    """
+    html_content = """
+    <h1>Section 1</h1>
+    <table>
+        <tr><td>Table 1 content</td></tr>
+    </table>
+    <p>Some text between tables</p>
+    <table>
+        <tr><td>Table 10 content</td></tr>
+    </table>
+    <ul>
+        <li>List item 1</li>
+        <li>List item 10</li>
+    </ul>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table", "ul"],
+            max_chunk_size=100,
+        )
+    documents = splitter.split_text(html_content)
+
+    # Verify that all preserved elements are correctly reinserted
+    # This would fail if placeholders were processed in forward order
+    # when one placeholder is a substring of another
+    assert len(documents) >= 1
+    # Check that table content is preserved
+    content = " ".join(doc.page_content for doc in documents)
+    assert "Table 1 content" in content
+    assert "Table 10 content" in content
+    assert "List item 1" in content
+    assert "List item 10" in content
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_replacement_order() -> None:
+    body = textwrap.dedent(
+        """
+        <p>Hello1</p>
+        <p>Hello2</p>
+        <p>Hello3</p>
+        <p>Hello4</p>
+        <p>Hello5</p>
+        <p>Hello6</p>
+        <p>Hello7</p>
+        <p>Hello8</p>
+        <p>Hello9</p>
+        <p>Hello10</p>
+        <p>Hello11</p>
+        <p>Hello12</p>
+        <p>Hello13</p>
+        <p>Hello14</p>
+        """
+    )
+
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[],
+            elements_to_preserve=["p"],
+        )
+    documents = splitter.split_text(body)
+    assert len(documents) == 1
+    content = documents[0].page_content
+    assert content == " ".join([f"Hello{i}" for i in range(1, 15)])
 
 
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:

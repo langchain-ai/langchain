@@ -1,10 +1,12 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+import json
+from collections.abc import Iterator, Sequence
 from importlib import util
 from typing import Any
 
 import pytest
+from blockbuster import BlockBuster, blockbuster_ctx
 from langchain_tests.conftest import CustomPersister, CustomSerializer, base_vcr_config
 from vcr import VCR
 
@@ -13,6 +15,12 @@ _EXTRA_HEADERS = [
     ("user-agent", "PLACEHOLDER"),
     ("x-openai-client-user-agent", "PLACEHOLDER"),
 ]
+
+
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx() as bb:
+        yield bb
 
 
 def remove_request_headers(request: Any) -> Any:
@@ -34,6 +42,7 @@ def remove_response_headers(response: dict[str, Any]) -> dict[str, Any]:
 def vcr_config() -> dict[str, Any]:
     """Extend the default configuration coming from langchain_tests."""
     config = base_vcr_config()
+    config["match_on"] = [m if m != "body" else "json_body" for m in config.get("match_on", [])]
     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
     config["before_record_request"] = remove_request_headers
     config["before_record_response"] = remove_response_headers
@@ -42,9 +51,27 @@ def vcr_config() -> dict[str, Any]:
     return config
 
 
+def _json_body_matcher(r1: Any, r2: Any) -> None:
+    """Match request bodies as parsed JSON, ignoring key order."""
+    b1 = r1.body or b""
+    b2 = r2.body or b""
+    if isinstance(b1, bytes):
+        b1 = b1.decode("utf-8")
+    if isinstance(b2, bytes):
+        b2 = b2.decode("utf-8")
+    try:
+        j1 = json.loads(b1)
+        j2 = json.loads(b2)
+    except (json.JSONDecodeError, ValueError):
+        assert b1 == b2, f"body mismatch (non-JSON):\n{b1}\n!=\n{b2}"
+        return
+    assert j1 == j2, f"body mismatch:\n{j1}\n!=\n{j2}"
+
+
 def pytest_recording_configure(config: dict[str, Any], vcr: VCR) -> None:  # noqa: ARG001
     vcr.register_persister(CustomPersister())
     vcr.register_serializer("yaml.gz", CustomSerializer())
+    vcr.register_matcher("json_body", _json_body_matcher)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

@@ -151,7 +151,7 @@ def _get_base64_from_url(url: str) -> str:
         )
         warnings.warn(warning_message, stacklevel=2)
     headers = {"User-Agent": user_agent} if user_agent else {}
-    httpx_response = httpx.get(url, headers=headers).content
+    httpx_response = httpx.get(url, headers=headers, timeout=10.0).content
     return base64.b64encode(httpx_response).decode("utf-8")
 
 
@@ -820,20 +820,42 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            The final chunk must have `chunk_position='last'` to signal stream
+            completion. This enables proper parsing of `tool_call_chunks` into
+            `tool_calls` on the aggregated message:
+
+            ```python
+            for i, token in enumerate(tokens):
+                is_last = i == len(tokens) - 1
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=token,
+                        chunk_position="last" if is_last else None,
+                    )
+                )
+            ```
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
 
     @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
@@ -861,20 +883,29 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            See `test_stream` troubleshooting for `chunk_position` requirements.
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
 
     def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
         """Test that model name can be overridden at invoke time via kwargs.
@@ -2552,7 +2583,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF inputs.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         message = HumanMessage(
             [
@@ -2750,7 +2783,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         message = HumanMessage(
@@ -2856,7 +2891,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image tool message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         oai_format_message = ToolMessage(
@@ -2955,7 +2992,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF tool message.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         tool_message = ToolMessage(
             content_blocks=[
@@ -3091,7 +3130,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         if self.supports_image_inputs:
             image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            image_data = base64.b64encode(
+                httpx.get(image_url, timeout=10.0).content
+            ).decode("utf-8")
             human_content.append(
                 {
                     "type": "image",

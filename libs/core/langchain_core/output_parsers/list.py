@@ -24,7 +24,7 @@ def droplastn(
     iter: Iterator[T],  # noqa: A002
     n: int,
 ) -> Iterator[T]:
-    """Drop the last n elements of an iterator.
+    """Drop the last `n` elements of an iterator.
 
     Args:
         iter: The iterator to drop elements from.

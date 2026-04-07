@@ -21,7 +21,7 @@ class LangSmithLoader(BaseLoader):
     example into the `Document` metadata. This allows you to easily create few-shot
     example retrievers from the loaded documents.
 
-    ??? note "Lazy loading example"
+    ??? example "Lazy loading"
 
         ```python
         from langchain_core.document_loaders import LangSmithLoader
@@ -60,27 +60,35 @@ class LangSmithLoader(BaseLoader):
         Args:
             dataset_id: The ID of the dataset to filter by.
             dataset_name: The name of the dataset to filter by.
-            content_key: The inputs key to set as Document page content. `'.'` characters
-                are interpreted as nested keys. E.g. `content_key="first.second"` will
-                result in
+            content_key: The inputs key to set as `Document` page content.
+
+                `'.'` characters are interpreted as nested keys, e.g.
+                `content_key="first.second"` will result in
                 `Document(page_content=format_content(example.inputs["first"]["second"]))`
             format_content: Function for converting the content extracted from the example
-                inputs into a string. Defaults to JSON-encoding the contents.
+                inputs into a string.
+
+                Defaults to JSON-encoding the contents.
             example_ids: The IDs of the examples to filter by.
             as_of: The dataset version tag or timestamp to retrieve the examples as of.
+
                 Response examples will only be those that were present at the time of
                 the tagged (or timestamped) version.
-            splits: A list of dataset splits, which are
-                divisions of your dataset such as `train`, `test`, or `validation`.
+            splits: A list of dataset splits, which are divisions of your dataset such
+                as `train`, `test`, or `validation`.
+
                 Returns examples only from the specified splits.
             inline_s3_urls: Whether to inline S3 URLs.
             offset: The offset to start from.
             limit: The maximum number of examples to return.
             metadata: Metadata to filter by.
             filter: A structured filter string to apply to the examples.
-            client: LangSmith Client. If not provided will be initialized from below args.
-            client_kwargs: Keyword args to pass to LangSmith client init. Should only be
-                specified if `client` isn't.
+            client: LangSmith Client.
+
+                If not provided will be initialized from below args.
+            client_kwargs: Keyword args to pass to LangSmith client init.
+
+                Should only be specified if `client` isn't.
 
         Raises:
             ValueError: If both `client` and `client_kwargs` are provided.

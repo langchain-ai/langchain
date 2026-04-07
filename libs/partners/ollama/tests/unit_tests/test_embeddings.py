@@ -1,7 +1,9 @@
 """Test embedding model integration."""
 
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from langchain_ollama.embeddings import OllamaEmbeddings
 
@@ -50,3 +52,79 @@ def test_embed_documents_passes_options(mock_client_class: Any) -> None:
     options = call_args.kwargs["options"]
     assert options["num_gpu"] == 4
     assert options["temperature"] == 0.5
+
+
+@patch("langchain_ollama.embeddings.Client")
+def test_embed_documents_passes_dimensions(mock_client_class: Any) -> None:
+    """Test that embed_documents passes dimensions to the embed call."""
+    mock_client = Mock()
+    mock_client_class.return_value = mock_client
+    mock_client.embed.return_value = {"embeddings": [[0.1, 0.2, 0.3]]}
+
+    embeddings = OllamaEmbeddings(model=MODEL_NAME, dimensions=512)
+    embeddings.embed_documents(["test text"])
+
+    call_args = mock_client.embed.call_args
+    assert call_args.kwargs["dimensions"] == 512
+
+
+@patch("langchain_ollama.embeddings.Client")
+def test_embed_documents_dimensions_none_by_default(mock_client_class: Any) -> None:
+    """Test that dimensions defaults to None when not specified."""
+    mock_client = Mock()
+    mock_client_class.return_value = mock_client
+    mock_client.embed.return_value = {"embeddings": [[0.1, 0.2, 0.3]]}
+
+    embeddings = OllamaEmbeddings(model=MODEL_NAME)
+    embeddings.embed_documents(["test text"])
+
+    call_args = mock_client.embed.call_args
+    assert call_args.kwargs["dimensions"] is None
+
+
+@patch("langchain_ollama.embeddings.AsyncClient")
+@patch("langchain_ollama.embeddings.Client")
+async def test_aembed_documents_passes_dimensions(
+    mock_client_class: Any, mock_async_client_class: Any
+) -> None:
+    """Test that aembed_documents passes dimensions to the async embed call."""
+    mock_async_client = AsyncMock()
+    mock_async_client_class.return_value = mock_async_client
+    mock_async_client.embed.return_value = {"embeddings": [[0.1, 0.2, 0.3]]}
+
+    embeddings = OllamaEmbeddings(model=MODEL_NAME, dimensions=512)
+    await embeddings.aembed_documents(["test text"])
+
+    call_args = mock_async_client.embed.call_args
+    assert call_args.kwargs["dimensions"] == 512
+
+
+def test_dimensions_validation() -> None:
+    """Test that dimensions must be a positive integer."""
+    with pytest.raises(ValueError, match="must be a positive integer"):
+        OllamaEmbeddings(model=MODEL_NAME, dimensions=0)
+
+    with pytest.raises(ValueError, match="must be a positive integer"):
+        OllamaEmbeddings(model=MODEL_NAME, dimensions=-1)
+
+
+def test_embed_documents_raises_when_client_none() -> None:
+    """Test that embed_documents raises RuntimeError when client is None."""
+    with patch("langchain_ollama.embeddings.Client") as mock_client_class:
+        mock_client_class.return_value = MagicMock()
+        embeddings = OllamaEmbeddings(model="test-model")
+        embeddings._client = None  # type: ignore[assignment]
+
+        with pytest.raises(RuntimeError, match="sync client is not initialized"):
+            embeddings.embed_documents(["test"])
+
+
+async def test_aembed_documents_raises_when_client_none() -> None:
+    """Test that aembed_documents raises RuntimeError when async client is None."""
+    with patch("langchain_ollama.embeddings.AsyncClient") as mock_client_class:
+        mock_client_class.return_value = MagicMock()
+        embeddings = OllamaEmbeddings(model="test-model")
+        embeddings._async_client = None  # type: ignore[assignment]
+
+        with pytest.raises(RuntimeError, match="async client is not initialized"):
+            await embeddings.aembed_documents(["test"])

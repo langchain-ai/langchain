@@ -12,7 +12,7 @@ from langchain_anthropic import ChatAnthropic
 
 REPO_ROOT_DIR = Path(__file__).parents[5]
 
-MODEL = "claude-3-5-haiku-20241022"
+MODEL = "claude-haiku-4-5-20251001"
 
 
 class TestAnthropicStandard(ChatModelIntegrationTests):

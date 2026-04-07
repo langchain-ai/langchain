@@ -4,6 +4,7 @@ This module provides core abstractions for handling data in retrieval-augmented
 generation (RAG) pipelines, vector stores, and document processing workflows.
 
 !!! warning "Documents vs. message content"
+
     This module is distinct from `langchain_core.messages.content`, which provides
     multimodal content blocks for **LLM chat I/O** (text, images, audio, etc. within
     messages).

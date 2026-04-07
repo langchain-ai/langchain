@@ -3,25 +3,37 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-qdrant"
+version = "1.1.0"
+description = "An integration package connecting Qdrant and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.15.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
 ]
-name = "langchain-qdrant"
-version = "1.1.0"
-description = "An integration package connecting Qdrant and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/qdrant"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_qdrant/"
-Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/qdrant"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-qdrant%22"
-Twitter = "https://x.com/LangChainAI"
+Twitter = "https://x.com/LangChain"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -52,6 +64,13 @@ typing = [
     "simsimd>=6.0.0,<7.0.0",
     "langchain-core"
 ]
+
+# CVE-2026-25990: pillow < 12.1.1 is vulnerable to out-of-bounds write when loading PSD images.
+# fastembed 0.7.x caps pillow<12.0. Override to pull in the fix for the lockfile.
+# Remove this override once fastembed releases a version that allows pillow>=12.1.1.
+[tool.uv]
+override-dependencies = ["pillow>=12.1.1"]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

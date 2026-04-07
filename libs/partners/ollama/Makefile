@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests integration_tests help extended_tests
+.PHONY: all format lint type test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -8,6 +8,7 @@ UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+PYTEST_EXTRA ?=
 integration_test: TEST_FILE = tests/integration_tests/
 # TODO(erick) configure ollama server to run in CI, in separate repo
 
@@ -18,7 +19,7 @@ OLLAMA_REASONING_TEST_MODEL ?= deepseek-r1:1.5b
 
 # unit tests are run with the --disable-socket flag to prevent network calls
 test tests:
-	uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
@@ -36,24 +37,28 @@ integration_test:
 
 # Define a variable for Python and notebook files.
 PYTHON_FILES=.
-MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/ollama --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_ollama
 lint_tests: PYTHON_FILES=tests
-lint_tests: MYPY_CACHE=.mypy_cache_test
+UV_RUN_LINT = uv run --all-groups
+lint_package lint_tests: UV_RUN_LINT = uv run --group lint
 
 lint lint_diff lint_package lint_tests:
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	./scripts/lint_imports.sh
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff format $(PYTHON_FILES) --diff
+	$(MAKE) type
+
+type:
+	uv run --all-groups ty check langchain_ollama
 
 format format_diff:
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff check --fix $(PYTHON_FILES)
 
 check_imports: $(shell find langchain_ollama -name '*.py')
-	uv run --all-groups python ./scripts/check_imports.py $^
+	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
 ######################
 # HELP
@@ -64,6 +69,7 @@ help:
 	@echo 'check_imports				- check imports'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
+	@echo 'type                         - run type checking'
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'

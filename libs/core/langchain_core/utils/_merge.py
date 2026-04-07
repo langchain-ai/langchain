@@ -69,7 +69,14 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif merged[right_k] == right_v:
                 continue
             elif isinstance(merged[right_k], int):
-                merged[right_k] += right_v
+                # Preserve identification and temporal fields using last-wins strategy
+                # instead of summing:
+                # - index: identifies which tool call a chunk belongs to
+                # - created/timestamp: temporal values that shouldn't be accumulated
+                if right_k in {"index", "created", "timestamp"}:
+                    merged[right_k] = right_v
+                else:
+                    merged[right_k] += right_v
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
@@ -110,7 +117,15 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
-                        if "index" in e_left and e_left["index"] == e["index"]
+                        if (
+                            "index" in e_left
+                            and e_left["index"] == e["index"]  # index matches
+                            and (  # IDs not inconsistent
+                                e_left.get("id") in (None, "")
+                                or e.get("id") in (None, "")
+                                or e_left.get("id") == e.get("id")
+                            )
+                        )
                     ]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special

@@ -1,4 +1,4 @@
-"""Runnable that can fallback to other Runnables if it fails."""
+"""`Runnable` that can fallback to other `Runnable` objects if it fails."""
 
 import asyncio
 import inspect
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """`Runnable` that can fallback to other `Runnable`s if it fails.
+    """`Runnable` that can fallback to other `Runnable` objects if it fails.
 
     External APIs (e.g., APIs for a language model) may at times experience
     degraded performance or even downtime.
@@ -54,8 +54,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         from langchain_core.chat_models.openai import ChatOpenAI
         from langchain_core.chat_models.anthropic import ChatAnthropic
 
-        model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
-            [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        model = ChatAnthropic(model="claude-sonnet-4-6").with_fallbacks(
+            [ChatOpenAI(model="gpt-5.4-mini")]
         )
         # Will usually use ChatAnthropic, but fallback to ChatOpenAI
         # if ChatAnthropic fails.
