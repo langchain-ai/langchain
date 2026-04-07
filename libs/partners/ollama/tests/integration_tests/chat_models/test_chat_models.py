@@ -68,7 +68,7 @@ def test_structured_output(method: str) -> None:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0)
+    llm = ChatOllama(model=DEFAULT_MODEL_NAME, temperature=0.3)
     query = "Tell me a joke about cats."
 
     # Pydantic
