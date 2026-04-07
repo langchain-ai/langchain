@@ -1,0 +1,122 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-ai-identity"
+description = "Integration package connecting AI Identity agent governance and LangChain"
+license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+
+version = "0.1.0"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.2.21,<2.0.0",
+    "langchain-openai>=0.3.0,<1.0.0",
+    "pydantic>=2.7.4,<3.0.0",
+    "httpx>=0.25",
+]
+
+[project.urls]
+Homepage = "https://www.ai-identity.co"
+Documentation = "https://www.ai-identity.co/docs"
+Repository = "https://github.com/Levaj2000/langchain"
+Issues = "https://github.com/Levaj2000/langchain/issues"
+
+[dependency-groups]
+test = [
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "langchain-core",
+    "langchain-tests",
+    "langchain",
+]
+lint = ["ruff>=0.13.1,<0.14.0"]
+dev = ["langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "langchain-core",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
+langchain = { path = "../../langchain_v1", editable = true }
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",
+    "ISC001",
+    "PERF203",
+    "SIM105",
+    "FIX",
+    "TD",
+    "C901",
+    "PLR0912",
+    "PLR0913",
+    "PLR0914",
+    "PLR0915",
+    "ARG001",
+    "PLR0911",
+    "PLR2004",
+    "ANN401",
+    "ARG002",
+    "BLE001",
+    "TC",
+    "PLC0415",
+    "PT011",
+    "PT013",
+    "TRY",
+    "PLW",
+    "PLE",
+]
+unfixable = ["B028"]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "requires: mark tests as requiring a specific library",
+]
+asyncio_mode = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101",
+    "S311",
+    "SLF001",
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",
+]
