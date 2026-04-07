@@ -827,21 +827,22 @@ class ChatOllama(BaseChatModel):
     ) -> str | dict[str, Any] | None:
         """Resolve the format parameter.
 
-        This method handles the conversion of the 'response_format' parameter
-        (used by OpenAI-compatible agents) to the 'format' parameter expected by Ollama.
+        Converts an OpenAI-style `response_format` dict to the `format`
+        parameter expected by Ollama.
 
         Args:
-            format_param: The explicit format parameter provided.
-            response_format: The response_format parameter provided.
+            format_param: The explicit `format` value (takes priority).
+            response_format: An OpenAI-style `response_format` dict.
 
         Returns:
-            The resolved format parameter to be passed to Ollama.
+            The resolved format value to pass to the Ollama client.
         """
         if format_param is not None:
             if response_format is not None:
                 warnings.warn(
                     "Both 'format' and 'response_format' were provided. "
                     "'response_format' will be ignored in favor of 'format'.",
+                    UserWarning,
                     stacklevel=2,
                 )
             return format_param
@@ -849,25 +850,76 @@ class ChatOllama(BaseChatModel):
         if response_format is None:
             return None
 
+        return self._convert_response_format(response_format)
+
+    def _convert_response_format(
+        self,
+        response_format: Any,
+    ) -> str | dict[str, Any] | None:
+        """Convert an OpenAI-style `response_format` to an Ollama `format` value.
+
+        Args:
+            response_format: The `response_format` value to convert.
+
+        Returns:
+            The Ollama-compatible `format` value, or `None` if conversion fails.
+        """
         if not isinstance(response_format, dict):
             warnings.warn(
                 f"Ignored invalid 'response_format' type: {type(response_format)}. "
                 "Expected a dictionary.",
+                UserWarning,
                 stacklevel=2,
             )
             return None
 
-        if response_format.get("type") == "json_object":
+        fmt_type = response_format.get("type")
+        if fmt_type == "json_object":
             return "json"
-        if response_format.get("type") == "json_schema":
-            return response_format.get("json_schema", {}).get("schema")
+        if fmt_type == "json_schema":
+            return self._extract_json_schema(response_format)
+
         warnings.warn(
-            f"Ignored unrecognized 'response_format' type: "
-            f"{response_format.get('type')}. "
+            f"Ignored unrecognized 'response_format' type: {fmt_type}. "
             "Expected 'json_object' or 'json_schema'.",
+            UserWarning,
             stacklevel=2,
         )
         return None
+
+    def _extract_json_schema(
+        self,
+        response_format: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        """Extract the raw JSON schema from an OpenAI ``json_schema`` envelope.
+
+        Args:
+            response_format: A dict with ``type: "json_schema"``.
+
+        Returns:
+            The raw JSON schema dict, or ``None`` if extraction fails.
+        """
+        json_schema_block = response_format.get("json_schema")
+        if not isinstance(json_schema_block, dict):
+            warnings.warn(
+                "response_format has type 'json_schema' but 'json_schema' "
+                f"value is {type(json_schema_block)}, expected a dict "
+                "containing a 'schema' key. "
+                "The format parameter will not be set.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return None
+        schema = json_schema_block.get("schema")
+        if schema is None:
+            warnings.warn(
+                "response_format has type 'json_schema' but no 'schema' "
+                "key was found in 'json_schema'. "
+                "The format parameter will not be set.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return schema
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:

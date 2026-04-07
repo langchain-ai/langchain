@@ -954,6 +954,90 @@ def test_chat_ollama_warns_unrecognized_response_format_type() -> None:
         assert call_kwargs.get("format") is None
 
 
+def test_chat_ollama_warns_json_schema_missing_schema_key() -> None:
+    """Test ChatOllama warns when json_schema block has no 'schema' key."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # json_schema present but no schema key
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": "test"},
+        }
+        with pytest.warns(UserWarning, match="no 'schema' key was found"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_json_schema_missing_json_schema_key() -> None:
+    """Test ChatOllama warns when json_schema type has no 'json_schema' block."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # type is json_schema but json_schema key is missing entirely
+        response_format = {"type": "json_schema"}
+        with pytest.warns(UserWarning, match="'json_schema' value is"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_json_schema_block_not_dict() -> None:
+    """Test ChatOllama warns when json_schema value is not a dict."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # json_schema is a string instead of a dict
+        response_format = {"type": "json_schema", "json_schema": "not_a_dict"}
+        with pytest.warns(UserWarning, match="'json_schema' value is"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
 def test_reasoning_content_serialized_as_thinking() -> None:
     """Test that `reasoning_content` in `AIMessage` is serialized as `'thinking'`.
 
