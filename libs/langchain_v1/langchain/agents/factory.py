@@ -1067,8 +1067,14 @@ def create_agent(
             and isinstance(output, AIMessage)
             and output.tool_calls
         ):
+            # Only accept tool calls matching the effective (possibly narrowed) format.
+            # Middleware may have narrowed response_format to a subset of the original
+            # structured tools; we must only treat that subset as structured output.
+            effective_structured_names = {
+                spec.name for spec in effective_response_format.schema_specs
+            }
             structured_tool_calls = [
-                tc for tc in output.tool_calls if tc["name"] in structured_output_tools
+                tc for tc in output.tool_calls if tc["name"] in effective_structured_names
             ]
 
             if structured_tool_calls:
@@ -1217,7 +1223,15 @@ def create_agent(
         final_tools = list(request.tools)
         if isinstance(effective_response_format, ToolStrategy):
             # Add structured output tools to final tools list
-            structured_tools = [info.tool for info in structured_output_tools.values()]
+            # Filter to only the tools present in the effective (possibly narrowed) format.
+            # Middleware may narrow the response_format to a subset of the original
+            # structured tools; we must only bind that subset to the model.
+            narrowed_names = {spec.name for spec in effective_response_format.schema_specs}
+            structured_tools = [
+                info.tool
+                for name, info in structured_output_tools.items()
+                if name in narrowed_names
+            ]
             final_tools.extend(structured_tools)
 
         # Bind model based on effective response format

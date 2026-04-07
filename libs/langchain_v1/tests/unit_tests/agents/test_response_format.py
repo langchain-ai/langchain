@@ -872,6 +872,185 @@ class TestDynamicModelWithResponseFormat:
         assert ai_message.content == json.dumps(WEATHER_DATA)
 
 
+class TestToolStrategyNarrowing:
+    """Tests for middleware narrowing ToolStrategy response_format to a subset."""
+
+    def test_middleware_narrows_union_to_single_type_binds_only_narrowed_tool(
+        self,
+    ) -> None:
+        """Middleware narrowing ToolStrategy must bind only the narrowed tool to the model.
+
+        Regression test for issue #36568: when wrap_model_call middleware overrides
+        response_format to a single-type ToolStrategy subset, the model must only
+        see that single structured-output tool, not the full original union.
+        """
+        bound_tool_names: list[list[str]] = []
+
+        class CapturingModel(FakeToolCallingModel):
+            """Records which tool names are bound on each bind_tools call."""
+
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                names = [
+                    t.name if isinstance(t, BaseTool) else str(t)
+                    for t in tools
+                ]
+                bound_tool_names.append(names)
+                return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ]
+        ]
+        model = CapturingModel(tool_calls=tool_calls)
+
+        class NarrowToWeatherMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                return handler(
+                    request.override(response_format=ToolStrategy(WeatherBaseModel))
+                )
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+            middleware=[NarrowToWeatherMiddleware()],
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # Model must only see the single narrowed tool, not LocationResponse
+        assert len(bound_tool_names) == 1
+        assert "WeatherBaseModel" in bound_tool_names[0]
+        assert "LocationResponse" not in bound_tool_names[0]
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_middleware_narrowing_returns_correct_structured_response(self) -> None:
+        """Narrowed middleware produces the expected structured_response value.
+
+        When middleware narrows ToolStrategy(A | B) to ToolStrategy(A) and the model
+        calls tool A, the agent must return A as structured_response.
+        """
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ]
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        class NarrowToWeatherMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                return handler(
+                    request.override(response_format=ToolStrategy(WeatherBaseModel))
+                )
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+            middleware=[NarrowToWeatherMiddleware()],
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_no_narrowing_still_binds_all_structured_tools(self) -> None:
+        """Without middleware narrowing, all structured-output tools are bound."""
+        bound_tool_names: list[list[str]] = []
+
+        class CapturingModel(FakeToolCallingModel):
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                names = [
+                    t.name if isinstance(t, BaseTool) else str(t)
+                    for t in tools
+                ]
+                bound_tool_names.append(names)
+                return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ]
+        ]
+        model = CapturingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+        )
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(bound_tool_names) == 1
+        assert "WeatherBaseModel" in bound_tool_names[0]
+        assert "LocationResponse" in bound_tool_names[0]
+
+    def test_middleware_narrowing_to_other_type_in_union(self) -> None:
+        """Middleware can narrow to the other type in the union."""
+        tool_calls = [
+            [
+                {
+                    "name": "LocationResponse",
+                    "id": "1",
+                    "args": LOCATION_DATA,
+                }
+            ]
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        class NarrowToLocationMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                return handler(
+                    request.override(response_format=ToolStrategy(LocationResponse))
+                )
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+            middleware=[NarrowToLocationMiddleware()],
+        )
+        response = agent.invoke({"messages": [HumanMessage("Where am I?")]})
+
+        assert response["structured_response"] == EXPECTED_LOCATION
+
+
 def test_union_of_types() -> None:
     """Test response_format as ProviderStrategy with Union (if supported)."""
     tool_calls = [
