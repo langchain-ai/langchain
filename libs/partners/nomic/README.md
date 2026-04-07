@@ -15,7 +15,7 @@ pip install langchain-nomic
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with Nomic
+This package contains the LangChain integration with Nomic.
 
 ## 📖 Documentation
 

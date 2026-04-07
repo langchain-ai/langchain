@@ -15,7 +15,7 @@ pip install langchain-ollama
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with Ollama
+This package contains the LangChain integration with Ollama.
 
 ## 📖 Documentation
 
