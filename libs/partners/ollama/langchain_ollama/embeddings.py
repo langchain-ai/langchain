@@ -6,7 +6,13 @@ from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
-from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 from typing_extensions import Self
 
 from langchain_ollama._utils import (
@@ -125,8 +131,18 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
 
     dimensions: int | None = None
-    """Dimension of the embedding vector. If not provided, it will be inferred from
-    the model response."""
+    """Number of dimensions for the output embedding vectors.
+
+    If not provided, the model's default embedding dimensionality is used.
+    """
+
+    @field_validator("dimensions")
+    @classmethod
+    def _validate_dimensions(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            msg = "`dimensions` must be a positive integer."
+            raise ValueError(msg)
+        return v
 
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
