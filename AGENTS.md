@@ -287,3 +287,21 @@ from langchain.agents.cognitive_agent import CognitiveSynergyAgent
 llm = init_chat_model("openai:gpt-4o")
 agent = CognitiveSynergyAgent(llm=llm, tools=your_tools)
 agent.run_autonomous_loop("Test cognitive synergy")
+
+## 🚀 CognitiveSynergyAgent (AGI Features 2026)
+**Inspired by** OpenCog, Soar/ACT-R, CoALA, AgentGPT, Haystack.
+
+### Key Additions
+- Multi-memory system with attention
+- Production rules + subgoaling
+- Cognitive cycle with reflection
+- Haystack RAG helper
+
+### Quick Start
+```python
+from langchain.chat_models import init_chat_model
+from langchain.agents.cognitive_agent import CognitiveSynergyAgent
+
+llm = init_chat_model("openai:gpt-4o")
+agent = CognitiveSynergyAgent(llm=llm, tools=your_tools)
+agent.run_autonomous_loop("Test cognitive synergy")
