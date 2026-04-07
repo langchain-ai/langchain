@@ -21,7 +21,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "release_date": "2025-12-01",
         "last_updated": "2026-02-28",
         "open_weights": True,
-        "max_input_tokens": 128000,
+        "max_input_tokens": 131072,
         "max_output_tokens": 8192,
         "text_inputs": True,
         "image_inputs": False,
