@@ -17,9 +17,31 @@ on:
     inputs:
       working-directory:
         required: true
-        type: string
+        type: choice
         description: "From which folder this pipeline executes"
         default: "libs/langchain_v1"
+        options:
+          - libs/core
+          - libs/langchain
+          - libs/langchain_v1
+          - libs/text-splitters
+          - libs/standard-tests
+          - libs/model-profiles
+          - libs/partners/anthropic
+          - libs/partners/chroma
+          - libs/partners/deepseek
+          - libs/partners/exa
+          - libs/partners/fireworks
+          - libs/partners/groq
+          - libs/partners/huggingface
+          - libs/partners/mistralai
+          - libs/partners/nomic
+          - libs/partners/ollama
+          - libs/partners/openai
+          - libs/partners/openrouter
+          - libs/partners/perplexity
+          - libs/partners/qdrant
+          - libs/partners/xai
       release-version:
         required: true
         type: string
@@ -37,7 +59,7 @@ env:
   UV_NO_SYNC: "true"
 
 permissions:
-  contents: write # Required for creating GitHub releases
+  contents: read # Job-level overrides grant write only where needed (mark-release)
 
 jobs:
   # Build the distribution package and extract version info
@@ -64,6 +86,7 @@ jobs:
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
       # (Release stage has trusted publishing and GitHub repo contents write access,
+      # which the build stage must not have access to.)
       #
       # Otherwise, a malicious `build` step (e.g. via a compromised dependency)
       # could get access to our GitHub or PyPI credentials.
@@ -273,15 +296,7 @@ jobs:
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
-        # Here we use:
-        # - The default regular PyPI index as the *primary* index, meaning
-        #   that it takes priority (https://pypi.org/simple)
-        # - The test PyPI index as an extra index, so that any dependencies that
-        #   are not found on test PyPI can be resolved and installed anyway.
-        #   (https://test.pypi.org/simple). This will include the PKG_NAME==VERSION
-        #   package because VERSION will not have been uploaded to regular PyPI yet.
-        # - attempt install again after 5 seconds if it fails because there is
-        #   sometimes a delay in availability on test pypi
+        # Install directly from the locally-built wheel (no index resolution needed)
         run: |
           uv venv
           VIRTUAL_ENV=.venv uv pip install dist/*.whl
@@ -592,7 +607,7 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - publish
-    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+    # Run if all needed jobs succeeded or were skipped
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
@@ -618,7 +633,7 @@ jobs:
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Create Tag
-        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -471,18 +471,11 @@ def test_route_from_model_kwargs() -> None:
 
 @pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
-    llm = ChatOpenAI(
-        model="computer-use-preview", truncation="auto", output_version="v0"
-    )
-    tool = {
-        "type": "computer_use_preview",
-        "display_width": 1024,
-        "display_height": 768,
-        "environment": "browser",
-    }
+    llm = ChatOpenAI(model="gpt-5.4")
+    tool = {"type": "computer"}
     llm_with_tools = llm.bind_tools([tool], tool_choice="any")
     response = llm_with_tools.invoke("Please open the browser.")
-    assert response.additional_kwargs["tool_outputs"]
+    assert any(block["type"] == "computer_call" for block in response.content)  # type: ignore[index]
 
 
 @pytest.mark.default_cassette("test_file_search.yaml.gz")
