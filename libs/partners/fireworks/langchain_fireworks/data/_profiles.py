@@ -277,7 +277,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "temperature": True,
     },
     "accounts/fireworks/routers/kimi-k2p5-turbo": {
-        "name": "Kimi K2.5 Turbo",
+        "name": "Kimi K2.5 Turbo (firepass)",
         "release_date": "2026-01-27",
         "last_updated": "2026-01-27",
         "open_weights": True,
