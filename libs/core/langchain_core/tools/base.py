@@ -34,6 +34,7 @@ from pydantic import (
     validate_arguments,
 )
 from pydantic.fields import FieldInfo
+from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
@@ -378,13 +379,38 @@ def create_schema_from_function(
         if field not in filter_args_:
             valid_properties.append(field)
 
-    return _create_subset_model(
+    subset = _create_subset_model(
         model_name,
         inferred_model,
         list(valid_properties),
         descriptions=arg_descriptions,
         fn_description=description,
     )
+
+    # Verify the model can produce a JSON schema. Injected args with
+    # Pydantic-incompatible types (e.g., Protocol types) will cause
+    # model_json_schema() to fail. Replace those annotations with Any
+    # and rebuild. See: https://github.com/langchain-ai/langchain/issues/32067
+    if include_injected:
+        try:
+            subset.model_json_schema()
+        except PydanticInvalidForJsonSchema:
+            for prop in valid_properties:
+                if prop in sig.parameters and _is_injected_arg_type(
+                    sig.parameters[prop].annotation
+                ):
+                    field = inferred_model.model_fields.get(prop)
+                    if field is not None:
+                        field.annotation = Any
+            subset = _create_subset_model(
+                model_name,
+                inferred_model,
+                list(valid_properties),
+                descriptions=arg_descriptions,
+                fn_description=description,
+            )
+
+    return subset
 
 
 class ToolException(Exception):  # noqa: N818
