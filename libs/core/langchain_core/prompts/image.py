@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
@@ -42,13 +43,15 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             )
             raise ValueError(msg)
 
-        template = kwargs.get("template", {})
-        template_format = kwargs.get("template_format", "f-string")
-        for value in template.values():
-            if isinstance(value, str):
-                get_template_variables(value, template_format)
-
         super().__init__(**kwargs)
+
+    @model_validator(mode="after")
+    def validate_template(self) -> Self:
+        """Validate template string values after Pydantic parsing."""
+        for value in self.template.values():
+            if isinstance(value, str):
+                get_template_variables(value, self.template_format)
+        return self
 
     @property
     def _prompt_type(self) -> str:

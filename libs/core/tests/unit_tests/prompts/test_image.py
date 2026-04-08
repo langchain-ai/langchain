@@ -1,7 +1,11 @@
 import json
 
+import pytest
+from pydantic import ValidationError
+
 from langchain_core.load import dump, loads
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts.image import ImagePromptTemplate
 
 
 def test_image_prompt_template_deserializable() -> None:
@@ -13,6 +17,11 @@ def test_image_prompt_template_deserializable() -> None:
             )
         ),
     )
+
+
+def test_image_prompt_template_invalid_template_type() -> None:
+    with pytest.raises(ValidationError):
+        ImagePromptTemplate(template=None)
 
 
 def test_image_prompt_template_deserializable_old() -> None:
