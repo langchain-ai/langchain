@@ -614,7 +614,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.25"
+version = "1.2.28"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -761,7 +761,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.5"
+version = "1.1.6"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
