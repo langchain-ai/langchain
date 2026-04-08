@@ -51,12 +51,12 @@ jobs:
     steps:
       # Checks out the BASE branch (safe for pull_request_target — never
       # the PR head). Needed to load .github/scripts/pr-labeler*.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Generate GitHub App token
         if: github.event.action == 'opened'
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         with:
           app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
@@ -72,7 +72,7 @@ jobs:
       - name: Check org membership
         if: github.event.action == 'opened'
         id: check-membership
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -86,7 +86,7 @@ jobs:
             core.setOutput('is-external', isExternal ? 'true' : 'false');
 
       - name: Apply PR labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           IS_EXTERNAL: ${{ steps.check-membership.outputs.is-external }}
         with:
@@ -180,7 +180,7 @@ jobs:
       # event fires and triggers require_issue_link.yml.
       - name: Apply contributor tier label
         if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -192,7 +192,7 @@ jobs:
 
       - name: Add external label
         if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           # Use App token so the "labeled" event propagates to downstream
           # workflows (e.g. require_issue_link.yml). Events created by the
