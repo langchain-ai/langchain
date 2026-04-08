@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -324,7 +324,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.23"
+version = "1.2.27"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -384,7 +384,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.5"
+version = "1.1.6"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
