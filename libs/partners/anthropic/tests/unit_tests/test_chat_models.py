@@ -2764,3 +2764,47 @@ def test_thinking_in_params_recognizes_adaptive() -> None:
     assert not _thinking_in_params({"thinking": {"type": "disabled"}})
     assert not _thinking_in_params({"thinking": {}})
     assert not _thinking_in_params({})
+
+
+def test_trailing_ai_message_stripped_for_no_prefill_models() -> None:
+    """Models with assistant_prefill=False in their profile should not receive
+    a trailing AIMessage in the request payload."""
+    chat_model = ChatAnthropic(
+        model="claude-opus-4-6",
+        anthropic_api_key="secret-api-key",
+    )
+
+    messages = [
+        HumanMessage(content="hello"),
+        AIMessage(content="hi there"),
+    ]
+    payload = chat_model._get_request_payload(messages)
+    formatted = payload["messages"]
+
+    # The trailing AIMessage must have been stripped
+    assert all(m["role"] != "assistant" for m in formatted), (
+        "Expected trailing assistant message to be stripped for claude-opus-4-6, "
+        f"got: {formatted}"
+    )
+
+
+def test_trailing_ai_message_kept_for_prefill_models() -> None:
+    """Models that support prefill should retain a trailing AIMessage."""
+    chat_model = ChatAnthropic(
+        model="claude-sonnet-4-20250514",
+        anthropic_api_key="secret-api-key",
+    )
+
+    messages = [
+        HumanMessage(content="hello"),
+        AIMessage(content="hi there"),
+    ]
+    payload = chat_model._get_request_payload(messages)
+    formatted = payload["messages"]
+
+    # The assistant message must be present
+    roles = [m["role"] for m in formatted]
+    assert "assistant" in roles, (
+        "Expected trailing assistant message to be kept for claude-sonnet-4-20250514, "
+        f"got: {formatted}"
+    )

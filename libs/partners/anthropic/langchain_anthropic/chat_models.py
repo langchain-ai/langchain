@@ -1059,6 +1059,19 @@ class ChatAnthropic(BaseChatModel):
                     }
                 )
 
+        # Some newer models do not support assistant message prefill.  If the
+        # model profile explicitly marks `assistant_prefill` as False and the
+        # last message is an AIMessage, strip it before formatting to avoid a
+        # 400 from the provider.
+        profile = self._resolve_model_profile()
+        if (
+            profile is not None
+            and profile.get("assistant_prefill") is False
+            and messages
+            and isinstance(messages[-1], AIMessage)
+        ):
+            messages = list(messages[:-1])
+
         system, formatted_messages = _format_messages(messages)
 
         payload = {

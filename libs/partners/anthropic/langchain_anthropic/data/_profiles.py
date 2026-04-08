@@ -465,6 +465,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
+        "assistant_prefill": False,
     },
     "claude-sonnet-4-0": {
         "name": "Claude Sonnet 4 (latest)",
@@ -590,5 +591,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": False,
+        "assistant_prefill": False,
     },
 }

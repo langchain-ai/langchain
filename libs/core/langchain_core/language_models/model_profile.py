@@ -120,6 +120,15 @@ class ModelProfile(TypedDict, total=False):
     temperature: bool
     """Whether the model supports a temperature parameter."""
 
+    assistant_prefill: bool
+    """Whether the model supports assistant message prefill (trailing assistant
+    message in the conversation).  When ``False``, the chat model implementation
+    should strip any trailing assistant message before sending the request to
+    avoid a 400 error from the provider."""
+    # Anthropic note: older models (e.g. claude-opus-3, claude-sonnet-3.*) accept
+    # prefill, but newer models in the claude-opus-4.x / claude-sonnet-4.x family
+    # (starting around claude-opus-4-6) do not.
+
 
 ModelProfileRegistry = dict[str, ModelProfile]
 """Registry mapping model identifiers or names to their ModelProfile."""
