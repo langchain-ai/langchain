@@ -43,6 +43,7 @@ import pytest
 deepagents = pytest.importorskip("deepagents")
 
 from deepagents.backends.protocol import (
+    ExecuteResponse,
     FileDownloadResponse,
     FileUploadResponse,
     ReadResult,
@@ -1838,7 +1839,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Async tests not supported.")
 
         command = "python -c \"import sys; sys.stdout.write('x' * (500 * 1024))\""
-        tasks: list[asyncio.Task] = []
+        tasks: list[asyncio.Task[ExecuteResponse]] = []
         async with asyncio.TaskGroup() as tg:
             tasks.extend(
                 tg.create_task(sandbox_backend.aexecute(command)) for _ in range(5)
