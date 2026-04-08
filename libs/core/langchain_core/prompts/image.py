@@ -2,13 +2,15 @@
 
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from langchain_core.prompt_values import ImagePromptValue, ImageURL, PromptValue
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     PromptTemplateFormat,
+    get_template_variables,
 )
 from langchain_core.runnables import run_in_executor
 
@@ -40,7 +42,16 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
                 f" Found: {overlap}"
             )
             raise ValueError(msg)
+
         super().__init__(**kwargs)
+
+    @model_validator(mode="after")
+    def validate_template(self) -> Self:
+        """Validate template string values after Pydantic parsing."""
+        for value in self.template.values():
+            if isinstance(value, str):
+                get_template_variables(value, self.template_format)
+        return self
 
     @property
     def _prompt_type(self) -> str:
