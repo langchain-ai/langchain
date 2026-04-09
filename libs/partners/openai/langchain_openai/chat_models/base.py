@@ -1004,7 +1004,6 @@ class BaseChatOpenAI(BaseChatModel):
                     "http_async_client",
                 )
             )
-            and "OPENAI_BASE_URL" not in os.environ
         ):
             self.stream_usage = True
 
