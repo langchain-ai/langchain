@@ -183,7 +183,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
-        for attempt in self._sync_retrying(reraise=True):
+        for attempt in self._sync_retrying(reraise=True, after=run_manager.on_retry):
             with attempt:
                 result = super().invoke(
                     input_,
@@ -207,7 +207,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Output:
-        async for attempt in self._async_retrying(reraise=True):
+        async for attempt in self._async_retrying(reraise=True, after=run_manager.on_retry):
             with attempt:
                 result = await super().ainvoke(
                     input_,
@@ -233,10 +233,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
+        def _after_retry(retry_state: RetryCallState) -> None:
+            for rm in run_manager:
+                rm.on_retry(retry_state)
+
         not_set: list[Output] = []
         result = not_set
         try:
-            for attempt in self._sync_retrying():
+            for attempt in self._sync_retrying(after=_after_retry):
                 with attempt:
                     # Retry for inputs that have not yet succeeded
                     # Determine which original indices remain.
@@ -309,10 +313,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
+        async def _after_retry(retry_state: RetryCallState) -> None:
+            for rm in run_manager:
+                await rm.on_retry(retry_state)
+
         not_set: list[Output] = []
         result = not_set
         try:
-            async for attempt in self._async_retrying():
+            async for attempt in self._async_retrying(after=_after_retry):
                 with attempt:
                     # Retry for inputs that have not yet succeeded
                     # Determine which original indices remain.

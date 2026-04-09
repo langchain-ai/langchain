@@ -4044,6 +4044,67 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def test_retry_fires_on_retry_callback() -> None:
+    """on_retry callback must be called once per retry attempt (issue #36382)."""
+    from langchain_core.callbacks import BaseCallbackHandler
+    from tenacity import RetryCallState
+
+    retry_calls: list[int] = []
+
+    class _Handler(BaseCallbackHandler):
+        def on_retry(self, retry_state: RetryCallState, **kwargs: Any) -> None:
+            retry_calls.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    ).invoke(1, config={"callbacks": [_Handler()]})
+
+    assert retry_calls == [1, 2], f"expected [1, 2], got {retry_calls}"
+
+
+@pytest.mark.asyncio
+async def test_async_retry_fires_on_retry_callback() -> None:
+    """on_retry async callback must fire for ainvoke (issue #36382)."""
+    from langchain_core.callbacks import AsyncCallbackHandler
+    from tenacity import RetryCallState
+
+    retry_calls: list[int] = []
+
+    class _Handler(AsyncCallbackHandler):
+        async def on_retry(self, retry_state: RetryCallState, **kwargs: Any) -> None:
+            retry_calls.append(retry_state.attempt_number)
+
+    count = 0
+
+    def flaky(x: int) -> int:
+        nonlocal count
+        count += 1
+        if count < 3:
+            msg = "transient"
+            raise ValueError(msg)
+        return x
+
+    await RunnableLambda(flaky).with_retry(
+        retry_if_exception_type=(ValueError,),
+        stop_after_attempt=5,
+        wait_exponential_jitter=False,
+    ).ainvoke(1, config={"callbacks": [_Handler()]})
+
+    assert retry_calls == [1, 2], f"expected [1, 2], got {retry_calls}"
+
+
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
