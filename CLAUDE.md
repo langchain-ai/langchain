@@ -247,6 +247,10 @@ When adding a new partner package, update these files:
 - `.github/workflows/integration_tests.yml` – Add integration test config
 - `.github/workflows/pr_lint.yml` – Add to allowed scopes
 
+## GitHub Actions & Workflows
+
+This repository require actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
+
 ## Additional resources
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
