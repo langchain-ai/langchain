@@ -1,4 +1,4 @@
-.PHONY: all start_services stop_services coverage coverage_agents test test_fast extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format type lint_diff format_diff lint_package lint_tests help
+.PHONY: all start_services stop_services coverage coverage_agents test test_fast benchmark extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format type lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -45,6 +45,9 @@ test:
 
 test_fast:
 	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
+
+benchmark:
+	uv run --group test pytest tests/benchmarks/test_create_agent.py -m benchmark
 
 extended_tests:
 	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests; \
@@ -117,6 +120,7 @@ help:
 	@echo 'coverage_agents              - run middleware and agent tests with coverage report'
 	@echo 'test                         - run unit tests with all services'
 	@echo 'test_fast                    - run unit tests with in-memory services only'
+	@echo 'benchmark                    - run the create_agent benchmark quickly'
 	@echo 'tests                        - run unit tests (alias for "make test")'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'extended_tests               - run only extended unit tests'
