@@ -162,6 +162,11 @@ Every new feature or bugfix MUST be covered by unit tests.
 - Race conditions or resource leaks (file handles, sockets, threads).
 - Ensure proper resource cleanup (file handles, connections)
 
+For threat models documenting trust boundaries, data flows, and known threats:
+
+- [`.github/THREAT_MODEL_CORE.md`](.github/THREAT_MODEL_CORE.md) — langchain-core (serialization, SSRF protection, prompts, tools, output parsers)
+- [`.github/THREAT_MODEL_V1.md`](.github/THREAT_MODEL_V1.md) — langchain v1 (agent middleware, shell tool, file search, HITL, execution policies)
+
 ### Documentation standards
 
 Use Google-style docstrings with Args section for all public functions.
