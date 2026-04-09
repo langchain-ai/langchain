@@ -17,7 +17,7 @@ test tests:
 	-u LANGSMITH_API_KEY \
 	-u LANGSMITH_TRACING \
 	-u LANGCHAIN_PROJECT \
-	uv run --group test pytest -n auto --benchmark-disable $(PYTEST_EXTRA)--disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -n auto --benchmark-disable $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	env \
