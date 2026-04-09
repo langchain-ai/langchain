@@ -143,10 +143,13 @@ def test_ensure_config_metadata_is_not_overridden_by_configurable_model() -> Non
 
 def test_ensure_config_copies_top_level_model_to_metadata() -> None:
     config = ensure_config(
-        {
-            "model": "gpt-4o",
-            "metadata": {"nooverride": 18},
-        }
+        cast(
+            "RunnableConfig",
+            {
+                "model": "gpt-4o",
+                "metadata": {"nooverride": 18},
+            },
+        )
     )
 
     assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
