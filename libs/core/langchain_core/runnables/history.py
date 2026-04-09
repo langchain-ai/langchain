@@ -35,6 +35,13 @@ MessagesOrDictWithMessages = Sequence["BaseMessage"] | dict[str, Any]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
+def _get_run_io_value(value: Any, *, run_type: str | None) -> Any:
+    """Return listener I/O, deserializing only tracer-serialized model payloads."""
+    if run_type in {"llm", "chat_model"}:
+        return load(value, allowed_objects="all")
+    return value
+
+
 class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     """`Runnable` that manages chat message history for another `Runnable`.
 
@@ -538,8 +545,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
-        # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = _get_run_io_value(run.inputs, run_type=run.run_type)
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -548,15 +554,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = _get_run_io_value(run.outputs, run_type=run.run_type)
         output_messages = self._get_output_messages(output_val)
         hist.add_messages(input_messages + output_messages)
 
     async def _aexit_history(self, run: Run, config: RunnableConfig) -> None:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
-        # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = _get_run_io_value(run.inputs, run_type=run.run_type)
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -565,7 +570,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = _get_run_io_value(run.outputs, run_type=run.run_type)
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
 
