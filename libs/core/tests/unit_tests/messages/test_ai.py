@@ -502,3 +502,14 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+    # Empty string reasoning_content should not produce a reasoning block (#36194)
+    message = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    content_blocks = message.content_blocks
+    assert len(content_blocks) == 1, (
+        "Empty reasoning_content should be ignored, not produce a reasoning block"
+    )
+    assert content_blocks[0]["type"] == "text"
