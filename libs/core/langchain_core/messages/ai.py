@@ -35,6 +35,31 @@ from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 logger = logging.getLogger(__name__)
 
 
+def _normalize_tool_call_chunks(
+    tool_call_chunks: list[ToolCallChunk],
+) -> list[ToolCallChunk]:
+    """Normalize tool call continuations that share a stream index.
+
+    Some providers can emit multiple fragments for the same tool call in a single
+    delta. Those fragments need to be merged before best-effort JSON parsing,
+    otherwise continuations can be split across `tool_calls` and
+    `invalid_tool_calls`.
+    """
+    normalized: list[dict[str, Any]] | None = None
+    for chunk in tool_call_chunks:
+        normalized = merge_lists(normalized, [chunk])
+
+    return [
+        create_tool_call_chunk(
+            name=chunk.get("name"),
+            args=chunk.get("args"),
+            id=chunk.get("id"),
+            index=chunk.get("index"),
+        )
+        for chunk in normalized or []
+    ]
+
+
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
 
@@ -525,6 +550,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = tool_call_chunks
 
             return self
+        self.tool_call_chunks = _normalize_tool_call_chunks(self.tool_call_chunks)
+
         tool_calls = []
         invalid_tool_calls = []
 
