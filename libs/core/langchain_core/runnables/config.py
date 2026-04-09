@@ -294,6 +294,11 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
+    if (
+        isinstance(model := empty.get("configurable", {}).get("model"), str)
+        and "model" not in empty["metadata"]
+    ):
+        empty["metadata"]["model"] = model
     return empty
 
 

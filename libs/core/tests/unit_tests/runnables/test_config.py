@@ -71,7 +71,7 @@ def test_ensure_config() -> None:
     }
 
 
-def test_ensure_config_copies_expected_keys_metadata() -> None:
+def test_ensure_config_copies_model_to_metadata() -> None:
     config = ensure_config(
         {
             "configurable": {
@@ -94,7 +94,7 @@ def test_ensure_config_copies_expected_keys_metadata() -> None:
         }
     )
 
-    assert config["metadata"] == {"nooverride": 18}
+    assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
     assert config["configurable"] == {
         "thread_id": "th-123",
         "checkpoint_id": "ckpt-1",
@@ -113,16 +113,16 @@ def test_ensure_config_copies_expected_keys_metadata() -> None:
     }
 
 
-def test_ensure_config_metadata_is_not_overridden_by_configurable() -> None:
+def test_ensure_config_metadata_is_not_overridden_by_configurable_model() -> None:
     config = ensure_config(
         {
             "configurable": {
-                "thread_id": "from-configurable",
+                "model": "from-configurable",
                 "run_id": None,
                 "checkpoint_ns": "from-configurable",
             },
             "metadata": {
-                "thread_id": "from-metadata",
+                "model": "from-metadata",
                 "run_id": "from-metadata",
                 "checkpoint_ns": "from-metadata",
             },
@@ -130,15 +130,27 @@ def test_ensure_config_metadata_is_not_overridden_by_configurable() -> None:
     )
 
     assert config["metadata"] == {
-        "thread_id": "from-metadata",
+        "model": "from-metadata",
         "run_id": "from-metadata",
         "checkpoint_ns": "from-metadata",
     }
     assert config["configurable"] == {
-        "thread_id": "from-configurable",
+        "model": "from-configurable",
         "run_id": None,
         "checkpoint_ns": "from-configurable",
     }
+
+
+def test_ensure_config_copies_top_level_model_to_metadata() -> None:
+    config = ensure_config(
+        {
+            "model": "gpt-4o",
+            "metadata": {"nooverride": 18},
+        }
+    )
+
+    assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
+    assert config["configurable"] == {"model": "gpt-4o"}
 
 
 async def test_merge_config_callbacks() -> None:
