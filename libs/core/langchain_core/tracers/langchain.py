@@ -189,6 +189,7 @@ class LangChainTracer(BaseTracer):
             metadata=merged_metadata,
             run_map=self.run_map,
             order_map=self.order_map,
+            _external_run_ids=self._external_run_ids,
         )
 
     def _start_trace(self, run: Run) -> None:

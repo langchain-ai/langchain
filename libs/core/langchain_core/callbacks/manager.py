@@ -2480,7 +2480,12 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = run_tree
+                    run_id_str = str(run_tree.id)
+                    if run_id_str not in handler.run_map:
+                        handler.run_map[run_id_str] = run_tree
+                        handler._external_run_ids.setdefault(  # noqa: SLF001
+                            run_id_str, 0
+                        )
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None

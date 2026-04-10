@@ -47,6 +47,15 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         if not run.parent_run_id:
             self._persist_run(run)
         self.run_map.pop(str(run.id))
+        # If this run's parent was injected from an external tracing context
+        # (e.g. a langsmith @traceable), decrement its child refcount and
+        # remove it from run_map once the last child is done.
+        parent_id = str(run.parent_run_id) if run.parent_run_id else None
+        if parent_id and parent_id in self._external_run_ids:
+            self._external_run_ids[parent_id] -= 1
+            if self._external_run_ids[parent_id] <= 0:
+                self.run_map.pop(parent_id, None)
+                del self._external_run_ids[parent_id]
         self._on_run_update(run)
 
     def on_chat_model_start(
@@ -568,6 +577,15 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         if not run.parent_run_id:
             await self._persist_run(run)
         self.run_map.pop(str(run.id))
+        # If this run's parent was injected from an external tracing context
+        # (e.g. a langsmith @traceable), decrement its child refcount and
+        # remove it from run_map once the last child is done.
+        parent_id = str(run.parent_run_id) if run.parent_run_id else None
+        if parent_id and parent_id in self._external_run_ids:
+            self._external_run_ids[parent_id] -= 1
+            if self._external_run_ids[parent_id] <= 0:
+                self.run_map.pop(parent_id, None)
+                del self._external_run_ids[parent_id]
         await self._on_run_update(run)
 
     @override

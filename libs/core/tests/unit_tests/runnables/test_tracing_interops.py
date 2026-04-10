@@ -555,6 +555,44 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
     assert kitten_run.dotted_order.startswith(grandchild_run.dotted_order)
 
 
+def test_traceable_parent_run_map_cleanup() -> None:
+    """External RunTree injected into run_map is cleaned up when its child ends.
+
+    When a `@traceable` function invokes a LangChain `Runnable`, the
+    `RunTree` is added to the tracer's `run_map` so child runs can
+    reference it.  Previously the entry was never removed, causing a
+    memory leak that grew with every call.
+    """
+    mock_session = MagicMock()
+    mock_client_ = Client(
+        session=mock_session, api_key="test", auto_batch_tracing=False
+    )
+
+    @RunnableLambda
+    def child(x: str) -> str:
+        return x
+
+    with tracing_context(client=mock_client_, enabled=True):
+
+        @traceable
+        def parent(x: str) -> str:
+            return child.invoke(x)
+
+        parent("hello")
+
+    # All LangChainTracer instances created during the call should have an
+    # empty run_map after the call completes.
+    import gc  # noqa: PLC0415
+
+    gc.collect()
+    tracers = [o for o in gc.get_objects() if isinstance(o, LangChainTracer)]
+    for tracer in tracers:
+        assert tracer.run_map == {}, (
+            f"run_map should be empty but contains: "
+            f"{[getattr(v, 'name', k) for k, v in tracer.run_map.items()]}"
+        )
+
+
 class TestTracerMetadataThroughInvoke:
     """Tests for tracer metadata merging through invoke calls."""
 
