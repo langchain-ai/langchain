@@ -562,35 +562,103 @@ def test_traceable_parent_run_map_cleanup() -> None:
     `RunTree` is added to the tracer's `run_map` so child runs can
     reference it.  Previously the entry was never removed, causing a
     memory leak that grew with every call.
+
+    Uses an explicit tracer so we can inspect `run_map` directly after
+    the call — the `_configure` insertion path is identical regardless
+    of whether the tracer was created internally or passed in.
     """
-    mock_session = MagicMock()
-    mock_client_ = Client(
-        session=mock_session, api_key="test", auto_batch_tracing=False
-    )
+    tracer = _create_tracer_with_mocked_client()
 
     @RunnableLambda
     def child(x: str) -> str:
         return x
 
-    with tracing_context(client=mock_client_, enabled=True):
+    with tracing_context(client=tracer.client, enabled=True):
 
         @traceable
         def parent(x: str) -> str:
-            return child.invoke(x)
+            return child.invoke(x, config={"callbacks": [tracer]})
 
         parent("hello")
 
-    # All LangChainTracer instances created during the call should have an
-    # empty run_map after the call completes.
+    assert tracer.run_map == {}, (
+        f"run_map should be empty but contains: "
+        f"{[getattr(v, 'name', k) for k, v in tracer.run_map.items()]}"
+    )
+
+
+def test_traceable_parent_run_map_cleanup_with_sibling_children() -> None:
+    """External parent survives in run_map until ALL its children finish.
+
+    When a `@traceable` function invokes a chain with multiple steps
+    (e.g. prompt | llm), each step is a sibling child of the same
+    intermediate run.  The external parent must stay in `run_map` until
+    the last child completes, not be removed when the first child ends.
+    """
+    from langchain_core.language_models.fake_chat_models import (  # noqa: PLC0415
+        FakeListChatModel,
+    )
+    from langchain_core.prompts import ChatPromptTemplate  # noqa: PLC0415
+
+    tracer = _create_tracer_with_mocked_client()
+
+    prompt = ChatPromptTemplate.from_messages([("system", "bot"), ("human", "{input}")])
+    llm = FakeListChatModel(responses=["hi"])
+    chain = prompt | llm
+
+    with tracing_context(client=tracer.client, enabled=True):
+
+        @traceable
+        def parent(x: dict) -> Any:
+            return chain.invoke(x, config={"callbacks": [tracer]})
+
+        result = parent({"input": "hello"})
+
+    assert result is not None
+    assert tracer.run_map == {}, (
+        f"run_map should be empty but contains: "
+        f"{[getattr(v, 'name', k) for k, v in tracer.run_map.items()]}"
+    )
+
+
+def test_traceable_parent_run_map_no_runttree_accumulation() -> None:
+    """RunTree objects reachable from run_map must not grow across calls.
+
+    This is the memory-level regression test: a long-lived tracer is
+    reused across many @traceable → Runnable invocations.  Without the
+    fix, each call leaves a RunTree (plus its child tree) in run_map,
+    causing unbounded growth.  With the fix, run_map is empty after
+    every call, so the count stays flat.
+    """
     import gc  # noqa: PLC0415
 
-    gc.collect()
-    tracers = [o for o in gc.get_objects() if isinstance(o, LangChainTracer)]
-    for tracer in tracers:
-        assert tracer.run_map == {}, (
-            f"run_map should be empty but contains: "
-            f"{[getattr(v, 'name', k) for k, v in tracer.run_map.items()]}"
-        )
+    tracer = _create_tracer_with_mocked_client()
+
+    @RunnableLambda
+    def child(x: str) -> str:
+        return x
+
+    counts: list[int] = []
+    with tracing_context(client=tracer.client, enabled=True):
+
+        @traceable
+        def parent(x: str) -> str:
+            return child.invoke(x, config={"callbacks": [tracer]})
+
+        for _ in range(5):
+            parent("hello")
+            gc.collect()
+            # Count RunTree objects reachable from the tracer's run_map.
+            run_map_runtrees = sum(
+                1 + len(v.child_runs) for v in tracer.run_map.values()
+            )
+            counts.append(run_map_runtrees)
+
+    # With the fix every call cleans up → counts are all 0.
+    # Without the fix they grow: [1, 2, 3, 4, 5] (or more with children).
+    assert counts == [0, 0, 0, 0, 0], (
+        f"RunTree objects in run_map should not accumulate, got counts: {counts}"
+    )
 
 
 class TestTracerMetadataThroughInvoke:
