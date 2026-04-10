@@ -3864,12 +3864,17 @@ def _create_usage_metadata(
     }
     if service_tier is not None:
         # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        # counts, since service tier tokens are already priced differently.
+        # Use ``or 0`` instead of ``.get(key, 0)`` because the key *exists* in
+        # the dict with a value of ``None`` when the upstream API omits the
+        # corresponding ``*_tokens`` field.  ``.get(key, 0)`` only returns the
+        # default when the key is *absent*; when it is present-but-None the
+        # default is ignored and a ``TypeError: int - NoneType`` results.
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read") or 0
         )
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning") or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -3904,13 +3909,12 @@ def _create_usage_metadata_responses(
         ).get("cached_tokens")
     }
     if service_tier is not None:
-        # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        # Same ``or 0`` guard as _create_usage_metadata — see comment there.
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning") or 0
         )
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read") or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
