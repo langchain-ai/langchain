@@ -1615,7 +1615,7 @@ class CallbackManager(BaseCallbackManager):
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
         *,
-        langsmith_inheritable_metadata: Mapping[str, str] | None = None,
+        langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
         langsmith_inheritable_tags: list[str] | None = None,
     ) -> CallbackManager:
         """Configure the callback manager.
@@ -2144,7 +2144,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
         *,
-        langsmith_inheritable_metadata: Mapping[str, str] | None = None,
+        langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
         langsmith_inheritable_tags: list[str] | None = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
@@ -2322,7 +2322,7 @@ def _configure(
     local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
-    langsmith_inheritable_metadata: Mapping[str, str] | None = None,
+    langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
     langsmith_inheritable_tags: list[str] | None = None,
 ) -> T:
     """Configure the callback manager.

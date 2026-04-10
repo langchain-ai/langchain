@@ -23,6 +23,8 @@ from langchain_core.tracers.langchain import LangChainTracer
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable, Coroutine, Generator, Mapping
 
+    from langchain_core.runnables.config import RunnableConfig
+
 
 def _get_posts(client: Client) -> list[dict[str, Any]]:
     mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
@@ -941,36 +943,34 @@ class TestLangsmithInheritableTracingDefaultsInConfigure:
         def my_func(x: int) -> int:
             return x
 
-        my_func.invoke(
-            1,
-            {
-                "callbacks": [tracer],
+        config: RunnableConfig = {
+            "callbacks": [tracer],
+            "metadata": {
                 "something": "else",
-                "metadata": {
-                    "checkpoint_ns": "from-metadata",
-                    "model": "from-metadata",
-                },
-                "configurable": {
-                    "thread_id": "th-123",
-                    "checkpoint_id": "ckpt-1",
-                    "checkpoint_ns": "from-configurable",
-                    "task_id": "task-1",
-                    "run_id": "run-456",
-                    "assistant_id": "asst-789",
-                    "graph_id": "graph-0",
-                    "model": "from-configurable",
-                    "user_id": "uid-1",
-                    "cron_id": "cron-1",
-                    "langgraph_auth_user_id": "user-1",
-                    "api_key": "should-not-propagate",
-                    "__secret_key": "should-not-propagate",
-                    "temperature": 0.5,
-                    "streaming": True,
-                    "custom_setting": {"nested": True},
-                    "none_value": None,
-                },
+                "checkpoint_ns": "from-metadata",
+                "model": "from-metadata",
             },
-        )
+            "configurable": {
+                "thread_id": "th-123",
+                "checkpoint_id": "ckpt-1",
+                "checkpoint_ns": "from-configurable",
+                "task_id": "task-1",
+                "run_id": "run-456",
+                "assistant_id": "asst-789",
+                "graph_id": "graph-0",
+                "model": "from-configurable",
+                "user_id": "uid-1",
+                "cron_id": "cron-1",
+                "langgraph_auth_user_id": "user-1",
+                "api_key": "should-not-propagate",
+                "__secret_key": "should-not-propagate",
+                "temperature": 0.5,
+                "streaming": True,
+                "custom_setting": {"nested": True},
+                "none_value": None,
+            },
+        }
+        my_func.invoke(1, config)
 
         posts = _get_posts(tracer.client)
         assert len(posts) == 1
