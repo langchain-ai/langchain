@@ -38,13 +38,13 @@ coverage_agents:
 		--cov-report=html:htmlcov \
 
 test:
-	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered --snapshot-update; \
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto $(PYTEST_EXTRA) --benchmark-disable --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered --snapshot-update; \
 	EXIT_CODE=$$?; \
 	make stop_services; \
 	exit $$EXIT_CODE
 
 test_fast:
-	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
+	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto $(PYTEST_EXTRA) --benchmark-disable --disable-socket --allow-unix-socket $(TEST_FILE)
 
 benchmark:
 	uv run --group test pytest tests/benchmarks/test_create_agent.py -m benchmark
