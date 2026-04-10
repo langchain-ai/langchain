@@ -146,7 +146,7 @@ CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
-) -> dict[str, str | int | float | bool] | None:
+) -> dict[str, Any] | None:
     """Get LangSmith-only inheritable metadata defaults derived from config."""
     configurable = config.get("configurable") or {}
     metadata = {
