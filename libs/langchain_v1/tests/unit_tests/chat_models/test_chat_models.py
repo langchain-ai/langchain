@@ -332,7 +332,7 @@ def test_configurable_with_default() -> None:
         "config": {
             "callbacks": None,
             "configurable": {},
-            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "metadata": {},
             "recursion_limit": 25,
             "tags": ["foo"],
         },
