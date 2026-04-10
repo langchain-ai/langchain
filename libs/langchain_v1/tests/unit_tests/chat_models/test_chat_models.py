@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 import pytest
@@ -171,7 +171,7 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -234,6 +234,7 @@ def test_configurable() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -297,7 +298,7 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -340,6 +341,7 @@ def test_configurable_with_default() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
