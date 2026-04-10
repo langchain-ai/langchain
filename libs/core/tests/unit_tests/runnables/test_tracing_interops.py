@@ -932,6 +932,88 @@ class TestLangsmithInheritableTracingDefaultsInConfigure:
         md = posts[0].get("extra", {}).get("metadata", {})
         assert md["env"] == "prod"
 
+    def test_runnable_config_copies_configurable_values_to_tracing_metadata(
+        self,
+    ) -> None:
+        tracer = _create_tracer_with_mocked_client()
+
+        @RunnableLambda
+        def my_func(x: int) -> int:
+            return x
+
+        my_func.invoke(
+            1,
+            {
+                "callbacks": [tracer],
+                "something": "else",
+                "metadata": {
+                    "checkpoint_ns": "from-metadata",
+                    "model": "from-metadata",
+                },
+                "configurable": {
+                    "thread_id": "th-123",
+                    "checkpoint_id": "ckpt-1",
+                    "checkpoint_ns": "from-configurable",
+                    "task_id": "task-1",
+                    "run_id": "run-456",
+                    "assistant_id": "asst-789",
+                    "graph_id": "graph-0",
+                    "model": "from-configurable",
+                    "user_id": "uid-1",
+                    "cron_id": "cron-1",
+                    "langgraph_auth_user_id": "user-1",
+                    "api_key": "should-not-propagate",
+                    "__secret_key": "should-not-propagate",
+                    "temperature": 0.5,
+                    "streaming": True,
+                    "custom_setting": {"nested": True},
+                    "none_value": None,
+                },
+            },
+        )
+
+        posts = _get_posts(tracer.client)
+        assert len(posts) == 1
+        md = posts[0].get("extra", {}).get("metadata", {})
+        assert {
+            key: md[key]
+            for key in (
+                "something",
+                "thread_id",
+                "checkpoint_id",
+                "task_id",
+                "run_id",
+                "assistant_id",
+                "graph_id",
+                "user_id",
+                "cron_id",
+                "langgraph_auth_user_id",
+                "temperature",
+                "streaming",
+                "model",
+                "checkpoint_ns",
+            )
+        } == {
+            "something": "else",
+            "thread_id": "th-123",
+            "checkpoint_id": "ckpt-1",
+            "task_id": "task-1",
+            "run_id": "run-456",
+            "assistant_id": "asst-789",
+            "graph_id": "graph-0",
+            "user_id": "uid-1",
+            "cron_id": "cron-1",
+            "langgraph_auth_user_id": "user-1",
+            "temperature": 0.5,
+            "streaming": True,
+            "model": "from-metadata",
+            "checkpoint_ns": "from-metadata",
+        }
+        assert "api_key" not in md
+        assert "__secret_key" not in md
+        assert "custom_setting" not in md
+        assert "none_value" not in md
+
     def test_langsmith_inheritable_metadata_does_not_affect_non_tracer_handlers(
         self,
     ) -> None:

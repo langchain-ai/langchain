@@ -138,32 +138,24 @@ COPIABLE_KEYS = [
     "configurable",
 ]
 
-CONFIGURABLE_TO_METADATA_KEYS = frozenset(
-    (
-        "thread_id",
-        "run_id",
-        "task_id",
-        "checkpoint_id",
-        "checkpoint_ns",
-        "assistant_id",
-        "graph_id",
-        "model",
-        "user_id",
-        "cron_id",
-        "langgraph_auth_user_id",
-    )
-)
+
+# Users are expected to use the `context` API with a context object
+# (which does not get traced)
+CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 
 
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
-) -> dict[str, str] | None:
+) -> dict[str, str | int | float | bool] | None:
     """Get LangSmith-only inheritable metadata defaults derived from config."""
     configurable = config.get("configurable") or {}
     metadata = {
         key: value
-        for key in CONFIGURABLE_TO_METADATA_KEYS
-        if isinstance((value := configurable.get(key)), str)
+        for key, value in configurable.items()
+        if not key.startswith("__")
+        and isinstance(value, (str, int, float, bool))
+        and key not in config.get("metadata", {})
+        and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
     }
     return metadata or None
 

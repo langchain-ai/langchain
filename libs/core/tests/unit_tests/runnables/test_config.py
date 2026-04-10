@@ -16,6 +16,7 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _get_langsmith_inheritable_metadata_from_config,
     _set_config_context,
     ensure_config,
     merge_configs,
@@ -154,6 +155,60 @@ def test_ensure_config_copies_top_level_model_to_metadata() -> None:
 
     assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
     assert config["configurable"] == {"model": "gpt-4o"}
+
+
+def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules() -> (
+    None
+):
+    config = ensure_config(
+        cast(
+            "RunnableConfig",
+            {
+                "something": "else",
+                "metadata": {
+                    "foo": "bar",
+                    "model": "from-metadata",
+                    "checkpoint_ns": "from-metadata",
+                },
+                "configurable": {
+                    "baz": "qux",
+                    "thread_id": "th-123",
+                    "checkpoint_id": "ckpt-1",
+                    "checkpoint_ns": "from-configurable",
+                    "task_id": "task-1",
+                    "run_id": "run-456",
+                    "assistant_id": "asst-789",
+                    "graph_id": "graph-0",
+                    "model": "from-configurable",
+                    "user_id": "uid-1",
+                    "cron_id": "cron-1",
+                    "langgraph_auth_user_id": "user-1",
+                    "api_key": "should-not-propagate",
+                    "__secret_key": "should-not-propagate",
+                    "temperature": 0.5,
+                    "streaming": True,
+                    "custom_setting": {"nested": True},
+                    "none_value": None,
+                },
+            },
+        )
+    )
+
+    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+        "something": "else",
+        "baz": "qux",
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
+        "temperature": 0.5,
+        "streaming": True,
+    }
 
 
 async def test_merge_config_callbacks() -> None:
