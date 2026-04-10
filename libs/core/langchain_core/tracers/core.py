@@ -51,6 +51,8 @@ class _TracerCore(ABC):
         _schema_format: Literal[
             "original", "streaming_events", "original+chat"
         ] = "original",
+        run_map: dict[str, Run] | None = None,
+        order_map: dict[UUID, tuple[UUID, str]] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
@@ -70,6 +72,8 @@ class _TracerCore(ABC):
                     streaming events.
                 - `'original+chat'` is a format that is the same as `'original'` except
                     it does NOT raise an attribute error `on_chat_model_start`
+            run_map: Optional shared map of run ID to run.
+            order_map: Optional shared map of run ID to trace ordering data.
             **kwargs: Additional keyword arguments that will be passed to the
                 superclass.
         """
@@ -77,10 +81,10 @@ class _TracerCore(ABC):
 
         self._schema_format = _schema_format  # For internal use only API will change.
 
-        self.run_map: dict[str, Run] = {}
+        self.run_map = run_map if run_map is not None else {}
         """Map of run ID to run. Cleared on run end."""
 
-        self.order_map: dict[UUID, tuple[UUID, str]] = {}
+        self.order_map = order_map if order_map is not None else {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @abstractmethod
