@@ -282,6 +282,8 @@ if __name__ == "__main__":
 
         if file.startswith("libs/core"):
             dirs_to_run["codspeed"].add("libs/core")
+        if file.startswith("libs/langchain_v1"):
+            dirs_to_run["codspeed"].add("libs/langchain_v1")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
