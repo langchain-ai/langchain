@@ -52,7 +52,7 @@ jobs:
     name: "⚡ CodSpeed Benchmarks"
     needs: [build]
     if: ${{ needs.build.outputs.codspeed != '[]' }}
-    runs-on: ubuntu-latest
+    runs-on: codspeed-macro
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
