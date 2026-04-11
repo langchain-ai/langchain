@@ -525,6 +525,21 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = tool_call_chunks
 
             return self
+        # Normalize same-index continuation fragments that a provider may pack
+        # in a single streamed delta.  A provider may emit multiple same-index
+        # tool_call fragments (e.g. one with name+id, another with the first
+        # bytes of arguments) inside one delta.  Without normalization each
+        # fragment is parsed separately: the continuation becomes a blank
+        # tool_call while the original ends up in invalid_tool_calls.
+        # We fold them here using the same merge_lists() semantics used by
+        # __add__ so that downstream accumulation via + also works correctly.
+        chunks_to_parse: list = []
+        for chunk in self.tool_call_chunks:
+            chunks_to_parse = merge_lists(chunks_to_parse, [chunk]) or []
+        if len(chunks_to_parse) != len(self.tool_call_chunks):
+            # Update tool_call_chunks so that subsequent __add__ calls see the
+            # already-normalized list rather than the raw per-delta fragments.
+            self.tool_call_chunks = chunks_to_parse
         tool_calls = []
         invalid_tool_calls = []
 
@@ -538,7 +553,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 )
             )
 
-        for chunk in self.tool_call_chunks:
+        for chunk in chunks_to_parse:
             try:
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
