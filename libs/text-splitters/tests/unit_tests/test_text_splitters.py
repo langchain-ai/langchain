@@ -4226,3 +4226,16 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_experimental_markdown_syntax_text_splitter_unclosed_code_block() -> None:
+    """Test that unclosed code blocks preserve content instead of discarding it."""
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    markdown_text = "# Header\n```python\nprint('hello')\nx = 42\n"
+    output = markdown_splitter.split_text(markdown_text)
+
+    # The unclosed code block content should be preserved, not silently dropped.
+    code_docs = [doc for doc in output if "Code" in doc.metadata]
+    assert len(code_docs) == 1
+    assert "print('hello')" in code_docs[0].page_content
+    assert "x = 42" in code_docs[0].page_content
