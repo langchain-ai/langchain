@@ -16,6 +16,7 @@ from langchain_core.indexing import InMemoryRecordManager, aindex, index
 from langchain_core.indexing.api import (
     IndexingException,
     _abatch,
+    _batch,
     _get_document_with_hash,
 )
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
@@ -2431,6 +2432,26 @@ async def test_abatch() -> None:
     batches = _abatch(2, _to_async_iter(range(5)))
     assert isinstance(batches, AsyncIterator)
     assert [batch async for batch in batches] == [[0, 1], [2, 3], [4]]
+
+
+def test_batch_validation() -> None:
+    """Test that _batch raises ValueError for non-positive batch sizes."""
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        list(_batch(0, [1, 2, 3]))
+
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        list(_batch(-1, [1, 2, 3]))
+
+
+async def test_abatch_validation() -> None:
+    """Test that _abatch raises ValueError for non-positive batch sizes."""
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        async for _ in _abatch(0, _to_async_iter([1, 2, 3])):
+            pass
+
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        async for _ in _abatch(-1, _to_async_iter([1, 2, 3])):
+            pass
 
 
 def test_indexing_force_update(
