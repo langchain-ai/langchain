@@ -153,7 +153,7 @@ def parse_json_markdown(
     """
     try:
         return _parse_json(json_string, parser=parser)
-    except json.JSONDecodeError:
+    except Exception:
         # Try to find JSON string within triple backticks
         match = _json_markdown_re.search(json_string)
 
