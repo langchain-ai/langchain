@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -3708,3 +3709,32 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_convert_delta_to_message_chunk_mixed_tool_calls() -> None:
+    """Test that a KeyError in one tool call chunk doesn't drop valid ones."""
+    delta = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "index": 0,
+                "id": "call_valid",
+                "function": {"name": "my_tool", "arguments": '{"x": 1}'},
+            },
+            # Invalid entry: missing "function" key entirely
+            {"index": 1, "id": "call_invalid"},
+            {
+                "index": 2,
+                "id": "call_also_valid",
+                "function": {"name": "other_tool", "arguments": '{"y": 2}'},
+            },
+        ],
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert len(result.tool_call_chunks) == 2
+    assert result.tool_call_chunks[0]["name"] == "my_tool"
+    assert result.tool_call_chunks[0]["id"] == "call_valid"
+    assert result.tool_call_chunks[1]["name"] == "other_tool"
+    assert result.tool_call_chunks[1]["id"] == "call_also_valid"
