@@ -203,6 +203,10 @@ class Blob(BaseMedia):
         """
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
+
+        elif isinstance(self.data, str):
+            yield BytesIO(self.data.encode(self.encoding))
+
         elif self.data is None and self.path:
             with Path(self.path).open("rb") as f:
                 yield f
