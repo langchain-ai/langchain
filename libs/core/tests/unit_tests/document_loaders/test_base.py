@@ -56,6 +56,27 @@ def test_lazy_load_not_implemented() -> None:
         loader.lazy_load()
 
 
+def test_blob_as_bytes_io_with_string_data() -> None:
+    """Blob.as_bytes_io() should handle string data the same way as_bytes() does."""
+    blob = Blob.from_data("hello")
+    with blob.as_bytes_io() as f:
+        assert f.read() == b"hello"
+
+
+def test_blob_as_bytes_io_with_bytes_data() -> None:
+    """Blob.as_bytes_io() should handle bytes data."""
+    blob = Blob.from_data(b"hello")
+    with blob.as_bytes_io() as f:
+        assert f.read() == b"hello"
+
+
+def test_blob_as_bytes_io_with_encoding() -> None:
+    """Blob.as_bytes_io() should respect the encoding parameter for string data."""
+    blob = Blob(data="café", encoding="utf-8")
+    with blob.as_bytes_io() as f:
+        assert f.read() == "café".encode("utf-8")
+
+
 async def test_default_aload() -> None:
     class FakeLoader(BaseLoader):
         @override
