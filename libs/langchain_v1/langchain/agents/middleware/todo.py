@@ -123,6 +123,37 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 - The `write_todos` tool should never be called multiple times in parallel.
 - Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
 
+_STATUS_MARKERS: dict[str, str] = {
+    "pending": "[ ]",
+    "in_progress": "[~]",
+    "completed": "[x]",
+}
+"""Mapping from a `Todo` status value to the display marker used in the injected
+``<current_todos>`` block."""
+
+
+def _render_todos_block(todos: list[Todo]) -> str:
+    """Render a list of todos as an XML-style block for system prompt injection.
+
+    Each todo item is formatted as ``<marker> <content>`` on its own line, where
+    the marker reflects the item's current status:
+
+    - ``[ ]`` — pending
+    - ``[~]`` — in_progress
+    - ``[x]`` — completed
+
+    Args:
+        todos: List of todo items to render. Must be non-empty.
+
+    Returns:
+        A ``<current_todos>`` XML block string with one formatted line per item.
+    """
+    lines = "\n".join(
+        f"{_STATUS_MARKERS.get(todo['status'], '[ ]')} {todo['content']}"
+        for todo in todos
+    )
+    return f"<current_todos>\n{lines}\n</current_todos>"
+
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
 def write_todos(
@@ -172,6 +203,12 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
     `write_todos` tool is called at most once per model turn, since the tool replaces
     the entire todo list and parallel calls would create ambiguity about precedence.
 
+    When `inject_current_todos` is ``True`` (the default), the live todo list is
+    re-injected into the system prompt on every model call as a ``<current_todos>``
+    block. This guarantees the model retains direct visibility of its current plan
+    even when message history has been compacted by a summarization middleware or
+    cleared for other reasons.
+
     Example:
         ```python
         from langchain.agents.middleware.todo import TodoListMiddleware
@@ -193,6 +230,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         *,
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+        inject_current_todos: bool = True,
     ) -> None:
         """Initialize the `TodoListMiddleware` with optional custom prompts.
 
@@ -200,10 +238,16 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             system_prompt: Custom system prompt to guide the agent on using the todo
                 tool.
             tool_description: Custom description for the `write_todos` tool.
+            inject_current_todos: When ``True`` (the default), the live todo list from
+                agent state is re-injected into the system prompt on every model call
+                as a ``<current_todos>`` block. This prevents plan drift when message
+                history is compacted or summarized. Set to ``False`` to restore the
+                previous behavior of only including static instructions.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.tool_description = tool_description
+        self.inject_current_todos = inject_current_todos
 
         self.tools = [
             StructuredTool.from_function(
@@ -216,30 +260,68 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             )
         ]
 
+    def _build_system_content(
+        self, request: ModelRequest[ContextT]
+    ) -> list[str | dict[str, str]]:
+        """Build the full list of system message content blocks for a model call.
+
+        Combines:
+
+        1. Any existing content blocks from the current system message.
+        2. The static ``system_prompt`` instructions.
+        3. When `inject_current_todos` is ``True`` and the agent state contains at
+           least one todo item, a ``<current_todos>`` block reflecting the live plan.
+
+        Centralising this logic here removes the duplication that previously existed
+        between `wrap_model_call` and `awrap_model_call`.
+
+        Args:
+            request: The incoming model request, containing the current system
+                message and agent state.
+
+        Returns:
+            A list of content blocks suitable for constructing a
+            `~langchain_core.messages.SystemMessage`.
+        """
+        blocks: list[str | dict[str, str]]
+        if request.system_message is not None:
+            blocks = list(request.system_message.content_blocks)
+            blocks.append({"type": "text", "text": f"\n\n{self.system_prompt}"})
+        else:
+            blocks = [{"type": "text", "text": self.system_prompt}]
+
+        if self.inject_current_todos:
+            todos: list[Todo] = (
+                cast("PlanningState[Any]", request.state).get("todos") or []
+            )
+            if todos:
+                blocks.append(
+                    {"type": "text", "text": f"\n\n{_render_todos_block(todos)}"}
+                )
+
+        return blocks
+
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
     ) -> ModelResponse[ResponseT] | AIMessage:
-        """Update the system message to include the todo system prompt.
+        """Update the system message to include the todo system prompt and live todos.
+
+        Delegates content construction to `_build_system_content`, which appends
+        the static ``system_prompt`` instructions and, when `inject_current_todos`
+        is enabled, a ``<current_todos>`` block with the agent's current plan.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
+            handler: Callback that executes the model request and returns
                 `ModelResponse`.
 
         Returns:
             The model call result.
         """
-        if request.system_message is not None:
-            new_system_content = [
-                *request.system_message.content_blocks,
-                {"type": "text", "text": f"\n\n{self.system_prompt}"},
-            ]
-        else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
         new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
+            content=cast("list[str | dict[str, str]]", self._build_system_content(request))
         )
         return handler(request.override(system_message=new_system_message))
 
@@ -248,7 +330,11 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
     ) -> ModelResponse[ResponseT] | AIMessage:
-        """Update the system message to include the todo system prompt.
+        """Async version of `wrap_model_call`.
+
+        Delegates content construction to `_build_system_content`, which appends
+        the static ``system_prompt`` instructions and, when `inject_current_todos`
+        is enabled, a ``<current_todos>`` block with the agent's current plan.
 
         Args:
             request: Model request to execute (includes state and runtime).
@@ -258,15 +344,8 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         Returns:
             The model call result.
         """
-        if request.system_message is not None:
-            new_system_content = [
-                *request.system_message.content_blocks,
-                {"type": "text", "text": f"\n\n{self.system_prompt}"},
-            ]
-        else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
         new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
+            content=cast("list[str | dict[str, str]]", self._build_system_content(request))
         )
         return await handler(request.override(system_message=new_system_message))
 

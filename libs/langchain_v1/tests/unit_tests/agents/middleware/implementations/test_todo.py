@@ -14,6 +14,7 @@ from langchain.agents.middleware.todo import (
     WRITE_TODOS_TOOL_DESCRIPTION,
     PlanningState,
     TodoListMiddleware,
+    _render_todos_block,
     write_todos,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
@@ -440,6 +441,152 @@ def test_todo_middleware_custom_system_prompt_in_agent() -> None:
 
 
 # ==============================================================================
+# _render_todos_block Tests
+# ==============================================================================
+
+
+@pytest.mark.parametrize(
+    ("todos", "expected"),
+    [
+        (
+            [{"content": "Buy milk", "status": "pending"}],
+            "<current_todos>\n[ ] Buy milk\n</current_todos>",
+        ),
+        (
+            [{"content": "Write tests", "status": "in_progress"}],
+            "<current_todos>\n[~] Write tests\n</current_todos>",
+        ),
+        (
+            [{"content": "Ship it", "status": "completed"}],
+            "<current_todos>\n[x] Ship it\n</current_todos>",
+        ),
+        (
+            [
+                {"content": "Plan", "status": "completed"},
+                {"content": "Implement", "status": "in_progress"},
+                {"content": "Review", "status": "pending"},
+            ],
+            "<current_todos>\n[x] Plan\n[~] Implement\n[ ] Review\n</current_todos>",
+        ),
+    ],
+)
+def test_render_todos_block(todos: list[dict], expected: str) -> None:
+    """Test that _render_todos_block formats todos correctly for each status."""
+    assert _render_todos_block(todos) == expected  # type: ignore[arg-type]
+
+
+# ==============================================================================
+# inject_current_todos Tests
+# ==============================================================================
+
+
+def test_inject_current_todos_appends_block_when_todos_present() -> None:
+    """Test that a <current_todos> block is injected when todos exist in state."""
+    todos = [
+        {"content": "Step one", "status": "completed"},
+        {"content": "Step two", "status": "in_progress"},
+        {"content": "Step three", "status": "pending"},
+    ]
+    middleware = TodoListMiddleware()  # inject_current_todos=True by default
+    state: PlanningState = {"messages": [], "todos": todos}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt="Base instructions.",
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" in system_prompt
+    assert "[x] Step one" in system_prompt
+    assert "[~] Step two" in system_prompt
+    assert "[ ] Step three" in system_prompt
+    # Original request is unchanged
+    assert request.system_prompt == "Base instructions."
+
+
+def test_inject_current_todos_no_op_when_todos_empty() -> None:
+    """Test that no <current_todos> block is added when the todo list is empty."""
+    middleware = TodoListMiddleware()  # inject_current_todos=True by default
+    state: PlanningState = {"messages": [], "todos": []}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt=None,
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" not in system_prompt
+
+
+def test_inject_current_todos_disabled_even_when_todos_present() -> None:
+    """Test that no <current_todos> block is added when inject_current_todos=False."""
+    todos = [{"content": "Some task", "status": "in_progress"}]
+    middleware = TodoListMiddleware(inject_current_todos=False)
+    state: PlanningState = {"messages": [], "todos": todos}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt="Base instructions.",
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" not in system_prompt
+    # Static instructions are still present
+    assert "write_todos" in system_prompt
+
+
+# ==============================================================================
 # Async Tests
 # ==============================================================================
 
@@ -844,3 +991,109 @@ async def test_handler_called_with_modified_request_async() -> None:
     assert received_prompt["value"] is not None
     assert "Original" in received_prompt["value"]
     assert "write_todos" in received_prompt["value"]
+
+
+async def test_inject_current_todos_appends_block_when_todos_present_async() -> None:
+    """Test async version — <current_todos> block is injected when todos exist in state."""
+    todos = [
+        {"content": "Step one", "status": "completed"},
+        {"content": "Step two", "status": "in_progress"},
+        {"content": "Step three", "status": "pending"},
+    ]
+    middleware = TodoListMiddleware()  # inject_current_todos=True by default
+    state: PlanningState = {"messages": [], "todos": todos}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt="Base instructions.",
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" in system_prompt
+    assert "[x] Step one" in system_prompt
+    assert "[~] Step two" in system_prompt
+    assert "[ ] Step three" in system_prompt
+    # Original request is unchanged
+    assert request.system_prompt == "Base instructions."
+
+
+async def test_inject_current_todos_no_op_when_todos_empty_async() -> None:
+    """Test async version — no <current_todos> block is added when the todo list is empty."""
+    middleware = TodoListMiddleware()  # inject_current_todos=True by default
+    state: PlanningState = {"messages": [], "todos": []}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt=None,
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" not in system_prompt
+
+
+async def test_inject_current_todos_disabled_even_when_todos_present_async() -> None:
+    """Test async version — no <current_todos> block when inject_current_todos=False."""
+    todos = [{"content": "Some task", "status": "in_progress"}]
+    middleware = TodoListMiddleware(inject_current_todos=False)
+    state: PlanningState = {"messages": [], "todos": todos}  # type: ignore[typeddict-unknown-key]
+    request = ModelRequest(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="ok")])),
+        system_prompt="Base instructions.",
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    system_prompt = captured_request.system_prompt
+    assert system_prompt is not None
+    assert "<current_todos>" not in system_prompt
+    # Static instructions are still present
+    assert "write_todos" in system_prompt
