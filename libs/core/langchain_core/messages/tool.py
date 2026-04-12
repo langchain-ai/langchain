@@ -362,20 +362,31 @@ def default_tool_parser(
     for raw_tool_call in raw_tool_calls:
         if "function" not in raw_tool_call:
             continue
-        function_name = raw_tool_call["function"]["name"]
+        function = raw_tool_call["function"]
+        if not isinstance(function, dict):
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=None,
+                    args=str(function),
+                    id=raw_tool_call.get("id"),
+                    error=f"Malformed `function` field: {function!r}",
+                )
+            )
+            continue
+        function_name = function.get("name")
         try:
-            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            function_args = json.loads(function.get("arguments") or "")
             parsed = tool_call(
                 name=function_name or "",
                 args=function_args or {},
                 id=raw_tool_call.get("id"),
             )
             tool_calls.append(parsed)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             invalid_tool_calls.append(
                 invalid_tool_call(
                     name=function_name,
-                    args=raw_tool_call["function"]["arguments"],
+                    args=function.get("arguments", ""),
                     id=raw_tool_call.get("id"),
                     error=None,
                 )
@@ -398,8 +409,13 @@ def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]
             function_args = None
             function_name = None
         else:
-            function_args = tool_call["function"]["arguments"]
-            function_name = tool_call["function"]["name"]
+            function = tool_call["function"]
+            if isinstance(function, dict):
+                function_args = function.get("arguments")
+                function_name = function.get("name")
+            else:
+                function_args = None
+                function_name = None
         parsed = tool_call_chunk(
             name=function_name,
             args=function_args,
