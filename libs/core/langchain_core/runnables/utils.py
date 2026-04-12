@@ -622,20 +622,20 @@ AnyConfigurableField = (
 class ConfigurableFieldSpec(NamedTuple):
     """Field that can be configured by the user. It is a specification of a field."""
 
-    id: str
     """The unique identifier of the field."""
-    annotation: Any
+    id: str
     """The annotation of the field."""
-    name: str | None = None
+    annotation: Any
     """The name of the field. """
-    description: str | None = None
+    name: str | None = None
     """The description of the field. """
-    default: Any = None
+    description: str | None = None
     """The default value for the field. """
-    is_shared: bool = False
+    default: Any = None
     """Whether the field is shared."""
-    dependencies: list[str] | None = None
+    is_shared: bool = False
     """The dependencies of the field. """
+    dependencies: list[str] | None = None
 
 
 def get_unique_config_specs(
