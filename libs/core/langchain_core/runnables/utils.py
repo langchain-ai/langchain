@@ -556,16 +556,16 @@ async def aadd(addables: AsyncIterable[Addable]) -> Addable | None:
 class ConfigurableField(NamedTuple):
     """Field that can be configured by the user."""
 
-    id: str
     """The unique identifier of the field."""
-    name: str | None = None
+    id: str
     """The name of the field. """
-    description: str | None = None
+    name: str | None = None
     """The description of the field. """
-    annotation: Any | None = None
+    description: str | None = None
     """The annotation of the field. """
-    is_shared: bool = False
+    annotation: Any | None = None
     """Whether the field is shared."""
+    is_shared: bool = False
 
     @override
     def __hash__(self) -> int:
@@ -575,18 +575,18 @@ class ConfigurableField(NamedTuple):
 class ConfigurableFieldSingleOption(NamedTuple):
     """Field that can be configured by the user with a default value."""
 
-    id: str
     """The unique identifier of the field."""
-    options: Mapping[str, Any]
+    id: str
     """The options for the field."""
-    default: str
+    options: Mapping[str, Any]
     """The default value for the field."""
-    name: str | None = None
+    default: str
     """The name of the field. """
-    description: str | None = None
+    name: str | None = None
     """The description of the field. """
-    is_shared: bool = False
+    description: str | None = None
     """Whether the field is shared."""
+    is_shared: bool = False
 
     @override
     def __hash__(self) -> int:
@@ -596,18 +596,18 @@ class ConfigurableFieldSingleOption(NamedTuple):
 class ConfigurableFieldMultiOption(NamedTuple):
     """Field that can be configured by the user with multiple default values."""
 
-    id: str
     """The unique identifier of the field."""
-    options: Mapping[str, Any]
+    id: str
     """The options for the field."""
-    default: Sequence[str]
+    options: Mapping[str, Any]
     """The default values for the field."""
-    name: str | None = None
+    default: Sequence[str]
     """The name of the field. """
-    description: str | None = None
+    name: str | None = None
     """The description of the field. """
-    is_shared: bool = False
+    description: str | None = None
     """Whether the field is shared."""
+    is_shared: bool = False
 
     @override
     def __hash__(self) -> int:
