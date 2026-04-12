@@ -286,6 +286,47 @@ class _SchemaConfig:
     """Whether to allow arbitrary types in the model."""
 
 
+def _is_protocol_type(tp: Any) -> bool:
+    """Check if a type is a Protocol that can't be used with isinstance.
+
+    Args:
+        tp: The type to check.
+
+    Returns:
+        ``True`` if *tp* is a non-runtime-checkable Protocol type.
+    """
+    return (
+        getattr(tp, "_is_protocol", False)
+        and not getattr(tp, "_is_runtime_protocol", False)
+    )
+
+
+def _sanitize_annotation(annotation: Any) -> Any:
+    """Replace non-runtime-checkable Protocol types with ``Any``.
+
+    Pydantic cannot build ``is-instance`` validators for Protocol types
+    that are not decorated with ``@runtime_checkable``.  This helper
+    rewrites such annotations so that schema generation succeeds.
+
+    Args:
+        annotation: The type annotation to sanitize.
+
+    Returns:
+        The original annotation, or a rewritten version with Protocol
+        types replaced by ``Any``.
+    """
+    if _is_protocol_type(annotation):
+        return Any
+
+    origin = get_origin(annotation)
+    if origin is Annotated:
+        args = get_args(annotation)
+        inner = args[0]
+        if _is_protocol_type(inner):
+            return Annotated[tuple([Any, *args[1:]])]
+    return annotation
+
+
 def create_schema_from_function(
     model_name: str,
     func: Callable,
@@ -316,6 +357,25 @@ def create_schema_from_function(
         A Pydantic model with the same arguments as the function.
     """
     sig = inspect.signature(func)
+
+    # Sanitize annotations so that non-runtime-checkable Protocol types
+    # (e.g. langgraph's StateLike) don't cause Pydantic schema errors.
+    sanitized_annotations = {
+        name: _sanitize_annotation(param.annotation)
+        for name, param in sig.parameters.items()
+        if param.annotation is not inspect.Parameter.empty
+    }
+    if sanitized_annotations and sanitized_annotations != {
+        name: param.annotation
+        for name, param in sig.parameters.items()
+        if param.annotation is not inspect.Parameter.empty
+    }:
+        func = functools.wraps(func)(lambda *a, **kw: func(*a, **kw))  # noqa: E731
+        func.__annotations__ = {
+            **getattr(func, "__annotations__", {}),
+            **sanitized_annotations,
+        }
+        sig = inspect.signature(func)
 
     if _function_annotations_are_pydantic_v1(sig, func):
         validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
