@@ -1,6 +1,3 @@
 - name: langchain-agentra
   repo: agentrapay/langchain-agentra
   path: .
-- name: langchain-agentra
-  repo: agentrapay/langchain-agentra
-  path: .
