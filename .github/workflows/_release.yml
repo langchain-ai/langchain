@@ -5,7 +5,7 @@
 # Handles version bumping, building, and publishing to PyPI with authentication.
 
 name: "🚀 Package Release"
-run-name: "Release ${{ inputs.working-directory }} ${{ inputs.release-version }}"
+run-name: "Release ${{ inputs.working-directory-override || inputs.working-directory }} ${{ inputs.release-version }}"
 on:
   workflow_call:
     inputs:
@@ -42,6 +42,10 @@ on:
           - libs/partners/perplexity
           - libs/partners/qdrant
           - libs/partners/xai
+      working-directory-override:
+        required: false
+        type: string
+        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
       release-version:
         required: true
         type: string
@@ -57,6 +61,7 @@ env:
   PYTHON_VERSION: "3.11"
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
+  EFFECTIVE_WORKING_DIR: ${{ inputs.working-directory-override || inputs.working-directory }}
 
 permissions:
   contents: read # Job-level overrides grant write only where needed (mark-release)
@@ -97,18 +102,18 @@ jobs:
       # https://github.com/pypa/gh-action-pypi-publish#non-goals
       - name: Build project for distribution
         run: uv build
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Upload build
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Check version
         id: check-version
         shell: python
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
         run: |
           import os
           import tomllib
@@ -135,13 +140,13 @@ jobs:
           repository: langchain-ai/langchain
           path: langchain
           sparse-checkout: | # this only grabs files for relevant dir
-            ${{ inputs.working-directory }}
+            ${{ env.EFFECTIVE_WORKING_DIR }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
       - name: Check tags
         id: check-tags
         shell: bash
-        working-directory: langchain/${{ inputs.working-directory }}
+        working-directory: langchain/${{ env.EFFECTIVE_WORKING_DIR }}
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -198,7 +203,7 @@ jobs:
         id: generate-release-body
         working-directory: langchain
         env:
-          WORKING_DIR: ${{ inputs.working-directory }}
+          WORKING_DIR: ${{ env.EFFECTIVE_WORKING_DIR }}
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           TAG: ${{ steps.check-tags.outputs.tag }}
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
@@ -238,12 +243,12 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish to test PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
-          packages-dir: ${{ inputs.working-directory }}/dist/
+          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
           print-hash: true
           repository-url: https://test.pypi.org/legacy/
@@ -288,11 +293,11 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Import dist package
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -310,11 +315,11 @@ jobs:
 
       - name: Import test dependencies
         run: uv sync --group test
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       # Overwrite the local version of the package with the built version
       - name: Import published package (again)
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
         shell: bash
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
@@ -325,17 +330,17 @@ jobs:
       - name: Check for prerelease versions
         # Block release if any dependencies allow prerelease versions
         # (unless this is itself a prerelease version)
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
         run: |
           uv run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
 
       - name: Run unit tests
         run: make tests
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Get minimum versions
         # Find the minimum published versions that satisfies the given constraints
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
         id: min-version
         run: |
           VIRTUAL_ENV=.venv uv pip install packaging requests
@@ -352,15 +357,15 @@ jobs:
           VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
           VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Import integration test dependencies
         run: uv sync --group test --group test_integration
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Run integration tests
         # Uses the Makefile's `integration_tests` target for the specified package
-        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        if: ${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/partners/') }}
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -400,7 +405,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
   # Test select published packages against new core
   # Done when code changes are made to langchain-core
@@ -441,25 +446,25 @@ jobs:
       # TODO: this seems to be resolved upstream, so we can probably remove this workaround
       - name: Check if libs/core
         run: |
-          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
+          if [ "${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') }}" != "true" ]; then
             echo "Not in libs/core. Exiting successfully."
             exit 0
           fi
 
       - name: Set up Python + uv
-        if: startsWith(inputs.working-directory, 'libs/core')
+        if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        if: startsWith(inputs.working-directory, 'libs/core')
+        if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Test against ${{ matrix.partner }}
-        if: startsWith(inputs.working-directory, 'libs/core')
+        if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         run: |
           # Identify latest tag, excluding pre-releases
           LATEST_PACKAGE_TAG="$(
@@ -504,8 +509,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Only run for core or langchain_v1 releases
-    if: startsWith(inputs.working-directory, 'libs/core') || startsWith(inputs.working-directory, 'libs/langchain_v1')
+    # Only run for core or langchain_v1 releases.
+    # Job-level 'if' does not support env context; must use inputs directly.
+    if: >-
+      startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/core')
+      || startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/langchain_v1')
     strategy:
       fail-fast: false
       matrix:
@@ -575,7 +583,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -588,12 +596,12 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
-          packages-dir: ${{ inputs.working-directory }}/dist/
+          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
           print-hash: true
           # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
@@ -617,7 +625,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -630,7 +638,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Create Tag
         uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
