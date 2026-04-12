@@ -527,7 +527,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             options = {"stop": stop}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -597,7 +597,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         options = {"stop": stop}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -906,14 +906,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         if (
             isinstance(callbacks, list)
@@ -1173,14 +1173,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         # Create callback managers
         if isinstance(callbacks, list) and (

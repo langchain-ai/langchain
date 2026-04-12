@@ -20,11 +20,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.1.10"
+version = "1.1.12"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.13,<2.0.0",
-    "openai>=2.20.0,<3.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
+    "openai>=2.26.0,<3.0.0",
     "tiktoken>=0.7.0,<1.0.0",
 ]
 
@@ -77,7 +77,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.uv]
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.mypy]
 disallow_untyped_defs = "True"

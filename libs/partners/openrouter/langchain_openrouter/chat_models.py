@@ -118,6 +118,7 @@ class ChatOpenRouter(BaseChatModel):
         | `timeout` | `int | None` | Timeout in milliseconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
+        | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -154,24 +155,45 @@ class ChatOpenRouter(BaseChatModel):
     app_url: str | None = Field(
         default_factory=from_env(
             "OPENROUTER_APP_URL",
-            default="https://docs.langchain.com/oss",
+            default="https://docs.langchain.com",
         ),
     )
     """Application URL for OpenRouter attribution.
 
     Maps to `HTTP-Referer` header.
 
+    Defaults to LangChain docs URL. Set this to your app's URL to get
+    attribution for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
     """
 
     app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default="langchain"),
+        default_factory=from_env("OPENROUTER_APP_TITLE", default="LangChain"),
     )
     """Application title for OpenRouter attribution.
 
     Maps to `X-Title` header.
 
+    Defaults to `'LangChain'`. Set this to your app's name to get attribution
+    for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
+    """
+
+    app_categories: list[str] | None = Field(
+        default=None,
+    )
+    """Marketplace categories for OpenRouter attribution.
+
+    Maps to `X-OpenRouter-Categories` header. Pass a list of lowercase,
+    hyphen-separated category strings (max 30 characters each),
+    e.g. `['cli-agent', 'programming-app']`.
+
+    Only recognized categories are accepted (unrecognized values are silently
+    dropped by OpenRouter).
+
+    See https://openrouter.ai/docs/app-attribution for recognized categories.
     """
 
     request_timeout: int | None = Field(default=None, alias="timeout")
@@ -180,13 +202,19 @@ class ChatOpenRouter(BaseChatModel):
     max_retries: int = 2
     """Maximum number of retries.
 
-    Controls the retry backoff window via the SDK's `max_elapsed_time`.
+    Each unit adds ~150 seconds to the backoff window via the SDK's
+    `max_elapsed_time` (e.g. `max_retries=2` allows up to ~300 s).
 
     Set to `0` to disable retries.
     """
 
     model_name: str = Field(alias="model")
     """The name of the model, e.g. `'anthropic/claude-sonnet-4-5'`."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float | None = None
     """Sampling temperature."""
@@ -217,6 +245,13 @@ class ChatOpenRouter(BaseChatModel):
 
     streaming: bool = False
     """Whether to stream the results or not."""
+
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output.
+
+    If `True`, additional message chunks will be generated during the stream including
+    usage metadata.
+    """
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Any extra model parameters for the OpenRouter API."""
@@ -289,6 +324,54 @@ class ChatOpenRouter(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
+    def _build_client(self) -> Any:
+        """Build and return an `openrouter.OpenRouter` SDK client.
+
+        Returns:
+            An `openrouter.OpenRouter` SDK client instance.
+        """
+        import openrouter  # noqa: PLC0415
+        from openrouter.utils import (  # noqa: PLC0415
+            BackoffStrategy,
+            RetryConfig,
+        )
+
+        client_kwargs: dict[str, Any] = {
+            "api_key": self.openrouter_api_key.get_secret_value(),  # type: ignore[union-attr]
+        }
+        if self.openrouter_api_base:
+            client_kwargs["server_url"] = self.openrouter_api_base
+        extra_headers: dict[str, str] = {}
+        if self.app_url:
+            extra_headers["HTTP-Referer"] = self.app_url
+        if self.app_title:
+            extra_headers["X-Title"] = self.app_title
+        if self.app_categories:
+            extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        if extra_headers:
+            import httpx  # noqa: PLC0415
+
+            client_kwargs["client"] = httpx.Client(
+                headers=extra_headers, follow_redirects=True
+            )
+            client_kwargs["async_client"] = httpx.AsyncClient(
+                headers=extra_headers, follow_redirects=True
+            )
+        if self.request_timeout is not None:
+            client_kwargs["timeout_ms"] = self.request_timeout
+        if self.max_retries > 0:
+            client_kwargs["retry_config"] = RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(
+                    initial_interval=500,
+                    max_interval=60000,
+                    exponent=1.5,
+                    max_elapsed_time=self.max_retries * 150_000,
+                ),
+                retry_connection_errors=True,
+            )
+        return openrouter.OpenRouter(**client_kwargs)
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate configuration and build the SDK client."""
@@ -301,49 +384,19 @@ class ChatOpenRouter(BaseChatModel):
 
         if not self.client:
             try:
-                import openrouter  # noqa: PLC0415
-                from openrouter.utils import (  # noqa: PLC0415
-                    BackoffStrategy,
-                    RetryConfig,
-                )
+                import openrouter  # noqa: PLC0415, F401
+
+                self.client = self._build_client()
             except ImportError as e:
                 msg = (
                     "Could not import the `openrouter` Python SDK. "
                     "Please install it with: pip install openrouter"
                 )
                 raise ImportError(msg) from e
-
-            client_kwargs: dict[str, Any] = {
-                "api_key": self.openrouter_api_key.get_secret_value(),
-            }
-            if self.openrouter_api_base:
-                client_kwargs["server_url"] = self.openrouter_api_base
-            if self.app_url:
-                client_kwargs["http_referer"] = self.app_url
-            if self.app_title:
-                client_kwargs["x_title"] = self.app_title
-            if self.request_timeout is not None:
-                client_kwargs["timeout_ms"] = self.request_timeout
-            if self.max_retries > 0:
-                client_kwargs["retry_config"] = RetryConfig(
-                    strategy="backoff",
-                    backoff=BackoffStrategy(
-                        initial_interval=500,
-                        max_interval=60000,
-                        exponent=1.5,
-                        max_elapsed_time=self.max_retries * 150_000,
-                    ),
-                    retry_connection_errors=True,
-                )
-            self.client = openrouter.OpenRouter(**client_kwargs)
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     #
     # Serializable class method overrides
@@ -438,7 +491,7 @@ class ChatOpenRouter(BaseChatModel):
         response = await self.client.chat.send_async(messages=sdk_messages, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901
+    def _stream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -447,6 +500,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -461,6 +516,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -489,7 +556,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
@@ -505,7 +577,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901
+    async def _astream(  # noqa: C901, PLR0912
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -514,6 +586,8 @@ class ChatOpenRouter(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
@@ -530,6 +604,18 @@ class ChatOpenRouter(BaseChatModel):
                         f"(code: {error.get('code', 'unknown')})"
                     )
                     raise ValueError(msg)
+                # Usage-only chunk (no choices) — emit with usage_metadata
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            token=generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(
@@ -558,7 +644,12 @@ class ChatOpenRouter(BaseChatModel):
             if generation_info:
                 generation_info["model_provider"] = "openrouter"
                 message_chunk = message_chunk.model_copy(
-                    update={"response_metadata": generation_info}
+                    update={
+                        "response_metadata": {
+                            **message_chunk.response_metadata,
+                            **generation_info,
+                        }
+                    }
                 )
 
             default_chunk_class = message_chunk.__class__
@@ -623,7 +714,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901
+    def _create_chat_result(self, response: Any) -> ChatResult:  # noqa: C901, PLR0912
         """Create a `ChatResult` from an OpenRouter SDK response."""
         if not isinstance(response, dict):
             response = response.model_dump(by_alias=True)
@@ -655,6 +746,13 @@ class ChatOpenRouter(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
+                # Surface OpenRouter cost data in response_metadata
+                if "cost" in token_usage:
+                    message.response_metadata["cost"] = token_usage["cost"]
+                if "cost_details" in token_usage:
+                    message.response_metadata["cost_details"] = token_usage[
+                        "cost_details"
+                    ]
             if isinstance(message, AIMessage):
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
@@ -873,7 +971,7 @@ def _wrap_messages_for_sdk(
 ) -> list[dict[str, Any]] | list[Any]:
     """Wrap message dicts as SDK Pydantic models when file blocks are present.
 
-    The OpenRouter Python SDK (v0.6.0) does not include `file` in its
+    The OpenRouter Python SDK does not include `file` in its
     `ChatMessageContentItem` discriminated union, so Pydantic validation
     rejects file content blocks even though the OpenRouter **API** supports
     them. Using `model_construct` on the SDK's message classes bypasses
@@ -895,25 +993,33 @@ def _wrap_messages_for_sdk(
     try:
         from openrouter import components  # noqa: PLC0415
     except ImportError:
+        warnings.warn(
+            "Could not import openrouter.components; file content blocks "
+            "will be sent as raw dicts which may cause validation errors.",
+            stacklevel=2,
+        )
         return message_dicts
 
     role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.UserMessage,
-        "system": components.SystemMessage,
-        "assistant": components.AssistantMessage,
-        "tool": components.ToolResponseMessage,
-        "developer": components.DeveloperMessage,
+        "user": components.ChatUserMessage,
+        "system": components.ChatSystemMessage,
+        "assistant": components.ChatAssistantMessage,
+        "tool": components.ChatToolMessage,
+        "developer": components.ChatDeveloperMessage,
     }
 
     wrapped: list[Any] = []
     for msg in message_dicts:
         model_cls = role_to_model.get(msg.get("role", ""))
         if model_cls is None:
-            # Unknown role — pass dict through and hope for the best.
+            warnings.warn(
+                f"Unknown message role {msg.get('role')!r} encountered during "
+                f"SDK wrapping; passing raw dict to the API.",
+                stacklevel=2,
+            )
             wrapped.append(msg)
             continue
-        fields = {k: v for k, v in msg.items() if k != "role"}
-        wrapped.append(model_cls.model_construct(**fields))
+        wrapped.append(model_cls.model_construct(**msg))
     return wrapped
 
 
@@ -1160,7 +1266,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: 
     return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
-def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911
+def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     """Convert a streaming chunk dict to a LangChain message chunk.
@@ -1205,14 +1311,20 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911
         if reasoning_details := _dict.get("reasoning_details"):
             additional_kwargs["reasoning_details"] = reasoning_details
         usage_metadata = None
+        response_metadata: dict[str, Any] = {"model_provider": "openrouter"}
         if usage := chunk.get("usage"):
             usage_metadata = _create_usage_metadata(usage)
+            # Surface OpenRouter cost data in response_metadata
+            if "cost" in usage:
+                response_metadata["cost"] = usage["cost"]
+            if "cost_details" in usage:
+                response_metadata["cost_details"] = usage["cost_details"]
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "openrouter"},
+            response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -1277,13 +1389,16 @@ def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     Returns:
         Usage metadata with input/output token details.
     """
+    _input = token_usage.get("prompt_tokens")
     input_tokens = int(
-        token_usage.get("prompt_tokens") or token_usage.get("input_tokens") or 0
+        _input if _input is not None else (token_usage.get("input_tokens") or 0)
     )
+    _output = token_usage.get("completion_tokens")
     output_tokens = int(
-        token_usage.get("completion_tokens") or token_usage.get("output_tokens") or 0
+        _output if _output is not None else (token_usage.get("output_tokens") or 0)
     )
-    total_tokens = int(token_usage.get("total_tokens") or input_tokens + output_tokens)
+    _total = token_usage.get("total_tokens")
+    total_tokens = int(_total if _total is not None else input_tokens + output_tokens)
 
     input_details_dict = (
         token_usage.get("prompt_tokens_details")

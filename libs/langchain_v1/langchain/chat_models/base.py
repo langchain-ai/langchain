@@ -38,8 +38,9 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
     "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
-    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIChatCompletionsModel", _call),
+    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
+    "baseten": ("langchain_baseten", "ChatBaseten", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
     "bedrock_converse": ("langchain_aws", "ChatBedrockConverse", _call),
     "cohere": ("langchain_cohere", "ChatCohere", _call),
@@ -63,6 +64,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
         "ChatWatsonx",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
+    "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
@@ -283,6 +285,8 @@ def init_chat_model(
             - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
+            - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
+            - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
