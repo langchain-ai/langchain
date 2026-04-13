@@ -121,7 +121,7 @@ exclude = [
 warn_return_any = false
 
 [[tool.mypy.overrides]]
-module = ["pytest_socket.*", "vcr.*"]
+module = ["pytest_socket.*", "vcr.*", "jsonschema.*"]
 ignore_missing_imports = true
 
 [tool.ruff.format]
