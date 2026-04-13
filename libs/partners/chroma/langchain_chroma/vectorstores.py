@@ -6,6 +6,7 @@ It contains the Chroma class which is a vector store for handling various tasks.
 from __future__ import annotations
 
 import base64
+import inspect
 import logging
 import uuid
 from collections.abc import Callable, Iterable, Sequence
@@ -150,6 +151,19 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def _validate_client(client: chromadb.ClientAPI | Any) -> None:
+    """Reject async clients with an actionable error message."""
+    if inspect.isawaitable(client):
+        msg = (
+            "`langchain_chroma.Chroma` requires a synchronous Chroma client. "
+            "Received an awaitable client, which usually means "
+            "`chromadb.AsyncHttpClient(...)` was passed in. Use "
+            "`chromadb.HttpClient(...)` or another synchronous `chromadb.ClientAPI` "
+            "instance instead."
+        )
+        raise TypeError(msg)
 
 
 class Chroma(VectorStore):
@@ -367,6 +381,7 @@ class Chroma(VectorStore):
             raise ValueError(msg)
 
         if client is not None:
+            _validate_client(client)
             self._client = client
 
         # PersistentClient

@@ -1,3 +1,5 @@
+import chromadb
+import pytest
 from langchain_core.embeddings.fake import (
     FakeEmbeddings,
 )
@@ -28,3 +30,13 @@ def test_similarity_search() -> None:
     output = docsearch.similarity_search("foo", k=1)
     docsearch.delete_collection()
     assert len(output) == 1
+
+
+def test_async_http_client_rejected() -> None:
+    """Chroma should fail fast when given an async Chroma client."""
+    client = chromadb.AsyncHttpClient(host="localhost", port=8000)
+
+    with pytest.raises(TypeError, match="requires a synchronous Chroma client"):
+        Chroma(client=client)
+
+    client.close()
