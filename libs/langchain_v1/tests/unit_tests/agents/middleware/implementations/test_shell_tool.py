@@ -394,6 +394,61 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_stdout_without_trailing_newline_does_not_timeout(tmp_path: Path) -> None:
+    """Test stdout is preserved when the done marker shares the same line."""
+    policy = HostExecutionPolicy(command_timeout=1.0)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'hello without newline'"},
+            tool_call_id="test-id",
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.status == "success"
+        assert result.content == "hello without newline"
+        assert result.artifact["timed_out"] is False
+        assert result.artifact["exit_code"] == 0
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_truncated_stdout_without_trailing_newline_does_not_timeout(tmp_path: Path) -> None:
+    """Test truncation does not prevent marker detection on the same line."""
+    policy = HostExecutionPolicy(command_timeout=1.0, max_output_bytes=5)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'hello without newline'"},
+            tool_call_id="test-id",
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.status == "success"
+        assert "truncated at 5 bytes" in result.content.lower()
+        assert result.artifact["timed_out"] is False
+        assert result.artifact["exit_code"] == 0
+        assert result.artifact["truncated_by_bytes"] is True
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_stderr_output_labeling(tmp_path: Path) -> None:
     """Test that stderr output is properly labeled."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")

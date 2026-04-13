@@ -237,6 +237,14 @@ class ShellSession:
 
             return self._collect_output(marker, deadline, timeout)
 
+    @staticmethod
+    def _split_stdout_marker(data: str, marker: str) -> tuple[str, str | None]:
+        """Split real stdout from an appended completion marker."""
+        marker_index = data.find(marker)
+        if marker_index == -1:
+            return data, None
+        return data[:marker_index], data[marker_index:]
+
     def _collect_output(
         self,
         marker: str,
@@ -265,37 +273,38 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            marker_data: str | None = None
+            if source == "stdout":
+                data, marker_data = self._split_stdout_marker(data, marker)
+
+            if data:
+                total_lines += 1
+                encoded = data.encode("utf-8", "replace")
+                total_bytes += len(encoded)
+
+                if total_lines > self._policy.max_output_lines:
+                    truncated_by_lines = True
+                elif (
+                    self._policy.max_output_bytes is not None
+                    and total_bytes > self._policy.max_output_bytes
+                ):
+                    truncated_by_bytes = True
+                elif source == "stderr":
+                    stripped = data.rstrip("\n")
+                    collected.append(f"[stderr] {stripped}")
+                    if data.endswith("\n"):
+                        collected.append("\n")
+                else:
+                    collected.append(data)
+
+            if marker_data is not None:
+                _, _, status = marker_data.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might
                 # still be in flight when the stdout marker arrives.
                 self._drain_remaining_stderr(collected, deadline)
                 break
-
-            total_lines += 1
-            encoded = data.encode("utf-8", "replace")
-            total_bytes += len(encoded)
-
-            if total_lines > self._policy.max_output_lines:
-                truncated_by_lines = True
-                continue
-
-            if (
-                self._policy.max_output_bytes is not None
-                and total_bytes > self._policy.max_output_bytes
-            ):
-                truncated_by_bytes = True
-                continue
-
-            if source == "stderr":
-                stripped = data.rstrip("\n")
-                collected.append(f"[stderr] {stripped}")
-                if data.endswith("\n"):
-                    collected.append("\n")
-            else:
-                collected.append(data)
 
         if timed_out:
             LOGGER.warning(
