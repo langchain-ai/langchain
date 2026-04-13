@@ -773,7 +773,7 @@ def is_async_callable(
     Returns:
         `True` if the function is async, `False` otherwise.
     """
-    return asyncio.iscoroutinefunction(func) or (
+    return inspect.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
-        and asyncio.iscoroutinefunction(func.__call__)
+        and inspect.iscoroutinefunction(func.__call__)
     )
