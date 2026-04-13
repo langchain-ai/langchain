@@ -31,7 +31,7 @@ from langchain_core.tools.base import (
     _is_injected_arg_type,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import _get_own_doc, is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
@@ -211,10 +211,10 @@ class StructuredTool(BaseTool):
             )
         description_ = description
         if description is None and not parse_docstring:
-            description_ = source_function.__doc__ or None
+            description_ = _get_own_doc(source_function) or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                description_ = args_schema.__doc__
+                description_ = _get_own_doc(args_schema)
                 if (
                     description_
                     and "A base class for creating Pydantic models" in description_

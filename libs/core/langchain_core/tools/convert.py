@@ -11,6 +11,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+from langchain_core.utils.pydantic import _get_own_doc
 
 
 @overload
@@ -316,7 +317,7 @@ def tool(
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
-            if dec_func.__doc__ is None:
+            if _get_own_doc(dec_func) is None:
                 msg = (
                     "Function must have a docstring if "
                     "description not provided and infer_schema is False."

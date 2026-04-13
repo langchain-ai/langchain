@@ -75,6 +75,25 @@ TypeBaseModel = type[BaseModel]
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
+def _get_own_doc(obj: Any) -> str | None:
+    """Get the docstring defined directly on obj, not inherited from parents.
+
+    For classes, Python's ``__doc__`` traverses the MRO, so a child class
+    without its own docstring will return the parent's. This function checks
+    ``__dict__`` directly to avoid that inheritance. For non-class objects
+    (functions, methods), ``__doc__`` is always their own.
+
+    Args:
+        obj: A class, function, or other object to inspect.
+
+    Returns:
+        The docstring if defined directly on ``obj``, otherwise ``None``.
+    """
+    if isinstance(obj, type):
+        return obj.__dict__.get("__doc__")
+    return obj.__doc__
+
+
 def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v1-like.
 
@@ -224,7 +243,7 @@ def _create_subset_model_v1(
         fields[field_name] = (t, field.field_info)
 
     rtn = cast("type[BaseModelV1]", create_model_v1(name, **fields))  # type: ignore[call-overload]
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    rtn.__doc__ = textwrap.dedent(fn_description or _get_own_doc(model) or "")
     return rtn
 
 
@@ -270,7 +289,7 @@ def _create_subset_model_v2(
     ]
 
     rtn.__annotations__ = dict(selected_annotations)
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    rtn.__doc__ = textwrap.dedent(fn_description or _get_own_doc(model) or "")
     return rtn
 
 

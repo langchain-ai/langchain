@@ -3653,3 +3653,130 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+class TestInheritedDocstrings:
+    """Tests for issue #32066: docstrings shouldn't inherit from parents."""
+
+    def test_child_class_with_own_docstring_uses_own(self) -> None:
+        """A child class with its own docstring should use it, not the parent's."""
+
+        class ParentSchema(BaseModel):
+            """Parent description."""
+
+            foo: str
+
+        class ChildSchema(ParentSchema):
+            """Child description."""
+
+            bar: str
+
+        structured_tool = StructuredTool.from_function(
+            func=lambda foo, bar: None,
+            name="child_tool",
+            args_schema=ChildSchema,
+            description=None,
+        )
+        assert structured_tool.description == "Child description."
+
+    def test_child_class_without_own_docstring_does_not_inherit(self) -> None:
+        """A child class without its own docstring should NOT inherit parent's."""
+
+        class ParentSchema(BaseModel):
+            """Parent description."""
+
+            foo: str
+
+        class ChildSchema(ParentSchema):
+            bar: str
+
+        # The child has no own docstring, so it should not silently use the
+        # parent's. Since no description is provided, this should raise.
+        with pytest.raises(ValueError, match="Function must have a docstring"):
+            StructuredTool.from_function(
+                func=lambda foo, bar: None,
+                name="child_tool",
+                args_schema=ChildSchema,
+                description=None,
+            )
+
+    def test_tool_decorator_child_class_with_own_docstring(self) -> None:
+        """@tool on a function with a child schema uses the function's docstring."""
+
+        class ParentSchema(BaseModel):
+            """Parent description."""
+
+            foo: str
+
+        class ChildSchema(ParentSchema):
+            """Child description."""
+
+            bar: str
+
+        @tool(args_schema=ChildSchema)
+        def my_tool(foo: str, bar: str) -> str:
+            """My tool description."""
+            return foo + bar
+
+        assert my_tool.description == "My tool description."
+
+    def test_explicit_description_overrides_inheritance(self) -> None:
+        """An explicit description should always be used regardless of inheritance."""
+
+        class ParentSchema(BaseModel):
+            """Parent description."""
+
+            foo: str
+
+        class ChildSchema(ParentSchema):
+            bar: str
+
+        structured_tool = StructuredTool.from_function(
+            func=lambda foo, bar: None,
+            name="child_tool",
+            args_schema=ChildSchema,
+            description="Explicit description.",
+        )
+        assert structured_tool.description == "Explicit description."
+
+    def test_function_with_own_docstring_still_works(self) -> None:
+        """Regression: normal functions with docstrings should still work."""
+
+        def my_func(x: int) -> str:
+            """My function description."""
+            return str(x)
+
+        structured_tool = StructuredTool.from_function(my_func, name="my_func")
+        assert structured_tool.description == "My function description."
+
+    def test_tool_decorator_function_docstring_with_inherited_schema(self) -> None:
+        """@tool with func docstring should use it even if schema has inherited doc."""
+
+        class ParentSchema(BaseModel):
+            """Parent description."""
+
+            x: int
+
+        class ChildSchema(ParentSchema):
+            pass
+
+        @tool(args_schema=ChildSchema)
+        def my_tool(x: int) -> str:
+            """Function description wins."""
+            return str(x)
+
+        assert my_tool.description == "Function description wins."
+
+    def test_base_model_without_custom_docstring(self) -> None:
+        """A direct BaseModel subclass without docstring should raise."""
+
+        class MySchema(BaseModel):
+            x: int
+
+        with pytest.raises(ValueError, match="Function must have a docstring"):
+            StructuredTool.from_function(
+                func=lambda x: None,
+                name="my_tool",
+                args_schema=MySchema,
+                description=None,
+            )
