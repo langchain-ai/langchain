@@ -46,7 +46,7 @@ full = [
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=7.3.0,<10.0.0",
     "pytest-asyncio>=0.21.1,<1.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
