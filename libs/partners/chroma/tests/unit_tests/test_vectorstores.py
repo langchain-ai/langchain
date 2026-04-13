@@ -36,7 +36,7 @@ def test_async_http_client_rejected() -> None:
     """Chroma should fail fast when given an async Chroma client."""
     client = chromadb.AsyncHttpClient(host="localhost", port=8000)
 
-    with pytest.raises(TypeError, match="requires a synchronous Chroma client"):
+    with pytest.raises(TypeError, match="must be a synchronous Chroma client"):
         Chroma(client=client)
 
     client.close()

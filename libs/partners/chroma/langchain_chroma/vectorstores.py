@@ -153,19 +153,6 @@ def maximal_marginal_relevance(
     return idxs
 
 
-def _validate_client(client: chromadb.ClientAPI | Any) -> None:
-    """Reject async clients with an actionable error message."""
-    if inspect.isawaitable(client):
-        msg = (
-            "`langchain_chroma.Chroma` requires a synchronous Chroma client. "
-            "Received an awaitable client, which usually means "
-            "`chromadb.AsyncHttpClient(...)` was passed in. Use "
-            "`chromadb.HttpClient(...)` or another synchronous `chromadb.ClientAPI` "
-            "instance instead."
-        )
-        raise TypeError(msg)
-
-
 class Chroma(VectorStore):
     """Chroma vector store integration.
 
@@ -381,7 +368,15 @@ class Chroma(VectorStore):
             raise ValueError(msg)
 
         if client is not None:
-            _validate_client(client)
+            if inspect.isawaitable(client):
+                msg = (
+                    "`client` must be a synchronous Chroma client implementing "
+                    "`chromadb.ClientAPI`. Got an awaitable instead, which usually "
+                    "means `chromadb.AsyncHttpClient(...)` was passed in. Use "
+                    "`chromadb.HttpClient(...)` or another synchronous client "
+                    "instance instead."
+                )
+                raise TypeError(msg)
             self._client = client
 
         # PersistentClient
