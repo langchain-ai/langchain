@@ -61,6 +61,7 @@ from typing_extensions import Self, TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
+    _consolidate_calls,
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
@@ -2895,6 +2896,84 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
+
+
+class TestConsolidateCalls:
+    """Tests for _consolidate_calls in _compat.py."""
+
+    def test_web_search_collapses(self) -> None:
+        items = [
+            {"type": "server_tool_call", "name": "web_search", "id": "call_1"},
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_1",
+                "status": "success",
+            },
+        ]
+        result = list(_consolidate_calls(items))
+        assert len(result) == 1
+        assert result[0]["type"] == "web_search_call"
+        assert result[0]["status"] == "completed"
+        assert result[0]["id"] == "call_1"
+
+    def test_file_search_collapses(self) -> None:
+        items: list[dict[str, Any]] = [
+            {
+                "type": "server_tool_call",
+                "name": "file_search",
+                "id": "call_2",
+                "args": {"queries": ["test"]},
+            },
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_2",
+                "status": "success",
+                "output": [{"text": "found"}],
+            },
+        ]
+        result = list(_consolidate_calls(items))
+        assert len(result) == 1
+        assert result[0]["type"] == "file_search_call"
+        assert result[0]["queries"] == ["test"]
+        assert result[0]["results"] == [{"text": "found"}]
+
+    def test_unrecognized_tool_name_passes_through(self) -> None:
+        """Unrecognized server tool names should not raise UnboundLocalError."""
+        items = [
+            {"type": "server_tool_call", "name": "computer", "id": "call_3"},
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_3",
+                "output": "result",
+            },
+        ]
+        result = list(_consolidate_calls(items))
+        assert len(result) == 2
+        assert result[0]["type"] == "server_tool_call"
+        assert result[1]["type"] == "server_tool_result"
+
+    def test_non_server_tool_passes_through(self) -> None:
+        items = [
+            {"type": "text", "text": "hello"},
+            {"type": "function_call", "name": "foo", "call_id": "c1"},
+        ]
+        result = list(_consolidate_calls(items))
+        assert len(result) == 2
+
+    def test_unmatched_pair_emits_both(self) -> None:
+        """server_tool_call followed by non-matching result emits both."""
+        items = [
+            {"type": "server_tool_call", "name": "web_search", "id": "call_a"},
+            {
+                "type": "server_tool_result",
+                "tool_call_id": "call_b",
+                "status": "success",
+            },
+        ]
+        result = list(_consolidate_calls(items))
+        assert len(result) == 2
+        assert result[0]["type"] == "server_tool_call"
+        assert result[1]["type"] == "server_tool_result"
 
 
 def test_get_last_messages() -> None:
