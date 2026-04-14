@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
 
 from langchain_openai.chat_models._batch_api import (
     BatchRequest,
@@ -27,7 +27,10 @@ class TestBatchRequest:
     def test_to_jsonl_line(self) -> None:
         req = BatchRequest(
             custom_id="req-0",
-            body={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "hi"}]},
+            body={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
         )
         line = req.to_jsonl_line()
         parsed = json.loads(line)
@@ -50,7 +53,10 @@ class TestBatchRequest:
 class TestCreateBatchJsonl:
     def test_single_request(self) -> None:
         requests = [
-            BatchRequest(custom_id="r-0", body={"model": "gpt-4o-mini", "messages": []}),
+            BatchRequest(
+                custom_id="r-0",
+                body={"model": "gpt-4o-mini", "messages": []},
+            ),
         ]
         jsonl = create_batch_jsonl(requests)
         lines = jsonl.strip().split("\n")
@@ -60,7 +66,10 @@ class TestCreateBatchJsonl:
 
     def test_multiple_requests(self) -> None:
         requests = [
-            BatchRequest(custom_id=f"r-{i}", body={"model": "gpt-4o-mini", "messages": []})
+            BatchRequest(
+                custom_id=f"r-{i}",
+                body={"model": "gpt-4o-mini", "messages": []},
+            )
             for i in range(5)
         ]
         jsonl = create_batch_jsonl(requests)
@@ -74,8 +83,16 @@ class TestCreateBatchJsonl:
 class TestBuildBatchRequests:
     def test_basic_payloads(self) -> None:
         payloads = [
-            {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "q1"}], "stream": True},
-            {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "q2"}], "stream": True},
+            {
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": "q1"}],
+                "stream": True,
+            },
+            {
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": "q2"}],
+                "stream": True,
+            },
         ]
         requests = build_batch_requests(payloads, batch_prefix="test")
         assert len(requests) == 2
@@ -124,28 +141,36 @@ class TestBuildBatchRequests:
 class TestParseOutputFile:
     def test_successful_responses(self) -> None:
         lines = [
-            json.dumps({
-                "custom_id": "r-0",
-                "result": {
-                    "status_code": 200,
-                    "body": {
-                        "id": "chatcmpl-1",
-                        "choices": [{"message": {"role": "assistant", "content": "hello"}}],
-                        "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+            json.dumps(
+                {
+                    "custom_id": "r-0",
+                    "result": {
+                        "status_code": 200,
+                        "body": {
+                            "id": "chatcmpl-1",
+                            "choices": [
+                                {"message": {"role": "assistant", "content": "hello"}}
+                            ],
+                            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+                        },
                     },
-                },
-            }),
-            json.dumps({
-                "custom_id": "r-1",
-                "result": {
-                    "status_code": 200,
-                    "body": {
-                        "id": "chatcmpl-2",
-                        "choices": [{"message": {"role": "assistant", "content": "world"}}],
-                        "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+                }
+            ),
+            json.dumps(
+                {
+                    "custom_id": "r-1",
+                    "result": {
+                        "status_code": 200,
+                        "body": {
+                            "id": "chatcmpl-2",
+                            "choices": [
+                                {"message": {"role": "assistant", "content": "world"}}
+                            ],
+                            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+                        },
                     },
-                },
-            }),
+                }
+            ),
         ]
         content = "\n".join(lines)
         results = _parse_output_file(content)
@@ -155,13 +180,20 @@ class TestParseOutputFile:
 
     def test_failed_response(self) -> None:
         lines = [
-            json.dumps({
-                "custom_id": "r-0",
-                "result": {
-                    "status_code": 400,
-                    "body": {"error": {"message": "bad request", "type": "invalid_request_error"}},
-                },
-            }),
+            json.dumps(
+                {
+                    "custom_id": "r-0",
+                    "result": {
+                        "status_code": 400,
+                        "body": {
+                            "error": {
+                                "message": "bad request",
+                                "type": "invalid_request_error",
+                            }
+                        },
+                    },
+                }
+            ),
         ]
         content = "\n".join(lines)
         results = _parse_output_file(content)
@@ -176,18 +208,24 @@ class TestParseOutputFile:
     def test_out_of_order_results(self) -> None:
         """Results are NOT guaranteed to be in input order."""
         lines = [
-            json.dumps({
-                "custom_id": "r-2",
-                "result": {"status_code": 200, "body": {"id": "c2", "choices": []}},
-            }),
-            json.dumps({
-                "custom_id": "r-0",
-                "result": {"status_code": 200, "body": {"id": "c0", "choices": []}},
-            }),
-            json.dumps({
-                "custom_id": "r-1",
-                "result": {"status_code": 200, "body": {"id": "c1", "choices": []}},
-            }),
+            json.dumps(
+                {
+                    "custom_id": "r-2",
+                    "result": {"status_code": 200, "body": {"id": "c2", "choices": []}},
+                }
+            ),
+            json.dumps(
+                {
+                    "custom_id": "r-0",
+                    "result": {"status_code": 200, "body": {"id": "c0", "choices": []}},
+                }
+            ),
+            json.dumps(
+                {
+                    "custom_id": "r-1",
+                    "result": {"status_code": 200, "body": {"id": "c1", "choices": []}},
+                }
+            ),
         ]
         results = _parse_output_file("\n".join(lines))
         assert results["r-0"]["id"] == "c0"
@@ -198,14 +236,19 @@ class TestParseOutputFile:
 class TestParseErrorFile:
     def test_parse_errors(self) -> None:
         lines = [
-            json.dumps({
-                "custom_id": "r-0",
-                "result": {
-                    "body": {
-                        "error": {"message": "rate limit", "type": "rate_limit_error"},
+            json.dumps(
+                {
+                    "custom_id": "r-0",
+                    "result": {
+                        "body": {
+                            "error": {
+                                "message": "rate limit",
+                                "type": "rate_limit_error",
+                            },
+                        },
                     },
-                },
-            }),
+                }
+            ),
         ]
         errors = _parse_error_file("\n".join(lines))
         assert "r-0" in errors
@@ -293,14 +336,16 @@ class TestPollBatchStatus:
         in_progress.request_counts = MagicMock(total=5, completed=0, failed=0)
         mock_client.batches.retrieve.return_value = in_progress
 
-        with patch("langchain_openai.chat_models._batch_api.time.sleep"):
-            with pytest.raises(TimeoutError, match="did not complete"):
-                poll_batch_status(
-                    mock_client,
-                    "batch-1",
-                    poll_interval=1.0,
-                    max_wait=0.5,
-                )
+        with (
+            patch("langchain_openai.chat_models._batch_api.time.sleep"),
+            pytest.raises(TimeoutError, match="did not complete"),
+        ):
+            poll_batch_status(
+                mock_client,
+                "batch-1",
+                poll_interval=1.0,
+                max_wait=0.5,
+            )
 
     def test_on_poll_callback(self) -> None:
         mock_client = MagicMock()
@@ -350,28 +395,34 @@ class TestRetrieveBatchResults:
         mock_batch.request_counts = MagicMock(total=2, completed=2, failed=0)
         mock_client.batches.retrieve.return_value = mock_batch
 
-        output_content = self._make_output_content([
-            {
-                "custom_id": "r-0",
-                "result": {
-                    "status_code": 200,
-                    "body": {
-                        "id": "chatcmpl-1",
-                        "choices": [{"message": {"role": "assistant", "content": "hi"}}],
+        output_content = self._make_output_content(
+            [
+                {
+                    "custom_id": "r-0",
+                    "result": {
+                        "status_code": 200,
+                        "body": {
+                            "id": "chatcmpl-1",
+                            "choices": [
+                                {"message": {"role": "assistant", "content": "hi"}}
+                            ],
+                        },
                     },
                 },
-            },
-            {
-                "custom_id": "r-1",
-                "result": {
-                    "status_code": 200,
-                    "body": {
-                        "id": "chatcmpl-2",
-                        "choices": [{"message": {"role": "assistant", "content": "bye"}}],
+                {
+                    "custom_id": "r-1",
+                    "result": {
+                        "status_code": 200,
+                        "body": {
+                            "id": "chatcmpl-2",
+                            "choices": [
+                                {"message": {"role": "assistant", "content": "bye"}}
+                            ],
+                        },
                     },
                 },
-            },
-        ])
+            ]
+        )
         mock_client.files.content.return_value = output_content
 
         result = retrieve_batch_results(mock_client, "batch-1")
@@ -430,7 +481,6 @@ class TestAdaptiveBackoff:
         mock_client.batches.retrieve.side_effect = side_effect
 
         sleep_durations: list[float] = []
-        original_sleep = __import__("time").sleep
 
         with patch(
             "langchain_openai.chat_models._batch_api.time.sleep",
@@ -453,7 +503,7 @@ class TestChatOpenAIBatchIntegration:
         """batch() should use default behavior when use_batch_api=False."""
         from langchain_openai import ChatOpenAI
 
-        model = ChatOpenAI(model="gpt-4o-mini", api_key="fake")
+        model = ChatOpenAI(model="gpt-4o-mini", api_key=SecretStr("fake"))
         assert model.use_batch_api is False
 
     def test_batch_api_responses_api_conflict(self) -> None:
@@ -462,7 +512,7 @@ class TestChatOpenAIBatchIntegration:
 
         model = ChatOpenAI(
             model="gpt-4o-mini",
-            api_key="fake",
+            api_key=SecretStr("fake"),
             use_batch_api=True,
             use_responses_api=True,
         )
@@ -473,7 +523,7 @@ class TestChatOpenAIBatchIntegration:
         """Verify that batch_api_submit constructs correct JSONL payloads."""
         from langchain_openai import ChatOpenAI
 
-        model = ChatOpenAI(model="gpt-4o-mini", api_key="fake")
+        model = ChatOpenAI(model="gpt-4o-mini", api_key=SecretStr("fake"))
 
         submitted_jsonl: list[str] = []
 

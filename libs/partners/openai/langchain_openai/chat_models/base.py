@@ -2410,10 +2410,15 @@ class BaseChatOpenAI(BaseChatModel):
 
         Polling can be configured via ``config["configurable"]``::
 
-            model.batch(inputs, config={"configurable": {
-                "batch_poll_interval": 10,
-                "batch_max_wait": 3600,
-            }})
+            model.batch(
+                inputs,
+                config={
+                    "configurable": {
+                        "batch_poll_interval": 10,
+                        "batch_max_wait": 3600,
+                    }
+                },
+            )
 
         Args:
             inputs: List of model inputs (strings, message lists, or PromptValues).
@@ -2435,7 +2440,6 @@ class BaseChatOpenAI(BaseChatModel):
         self._validate_batch_api_compatible()
 
         from langchain_openai.chat_models._batch_api import (
-            BatchResult,
             build_batch_requests,
             create_batch_jsonl,
             poll_batch_status,
@@ -2503,7 +2507,6 @@ class BaseChatOpenAI(BaseChatModel):
         self._validate_batch_api_compatible()
 
         from langchain_openai.chat_models._batch_api import (
-            BatchResult,
             async_poll_batch_status,
             async_retrieve_batch_results,
             async_upload_and_submit_batch,
@@ -2524,9 +2527,7 @@ class BaseChatOpenAI(BaseChatModel):
         requests = build_batch_requests(payloads)
         jsonl = create_batch_jsonl(requests)
 
-        batch_id = await async_upload_and_submit_batch(
-            self.root_async_client, jsonl
-        )
+        batch_id = await async_upload_and_submit_batch(self.root_async_client, jsonl)
 
         await async_poll_batch_status(
             self.root_async_client,
@@ -2535,9 +2536,7 @@ class BaseChatOpenAI(BaseChatModel):
             max_wait=max_wait,
         )
 
-        result = await async_retrieve_batch_results(
-            self.root_async_client, batch_id
-        )
+        result = await async_retrieve_batch_results(self.root_async_client, batch_id)
         return self._batch_result_to_outputs(
             result, requests, return_exceptions=return_exceptions
         )
@@ -2566,33 +2565,26 @@ class BaseChatOpenAI(BaseChatModel):
                             raise
                 elif isinstance(response_body, dict) and "error" in response_body:
                     err = ValueError(
-                        f"Batch request {cid} failed: "
-                        f"{response_body['error']}"
+                        f"Batch request {cid} failed: {response_body['error']}"
                     )
                     if return_exceptions:
                         outputs.append(err)
                     else:
                         raise err
                 else:
-                    err = ValueError(
-                        f"Unexpected response for {cid}: {response_body}"
-                    )
+                    err = ValueError(f"Unexpected response for {cid}: {response_body}")
                     if return_exceptions:
                         outputs.append(err)
                     else:
                         raise err
             elif result.errors and cid in result.errors:
-                err = ValueError(
-                    f"Batch request {cid} errored: {result.errors[cid]}"
-                )
+                err = ValueError(f"Batch request {cid} errored: {result.errors[cid]}")
                 if return_exceptions:
                     outputs.append(err)
                 else:
                     raise err
             else:
-                err = ValueError(
-                    f"No result found for batch request {cid}"
-                )
+                err = ValueError(f"No result found for batch request {cid}")
                 if return_exceptions:
                     outputs.append(err)
                 else:
@@ -2615,10 +2607,12 @@ class BaseChatOpenAI(BaseChatModel):
         Example::
 
             model = ChatOpenAI(model="gpt-4o-mini")
-            batch_id = model.batch_api_submit([
-                [HumanMessage("Question 1")],
-                [HumanMessage("Question 2")],
-            ])
+            batch_id = model.batch_api_submit(
+                [
+                    [HumanMessage("Question 1")],
+                    [HumanMessage("Question 2")],
+                ]
+            )
             # ... later ...
             status = model.batch_api_status(batch_id)
             if status.status == "completed":
@@ -2643,9 +2637,7 @@ class BaseChatOpenAI(BaseChatModel):
         payloads = self._build_batch_payloads(inputs, **kwargs)
         requests = build_batch_requests(payloads)
         jsonl = create_batch_jsonl(requests)
-        return upload_and_submit_batch(
-            self.root_client, jsonl, metadata=metadata
-        )
+        return upload_and_submit_batch(self.root_client, jsonl, metadata=metadata)
 
     async def abatch_api_submit(
         self,
@@ -2695,6 +2687,21 @@ class BaseChatOpenAI(BaseChatModel):
         batch = self.root_client.batches.retrieve(batch_id)
         return _parse_batch_to_result(batch)
 
+    async def abatch_api_status(self, batch_id: str) -> Any:
+        """Async check the status of a submitted batch.
+
+        Args:
+            batch_id: The batch ID returned by :meth:`abatch_api_submit`.
+
+        Returns:
+            A :class:`~langchain_openai.chat_models._batch_api.BatchResult`
+            with current status and progress counts.
+        """
+        from langchain_openai.chat_models._batch_api import _parse_batch_to_result
+
+        batch = await self.root_async_client.batches.retrieve(batch_id)
+        return _parse_batch_to_result(batch)
+
     def batch_api_retrieve(self, batch_id: str) -> list[Any]:
         """Retrieve results for a completed batch.
 
@@ -2715,8 +2722,12 @@ class BaseChatOpenAI(BaseChatModel):
         if not result.results:
             return []
 
+        def _sort_key(cid: str) -> int:
+            """Extract numeric index from custom_id for correct ordering."""
+            return int(cid.rsplit("-", 1)[-1])
+
         outputs = []
-        for cid in sorted(result.results.keys()):
+        for cid in sorted(result.results.keys(), key=_sort_key):
             response_body = result.results[cid]
             if isinstance(response_body, dict) and "choices" in response_body:
                 chat_result = self._create_chat_result(response_body)
@@ -2741,15 +2752,17 @@ class BaseChatOpenAI(BaseChatModel):
             async_retrieve_batch_results,
         )
 
-        result = await async_retrieve_batch_results(
-            self.root_async_client, batch_id
-        )
+        result = await async_retrieve_batch_results(self.root_async_client, batch_id)
 
         if not result.results:
             return []
 
+        def _sort_key(cid: str) -> int:
+            """Extract numeric index from custom_id for correct ordering."""
+            return int(cid.rsplit("-", 1)[-1])
+
         outputs = []
-        for cid in sorted(result.results.keys()):
+        for cid in sorted(result.results.keys(), key=_sort_key):
             response_body = result.results[cid]
             if isinstance(response_body, dict) and "choices" in response_body:
                 chat_result = self._create_chat_result(response_body)

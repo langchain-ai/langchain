@@ -77,9 +77,7 @@ class TestBatchApiLifecycle:
 
     def test_cancel(self, model_no_batch: ChatOpenAI) -> None:
         """Test batch cancellation."""
-        batch_id = model_no_batch.batch_api_submit(
-            [f"Question {i}" for i in range(10)]
-        )
+        batch_id = model_no_batch.batch_api_submit([f"Question {i}" for i in range(10)])
         # Cancel immediately
         model_no_batch.batch_api_cancel(batch_id)
 
@@ -100,9 +98,7 @@ class TestBatchApiAsync:
         assert hasattr(results[0], "content")
 
     @pytest.mark.asyncio
-    async def test_abatch_submit_and_retrieve(
-        self, model_no_batch: ChatOpenAI
-    ) -> None:
+    async def test_abatch_submit_and_retrieve(self, model_no_batch: ChatOpenAI) -> None:
         """Async fire-and-forget lifecycle."""
         batch_id = await model_no_batch.abatch_api_submit(
             ["Say 'async lifecycle' and nothing else."]
