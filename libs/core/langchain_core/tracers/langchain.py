@@ -27,6 +27,8 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
@@ -124,6 +126,8 @@ class LangChainTracer(BaseTracer):
         project_name: str | None = None,
         client: Client | None = None,
         tags: list[str] | None = None,
+        *,
+        metadata: Mapping[str, str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -139,6 +143,9 @@ class LangChainTracer(BaseTracer):
             tags: The tags.
 
                 Defaults to an empty list.
+            metadata: Additional metadata to include if it isn't already in the run.
+
+                Defaults to None.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
@@ -150,6 +157,40 @@ class LangChainTracer(BaseTracer):
         self.tags = tags or []
         self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
+        self.tracing_metadata: dict[str, str] | None = (
+            dict(metadata) if metadata is not None else None
+        )
+
+    def copy_with_metadata_defaults(
+        self,
+        *,
+        metadata: Mapping[str, str] | None = None,
+        tags: list[str] | None = None,
+    ) -> LangChainTracer:
+        """Return a new tracer with merged tracer-only defaults."""
+        base_metadata = self.tracing_metadata
+        if metadata is None:
+            merged_metadata = dict(base_metadata) if base_metadata is not None else None
+        elif base_metadata is None:
+            merged_metadata = dict(metadata)
+        else:
+            merged_metadata = dict(base_metadata)
+            for key, value in metadata.items():
+                if key not in merged_metadata:
+                    merged_metadata[key] = value
+
+        merged_tags = sorted(set(self.tags + tags)) if tags else self.tags
+
+        return self.__class__(
+            example_id=self.example_id,
+            project_name=self.project_name,
+            client=self.client,
+            tags=merged_tags,
+            metadata=merged_metadata,
+            run_map=self.run_map,
+            order_map=self.order_map,
+            _external_run_ids=self._external_run_ids,
+        )
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:
@@ -263,6 +304,7 @@ class LangChainTracer(BaseTracer):
         try:
             run.extra["runtime"] = get_runtime_environment()
             run.tags = self._get_tags(run)
+            _patch_missing_metadata(self, run)
             if run.ls_client is not self.client:
                 run.ls_client = self.client
             run.post()
@@ -398,3 +440,17 @@ class LangChainTracer(BaseTracer):
         """Wait for the given futures to complete."""
         if self.client is not None:
             self.client.flush()
+
+
+def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
+    if not self.tracing_metadata:
+        return
+    metadata = run.metadata
+    patched = None
+    for k, v in self.tracing_metadata.items():
+        if k not in metadata:
+            if patched is None:
+                # Copy on first miss to avoid mutating the shared dict.
+                patched = {**metadata}
+                run.extra["metadata"] = patched
+            patched[k] = v

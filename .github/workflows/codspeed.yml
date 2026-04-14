@@ -32,9 +32,9 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: "🐍 Setup Python 3.11"
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
       - name: "📂 Get Changed Files"
@@ -52,13 +52,13 @@ jobs:
     name: "⚡ CodSpeed Benchmarks"
     needs: [build]
     if: ${{ needs.build.outputs.codspeed != '[]' }}
-    runs-on: ubuntu-latest
+    runs-on: codspeed-macro
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: "📦 Install UV Package Manager"
         uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
@@ -77,9 +77,7 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             cd ${{ matrix.job-configs.working-directory }}
-            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
+            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ] || [ "${{ matrix.job-configs.working-directory }}" = "libs/langchain_v1" ]; then
               uv run --no-sync pytest ./tests/benchmarks --codspeed
-            else
-              uv run --no-sync pytest ./tests/unit_tests/ -m benchmark --codspeed
             fi
           mode: ${{ matrix.job-configs.codspeed-mode }}

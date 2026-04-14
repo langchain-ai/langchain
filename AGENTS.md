@@ -194,6 +194,16 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
 - Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
 
+#### Model references in docs and examples
+
+Always use the latest generally available (GA) models when referencing LLMs in docstrings and illustrative code snippets. Avoid preview or beta identifiers unless the model has no GA equivalent. Outdated model names signal stale code and confuse users.
+
+Before writing or updating model references, verify current model IDs against the provider's official docs. Do not rely on memorized or cached model names — they go stale quickly.
+
+Changing **shipped default parameter values** in code (e.g., a `model=` kwarg default in a class constructor) may constitute a breaking change — see "Maintain stable public interfaces" above. This guidance applies to documentation and examples, not code defaults.
+
+For model *profile data* (capability flags, context windows), use the `langchain-profiles` CLI described below.
+
 ## Model profiles
 
 Model profiles are generated using the `langchain-profiles` CLI in `libs/model-profiles`. The `--data-dir` must point to the directory containing `profile_augmentations.toml`, not the top-level package directory.
@@ -246,6 +256,10 @@ When adding a new partner package, update these files:
 - `.github/workflows/check_diffs.yml` – Add to change detection
 - `.github/workflows/integration_tests.yml` – Add integration test config
 - `.github/workflows/pr_lint.yml` – Add to allowed scopes
+
+## GitHub Actions & Workflows
+
+This repository require actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
 
 ## Additional resources
 

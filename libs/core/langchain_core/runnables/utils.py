@@ -558,12 +558,16 @@ class ConfigurableField(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     annotation: Any | None = None
     """The annotation of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -577,14 +581,19 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     options: Mapping[str, Any]
     """The options for the field."""
+
     default: str
     """The default value for the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -598,14 +607,19 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     options: Mapping[str, Any]
     """The options for the field."""
+
     default: Sequence[str]
     """The default values for the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -624,16 +638,22 @@ class ConfigurableFieldSpec(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     annotation: Any
     """The annotation of the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     default: Any = None
     """The default value for the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
+
     dependencies: list[str] | None = None
     """The dependencies of the field. """
 

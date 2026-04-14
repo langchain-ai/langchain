@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import itertools
 from dataclasses import dataclass, field, fields
 from typing import (
@@ -399,9 +400,15 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
+@functools.lru_cache(maxsize=100)
+def _get_schema_type_hints(schema: type) -> dict[str, Any]:
+    """Return cached type hints for a schema."""
+    return get_type_hints(schema, include_extras=True)
+
+
 def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
     """Resolve state, input, and output schemas for the given schemas."""
-    schema_hints = {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+    schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
         _resolve_schema(schema_hints, "InputSchema", "input"),
