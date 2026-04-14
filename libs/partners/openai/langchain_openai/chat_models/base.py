@@ -3180,7 +3180,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         `ChatOpenAI` can be used with OpenAI-compatible APIs like
         [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
-        [Ollama](https://ollama.com/), and others.
+        [Ollama](https://ollama.com/), [Foundry Local](https://github.com/microsoft/Foundry-Local),
+        and others.
 
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
@@ -3199,6 +3200,35 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },  # Auto-evict model after 5 minutes of inactivity
             )
             ```
+
+        !!! example "Foundry Local example"
+
+            ```python
+            from foundry_local_sdk import Configuration, FoundryLocalManager
+            from langchain_openai import ChatOpenAI
+
+            FoundryLocalManager.initialize(
+                Configuration(app_name="langchain-foundry-local")
+            )
+            manager = FoundryLocalManager.instance
+
+            foundry_model = manager.catalog.get_model("qwen2.5-0.5b")
+            foundry_model.download()
+            foundry_model.load()
+            manager.start_web_service()
+
+            model = ChatOpenAI(
+                base_url=f"{manager.urls[0]}/v1",
+                api_key="not-needed",
+                model=foundry_model.id,
+                temperature=0,
+            )
+            ```
+
+            Foundry Local 1.2 serves both Chat Completions and the OpenAI Responses
+            API from the same local `/v1` endpoint, so `ChatOpenAI` features that opt
+            into Responses (`use_responses_api=True`, `output_version="responses/v1"`,
+            and related options) can use the same `base_url`.
 
         !!! example "vLLM example with custom parameters"
 
