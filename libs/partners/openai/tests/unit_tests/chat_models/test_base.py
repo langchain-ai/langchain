@@ -2897,6 +2897,51 @@ def test_convert_from_v1_to_responses(
     assert message_v1 != result
 
 
+def test_convert_from_v1_to_responses_missing_type() -> None:
+    """Regression: blocks without 'type' should not raise KeyError."""
+    content: list = [
+        {"type": "text", "text": "Hello", "annotations": []},
+        {"summary": [{"type": "summary_text", "text": "..."}]},  # no "type" key
+        {"index": 0},  # no "type" key
+    ]
+    result = _convert_from_v1_to_responses(content, [])
+    # Blocks without "type" should pass through without error
+    assert result[0] == {"type": "text", "text": "Hello", "annotations": []}
+    assert result[1] == {"summary": [{"type": "summary_text", "text": "..."}]}
+    assert result[2] == {"index": 0}
+
+
+def test_v03_reasoning_without_type_roundtrip() -> None:
+    """Regression: v0.3 reasoning stored without 'type' key should roundtrip."""
+    message_v03 = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello!", "annotations": []},
+        ],
+        additional_kwargs={
+            # Reasoning stored without "type" (as produced by streaming v0.3 path)
+            "reasoning": {
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "Thinking..."}],
+            },
+        },
+        response_metadata={"id": "resp_123"},
+        id="msg_123",
+    )
+
+    converted = _convert_from_v03_ai_message(message_v03)
+
+    # Reasoning block should have "type" restored
+    reasoning_blocks = [
+        b for b in converted.content if isinstance(b, dict) and b.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) == 1
+    assert reasoning_blocks[0]["type"] == "reasoning"
+
+    # Full pipeline should not raise
+    result = _construct_responses_api_input([converted])
+    assert len(result) > 0
+
+
 def test_get_last_messages() -> None:
     messages: list[BaseMessage] = [HumanMessage("Hello")]
     last_messages, previous_response_id = _get_last_messages(messages)
