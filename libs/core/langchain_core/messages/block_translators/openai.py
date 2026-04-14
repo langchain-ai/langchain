@@ -335,10 +335,9 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
 
     # Reasoning
     if reasoning := message.additional_kwargs.get("reasoning"):
-        if isinstance(message, AIMessageChunk) and message.chunk_position != "last":
-            buckets["reasoning"].append({**reasoning, "type": "reasoning"})
-        else:
-            buckets["reasoning"].append(reasoning)
+        if "type" not in reasoning:
+            reasoning = {**reasoning, "type": "reasoning"}
+        buckets["reasoning"].append(reasoning)
 
     # Refusal
     if refusal := message.additional_kwargs.get("refusal"):
