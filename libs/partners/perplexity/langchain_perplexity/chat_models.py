@@ -36,6 +36,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
+    InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
     subtract_usage,
@@ -87,6 +88,12 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
 
+    # Build input_token_details for Perplexity-specific fields.
+    # num_search_queries drives per-query cost and is a provider-specific key.
+    input_token_details: InputTokenDetails = {}
+    if (num_search_queries := token_usage.get("num_search_queries")) is not None:
+        input_token_details["num_search_queries"] = num_search_queries  # type: ignore[typeddict-unknown-key]
+
     # Build output_token_details for Perplexity-specific fields
     output_token_details: OutputTokenDetails = {}
     if (reasoning := token_usage.get("reasoning_tokens")) is not None:
@@ -94,12 +101,15 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     if (citation_tokens := token_usage.get("citation_tokens")) is not None:
         output_token_details["citation_tokens"] = citation_tokens  # type: ignore[typeddict-unknown-key]
 
-    return UsageMetadata(
+    usage = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
         output_token_details=output_token_details,
     )
+    if input_token_details:
+        usage["input_token_details"] = input_token_details
+    return usage
 
 
 class ChatPerplexity(BaseChatModel):
@@ -630,6 +640,8 @@ class ChatPerplexity(BaseChatModel):
             response_metadata["num_search_queries"] = num_search_queries
         if search_context_size := usage_dict.get("search_context_size"):
             response_metadata["search_context_size"] = search_context_size
+        if cost := usage_dict.get("cost"):
+            response_metadata["cost"] = cost
 
         message = AIMessage(
             content=response.choices[0].message.content,
@@ -689,6 +701,8 @@ class ChatPerplexity(BaseChatModel):
             response_metadata["num_search_queries"] = num_search_queries
         if search_context_size := usage_dict.get("search_context_size"):
             response_metadata["search_context_size"] = search_context_size
+        if cost := usage_dict.get("cost"):
+            response_metadata["cost"] = cost
 
         message = AIMessage(
             content=response.choices[0].message.content,
