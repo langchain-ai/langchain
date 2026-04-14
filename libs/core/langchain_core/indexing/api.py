@@ -90,6 +90,8 @@ def _hash_nested_dict(
 
 def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function."""
+    if size <= 0:
+        raise ValueError("batch_size must be a positive integer")
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))
@@ -100,6 +102,8 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
 
 async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T]]:
     """Utility batching function."""
+    if size <= 0:
+        raise ValueError("batch_size must be a positive integer")
     batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
