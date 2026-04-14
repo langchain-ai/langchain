@@ -408,7 +408,6 @@ def _convert_from_v1_to_responses(
     new_content: list = []
     for block in content:
         if "type" not in block:
-            new_content.append(block)
             continue
         if block["type"] == "text" and "annotations" in block:
             # Need a copy because we're changing the annotations list

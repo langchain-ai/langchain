@@ -2898,17 +2898,16 @@ def test_convert_from_v1_to_responses(
 
 
 def test_convert_from_v1_to_responses_missing_type() -> None:
-    """Regression: blocks without 'type' should not raise KeyError."""
+    """Regression: blocks without 'type' should be skipped, not raise KeyError."""
     content: list = [
         {"type": "text", "text": "Hello", "annotations": []},
         {"summary": [{"type": "summary_text", "text": "..."}]},  # no "type" key
         {"index": 0},  # no "type" key
     ]
     result = _convert_from_v1_to_responses(content, [])
-    # Blocks without "type" should pass through without error
+    # Blocks without "type" should be skipped
+    assert len(result) == 1
     assert result[0] == {"type": "text", "text": "Hello", "annotations": []}
-    assert result[1] == {"summary": [{"type": "summary_text", "text": "..."}]}
-    assert result[2] == {"index": 0}
 
 
 def test_v03_reasoning_without_type_roundtrip() -> None:
