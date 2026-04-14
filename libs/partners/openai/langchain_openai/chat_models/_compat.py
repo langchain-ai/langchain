@@ -407,15 +407,17 @@ def _convert_from_v1_to_responses(
 ) -> list[dict[str, Any]]:
     new_content: list = []
     for block in content:
-        block_type = block.get("type")
-        if block_type == "text" and "annotations" in block:
+        if "type" not in block:
+            new_content.append(block)
+            continue
+        if block["type"] == "text" and "annotations" in block:
             # Need a copy because we're changing the annotations list
             new_block = dict(block)
             new_block["annotations"] = [
                 _convert_annotation_from_v1(a) for a in block["annotations"]
             ]
             new_content.append(new_block)
-        elif block_type == "tool_call":
+        elif block["type"] == "tool_call":
             new_block = {"type": "function_call", "call_id": block["id"]}
             if "extras" in block and "item_id" in block["extras"]:
                 new_block["id"] = block["extras"]["item_id"]
@@ -441,10 +443,7 @@ def _convert_from_v1_to_responses(
                         new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)
 
-        elif (
-            block_type == "server_tool_call"
-            and block.get("name") == "tool_search"
-        ):
+        elif block["type"] == "server_tool_call" and block.get("name") == "tool_search":
             extras = block.get("extras", {})
             new_block = {"id": block["id"]}
             status = extras.get("status")
@@ -459,7 +458,7 @@ def _convert_from_v1_to_responses(
             new_content.append(new_block)
 
         elif (
-            block_type == "server_tool_result"
+            block["type"] == "server_tool_result"
             and block.get("extras", {}).get("name") == "tool_search"
         ):
             extras = block.get("extras", {})
@@ -480,7 +479,7 @@ def _convert_from_v1_to_responses(
 
         elif (
             is_data_content_block(cast(dict, block))
-            and block_type == "image"
+            and block["type"] == "image"
             and "base64" in block
             and isinstance(block.get("id"), str)
             and block["id"].startswith("ig_")
@@ -492,7 +491,7 @@ def _convert_from_v1_to_responses(
                 elif extra_key in block.get("extras", {}):
                     new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)
-        elif block_type == "non_standard" and "value" in block:
+        elif block["type"] == "non_standard" and "value" in block:
             new_content.append(block["value"])
         else:
             new_content.append(block)

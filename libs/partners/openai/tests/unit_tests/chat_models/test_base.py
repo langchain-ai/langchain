@@ -2932,7 +2932,9 @@ def test_v03_reasoning_without_type_roundtrip() -> None:
 
     # Reasoning block should have "type" restored
     reasoning_blocks = [
-        b for b in converted.content if isinstance(b, dict) and b.get("type") == "reasoning"
+        b
+        for b in converted.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
     ]
     assert len(reasoning_blocks) == 1
     assert reasoning_blocks[0]["type"] == "reasoning"
