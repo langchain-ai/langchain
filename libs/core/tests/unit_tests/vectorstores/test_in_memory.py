@@ -209,8 +209,10 @@ async def test_inmemory_get_by_ids() -> None:
 async def test_inmemory_call_embeddings_async() -> None:
     embeddings_mock = Mock(
         wraps=DeterministicFakeEmbedding(size=3),
-        aembed_documents=AsyncMock(),
-        aembed_query=AsyncMock(),
+        aembed_documents=AsyncMock(
+            return_value=[[0.1, 0.2, 0.3], [0.1, 0.2, 0.3], [0.1, 0.2, 0.3]]
+        ),
+        aembed_query=AsyncMock(return_value=[0.1, 0.2, 0.3]),
     )
     store = InMemoryVectorStore(embedding=embeddings_mock)
 

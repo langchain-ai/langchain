@@ -194,6 +194,13 @@ class InMemoryVectorStore(VectorStore):
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
+        if len(documents) != len(vectors):
+            msg = (
+                f"Mismatched counts: {len(documents)} documents but "
+                f"{len(vectors)} embeddings returned."
+            )
+            raise ValueError(msg)
+
         if ids and len(ids) != len(texts):
             msg = (
                 f"ids must be the same length as texts. "
@@ -226,6 +233,13 @@ class InMemoryVectorStore(VectorStore):
     ) -> list[str]:
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
+
+        if len(documents) != len(vectors):
+            msg = (
+                f"Mismatched counts: {len(documents)} documents but "
+                f"{len(vectors)} embeddings returned."
+            )
+            raise ValueError(msg)
 
         if ids and len(ids) != len(texts):
             msg = (
