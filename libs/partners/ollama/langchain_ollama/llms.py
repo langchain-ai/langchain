@@ -475,7 +475,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     async def _agenerate(
         self,
@@ -494,7 +494,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     def _stream(
         self,

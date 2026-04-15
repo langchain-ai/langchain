@@ -7,7 +7,7 @@ import atexit
 import functools
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
@@ -1614,6 +1614,9 @@ class CallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
+        langsmith_inheritable_tags: list[str] | None = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1625,6 +1628,10 @@ class CallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            langsmith_inheritable_metadata: Default inheritable metadata applied
+                to any `LangChainTracer` handlers via `set_defaults`.
+            langsmith_inheritable_tags: Default inheritable tags applied to any
+                `LangChainTracer` handlers via `set_defaults`.
 
         Returns:
             The configured callback manager.
@@ -1638,6 +1645,8 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            langsmith_inheritable_metadata=langsmith_inheritable_metadata,
+            langsmith_inheritable_tags=langsmith_inheritable_tags,
         )
 
 
@@ -2134,6 +2143,9 @@ class AsyncCallbackManager(BaseCallbackManager):
         local_tags: list[str] | None = None,
         inheritable_metadata: dict[str, Any] | None = None,
         local_metadata: dict[str, Any] | None = None,
+        *,
+        langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
+        langsmith_inheritable_tags: list[str] | None = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -2145,6 +2157,10 @@ class AsyncCallbackManager(BaseCallbackManager):
             local_tags: The local tags.
             inheritable_metadata: The inheritable metadata.
             local_metadata: The local metadata.
+            langsmith_inheritable_metadata: Default inheritable metadata applied
+                to any `LangChainTracer` handlers via `set_defaults`.
+            langsmith_inheritable_tags: Default inheritable tags applied to any
+                `LangChainTracer` handlers via `set_defaults`.
 
         Returns:
             The configured async callback manager.
@@ -2158,6 +2174,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata,
             local_metadata,
             verbose=verbose,
+            langsmith_inheritable_metadata=langsmith_inheritable_metadata,
+            langsmith_inheritable_tags=langsmith_inheritable_tags,
         )
 
 
@@ -2304,6 +2322,8 @@ def _configure(
     local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
+    langsmith_inheritable_metadata: Mapping[str, Any] | None = None,
+    langsmith_inheritable_tags: list[str] | None = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2316,6 +2336,10 @@ def _configure(
         inheritable_metadata: The inheritable metadata.
         local_metadata: The local metadata.
         verbose: Whether to enable verbose mode.
+        langsmith_inheritable_metadata: Default inheritable metadata applied to
+            any `LangChainTracer` handlers via `set_defaults`.
+        langsmith_inheritable_tags: Default inheritable tags applied to any
+            `LangChainTracer` handlers via `set_defaults`.
 
     Raises:
         RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
@@ -2387,8 +2411,6 @@ def _configure(
     if inheritable_metadata or local_metadata:
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, inherit=False)
-    if tracing_metadata:
-        callback_manager.add_metadata(tracing_metadata.copy())
     if tracing_tags:
         callback_manager.add_tags(tracing_tags.copy())
 
@@ -2440,6 +2462,7 @@ def _configure(
                             else tracing_context["client"]
                         ),
                         tags=tracing_tags,
+                        metadata=tracing_metadata,
                     )
                     callback_manager.add_handler(handler)
                 except Exception as e:
@@ -2457,7 +2480,12 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = run_tree
+                    run_id_str = str(run_tree.id)
+                    if run_id_str not in handler.run_map:
+                        handler.run_map[run_id_str] = run_tree
+                        handler._external_run_ids.setdefault(  # noqa: SLF001
+                            run_id_str, 0
+                        )
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
@@ -2479,6 +2507,32 @@ def _configure(
                 for handler in callback_manager.handlers
             ):
                 callback_manager.add_handler(var_handler, inheritable)
+
+    if tracing_metadata:
+        langsmith_inheritable_metadata = {
+            **tracing_metadata,
+            **(langsmith_inheritable_metadata or {}),
+        }
+
+    if langsmith_inheritable_metadata or langsmith_inheritable_tags:
+        callback_manager.handlers = [
+            handler.copy_with_metadata_defaults(
+                metadata=langsmith_inheritable_metadata,
+                tags=langsmith_inheritable_tags,
+            )
+            if isinstance(handler, LangChainTracer)
+            else handler
+            for handler in callback_manager.handlers
+        ]
+        callback_manager.inheritable_handlers = [
+            handler.copy_with_metadata_defaults(
+                metadata=langsmith_inheritable_metadata,
+                tags=langsmith_inheritable_tags,
+            )
+            if isinstance(handler, LangChainTracer)
+            else handler
+            for handler in callback_manager.inheritable_handlers
+        ]
     return callback_manager
 
 

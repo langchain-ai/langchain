@@ -23,7 +23,7 @@ classifiers = [
 version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.1.0,<2.0.0",
+    "langchain-core>=1.2.21,<2.0.0",
     "perplexityai>=0.22.0",
 ]
 
@@ -63,6 +63,9 @@ typing = [
     "types-tqdm>=4.66.0.5,<5.0.0.0",
     "langchain-core"
 ]
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

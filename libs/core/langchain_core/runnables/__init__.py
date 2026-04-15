@@ -3,7 +3,7 @@
 The LangChain Expression Language (LCEL) offers a declarative method to build
 production-grade programs that harness the power of LLMs.
 
-Programs created using LCEL and LangChain `Runnable` objects inherently suppor
+Programs created using LCEL and LangChain `Runnable` objects inherently support
 synchronous asynchronous, batch, and streaming operations.
 
 Support for **async** allows servers hosting LCEL based programs to scale bette for

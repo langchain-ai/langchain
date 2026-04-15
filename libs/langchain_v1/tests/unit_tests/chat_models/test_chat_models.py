@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 import pytest
@@ -88,7 +88,7 @@ def test_supported_providers_is_sorted() -> None:
         ("Accounts/Fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("gemini-1.5-pro", "google_vertexai"),
         ("gemini-2.5-pro", "google_vertexai"),
-        ("gemini-3-pro-preview", "google_vertexai"),
+        ("gemini-3.1-pro-preview", "google_vertexai"),
         ("amazon.titan-text-express-v1", "bedrock"),
         ("Amazon.Titan-Text-Express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
@@ -171,7 +171,7 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -234,6 +234,7 @@ def test_configurable() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -297,7 +298,7 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -332,7 +333,7 @@ def test_configurable_with_default() -> None:
         "config": {
             "callbacks": None,
             "configurable": {},
-            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "metadata": {},
             "recursion_limit": 25,
             "tags": ["foo"],
         },
@@ -340,6 +341,7 @@ def test_configurable_with_default() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)

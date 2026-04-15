@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-exa"
-version = "1.0.0"
+version = "1.1.0"
 description = "An integration package connecting Exa and LangChain"
 license = { text = "MIT" }
 readme = "README.md"
@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-core>=1.2.22,<2.0.0",
     "exa-py>=1.0.8,<2.0.0"
 ]
 
@@ -56,6 +56,9 @@ typing = [
     "langchain-core",
 ]
 
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

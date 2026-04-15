@@ -199,8 +199,6 @@ def _convert_pydantic_to_openai_function(
             "  1. Converting them to Pydantic models with JSON-compatible fields\n"
             "  2. Using primitive types (str, int, float, bool, list, dict) instead\n"
             "  3. Passing the data as serialized JSON strings\n\n"
-            "For more information, see: "
-            "https://python.langchain.com/docs/how_to/custom_tools/"
         )
         raise PydanticInvalidForJsonSchema(msg) from e
     return _convert_json_schema_to_openai_function(
@@ -502,12 +500,15 @@ def convert_to_openai_function(
 _WellKnownOpenAITools = (
     "function",
     "file_search",
+    "computer",
     "computer_use_preview",
     "code_interpreter",
     "mcp",
     "image_generation",
     "web_search_preview",
     "web_search",
+    "tool_search",
+    "namespace",
 )
 
 

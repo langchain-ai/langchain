@@ -21,10 +21,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.1.5"
+version = "1.1.6"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.7,<2.0.0",
+    "langchain-core>=1.2.27,<2.0.0",
     "pytest>=7.0.0,<10.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -62,7 +62,7 @@ typing = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.uv]
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
