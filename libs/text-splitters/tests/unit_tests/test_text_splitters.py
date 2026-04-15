@@ -1173,6 +1173,36 @@ if (TRUE) {
     ]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+package HelloWorld;
+
+use strict;
+use warnings;
+
+sub hello {
+    print "Hello, World!\\n";
+}
+
+hello();
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "package",
+        "HelloWorld;",
+        "use strict;",
+        "use warnings;",
+        "sub hello {",
+        'print "Hello,',
+        'World!\\n";',
+        "}",
+        "hello();",
+    ]
+
+
 def test_markdown_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.MARKDOWN, chunk_size=CHUNK_SIZE, chunk_overlap=0
