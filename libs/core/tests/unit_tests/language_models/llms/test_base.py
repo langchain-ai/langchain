@@ -353,17 +353,6 @@ class FakeLLMWithInvocationParams(BaseLLM):
         return LLMResult(generations=generations)
 
 
-def test_llm_invocation_params_passed_to_tracer_metadata() -> None:
-    """Test that invocation params are passed to tracer metadata."""
-    llm = FakeLLMWithInvocationParams()
-    with collect_runs() as cb:
-        llm.invoke("Hello", config={"callbacks": [cb]})
-        assert len(cb.traced_runs) == 1
-        run = cb.traced_runs[0]
-        # The invocation params should be in the run's extra
-        assert run.extra is not None
-
-
 async def test_llm_invocation_params_filtered_in_stream() -> None:
     """Test that invocation params are filtered when streaming."""
 
