@@ -265,8 +265,15 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                # The marker may appear mid-line when the command's stdout lacks a
+                # trailing newline — the shell appends the printf done-marker to the
+                # same line (e.g. "hello__LC_SHELL_DONE__<id> 0").  Preserve any
+                # real output that precedes the marker on that line.
+                pre, _, rest = data.partition(marker)
+                if pre:
+                    collected.append(pre)
+                _, _, status = rest.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might
