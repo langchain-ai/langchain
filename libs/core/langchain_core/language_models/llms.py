@@ -42,6 +42,7 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
+from langchain_core.language_models._utils import _filter_invocation_params_for_tracing
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -537,7 +538,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
-                langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                     params
                 ),
             )
@@ -610,7 +611,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
-            langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                 params
             ),
         )
@@ -967,7 +968,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
-                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
                     ),
                 )
@@ -988,7 +989,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
-                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
                     ),
                 )
@@ -1239,7 +1240,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
-                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
                     ),
                 )
@@ -1260,7 +1261,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
-                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
                     ),
                 )

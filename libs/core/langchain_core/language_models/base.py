@@ -389,20 +389,3 @@ class BaseLanguageModel(
                 stacklevel=2,
             )
         return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
-
-    def _filter_invocation_params_for_tracing(
-        self, params: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Filter out large/inappropriate fields from invocation params for tracing.
-
-        Removes fields like tools, functions, messages, response_format that can be large.
-
-        Args:
-            params: The invocation parameters to filter.
-
-        Returns:
-            The filtered parameters with large fields removed.
-        """
-        # Use dict comprehension to filter out large fields
-        excluded_keys = {"tools", "functions", "messages", "response_format"}
-        return {k: v for k, v in params.items() if k not in excluded_keys}

@@ -13,6 +13,7 @@ from langchain_core.language_models import (
     BaseLLM,
     FakeListLLM,
 )
+from langchain_core.language_models._utils import _filter_invocation_params_for_tracing
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -286,6 +287,28 @@ def test_get_ls_params() -> None:
     assert ls_params["ls_stop"] == ["stop"]
 
 
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
 class FakeLLMWithInvocationParams(BaseLLM):
     """Fake LLM with invocation params for testing tracing."""
 
@@ -341,28 +364,8 @@ def test_llm_invocation_params_passed_to_tracer_metadata() -> None:
         assert run.extra is not None
 
 
-def test_llm_invocation_params_filtered_for_tracing() -> None:
-    """Test that large fields are filtered from invocation params for tracing."""
-    llm = FakeLLMWithInvocationParams()
-
-    # Test the filter method directly
-    params = dict(llm._identifying_params)
-    filtered = llm._filter_invocation_params_for_tracing(params)
-
-    # Should include temperature
-    assert "temperature" in filtered
-    assert filtered["temperature"] == 0.7
-
-    # Should exclude these large fields
-    assert "tools" not in filtered
-    assert "functions" not in filtered
-    assert "messages" not in filtered
-    assert "response_format" not in filtered
-
-
 async def test_llm_invocation_params_filtered_in_stream() -> None:
     """Test that invocation params are filtered when streaming."""
-    llm = FakeLLMWithInvocationParams()
 
     # Create a custom LLM that supports streaming
     class FakeStreamingLLM(FakeLLMWithInvocationParams):
