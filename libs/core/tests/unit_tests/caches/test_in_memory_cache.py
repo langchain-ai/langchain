@@ -69,6 +69,36 @@ def test_update_with_maxsize() -> None:
     assert cache.lookup(prompt3, llm_string3) == generations3
 
 
+def test_update_existing_key_does_not_evict() -> None:
+    """Updating an existing key must not evict any other entry.
+
+    Regression test: the old implementation checked ``len == maxsize`` before
+    evicting, so re-writing an existing key that was *not* the insertion-order
+    first entry would incorrectly evict that first entry and leave the cache
+    one slot under capacity.
+    """
+    cache = InMemoryCache(maxsize=2)
+
+    prompt1, llm_string1, generations1 = cache_item(1)
+    prompt2, llm_string2, generations2 = cache_item(2)
+    cache.update(prompt1, llm_string1, generations1)
+    cache.update(prompt2, llm_string2, generations2)
+
+    # Both entries are present; cache is at capacity.
+    assert cache.lookup(prompt1, llm_string1) == generations1
+    assert cache.lookup(prompt2, llm_string2) == generations2
+
+    # Update the *second* (non-first) key. With the old code this would evict
+    # prompt1 (insertion-order first) even though it was not the key being
+    # replaced, leaving the cache with only 1 entry.
+    new_generations2 = [*generations2]
+    cache.update(prompt2, llm_string2, new_generations2)
+
+    # Both keys must still be present; no entry should have been evicted.
+    assert cache.lookup(prompt1, llm_string1) == generations1
+    assert cache.lookup(prompt2, llm_string2) == new_generations2
+
+
 def test_clear(cache: InMemoryCache) -> None:
     """Test the clear method of InMemoryCache."""
     prompt, llm_string, generations = cache_item(1)
