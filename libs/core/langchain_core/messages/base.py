@@ -21,6 +21,70 @@ if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
+def _format_content(
+    content: str | list[str | dict],
+) -> str:
+    """Format message content for pretty printing.
+
+    Handles both string content and multimodal content blocks (lists of dicts),
+    producing human-readable output for each block type.
+
+    Args:
+        content: The message content, either a string or a list of content blocks.
+
+    Returns:
+        A formatted string representation of the content.
+    """
+    if isinstance(content, str):
+        return content
+
+    parts: list[str] = []
+    for block in content:
+        if isinstance(block, str):
+            parts.append(block)
+        elif isinstance(block, dict):
+            block_type = block.get("type", "")
+            if block_type == "text":
+                text = block.get("text", "")
+                parts.append(text)
+            elif block_type in {"image", "image_url"}:
+                source = block.get("source", {})
+                url = block.get("url", "")
+                if isinstance(source, dict) and source.get("type") == "base64":
+                    media_type = source.get("media_type", "unknown")
+                    parts.append(f"[image: base64 {media_type}]")
+                elif url:
+                    url_str = url.get("url", str(url)) if isinstance(url, dict) else url
+                    parts.append(f"[image: {url_str}]")
+                else:
+                    parts.append("[image]")
+            elif block_type == "audio":
+                source = block.get("source", {})
+                if isinstance(source, dict) and source.get("type") == "base64":
+                    media_type = source.get("media_type", "unknown")
+                    parts.append(f"[audio: base64 {media_type}]")
+                else:
+                    parts.append("[audio]")
+            elif block_type == "video":
+                source = block.get("source", {})
+                if isinstance(source, dict) and source.get("type") == "base64":
+                    media_type = source.get("media_type", "unknown")
+                    parts.append(f"[video: base64 {media_type}]")
+                else:
+                    parts.append("[video]")
+            elif block_type == "reasoning":
+                reasoning_text = block.get("reasoning_text", "")
+                if reasoning_text:
+                    parts.append(f"[reasoning: {reasoning_text}]")
+                else:
+                    parts.append("[reasoning]")
+            else:
+                parts.append(str(block))
+        else:
+            parts.append(str(block))
+    return "\n".join(parts)
+
+
 def _extract_reasoning_from_additional_kwargs(
     message: BaseMessage,
 ) -> types.ReasoningContentBlock | None:
@@ -336,10 +400,10 @@ class BaseMessage(Serializable):
             ```
         """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
-        # TODO: handle non-string content.
         if self.name is not None:
             title += f"\nName: {self.name}"
-        return f"{title}\n\n{self.content}"
+        content = _format_content(self.content)
+        return f"{title}\n\n{content}"
 
     def pretty_print(self) -> None:
         """Print a pretty representation of the message.
