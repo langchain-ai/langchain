@@ -16,35 +16,35 @@ from langchain_core._security._exceptions import SSRFBlockedError
 _BLOCKED_IPV4_NETWORKS: tuple[ipaddress.IPv4Network, ...] = tuple(
     ipaddress.IPv4Network(n)
     for n in (
-        "10.0.0.0/8",  # RFC 1918 – private class A
-        "172.16.0.0/12",  # RFC 1918 – private class B
-        "192.168.0.0/16",  # RFC 1918 – private class C
-        "127.0.0.0/8",  # RFC 1122 – loopback
-        "169.254.0.0/16",  # RFC 3927 – link-local
-        "0.0.0.0/8",  # RFC 1122 – "this network"
-        "100.64.0.0/10",  # RFC 6598 – shared/CGN address space
-        "192.0.0.0/24",  # RFC 6890 – IETF protocol assignments
-        "192.0.2.0/24",  # RFC 5737 – TEST-NET-1 (documentation)
-        "198.18.0.0/15",  # RFC 2544 – benchmarking
-        "198.51.100.0/24",  # RFC 5737 – TEST-NET-2 (documentation)
-        "203.0.113.0/24",  # RFC 5737 – TEST-NET-3 (documentation)
-        "224.0.0.0/4",  # RFC 5771 – multicast
-        "240.0.0.0/4",  # RFC 1112 – reserved for future use
-        "255.255.255.255/32",  # RFC 919  – limited broadcast
+        "10.0.0.0/8",  # RFC 1918 - private class A
+        "172.16.0.0/12",  # RFC 1918 - private class B
+        "192.168.0.0/16",  # RFC 1918 - private class C
+        "127.0.0.0/8",  # RFC 1122 - loopback
+        "169.254.0.0/16",  # RFC 3927 - link-local
+        "0.0.0.0/8",  # RFC 1122 - "this network"
+        "100.64.0.0/10",  # RFC 6598 - shared/CGN address space
+        "192.0.0.0/24",  # RFC 6890 - IETF protocol assignments
+        "192.0.2.0/24",  # RFC 5737 - TEST-NET-1 (documentation)
+        "198.18.0.0/15",  # RFC 2544 - benchmarking
+        "198.51.100.0/24",  # RFC 5737 - TEST-NET-2 (documentation)
+        "203.0.113.0/24",  # RFC 5737 - TEST-NET-3 (documentation)
+        "224.0.0.0/4",  # RFC 5771 - multicast
+        "240.0.0.0/4",  # RFC 1112 - reserved for future use
+        "255.255.255.255/32",  # RFC 919  - limited broadcast
     )
 )
 
 _BLOCKED_IPV6_NETWORKS: tuple[ipaddress.IPv6Network, ...] = tuple(
     ipaddress.IPv6Network(n)
     for n in (
-        "::1/128",  # RFC 4291 – loopback
-        "fc00::/7",  # RFC 4193 – unique local addresses (ULA)
-        "fe80::/10",  # RFC 4291 – link-local
-        "ff00::/8",  # RFC 4291 – multicast
-        "::ffff:0:0/96",  # RFC 4291 – IPv4-mapped IPv6 addresses
-        "::0.0.0.0/96",  # RFC 4291 – IPv4-compatible IPv6 (deprecated)
-        "64:ff9b::/96",  # RFC 6052 – NAT64 well-known prefix
-        "64:ff9b:1::/48",  # RFC 8215 – NAT64 discovery prefix
+        "::1/128",  # RFC 4291 - loopback
+        "fc00::/7",  # RFC 4193 - unique local addresses (ULA)
+        "fe80::/10",  # RFC 4291 - link-local
+        "ff00::/8",  # RFC 4291 - multicast
+        "::ffff:0:0/96",  # RFC 4291 - IPv4-mapped IPv6 addresses
+        "::0.0.0.0/96",  # RFC 4291 - IPv4-compatible IPv6 (deprecated)
+        "64:ff9b::/96",  # RFC 6052 - NAT64 well-known prefix
+        "64:ff9b:1::/48",  # RFC 8215 - NAT64 discovery prefix
     )
 )
 
@@ -136,15 +136,15 @@ def _ip_in_blocked_networks(
             for net in _BLOCKED_IPV4_NETWORKS:
                 if addr in net:
                     return "private IP range"
-        for net in policy.additional_blocked_cidrs:
+        for net in policy.additional_blocked_cidrs:  # type: ignore[assignment]
             if isinstance(net, ipaddress.IPv4Network) and addr in net:
                 return "blocked CIDR"
     else:
         if policy.block_private_ips:
-            for net in _BLOCKED_IPV6_NETWORKS:
+            for net in _BLOCKED_IPV6_NETWORKS:  # type: ignore[assignment]
                 if addr in net:
                     return "private IP range"
-        for net in policy.additional_blocked_cidrs:
+        for net in policy.additional_blocked_cidrs:  # type: ignore[assignment]
             if isinstance(net, ipaddress.IPv6Network) and addr in net:
                 return "blocked CIDR"
 
@@ -225,30 +225,18 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     scheme/hostname/allowed-hosts checks to ``validate_url_sync``, then
     resolves DNS and validates every resolved IP.
 
-    Raises SSRFBlockedError on any violation.
+    Raises:
+        SSRFBlockedError: If the URL violates the policy.
     """
     parsed = urllib.parse.urlparse(url)
     hostname = parsed.hostname or ""
 
-    # Reuse synchronous checks (scheme, hostname, allowed-hosts bypass).
-    try:
-        validate_url_sync(url, policy)
-    except SSRFBlockedError as exc:
-        logger.warning(
-            "ssrf_blocked",
-            hostname=hostname,
-            reason=str(exc),
-            validation_type="write_time",
-        )
-        raise
+    validate_url_sync(url, policy)
 
-    # If the host is in the allowed list, validate_url_sync returned
-    # successfully and no DNS/IP checks are needed.
     allowed = {h.lower() for h in _effective_allowed_hosts(policy)}
     if hostname.lower() in allowed:
         return
 
-    # DNS resolution
     scheme = (parsed.scheme or "").lower()
     port = parsed.port or (443 if scheme == "https" else 80)
     try:
@@ -256,63 +244,46 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
             socket.getaddrinfo, hostname, port, type=socket.SOCK_STREAM
         )
     except socket.gaierror as exc:
-        logger.warning(
-            "ssrf_blocked",
-            hostname=hostname,
-            reason="DNS resolution failed",
-            validation_type="write_time",
-        )
-        raise SSRFBlockedError("DNS resolution failed") from exc
+        msg = "DNS resolution failed"
+        raise SSRFBlockedError(msg) from exc
 
-    # Validate every resolved IP
-    for family, _type, _proto, _canonname, sockaddr in addrinfo:
-        ip_str = sockaddr[0]
-        try:
-            validate_resolved_ip(ip_str, policy)
-        except SSRFBlockedError as exc:
-            logger.warning(
-                "ssrf_blocked",
-                hostname=hostname,
-                reason=str(exc),
-                validation_type="write_time",
-            )
-            raise
+    for _family, _type, _proto, _canonname, sockaddr in addrinfo:
+        validate_resolved_ip(str(sockaddr[0]), policy)
 
 
 def validate_url_sync(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     """Synchronous URL validation (no DNS resolution).
 
     Suitable for Pydantic validators and other sync contexts. Checks scheme
-    and hostname patterns only — use validate_url for full DNS-aware checking.
+    and hostname patterns only - use ``validate_url`` for full DNS-aware checking.
 
-    Raises SSRFBlockedError on any violation.
+    Raises:
+        SSRFBlockedError: If the URL violates the policy.
     """
     parsed = urllib.parse.urlparse(url)
 
-    # Scheme check
     scheme = (parsed.scheme or "").lower()
     if scheme not in policy.allowed_schemes:
-        raise SSRFBlockedError(f"scheme '{scheme}' not allowed")
+        msg = f"scheme '{scheme}' not allowed"
+        raise SSRFBlockedError(msg)
 
-    # Hostname check
     hostname = parsed.hostname
     if not hostname:
-        raise SSRFBlockedError("missing hostname")
+        msg = "missing hostname"
+        raise SSRFBlockedError(msg)
 
-    # Allowed-hosts bypass
     allowed = _effective_allowed_hosts(policy)
     if hostname.lower() in {h.lower() for h in allowed}:
         return
 
-    # If the hostname is a raw IP address, validate it directly without DNS.
     try:
         ipaddress.ip_address(hostname)
         validate_resolved_ip(hostname, policy)
-        return
     except SSRFBlockedError:
         raise
     except ValueError:
-        pass  # Not a raw IP — fall through to hostname pattern checks.
+        pass
+    else:
+        return
 
-    # Hostname pattern checks
     validate_hostname(hostname, policy)

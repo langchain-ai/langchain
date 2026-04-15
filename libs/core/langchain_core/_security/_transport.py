@@ -4,10 +4,9 @@ import asyncio
 import socket
 
 import httpx
-import structlog
 
-from lc_security.exceptions import SSRFBlockedError
-from lc_security.policy import (
+from langchain_core._security._exceptions import SSRFBlockedError
+from langchain_core._security._policy import (
     SSRFPolicy,
     _effective_allowed_hosts,
     validate_resolved_ip,
@@ -65,11 +64,10 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
         # 1-3. Scheme, hostname, and pattern checks (reuse sync validator).
         try:
             validate_url_sync(str(request.url), self._policy)
-        except SSRFBlockedError as exc:
-            logger.warning("ssrf_blocked", hostname=hostname, reason=str(exc))
+        except SSRFBlockedError:
             raise
 
-        # Allowed-hosts bypass — skip DNS/IP validation entirely.
+        # Allowed-hosts bypass - skip DNS/IP validation entirely.
         allowed = {h.lower() for h in _effective_allowed_hosts(self._policy)}
         if hostname.lower() in allowed:
             return await self._inner.handle_async_request(request)
@@ -84,27 +82,15 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
                 type=socket.SOCK_STREAM,
             )
         except socket.gaierror as exc:
-            logger.warning(
-                "ssrf_blocked", hostname=hostname, reason="DNS resolution failed"
-            )
             raise SSRFBlockedError("DNS resolution failed") from exc
 
         if not addrinfo:
-            logger.warning(
-                "ssrf_blocked",
-                hostname=hostname,
-                reason="DNS resolution returned no results",
-            )
             raise SSRFBlockedError("DNS resolution returned no results")
 
-        # 5. Validate ALL resolved IPs — any blocked means reject.
+        # 5. Validate ALL resolved IPs - any blocked means reject.
         for _family, _type, _proto, _canonname, sockaddr in addrinfo:
-            ip_str = sockaddr[0]
-            try:
-                validate_resolved_ip(ip_str, self._policy)
-            except SSRFBlockedError as exc:
-                logger.warning("ssrf_blocked", hostname=hostname, reason=str(exc))
-                raise
+            ip_str: str = sockaddr[0]  # type: ignore[assignment]
+            validate_resolved_ip(ip_str, self._policy)
 
         # 6. Pin to first resolved IP.
         pinned_ip = addrinfo[0][4][0]
@@ -147,7 +133,7 @@ def ssrf_safe_async_client(
 ) -> httpx.AsyncClient:
     """Create an ``httpx.AsyncClient`` with SSRF protection.
 
-    Drop-in replacement for ``httpx.AsyncClient(...)`` — callers just swap
+    Drop-in replacement for ``httpx.AsyncClient(...)`` - callers just swap
     the constructor call.  Transport-specific kwargs (``verify``, ``cert``,
     ``retries``, etc.) are forwarded to the inner ``AsyncHTTPTransport``;
     everything else goes to the ``AsyncClient``.
@@ -169,6 +155,4 @@ def ssrf_safe_async_client(
     return httpx.AsyncClient(
         transport=transport,
         **client_kwargs,  # type: ignore[arg-type]
-    )
-   **client_kwargs,  # type: ignore[arg-type]
     )

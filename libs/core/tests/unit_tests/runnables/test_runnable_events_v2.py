@@ -2843,7 +2843,7 @@ async def test_tool_error_event_includes_tool_call_id() -> None:
     """Test that on_tool_error event includes tool_call_id when provided."""
 
     @tool
-    def failing_tool(x: int) -> str:  # noqa: ARG001
+    def failing_tool(x: int) -> str:
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)
@@ -2883,7 +2883,7 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     """Test that on_tool_error event has tool_call_id=None when not provided."""
 
     @tool
-    def failing_tool_no_id(x: int) -> str:  # noqa: ARG001
+    def failing_tool_no_id(x: int) -> str:
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)

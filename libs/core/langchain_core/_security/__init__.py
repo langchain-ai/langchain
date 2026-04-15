@@ -8,7 +8,10 @@ from langchain_core._security._policy import (
     validate_url,
     validate_url_sync,
 )
-from lc_security.transport import SSRFSafeTransport, ssrf_safe_async_client
+from langchain_core._security._transport import (
+    SSRFSafeTransport,
+    ssrf_safe_async_client,
+)
 
 __all__ = [
     "SSRFBlockedError",
