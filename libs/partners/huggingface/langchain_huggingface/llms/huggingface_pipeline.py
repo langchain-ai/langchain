@@ -28,7 +28,7 @@ VALID_TASKS = (
     "translation",
 )
 DEFAULT_BATCH_SIZE = 4
-_MIN_OPTIMUM_VERSION = "1.21"
+_MIN_OPTIMUM_VERSION = "1.22"
 
 
 logger = logging.getLogger(__name__)
@@ -162,16 +162,10 @@ class HuggingFacePipeline(BaseLLM):
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
-            # TODO: upgrade _MIN_OPTIMUM_VERSION to 1.22 after release
-            min_optimum_version = (
-                "1.22"
-                if backend == "ipex" and task != "text-generation"
-                else _MIN_OPTIMUM_VERSION
-            )
-            if is_optimum_intel_version("<", min_optimum_version):
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
                 msg = (
                     f"Backend: {backend} requires optimum-intel>="
-                    f"{min_optimum_version}. You can install it with pip: "
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
                     "`pip install --upgrade --upgrade-strategy eager "
                     f"`optimum[{backend}]`."
                 )
@@ -194,6 +188,15 @@ class HuggingFacePipeline(BaseLLM):
             else:
                 if not is_ipex_available():
                     raise ImportError(err_msg)
+
+                if is_optimum_intel_version(">=", "2.0"):
+                    msg = (
+                        "Backend: ipex is not supported with optimum-intel>=2.0. "
+                        "The IPEX integration was deprecated and removed after "
+                        "optimum-intel v2.0. Please downgrade to optimum-intel<2.0 "
+                        "or use a different backend."
+                    )
+                    raise ImportError(msg)
 
                 if task == "text-generation":
                     from optimum.intel import (

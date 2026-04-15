@@ -87,6 +87,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 )
                 raise ImportError(msg)
 
+            if is_optimum_intel_version(">=", "2.0"):
+                msg = (
+                    "Backend: ipex is not supported with optimum-intel>=2.0. "
+                    "The IPEX integration was deprecated and removed after "
+                    "optimum-intel v2.0. Please downgrade to optimum-intel<2.0 "
+                    "or use a different backend."
+                )
+                raise ImportError(msg)
+
             from optimum.intel import IPEXSentenceTransformer  # type: ignore[import]
 
             model_cls = IPEXSentenceTransformer
