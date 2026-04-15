@@ -172,6 +172,12 @@ def test_loopback_still_blocked_when_private_ips_allowed(url: str) -> None:
         validate_url_sync(url, policy)
 
 
+def test_docker_internal_blocked() -> None:
+    policy = SSRFPolicy()
+    with pytest.raises(SSRFBlockedError, match="localhost"):
+        validate_url_sync("http://host.docker.internal:8080/", policy)
+
+
 def test_metadata_still_blocked_when_private_ips_allowed() -> None:
     policy = SSRFPolicy(block_private_ips=False)
     with pytest.raises(SSRFBlockedError):

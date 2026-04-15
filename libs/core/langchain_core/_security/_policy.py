@@ -70,6 +70,7 @@ _LOCALHOST_NAMES: frozenset[str] = frozenset(
     {
         "localhost",
         "localhost.localdomain",
+        "host.docker.internal",
     }
 )
 
