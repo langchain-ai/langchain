@@ -207,7 +207,7 @@ class InMemoryVectorStore(VectorStore):
 
         ids_ = []
 
-        for doc, vector in zip(documents, vectors, strict=False):
+        for doc, vector in zip(documents, vectors, strict=True):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
@@ -239,7 +239,7 @@ class InMemoryVectorStore(VectorStore):
         )
         ids_: list[str] = []
 
-        for doc, vector in zip(documents, vectors, strict=False):
+        for doc, vector in zip(documents, vectors, strict=True):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
