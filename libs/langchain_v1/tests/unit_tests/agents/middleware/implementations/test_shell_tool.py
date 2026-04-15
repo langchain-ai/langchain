@@ -546,3 +546,63 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_command_output_without_trailing_newline(tmp_path: Path) -> None:
+    """Regression: commands that print without a trailing newline must not time out.
+
+    printf 'text' writes bytes with no trailing newline.  The shell appends the
+    done marker on the same readline() chunk, so the old startswith() check
+    missed it and caused a timeout.  The fixed 'in' check must capture it and
+    return the output correctly.
+    """
+    policy = HostExecutionPolicy(command_timeout=3.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", execution_policy=policy
+    )
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'hello without newline'"},
+            tool_call_id=None,
+        )
+
+        assert isinstance(result, str)
+        assert "hello without newline" in result
+        assert "timed out" not in result.lower()
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_command_output_without_trailing_newline_exit_code(tmp_path: Path) -> None:
+    """Regression: exit code must be captured correctly when no trailing newline."""
+    policy = HostExecutionPolicy(command_timeout=3.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", execution_policy=policy
+    )
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'partial'; exit 0"},
+            tool_call_id="test-id",
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.artifact["timed_out"] is False
+        assert result.artifact["exit_code"] == 0
+    finally:
+        middleware.after_agent(state, runtime)
