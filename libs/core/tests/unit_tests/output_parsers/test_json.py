@@ -254,6 +254,14 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    # Raw newline inside string value — already handled historically.
+    ('{"key": "line1\nline2"}', '{"key": "line1\\nline2"}'),
+    # Raw carriage return — regression guard for #36747.
+    ('{"key": "line1\rline2"}', '{"key": "line1\\rline2"}'),
+    # Raw tab — regression guard for #36747.
+    ('{"key": "col1\tcol2"}', '{"key": "col1\\tcol2"}'),
+    # Mixed raw control chars in a single string value.
+    ('{"k": "a\nb\rc\td"}', '{"k": "a\\nb\\rc\\td"}'),
 ]
 
 

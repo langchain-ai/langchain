@@ -84,9 +84,11 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
             if char == '"' and not escaped:
                 is_inside_string = False
             elif char == "\n" and not escaped:
-                new_char = (
-                    "\\n"  # Replace the newline character with the escape sequence.
-                )
+                new_char = "\\n"  # newline must be escaped inside JSON strings
+            elif char == "\r" and not escaped:
+                new_char = "\\r"  # carriage return must be escaped inside JSON strings
+            elif char == "\t" and not escaped:
+                new_char = "\\t"  # tab must be escaped inside JSON strings
             elif char == "\\":
                 escaped = not escaped
             else:
