@@ -5,10 +5,11 @@ Handlers must declare `serialized` and `messages` as explicit positional args
 (not *args) — see on_chat_model_start docstring for details.
 
 See: https://github.com/langchain-ai/langchain/issues/31576
+See: https://github.com/langchain-ai/langchain/issues/30870
 """
 
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -132,3 +133,52 @@ async def test_ahandle_event_other_event_not_implemented_logs_warning() -> None:
         {"name": "test"},
         ["prompt"],
     )
+
+
+class _AsyncFallbackChatHandler(BaseCallbackHandler):
+    """Async handler whose on_chat_model_start raises NotImplementedError.
+
+    This simulates an AsyncBaseTracer-derived handler that does not override
+    on_chat_model_start.  When used with the *sync* handle_event path
+    (llm.invoke), the coroutine is collected and run later — the
+    NotImplementedError must still trigger the on_llm_start fallback.
+
+    See: https://github.com/langchain-ai/langchain/issues/30870
+    """
+
+    async def on_chat_model_start(
+        self,
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
+        **kwargs: Any,
+    ) -> None:
+        raise NotImplementedError
+
+    async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+
+def test_handle_event_async_handler_chat_model_start_fallback() -> None:
+    """Sync handle_event with async handler: on_chat_model_start raises
+    NotImplementedError inside the coroutine → falls back to on_llm_start.
+
+    This is the exact scenario from issue #30870 where llm.invoke (sync) with
+    an async callback handler would fail to trace because the
+    NotImplementedError was raised when the coroutine was awaited, not when it
+    was created, so the sync fallback logic never caught it.
+    """
+    handler = _AsyncFallbackChatHandler()
+    handler.on_llm_start = AsyncMock()  # type: ignore[method-assign]
+
+    serialized = {"name": "test"}
+    messages = [[HumanMessage(content="hello")]]
+
+    handle_event(
+        [handler],
+        "on_chat_model_start",
+        "ignore_chat_model",
+        serialized,
+        messages,
+    )
+
+    handler.on_llm_start.assert_called_once()

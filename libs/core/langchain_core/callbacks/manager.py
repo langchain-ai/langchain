@@ -251,6 +251,35 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+async def _wrap_chat_model_start_coro(
+    coro: Coroutine[Any, Any, Any],
+    handler: BaseCallbackHandler,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> None:
+    """Await *coro* and, on ``NotImplementedError``, fall back to ``on_llm_start``.
+
+    This mirrors the fallback logic in :func:`_ahandle_event_for_handler` so
+    that async callback handlers whose ``on_chat_model_start`` raises
+    ``NotImplementedError`` are correctly routed to ``on_llm_start`` even when
+    invoked from the **sync** :func:`handle_event` path (which collects
+    coroutines and runs them via :func:`_run_coros`).
+    """
+    try:
+        await coro
+    except NotImplementedError:
+        message_strings = [get_buffer_string(m) for m in args[1]]
+        await _ahandle_event_for_handler(
+            handler,
+            "on_llm_start",
+            "ignore_llm",
+            args[0],
+            message_strings,
+            *args[2:],
+            **kwargs,
+        )
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -280,7 +309,18 @@ def handle_event(
                 ):
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
-                        coros.append(event)
+                        if event_name == "on_chat_model_start":
+                            # Wrap the coroutine so that NotImplementedError
+                            # raised *inside* the async handler falls back to
+                            # on_llm_start, mirroring the behaviour of
+                            # _ahandle_event_for_handler.
+                            coros.append(
+                                _wrap_chat_model_start_coro(
+                                    event, handler, args, kwargs
+                                )
+                            )
+                        else:
+                            coros.append(event)
             except NotImplementedError as e:
                 if event_name == "on_chat_model_start":
                     if message_strings is None:
