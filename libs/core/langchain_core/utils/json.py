@@ -54,6 +54,8 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 
+_MAX_JSON_CONTROL_CHAR = 0x20  # U+0000 through U+001F must be escaped per RFC 8259
+
 
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
@@ -84,9 +86,17 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
             if char == '"' and not escaped:
                 is_inside_string = False
             elif char == "\n" and not escaped:
-                new_char = (
-                    "\\n"  # Replace the newline character with the escape sequence.
-                )
+                new_char = "\\n"
+            elif char == "\r" and not escaped:
+                new_char = "\\r"
+            elif char == "\t" and not escaped:
+                new_char = "\\t"
+            elif char == "\b" and not escaped:
+                new_char = "\\b"
+            elif char == "\f" and not escaped:
+                new_char = "\\f"
+            elif ord(char) < _MAX_JSON_CONTROL_CHAR and not escaped:
+                new_char = f"\\u{ord(char):04x}"
             elif char == "\\":
                 escaped = not escaped
             else:

@@ -254,6 +254,12 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    ('{"key": "line1\rline2"}', '{"key": "line1\\rline2"}'),
+    ('{"key": "col1\tcol2"}', '{"key": "col1\\tcol2"}'),
+    ('{"key": "a\r\n\tb"}', '{"key": "a\\r\\n\\tb"}'),
+    ('{"key": "back\bspace"}', '{"key": "back\\bspace"}'),
+    ('{"key": "form\ffeed"}', '{"key": "form\\ffeed"}'),
+    ('{"key": "null\x00char"}', '{"key": "null\\u0000char"}'),
 ]
 
 
