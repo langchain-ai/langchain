@@ -874,9 +874,9 @@ def filter_messages(
 
         filter_messages(
             messages,
-            incl_names=("example_user", "example_assistant"),
-            incl_types=("system",),
-            excl_ids=("bar",),
+            include_names=("example_user", "example_assistant"),
+            include_types=("system",),
+            exclude_ids=("bar",),
         )
         ```
 
@@ -1551,7 +1551,7 @@ def convert_to_openai_messages(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "whats in this"},
+                    {"type": "text", "text": "what's in this"},
                     {
                         "type": "image_url",
                         "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
@@ -1570,15 +1570,15 @@ def convert_to_openai_messages(
                 ],
             ),
             ToolMessage("foobar", tool_call_id="1", name="bar"),
-            {"role": "assistant", "content": "thats nice"},
+            {"role": "assistant", "content": "that's nice"},
         ]
         oai_messages = convert_to_openai_messages(messages)
         # -> [
         #   {'role': 'system', 'content': 'foo'},
-        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
+        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'what's in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
         #   {'role': 'assistant', 'tool_calls': [{'type': 'function', 'id': '1','function': {'name': 'analyze', 'arguments': '{"baz": "buz"}'}}], 'content': ''},
         #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
-        #   {'role': 'assistant', 'content': 'thats nice'}
+        #   {'role': 'assistant', 'content': 'that's nice'}
         # ]
         ```
 

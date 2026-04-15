@@ -83,7 +83,7 @@ def test_custom_tool() -> None:
     ]
     payload = llm._get_request_payload(message_history)  # type: ignore[attr-defined]
     expected_input = [
-        {"content": "Use the tool", "role": "user"},
+        {"content": "Use the tool", "role": "user", "type": "message"},
         {
             "type": "custom_tool_call",
             "id": "ctc_abc123",

@@ -22,10 +22,10 @@ classifiers = [
     "Topic :: Text Processing",
 ]
 
-version = "1.1.0"
+version = "1.1.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.12,<2.0.0",
+    "langchain-core>=1.2.13,<2.0.0",
 ]
 
 [project.urls]
@@ -65,16 +65,16 @@ test = [
     "langchain-core",
 ]
 test_integration = [
-    "spacy>=3.8.7,<4.0.0; python_version < \"3.14\"",
-    "thinc>=8.3.6,<10.0.0",
+    "spacy>=3.8.13,<4.0.0",
     "nltk>=3.9.1,<4.0.0",
     "transformers>=4.51.3,<6.0.0",
-    "sentence-transformers>=3.0.1,<6.0.0",
-    "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
-    "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
+    "sentence-transformers>=5.3.0,<6.0.0",
     "tiktoken>=0.8.0,<1.0.0",
     "en-core-web-sm",
 ]
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -87,7 +87,7 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["konlpy", "nltk",]
+module = ["konlpy", "nltk", "transformers", "transformers.*",]
 ignore_missing_imports = true
 
 [tool.ruff.format]

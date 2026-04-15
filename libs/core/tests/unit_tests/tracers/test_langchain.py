@@ -1,3 +1,4 @@
+import concurrent.futures
 import threading
 import time
 import unittest.mock
@@ -10,10 +11,12 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
-from langchain_core.outputs import LLMResult
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
+    _patch_missing_metadata,
 )
 from langchain_core.tracers.schemas import Run
 
@@ -154,7 +157,8 @@ def test_correct_get_tracer_project(
 @pytest.mark.parametrize(
     ("generations", "expected"),
     [
-        # Returns usage_metadata when present
+        # Returns None for non-serialized message usage_metadata shape
+        # (earlier regression)
         (
             [
                 [
@@ -166,6 +170,33 @@ def test_correct_get_tracer_project(
                                 "input_tokens": 10,
                                 "output_tokens": 20,
                                 "total_tokens": 30,
+                            },
+                        },
+                    }
+                ]
+            ],
+            None,
+        ),
+        # Returns usage_metadata when message is serialized via dumpd
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Hello!",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     }
@@ -187,22 +218,38 @@ def test_correct_get_tracer_project(
                     {
                         "text": "First",
                         "message": {
-                            "content": "First",
-                            "usage_metadata": {
-                                "input_tokens": 5,
-                                "output_tokens": 10,
-                                "total_tokens": 15,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "First",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 5,
+                                    "output_tokens": 10,
+                                    "total_tokens": 15,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     },
                     {
                         "text": "Second",
                         "message": {
-                            "content": "Second",
-                            "usage_metadata": {
-                                "input_tokens": 50,
-                                "output_tokens": 100,
-                                "total_tokens": 150,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Second",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 50,
+                                    "output_tokens": 100,
+                                    "total_tokens": 150,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     },
@@ -218,11 +265,19 @@ def test_correct_get_tracer_project(
                     {
                         "text": "Has message",
                         "message": {
-                            "content": "Has message",
-                            "usage_metadata": {
-                                "input_tokens": 10,
-                                "output_tokens": 20,
-                                "total_tokens": 30,
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Has message",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
                             },
                         },
                     }
@@ -232,7 +287,8 @@ def test_correct_get_tracer_project(
         ),
     ],
     ids=[
-        "returns_usage_metadata_when_present",
+        "returns_none_when_non_serialized_message_shape",
+        "returns_usage_metadata_when_message_serialized",
         "returns_none_when_no_usage_metadata",
         "returns_none_when_no_message",
         "returns_none_for_empty_list",
@@ -265,11 +321,57 @@ def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
             [
                 {
                     "text": "Hello!",
-                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
                 }
             ]
         ]
     }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+
+
+def test_on_llm_end_stores_usage_metadata_from_serialized_outputs() -> None:
+    """Store `usage_metadata` from serialized generation message outputs."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("d94d0ff8-cf5a-4100-ab11-1a0efaa8d8d0")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Hello!", usage_metadata=usage_metadata)
+                )
+            ]
+        ]
+    )
+    run = tracer._complete_llm_run(response=response, run_id=run_id)
 
     captured_run = None
 
@@ -296,7 +398,24 @@ def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
 
     run = tracer.run_map[str(run_id)]
     run.outputs = {
-        "generations": [[{"text": "Hello!", "message": {"content": "Hello!"}}]]
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
+                }
+            ]
+        ]
     }
 
     captured_run = None
@@ -334,7 +453,18 @@ def test_on_llm_end_preserves_existing_metadata() -> None:
             [
                 {
                     "text": "Hello!",
-                    "message": {"content": "Hello!", "usage_metadata": usage_metadata},
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
                 }
             ]
         ]
@@ -568,3 +698,206 @@ def test_on_chain_error_updates_when_not_defers_inputs() -> None:
     # Should call update (PATCH), not persist (POST) for normal inputs
     assert not persist_called
     assert update_called
+
+
+class TestPatchMissingMetadata:
+    """Tests for `_patch_missing_metadata` and tracer metadata behavior."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    @staticmethod
+    def _make_run(
+        metadata: dict[str, Any] | None = None,
+    ) -> Run:
+        return Run(
+            id=uuid.uuid4(),
+            name="test",
+            inputs={},
+            run_type="chain",
+            extra={"metadata": metadata or {}},
+        )
+
+    def test_adds_metadata_when_run_has_none(self) -> None:
+        """Tracer metadata fills in when the run has no matching keys."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run()
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "prod"
+        assert run.metadata["service"] == "api"
+
+    def test_does_not_overwrite_existing_keys(self) -> None:
+        """Config metadata takes precedence over tracer metadata."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run(metadata={"env": "staging"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["service"] == "api"
+
+    def test_noop_when_tracer_has_no_metadata(self) -> None:
+        """No-op when the tracer has no metadata configured."""
+        tracer = self._make_tracer(metadata=None)
+        run = self._make_run(metadata={"existing": "value"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"existing": "value"}
+
+    def test_noop_when_all_keys_already_present(self) -> None:
+        """No-op when every tracer key already exists in the run."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run = self._make_run(metadata={"env": "dev"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"env": "dev"}
+
+    def test_merges_disjoint_keys(self) -> None:
+        """Disjoint keys from tracer and config are all present after patching."""
+        tracer = self._make_tracer(metadata={"tracer_key": "tracer_val"})
+        run = self._make_run(metadata={"config_key": "config_val"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {
+            "tracer_key": "tracer_val",
+            "config_key": "config_val",
+        }
+
+    def test_persist_run_single_applies_tracer_metadata(self) -> None:
+        """End-to-end: `_persist_run_single` calls `_patch_missing_metadata`."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata.get("env") == "prod"
+
+    def test_persist_run_single_config_metadata_wins(self) -> None:
+        """Config metadata is not overwritten by tracer metadata during persist."""
+        tracer = self._make_tracer(metadata={"env": "prod", "extra": "from_tracer"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160b")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+            metadata={"env": "staging"},
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["extra"] == "from_tracer"
+
+
+class TestTracerMetadataCloning:
+    """Tests for LangChainTracer metadata cloning helpers."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    def test_copy_with_metadata_defaults_copies_configuration(self) -> None:
+        """Copied tracer keeps stable configuration but not identity."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        tracer.project_name = "project"
+        tracer.tags = ["tag"]
+
+        copied = tracer.copy_with_metadata_defaults(metadata={"service": "api"})
+
+        assert copied is not tracer
+        assert copied.client is tracer.client
+        assert copied.project_name == "project"
+        assert copied.tags == ["tag"]
+        assert copied.tags is tracer.tags
+        assert copied.tracing_metadata == {"env": "staging", "service": "api"}
+        assert copied.run_map is tracer.run_map
+        assert copied.order_map is tracer.order_map
+        assert copied.run_has_token_event_map == {}
+
+    def test_copy_with_metadata_defaults_does_not_mutate_original(self) -> None:
+        """Metadata-default cloning leaves the source tracer unchanged."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+
+        copied = tracer.copy_with_metadata_defaults(metadata={"service": "api"})
+
+        assert tracer.tracing_metadata == {"env": "staging"}
+        assert copied.tracing_metadata == {"env": "staging", "service": "api"}
+
+    def test_copy_with_metadata_defaults_none_preserves_configuration(self) -> None:
+        """Copying without new metadata preserves metadata and shared run state."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        copied = tracer.copy_with_metadata_defaults(metadata=None)
+
+        assert copied is not tracer
+        assert copied.tracing_metadata == {"env": "staging"}
+        assert copied.run_map is tracer.run_map
+        assert copied.order_map is tracer.order_map
+
+    def test_copy_with_metadata_defaults_threadsafe(self) -> None:
+        """Concurrent metadata-default copies do not mutate each other or the source."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+
+        def copy_for_service(service: str) -> dict[str, str]:
+            copied = tracer.copy_with_metadata_defaults(metadata={"service": service})
+            assert copied is not tracer
+            return copied.tracing_metadata or {}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            metadata_values = list(executor.map(copy_for_service, ["api", "worker"]))
+
+        assert tracer.tracing_metadata == {"env": "staging"}
+        assert {metadata["service"] for metadata in metadata_values} == {
+            "api",
+            "worker",
+        }
+        assert all(metadata["env"] == "staging" for metadata in metadata_values)
+
+    def test_copy_with_metadata_defaults_threadsafe_with_existing_shared_state(
+        self,
+    ) -> None:
+        """Concurrent copies preserve pre-populated shared run state."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        run_id = uuid.uuid4()
+        tracer.run_map["existing"] = unittest.mock.MagicMock()
+        tracer.order_map[run_id] = (run_id, f"prefix.{run_id}")
+
+        def copy_for_service(service: str) -> LangChainTracer:
+            copied = tracer.copy_with_metadata_defaults(metadata={"service": service})
+            assert copied.run_map is tracer.run_map
+            assert copied.order_map is tracer.order_map
+            return copied
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            copied_tracers = list(executor.map(copy_for_service, ["api", "worker"]))
+
+        assert tracer.run_map.keys() == {"existing"}
+        assert tracer.order_map == {run_id: (run_id, f"prefix.{run_id}")}
+        copied_services = {
+            copied.tracing_metadata["service"]
+            for copied in copied_tracers
+            if copied.tracing_metadata is not None
+        }
+        assert copied_services == {"api", "worker"}

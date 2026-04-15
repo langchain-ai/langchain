@@ -13,13 +13,19 @@ allowlist. If the class is not in the allowlist, deserialization raises a `Value
 
 ## Security model
 
-!!! warning "Do not use with untrusted input"
+!!! warning "Exercise caution with untrusted input"
 
-    These functions instantiate Python objects and can trigger side effects
-    such as network calls, file operations, or environment variable access
-    during deserialization. **Never call `load()` or `loads()` on data from an
-    untrusted or unauthenticated source.** Even with the allowlist, allowed
-    classes may perform dangerous operations during `__init__`.
+    These functions deserialize by instantiating Python objects, which means
+    constructors (`__init__`) and validators may run and can trigger side effects.
+    With the default settings, deserialization is restricted to a core allowlist
+    of `langchain_core` types (for example: messages, documents, and prompts)
+    defined in `langchain_core.load.mapping`.
+
+    If you broaden `allowed_objects` (for example, by using `'all'` or adding
+    additional classes), treat the serialized payload as a manifest and only
+    deserialize data that comes from a trusted source. A crafted payload that
+    is allowed to instantiate unintended classes could cause network calls,
+    file operations, or environment variable access during `__init__`.
 
 The `allowed_objects` parameter controls which classes can be deserialized:
 
@@ -103,6 +109,7 @@ from langchain_core.load.mapping import (
     SERIALIZABLE_MAPPING,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.load.validators import CLASS_INIT_VALIDATORS
 
 DEFAULT_NAMESPACES = [
     "langchain",
@@ -474,6 +481,19 @@ class Reviver:
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 
+            # We don't need to recurse on kwargs
+            # as json.loads will do that for us.
+            kwargs = value.get("kwargs", {})
+
+            # Run class-specific validators before the general init_validator.
+            # These run before importing to fail fast on security violations.
+            if mapping_key in CLASS_INIT_VALIDATORS:
+                CLASS_INIT_VALIDATORS[mapping_key](mapping_key, kwargs)
+
+            # Also run general init_validator (e.g., jinja2 blocking)
+            if self.init_validator is not None:
+                self.init_validator(mapping_key, kwargs)
+
             mod = importlib.import_module(".".join(import_dir))
 
             cls = getattr(mod, name)
@@ -482,13 +502,6 @@ class Reviver:
             if not issubclass(cls, Serializable):
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
-
-            # We don't need to recurse on kwargs
-            # as json.loads will do that for us.
-            kwargs = value.get("kwargs", {})
-
-            if self.init_validator is not None:
-                self.init_validator(mapping_key, kwargs)
 
             return cls(**kwargs)
 

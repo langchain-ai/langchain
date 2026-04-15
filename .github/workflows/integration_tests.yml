@@ -5,17 +5,44 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
 
 on:
   workflow_dispatch:
     inputs:
-      working-directory-force:
+      working-directory:
+        type: choice
+        description: "Library to test (select from dropdown)"
+        default: "all"
+        options:
+          - "all"
+          - "libs/core"
+          - "libs/langchain"
+          - "libs/langchain_v1"
+          - "libs/text-splitters"
+          - "libs/standard-tests"
+          - "libs/model-profiles"
+          - "libs/partners/anthropic"
+          - "libs/partners/chroma"
+          - "libs/partners/deepseek"
+          - "libs/partners/exa"
+          - "libs/partners/fireworks"
+          - "libs/partners/groq"
+          - "libs/partners/huggingface"
+          - "libs/partners/mistralai"
+          - "libs/partners/nomic"
+          - "libs/partners/ollama"
+          - "libs/partners/openai"
+          - "libs/partners/openrouter"
+          - "libs/partners/perplexity"
+          - "libs/partners/qdrant"
+          - "libs/partners/xai"
+      working-directory-override:
         type: string
-        description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
-      python-version-force:
+        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+      python-version-override:
         type: string
-        description: "Python version to use - defaults to 3.10 and 3.13 in matrix - example value: 3.11"
+        description: "Python version override — defaults to 3.10 and 3.13 in matrix (e.g. 3.11)"
   schedule:
     - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -52,29 +79,32 @@ jobs:
         id: set-matrix
         env:
           DEFAULT_LIBS: ${{ env.DEFAULT_LIBS }}
-          WORKING_DIRECTORY_FORCE: ${{ github.event.inputs.working-directory-force || '' }}
-          PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
+          WORKING_DIRECTORY_OVERRIDE: ${{ github.event.inputs.working-directory-override || '' }}
+          WORKING_DIRECTORY_CHOICE: ${{ github.event.inputs.working-directory || 'all' }}
+          PYTHON_VERSION_OVERRIDE: ${{ github.event.inputs.python-version-override || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
-          # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
+          # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
+          # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
           python_version='["3.10", "3.13"]'
           python_version_min_3_11='["3.11", "3.13"]'
           working_directory="$DEFAULT_LIBS"
-          if [ -n "$PYTHON_VERSION_FORCE" ]; then
-            python_version="[\"$PYTHON_VERSION_FORCE\"]"
-            # Bound forced version to >= 3.11 for packages requiring it
-            if [ "$(echo "$PYTHON_VERSION_FORCE >= 3.11" | bc -l)" -eq 1 ]; then
-              python_version_min_3_11="[\"$PYTHON_VERSION_FORCE\"]"
+          if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
+            python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
+            # Bound override version to >= 3.11 for packages requiring it
+            if [ "$(echo "$PYTHON_VERSION_OVERRIDE >= 3.11" | bc -l)" -eq 1 ]; then
+              python_version_min_3_11="[\"$PYTHON_VERSION_OVERRIDE\"]"
             else
               python_version_min_3_11='["3.11"]'
             fi
           fi
-          if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
-            working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
+          if [ -n "$WORKING_DIRECTORY_OVERRIDE" ]; then
+            working_directory="[\"$WORKING_DIRECTORY_OVERRIDE\"]"
+          elif [ "$WORKING_DIRECTORY_CHOICE" != "all" ]; then
+            working_directory="[\"$WORKING_DIRECTORY_CHOICE\"]"
           fi
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
-          echo $matrix
+          echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
 
@@ -92,26 +122,26 @@ jobs:
         working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: langchain
 
       # These libraries exist outside of the monorepo and need to be checked out separately
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
       - name: "🔐 Authenticate to Google Cloud"
         id: "auth"
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -234,11 +264,11 @@ jobs:
             path: libs/deepagents
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: langchain
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}

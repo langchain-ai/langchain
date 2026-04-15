@@ -21,11 +21,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.10"
+version = "1.2.15"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.2.10,<2.0.0",
-    "langgraph>=1.0.8,<1.1.0",
+    "langgraph>=1.1.5,<1.2.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -44,6 +44,7 @@ mistralai = ["langchain-mistralai"]
 huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
+baseten = ["langchain-baseten>=0.2.0"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
@@ -67,6 +68,7 @@ test = [
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
+    "pytest-benchmark>=5.1.0,<6.0.0",
     "syrupy>=4.0.2,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
@@ -92,7 +94,7 @@ test_integration = [
 
 [tool.uv]
 prerelease = "allow"
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -175,7 +177,8 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 ]
 
 "scripts/*" = [
-    "INP", # Scripts are not in a package
+    "INP",  # Scripts are not in a package
+    "T201", # Scripts can print to the console
 ]
 
 [tool.coverage.run]
@@ -187,6 +190,7 @@ markers = [
     "requires: mark tests as requiring a specific library",
     "scheduled: mark tests to run in scheduled testing",
     "compile: mark placeholder test used to compile integration tests without running them",
+    "benchmark: mark benchmark tests",
 ]
 asyncio_mode = "auto"
 filterwarnings = [

@@ -1,0 +1,83 @@
+# CodSpeed performance benchmarks.
+#
+# Runs benchmarks on changed packages and uploads results to CodSpeed.
+# Separated from the main CI workflow so that push-to-master baseline runs
+# are never cancelled by subsequent merges (cancel-in-progress is only
+# enabled for pull_request events).
+
+name: "⚡ CodSpeed"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# On PRs, cancel stale runs when new commits are pushed.
+# On push-to-master, never cancel — these runs populate CodSpeed baselines.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
+
+jobs:
+  build:
+    name: "Detect Changes"
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Setup Python 3.11"
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+      - name: "📂 Get Changed Files"
+        id: files
+        uses: Ana06/get-changed-files@25f79e676e7ea1868813e21465014798211fad8c # v2.3.0
+      - name: "🔍 Analyze Changed Files"
+        id: set-matrix
+        run: |
+          python -m pip install packaging requests
+          python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
+    outputs:
+      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
+
+  benchmarks:
+    name: "⚡ CodSpeed Benchmarks"
+    needs: [build]
+    if: ${{ needs.build.outputs.codspeed != '[]' }}
+    runs-on: codspeed-macro
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: "📦 Install UV Package Manager"
+        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
+        with:
+          # Pinned to 3.13.11 to work around CodSpeed walltime segfault on 3.13.12+
+          # See: https://github.com/CodSpeedHQ/pytest-codspeed/issues/106
+          python-version: "3.13.11"
+
+      - name: "📦 Install Test Dependencies"
+        run: uv sync --group test
+        working-directory: ${{ matrix.job-configs.working-directory }}
+
+      - name: "⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}"
+        uses: CodSpeedHQ/action@a50965600eafa04edcd6717761f55b77e52aafbd # v4
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd ${{ matrix.job-configs.working-directory }}
+            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ] || [ "${{ matrix.job-configs.working-directory }}" = "libs/langchain_v1" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            fi
+          mode: ${{ matrix.job-configs.codspeed-mode }}
