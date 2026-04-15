@@ -1,4 +1,4 @@
-"""lc_security — SSRF protection and security utilities for LangSmith."""
+"""lc_security — SSRF protection and security utilities."""
 
 from langchain_core._security._exceptions import SSRFBlockedError
 from langchain_core._security._policy import (
