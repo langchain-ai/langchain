@@ -1,7 +1,7 @@
 """lc_security — SSRF protection and security utilities for LangSmith."""
 
-from lc_security.exceptions import SSRFBlockedError
-from lc_security.policy import (
+from langchain_core._security._exceptions import SSRFBlockedError
+from langchain_core._security._policy import (
     SSRFPolicy,
     validate_hostname,
     validate_resolved_ip,

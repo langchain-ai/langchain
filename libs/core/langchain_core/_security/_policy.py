@@ -7,11 +7,7 @@ import os
 import socket
 import urllib.parse
 
-import structlog
-
-from lc_security.exceptions import SSRFBlockedError
-
-logger = structlog.get_logger(__name__)
+from langchain_core._security._exceptions import SSRFBlockedError
 
 # ---------------------------------------------------------------------------
 # Blocklist constants

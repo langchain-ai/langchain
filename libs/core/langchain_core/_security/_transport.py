@@ -14,8 +14,6 @@ from lc_security.policy import (
     validate_url_sync,
 )
 
-logger = structlog.get_logger(__name__)
-
 # Keys that AsyncHTTPTransport accepts (forwarded from factory kwargs).
 _TRANSPORT_KWARGS = frozenset(
     {
@@ -171,4 +169,6 @@ def ssrf_safe_async_client(
     return httpx.AsyncClient(
         transport=transport,
         **client_kwargs,  # type: ignore[arg-type]
+    )
+   **client_kwargs,  # type: ignore[arg-type]
     )
