@@ -8,8 +8,10 @@ import pytest
 from langchain_core._security import (
     SSRFBlockedError,
     SSRFPolicy,
+    SSRFSafeSyncTransport,
     SSRFSafeTransport,
     ssrf_safe_async_client,
+    ssrf_safe_client,
     validate_hostname,
     validate_resolved_ip,
     validate_url_sync,
@@ -300,3 +302,80 @@ async def test_localhost_blocked_in_production(monkeypatch: Any) -> None:
     request = httpx.Request("GET", "http://localhost:8084/mcp")
     with pytest.raises(SSRFBlockedError):
         await transport.handle_async_request(request)
+
+
+# ---------------------------------------------------------------------------
+# Sync transport tests
+# ---------------------------------------------------------------------------
+
+
+def test_sync_transport_pins_ip_and_sets_sni() -> None:
+    transport = SSRFSafeSyncTransport()
+    transport._inner = httpx.MockTransport(_ok_response)  # type: ignore[assignment]
+
+    addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=addrinfo,
+    ):
+        request = httpx.Request("GET", "https://example.com/resource")
+        response = transport.handle_request(request)
+
+    assert response.status_code == 200
+
+
+def test_sync_transport_blocks_private_resolution() -> None:
+    transport = SSRFSafeSyncTransport()
+
+    addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=addrinfo,
+    ):
+        request = httpx.Request("GET", "https://example.com/resource")
+        with pytest.raises(SSRFBlockedError, match="private IP range"):
+            transport.handle_request(request)
+
+
+def test_sync_transport_redirect_to_private_blocked(monkeypatch: Any) -> None:
+    call_count = 0
+
+    def _routing_addrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return _fake_addrinfo("93.184.216.34")
+        return _fake_addrinfo("127.0.0.1")
+
+    monkeypatch.setattr(socket, "getaddrinfo", _routing_addrinfo)
+
+    def _redirect_responder(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            302,
+            headers={"Location": "http://evil.com/pwned"},
+        )
+
+    transport = SSRFSafeSyncTransport()
+    transport._inner = httpx.MockTransport(_redirect_responder)  # type: ignore[assignment]
+
+    client = httpx.Client(
+        transport=transport,
+        follow_redirects=True,
+        max_redirects=5,
+    )
+
+    with pytest.raises(SSRFBlockedError):
+        client.get("http://safe.com/start")
+
+    client.close()
+
+
+def test_ssrf_safe_client_sets_redirect_defaults() -> None:
+    client = ssrf_safe_client()
+    try:
+        assert client.follow_redirects is True
+        assert client.max_redirects == 10
+    finally:
+        client.close()
