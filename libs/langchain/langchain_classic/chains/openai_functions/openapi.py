@@ -351,7 +351,7 @@ def get_openapi_chain(
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
         llm: language model, should be an OpenAI function-calling model, e.g.
-            `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
+            `ChatOpenAI(model="gpt-4o-mini")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
         params: Request parameters.

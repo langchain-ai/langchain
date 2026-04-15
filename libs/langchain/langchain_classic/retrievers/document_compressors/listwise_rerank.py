@@ -65,7 +65,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         ]
 
         reranker = LLMListwiseRerank.from_llm(
-            llm=ChatOpenAI(model="gpt-3.5-turbo"), top_n=3
+            llm=ChatOpenAI(model="gpt-4o-mini"), top_n=3
         )
         compressed_docs = reranker.compress_documents(documents, "Who is steve")
         assert len(compressed_docs) == 3

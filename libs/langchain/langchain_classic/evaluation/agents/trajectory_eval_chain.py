@@ -113,7 +113,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         \"\"\"Very helpful answers to geography questions.\"\"\"
         return f"{country}? IDK - We may never know {question}."
 
-    model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     agent = initialize_agent(
         tools=[geography_answers],
         llm=model,
