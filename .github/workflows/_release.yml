@@ -356,7 +356,7 @@ jobs:
         run: |
           VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
           VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
-          make tests PYTEST_EXTRA="-q -k 'not test_serdes'"
+          make tests
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Import integration test dependencies
