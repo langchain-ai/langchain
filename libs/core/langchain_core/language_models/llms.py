@@ -537,6 +537,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
+                langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                    params
+                ),
             )
             (run_manager,) = callback_manager.on_llm_start(
                 self._serialized,
@@ -607,6 +610,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = await callback_manager.on_llm_start(
             self._serialized,
@@ -950,6 +956,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
+            params = self.dict()
+            params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
                     callback,
@@ -959,6 +967,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
                 for callback, tag, meta in zip(
                     callbacks, tags_list, metadata_list, strict=False
@@ -966,6 +977,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
+            params = self.dict()
+            params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
                     cast("Callbacks", callbacks),
@@ -975,12 +988,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
+                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
-        params["stop"] = stop
         options = {"stop": stop}
         (
             existing_prompts,
@@ -1214,6 +1228,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
+            params = self.dict()
+            params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
                     callback,
@@ -1223,6 +1239,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
                 for callback, tag, meta in zip(
                     callbacks, tags_list, metadata_list, strict=False
@@ -1230,6 +1249,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
+            params = self.dict()
+            params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
                     cast("Callbacks", callbacks),
@@ -1239,12 +1260,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
+                    langsmith_inheritable_metadata=self._filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.dict()
-        params["stop"] = stop
         options = {"stop": stop}
         (
             existing_prompts,

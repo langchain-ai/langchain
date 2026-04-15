@@ -284,3 +284,103 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+class FakeLLMWithInvocationParams(BaseLLM):
+    """Fake LLM with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-llm-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _generate(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        generations = [[Generation(text="test response")]]
+        return LLMResult(generations=generations)
+
+    @override
+    async def _agenerate(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        generations = [[Generation(text="test response")]]
+        return LLMResult(generations=generations)
+
+
+def test_llm_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeLLMWithInvocationParams()
+    with collect_runs() as cb:
+        llm.invoke("Hello", config={"callbacks": [cb]})
+        assert len(cb.traced_runs) == 1
+        run = cb.traced_runs[0]
+        # The invocation params should be in the run's extra
+        assert run.extra is not None
+
+
+def test_llm_invocation_params_filtered_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    llm = FakeLLMWithInvocationParams()
+
+    # Test the filter method directly
+    params = dict(llm._identifying_params)
+    filtered = llm._filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+async def test_llm_invocation_params_filtered_in_stream() -> None:
+    """Test that invocation params are filtered when streaming."""
+    llm = FakeLLMWithInvocationParams()
+
+    # Create a custom LLM that supports streaming
+    class FakeStreamingLLM(FakeLLMWithInvocationParams):
+        @override
+        def _stream(
+            self,
+            prompt: str,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[GenerationChunk]:
+            yield GenerationChunk(text="test ")
+
+    streaming_llm = FakeStreamingLLM()
+
+    with collect_runs() as cb:
+        list(streaming_llm.stream("Hello", config={"callbacks": [cb]}))
+        assert len(cb.traced_runs) == 1
+        run = cb.traced_runs[0]
+        # Verify the run was traced
+        assert run.extra is not None

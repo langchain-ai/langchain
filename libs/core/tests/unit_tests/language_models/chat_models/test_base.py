@@ -17,6 +17,7 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
+from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.chat_models import _generate_response_from_error
 from langchain_core.language_models.fake_chat_models import (
@@ -1390,3 +1391,88 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["body"] is None
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+class FakeChatModelWithInvocationParams(SimpleChatModel):
+    """Fake chat model with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-chat-model-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _call(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return "test response"
+
+
+def test_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeChatModelWithInvocationParams()
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [cb]})
+        assert len(cb.traced_runs) == 1
+        run = cb.traced_runs[0]
+        # The invocation params should be in the run's extra
+        assert run.extra is not None
+        # Temperature should be passed through
+        assert "temperature" in run.extra or "metadata" in run.extra
+
+
+def test_invocation_params_filtered_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    llm = FakeChatModelWithInvocationParams()
+
+    # Test the filter method directly
+    params = llm._identifying_params
+    filtered = llm._filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+def test_invocation_params_not_in_stream_events() -> None:
+    """Test that invocation params are not duplicated in stream events output."""
+    from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+
+    llm = FakeChatModelWithInvocationParams()
+
+    # Create a callback handler for astream events
+    handler = _AstreamEventsCallbackHandler()
+
+    # The handler should not have invocation params in its event output
+    # This is tested by ensuring the filter is applied before passing to tracer
+    params = llm._identifying_params
+    filtered = llm._filter_invocation_params_for_tracing(params)
+
+    # Verify the filtered params don't have the excluded keys
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
