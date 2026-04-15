@@ -407,3 +407,62 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
+
+
+def test_max_concurrent_requests_wired_to_httpx_limits() -> None:
+    """Verify max_concurrent_requests is forwarded to the httpx connection pool."""
+    chat = ChatMistralAI(max_concurrent_requests=7)  # type: ignore[call-arg]
+    # httpx.Client does not expose .limits publicly; the chosen value is
+    # visible on the underlying httpcore connection pool.
+    assert chat.client._transport._pool._max_connections == 7
+    assert chat.client._transport._pool._max_keepalive_connections == 7
+    assert chat.async_client._transport._pool._max_connections == 7
+    assert chat.async_client._transport._pool._max_keepalive_connections == 7
+
+
+def test_is_retryable_error_rate_limit() -> None:
+    """429 responses must be retried; 400 must not."""
+    from langchain_mistralai.chat_models import _is_retryable_error
+
+    rate_limit_response = MagicMock()
+    rate_limit_response.status_code = 429
+    rate_limit_exc = httpx.HTTPStatusError(
+        "rate limited", request=MagicMock(), response=rate_limit_response
+    )
+    assert _is_retryable_error(rate_limit_exc) is True
+
+    bad_request_response = MagicMock()
+    bad_request_response.status_code = 400
+    bad_request_exc = httpx.HTTPStatusError(
+        "bad request", request=MagicMock(), response=bad_request_response
+    )
+    assert _is_retryable_error(bad_request_exc) is False
+
+
+def test_is_retryable_error_server_errors() -> None:
+    """5xx server errors must be retried."""
+    from langchain_mistralai.chat_models import _is_retryable_error
+
+    for status_code in [500, 502, 503, 504]:
+        response = MagicMock()
+        response.status_code = status_code
+        exc = httpx.HTTPStatusError(
+            "server error", request=MagicMock(), response=response
+        )
+        assert _is_retryable_error(exc) is True
+
+
+def test_is_retryable_error_network_error() -> None:
+    """Raw network/connection errors (no status code) must be retried."""
+    from langchain_mistralai.chat_models import _is_retryable_error
+
+    exc = httpx.RequestError("connection reset", request=MagicMock())
+    assert _is_retryable_error(exc) is True
+
+
+def test_is_retryable_error_non_retryable() -> None:
+    """Arbitrary exceptions that are not httpx errors must not be retried."""
+    from langchain_mistralai.chat_models import _is_retryable_error
+
+    assert _is_retryable_error(ValueError("oops")) is False
+    assert _is_retryable_error(RuntimeError("oops")) is False

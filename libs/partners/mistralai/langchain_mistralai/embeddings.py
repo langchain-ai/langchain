@@ -178,7 +178,15 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     def validate_environment(self) -> Self:
         """Validate configuration."""
         api_key_str = self.mistral_api_key.get_secret_value()
-        # TODO: handle retries
+
+        # Bound the connection pool to max_concurrent_requests so that callers
+        # cannot inadvertently open an unbounded number of simultaneous TCP
+        # connections to the Mistral API.  Retries are handled at the call-site
+        # via the _retry decorator (tenacity).
+        limits = httpx.Limits(
+            max_connections=self.max_concurrent_requests,
+            max_keepalive_connections=self.max_concurrent_requests,
+        )
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
@@ -188,8 +196,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                limits=limits,
             )
-        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.endpoint,
@@ -199,6 +207,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Authorization": f"Bearer {api_key_str}",
                 },
                 timeout=self.timeout,
+                limits=limits,
             )
         if self.tokenizer is None:
             try:
@@ -296,16 +305,22 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         try:
+            # Use a semaphore to cap the number of in-flight requests to
+            # max_concurrent_requests.  asyncio.gather would otherwise fire all
+            # batch coroutines simultaneously, ignoring the connection-pool
+            # limit set on the underlying httpx client.
+            semaphore = asyncio.Semaphore(self.max_concurrent_requests)
 
             @self._retry
             async def _aembed_batch(batch: list[str]) -> Response:
-                response = await self.async_client.post(
-                    url="/embeddings",
-                    json={
-                        "model": self.model,
-                        "input": batch,
-                    },
-                )
+                async with semaphore:
+                    response = await self.async_client.post(
+                        url="/embeddings",
+                        json={
+                            "model": self.model,
+                            "input": batch,
+                        },
+                    )
                 response.raise_for_status()
                 return response
 

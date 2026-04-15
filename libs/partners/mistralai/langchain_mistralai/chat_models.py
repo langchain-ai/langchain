@@ -99,12 +99,33 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _is_retryable_error(exception: BaseException) -> bool:
+    """Determine if an exception is transient and warrants a retry.
+
+    Retries on network-layer errors, rate-limit responses (429), and
+    server-side errors (5xx).  Permanent client errors (4xx other than
+    429) are not retried to avoid wasting quota.
+    """
+    if isinstance(exception, (httpx.RequestError, httpx.StreamError)):
+        # Network / connection / timeout failures — always transient.
+        if isinstance(exception, httpx.HTTPStatusError):
+            # RequestError can only be HTTPStatusError when the response has
+            # a status code, so gate on that.
+            status_code = exception.response.status_code
+            return status_code == 429 or status_code >= 500
+        return True
+    if isinstance(exception, httpx.HTTPStatusError):
+        status_code = exception.response.status_code
+        return status_code == 429 or status_code >= 500
+    return False
+
+
 def _create_retry_decorator(
     llm: ChatMistralAI,
     run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
 ) -> Callable[[Any], Any]:
     """Return a tenacity retry decorator, preconfigured to handle exceptions."""
-    errors = [httpx.RequestError, httpx.StreamError]
+    errors = [httpx.RequestError, httpx.StreamError, httpx.HTTPStatusError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -605,13 +626,21 @@ class ChatMistralAI(BaseChatModel):
         else:
             api_key_str = self.mistral_api_key
 
-        # TODO: handle retries
         base_url_str = (
             self.endpoint
             or os.environ.get("MISTRAL_BASE_URL")
             or "https://api.mistral.ai/v1"
         )
         self.endpoint = base_url_str
+
+        # Bound the connection pool to max_concurrent_requests so that callers
+        # cannot inadvertently open an unbounded number of simultaneous TCP
+        # connections to the Mistral API.  Retries are handled at the call-site
+        # via completion_with_retry / acompletion_with_retry (tenacity).
+        limits = httpx.Limits(
+            max_connections=self.max_concurrent_requests,
+            max_keepalive_connections=self.max_concurrent_requests,
+        )
         if not self.client:
             self.client = httpx.Client(
                 base_url=base_url_str,
@@ -622,8 +651,8 @@ class ChatMistralAI(BaseChatModel):
                 },
                 timeout=self.timeout,
                 verify=global_ssl_context,
+                limits=limits,
             )
-        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
@@ -634,6 +663,7 @@ class ChatMistralAI(BaseChatModel):
                 },
                 timeout=self.timeout,
                 verify=global_ssl_context,
+                limits=limits,
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
