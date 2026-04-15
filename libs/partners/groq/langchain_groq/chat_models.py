@@ -942,9 +942,7 @@ class ChatGroq(BaseChatModel):
                     Uses Groq's tool-calling [API](https://console.groq.com/docs/tool-use)
                 - `'json_schema'`:
                     Uses Groq's [Structured Output API](https://console.groq.com/docs/structured-outputs).
-                    Supported for a subset of models, including `openai/gpt-oss`,
-                    `moonshotai/kimi-k2-instruct-0905`, and some `meta-llama/llama-4`
-                    models. See [docs](https://console.groq.com/docs/structured-outputs)
+                    Supported for a subset of models. See [docs](https://console.groq.com/docs/structured-outputs)
                     for details.
                 - `'json_mode'`:
                     Uses Groq's [JSON mode](https://console.groq.com/docs/structured-outputs#json-object-mode).
