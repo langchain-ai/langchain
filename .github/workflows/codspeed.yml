@@ -77,7 +77,5 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             cd ${{ matrix.job-configs.working-directory }}
-            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ] || [ "${{ matrix.job-configs.working-directory }}" = "libs/langchain_v1" ]; then
-              uv run --no-sync pytest ./tests/benchmarks --codspeed
-            fi
+            uv run --no-sync pytest ./tests/benchmarks --codspeed
           mode: ${{ matrix.job-configs.codspeed-mode }}
