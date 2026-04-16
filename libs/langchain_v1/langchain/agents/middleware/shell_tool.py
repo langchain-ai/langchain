@@ -265,8 +265,22 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                # The marker may appear mid-line when the preceding command's
+                # output lacks a trailing newline (e.g. ``echo -n``).  Any text
+                # before the marker belongs to the command output.
+                marker_idx = data.index(marker)
+                if marker_idx > 0:
+                    prefix = data[:marker_idx]
+                    total_lines += 1
+                    total_bytes += len(prefix.encode("utf-8", "replace"))
+                    if total_lines <= self._policy.max_output_lines and (
+                        self._policy.max_output_bytes is None
+                        or total_bytes <= self._policy.max_output_bytes
+                    ):
+                        collected.append(prefix)
+                marker_tail = data[marker_idx + len(marker) :]
+                _, _, status = marker_tail.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might

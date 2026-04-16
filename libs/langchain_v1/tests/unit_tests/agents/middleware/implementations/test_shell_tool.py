@@ -546,3 +546,31 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_command_without_trailing_newline(tmp_path: Path) -> None:
+    """Test that commands whose output lacks a trailing newline don't time out.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36804.
+    When a command like ``echo -n`` omits the trailing newline, the done-marker
+    must still be detected on its own line.
+    """
+    policy = HostExecutionPolicy(command_timeout=5.0)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources, {"command": 'echo -n "hello"'}, tool_call_id=None
+        )
+
+        assert isinstance(result, str)
+        assert "hello" in result
+        assert "timed out" not in result.lower()
+    finally:
+        middleware.after_agent(state, runtime)
