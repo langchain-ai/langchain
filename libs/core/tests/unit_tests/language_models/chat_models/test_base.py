@@ -1460,6 +1460,22 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
         assert len(cb.traced_runs) == 1
         run = cb.traced_runs[0]
         # The invocation params should be in the run's extra
-        assert run.extra is not None
-        # Temperature should be passed through
-        assert "temperature" in run.extra or "metadata" in run.extra
+        assert run.extra == {
+            "batch_size": 1,
+            "invocation_params": {
+                "_type": "fake-chat-model-with-invocation-params",
+                "functions": [{"name": "test_function"}],
+                "messages": [{"content": "test", "role": "system"}],
+                "response_format": {"type": "json_object"},
+                "stop": None,
+                "temperature": 0.7,
+                "tools": [{"name": "test_tool"}],
+            },
+            "metadata": {
+                "ls_integration": "langchain_chat_model",
+                "ls_model_type": "chat",
+                "ls_provider": "fakechatmodelwithinvocationparams",
+                "ls_temperature": 0.7,
+            },
+            "options": {"stop": None},
+        }
