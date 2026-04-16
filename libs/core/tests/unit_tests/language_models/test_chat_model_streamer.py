@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import Field
 
 from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.language_models.chat_model_stream import (
@@ -146,3 +147,77 @@ class TestCallbacks:
 
         assert "on_chat_model_start" in handler.events
         assert "on_llm_end" in handler.events
+
+
+class _KwargRecordingModel(FakeListChatModel):
+    """Fake model that records kwargs passed to `_stream` / `_astream`."""
+
+    received_kwargs: list[dict[str, Any]] = Field(default_factory=list)
+
+    def _stream(
+        self,
+        messages: Any,
+        stop: Any = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        self.received_kwargs.append({"stop": stop, **kwargs})
+        return super()._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    async def _astream(
+        self,
+        messages: Any,
+        stop: Any = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        self.received_kwargs.append({"stop": stop, **kwargs})
+        async for chunk in super()._astream(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        ):
+            yield chunk
+
+
+class TestRunnableBindingForwarding:
+    """`RunnableBinding.stream_v2` must merge bound kwargs into the call.
+
+    Without the explicit override on `RunnableBinding`, `__getattr__`
+    forwards the call but drops `self.kwargs` — so tools bound via
+    `bind_tools`, stop sequences bound via `bind`, etc. would be silently
+    ignored.
+    """
+
+    def test_bound_kwargs_reach_stream_v2(self) -> None:
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(my_marker="sentinel-42")
+
+        stream = bound.stream_v2("test")  # type: ignore[attr-defined]
+        for _ in stream.text:
+            pass
+
+        assert len(model.received_kwargs) == 1
+        assert model.received_kwargs[0].get("my_marker") == "sentinel-42"
+
+    def test_call_kwargs_override_bound_kwargs(self) -> None:
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(my_marker="from-bind")
+
+        stream = bound.stream_v2("test", my_marker="from-call")  # type: ignore[attr-defined]
+        for _ in stream.text:
+            pass
+
+        assert model.received_kwargs[0].get("my_marker") == "from-call"
+
+    @pytest.mark.asyncio
+    async def test_bound_kwargs_reach_astream_v2(self) -> None:
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(my_marker="sentinel-async")
+
+        stream = await bound.astream_v2("test")  # type: ignore[attr-defined]
+        _ = await stream
+
+        assert len(model.received_kwargs) == 1
+        assert model.received_kwargs[0].get("my_marker") == "sentinel-async"
