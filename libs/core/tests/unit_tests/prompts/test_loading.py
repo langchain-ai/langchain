@@ -162,6 +162,75 @@ def test_load_examples_allows_dangerous_paths_when_opted_in(tmp_path: Path) -> N
     assert result["examples"] == [{"input": "a", "output": "b"}]
 
 
+def test_load_template_rejects_symlink_target_outside_working_directory(
+    tmp_path: Path,
+) -> None:
+    safe_dir = tmp_path / "safe"
+    outside_dir = tmp_path / "outside"
+    safe_dir.mkdir()
+    outside_dir.mkdir()
+    (outside_dir / "secret.txt").write_text("SECRET")
+    symlink = safe_dir / "template.txt"
+    symlink.symlink_to(outside_dir / "secret.txt")
+
+    with (
+        change_directory(safe_dir),
+        pytest.raises(
+            ValueError, match="resolves outside the current working directory"
+        ),
+    ):
+        _load_template("template", {"template_path": "template.txt"})
+
+
+def test_load_examples_rejects_symlink_target_outside_working_directory(
+    tmp_path: Path,
+) -> None:
+    safe_dir = tmp_path / "safe"
+    outside_dir = tmp_path / "outside"
+    safe_dir.mkdir()
+    outside_dir.mkdir()
+    (outside_dir / "examples.json").write_text(
+        json.dumps([{"input": "top", "output": "secret"}])
+    )
+    (safe_dir / "examples.json").symlink_to(outside_dir / "examples.json")
+
+    with (
+        change_directory(safe_dir),
+        pytest.raises(
+            ValueError, match="resolves outside the current working directory"
+        ),
+    ):
+        _load_examples({"examples": "examples.json"})
+
+
+def test_load_prompt_rejects_relative_symlink_target_outside_working_directory(
+    tmp_path: Path,
+) -> None:
+    safe_dir = tmp_path / "safe"
+    outside_dir = tmp_path / "outside"
+    safe_dir.mkdir()
+    outside_dir.mkdir()
+    (outside_dir / "prompt.json").write_text(
+        json.dumps(
+            {
+                "_type": "prompt",
+                "template": "external {value}",
+                "input_variables": ["value"],
+            }
+        )
+    )
+    (safe_dir / "prompt.json").symlink_to(outside_dir / "prompt.json")
+
+    with (
+        change_directory(safe_dir),
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(
+            ValueError, match="resolves outside the current working directory"
+        ),
+    ):
+        load_prompt("prompt.json")
+
+
 def test_load_prompt_from_config_rejects_absolute_template_path(
     tmp_path: Path,
 ) -> None:
@@ -274,6 +343,40 @@ def test_load_prompt_from_config_few_shot_rejects_absolute_example_prompt_path(
     with (
         suppress_langchain_deprecation_warning(),
         pytest.raises(ValueError, match="is absolute"),
+    ):
+        load_prompt_from_config(config)
+
+
+def test_load_prompt_from_config_few_shot_rejects_symlinked_examples_outside_cwd(
+    tmp_path: Path,
+) -> None:
+    safe_dir = tmp_path / "safe"
+    outside_dir = tmp_path / "outside"
+    safe_dir.mkdir()
+    outside_dir.mkdir()
+    (outside_dir / "examples.json").write_text(
+        json.dumps([{"input": "top", "output": "secret"}])
+    )
+    (safe_dir / "examples.json").symlink_to(outside_dir / "examples.json")
+
+    config = {
+        "_type": "few_shot",
+        "input_variables": ["query"],
+        "prefix": "Examples:",
+        "example_prompt": {
+            "_type": "prompt",
+            "input_variables": ["input", "output"],
+            "template": "{input}: {output}",
+        },
+        "examples": "examples.json",
+        "suffix": "Query: {query}",
+    }
+    with (
+        change_directory(safe_dir),
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(
+            ValueError, match="resolves outside the current working directory"
+        ),
     ):
         load_prompt_from_config(config)
 
