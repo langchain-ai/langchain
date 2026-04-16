@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING, cast
 
+import pytest
+
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _accumulate_block,
@@ -12,7 +14,9 @@ from langchain_core.language_models._compat_bridge import (
     _make_start_block,
     _normalize_finish_reason,
     _to_protocol_usage,
+    amessage_to_events,
     chunks_to_events,
+    message_to_events,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
@@ -305,3 +309,144 @@ def test_chunks_to_events_invalid_tool_call_finish_reason() -> None:
     # valid tool_call/tool_call_chunk at finish time, so no tool_use inference.
     final = cast("MessageFinishData", events[-1])
     assert final["reason"] == "stop"
+
+
+# ---------------------------------------------------------------------------
+# message_to_events: finalized-message replay
+# ---------------------------------------------------------------------------
+
+
+def test_message_to_events_text_only() -> None:
+    msg = AIMessage(content="Hello world", id="msg-1")
+    events = list(message_to_events(msg))
+
+    event_types = [e["event"] for e in events]
+    assert event_types == [
+        "message-start",
+        "content-block-start",
+        "content-block-delta",
+        "content-block-finish",
+        "message-finish",
+    ]
+    assert events[0]["message_id"] == "msg-1"
+
+    delta = cast("TextBlock", events[2]["content_block"])
+    assert delta["text"] == "Hello world"
+
+    final = cast("MessageFinishData", events[-1])
+    assert final["reason"] == "stop"
+
+
+def test_message_to_events_empty_content_skips_delta() -> None:
+    """Empty text should yield start+finish only, no delta event."""
+    msg = AIMessage(content="", id="msg-empty")
+    events = list(message_to_events(msg))
+
+    # No blocks → just message-start and message-finish
+    event_types = [e["event"] for e in events]
+    assert event_types == ["message-start", "message-finish"]
+
+
+def test_message_to_events_reasoning_text_order() -> None:
+    msg = AIMessage(
+        content=[
+            {"type": "reasoning", "reasoning": "think hard"},
+            {"type": "text", "text": "the answer"},
+        ],
+        id="msg-2",
+    )
+    events = list(message_to_events(msg))
+
+    # Two start events, two deltas, two finishes — in block order
+    starts = [e for e in events if e["event"] == "content-block-start"]
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert [s["content_block"]["type"] for s in starts] == ["reasoning", "text"]
+    assert [f["content_block"]["type"] for f in finishes] == ["reasoning", "text"]
+
+    deltas = [e for e in events if e["event"] == "content-block-delta"]
+    assert len(deltas) == 2
+    assert cast("ReasoningBlock", deltas[0]["content_block"])["reasoning"] == (
+        "think hard"
+    )
+    assert cast("TextBlock", deltas[1]["content_block"])["text"] == "the answer"
+
+
+def test_message_to_events_tool_call_infers_tool_use() -> None:
+    msg = AIMessage(
+        content="",
+        id="msg-3",
+        tool_calls=[
+            {"id": "tc1", "name": "search", "args": {"q": "hi"}, "type": "tool_call"},
+        ],
+    )
+    events = list(message_to_events(msg))
+
+    # tool_call blocks skip the delta — start + finish only
+    deltas = [e for e in events if e["event"] == "content-block-delta"]
+    assert deltas == []
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len(finishes) == 1
+    tc = cast("ToolCallBlock", finishes[0]["content_block"])
+    assert tc["type"] == "tool_call"
+    assert tc["args"] == {"q": "hi"}
+
+    final = cast("MessageFinishData", events[-1])
+    assert final["reason"] == "tool_use"
+
+
+def test_message_to_events_preserves_finish_reason_and_metadata() -> None:
+    msg = AIMessage(
+        content="done",
+        id="msg-4",
+        response_metadata={
+            "finish_reason": "length",
+            "model_name": "test-model",
+            "stop_sequence": "</end>",
+        },
+    )
+    events = list(message_to_events(msg))
+
+    start = events[0]
+    assert start["metadata"] == {"model": "test-model"}
+
+    final = cast("MessageFinishData", events[-1])
+    assert final["reason"] == "length"
+    # finish_reason stripped from metadata; stop_sequence preserved
+    assert final["metadata"] == {"model_name": "test-model", "stop_sequence": "</end>"}
+
+
+def test_message_to_events_propagates_usage() -> None:
+    msg = AIMessage(
+        content="hi",
+        id="msg-5",
+        usage_metadata={"input_tokens": 10, "output_tokens": 2, "total_tokens": 12},
+    )
+    events = list(message_to_events(msg))
+
+    final = cast("MessageFinishData", events[-1])
+    assert final["usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 2,
+        "total_tokens": 12,
+    }
+
+
+def test_message_to_events_message_id_override() -> None:
+    msg = AIMessage(content="x", id="msg-orig")
+    events = list(message_to_events(msg, message_id="msg-override"))
+    assert events[0]["message_id"] == "msg-override"
+
+
+@pytest.mark.asyncio
+async def test_amessage_to_events_matches_sync() -> None:
+    msg = AIMessage(
+        content=[
+            {"type": "reasoning", "reasoning": "why"},
+            {"type": "text", "text": "because"},
+        ],
+        id="msg-async",
+    )
+    sync_events = list(message_to_events(msg))
+    async_events = [e async for e in amessage_to_events(msg)]
+    assert async_events == sync_events

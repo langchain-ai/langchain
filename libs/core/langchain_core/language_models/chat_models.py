@@ -855,6 +855,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
         stream = ChatModelStream(message_id=run_id)
 
+        # Providers may implement the optional `_stream_chat_model_events` hook
+        # to emit protocol events directly, bypassing the chunk→event compat
+        # bridge. Expected signature:
+        #     (messages, *, stop, run_manager, **kwargs) -> Iterator[MessagesData]
         native_stream = cast(
             "Callable[..., Iterator[MessagesData]] | None",
             getattr(self, "_stream_chat_model_events", None),
@@ -898,8 +902,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 return False
             dispatch_event(event, stream)
-            if stream._done:  # noqa: SLF001
-                run_manager.on_llm_end(LLMResult(generations=[]))
+            if stream._done and stream._output_message is not None:  # noqa: SLF001
+                run_manager.on_llm_end(
+                    LLMResult(
+                        generations=[
+                            [ChatGeneration(message=stream._output_message)],  # noqa: SLF001
+                        ],
+                    ),
+                )
             return True
 
         stream._bind_pump(pump_one)  # noqa: SLF001
@@ -962,6 +972,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
         stream = AsyncChatModelStream(message_id=run_id)
 
+        # Async counterpart to `_stream_chat_model_events` — see `stream_v2`
+        # for the full hook description. Expected signature:
+        #     (messages, *, stop, run_manager, **kwargs)
+        #         -> AsyncIterator[MessagesData]
         native_astream = cast(
             "Callable[..., AsyncIterator[MessagesData]] | None",
             getattr(self, "_astream_chat_model_events", None),
@@ -991,10 +1005,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                 async for event in event_source:
                     dispatch_event(event, stream)
-                if stream._done:  # noqa: SLF001
+                if stream._done and stream._output_message is not None:  # noqa: SLF001
                     await run_manager.on_llm_end(
-                        LLMResult(generations=[]),
+                        LLMResult(
+                            generations=[
+                                [ChatGeneration(message=stream._output_message)],  # noqa: SLF001
+                            ],
+                        ),
                     )
+            except asyncio.CancelledError as exc:
+                stream._fail(exc)  # noqa: SLF001
+                raise
             except BaseException as exc:
                 stream._fail(exc)  # noqa: SLF001
                 await run_manager.on_llm_error(

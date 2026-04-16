@@ -573,8 +573,115 @@ async def achunks_to_events(
         yield event
 
 
+def message_to_events(
+    msg: BaseMessage,
+    *,
+    message_id: str | None = None,
+) -> Iterator[MessagesData]:
+    """Replay a finalized message as a synthetic event lifecycle.
+
+    Converts an already-complete message (e.g. one returned whole from a
+    graph node, loaded from checkpoint state, or fetched from cache) into
+    the same ``message-start`` / per-block / ``message-finish`` event
+    stream a live call would produce. Consumers downstream see a uniform
+    event shape regardless of source.
+
+    Text and reasoning blocks emit a single ``content-block-delta`` with
+    the full content so projections like ``.text`` pick up the value.
+    Tool-call blocks skip the delta (finalized ``args`` are a dict, not a
+    chunk string) and rely on the finish event alone.
+
+    Args:
+        msg: The finalized message — typically an ``AIMessage``.
+        message_id: Optional stable message ID; falls back to ``msg.id``.
+
+    Yields:
+        ``MessagesData`` lifecycle events.
+    """
+    blocks = _extract_final_blocks(msg)
+
+    start_data = MessageStartData(event="message-start", role="ai")
+    resolved_id = message_id if message_id is not None else msg.id
+    if resolved_id:
+        start_data["message_id"] = resolved_id
+    response_metadata = msg.response_metadata or {}
+    start_metadata = _extract_start_metadata(response_metadata)
+    if start_metadata:
+        start_data["metadata"] = start_metadata
+    yield start_data
+
+    has_valid_tool_call = False
+    for idx, block in blocks:
+        yield ContentBlockStartData(
+            event="content-block-start",
+            index=idx,
+            content_block=_make_start_block(block),
+        )
+        btype = block.get("type")
+        if btype == "text":
+            text = block.get("text", "")
+            if text:
+                yield ContentBlockDeltaData(
+                    event="content-block-delta",
+                    index=idx,
+                    content_block=TextBlock(type="text", text=text),
+                )
+        elif btype == "reasoning":
+            reasoning = block.get("reasoning", "")
+            if reasoning:
+                yield ContentBlockDeltaData(
+                    event="content-block-delta",
+                    index=idx,
+                    content_block=ReasoningBlock(
+                        type="reasoning", reasoning=reasoning
+                    ),
+                )
+        finalized = _finalize_block(block)
+        if finalized.get("type") == "tool_call":
+            has_valid_tool_call = True
+        yield ContentBlockFinishData(
+            event="content-block-finish",
+            index=idx,
+            content_block=finalized,
+        )
+
+    raw_reason = response_metadata.get("finish_reason") or response_metadata.get(
+        "stop_reason"
+    )
+    finish_reason: FinishReason = (
+        _normalize_finish_reason(raw_reason) if raw_reason else "stop"
+    )
+    if finish_reason == "stop" and has_valid_tool_call:
+        finish_reason = "tool_use"
+
+    finish_data = MessageFinishData(event="message-finish", reason=finish_reason)
+    usage_info = _to_protocol_usage(getattr(msg, "usage_metadata", None))
+    if usage_info is not None:
+        finish_data["usage"] = usage_info
+    metadata = {
+        k: v
+        for k, v in response_metadata.items()
+        if k not in ("finish_reason", "stop_reason")
+    }
+    if metadata:
+        finish_data["metadata"] = metadata
+    yield finish_data
+
+
+async def amessage_to_events(
+    msg: BaseMessage,
+    *,
+    message_id: str | None = None,
+) -> AsyncIterator[MessagesData]:
+    """Async variant of :func:`message_to_events`."""
+    for event in message_to_events(msg, message_id=message_id):
+        yield event
+
+
 __all__ = [
     "CompatBlock",
     "achunks_to_events",
+    "amessage_to_events",
     "chunks_to_events",
+    "message_to_events",
 ]

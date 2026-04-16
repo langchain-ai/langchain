@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+import asyncio
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pydantic import Field
@@ -13,6 +14,9 @@ from langchain_core.language_models.chat_model_stream import (
     ChatModelStream,
 )
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
+
+if TYPE_CHECKING:
+    from langchain_core.outputs import LLMResult
 
 
 class TestStreamV2Sync:
@@ -88,14 +92,16 @@ class _RecordingHandler(BaseCallbackHandler):
 
     def __init__(self) -> None:
         self.events: list[str] = []
+        self.last_llm_end_response: LLMResult | None = None
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
         self.events.append("on_chat_model_start")
 
-    def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
-        del args, kwargs
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        del kwargs
         self.events.append("on_llm_end")
+        self.last_llm_end_response = response
 
     def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
@@ -107,14 +113,16 @@ class _AsyncRecordingHandler(AsyncCallbackHandler):
 
     def __init__(self) -> None:
         self.events: list[str] = []
+        self.last_llm_end_response: LLMResult | None = None
 
     async def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
         self.events.append("on_chat_model_start")
 
-    async def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
-        del args, kwargs
+    async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        del kwargs
         self.events.append("on_llm_end")
+        self.last_llm_end_response = response
 
     async def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
@@ -147,6 +155,57 @@ class TestCallbacks:
 
         assert "on_chat_model_start" in handler.events
         assert "on_llm_end" in handler.events
+
+    def test_on_llm_end_receives_assembled_message(self) -> None:
+        """The LLMResult passed to on_llm_end must carry the final message.
+
+        Without this, LangSmith traces would see an empty generations list.
+        """
+        handler = _RecordingHandler()
+        model = FakeListChatModel(responses=["hello"], callbacks=[handler])
+        stream = model.stream_v2("test")
+        _ = stream.output
+
+        response = handler.last_llm_end_response
+        assert response is not None
+        assert response.generations
+        assert response.generations[0][0].message.content == "hello"  # type: ignore[attr-defined]
+
+    @pytest.mark.asyncio
+    async def test_on_llm_end_receives_assembled_message_async(self) -> None:
+        handler = _AsyncRecordingHandler()
+        model = FakeListChatModel(responses=["hello"], callbacks=[handler])
+        stream = await model.astream_v2("test")
+        _ = await stream
+
+        response = handler.last_llm_end_response
+        assert response is not None
+        assert response.generations
+        assert response.generations[0][0].message.content == "hello"  # type: ignore[attr-defined]
+
+
+class TestCancellation:
+    """Cancellation of `astream_v2` must propagate, not be swallowed."""
+
+    @pytest.mark.asyncio
+    async def test_astream_v2_cancellation_propagates(self) -> None:
+        """Cancelling the producer task must raise CancelledError.
+
+        Regression test: the producer's `except BaseException` previously
+        swallowed `asyncio.CancelledError`, converting it into an
+        `on_llm_error` + `stream._fail` pair that never propagated.
+        """
+        model = FakeListChatModel(responses=["abcdefghij"], sleep=0.05)
+        stream = await model.astream_v2("test")
+        task = stream._producer_task
+        assert task is not None
+
+        await asyncio.sleep(0.01)
+        task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert isinstance(stream._error, asyncio.CancelledError)
 
 
 class _KwargRecordingModel(FakeListChatModel):
