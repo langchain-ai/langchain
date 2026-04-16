@@ -4,6 +4,7 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import patch
 
 import pytest
 from pydantic import model_validator
@@ -43,6 +44,7 @@ from langchain_core.tracers import LogStreamCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -1455,33 +1457,40 @@ class FakeChatModelWithInvocationParams(SimpleChatModel):
 def test_invocation_params_passed_to_tracer_metadata() -> None:
     """Test that invocation params are passed to tracer metadata."""
     llm = FakeChatModelWithInvocationParams()
-    with collect_runs() as cb:
-        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [cb]})
-        assert len(cb.traced_runs) == 1
-        run = cb.traced_runs[0]
-        # The invocation params should be in the run's extra
-        assert run.extra == {
-            "batch_size": 1,
-            "invocation_params": {
-                "_type": "fake-chat-model-with-invocation-params",
-                "functions": [{"name": "test_function"}],
-                "messages": [{"content": "test", "role": "system"}],
-                "response_format": {"type": "json_object"},
-                "stop": None,
-                "temperature": 0.7,
-                "tools": [{"name": "test_tool"}],
-            },
-            "metadata": {
-                "ls_integration": "langchain_chat_model",
-                "ls_model_type": "chat",
-                "ls_provider": "fakechatmodelwithinvocationparams",
-                "ls_temperature": 0.7,
-            },
-            "options": {"stop": None},
-        }
-        assert run.metadata == {
+    tracer = LangChainTracer()
+    persisted_runs: list[Run] = []
+
+    def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+        persisted_runs.append(run)
+
+    with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
+
+    assert len(persisted_runs) == 1
+    run = persisted_runs[0]
+    assert run.extra == {
+        "batch_size": 1,
+        "invocation_params": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "functions": [{"name": "test_function"}],
+            "messages": [{"content": "test", "role": "system"}],
+            "response_format": {"type": "json_object"},
+            "stop": None,
+            "temperature": 0.7,
+            "tools": [{"name": "test_tool"}],
+        },
+        "metadata": {
+            "LANGSMITH_LANGGRAPH_API_VARIANT": "local_dev",
+            "_type": "fake-chat-model-with-invocation-params",
             "ls_integration": "langchain_chat_model",
             "ls_model_type": "chat",
             "ls_provider": "fakechatmodelwithinvocationparams",
             "ls_temperature": 0.7,
-        }
+            "revision_id": run.extra["metadata"]["revision_id"],
+            "stop": None,
+            "temperature": 0.7,
+        },
+        "options": {"stop": None},
+        "runtime": run.extra["runtime"],
+    }
+    assert run.metadata == run.extra["metadata"]
