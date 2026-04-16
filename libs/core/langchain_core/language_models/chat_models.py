@@ -24,6 +24,10 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
+from langchain_core.language_models._compat_bridge import (
+    achunks_to_events,
+    chunks_to_events,
+)
 from langchain_core.language_models._utils import (
     _normalize_messages,
     _update_message_content_to_blocks,
@@ -32,6 +36,11 @@ from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
+)
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
+    dispatch_event,
 )
 from langchain_core.language_models.model_profile import (
     ModelProfile,
@@ -79,6 +88,8 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import builtins
     import uuid
+
+    from langchain_protocol.protocol import MessagesData
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -783,6 +794,216 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         await run_manager.on_llm_end(
             LLMResult(generations=[[generation]]),
         )
+
+    # --- stream_v2 / astream_v2 ---
+
+    def stream_v2(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> ChatModelStream:
+        """Stream content-block lifecycle events for a single model call.
+
+        Returns a :class:`ChatModelStream` with typed projections
+        (``.text``, ``.reasoning``, ``.tool_calls``, ``.usage``,
+        ``.output``).
+
+        .. warning::
+            This API is experimental and may change.
+
+        Args:
+            input: The model input.
+            config: Optional runnable config.
+            stop: Optional list of stop words.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            A :class:`ChatModelStream` with typed projections.
+        """
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        input_messages = _normalize_messages(messages)
+
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        }
+        callback_manager = CallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            inheritable_metadata,
+            self.metadata,
+        )
+        (run_manager,) = callback_manager.on_chat_model_start(
+            self._serialized,
+            [_format_for_tracing(messages)],
+            invocation_params=params,
+            options=options,
+            name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            batch_size=1,
+        )
+
+        run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+        stream = ChatModelStream(message_id=run_id)
+
+        native_stream = cast(
+            "Callable[..., Iterator[MessagesData]] | None",
+            getattr(self, "_stream_chat_model_events", None),
+        )
+        if native_stream is not None:
+            event_iter: Iterator[MessagesData] = native_stream(
+                input_messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            )
+        else:
+            event_iter = chunks_to_events(
+                self._stream(
+                    input_messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                ),
+                message_id=run_id,
+            )
+
+        event_iter_ref = iter(event_iter)
+        rate_limiter_acquired = self.rate_limiter is None
+
+        def pump_one() -> bool:
+            nonlocal rate_limiter_acquired
+            if not rate_limiter_acquired:
+                assert self.rate_limiter is not None  # noqa: S101
+                self.rate_limiter.acquire(blocking=True)
+                rate_limiter_acquired = True
+            try:
+                event = next(event_iter_ref)
+            except StopIteration:
+                return False
+            except BaseException as exc:
+                stream._fail(exc)  # noqa: SLF001
+                run_manager.on_llm_error(
+                    exc,
+                    response=LLMResult(generations=[]),
+                )
+                return False
+            dispatch_event(event, stream)
+            if stream._done:  # noqa: SLF001
+                run_manager.on_llm_end(LLMResult(generations=[]))
+            return True
+
+        stream._bind_pump(pump_one)  # noqa: SLF001
+        return stream
+
+    async def astream_v2(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncChatModelStream:
+        """Async variant of :meth:`stream_v2`.
+
+        Returns an :class:`AsyncChatModelStream` whose projections are
+        async-iterable and awaitable.
+
+        .. warning::
+            This API is experimental and may change.
+
+        Args:
+            input: The model input.
+            config: Optional runnable config.
+            stop: Optional list of stop words.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            An :class:`AsyncChatModelStream` with typed projections.
+        """
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        input_messages = _normalize_messages(messages)
+
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        }
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            inheritable_metadata,
+            self.metadata,
+        )
+        (run_manager,) = await callback_manager.on_chat_model_start(
+            self._serialized,
+            [_format_for_tracing(messages)],
+            invocation_params=params,
+            options=options,
+            name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            batch_size=1,
+        )
+
+        run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+        stream = AsyncChatModelStream(message_id=run_id)
+
+        native_astream = cast(
+            "Callable[..., AsyncIterator[MessagesData]] | None",
+            getattr(self, "_astream_chat_model_events", None),
+        )
+
+        async def _produce() -> None:
+            try:
+                if self.rate_limiter:
+                    await self.rate_limiter.aacquire(blocking=True)
+
+                if native_astream is not None:
+                    event_source: AsyncIterator[MessagesData] = native_astream(
+                        input_messages,
+                        stop=stop,
+                        run_manager=run_manager,
+                        **kwargs,
+                    )
+                else:
+                    event_source = achunks_to_events(
+                        self._astream(
+                            input_messages,
+                            stop=stop,
+                            run_manager=run_manager,
+                            **kwargs,
+                        ),
+                        message_id=run_id,
+                    )
+                async for event in event_source:
+                    dispatch_event(event, stream)
+                if stream._done:  # noqa: SLF001
+                    await run_manager.on_llm_end(
+                        LLMResult(generations=[]),
+                    )
+            except BaseException as exc:
+                stream._fail(exc)  # noqa: SLF001
+                await run_manager.on_llm_error(
+                    exc,
+                    response=LLMResult(generations=[]),
+                )
+
+        stream._producer_task = asyncio.get_running_loop().create_task(_produce())  # noqa: SLF001
+        return stream
 
     # --- Custom methods ---
 
