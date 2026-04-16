@@ -5,8 +5,10 @@
 # issues with every box unchecked or skip the template altogether.
 #
 # Rules:
-#   1. Checkboxes present, none checked → close
-#   2. No checkboxes at all → close unless author is an org member or bot
+#   1. No checkboxes at all -> close unless author is an org member or bot
+#   2. Checkboxes present but none checked -> close
+#   3. "Submission checklist" section incomplete -> close
+#   4. "Package (Required)" section has no selection -> close
 #
 # Org membership check reuses the shared helper from pr-labeler.js and
 # the same GitHub App used by tag-external-issues.yml.
@@ -47,60 +49,115 @@ jobs:
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
             const body = context.payload.issue.body ?? '';
-            const checked = (body.match(/- \[x\]/gi) || []).length;
+            const allChecked = (body.match(/- \[x\]/gi) || []).length;
+            const allUnchecked = (body.match(/- \[ \]/g) || []).length;
+            const total = allChecked + allUnchecked;
 
-            if (checked > 0) {
-              console.log(`Found ${checked} checked checkbox(es) — OK`);
-              return;
+            // ── Helpers ─────────────────────────────────────────────────
+            // Extract checkboxes under a markdown H2/H3 heading.
+            // Returns { checked, unchecked } counts, or null if the
+            // section heading is not found in the body.
+            function parseSection(heading) {
+              const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              // Find the heading line
+              const headingRe = new RegExp(`^#{2,3}\\s+${escaped}\\s*$`, 'm');
+              const headingMatch = headingRe.exec(body);
+              if (!headingMatch) return null;
+              // Slice from after the heading to the next heading or end
+              const rest = body.slice(headingMatch.index + headingMatch[0].length);
+              const nextHeading = rest.search(/\n#{2,3}\s/);
+              const block = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+              return {
+                checked: (block.match(/- \[x\]/gi) || []).length,
+                unchecked: (block.match(/- \[ \]/g) || []).length,
+              };
             }
 
-            const unchecked = (body.match(/- \[ \]/g) || []).length;
-
-            // No checkboxes at all — allow org members and bots, close everyone else
-            if (unchecked === 0) {
-              const { owner, repo } = context.repo;
-              const { h } = require('./.github/scripts/pr-labeler.js').loadAndInit(github, owner, repo, core);
-
+            async function isOrgMember() {
+              const { h } = require('./.github/scripts/pr-labeler.js')
+                .loadAndInit(github, owner, repo, core);
               const author = context.payload.sender.login;
               const { isExternal } = await h.checkMembership(
                 author, context.payload.sender.type,
               );
+              return { internal: !isExternal, author };
+            }
 
-              if (!isExternal) {
+            async function closeWithComment(lines) {
+              const templateUrl = `https://github.com/${owner}/${repo}/issues/new/choose`;
+              lines.push(
+                '',
+                `Please use one of the [issue templates](${templateUrl}).`,
+              );
+
+              await github.rest.issues.update({
+                owner, repo, issue_number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+
+              await github.rest.issues.createComment({
+                owner, repo, issue_number,
+                body: lines.join('\n'),
+              });
+            }
+
+            // ── Rule 1: no checkboxes at all ────────────────────────────
+            if (total === 0) {
+              const { internal, author } = await isOrgMember();
+              if (internal) {
                 console.log(`No checkboxes, but ${author} is internal — OK`);
                 return;
               }
               console.log(`No checkboxes and ${author} is external — closing`);
-            } else {
-              console.log(`Found 0 checked and ${unchecked} unchecked checkbox(es) — closing`);
+              await closeWithComment([
+                'This issue was automatically closed because no issue template was used.',
+              ]);
+              return;
             }
 
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.issue.number;
+            // ── Rule 2: checkboxes present but none checked ─────────────
+            if (allChecked === 0) {
+              console.log(`${allUnchecked} checkbox(es) present, none checked — closing`);
+              await closeWithComment([
+                'This issue was automatically closed because none of the required checkboxes were checked. Please re-file using an issue template and complete the checklist.',
+              ]);
+              return;
+            }
 
-            const reason = unchecked > 0
-              ? 'none of the required checkboxes were checked'
-              : 'no issue template was used';
+            // ── Rules 3–4: parse sections for targeted feedback ─────────
+            const checklist = parseSection('Submission checklist');
+            const pkg = parseSection('Package (Required)');
+            console.log(`Section parse — checklist: ${JSON.stringify(checklist)}, pkg: ${JSON.stringify(pkg)}`);
 
-            // Close before commenting — a closed issue without a comment is
-            // less confusing than an open issue with a false "auto-closed" message
-            // if the second API call fails.
-            await github.rest.issues.update({
-              owner,
-              repo,
-              issue_number,
-              state: 'closed',
-              state_reason: 'not_planned',
-            });
+            const problems = [];
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number,
-              body: [
-                `This issue was automatically closed because ${reason}.`,
-                '',
-                `Please use one of the [issue templates](https://github.com/${owner}/${repo}/issues/new/choose) and complete the checklist.`,
-              ].join('\n'),
-            });
+            if (checklist && checklist.unchecked > 0) {
+              problems.push(
+                'the submission checklist is incomplete — please confirm you searched for duplicates, included a reproduction, etc.'
+              );
+            }
+            if (pkg !== null && pkg.checked === 0) {
+              problems.push(
+                'no package was selected (e.g. langchain-core, langchain, langgraph) — this helps us route the issue to the right team'
+              );
+            } else if (pkg === null) {
+              problems.push(
+                'the package selection is missing (e.g. langchain-core, langchain, langgraph) — this helps us route the issue to the right team'
+              );
+            }
+
+            if (problems.length === 0) {
+              console.log(`All section checks passed (${allChecked} checked) — OK`);
+              return;
+            }
+
+            console.log(`Closing — problems: ${problems.join('; ')}`);
+            await closeWithComment([
+              'Thanks for opening an issue! It was automatically closed because:',
+              '',
+              ...problems.map(p => `- ${p}`),
+            ]);
