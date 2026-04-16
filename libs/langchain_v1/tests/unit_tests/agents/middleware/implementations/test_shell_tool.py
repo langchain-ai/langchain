@@ -546,3 +546,36 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_command_output_without_trailing_newline(tmp_path: Path) -> None:
+    """Test that commands whose output lacks a trailing newline don't cause
+    the marker to stick to the output, which would make marker detection fail
+    and eventually time out the session.
+
+    Regression test for the marker-concatenation bug where:
+      printf 'hello' -> stdout: "hello__LC_SHELL_DONE__... 0"
+    caused startswith(marker) to fail.
+    """
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources, {"command": "printf 'hello'"}, tool_call_id=None
+        )
+        assert isinstance(result, str)
+        assert "hello" in result
+        assert "timed out" not in result.lower()
+
+        follow_up = middleware._run_shell_tool(
+            resources, {"command": "echo alive"}, tool_call_id=None
+        )
+        assert "alive" in follow_up
+    finally:
+        middleware.after_agent(state, runtime)
