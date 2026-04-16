@@ -239,7 +239,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
-        "structured_output": False,
+        "structured_output": True,
     },
     "claude-haiku-4-5-20251001": {
         "name": "Claude Haiku 4.5",
@@ -389,7 +389,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
-        "structured_output": False,
+        "structured_output": True,
     },
     "claude-opus-4-5-20251101": {
         "name": "Claude Opus 4.5",
@@ -439,7 +439,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
-        "structured_output": False,
+        "structured_output": True,
     },
     "claude-opus-4-7": {
         "name": "Claude Opus 4.7",
@@ -464,7 +464,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
-        "structured_output": False,
+        "structured_output": True,
     },
     "claude-sonnet-4-0": {
         "name": "Claude Sonnet 4 (latest)",
@@ -589,6 +589,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
-        "structured_output": False,
+        "structured_output": True,
     },
 }
