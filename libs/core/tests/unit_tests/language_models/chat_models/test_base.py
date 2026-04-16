@@ -3,6 +3,7 @@
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
@@ -327,6 +328,20 @@ class FakeTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
         self.traced_run_ids.append(run.id)
+
+
+class LangChainTracerRunCollector:
+    def __init__(self) -> None:
+        self.tracer = LangChainTracer()
+        self.runs: list[Run] = []
+
+    @contextmanager
+    def tracing_callback(self) -> Iterator[LangChainTracer]:
+        def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+            self.runs.append(run)
+
+        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+            yield self.tracer
 
 
 def test_pass_run_id() -> None:
@@ -1457,17 +1472,13 @@ class FakeChatModelWithInvocationParams(SimpleChatModel):
 def test_invocation_params_passed_to_tracer_metadata() -> None:
     """Test that invocation params are passed to tracer metadata."""
     llm = FakeChatModelWithInvocationParams()
-    tracer = LangChainTracer()
-    persisted_runs: list[Run] = []
+    collector = LangChainTracerRunCollector()
 
-    def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
-        persisted_runs.append(run)
-
-    with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+    with collector.tracing_callback() as tracer:
         llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
 
-    assert len(persisted_runs) == 1
-    run = persisted_runs[0]
+    assert len(collector.runs) == 1
+    run = collector.runs[0]
 
     key = "LANGSMITH_LANGGRAPH_API_VARIANT"
 
