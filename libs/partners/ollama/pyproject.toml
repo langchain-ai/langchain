@@ -39,11 +39,11 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=8.4.1,<9.0.0",
-    "pytest-asyncio>=0.26.0,<1.0.0",
+    "pytest>=8.4.1,<10.0.0",
+    "pytest-asyncio>=0.26.0,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-watcher>=0.4.3,<1.0.0",
-    "syrupy>=4.9.1,<5.0.0",
+    "syrupy>=4.9.1,<6.0.0",
     "langchain-core",
     "langchain-tests",
 ]
