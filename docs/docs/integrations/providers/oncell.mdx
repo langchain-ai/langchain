@@ -1,0 +1,76 @@
+# OnCell
+
+> [OnCell](https://oncell.ai) provides per-user sandboxed environments with
+> persistent storage, database, and search for AI agents.
+
+## Overview
+
+OnCell gives each user their own isolated environment. Unlike ephemeral
+sandboxes, files, database state, and search indexes persist across sessions.
+Environments auto-pause when idle and resume in 200ms.
+
+## Installation
+
+```bash
+pip install oncell
+```
+
+## Setup
+
+Get an API key from [oncell.ai](https://oncell.ai).
+
+```python
+import os
+os.environ["ONCELL_API_KEY"] = "oncell_sk_..."
+```
+
+## Usage with LangChain
+
+OnCell works as a persistent backend for LangChain agents — providing
+file storage, database, and search as tools.
+
+```python
+from oncell import OnCell
+from langchain.tools import tool
+
+oncell = OnCell()
+cell = oncell.cells.create(customer_id="user-1", agent=agent_code, permanent=True)
+
+@tool
+def save_file(path: str, content: str) -> str:
+    """Save a file to the user's persistent storage."""
+    oncell.cells.request(cell.id, "save_file", {"path": path, "content": content})
+    return f"Saved {path}"
+
+@tool
+def search_files(query: str) -> str:
+    """Search across user's files."""
+    result = oncell.cells.request(cell.id, "search", {"query": query})
+    return str(result["results"])
+
+@tool
+def run_code(code: str) -> str:
+    """Run Python code in the user's sandboxed environment."""
+    result = oncell.cells.request(cell.id, "run_shell", {"command": f"python -c '{code}'"})
+    return result["stdout"]
+```
+
+### Full example
+
+See the [OnCell cookbook](https://github.com/oncellai/oncell-cookbook/tree/main/langchain/agent-with-memory)
+for a complete LangChain agent with persistent memory, file storage, and search.
+
+## When to use OnCell
+
+- Your agent needs **per-user isolation** — each user has their own files and state
+- State needs to **persist across sessions** — not just within a single conversation
+- You need **built-in search** over user data without setting up a vector database
+- You want **crash recovery** — agent resumes from last successful step
+- You want to **avoid managing infrastructure** — no Docker, no Kubernetes, no S3
+
+## Resources
+
+- [oncell.ai](https://oncell.ai)
+- [Documentation](https://oncell.ai/docs)
+- [Cookbook](https://github.com/oncellai/oncell-cookbook)
+- [Discord](https://discord.gg/rAxyyCVDxs)
