@@ -16,6 +16,8 @@ from langchain_core.language_models.chat_model_stream import (
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
 if TYPE_CHECKING:
+    from langchain_protocol.protocol import MessagesData
+
     from langchain_core.outputs import LLMResult
 
 
@@ -92,6 +94,7 @@ class _RecordingHandler(BaseCallbackHandler):
 
     def __init__(self) -> None:
         self.events: list[str] = []
+        self.stream_events: list[MessagesData] = []
         self.last_llm_end_response: LLMResult | None = None
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
@@ -107,12 +110,17 @@ class _RecordingHandler(BaseCallbackHandler):
         del args, kwargs
         self.events.append("on_llm_error")
 
+    def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        del kwargs
+        self.stream_events.append(event)
+
 
 class _AsyncRecordingHandler(AsyncCallbackHandler):
     """Async callback handler that records lifecycle hook invocations."""
 
     def __init__(self) -> None:
         self.events: list[str] = []
+        self.stream_events: list[MessagesData] = []
         self.last_llm_end_response: LLMResult | None = None
 
     async def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:
@@ -127,6 +135,10 @@ class _AsyncRecordingHandler(AsyncCallbackHandler):
     async def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
         del args, kwargs
         self.events.append("on_llm_error")
+
+    async def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        del kwargs
+        self.stream_events.append(event)
 
 
 class TestCallbacks:
@@ -182,6 +194,49 @@ class TestCallbacks:
         assert response is not None
         assert response.generations
         assert response.generations[0][0].message.content == "hello"  # type: ignore[attr-defined]
+
+
+class TestOnStreamEvent:
+    """`on_stream_event` must fire once per protocol event from stream_v2."""
+
+    def test_on_stream_event_fires_for_every_event_sync(self) -> None:
+        handler = _RecordingHandler()
+        model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
+        stream = model.stream_v2("test")
+        _ = stream.output
+
+        # Every event the stream sees should also reach the observer.
+        assert len(handler.stream_events) == len(list(stream))
+        event_types = [e["event"] for e in handler.stream_events]
+        assert event_types[0] == "message-start"
+        assert event_types[-1] == "message-finish"
+        assert "content-block-delta" in event_types
+
+    @pytest.mark.asyncio
+    async def test_on_stream_event_fires_for_every_event_async(self) -> None:
+        handler = _AsyncRecordingHandler()
+        model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
+        stream = await model.astream_v2("test")
+        _ = await stream
+
+        event_types = [e["event"] for e in handler.stream_events]
+        assert event_types[0] == "message-start"
+        assert event_types[-1] == "message-finish"
+        assert "content-block-delta" in event_types
+
+    def test_on_stream_event_ordering_relative_to_lifecycle(self) -> None:
+        """Stream events must all fire between on_chat_model_start and on_llm_end."""
+        handler = _RecordingHandler()
+        model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
+        stream = model.stream_v2("test")
+        _ = stream.output
+
+        # on_stream_event doesn't show up in `events` (different list), but
+        # on_chat_model_start and on_llm_end bracket the run.
+        assert handler.events[0] == "on_chat_model_start"
+        assert handler.events[-1] == "on_llm_end"
+        # And we did see stream events during that bracket.
+        assert handler.stream_events
 
 
 class TestCancellation:

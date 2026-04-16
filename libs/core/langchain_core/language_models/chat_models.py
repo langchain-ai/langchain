@@ -902,6 +902,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 return False
             dispatch_event(event, stream)
+            run_manager.on_stream_event(event)
             if stream._done and stream._output_message is not None:  # noqa: SLF001
                 run_manager.on_llm_end(
                     LLMResult(
@@ -1005,6 +1006,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                 async for event in event_source:
                     dispatch_event(event, stream)
+                    await run_manager.on_stream_event(event)
                 if stream._done and stream._output_message is not None:  # noqa: SLF001
                     await run_manager.on_llm_end(
                         LLMResult(
