@@ -1479,3 +1479,9 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             },
             "options": {"stop": None},
         }
+        assert run.metadata == {
+            "ls_integration": "langchain_chat_model",
+            "ls_model_type": "chat",
+            "ls_provider": "fakechatmodelwithinvocationparams",
+            "ls_temperature": 0.7,
+        }
