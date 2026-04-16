@@ -1134,7 +1134,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.1.1"
+version = "1.1.2"
 source = { directory = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
