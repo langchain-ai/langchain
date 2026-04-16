@@ -65,6 +65,12 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        for field_name in ("model", "repo_id"):
+            value = getattr(self, field_name)
+            if value and value.startswith(("http://", "https://")):
+                msg = f"`{field_name}` must be a HuggingFace repo ID, not a URL."
+                raise ValueError(msg)
+
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
         )
