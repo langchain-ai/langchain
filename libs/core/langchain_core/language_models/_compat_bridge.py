@@ -632,9 +632,7 @@ def message_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=ReasoningBlock(
-                        type="reasoning", reasoning=reasoning
-                    ),
+                    content_block=ReasoningBlock(type="reasoning", reasoning=reasoning),
                 )
         finalized = _finalize_block(block)
         if finalized.get("type") == "tool_call":
