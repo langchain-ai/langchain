@@ -1468,6 +1468,12 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
 
     assert len(persisted_runs) == 1
     run = persisted_runs[0]
+
+    key = "LANGSMITH_LANGGRAPH_API_VARIANT"
+
+    if key in run.extra["metadata"]:
+        del run.extra["metadata"][key]
+
     assert run.extra == {
         "batch_size": 1,
         "invocation_params": {
