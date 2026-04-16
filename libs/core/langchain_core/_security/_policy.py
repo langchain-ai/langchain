@@ -50,11 +50,21 @@ _BLOCKED_IPV6_NETWORKS: tuple[ipaddress.IPv6Network, ...] = tuple(
 
 _CLOUD_METADATA_IPS: frozenset[str] = frozenset(
     {
-        "169.254.169.254",
-        "169.254.170.2",
-        "100.100.100.200",
-        "fd00:ec2::254",
+        "169.254.169.254",  # AWS, GCP, Azure, DigitalOcean, Oracle Cloud
+        "169.254.170.2",  # AWS ECS task metadata
+        "169.254.170.23",  # AWS EKS Pod Identity Agent
+        "100.100.100.200",  # Alibaba Cloud metadata
+        "fd00:ec2::254",  # AWS EC2 IMDSv2 over IPv6 (Nitro instances)
+        "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
+        "fe80::a9fe:a9fe",  # OpenStack Nova metadata (IPv6 link-local)
     }
+)
+
+# Network ranges that are always blocked when block_cloud_metadata=True,
+# independent of block_private_ips.  The entire link-local range is used by
+# cloud metadata services across providers.
+_CLOUD_METADATA_NETWORKS: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...] = (
+    ipaddress.IPv4Network("169.254.0.0/16"),
 )
 
 _CLOUD_METADATA_HOSTNAMES: frozenset[str] = frozenset(
@@ -160,9 +170,15 @@ def _ip_in_blocked_networks(
         if isinstance(addr, ipaddress.IPv6Address) and addr == _LOOPBACK_IPV6:
             return "localhost address"
 
-    # Cloud metadata IP check
-    if policy.block_cloud_metadata and str(addr) in _CLOUD_METADATA_IPS:
-        return "cloud metadata endpoint"
+    # Cloud metadata check — IP set *and* network ranges (e.g. 169.254.0.0/16).
+    # Independent of block_private_ips so that allow_private=True still blocks
+    # cloud metadata endpoints.
+    if policy.block_cloud_metadata:
+        if str(addr) in _CLOUD_METADATA_IPS:
+            return "cloud metadata endpoint"
+        for net in _CLOUD_METADATA_NETWORKS:  # type: ignore[assignment]
+            if addr in net:
+                return "cloud metadata endpoint"
 
     return None
 
@@ -223,7 +239,7 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     """Validate a URL against the SSRF policy, including DNS resolution.
 
     This is the primary entry-point for async code paths. It delegates
-    scheme/hostname/allowed-hosts checks to ``validate_url_sync``, then
+    scheme/hostname/allowed-hosts checks to `validate_url_sync`, then
     resolves DNS and validates every resolved IP.
 
     Raises:
@@ -256,7 +272,7 @@ def validate_url_sync(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     """Synchronous URL validation (no DNS resolution).
 
     Suitable for Pydantic validators and other sync contexts. Checks scheme
-    and hostname patterns only - use ``validate_url`` for full DNS-aware checking.
+    and hostname patterns only - use `validate_url` for full DNS-aware checking.
 
     Raises:
         SSRFBlockedError: If the URL violates the policy.

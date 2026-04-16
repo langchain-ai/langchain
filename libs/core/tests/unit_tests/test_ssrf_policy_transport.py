@@ -191,6 +191,46 @@ def test_k8s_still_blocked_when_private_ips_allowed() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Cloud metadata: link-local range and restored IPs blocked even with
+# block_private_ips=False (regression test for dropped ranges/IPs)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "169.254.169.254",
+        "169.254.170.2",
+        "169.254.170.23",  # AWS EKS Pod Identity Agent
+        "100.100.100.200",
+        "fd00:ec2::254",
+        "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
+        "fe80::a9fe:a9fe",  # OpenStack Nova metadata
+    ],
+)
+def test_cloud_metadata_ips_blocked_when_private_ips_allowed(ip: str) -> None:
+    policy = SSRFPolicy(block_private_ips=False)
+    with pytest.raises(SSRFBlockedError, match="cloud metadata endpoint"):
+        validate_resolved_ip(ip, policy)
+
+
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "169.254.1.2",
+        "169.254.255.254",
+        "169.254.42.99",
+    ],
+)
+def test_link_local_range_blocked_as_cloud_metadata_when_private_ips_allowed(
+    ip: str,
+) -> None:
+    policy = SSRFPolicy(block_private_ips=False)
+    with pytest.raises(SSRFBlockedError, match="cloud metadata endpoint"):
+        validate_resolved_ip(ip, policy)
+
+
+# ---------------------------------------------------------------------------
 # Transport: redirect to private IP blocked
 # ---------------------------------------------------------------------------
 
