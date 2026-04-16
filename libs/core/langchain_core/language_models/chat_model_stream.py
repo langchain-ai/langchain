@@ -49,8 +49,13 @@ if TYPE_CHECKING:
 class _ProjectionBase:
     """Shared state and producer API for sync and async projections.
 
-    Subclasses add the consumer protocol (sync iteration or async
-    iteration + await).
+    The ``push`` / ``complete`` / ``fail`` methods are the producer-side
+    API — called by the stream as events arrive. Subclasses add the
+    consumer protocol (sync iteration or async iteration + await).
+
+    ``done`` and ``error`` are safe read-only views of the terminal state
+    for iterators and other siblings that need to observe lifecycle
+    without reaching into the underlying fields.
     """
 
     __slots__ = ("_deltas", "_done", "_error", "_final_set", "_final_value")
@@ -63,18 +68,28 @@ class _ProjectionBase:
         self._done: bool = False
         self._error: BaseException | None = None
 
-    def _push(self, delta: Any) -> None:
-        """Append a delta value."""
+    @property
+    def done(self) -> bool:
+        """Whether the projection has finished (successfully or via error)."""
+        return self._done
+
+    @property
+    def error(self) -> BaseException | None:
+        """The terminal error, if any."""
+        return self._error
+
+    def push(self, delta: Any) -> None:
+        """Append a delta value. Producer-side API."""
         self._deltas.append(delta)
 
-    def _finish(self, final_value: Any) -> None:
-        """Set the final accumulated value and mark as done."""
+    def complete(self, final_value: Any) -> None:
+        """Set the final accumulated value and mark as done. Producer-side API."""
         self._final_value = final_value
         self._final_set = True
         self._done = True
 
-    def _fail(self, error: BaseException) -> None:
-        """Mark as errored."""
+    def fail(self, error: BaseException) -> None:
+        """Mark as errored. Producer-side API."""
         self._error = error
         self._done = True
 
@@ -102,6 +117,10 @@ class SyncProjection(_ProjectionBase):
         """Initialize with no pull callback."""
         super().__init__()
         self._request_more: Callable[[], bool] | None = None
+
+    def set_request_more(self, cb: Callable[[], bool] | None) -> None:
+        """Install the pull callback the iterator uses to drain the source."""
+        self._request_more = cb
 
     def __iter__(self) -> Iterator[Any]:
         """Yield deltas, pulling via ``_request_more`` when caught up."""
@@ -187,19 +206,19 @@ class AsyncProjection(_ProjectionBase):
         super().__init__()
         self._event = asyncio.Event()
 
-    def _push(self, delta: Any) -> None:
+    def push(self, delta: Any) -> None:
         """Append a delta and notify waiters."""
-        super()._push(delta)
+        super().push(delta)
         self._event.set()
 
-    def _finish(self, final_value: Any) -> None:
+    def complete(self, final_value: Any) -> None:
         """Set the final value, mark done, and notify waiters."""
-        super()._finish(final_value)
+        super().complete(final_value)
         self._event.set()
 
-    def _fail(self, error: BaseException) -> None:
+    def fail(self, error: BaseException) -> None:
         """Mark errored and notify waiters."""
-        super()._fail(error)
+        super().fail(error)
         self._event.set()
 
     # -- Async iterable (yields deltas) ------------------------------------
@@ -243,13 +262,16 @@ class _AsyncProjectionIterator:
     async def __anext__(self) -> Any:
         """Return the next delta, awaiting if necessary."""
         while True:
+            # Direct access to the projection's internal list/event is
+            # intentional — the iterator is the projection's sidekick and
+            # depends on reading the shared buffer by cursor.
             if self._offset < len(self._proj._deltas):  # noqa: SLF001
                 item = self._proj._deltas[self._offset]  # noqa: SLF001
                 self._offset += 1
                 return item
-            if self._proj._error is not None:  # noqa: SLF001
-                raise self._proj._error  # noqa: SLF001
-            if self._proj._done:  # noqa: SLF001
+            if self._proj.error is not None:
+                raise self._proj.error
+            if self._proj.done:
                 raise StopAsyncIteration
             self._proj._event.clear()  # noqa: SLF001
             await self._proj._event.wait()  # noqa: SLF001
@@ -313,29 +335,29 @@ class ChatModelStream:
         self._reasoning_proj = SyncTextProjection()
         self._tool_calls_proj = SyncProjection()
 
-        # Pull callback (set by _bind_pump or _set_request_more)
+        # Pull callback (set by bind_pump or set_request_more)
         self._request_more: Callable[[], bool] | None = None
 
     # -- Pump/pull wiring --------------------------------------------------
 
-    def _bind_pump(self, pump_one: Callable[[], bool]) -> None:
+    def bind_pump(self, pump_one: Callable[[], bool]) -> None:
         """Bind a pump for standalone streaming.
 
-        Delegates to :meth:`_set_request_more`.  Used by
+        Delegates to :meth:`set_request_more`.  Used by
         ``BaseChatModel.stream_v2()``.
         """
-        self._set_request_more(pump_one)
+        self.set_request_more(pump_one)
 
-    def _set_request_more(self, cb: Callable[[], bool]) -> None:
+    def set_request_more(self, cb: Callable[[], bool]) -> None:
         """Set the pull callback on this stream and all its projections.
 
         Used by langgraph's ``GraphRunStream._wire_request_more`` to
         connect the shared graph pump.
         """
         self._request_more = cb
-        self._text_proj._request_more = cb  # noqa: SLF001
-        self._reasoning_proj._request_more = cb  # noqa: SLF001
-        self._tool_calls_proj._request_more = cb  # noqa: SLF001
+        self._text_proj.set_request_more(cb)
+        self._reasoning_proj.set_request_more(cb)
+        self._tool_calls_proj.set_request_more(cb)
 
     # -- Public projections ------------------------------------------------
 
@@ -396,6 +418,17 @@ class ChatModelStream:
         """Whether the stream has finished."""
         return self._done
 
+    @property
+    def output_message(self) -> AIMessage | None:
+        """The assembled message if the stream has finished, else ``None``.
+
+        Unlike :attr:`output`, this never blocks or pumps and never raises.
+        Intended for the stream driver (``stream_v2`` / ``astream_v2``) to
+        check whether the stream produced a message before firing
+        ``on_llm_end`` callbacks.
+        """
+        return self._output_message
+
     # -- Raw event iteration (replay buffer) -------------------------------
 
     def __iter__(self) -> Iterator[MessagesData]:
@@ -420,6 +453,29 @@ class ChatModelStream:
             else:
                 return
 
+    # -- Event ingestion (public) ------------------------------------------
+
+    def dispatch(self, event: MessagesData) -> None:
+        """Route a protocol event to the appropriate internal handler.
+
+        Public entry point for feeding events into the stream. Called by
+        the stream driver (``stream_v2`` / ``astream_v2``'s pump) and by
+        any observer or test that needs to inject protocol events.
+        """
+        self._record_event(event)
+        event_type = event.get("event")
+        if event_type == "message-start":
+            self._push_message_start(cast("MessageStartData", event))
+        elif event_type == "content-block-delta":
+            self._push_content_block_delta(cast("ContentBlockDeltaData", event))
+        elif event_type == "content-block-finish":
+            self._push_content_block_finish(cast("ContentBlockFinishData", event))
+        elif event_type == "message-finish":
+            self._finish(cast("MessageFinishData", event))
+        elif event_type == "error":
+            self.fail(RuntimeError(event.get("message", "Unknown error")))
+        # content-block-start is informational — no accumulation needed
+
     # -- Internal helpers --------------------------------------------------
 
     def _drain(self) -> None:
@@ -435,7 +491,7 @@ class ChatModelStream:
         if not self._done:
             self._finish(MessageFinishData(event="message-finish", reason="stop"))
 
-    # -- Internal push API (called by dispatch_event) ----------------------
+    # -- Internal push API (called by dispatch) ----------------------------
 
     def _record_event(self, event: MessagesData) -> None:
         """Append a raw event to the replay buffer."""
@@ -457,13 +513,13 @@ class ChatModelStream:
             delta_text = text_block.get("text", "")
             if delta_text:
                 self._text_acc += delta_text
-                self._text_proj._push(delta_text)  # noqa: SLF001
+                self._text_proj.push(delta_text)
         elif btype == "reasoning":
             reasoning_block = cast("ReasoningBlock", block)
             delta_r = reasoning_block.get("reasoning", "")
             if delta_r:
                 self._reasoning_acc += delta_r
-                self._reasoning_proj._push(delta_r)  # noqa: SLF001
+                self._reasoning_proj.push(delta_r)
         elif btype == "tool_call_chunk":
             tcc = cast("ToolCallChunkBlock", block)
             # The protocol puts the block index on the event (ContentBlockDeltaData),
@@ -488,7 +544,7 @@ class ChatModelStream:
                 chunk_block["args"] = tcc["args"]
             if "index" in tcc:
                 chunk_block["index"] = tcc["index"]
-            self._tool_calls_proj._push(chunk_block)  # noqa: SLF001
+            self._tool_calls_proj.push(chunk_block)
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
         """Process a ``content-block-finish`` event."""
@@ -545,18 +601,24 @@ class ChatModelStream:
             )
         self._tool_call_chunks.clear()
 
-        self._text_proj._finish(self._text_acc)  # noqa: SLF001
-        self._reasoning_proj._finish(self._reasoning_acc)  # noqa: SLF001
-        self._tool_calls_proj._finish(self._tool_calls_acc)  # noqa: SLF001
+        self._text_proj.complete(self._text_acc)
+        self._reasoning_proj.complete(self._reasoning_acc)
+        self._tool_calls_proj.complete(self._tool_calls_acc)
         self._output_message = self._assemble_message()
 
-    def _fail(self, error: BaseException) -> None:
-        """Process a ``message-error`` or exception."""
+    def fail(self, error: BaseException) -> None:
+        """Mark the stream as errored and propagate to all projections.
+
+        Public API — called by the stream driver (``stream_v2`` /
+        ``astream_v2``) when the underlying producer raises, by
+        :meth:`dispatch` when an ``error`` protocol event arrives, and by
+        cancellation paths.
+        """
         self._done = True
         self._error = error
-        self._text_proj._fail(error)  # noqa: SLF001
-        self._reasoning_proj._fail(error)  # noqa: SLF001
-        self._tool_calls_proj._fail(error)  # noqa: SLF001
+        self._text_proj.fail(error)
+        self._reasoning_proj.fail(error)
+        self._tool_calls_proj.fail(error)
 
     def _assemble_message(self) -> AIMessage:
         """Build an ``AIMessage`` from accumulated state."""
@@ -705,7 +767,7 @@ class AsyncChatModelStream(ChatModelStream):
     def _record_event(self, event: MessagesData) -> None:
         """Record event and push to async event replay projection."""
         super()._record_event(event)
-        self._events_proj._push(event)  # noqa: SLF001
+        self._events_proj.push(event)
 
     def _push_content_block_delta(self, data: ContentBlockDeltaData) -> None:
         """Process delta — base class pushes to async projections."""
@@ -718,20 +780,20 @@ class AsyncChatModelStream(ChatModelStream):
     def _finish(self, data: MessageFinishData) -> None:
         """Finish base projections and async-only projections."""
         super()._finish(data)
-        self._usage_proj._finish(self._usage_value)  # noqa: SLF001
-        self._output_proj._finish(self._output_message)  # noqa: SLF001
-        self._events_proj._finish(self._events)  # noqa: SLF001
+        self._usage_proj.complete(self._usage_value)
+        self._output_proj.complete(self._output_message)
+        self._events_proj.complete(self._events)
 
-    def _fail(self, error: BaseException) -> None:
+    def fail(self, error: BaseException) -> None:
         """Fail base projections and async-only projections."""
-        super()._fail(error)
-        self._usage_proj._fail(error)  # noqa: SLF001
-        self._output_proj._fail(error)  # noqa: SLF001
-        self._events_proj._fail(error)  # noqa: SLF001
+        super().fail(error)
+        self._usage_proj.fail(error)
+        self._output_proj.fail(error)
+        self._events_proj.fail(error)
 
 
 # ---------------------------------------------------------------------------
-# Event dispatch helper
+# Legacy dispatch helper (kept for backwards compatibility)
 # ---------------------------------------------------------------------------
 
 
@@ -739,26 +801,13 @@ def dispatch_event(
     event: MessagesData,
     stream: ChatModelStream,
 ) -> None:
-    """Route a protocol event to the appropriate method on a stream."""
-    stream._record_event(event)  # noqa: SLF001
-    event_type = event.get("event")
-    if event_type == "message-start":
-        stream._push_message_start(cast("MessageStartData", event))  # noqa: SLF001
-    elif event_type == "content-block-delta":
-        stream._push_content_block_delta(  # noqa: SLF001
-            cast("ContentBlockDeltaData", event),
-        )
-    elif event_type == "content-block-finish":
-        stream._push_content_block_finish(  # noqa: SLF001
-            cast("ContentBlockFinishData", event),
-        )
-    elif event_type == "message-finish":
-        stream._finish(cast("MessageFinishData", event))  # noqa: SLF001
-    elif event_type == "error":
-        stream._fail(  # noqa: SLF001
-            RuntimeError(event.get("message", "Unknown error")),
-        )
-    # content-block-start is informational — no accumulation needed
+    """Route a protocol event to the stream's :meth:`dispatch` method.
+
+    .. deprecated::
+        Prefer ``stream.dispatch(event)`` directly. Kept for callers that
+        already import this helper.
+    """
+    stream.dispatch(event)
 
 
 __all__ = [

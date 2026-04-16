@@ -23,8 +23,10 @@ from langchain_core.outputs import ChatGenerationChunk
 
 if TYPE_CHECKING:
     from langchain_protocol.protocol import (
+        ContentBlockDeltaData,
         InvalidToolCallBlock,
         MessageFinishData,
+        MessageStartData,
         ReasoningBlock,
         TextBlock,
         ToolCallBlock,
@@ -328,9 +330,11 @@ def test_message_to_events_text_only() -> None:
         "content-block-finish",
         "message-finish",
     ]
-    assert events[0]["message_id"] == "msg-1"
+    start = cast("MessageStartData", events[0])
+    assert start["message_id"] == "msg-1"
 
-    delta = cast("TextBlock", events[2]["content_block"])
+    delta_event = cast("ContentBlockDeltaData", events[2])
+    delta = cast("TextBlock", delta_event["content_block"])
     assert delta["text"] == "Hello world"
 
     final = cast("MessageFinishData", events[-1])
@@ -407,7 +411,7 @@ def test_message_to_events_preserves_finish_reason_and_metadata() -> None:
     )
     events = list(message_to_events(msg))
 
-    start = events[0]
+    start = cast("MessageStartData", events[0])
     assert start["metadata"] == {"model": "test-model"}
 
     final = cast("MessageFinishData", events[-1])
@@ -435,7 +439,8 @@ def test_message_to_events_propagates_usage() -> None:
 def test_message_to_events_message_id_override() -> None:
     msg = AIMessage(content="x", id="msg-orig")
     events = list(message_to_events(msg, message_id="msg-override"))
-    assert events[0]["message_id"] == "msg-override"
+    start = cast("MessageStartData", events[0])
+    assert start["message_id"] == "msg-override"
 
 
 @pytest.mark.asyncio

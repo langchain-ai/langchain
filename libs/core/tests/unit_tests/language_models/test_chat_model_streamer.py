@@ -14,6 +14,7 @@ from langchain_core.language_models.chat_model_stream import (
     ChatModelStream,
 )
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
+from langchain_core.outputs import ChatGeneration
 
 if TYPE_CHECKING:
     from langchain_protocol.protocol import MessagesData
@@ -181,7 +182,9 @@ class TestCallbacks:
         response = handler.last_llm_end_response
         assert response is not None
         assert response.generations
-        assert response.generations[0][0].message.content == "hello"  # type: ignore[attr-defined]
+        gen = response.generations[0][0]
+        assert isinstance(gen, ChatGeneration)
+        assert gen.message.content == "hello"
 
     @pytest.mark.asyncio
     async def test_on_llm_end_receives_assembled_message_async(self) -> None:
@@ -193,7 +196,9 @@ class TestCallbacks:
         response = handler.last_llm_end_response
         assert response is not None
         assert response.generations
-        assert response.generations[0][0].message.content == "hello"  # type: ignore[attr-defined]
+        gen = response.generations[0][0]
+        assert isinstance(gen, ChatGeneration)
+        assert gen.message.content == "hello"
 
 
 class TestOnStreamEvent:

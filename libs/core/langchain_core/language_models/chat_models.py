@@ -40,7 +40,6 @@ from langchain_core.language_models.base import (
 from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
-    dispatch_event,
 )
 from langchain_core.language_models.model_profile import (
     ModelProfile,
@@ -895,25 +894,25 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             except StopIteration:
                 return False
             except BaseException as exc:
-                stream._fail(exc)  # noqa: SLF001
+                stream.fail(exc)
                 run_manager.on_llm_error(
                     exc,
                     response=LLMResult(generations=[]),
                 )
                 return False
-            dispatch_event(event, stream)
+            stream.dispatch(event)
             run_manager.on_stream_event(event)
-            if stream._done and stream._output_message is not None:  # noqa: SLF001
+            if stream.done and stream.output_message is not None:
                 run_manager.on_llm_end(
                     LLMResult(
                         generations=[
-                            [ChatGeneration(message=stream._output_message)],  # noqa: SLF001
+                            [ChatGeneration(message=stream.output_message)],
                         ],
                     ),
                 )
             return True
 
-        stream._bind_pump(pump_one)  # noqa: SLF001
+        stream.bind_pump(pump_one)
         return stream
 
     async def astream_v2(
@@ -1005,21 +1004,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         message_id=run_id,
                     )
                 async for event in event_source:
-                    dispatch_event(event, stream)
+                    stream.dispatch(event)
                     await run_manager.on_stream_event(event)
-                if stream._done and stream._output_message is not None:  # noqa: SLF001
+                if stream.done and stream.output_message is not None:
                     await run_manager.on_llm_end(
                         LLMResult(
                             generations=[
-                                [ChatGeneration(message=stream._output_message)],  # noqa: SLF001
+                                [ChatGeneration(message=stream.output_message)],
                             ],
                         ),
                     )
             except asyncio.CancelledError as exc:
-                stream._fail(exc)  # noqa: SLF001
+                stream.fail(exc)
                 raise
             except BaseException as exc:
-                stream._fail(exc)  # noqa: SLF001
+                stream.fail(exc)
                 await run_manager.on_llm_error(
                     exc,
                     response=LLMResult(generations=[]),

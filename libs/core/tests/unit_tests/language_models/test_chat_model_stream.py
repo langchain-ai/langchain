@@ -29,15 +29,15 @@ class TestSyncProjection:
 
     def test_push_and_iterate(self) -> None:
         proj = SyncProjection()
-        proj._push("a")
-        proj._push("b")
-        proj._finish(["a", "b"])
+        proj.push("a")
+        proj.push("b")
+        proj.complete(["a", "b"])
         assert list(proj) == ["a", "b"]
 
     def test_get_returns_final_value(self) -> None:
         proj = SyncProjection()
-        proj._push("x")
-        proj._finish("final")
+        proj.push("x")
+        proj.complete("final")
         assert proj.get() == "final"
 
     def test_request_more_pulls(self) -> None:
@@ -47,9 +47,9 @@ class TestSyncProjection:
         def pump() -> bool:
             val = next(calls)
             if val is None:
-                proj._finish("ab")
+                proj.complete("ab")
                 return True
-            proj._push(val)
+            proj.push(val)
             return True
 
         proj._request_more = pump
@@ -58,28 +58,28 @@ class TestSyncProjection:
 
     def test_error_propagation(self) -> None:
         proj = SyncProjection()
-        proj._push("partial")
-        proj._fail(ValueError("boom"))
+        proj.push("partial")
+        proj.fail(ValueError("boom"))
         with pytest.raises(ValueError, match="boom"):
             list(proj)
 
     def test_error_on_get(self) -> None:
         proj = SyncProjection()
-        proj._fail(ValueError("boom"))
+        proj.fail(ValueError("boom"))
         with pytest.raises(ValueError, match="boom"):
             proj.get()
 
     def test_multi_cursor_replay(self) -> None:
         proj = SyncProjection()
-        proj._push("a")
-        proj._push("b")
-        proj._finish(None)
+        proj.push("a")
+        proj.push("b")
+        proj.complete(None)
         assert list(proj) == ["a", "b"]
         assert list(proj) == ["a", "b"]  # Second iteration replays
 
     def test_empty_projection(self) -> None:
         proj = SyncProjection()
-        proj._finish([])
+        proj.complete([])
         assert list(proj) == []
         assert proj.get() == []
 
@@ -89,9 +89,9 @@ class TestSyncTextProjection:
 
     def test_str_drains(self) -> None:
         proj = SyncTextProjection()
-        proj._push("Hello")
-        proj._push(" world")
-        proj._finish("Hello world")
+        proj.push("Hello")
+        proj.push(" world")
+        proj.complete("Hello world")
         assert str(proj) == "Hello world"
 
     def test_str_with_pump(self) -> None:
@@ -101,8 +101,8 @@ class TestSyncTextProjection:
         def pump() -> bool:
             nonlocal done
             if not done:
-                proj._push("Hi")
-                proj._finish("Hi")
+                proj.push("Hi")
+                proj.complete("Hi")
                 done = True
                 return True
             return False
@@ -113,14 +113,14 @@ class TestSyncTextProjection:
     def test_bool_nonempty(self) -> None:
         proj = SyncTextProjection()
         assert not proj
-        proj._push("x")
+        proj.push("x")
         assert proj
 
     def test_repr(self) -> None:
         proj = SyncTextProjection()
-        proj._push("hello")
+        proj.push("hello")
         assert repr(proj) == "'hello'"
-        proj._finish("hello")
+        proj.complete("hello")
         assert repr(proj) == "'hello'"
 
 
@@ -130,8 +130,8 @@ class TestAsyncProjection:
     @pytest.mark.asyncio
     async def test_await_final_value(self) -> None:
         proj = AsyncProjection()
-        proj._push("a")
-        proj._finish("final")
+        proj.push("a")
+        proj.complete("final")
         assert await proj == "final"
 
     @pytest.mark.asyncio
@@ -140,11 +140,11 @@ class TestAsyncProjection:
 
         async def produce() -> None:
             await asyncio.sleep(0)
-            proj._push("x")
+            proj.push("x")
             await asyncio.sleep(0)
-            proj._push("y")
+            proj.push("y")
             await asyncio.sleep(0)
-            proj._finish("xy")
+            proj.complete("xy")
 
         asyncio.get_running_loop().create_task(produce())
         deltas = [d async for d in proj]
@@ -153,15 +153,15 @@ class TestAsyncProjection:
     @pytest.mark.asyncio
     async def test_error_on_await(self) -> None:
         proj = AsyncProjection()
-        proj._fail(ValueError("async boom"))
+        proj.fail(ValueError("async boom"))
         with pytest.raises(ValueError, match="async boom"):
             await proj
 
     @pytest.mark.asyncio
     async def test_error_on_iter(self) -> None:
         proj = AsyncProjection()
-        proj._push("partial")
-        proj._fail(ValueError("mid-stream"))
+        proj.push("partial")
+        proj.fail(ValueError("mid-stream"))
         with pytest.raises(ValueError, match="mid-stream"):
             async for _ in proj:
                 pass
@@ -218,7 +218,7 @@ class TestChatModelStream:
             idx += 1
             return True
 
-        stream._bind_pump(pump)
+        stream.bind_pump(pump)
         assert list(stream.text) == ["Hi", " there"]
         assert str(stream.text) == "Hi there"
 
@@ -399,7 +399,7 @@ class TestChatModelStream:
             },
             stream,
         )
-        stream._fail(RuntimeError("connection lost"))
+        stream.fail(RuntimeError("connection lost"))
 
         with pytest.raises(RuntimeError, match="connection lost"):
             str(stream.text)
@@ -548,7 +548,7 @@ class TestAsyncChatModelStream:
     @pytest.mark.asyncio
     async def test_error_propagation(self) -> None:
         stream = AsyncChatModelStream()
-        stream._fail(RuntimeError("async fail"))
+        stream.fail(RuntimeError("async fail"))
 
         with pytest.raises(RuntimeError, match="async fail"):
             await stream.text

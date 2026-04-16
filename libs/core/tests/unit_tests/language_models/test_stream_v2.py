@@ -74,7 +74,7 @@ class TestChatModelStream:
 
     def test_fail(self) -> None:
         stream = ChatModelStream()
-        stream._fail(RuntimeError("test"))
+        stream.fail(RuntimeError("test"))
         assert stream.done
 
     def test_pump_driven_text(self) -> None:
@@ -107,7 +107,7 @@ class TestChatModelStream:
                 return True
             return False
 
-        stream._bind_pump(pump_one)
+        stream.bind_pump(pump_one)
 
         text_deltas = list(stream.text)
         assert text_deltas == ["Hi", " there"]
@@ -192,7 +192,7 @@ class TestAsyncChatModelStream:
     @pytest.mark.asyncio
     async def test_error_propagation(self) -> None:
         stream = AsyncChatModelStream()
-        stream._fail(RuntimeError("boom"))
+        stream.fail(RuntimeError("boom"))
 
         with pytest.raises(RuntimeError, match="boom"):
             await stream.text
