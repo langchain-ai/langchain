@@ -17,7 +17,6 @@ consumers supported).
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import json
 from typing import TYPE_CHECKING, Any, cast
 
@@ -170,42 +169,38 @@ class SyncTextProjection(SyncProjection):
 class AsyncProjection(_ProjectionBase):
     """Async iterable of deltas that is also awaitable for the final value.
 
-    Uses ``asyncio.Future`` waiters to notify consumers when new deltas
-    arrive or the projection completes.
+    Uses an ``asyncio.Event`` to notify consumers of state changes. Each
+    waiter — the awaitable (``__await__``) and each async iterator cursor
+    — shares the event and re-checks its own condition on wake. The event
+    is cleared before a waiter awaits, so stale "something happened"
+    signals don't cause spin loops.
+
+    This is single-loop only — producers and consumers must share an
+    event loop. If cross-thread wake is ever required, revert to a
+    list-of-futures pattern with ``call_soon_threadsafe``.
     """
 
-    __slots__ = ("_waiters",)
+    __slots__ = ("_event",)
 
     def __init__(self) -> None:
-        """Initialize with empty waiter list."""
+        """Initialize with an un-set event."""
         super().__init__()
-        self._waiters: list[asyncio.Future[None]] = []
+        self._event = asyncio.Event()
 
     def _push(self, delta: Any) -> None:
-        """Append a delta and wake async waiters."""
+        """Append a delta and notify waiters."""
         super()._push(delta)
-        self._wake()
+        self._event.set()
 
     def _finish(self, final_value: Any) -> None:
-        """Set the final value, mark done, and wake waiters."""
+        """Set the final value, mark done, and notify waiters."""
         super()._finish(final_value)
-        self._wake()
+        self._event.set()
 
     def _fail(self, error: BaseException) -> None:
-        """Mark errored and wake waiters."""
+        """Mark errored and notify waiters."""
         super()._fail(error)
-        self._wake()
-
-    def _wake(self) -> None:
-        """Notify all waiting async consumers."""
-        for fut in self._waiters:
-            if not fut.done():
-                with contextlib.suppress(RuntimeError):
-                    fut.get_loop().call_soon_threadsafe(
-                        fut.set_result,
-                        None,
-                    )
-        self._waiters.clear()
+        self._event.set()
 
     # -- Async iterable (yields deltas) ------------------------------------
 
@@ -224,10 +219,8 @@ class AsyncProjection(_ProjectionBase):
         while not self._final_set:
             if self._error is not None:
                 raise self._error
-            loop = asyncio.get_running_loop()
-            fut: asyncio.Future[None] = loop.create_future()
-            self._waiters.append(fut)
-            await fut
+            self._event.clear()
+            await self._event.wait()
         if self._error is not None:
             raise self._error
         return self._final_value
@@ -258,10 +251,8 @@ class _AsyncProjectionIterator:
                 raise self._proj._error  # noqa: SLF001
             if self._proj._done:  # noqa: SLF001
                 raise StopAsyncIteration
-            loop = asyncio.get_running_loop()
-            fut: asyncio.Future[None] = loop.create_future()
-            self._proj._waiters.append(fut)  # noqa: SLF001
-            await fut
+            self._proj._event.clear()  # noqa: SLF001
+            await self._proj._event.wait()  # noqa: SLF001
 
 
 # ---------------------------------------------------------------------------
