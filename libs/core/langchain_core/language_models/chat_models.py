@@ -25,6 +25,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
     _normalize_messages,
     _update_message_content_to_blocks,
 )
@@ -567,6 +568,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
+                langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                    params
+                ),
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 self._serialized,
@@ -695,6 +699,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
@@ -972,6 +979,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         messages_to_trace = [
             _format_for_tracing(message_list) for message_list in messages
@@ -1095,6 +1105,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
 
         messages_to_trace = [
