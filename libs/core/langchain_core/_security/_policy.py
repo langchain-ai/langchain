@@ -239,7 +239,7 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     """Validate a URL against the SSRF policy, including DNS resolution.
 
     This is the primary entry-point for async code paths. It delegates
-    scheme/hostname/allowed-hosts checks to ``validate_url_sync``, then
+    scheme/hostname/allowed-hosts checks to `validate_url_sync`, then
     resolves DNS and validates every resolved IP.
 
     Raises:
@@ -272,7 +272,7 @@ def validate_url_sync(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
     """Synchronous URL validation (no DNS resolution).
 
     Suitable for Pydantic validators and other sync contexts. Checks scheme
-    and hostname patterns only - use ``validate_url`` for full DNS-aware checking.
+    and hostname patterns only - use `validate_url` for full DNS-aware checking.
 
     Raises:
         SSRFBlockedError: If the URL violates the policy.
