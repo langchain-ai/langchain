@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -203,6 +204,69 @@ def test__convert_dict_to_message_ai_with_name() -> None:
     expected_output = AIMessage(content="foo", name="test")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    message = {
+        "role": "assistant",
+        "content": "2 + 2 = 4",
+        "reasoning_content": "Let me think about this...",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "2 + 2 = 4"
+    assert result.additional_kwargs["reasoning_content"] == "Let me think about this..."
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """Test that reasoning_content from vLLM/DeepSeek-style deltas is preserved."""
+    # Thinking phase: reasoning_content present, content empty
+    delta = {"role": "assistant", "reasoning_content": "thinking...", "content": None}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == ""
+    assert result.additional_kwargs["reasoning_content"] == "thinking..."
+
+    # Empty string reasoning_content should still be preserved
+    delta = {"role": "assistant", "reasoning_content": ""}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == ""
+
+    # No reasoning_content at all — should not appear in additional_kwargs
+    delta = {"role": "assistant", "content": "hello"}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert "reasoning_content" not in result.additional_kwargs
+
+    # Ollama/OpenRouter use "reasoning" field — normalized to "reasoning_content"
+    delta = {"role": "assistant", "reasoning": "let me think...", "content": ""}
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == "let me think..."
+
+    # "reasoning_content" takes precedence over "reasoning" if both present
+    delta = {
+        "role": "assistant",
+        "reasoning_content": "primary",
+        "reasoning": "fallback",
+    }
+    result = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(result, AIMessageChunk)
+    assert result.additional_kwargs["reasoning_content"] == "primary"
+
+
+def test__convert_dict_to_message_ai_with_reasoning_field() -> None:
+    """Test that 'reasoning' field (Ollama/OpenRouter) is normalized."""
+    message = {
+        "role": "assistant",
+        "content": "4",
+        "reasoning": "2+2=4",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "4"
+    assert result.additional_kwargs["reasoning_content"] == "2+2=4"
 
 
 def test__convert_dict_to_message_system() -> None:
