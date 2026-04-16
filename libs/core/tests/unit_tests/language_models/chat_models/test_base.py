@@ -1480,7 +1480,6 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             "tools": [{"name": "test_tool"}],
         },
         "metadata": {
-            "LANGSMITH_LANGGRAPH_API_VARIANT": "local_dev",
             "_type": "fake-chat-model-with-invocation-params",
             "ls_integration": "langchain_chat_model",
             "ls_model_type": "chat",
