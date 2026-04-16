@@ -31,14 +31,14 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
     """httpx async transport that validates DNS results against an SSRF policy.
 
     For every outgoing request the transport:
-    1. Checks the URL scheme against ``policy.allowed_schemes``.
+    1. Checks the URL scheme against `policy.allowed_schemes`.
     2. Validates the hostname against blocked patterns.
     3. Resolves DNS and validates **all** returned IPs.
     4. Rewrites the request to connect to the first valid IP while
-       preserving the original ``Host`` header and TLS SNI hostname.
+       preserving the original `Host` header and TLS SNI hostname.
 
-    Redirects are re-validated on each hop because ``follow_redirects``
-    is set on the *client*, causing ``handle_async_request`` to be called
+    Redirects are re-validated on each hop because `follow_redirects`
+    is set on the *client*, causing `handle_async_request` to be called
     again for each redirect target.
     """
 
@@ -225,12 +225,12 @@ def ssrf_safe_async_client(
     policy: SSRFPolicy = SSRFPolicy(),
     **kwargs: object,
 ) -> httpx.AsyncClient:
-    """Create an ``httpx.AsyncClient`` with SSRF protection.
+    """Create an `httpx.AsyncClient` with SSRF protection.
 
-    Drop-in replacement for ``httpx.AsyncClient(...)`` - callers just swap
-    the constructor call.  Transport-specific kwargs (``verify``, ``cert``,
-    ``retries``, etc.) are forwarded to the inner ``AsyncHTTPTransport``;
-    everything else goes to the ``AsyncClient``.
+    Drop-in replacement for `httpx.AsyncClient(...)` - callers just swap
+    the constructor call.  Transport-specific kwargs (`verify`, `cert`,
+    `retries`, etc.) are forwarded to the inner `AsyncHTTPTransport`;
+    everything else goes to the `AsyncClient`.
     """
     transport_kwargs: dict[str, object] = {}
     client_kwargs: dict[str, object] = {}
