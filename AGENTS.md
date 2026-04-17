@@ -12,8 +12,8 @@ This is a Python monorepo with multiple independently versioned packages that us
 langchain/
 ├── libs/
 │   ├── core/             # `langchain-core` primitives and base abstractions
-│   ├── langchain/        # `langchain-classic` (legacy, no new features)
-│   ├── langchain_v1/     # Actively maintained `langchain` package
+│   ├── langchain/        # `langchain-classic` (legacy copy — DO NOT add features here)
+│   ├── langchain_v1/     # Source of the published `langchain` PyPI package (actively maintained)
 │   ├── partners/         # Third-party integrations
 │   │   ├── openai/       # OpenAI models and embeddings
 │   │   ├── anthropic/    # Anthropic (Claude) integration
@@ -28,7 +28,7 @@ langchain/
 ```
 
 - **Core layer** (`langchain-core`): Base abstractions, interfaces, and protocols. Users should not need to know about this layer directly.
-- **Implementation layer** (`langchain`): Concrete implementations and high-level public utilities
+- **Implementation layer** (`langchain_v1/`): This is the source of the published `langchain` package on PyPI. All new features belong here. `libs/langchain/` is a preserved legacy copy maintained for historical reference only — it receives no new features.
 - **Integration layer** (`partners/`): Third-party service integrations. Note that this monorepo is not exhaustive of all LangChain integrations; some are maintained in separate repos, such as `langchain-ai/langchain-google` and `langchain-ai/langchain-aws`. Usually these repos are cloned at the same level as this monorepo, so if needed, you can refer to their code directly by navigating to `../langchain-google/` from this monorepo.
 - **Testing layer** (`standard-tests/`): Standardized integration tests for partner integrations
 
@@ -246,6 +246,9 @@ When adding a new partner package, update these files:
 - `.github/workflows/check_diffs.yml` – Add to change detection
 - `.github/workflows/integration_tests.yml` – Add integration test config
 - `.github/workflows/pr_lint.yml` – Add to allowed scopes
+- `libs/partners/README.md` – Add the new package to the integration index list
+- `libs/partners/<name>/langchain_<name>/data/profile_augmentations.toml` – Create this file if the partner supports model profiles (see the [Model profiles](#model-profiles) section)
+- `libs/partners/<name>/README.md` – Write a README following the standard template: quick install (both `pip` and `uv`), authentication, basic usage example, and a link to the API reference
 
 ## Additional resources
 

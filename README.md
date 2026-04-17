@@ -29,16 +29,22 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 ## Quickstart
 
 ```bash
-pip install langchain
+pip install langchain langchain-openai
 # or
-uv add langchain
+uv add langchain langchain-openai
+```
+
+```bash
+# Set your API key
+export OPENAI_API_KEY="sk-..."
 ```
 
 ```python
 from langchain.chat_models import init_chat_model
 
-model = init_chat_model("openai:gpt-5.4")
+model = init_chat_model("openai:gpt-4o")
 result = model.invoke("Hello, world!")
+print(result.content)
 ```
 
 If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
