@@ -7,8 +7,23 @@ pdf_tool_message = true
 image_tool_message = true
 structured_output = false
 
+[overrides."claude-haiku-4-5"]
+structured_output = true
+
 [overrides."claude-sonnet-4-5"]
 structured_output = true
 
+[overrides."claude-sonnet-4-6"]
+structured_output = true
+
 [overrides."claude-opus-4-1"]
+structured_output = true
+
+[overrides."claude-opus-4-5"]
+structured_output = true
+
+[overrides."claude-opus-4-6"]
+structured_output = true
+
+[overrides."claude-opus-4-7"]
 structured_output = true

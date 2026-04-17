@@ -831,19 +831,55 @@ class ChatAnthropic(BaseChatModel):
     """
 
     thinking: dict[str, Any] | None = Field(default=None)
-    """Parameters for Claude reasoning,
+    """Parameters for Claude reasoning.
 
-    e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+    Examples:
 
-    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
-    `#!python {"type": "adaptive"}`
+    - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+)
+
+    !!! note "Claude Opus 4.7"
+
+        `budget_tokens` is removed on Opus 4.7 — use `{"type": "adaptive"}`
+        with `output_config.effort` to control reasoning effort. Set `display`
+        to `"summarized"` to receive summarized reasoning in the response
+        (default is `"omitted"`).
     """
 
-    effort: Literal["max", "high", "medium", "low"] | None = None
-    """Control how many tokens Claude uses when responding.
+    output_config: dict[str, Any] | None = None
+    """Configuration options for the model's output.
 
-    This parameter will be merged into the `output_config` parameter when making
-    API calls.
+    Supports the following keys:
+
+    - `effort`: Controls how many tokens Claude uses when responding.
+      One of `"max"`, `"xhigh"`, `"high"`, `"medium"`, or `"low"`.
+    - `format`: Structured output format configuration (typically set via
+      `with_structured_output`).
+    - `task_budget`: Advisory token budget for an agentic loop (beta).
+      E.g., `#!python {"type": "tokens", "total": 128_000}`.
+
+    Example:
+
+    .. code-block:: python
+
+        ChatAnthropic(
+            model="claude-opus-4-7",
+            output_config={
+                "effort": "xhigh",
+                "task_budget": {"type": "tokens", "total": 128_000},
+            },
+        )
+
+    See Anthropic docs on
+    [extended output](https://platform.claude.com/docs/en/api/go/beta/messages/create).
+    """
+
+    effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
+    """Convenience shorthand for `output_config.effort`.
+
+    When set, this value takes precedence over any `effort` key inside
+    `output_config`.
 
     Example: `effort="medium"`
 
@@ -851,11 +887,6 @@ class ChatAnthropic(BaseChatModel):
 
         Setting `effort` to `'high'` produces exactly the same behavior as omitting the
         parameter altogether.
-
-    !!! note "Model Support"
-
-        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
-        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -927,6 +958,7 @@ class ChatAnthropic(BaseChatModel):
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
             "thinking": self.thinking,
+            "output_config": self.output_config,
         }
 
     def _get_ls_params(
@@ -1082,9 +1114,13 @@ class ChatAnthropic(BaseChatModel):
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > payload output_config
-        output_config = payload.get("output_config", {})
-        output_config = output_config.copy() if isinstance(output_config, dict) else {}
+        # Priority: self.effort > kwargs output_config > self.output_config
+        output_config: dict[str, Any] = {}
+        if self.output_config:
+            output_config.update(self.output_config)
+        payload_oc = payload.get("output_config")
+        if isinstance(payload_oc, dict):
+            output_config.update(payload_oc)
 
         if self.effort:
             output_config["effort"] = self.effort
@@ -1170,6 +1206,16 @@ class ChatAnthropic(BaseChatModel):
             required_beta = "mcp-client-2025-11-20"
             if payload["betas"]:
                 # Append to existing betas if not already present
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for task_budget
+        resolved_oc = payload.get("output_config")
+        if isinstance(resolved_oc, dict) and resolved_oc.get("task_budget"):
+            required_beta = "task-budgets-2026-03-13"
+            if payload.get("betas"):
                 if required_beta not in payload["betas"]:
                     payload["betas"] = [*payload["betas"], required_beta]
             else:
