@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         MessageFinishData,
         MessageStartData,
         ReasoningBlock,
+        ServerToolCallBlock,
         TextBlock,
         ToolCallBlock,
     )
@@ -77,10 +78,11 @@ def test_finalize_block_server_tool_call_chunk_valid_json() -> None:
         "name": "web_search",
     }
     result = _finalize_block(block)
-    assert result["type"] == "server_tool_call"
-    assert result["id"] == "srv_1"
-    assert result["name"] == "web_search"
-    assert result["args"] == {"q": "weather"}
+    server_result = cast("ServerToolCallBlock", result)
+    assert server_result["type"] == "server_tool_call"
+    assert server_result["id"] == "srv_1"
+    assert server_result["name"] == "web_search"
+    assert server_result["args"] == {"q": "weather"}
 
 
 def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
@@ -251,9 +253,7 @@ def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() 
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks = [
-        e["content_block"]
-        for e in events
-        if e["event"] == "content-block-finish"
+        e["content_block"] for e in events if e["event"] == "content-block-finish"
     ]
     block_types = [b.get("type") for b in finish_blocks]
     assert "server_tool_call" in block_types
@@ -303,9 +303,7 @@ def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks = [
-        e["content_block"]
-        for e in events
-        if e["event"] == "content-block-finish"
+        e["content_block"] for e in events if e["event"] == "content-block-finish"
     ]
     types = [b.get("type") for b in finish_blocks]
     assert "text" in types
@@ -326,9 +324,7 @@ def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks = [
-        e["content_block"]
-        for e in events
-        if e["event"] == "content-block-finish"
+        e["content_block"] for e in events if e["event"] == "content-block-finish"
     ]
     types = [b.get("type") for b in finish_blocks]
     assert "reasoning" in types

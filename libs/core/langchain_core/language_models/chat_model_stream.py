@@ -28,7 +28,6 @@ from langchain_protocol.protocol import (
     MessageMetadata,
     MessageStartData,
     ReasoningBlock,
-    ServerToolCallBlock,
     ServerToolCallChunkBlock,
     TextBlock,
     ToolCallBlock,
@@ -622,7 +621,9 @@ class ChatModelStream:
             if idx is None:
                 idx = len(self._server_tool_call_chunks)
             _merge_chunk_into_store(
-                self._server_tool_call_chunks, idx, dict(stcc),
+                self._server_tool_call_chunks,
+                idx,
+                dict(stcc),
             )
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
@@ -745,10 +746,7 @@ class ChatModelStream:
             content = self._text_acc
         else:
             ordered_blocks = [self._blocks[idx] for idx in sorted(self._blocks)]
-            if (
-                len(ordered_blocks) == 1
-                and ordered_blocks[0].get("type") == "text"
-            ):
+            if len(ordered_blocks) == 1 and ordered_blocks[0].get("type") == "text":
                 content = cast("TextBlock", ordered_blocks[0]).get("text", "")
             else:
                 content = [dict(b) for b in ordered_blocks]

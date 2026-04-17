@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
@@ -17,7 +17,7 @@ from langchain_core.language_models.chat_model_stream import (
 )
 
 if TYPE_CHECKING:
-    from langchain_protocol.protocol import MessagesData
+    from langchain_protocol.protocol import ContentBlockFinishData, MessagesData
 
 # ---------------------------------------------------------------------------
 # Projection unit tests
@@ -539,9 +539,10 @@ class TestChatModelStream:
 
         msg = stream.output
         assert isinstance(msg.content, list)
-        types = [b.get("type") for b in msg.content]
+        content = cast("list[dict[str, Any]]", msg.content)
+        types = [b.get("type") for b in content]
         assert types == ["text", "tool_call"]
-        tool_block = msg.content[1]
+        tool_block = content[1]
         assert tool_block["name"] == "search"
         assert tool_block["args"] == {"q": "weather"}
         # Legacy shape fields must be absent
@@ -566,23 +567,27 @@ class TestChatModelStream:
             stream,
         )
         dispatch_event(
-            {
-                "event": "content-block-finish",
-                "index": 1,
-                "content_block": {
-                    "type": "server_tool_result",
-                    "tool_call_id": "srv_1",
-                    "status": "success",
-                    "output": "62F, clear",
+            cast(
+                "ContentBlockFinishData",
+                {
+                    "event": "content-block-finish",
+                    "index": 1,
+                    "content_block": {
+                        "type": "server_tool_result",
+                        "tool_call_id": "srv_1",
+                        "status": "success",
+                        "output": "62F, clear",
+                    },
                 },
-            },
+            ),
             stream,
         )
         dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
 
         msg = stream.output
         assert isinstance(msg.content, list)
-        types = [b.get("type") for b in msg.content]
+        content = cast("list[dict[str, Any]]", msg.content)
+        types = [b.get("type") for b in content]
         assert types == ["server_tool_call", "server_tool_result"]
         # Regular tool_calls projection must NOT include server-executed ones
         assert msg.tool_calls == []
@@ -619,9 +624,10 @@ class TestChatModelStream:
 
         msg = stream.output
         assert isinstance(msg.content, list)
-        assert msg.content[0]["type"] == "server_tool_call"
-        assert msg.content[0]["args"] == {"q": "weather"}
-        assert msg.content[0]["name"] == "web_search"
+        content = cast("list[dict[str, Any]]", msg.content)
+        assert content[0]["type"] == "server_tool_call"
+        assert content[0]["args"] == {"q": "weather"}
+        assert content[0]["name"] == "web_search"
 
     def test_image_block_pass_through(self) -> None:
         """An image block finished via the event stream reaches .output.content."""

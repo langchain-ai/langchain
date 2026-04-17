@@ -172,7 +172,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
         return skel
     if btype == "server_tool_call_chunk":
         s_skel = ServerToolCallChunkBlock(
-            type="server_tool_call_chunk", args="",
+            type="server_tool_call_chunk",
+            args="",
         )
         if block.get("id") is not None:
             s_skel["id"] = block["id"]
@@ -215,9 +216,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     if btype == "text" and dtype == "text":
         state["text"] = state.get("text", "") + delta.get("text", "")
     elif btype == "reasoning" and dtype == "reasoning":
-        state["reasoning"] = state.get("reasoning", "") + delta.get(
-            "reasoning", ""
-        )
+        state["reasoning"] = state.get("reasoning", "") + delta.get("reasoning", "")
     elif btype in ("tool_call_chunk", "server_tool_call_chunk") and dtype == btype:
         state["args"] = state.get("args", "") + (delta.get("args") or "")
         if delta.get("id") is not None:
