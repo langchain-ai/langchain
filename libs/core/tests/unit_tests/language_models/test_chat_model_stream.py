@@ -570,7 +570,7 @@ class TestChatModelStream:
                 "event": "content-block-finish",
                 "index": 1,
                 "content_block": {
-                    "type": "server_tool_call_result",
+                    "type": "server_tool_result",
                     "tool_call_id": "srv_1",
                     "status": "success",
                     "output": "62F, clear",
@@ -583,7 +583,7 @@ class TestChatModelStream:
         msg = stream.output
         assert isinstance(msg.content, list)
         types = [b.get("type") for b in msg.content]
-        assert types == ["server_tool_call", "server_tool_call_result"]
+        assert types == ["server_tool_call", "server_tool_result"]
         # Regular tool_calls projection must NOT include server-executed ones
         assert msg.tool_calls == []
 

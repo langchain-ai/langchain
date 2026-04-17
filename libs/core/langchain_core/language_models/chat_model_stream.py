@@ -45,6 +45,72 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
+# Tool-call chunk helpers (shared by tool_call_chunk and server_tool_call_chunk)
+# ---------------------------------------------------------------------------
+
+
+def _merge_chunk_into_store(
+    store: dict[int, dict[str, Any]],
+    idx: int,
+    block: dict[str, Any],
+) -> None:
+    """Merge a tool-call-chunk delta: sticky id/name, concat args."""
+    existing = store.get(idx, {})
+    if block.get("id") and "id" not in existing:
+        existing["id"] = block["id"]
+    if block.get("name") and "name" not in existing:
+        existing["name"] = block["name"]
+    existing["args"] = existing.get("args", "") + (block.get("args") or "")
+    store[idx] = existing
+
+
+def _sweep_chunk_store(
+    store: dict[int, dict[str, Any]],
+    *,
+    finalized_type: str,
+    finalized_blocks: dict[int, FinalizedContentBlock],
+    tool_calls_acc: list[ToolCallBlock] | None,
+    invalid_acc: list[InvalidToolCallBlock],
+) -> None:
+    """Parse each unswept chunk's ``args``; record as ``finalized_type`` or invalid.
+
+    ``tool_calls_acc`` is only populated when ``finalized_type == "tool_call"``
+    (server-side calls don't surface through ``.tool_calls``).
+    """
+    for idx in sorted(store):
+        chunk = store[idx]
+        raw_args = chunk.get("args", "{}")
+        try:
+            parsed = json.loads(raw_args) if raw_args else {}
+        except (json.JSONDecodeError, TypeError):
+            invalid: InvalidToolCallBlock = {
+                "type": "invalid_tool_call",
+                "args": raw_args or "",
+                "error": "Failed to parse tool call arguments as JSON",
+            }
+            if chunk.get("id"):
+                invalid["id"] = chunk["id"]
+            if chunk.get("name"):
+                invalid["name"] = chunk["name"]
+            invalid_acc.append(invalid)
+            finalized_blocks[idx] = invalid
+            continue
+        final_block = cast(
+            "FinalizedContentBlock",
+            {
+                "type": finalized_type,
+                "id": chunk.get("id", ""),
+                "name": chunk.get("name", ""),
+                "args": parsed,
+            },
+        )
+        if tool_calls_acc is not None and finalized_type == "tool_call":
+            tool_calls_acc.append(cast("ToolCallBlock", final_block))
+        finalized_blocks[idx] = final_block
+    store.clear()
+
+
+# ---------------------------------------------------------------------------
 # Projection base — shared producer API
 # ---------------------------------------------------------------------------
 
@@ -532,19 +598,14 @@ class ChatModelStream:
                 self._reasoning_proj.push(delta_r)
         elif btype == "tool_call_chunk":
             tcc = cast("ToolCallChunkBlock", block)
-            # The protocol puts the block index on the event (ContentBlockDeltaData),
-            # not inside the content_block. Fall back to the content_block's `index`
-            # for providers that choose to echo it there.
+            # The protocol puts the block index on the event
+            # (``ContentBlockDeltaData``), not inside ``content_block``.
+            # Fall back to ``content_block.index`` for providers that echo
+            # it there.
             idx = data.get("index")
             if idx is None:
                 idx = tcc.get("index", len(self._tool_call_chunks))
-            existing = self._tool_call_chunks.get(idx, {})
-            if tcc.get("id") and "id" not in existing:
-                existing["id"] = tcc["id"]
-            if tcc.get("name") and "name" not in existing:
-                existing["name"] = tcc["name"]
-            existing["args"] = existing.get("args", "") + (tcc.get("args") or "")
-            self._tool_call_chunks[idx] = existing
+            _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
             chunk_block = ToolCallChunkBlock(type="tool_call_chunk")
             if tcc.get("id"):
                 chunk_block["id"] = tcc["id"]
@@ -560,13 +621,9 @@ class ChatModelStream:
             idx = data.get("index")
             if idx is None:
                 idx = len(self._server_tool_call_chunks)
-            existing = self._server_tool_call_chunks.get(idx, {})
-            if stcc.get("id") and "id" not in existing:
-                existing["id"] = stcc["id"]
-            if stcc.get("name") and "name" not in existing:
-                existing["name"] = stcc["name"]
-            existing["args"] = existing.get("args", "") + (stcc.get("args") or "")
-            self._server_tool_call_chunks[idx] = existing
+            _merge_chunk_into_store(
+                self._server_tool_call_chunks, idx, dict(stcc),
+            )
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
         """Process a ``content-block-finish`` event."""
@@ -619,7 +676,7 @@ class ChatModelStream:
             finalized = itc
         elif btype in (
             "server_tool_call",
-            "server_tool_call_result",
+            "server_tool_result",
             "image",
             "audio",
             "video",
@@ -640,62 +697,21 @@ class ChatModelStream:
         self._finish_reason = data.get("reason")
         self._finish_metadata = data.get("metadata")
 
-        # Finalize any tool_call_chunks without content-block-finish
-        for idx in sorted(self._tool_call_chunks):
-            chunk = self._tool_call_chunks[idx]
-            raw_args = chunk.get("args", "{}")
-            try:
-                parsed = json.loads(raw_args) if raw_args else {}
-            except (json.JSONDecodeError, TypeError):
-                invalid: InvalidToolCallBlock = {
-                    "type": "invalid_tool_call",
-                    "args": raw_args or "",
-                    "error": "Failed to parse tool call arguments as JSON",
-                }
-                if chunk.get("id"):
-                    invalid["id"] = chunk["id"]
-                if chunk.get("name"):
-                    invalid["name"] = chunk["name"]
-                self._invalid_tool_calls_acc.append(invalid)
-                self._blocks[idx] = invalid
-                continue
-            tc = ToolCallBlock(
-                type="tool_call",
-                id=chunk.get("id", ""),
-                name=chunk.get("name", ""),
-                args=parsed,
-            )
-            self._tool_calls_acc.append(tc)
-            self._blocks[idx] = tc
-        self._tool_call_chunks.clear()
-
-        # Finalize any server_tool_call_chunks without content-block-finish
-        for idx in sorted(self._server_tool_call_chunks):
-            chunk = self._server_tool_call_chunks[idx]
-            raw_args = chunk.get("args", "{}")
-            try:
-                parsed = json.loads(raw_args) if raw_args else {}
-            except (json.JSONDecodeError, TypeError):
-                invalid2: InvalidToolCallBlock = {
-                    "type": "invalid_tool_call",
-                    "args": raw_args or "",
-                    "error": "Failed to parse tool call arguments as JSON",
-                }
-                if chunk.get("id"):
-                    invalid2["id"] = chunk["id"]
-                if chunk.get("name"):
-                    invalid2["name"] = chunk["name"]
-                self._invalid_tool_calls_acc.append(invalid2)
-                self._blocks[idx] = invalid2
-                continue
-            stc = ServerToolCallBlock(
-                type="server_tool_call",
-                id=chunk.get("id", ""),
-                name=chunk.get("name", ""),
-                args=parsed,
-            )
-            self._blocks[idx] = stc
-        self._server_tool_call_chunks.clear()
+        # Finalize any unswept chunks — both client- and server-side.
+        _sweep_chunk_store(
+            self._tool_call_chunks,
+            finalized_type="tool_call",
+            finalized_blocks=self._blocks,
+            tool_calls_acc=self._tool_calls_acc,
+            invalid_acc=self._invalid_tool_calls_acc,
+        )
+        _sweep_chunk_store(
+            self._server_tool_call_chunks,
+            finalized_type="server_tool_call",
+            finalized_blocks=self._blocks,
+            tool_calls_acc=None,
+            invalid_acc=self._invalid_tool_calls_acc,
+        )
 
         self._text_proj.complete(self._text_acc)
         self._reasoning_proj.complete(self._reasoning_acc)
@@ -871,14 +887,6 @@ class AsyncChatModelStream(ChatModelStream):
         """Record event and push to async event replay projection."""
         super()._record_event(event)
         self._events_proj.push(event)
-
-    def _push_content_block_delta(self, data: ContentBlockDeltaData) -> None:
-        """Process delta — base class pushes to async projections."""
-        super()._push_content_block_delta(data)
-
-    def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
-        """Process finish — base class handles accumulation."""
-        super()._push_content_block_finish(data)
 
     def _finish(self, data: MessageFinishData) -> None:
         """Finish base projections and async-only projections."""

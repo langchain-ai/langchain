@@ -6,12 +6,7 @@ import pytest
 
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
-    _accumulate_block,
-    _delta_block,
-    _extract_blocks_from_chunk,
-    _extract_final_blocks,
     _finalize_block,
-    _make_start_block,
     _normalize_finish_reason,
     _to_protocol_usage,
     amessage_to_events,
@@ -33,58 +28,12 @@ if TYPE_CHECKING:
     )
 
 
-def test_accumulate_block_text() -> None:
-    acc: CompatBlock = {"type": "text", "text": "Hello"}
-    delta: CompatBlock = {"type": "text", "text": " world"}
-    result = _accumulate_block(acc, delta)
-    assert result["text"] == "Hello world"
+# ---------------------------------------------------------------------------
+# Pure helpers
+# ---------------------------------------------------------------------------
 
 
-def test_accumulate_block_reasoning() -> None:
-    acc: CompatBlock = {"type": "reasoning", "reasoning": "think"}
-    delta: CompatBlock = {"type": "reasoning", "reasoning": "ing"}
-    result = _accumulate_block(acc, delta)
-    assert result["reasoning"] == "thinking"
-
-
-def test_accumulate_block_tool_call_chunk() -> None:
-    acc: CompatBlock = {"type": "tool_call_chunk", "args": '{"na'}
-    delta: CompatBlock = {
-        "type": "tool_call_chunk",
-        "args": 'me": "test"}',
-        "id": "tc1",
-    }
-    result = _accumulate_block(acc, delta)
-    assert result["args"] == '{"name": "test"}'
-    assert result["id"] == "tc1"
-
-
-def test_delta_block_text() -> None:
-    prev: CompatBlock = {"type": "text", "text": "Hello"}
-    cur: CompatBlock = {"type": "text", "text": "Hello world"}
-    delta = _delta_block(prev, cur)
-    assert delta is not None
-    text_delta = cast("TextBlock", delta)
-    assert text_delta["text"] == " world"
-
-
-def test_delta_block_no_change() -> None:
-    prev: CompatBlock = {"type": "text", "text": "Hello"}
-    cur: CompatBlock = {"type": "text", "text": "Hello"}
-    delta = _delta_block(prev, cur)
-    assert delta is None
-
-
-def test_delta_block_reasoning() -> None:
-    prev: CompatBlock = {"type": "reasoning", "reasoning": "step 1"}
-    cur: CompatBlock = {"type": "reasoning", "reasoning": "step 1, step 2"}
-    delta = _delta_block(prev, cur)
-    assert delta is not None
-    reasoning_delta = cast("ReasoningBlock", delta)
-    assert reasoning_delta["reasoning"] == ", step 2"
-
-
-def test_finalize_block_text() -> None:
+def test_finalize_block_text_passes_through() -> None:
     block: CompatBlock = {"type": "text", "text": "hello"}
     result = _finalize_block(block)
     text_result = cast("TextBlock", result)
@@ -92,7 +41,7 @@ def test_finalize_block_text() -> None:
     assert text_result["text"] == "hello"
 
 
-def test_finalize_block_tool_call_chunk_valid() -> None:
+def test_finalize_block_tool_call_chunk_valid_json() -> None:
     block: CompatBlock = {
         "type": "tool_call_chunk",
         "args": '{"query": "test"}',
@@ -120,7 +69,7 @@ def test_finalize_block_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
-def test_finalize_block_server_tool_call_chunk_valid() -> None:
+def test_finalize_block_server_tool_call_chunk_valid_json() -> None:
     block: CompatBlock = {
         "type": "server_tool_call_chunk",
         "args": '{"q": "weather"}',
@@ -147,65 +96,6 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
-def test_extract_blocks_from_chunk_passes_through_protocol_blocks() -> None:
-    """Protocol-shape dicts in msg.content pass through the extractor."""
-    msg = AIMessageChunk(
-        content=[
-            {"type": "text", "text": "hi"},
-            {
-                "type": "server_tool_call",
-                "id": "srv_1",
-                "name": "web_search",
-                "args": {"q": "weather"},
-            },
-            {
-                "type": "image",
-                "url": "https://example.com/cat.png",
-                "mime_type": "image/png",
-            },
-        ],
-    )
-    extracted = _extract_blocks_from_chunk(msg)
-    types = [b.get("type") for _, b in extracted]
-    assert "server_tool_call" in types
-    assert "image" in types
-
-
-def test_extract_final_blocks_includes_invalid_tool_calls() -> None:
-    """The standard `invalid_tool_calls` field is surfaced as protocol blocks."""
-    msg = AIMessage(
-        content="",
-        invalid_tool_calls=[
-            {
-                "type": "invalid_tool_call",
-                "id": "call_1",
-                "name": "search",
-                "args": '{"q":',
-                "error": "bad json",
-            }
-        ],
-    )
-    extracted = _extract_final_blocks(msg)
-    types = [b.get("type") for _, b in extracted]
-    assert "invalid_tool_call" in types
-
-
-def test_make_start_block_text() -> None:
-    block: CompatBlock = {"type": "text", "text": "hello"}
-    start = _make_start_block(block)
-    text_start = cast("TextBlock", start)
-    assert text_start["type"] == "text"
-    assert text_start["text"] == ""
-
-
-def test_make_start_block_reasoning() -> None:
-    block: CompatBlock = {"type": "reasoning", "reasoning": "thinking"}
-    start = _make_start_block(block)
-    reasoning_start = cast("ReasoningBlock", start)
-    assert reasoning_start["type"] == "reasoning"
-    assert reasoning_start["reasoning"] == ""
-
-
 def test_normalize_finish_reason() -> None:
     assert _normalize_finish_reason("stop") == "stop"
     assert _normalize_finish_reason("end_turn") == "stop"
@@ -216,7 +106,7 @@ def test_normalize_finish_reason() -> None:
     assert _normalize_finish_reason(None) == "stop"
 
 
-def test_to_protocol_usage() -> None:
+def test_to_protocol_usage_present() -> None:
     usage = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
     result = _to_protocol_usage(usage)
     assert result is not None
@@ -228,93 +118,51 @@ def test_to_protocol_usage_none() -> None:
     assert _to_protocol_usage(None) is None
 
 
-def test_extract_blocks_from_chunk_string_content() -> None:
-    msg = AIMessageChunk(content="Hello")
-    blocks = _extract_blocks_from_chunk(msg)
-    assert len(blocks) == 1
-    idx, block = blocks[0]
-    assert idx == 0
-    assert block["type"] == "text"
-    assert block["text"] == "Hello"
-
-
-def test_extract_blocks_from_chunk_list_content() -> None:
-    msg = AIMessageChunk(
-        content=[
-            {"type": "text", "text": "Hello"},
-            {"type": "reasoning", "reasoning": "think"},
-        ]
-    )
-    blocks = _extract_blocks_from_chunk(msg)
-    assert len(blocks) == 2
-    assert blocks[0][1]["type"] == "text"
-    assert blocks[1][1]["type"] == "reasoning"
-
-
-def test_extract_blocks_from_chunk_tool_call_chunks() -> None:
-    msg = AIMessageChunk(
-        content="",
-        tool_call_chunks=[
-            {"index": 1, "id": "tc1", "name": "search", "args": '{"q": "test"}'}
-        ],
-    )
-    blocks = _extract_blocks_from_chunk(msg)
-    assert len(blocks) == 1
-    idx, block = blocks[0]
-    assert idx == 1
-    assert block["type"] == "tool_call_chunk"
-    assert block["id"] == "tc1"
-
-
-def test_extract_final_blocks() -> None:
-    msg = AIMessage(
-        content="Hello",
-        tool_calls=[{"id": "tc1", "name": "search", "args": {"q": "test"}}],
-    )
-    blocks = _extract_final_blocks(msg)
-    assert len(blocks) == 2
-    assert blocks[0][1]["type"] == "text"
-    assert blocks[1][1]["type"] == "tool_call"
+# ---------------------------------------------------------------------------
+# chunks_to_events: streaming lifecycle
+# ---------------------------------------------------------------------------
 
 
 def test_chunks_to_events_text_only() -> None:
-    """Test full lifecycle with text-only stream."""
+    """Multi-chunk text stream produces a clean lifecycle."""
     chunks = [
         ChatGenerationChunk(message=AIMessageChunk(content="Hello", id="msg-1")),
         ChatGenerationChunk(message=AIMessageChunk(content=" world", id="msg-1")),
     ]
 
     events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
-
-    # Expected: message-start, content-block-start, delta, delta,
-    # content-block-finish, message-finish
     event_types = [e["event"] for e in events]
+
     assert event_types[0] == "message-start"
     assert "content-block-start" in event_types
-    assert "content-block-delta" in event_types
+    assert event_types.count("content-block-delta") == 2
     assert "content-block-finish" in event_types
     assert event_types[-1] == "message-finish"
 
-    # Verify the finish event
     finish = cast("MessageFinishData", events[-1])
     assert finish["reason"] == "stop"
 
 
-def test_chunks_to_events_empty() -> None:
+def test_chunks_to_events_empty_iterator() -> None:
     """No chunks means no events."""
-    events = list(chunks_to_events(iter([])))
-    assert events == []
+    assert list(chunks_to_events(iter([]))) == []
 
 
-def test_chunks_to_events_tool_call() -> None:
-    """Test lifecycle with tool call chunks."""
+def test_chunks_to_events_tool_call_multichunk() -> None:
+    """Partial tool-call args across chunks finalize to a single tool_call."""
     chunks = [
         ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
                 id="msg-1",
                 tool_call_chunks=[
-                    {"index": 0, "id": "tc1", "name": "search", "args": '{"q":'}
+                    {
+                        "index": 0,
+                        "id": "tc1",
+                        "name": "search",
+                        "args": '{"q":',
+                        "type": "tool_call_chunk",
+                    }
                 ],
             )
         ),
@@ -323,7 +171,13 @@ def test_chunks_to_events_tool_call() -> None:
                 content="",
                 id="msg-1",
                 tool_call_chunks=[
-                    {"index": 0, "id": None, "name": None, "args": ' "test"}'}
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": None,
+                        "args": ' "test"}',
+                        "type": "tool_call_chunk",
+                    }
                 ],
             )
         ),
@@ -337,33 +191,32 @@ def test_chunks_to_events_tool_call() -> None:
     assert "content-block-finish" in event_types
     assert event_types[-1] == "message-finish"
 
-    # Finish reason should be tool_use
-    final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "tool_use"
-
-    # Find the content-block-finish event
+    # Exactly one block finalized, args parsed to a dict.
     finish_events = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finish_events) == 1
-    finish_tc = cast("ToolCallBlock", finish_events[0]["content_block"])
-    assert finish_tc["type"] == "tool_call"
-    assert finish_tc["args"] == {"q": "test"}
+    finalized = cast("ToolCallBlock", finish_events[0]["content_block"])
+    assert finalized["type"] == "tool_call"
+    assert finalized["args"] == {"q": "test"}
+
+    # Valid tool_call at finish => finish_reason flips to tool_use.
+    assert cast("MessageFinishData", events[-1])["reason"] == "tool_use"
 
 
-def test_chunks_to_events_invalid_tool_call_finish_reason() -> None:
-    """Malformed JSON tool args should NOT infer finish_reason="tool_use".
-
-    Fix 5a from the streaming-v2 plan: the ``tool_use`` inference was
-    previously triggered by any tool-like block including
-    ``invalid_tool_call``. Now it should only fire for in-flight
-    ``tool_call_chunk`` / finalized ``tool_call`` blocks.
-    """
+def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
+    """Malformed tool-args become invalid_tool_call; finish_reason stays ``stop``."""
     chunks = [
         ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
                 id="msg-bad",
                 tool_call_chunks=[
-                    {"index": 0, "id": "tc1", "name": "search", "args": "{oops"},
+                    {
+                        "index": 0,
+                        "id": "tc1",
+                        "name": "search",
+                        "args": "{oops",
+                        "type": "tool_call_chunk",
+                    },
                 ],
             )
         ),
@@ -371,16 +224,115 @@ def test_chunks_to_events_invalid_tool_call_finish_reason() -> None:
 
     events = list(chunks_to_events(iter(chunks), message_id="msg-bad"))
 
-    # The finalized block at content-block-finish should be invalid_tool_call
     finish_events = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finish_events) == 1
-    finalized = finish_events[0]["content_block"]
-    assert finalized["type"] == "invalid_tool_call"
+    assert finish_events[0]["content_block"]["type"] == "invalid_tool_call"
+    assert cast("MessageFinishData", events[-1])["reason"] == "stop"
 
-    # And the message-finish reason must remain "stop" — we never had a
-    # valid tool_call/tool_call_chunk at finish time, so no tool_use inference.
-    final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "stop"
+
+def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() -> None:
+    """`server_tool_use` shape + anthropic provider tag becomes `server_tool_call`."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "text", "text": "Let me search. "},
+                    {
+                        "type": "server_tool_use",
+                        "id": "srvtoolu_01",
+                        "name": "web_search",
+                        "input": {"query": "weather"},
+                    },
+                ],
+                response_metadata={"model_provider": "anthropic"},
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    finish_blocks = [
+        e["content_block"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
+    block_types = [b.get("type") for b in finish_blocks]
+    assert "server_tool_call" in block_types
+    assert "text" in block_types
+
+
+def test_chunks_to_events_unregistered_provider_falls_back() -> None:
+    """Unknown provider tag doesn't crash; best-effort parsing surfaces text."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="Hello",
+                response_metadata={"model_provider": "totally-made-up-provider"},
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    finish_events = [e for e in events if e["event"] == "content-block-finish"]
+    assert [e["content_block"]["type"] for e in finish_events] == ["text"]
+
+
+def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
+    """Without a provider tag, text + tool_call_chunks both come through.
+
+    This is the case the old legacy path silently dropped the tool call
+    because it re-mined tool_call_chunks on top of the positional index
+    already used by the text block. Trusting content_blocks keeps them
+    on distinct indices.
+    """
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="Hello",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": "t1",
+                        "name": "search",
+                        "args": '{"q": "x"}',
+                        "type": "tool_call_chunk",
+                    },
+                ],
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    finish_blocks = [
+        e["content_block"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
+    types = [b.get("type") for b in finish_blocks]
+    assert "text" in types
+    assert "tool_call" in types
+
+
+def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
+    """Reasoning packed into additional_kwargs surfaces as a reasoning block."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "text", "text": "2+2=4"}],
+                additional_kwargs={"reasoning_content": "Adding two and two..."},
+                response_metadata={"model_provider": "unknown-open-model"},
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    finish_blocks = [
+        e["content_block"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
+    types = [b.get("type") for b in finish_blocks]
+    assert "reasoning" in types
+    assert "text" in types
 
 
 # ---------------------------------------------------------------------------
@@ -411,12 +363,9 @@ def test_message_to_events_text_only() -> None:
     assert final["reason"] == "stop"
 
 
-def test_message_to_events_empty_content_skips_delta() -> None:
-    """Empty text should yield start+finish only, no delta event."""
+def test_message_to_events_empty_content_yields_start_finish_only() -> None:
     msg = AIMessage(content="", id="msg-empty")
     events = list(message_to_events(msg))
-
-    # No blocks → just message-start and message-finish
     event_types = [e["event"] for e in events]
     assert event_types == ["message-start", "message-finish"]
 
@@ -431,7 +380,6 @@ def test_message_to_events_reasoning_text_order() -> None:
     )
     events = list(message_to_events(msg))
 
-    # Two start events, two deltas, two finishes — in block order
     starts = [e for e in events if e["event"] == "content-block-start"]
     finishes = [e for e in events if e["event"] == "content-block-finish"]
     assert [s["content_block"]["type"] for s in starts] == ["reasoning", "text"]
@@ -445,7 +393,7 @@ def test_message_to_events_reasoning_text_order() -> None:
     assert cast("TextBlock", deltas[1]["content_block"])["text"] == "the answer"
 
 
-def test_message_to_events_tool_call_infers_tool_use() -> None:
+def test_message_to_events_tool_call_skips_delta_and_infers_tool_use() -> None:
     msg = AIMessage(
         content="",
         id="msg-3",
@@ -455,7 +403,8 @@ def test_message_to_events_tool_call_infers_tool_use() -> None:
     )
     events = list(message_to_events(msg))
 
-    # tool_call blocks skip the delta — start + finish only
+    # Finalized tool_call blocks carry no useful incremental text,
+    # so no content-block-delta is emitted.
     deltas = [e for e in events if e["event"] == "content-block-delta"]
     assert deltas == []
 
@@ -467,6 +416,30 @@ def test_message_to_events_tool_call_infers_tool_use() -> None:
 
     final = cast("MessageFinishData", events[-1])
     assert final["reason"] == "tool_use"
+
+
+def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
+    """`invalid_tool_calls` on AIMessage surface as protocol blocks.
+
+    `AIMessage.content_blocks` does not currently include
+    ``invalid_tool_calls``, so the bridge merges them in explicitly.
+    """
+    msg = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_1",
+                "name": "search",
+                "args": '{"q":',
+                "error": "bad json",
+            }
+        ],
+    )
+    events = list(message_to_events(msg))
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    types = [f["content_block"]["type"] for f in finishes]
+    assert "invalid_tool_call" in types
 
 
 def test_message_to_events_preserves_finish_reason_and_metadata() -> None:

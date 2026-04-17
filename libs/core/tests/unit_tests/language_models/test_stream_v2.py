@@ -72,6 +72,54 @@ class _MalformedToolCallModel(BaseChatModel):
         )
 
 
+class _AnthropicStyleServerToolModel(BaseChatModel):
+    """Fake model that streams Anthropic-native server_tool_use shapes.
+
+    Exercises Phase E: the bridge should call ``content_blocks`` (which
+    invokes the Anthropic translator) to convert ``server_tool_use`` into
+    protocol ``server_tool_call`` blocks instead of silently dropping them.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-style-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        # Single chunk carrying a complete server_tool_use block — what
+        # Anthropic typically emits once input_json_delta finishes.
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "server_tool_use",
+                        "id": "srvtoolu_01",
+                        "name": "web_search",
+                        "input": {"query": "weather today"},
+                    },
+                    {"type": "text", "text": "Based on the search..."},
+                ],
+                response_metadata={"model_provider": "anthropic"},
+            )
+        )
+
+
 class TestChatModelStream:
     """Test the sync ChatModelStream object."""
 
@@ -285,6 +333,21 @@ class TestStreamV2:
         assert itc["name"] == "search"
         assert itc["args"] == '{"q": '
         assert itc["id"] == "call_1"
+
+    def test_stream_v2_translates_anthropic_server_tool_use_to_protocol(self) -> None:
+        """Phase E end-to-end: server_tool_use becomes server_tool_call in output."""
+        model = _AnthropicStyleServerToolModel()
+        stream = model.stream_v2("weather?")
+        msg = stream.output
+
+        assert isinstance(msg.content, list)
+        types = [b.get("type") for b in msg.content if isinstance(b, dict)]
+        # The server tool call must appear in the output content.
+        assert "server_tool_call" in types
+        # Text block should also be present.
+        assert "text" in types
+        # Regular tool_calls should NOT include the server-executed call.
+        assert msg.tool_calls == []
 
 
 class TestAstreamV2:
