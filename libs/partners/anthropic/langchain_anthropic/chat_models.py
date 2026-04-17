@@ -1454,6 +1454,11 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "compaction"
+                if (
+                    "encrypted_content" in content_block
+                    and content_block["encrypted_content"] is None
+                ):
+                    content_block.pop("encrypted_content")
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Process final usage metadata and completion info
@@ -1501,6 +1506,8 @@ class ChatAnthropic(BaseChatModel):
                     block.pop("citations")
                 if "caller" in block and block["caller"] is None:
                     block.pop("caller")
+                if "encrypted_content" in block and block["encrypted_content"] is None:
+                    block.pop("encrypted_content")
                 if (
                     block.get("type") == "thinking"
                     and "text" in block
