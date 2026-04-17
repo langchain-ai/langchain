@@ -159,6 +159,36 @@ def test_max_completion_tokens_parameter() -> None:
     assert "max_tokens" not in payload
 
 
+def test_profile_inference() -> None:
+    """AzureChatOpenAI should infer profile from model_name, not just deployment_name."""
+    azure_kwargs = {
+        "azure_endpoint": "https://example.openai.azure.com/",
+        "api_key": "test-key",  # type: ignore[arg-type]
+        "api_version": "2024-02-01",
+    }
+
+    # model_name set, deployment_name unset (e.g. init_chat_model("azure_openai:gpt-4o"))
+    llm = AzureChatOpenAI(model="gpt-4o", **azure_kwargs)  # type: ignore[call-arg]
+    assert llm.profile, "profile should be populated when model_name is a known model"
+    assert "max_input_tokens" in llm.profile
+
+    # model_name set, deployment_name is a custom alias
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        model="gpt-4o",
+        azure_deployment="my-custom-deployment",
+        **azure_kwargs,
+    )
+    assert llm.profile, "profile should use model_name even with custom deployment alias"
+    assert "max_input_tokens" in llm.profile
+
+    # deployment_name matches a known model, model_name unset — existing behaviour preserved
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4o",
+        **azure_kwargs,
+    )
+    assert llm.profile, "profile should still resolve from deployment_name when model_name is absent"
+
+
 def test_max_tokens_converted_to_max_completion_tokens() -> None:
     """Test that max_tokens is converted to max_completion_tokens."""
     llm = AzureChatOpenAI(

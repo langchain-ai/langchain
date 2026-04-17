@@ -705,6 +705,18 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
+        # Prefer `model_name` (the canonical OpenAI model identifier) when it
+        # resolves to a known profile. Azure users commonly set
+        # `azure_deployment` to an arbitrary alias, so keying profile lookup
+        # off the deployment name alone misses profile data for the
+        # underlying model. `model_name` is set by
+        # `init_chat_model("azure_openai:<model>")` and by direct
+        # `AzureChatOpenAI(model=...)` usage, both of which otherwise end up
+        # with an empty profile.
+        if self.model_name is not None:
+            profile = _get_default_model_profile(self.model_name)
+            if profile:
+                return profile
         if self.deployment_name is not None:
             return _get_default_model_profile(self.deployment_name) or None
         return None
