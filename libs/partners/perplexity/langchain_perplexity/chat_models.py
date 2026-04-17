@@ -56,6 +56,11 @@ from langchain_perplexity.output_parsers import (
 )
 from langchain_perplexity.types import MediaResponse, WebSearchOptions
 
+# Responses (Agent) API event type constants
+_RESPONSES_TEXT_DELTA = "response.output_text.delta"
+_RESPONSES_COMPLETED = "response.completed"
+_RESPONSES_SEARCH_RESULTS = "response.reasoning.search_results"
+
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict | BaseModel
 
@@ -257,6 +262,29 @@ class ChatPerplexity(BaseChatModel):
     media_response: MediaResponse | None = None
     """Media response: "images", "videos", or "none" (default)."""
 
+    use_responses_api: bool = False
+    """Whether to use the Perplexity Agent (Responses) API instead of the Sonar
+    (Chat Completions) API.
+
+    When ``True``, calls are routed to ``POST /v1/agent`` via
+    ``client.responses.create()``.  This enables access to third-party frontier
+    models (e.g. ``openai/gpt-5.4``, ``anthropic/claude-opus-4-5``,
+    ``google/gemini-2.5-pro``) that include Perplexity's real-time web-search
+    tooling.
+
+    Note that several Sonar-specific parameters (``search_mode``,
+    ``search_recency_filter``, ``return_images``, etc.) are ignored when this
+    flag is ``True``.  Use the ``tools`` model kwarg to pass web-search tool
+    configuration to the Agent API directly.
+
+    Example::
+
+        from langchain_perplexity import ChatPerplexity
+
+        model = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+        model.invoke("What happened in AI this week?")
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @property
@@ -355,6 +383,90 @@ class ChatPerplexity(BaseChatModel):
 
         return {**params, **self.model_kwargs}
 
+    @property
+    def _responses_default_params(self) -> dict[str, Any]:
+        """Parameters for the Responses (Agent) API.
+
+        Only includes fields that are valid for ``client.responses.create()``.
+        Sonar-specific search params are intentionally excluded.
+        """
+        params: dict[str, Any] = {
+            "temperature": self.temperature,
+        }
+        if self.max_tokens is not None:
+            params["max_output_tokens"] = self.max_tokens
+        if self.language_preference:
+            params["language_preference"] = self.language_preference
+        return {**params, **self.model_kwargs}
+
+    def _convert_messages_to_responses_input(
+        self,
+        messages: list[BaseMessage],
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Convert LangChain messages to Responses API ``input`` + ``instructions``.
+
+        System messages are merged into a single ``instructions`` string.
+        All other messages become a list of ``InputItemParam`` dicts.
+
+        Returns:
+            A tuple ``(input_list, instructions)`` where ``instructions`` may be
+            ``None`` when no system message is present.
+        """
+        instructions_parts: list[str] = []
+        input_items: list[dict[str, Any]] = []
+
+        for message in messages:
+            if isinstance(message, SystemMessage):
+                content = (
+                    message.content
+                    if isinstance(message.content, str)
+                    else str(message.content)
+                )
+                instructions_parts.append(content)
+            elif isinstance(message, HumanMessage):
+                input_items.append(
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": (
+                            message.content
+                            if isinstance(message.content, str)
+                            else str(message.content)
+                        ),
+                    }
+                )
+            elif isinstance(message, AIMessage):
+                input_items.append(
+                    {
+                        "type": "message",
+                        "role": "assistant",
+                        "content": (
+                            message.content
+                            if isinstance(message.content, str)
+                            else str(message.content)
+                        ),
+                    }
+                )
+            elif isinstance(message, ChatMessage):
+                role = message.role
+                content = (
+                    message.content
+                    if isinstance(message.content, str)
+                    else str(message.content)
+                )
+                if role == "system":
+                    instructions_parts.append(content)
+                else:
+                    valid_role = role if role in ("user", "assistant", "developer") else "user"
+                    input_items.append(
+                        {"type": "message", "role": valid_role, "content": content}
+                    )
+            else:
+                raise TypeError(f"Got unknown type {message}")
+
+        instructions = "\n".join(instructions_parts) if instructions_parts else None
+        return input_items, instructions
+
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
@@ -415,6 +527,11 @@ class ChatPerplexity(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        if self.use_responses_api:
+            yield from self._stream_with_responses_api(
+                messages, run_manager=run_manager, **kwargs
+            )
+            return
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
@@ -504,6 +621,12 @@ class ChatPerplexity(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if self.use_responses_api:
+            async for chunk in self._astream_with_responses_api(
+                messages, run_manager=run_manager, **kwargs
+            ):
+                yield chunk
+            return
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
@@ -582,6 +705,250 @@ class ChatPerplexity(BaseChatModel):
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
 
+    # ------------------------------------------------------------------
+    # Responses (Agent) API — non-streaming & streaming implementations
+    # ------------------------------------------------------------------
+
+    def _generate_with_responses_api(
+        self,
+        messages: list[BaseMessage],
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Non-streaming call via ``client.responses.create()``."""
+        input_items, instructions = self._convert_messages_to_responses_input(messages)
+        params: dict[str, Any] = {
+            "model": self.model,
+            **self._responses_default_params,
+            **kwargs,
+        }
+        if instructions is not None:
+            params["instructions"] = instructions
+
+        response = self.client.responses.create(input=input_items, **params)
+
+        content = response.output_text or ""
+
+        usage_metadata: UsageMetadata | None = None
+        if hasattr(response, "usage") and response.usage:
+            u = response.usage
+            usage_metadata = UsageMetadata(
+                input_tokens=u.input_tokens,
+                output_tokens=u.output_tokens,
+                total_tokens=u.total_tokens,
+            )
+
+        # Extract search results from output items (citations equivalent)
+        additional_kwargs: dict[str, Any] = {}
+        if hasattr(response, "output") and response.output:
+            search_results = []
+            for item in response.output:
+                item_dict = item.model_dump() if hasattr(item, "model_dump") else item
+                if item_dict.get("type") == "search_results":
+                    search_results.extend(item_dict.get("results", []))
+            if search_results:
+                additional_kwargs["search_results"] = search_results
+
+        response_metadata: dict[str, Any] = {
+            "model_name": getattr(response, "model", self.model),
+        }
+
+        message = AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
+        )
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
+    async def _agenerate_with_responses_api(
+        self,
+        messages: list[BaseMessage],
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Async non-streaming call via ``async_client.responses.create()``."""
+        input_items, instructions = self._convert_messages_to_responses_input(messages)
+        params: dict[str, Any] = {
+            "model": self.model,
+            **self._responses_default_params,
+            **kwargs,
+        }
+        if instructions is not None:
+            params["instructions"] = instructions
+
+        response = await self.async_client.responses.create(input=input_items, **params)
+
+        content = response.output_text or ""
+
+        usage_metadata: UsageMetadata | None = None
+        if hasattr(response, "usage") and response.usage:
+            u = response.usage
+            usage_metadata = UsageMetadata(
+                input_tokens=u.input_tokens,
+                output_tokens=u.output_tokens,
+                total_tokens=u.total_tokens,
+            )
+
+        additional_kwargs: dict[str, Any] = {}
+        if hasattr(response, "output") and response.output:
+            search_results = []
+            for item in response.output:
+                item_dict = item.model_dump() if hasattr(item, "model_dump") else item
+                if item_dict.get("type") == "search_results":
+                    search_results.extend(item_dict.get("results", []))
+            if search_results:
+                additional_kwargs["search_results"] = search_results
+
+        response_metadata: dict[str, Any] = {
+            "model_name": getattr(response, "model", self.model),
+        }
+
+        message = AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
+        )
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
+    def _stream_with_responses_api(
+        self,
+        messages: list[BaseMessage],
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Streaming call via ``client.responses.create(stream=True)``."""
+        input_items, instructions = self._convert_messages_to_responses_input(messages)
+        params: dict[str, Any] = {
+            "model": self.model,
+            **self._responses_default_params,
+            **kwargs,
+        }
+        if instructions is not None:
+            params["instructions"] = instructions
+
+        stream = self.client.responses.create(input=input_items, stream=True, **params)
+
+        first_chunk = True
+        for event in stream:
+            event_dict = event.model_dump() if hasattr(event, "model_dump") else event
+            event_type = event_dict.get("type", "")
+
+            if event_type == _RESPONSES_TEXT_DELTA:
+                delta = event_dict.get("delta", "")
+                chunk = AIMessageChunk(content=delta)
+                gen_chunk = ChatGenerationChunk(message=chunk)
+                if run_manager:
+                    run_manager.on_llm_new_token(delta, chunk=gen_chunk)
+                yield gen_chunk
+                first_chunk = False
+
+            elif event_type == _RESPONSES_SEARCH_RESULTS:
+                # Emit search results on the first content chunk or as additional_kwargs
+                results = event_dict.get("results", [])
+                if results and first_chunk:
+                    chunk = AIMessageChunk(
+                        content="",
+                        additional_kwargs={"search_results": results},
+                    )
+                    gen_chunk = ChatGenerationChunk(message=chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token("", chunk=gen_chunk)
+                    yield gen_chunk
+                    first_chunk = False
+
+            elif event_type == _RESPONSES_COMPLETED:
+                response_obj = event_dict.get("response") or {}
+                usage_dict = response_obj.get("usage") or {}
+                if usage_dict:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=usage_dict.get("input_tokens", 0),
+                        output_tokens=usage_dict.get("output_tokens", 0),
+                        total_tokens=usage_dict.get("total_tokens", 0),
+                    )
+                    model_name = response_obj.get("model", self.model)
+                    chunk = AIMessageChunk(content="", usage_metadata=usage_metadata)
+                    gen_chunk = ChatGenerationChunk(
+                        message=chunk,
+                        generation_info={
+                            "finish_reason": "stop",
+                            "model_name": model_name,
+                        },
+                    )
+                    if run_manager:
+                        run_manager.on_llm_new_token("", chunk=gen_chunk)
+                    yield gen_chunk
+
+    async def _astream_with_responses_api(
+        self,
+        messages: list[BaseMessage],
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Async streaming call via ``async_client.responses.create(stream=True)``."""
+        input_items, instructions = self._convert_messages_to_responses_input(messages)
+        params: dict[str, Any] = {
+            "model": self.model,
+            **self._responses_default_params,
+            **kwargs,
+        }
+        if instructions is not None:
+            params["instructions"] = instructions
+
+        stream = await self.async_client.responses.create(
+            input=input_items, stream=True, **params
+        )
+
+        first_chunk = True
+        async for event in stream:
+            event_dict = event.model_dump() if hasattr(event, "model_dump") else event
+            event_type = event_dict.get("type", "")
+
+            if event_type == _RESPONSES_TEXT_DELTA:
+                delta = event_dict.get("delta", "")
+                chunk = AIMessageChunk(content=delta)
+                gen_chunk = ChatGenerationChunk(message=chunk)
+                if run_manager:
+                    await run_manager.on_llm_new_token(delta, chunk=gen_chunk)
+                yield gen_chunk
+                first_chunk = False
+
+            elif event_type == _RESPONSES_SEARCH_RESULTS:
+                results = event_dict.get("results", [])
+                if results and first_chunk:
+                    chunk = AIMessageChunk(
+                        content="",
+                        additional_kwargs={"search_results": results},
+                    )
+                    gen_chunk = ChatGenerationChunk(message=chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token("", chunk=gen_chunk)
+                    yield gen_chunk
+                    first_chunk = False
+
+            elif event_type == _RESPONSES_COMPLETED:
+                response_obj = event_dict.get("response") or {}
+                usage_dict = response_obj.get("usage") or {}
+                if usage_dict:
+                    usage_metadata = UsageMetadata(
+                        input_tokens=usage_dict.get("input_tokens", 0),
+                        output_tokens=usage_dict.get("output_tokens", 0),
+                        total_tokens=usage_dict.get("total_tokens", 0),
+                    )
+                    model_name = response_obj.get("model", self.model)
+                    chunk = AIMessageChunk(content="", usage_metadata=usage_metadata)
+                    gen_chunk = ChatGenerationChunk(
+                        message=chunk,
+                        generation_info={
+                            "finish_reason": "stop",
+                            "model_name": model_name,
+                        },
+                    )
+                    if run_manager:
+                        await run_manager.on_llm_new_token("", chunk=gen_chunk)
+                    yield gen_chunk
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -589,6 +956,15 @@ class ChatPerplexity(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.use_responses_api:
+            if self.streaming:
+                stream_iter = self._stream_with_responses_api(
+                    messages, run_manager=run_manager, **kwargs
+                )
+                return generate_from_stream(stream_iter)
+            return self._generate_with_responses_api(
+                messages, run_manager=run_manager, **kwargs
+            )
         if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
@@ -646,6 +1022,15 @@ class ChatPerplexity(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.use_responses_api:
+            if self.streaming:
+                stream_iter = self._astream_with_responses_api(
+                    messages, run_manager=run_manager, **kwargs
+                )
+                return await agenerate_from_stream(stream_iter)
+            return await self._agenerate_with_responses_api(
+                messages, run_manager=run_manager, **kwargs
+            )
         if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs

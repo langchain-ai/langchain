@@ -211,3 +211,181 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile
+
+
+# ---------------------------------------------------------------------------
+# Responses (Agent) API tests
+# ---------------------------------------------------------------------------
+
+
+def test_use_responses_api_flag() -> None:
+    """use_responses_api defaults to False and can be set to True."""
+    llm = ChatPerplexity(model="sonar")
+    assert llm.use_responses_api is False
+
+    llm_agent = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+    assert llm_agent.use_responses_api is True
+
+
+def test_convert_messages_to_responses_input_basic() -> None:
+    """Human and AI messages are converted to input_items; no instructions."""
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    llm = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi there")]
+    input_items, instructions = llm._convert_messages_to_responses_input(messages)
+
+    assert instructions is None
+    assert len(input_items) == 2
+    assert input_items[0] == {"type": "message", "role": "user", "content": "Hello"}
+    assert input_items[1] == {
+        "type": "message",
+        "role": "assistant",
+        "content": "Hi there",
+    }
+
+
+def test_convert_messages_to_responses_input_with_system() -> None:
+    """System messages become instructions; multiple are newline-joined."""
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    llm = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+    messages = [
+        SystemMessage(content="You are helpful."),
+        SystemMessage(content="Be concise."),
+        HumanMessage(content="What is 2+2?"),
+    ]
+    input_items, instructions = llm._convert_messages_to_responses_input(messages)
+
+    assert instructions == "You are helpful.\nBe concise."
+    assert len(input_items) == 1
+    assert input_items[0]["role"] == "user"
+
+
+def test_responses_default_params_max_tokens() -> None:
+    """max_tokens maps to max_output_tokens in responses params."""
+    llm = ChatPerplexity(
+        model="openai/gpt-5.4",
+        use_responses_api=True,
+        max_tokens=512,
+        temperature=0.5,
+    )
+    params = llm._responses_default_params
+    assert params["max_output_tokens"] == 512
+    assert params["temperature"] == 0.5
+    assert "max_tokens" not in params
+
+
+def test_responses_default_params_no_sonar_fields() -> None:
+    """Sonar-specific params (search_mode etc.) must NOT appear in responses params."""
+    llm = ChatPerplexity(
+        model="openai/gpt-5.4",
+        use_responses_api=True,
+        search_mode="web",  # type: ignore[arg-type]
+    )
+    params = llm._responses_default_params
+    assert "search_mode" not in params
+
+
+def test_invoke_with_responses_api(mocker: MockerFixture) -> None:
+    """_generate routes to responses.create when use_responses_api=True."""
+    llm = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+
+    mock_response = MagicMock()
+    mock_response.output_text = "The answer is 42."
+    mock_response.model = "openai/gpt-5.4"
+    mock_response.output = []
+
+    mock_usage = MagicMock()
+    mock_usage.input_tokens = 10
+    mock_usage.output_tokens = 5
+    mock_usage.total_tokens = 15
+    mock_response.usage = mock_usage
+
+    patcher = mocker.patch.object(
+        llm.client.responses, "create", return_value=mock_response
+    )
+
+    result = llm.invoke("What is 6 times 7?")
+
+    patcher.assert_called_once()
+    call_kwargs = patcher.call_args
+    # input must be a list of message dicts
+    assert call_kwargs.kwargs["input"][0]["role"] == "user"
+    assert result.content == "The answer is 42."
+    assert result.usage_metadata["input_tokens"] == 10
+    assert result.usage_metadata["output_tokens"] == 5
+
+
+def test_invoke_with_responses_api_system_message(mocker: MockerFixture) -> None:
+    """System messages are passed as instructions, not as input items."""
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    llm = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+
+    mock_response = MagicMock()
+    mock_response.output_text = "Hello!"
+    mock_response.model = "openai/gpt-5.4"
+    mock_response.output = []
+    mock_usage = MagicMock()
+    mock_usage.input_tokens = 5
+    mock_usage.output_tokens = 3
+    mock_usage.total_tokens = 8
+    mock_response.usage = mock_usage
+
+    patcher = mocker.patch.object(
+        llm.client.responses, "create", return_value=mock_response
+    )
+
+    messages = [SystemMessage(content="Be brief."), HumanMessage(content="Hi")]
+    llm.invoke(messages)
+
+    call_kwargs = patcher.call_args.kwargs
+    assert call_kwargs["instructions"] == "Be brief."
+    # Only the human message should appear in input
+    assert len(call_kwargs["input"]) == 1
+    assert call_kwargs["input"][0]["role"] == "user"
+
+
+def test_stream_with_responses_api(mocker: MockerFixture) -> None:
+    """Streaming with use_responses_api=True uses responses.create(stream=True)."""
+    llm = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True, streaming=True)
+
+    delta_event = MagicMock()
+    delta_event.model_dump.return_value = {
+        "type": "response.output_text.delta",
+        "delta": "Hello ",
+    }
+    delta_event2 = MagicMock()
+    delta_event2.model_dump.return_value = {
+        "type": "response.output_text.delta",
+        "delta": "world!",
+    }
+    completed_event = MagicMock()
+    completed_event.model_dump.return_value = {
+        "type": "response.completed",
+        "response": {
+            "model": "openai/gpt-5.4",
+            "usage": {"input_tokens": 8, "output_tokens": 4, "total_tokens": 12},
+        },
+    }
+
+    mock_stream = MagicMock()
+    mock_stream.__iter__ = MagicMock(
+        return_value=iter([delta_event, delta_event2, completed_event])
+    )
+
+    patcher = mocker.patch.object(
+        llm.client.responses, "create", return_value=mock_stream
+    )
+
+    chunks = list(llm.stream("Say hello"))
+    patcher.assert_called_once()
+    call_kwargs = patcher.call_args.kwargs
+    assert call_kwargs.get("stream") is True
+
+    # Collect text from chunks (exclude the final usage chunk)
+    text_chunks = [c for c in chunks if c.content]
+    full_text = "".join(c.content for c in text_chunks)
+    assert "Hello " in full_text
+    assert "world!" in full_text
