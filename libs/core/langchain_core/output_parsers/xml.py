@@ -266,7 +266,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
+    def _root_to_dict(self, root: ET.Element) -> dict[str, Any]:
         """Converts xml tree to python dictionary."""
         if len(root) == 0:
             return {root.tag: root.text}
