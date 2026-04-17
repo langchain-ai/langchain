@@ -5,6 +5,7 @@
 # issues with every box unchecked or skip the template altogether.
 #
 # Rules:
+#   0. No issue type -> close unless author is an org member
 #   1. No checkboxes at all -> close unless author is an org member or bot
 #   2. Checkboxes present but none checked -> close
 #   3. "Submission checklist" section incomplete -> close
@@ -76,14 +77,17 @@ jobs:
               };
             }
 
+            let _cachedMember;
             async function isOrgMember() {
+              if (_cachedMember) return _cachedMember;
               const { h } = require('./.github/scripts/pr-labeler.js')
                 .loadAndInit(github, owner, repo, core);
               const author = context.payload.sender.login;
               const { isExternal } = await h.checkMembership(
                 author, context.payload.sender.type,
               );
-              return { internal: !isExternal, author };
+              _cachedMember = { internal: !isExternal, author };
+              return _cachedMember;
             }
 
             async function closeWithComment(lines) {
@@ -93,16 +97,45 @@ jobs:
                 `Please use one of the [issue templates](${templateUrl}).`,
               );
 
+              // Post comment first so the author sees the reason even if
+              // the subsequent close call fails.
+              await github.rest.issues.createComment({
+                owner, repo, issue_number,
+                body: lines.join('\n'),
+              });
+
               await github.rest.issues.update({
                 owner, repo, issue_number,
                 state: 'closed',
                 state_reason: 'not_planned',
               });
+            }
 
-              await github.rest.issues.createComment({
-                owner, repo, issue_number,
-                body: lines.join('\n'),
-              });
+            // ── Rule 0: no issue type (API/CLI bypass) ──────────────────
+            // Issue types are set automatically when using web UI templates.
+            // External users cannot set issue types via the API (requires
+            // write/triage permissions), so a missing type reliably indicates
+            // programmatic submission.
+            if (!context.payload.issue.type) {
+              let membership;
+              try {
+                membership = await isOrgMember();
+              } catch (e) {
+                // Org membership check failed — skip Rule 0 and let
+                // Rules 1-4 handle validation via checkboxes.
+                core.warning(`Rule 0: org membership check failed, skipping: ${e.message}`);
+              }
+              if (membership?.internal) {
+                console.log(`No issue type, but ${membership.author} is internal — OK`);
+              } else if (membership) {
+                console.log(`No issue type and ${membership.author} is external — closing`);
+                await closeWithComment([
+                  'This issue was automatically closed because it appears to have been submitted programmatically — issue types are automatically set when using the GitHub web interface, and this issue has none.',
+                  '',
+                  'We do not allow automated issue submission at this time.',
+                ]);
+                return;
+              }
             }
 
             // ── Rule 1: no checkboxes at all ────────────────────────────
