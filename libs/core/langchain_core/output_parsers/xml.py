@@ -268,16 +268,20 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
         """Converts xml tree to python dictionary."""
-        if len(root) == 0 and root.text and bool(re.search(r"\S", root.text)):
-            # If root text contains any non-whitespace character it
-            # returns {root.tag: root.text}
+        if len(root) == 0:
             return {root.tag: root.text}
-        result: dict = {root.tag: []}
+
+        result: dict[str, list[Any]] = {root.tag: []}
+
+        if root.text and bool(re.search(r"\S", root.text)):
+            result[root.tag].append({"_text": root.text.strip()})
+
         for child in root:
             if len(child) == 0:
                 result[root.tag].append({child.tag: child.text})
             else:
                 result[root.tag].append(self._root_to_dict(child))
+
         return result
 
     @property

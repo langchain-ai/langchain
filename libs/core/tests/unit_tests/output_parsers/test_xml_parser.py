@@ -156,3 +156,16 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+def test_mixed_content() -> None:
+    parser = XMLOutputParser()
+    xml = "<result>Summary<detail>info</detail></result>"
+    result = parser.parse(f"```xml\n{xml}\n```")
+
+    assert result == {
+        "result": [
+            {"_text": "Summary"},
+            {"detail": "info"},
+        ]
+    }
