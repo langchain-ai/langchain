@@ -120,6 +120,76 @@ def test_finalize_block_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
+def test_finalize_block_server_tool_call_chunk_valid() -> None:
+    block: CompatBlock = {
+        "type": "server_tool_call_chunk",
+        "args": '{"q": "weather"}',
+        "id": "srv_1",
+        "name": "web_search",
+    }
+    result = _finalize_block(block)
+    assert result["type"] == "server_tool_call"
+    assert result["id"] == "srv_1"
+    assert result["name"] == "web_search"
+    assert result["args"] == {"q": "weather"}
+
+
+def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
+    block: CompatBlock = {
+        "type": "server_tool_call_chunk",
+        "args": "not json",
+        "id": "srv_1",
+        "name": "web_search",
+    }
+    result = _finalize_block(block)
+    invalid = cast("InvalidToolCallBlock", result)
+    assert invalid["type"] == "invalid_tool_call"
+    assert invalid.get("error") is not None
+
+
+def test_extract_blocks_from_chunk_passes_through_protocol_blocks() -> None:
+    """Protocol-shape dicts in msg.content pass through the extractor."""
+    msg = AIMessageChunk(
+        content=[
+            {"type": "text", "text": "hi"},
+            {
+                "type": "server_tool_call",
+                "id": "srv_1",
+                "name": "web_search",
+                "args": {"q": "weather"},
+            },
+            {
+                "type": "image",
+                "url": "https://example.com/cat.png",
+                "mime_type": "image/png",
+            },
+        ],
+    )
+    extracted = _extract_blocks_from_chunk(msg)
+    types = [b.get("type") for _, b in extracted]
+    assert "server_tool_call" in types
+    assert "image" in types
+
+
+def test_extract_final_blocks_includes_invalid_tool_calls() -> None:
+    """The standard `invalid_tool_calls` field is surfaced as protocol blocks."""
+    msg = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_1",
+                "name": "search",
+                "args": '{"q":',
+                "error": "bad json",
+            }
+        ],
+    )
+    extracted = _extract_final_blocks(msg)
+    types = [b.get("type") for _, b in extracted]
+    assert "invalid_tool_call" in types
+
+
 def test_make_start_block_text() -> None:
     block: CompatBlock = {"type": "text", "text": "hello"}
     start = _make_start_block(block)

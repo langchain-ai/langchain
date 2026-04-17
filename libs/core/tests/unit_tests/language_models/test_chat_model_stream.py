@@ -502,6 +502,153 @@ class TestChatModelStream:
         assert msg.tool_calls == []
         assert len(msg.invalid_tool_calls) == 1
 
+    def test_output_content_uses_protocol_tool_call_shape(self) -> None:
+        """`.output.content` must emit `type: tool_call`, not legacy tool_use."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {"type": "text", "text": "Let me search."},
+            },
+            stream,
+        )
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {"type": "text", "text": "Let me search."},
+            },
+            stream,
+        )
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 1,
+                "content_block": {
+                    "type": "tool_call",
+                    "id": "call_1",
+                    "name": "search",
+                    "args": {"q": "weather"},
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "tool_use"}, stream)
+
+        msg = stream.output
+        assert isinstance(msg.content, list)
+        types = [b.get("type") for b in msg.content]
+        assert types == ["text", "tool_call"]
+        tool_block = msg.content[1]
+        assert tool_block["name"] == "search"
+        assert tool_block["args"] == {"q": "weather"}
+        # Legacy shape fields must be absent
+        assert "input" not in tool_block
+        assert tool_block.get("type") != "tool_use"
+
+    def test_server_tool_call_finish_lands_in_output_content(self) -> None:
+        """Server-executed tool call finish events flow into .output.content."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {
+                    "type": "server_tool_call",
+                    "id": "srv_1",
+                    "name": "web_search",
+                    "args": {"q": "weather"},
+                },
+            },
+            stream,
+        )
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 1,
+                "content_block": {
+                    "type": "server_tool_call_result",
+                    "tool_call_id": "srv_1",
+                    "status": "success",
+                    "output": "62F, clear",
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        assert isinstance(msg.content, list)
+        types = [b.get("type") for b in msg.content]
+        assert types == ["server_tool_call", "server_tool_call_result"]
+        # Regular tool_calls projection must NOT include server-executed ones
+        assert msg.tool_calls == []
+
+    def test_server_tool_call_chunk_sweep(self) -> None:
+        """Unfinished server_tool_call_chunks get swept to server_tool_call."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {
+                    "type": "server_tool_call_chunk",
+                    "id": "srv_1",
+                    "name": "web_search",
+                    "args": '{"q":',
+                },
+            },
+            stream,
+        )
+        dispatch_event(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {
+                    "type": "server_tool_call_chunk",
+                    "args": ' "weather"}',
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        assert isinstance(msg.content, list)
+        assert msg.content[0]["type"] == "server_tool_call"
+        assert msg.content[0]["args"] == {"q": "weather"}
+        assert msg.content[0]["name"] == "web_search"
+
+    def test_image_block_pass_through(self) -> None:
+        """An image block finished via the event stream reaches .output.content."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {
+                    "type": "image",
+                    "url": "https://example.com/cat.png",
+                    "mime_type": "image/png",
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        assert isinstance(msg.content, list)
+        assert msg.content[0] == {
+            "type": "image",
+            "url": "https://example.com/cat.png",
+            "mime_type": "image/png",
+        }
+
     def test_sweep_of_unfinished_malformed_chunk_produces_invalid_tool_call(
         self,
     ) -> None:

@@ -50,6 +50,42 @@ if TYPE_CHECKING:
 # block TypedDicts (TextBlock, ReasoningBlock, ToolCallChunkBlock, etc.).
 CompatBlock = dict[str, Any]
 
+# Protocol block types that arrive as a single fully-populated block rather
+# than through incremental deltas. Accumulation replaces wholesale; a single
+# delta event carries the full block.
+_SELF_CONTAINED_BLOCK_TYPES = frozenset(
+    {
+        "server_tool_call",
+        "server_tool_call_result",
+        "invalid_tool_call",
+        "image",
+        "audio",
+        "video",
+        "file",
+        "non_standard",
+    }
+)
+
+# Protocol block types the extractor passes through verbatim when encountered
+# in ``msg.content`` as a protocol-shape dict. Text, reasoning and tool-call
+# fields are handled by dedicated extraction paths above; everything else
+# flows through unchanged so the stream can accumulate and finalize it.
+_PROTOCOL_PASS_THROUGH_TYPES = frozenset(
+    {
+        "tool_call",
+        "tool_call_chunk",
+        "invalid_tool_call",
+        "server_tool_call",
+        "server_tool_call_chunk",
+        "server_tool_call_result",
+        "image",
+        "audio",
+        "video",
+        "file",
+        "non_standard",
+    }
+)
+
 
 # ---------------------------------------------------------------------------
 # Content-block accumulation helpers
@@ -57,7 +93,13 @@ CompatBlock = dict[str, Any]
 
 
 def _accumulate_block(accumulated: CompatBlock, delta: CompatBlock) -> CompatBlock:
-    """Merge *delta* into *accumulated*, returning the updated block."""
+    """Merge *delta* into *accumulated*, returning the updated block.
+
+    Deltaable types (text / reasoning / ``_chunk`` variants) concatenate
+    their streamed field; non-deltaable types (media / server-tool results /
+    non_standard) pass through as the latest value since a single emission
+    carries the full block.
+    """
     btype = accumulated.get("type", "text")
     if btype == "text" and delta.get("type", "text") == "text":
         accumulated["text"] = accumulated.get("text", "") + delta.get("text", "")
@@ -65,12 +107,18 @@ def _accumulate_block(accumulated: CompatBlock, delta: CompatBlock) -> CompatBlo
         accumulated["reasoning"] = accumulated.get("reasoning", "") + delta.get(
             "reasoning", ""
         )
-    elif btype == "tool_call_chunk" and delta.get("type") == "tool_call_chunk":
+    elif btype in ("tool_call_chunk", "server_tool_call_chunk") and delta.get(
+        "type"
+    ) == btype:
         accumulated["args"] = accumulated.get("args", "") + delta.get("args", "")
         if delta.get("id") is not None:
             accumulated["id"] = delta["id"]
         if delta.get("name") is not None:
             accumulated["name"] = delta["name"]
+    elif btype in _SELF_CONTAINED_BLOCK_TYPES:
+        # Self-contained block types — replace wholesale rather than merge.
+        accumulated.clear()
+        accumulated.update(delta)
     return accumulated
 
 
@@ -107,41 +155,90 @@ def _delta_block(previous: CompatBlock, current: CompatBlock) -> ContentBlock | 
         if current.get("name") is not None and previous.get("name") is None:
             chunk["name"] = current["name"]
         return chunk
+    if btype == "server_tool_call_chunk":
+        prev_args = previous.get("args", "")
+        cur_args = current.get("args", "")
+        delta_args = cur_args[len(prev_args) :]
+        has_meta = current.get("id") is not None or current.get("name") is not None
+        if not delta_args and not has_meta:
+            return None
+        s_chunk: CompatBlock = {
+            "type": "server_tool_call_chunk",
+            "args": delta_args,
+        }
+        if current.get("id") is not None and previous.get("id") is None:
+            s_chunk["id"] = current["id"]
+        if current.get("name") is not None and previous.get("name") is None:
+            s_chunk["name"] = current["name"]
+        return cast("ContentBlock", s_chunk)
+    if btype in _SELF_CONTAINED_BLOCK_TYPES:
+        # Self-contained blocks: emit once on transition from skeleton
+        # (type-only) start to populated form; subsequent identical
+        # accumulations suppress.
+        if len(previous) <= 1:
+            return cast("ContentBlock", dict(current))
+        return None
     # Unrecognized block type — pass through unchanged.  Caller is
     # responsible for ensuring the dict matches a valid ``ContentBlock``.
     return cast("ContentBlock", current)
 
 
 def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
-    """Convert a ``tool_call_chunk`` to a finalized ``tool_call``.
+    """Promote chunk variants to their finalized form.
 
-    Returns ``invalid_tool_call`` if JSON parsing fails.  Non-chunk
-    blocks are already finalized and pass through unchanged.
+    ``tool_call_chunk`` becomes ``tool_call`` (or ``invalid_tool_call`` if
+    JSON parsing fails), and ``server_tool_call_chunk`` becomes
+    ``server_tool_call`` under the same rule. Non-chunk blocks are already
+    finalized and pass through unchanged.
     """
     btype = block.get("type")
-    if btype != "tool_call_chunk":
-        # Already a finalized block variant — pass through.
-        return cast("FinalizedContentBlock", block)
-    raw_args = block.get("args", "{}")
-    try:
-        parsed_args = json.loads(raw_args) if raw_args else {}
+    if btype == "tool_call_chunk":
+        raw_args = block.get("args", "{}")
+        try:
+            parsed_args = json.loads(raw_args) if raw_args else {}
+        except (json.JSONDecodeError, TypeError):
+            invalid = InvalidToolCallBlock(
+                type="invalid_tool_call",
+                args=raw_args,
+                error="Failed to parse tool call arguments as JSON",
+            )
+            if block.get("id") is not None:
+                invalid["id"] = block["id"]
+            if block.get("name") is not None:
+                invalid["name"] = block["name"]
+            return invalid
         return ToolCallBlock(
             type="tool_call",
             id=block.get("id", ""),
             name=block.get("name", ""),
             args=parsed_args,
         )
-    except (json.JSONDecodeError, TypeError):
-        invalid = InvalidToolCallBlock(
-            type="invalid_tool_call",
-            args=raw_args,
-            error="Failed to parse tool call arguments as JSON",
+    if btype == "server_tool_call_chunk":
+        raw_args = block.get("args", "{}")
+        try:
+            parsed_args = json.loads(raw_args) if raw_args else {}
+        except (json.JSONDecodeError, TypeError):
+            s_invalid = InvalidToolCallBlock(
+                type="invalid_tool_call",
+                args=raw_args,
+                error="Failed to parse tool call arguments as JSON",
+            )
+            if block.get("id") is not None:
+                s_invalid["id"] = block["id"]
+            if block.get("name") is not None:
+                s_invalid["name"] = block["name"]
+            return s_invalid
+        return cast(
+            "FinalizedContentBlock",
+            {
+                "type": "server_tool_call",
+                "id": block.get("id", ""),
+                "name": block.get("name", ""),
+                "args": parsed_args,
+            },
         )
-        if block.get("id") is not None:
-            invalid["id"] = block["id"]
-        if block.get("name") is not None:
-            invalid["name"] = block["name"]
-        return invalid
+    # Already a finalized block variant — pass through.
+    return cast("FinalizedContentBlock", block)
 
 
 def _make_start_block(block: CompatBlock) -> ContentBlock:
@@ -158,6 +255,13 @@ def _make_start_block(block: CompatBlock) -> ContentBlock:
         if "name" in block:
             chunk["name"] = block["name"]
         return chunk
+    if btype == "server_tool_call_chunk":
+        s_chunk: CompatBlock = {"type": "server_tool_call_chunk", "args": ""}
+        if "id" in block:
+            s_chunk["id"] = block["id"]
+        if "name" in block:
+            s_chunk["name"] = block["name"]
+        return cast("ContentBlock", s_chunk)
     if btype == "tool_call":
         # Already finalized — return as-is for start event
         return ToolCallBlock(
@@ -166,6 +270,10 @@ def _make_start_block(block: CompatBlock) -> ContentBlock:
             name=block.get("name", ""),
             args=block.get("args", {}),
         )
+    if btype in _SELF_CONTAINED_BLOCK_TYPES:
+        # Emit a type-only skeleton so the first delta can carry the block's
+        # populated content without looking like a no-op.
+        return cast("ContentBlock", {"type": btype})
     # Any other recognized ContentBlock variant — pass through unchanged.
     return cast("ContentBlock", block)
 
@@ -274,6 +382,8 @@ def _extract_blocks_from_chunk(msg: AIMessageChunk) -> list[tuple[int, CompatBlo
                             ),
                         )
                     )
+            elif ctype in _PROTOCOL_PASS_THROUGH_TYPES:
+                blocks.append((item.get("index", i), dict(item)))
 
     # Tool call chunks live in a separate field
     for tc in msg.tool_call_chunks or []:
@@ -322,6 +432,8 @@ def _extract_final_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
                             ),
                         )
                     )
+            elif ctype in _PROTOCOL_PASS_THROUGH_TYPES:
+                blocks.append((i, dict(item)))
 
     # Finalized tool calls (already parsed, not chunks)
     for tc in getattr(msg, "tool_calls", None) or []:
@@ -339,6 +451,15 @@ def _extract_final_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
                 ),
             )
         )
+
+    # Standard langchain invalid_tool_calls field
+    for itc in getattr(msg, "invalid_tool_calls", None) or []:
+        idx = len(blocks)
+        block: CompatBlock = {"type": "invalid_tool_call"}
+        for k in ("id", "name", "args", "error"):
+            if itc.get(k) is not None:
+                block[k] = itc[k]
+        blocks.append((idx, block))
 
     return blocks
 

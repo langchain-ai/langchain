@@ -28,6 +28,8 @@ from langchain_protocol.protocol import (
     MessageMetadata,
     MessageStartData,
     ReasoningBlock,
+    ServerToolCallBlock,
+    ServerToolCallChunkBlock,
     TextBlock,
     ToolCallBlock,
     ToolCallChunkBlock,
@@ -39,7 +41,7 @@ from langchain_core.messages import AIMessage
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterator
 
-    from langchain_protocol.protocol import MessagesData
+    from langchain_protocol.protocol import FinalizedContentBlock, MessagesData
 
 
 # ---------------------------------------------------------------------------
@@ -321,6 +323,12 @@ class ChatModelStream:
         self._tool_call_chunks: dict[int, dict[str, Any]] = {}
         self._tool_calls_acc: list[ToolCallBlock] = []
         self._invalid_tool_calls_acc: list[InvalidToolCallBlock] = []
+        self._server_tool_call_chunks: dict[int, dict[str, Any]] = {}
+        # Ordered snapshot of every finalized block, keyed by event index.
+        # Single source of truth for .output.content. Typed accumulators
+        # (text/reasoning/tool_calls/invalid_tool_calls) continue to serve
+        # the public projections.
+        self._blocks: dict[int, FinalizedContentBlock] = {}
         self._usage_value: UsageInfo | None = None
         self._finish_reason: str | None = None
         self._start_metadata: MessageMetadata | None = None
@@ -547,6 +555,18 @@ class ChatModelStream:
             if "index" in tcc:
                 chunk_block["index"] = tcc["index"]
             self._tool_calls_proj.push(chunk_block)
+        elif btype == "server_tool_call_chunk":
+            stcc = cast("ServerToolCallChunkBlock", block)
+            idx = data.get("index")
+            if idx is None:
+                idx = len(self._server_tool_call_chunks)
+            existing = self._server_tool_call_chunks.get(idx, {})
+            if stcc.get("id") and "id" not in existing:
+                existing["id"] = stcc["id"]
+            if stcc.get("name") and "name" not in existing:
+                existing["name"] = stcc["name"]
+            existing["args"] = existing.get("args", "") + (stcc.get("args") or "")
+            self._server_tool_call_chunks[idx] = existing
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
         """Process a ``content-block-finish`` event."""
@@ -554,17 +574,27 @@ class ChatModelStream:
         if block is None:
             return
         btype = block.get("type", "")
+        idx = data.get("index")
+        finalized: FinalizedContentBlock | None = None
 
         if btype == "text":
             text_block = cast("TextBlock", block)
             full_text = text_block.get("text", "")
             if full_text and full_text != self._text_acc:
                 self._text_acc = full_text
+            finalized = cast(
+                "FinalizedContentBlock",
+                {"type": "text", "text": self._text_acc},
+            )
         elif btype == "reasoning":
             reasoning_block = cast("ReasoningBlock", block)
             full_r = reasoning_block.get("reasoning", "")
             if full_r and full_r != self._reasoning_acc:
                 self._reasoning_acc = full_r
+            finalized = cast(
+                "FinalizedContentBlock",
+                {"type": "reasoning", "reasoning": self._reasoning_acc},
+            )
         elif btype == "tool_call":
             tcb = cast("ToolCallBlock", block)
             tc = ToolCallBlock(
@@ -574,17 +604,34 @@ class ChatModelStream:
                 args=tcb.get("args", {}),
             )
             self._tool_calls_acc.append(tc)
-            idx = data.get("index")
             if idx is not None and idx in self._tool_call_chunks:
                 del self._tool_call_chunks[idx]
+            finalized = tc
         elif btype == "invalid_tool_call":
             itc = cast("InvalidToolCallBlock", block)
             self._invalid_tool_calls_acc.append(itc)
             # Critical: drop the stale chunk so _finish's sweep doesn't revive
             # it as an empty-args ToolCallBlock.
-            idx = data.get("index")
             if idx is not None and idx in self._tool_call_chunks:
                 del self._tool_call_chunks[idx]
+            if idx is not None and idx in self._server_tool_call_chunks:
+                del self._server_tool_call_chunks[idx]
+            finalized = itc
+        elif btype in (
+            "server_tool_call",
+            "server_tool_call_result",
+            "image",
+            "audio",
+            "video",
+            "file",
+            "non_standard",
+        ):
+            if btype == "server_tool_call" and idx is not None:
+                self._server_tool_call_chunks.pop(idx, None)
+            finalized = block
+
+        if finalized is not None and idx is not None:
+            self._blocks[idx] = finalized
 
     def _finish(self, data: MessageFinishData) -> None:
         """Process a ``message-finish`` event."""
@@ -610,16 +657,45 @@ class ChatModelStream:
                 if chunk.get("name"):
                     invalid["name"] = chunk["name"]
                 self._invalid_tool_calls_acc.append(invalid)
+                self._blocks[idx] = invalid
                 continue
-            self._tool_calls_acc.append(
-                ToolCallBlock(
-                    type="tool_call",
-                    id=chunk.get("id", ""),
-                    name=chunk.get("name", ""),
-                    args=parsed,
-                )
+            tc = ToolCallBlock(
+                type="tool_call",
+                id=chunk.get("id", ""),
+                name=chunk.get("name", ""),
+                args=parsed,
             )
+            self._tool_calls_acc.append(tc)
+            self._blocks[idx] = tc
         self._tool_call_chunks.clear()
+
+        # Finalize any server_tool_call_chunks without content-block-finish
+        for idx in sorted(self._server_tool_call_chunks):
+            chunk = self._server_tool_call_chunks[idx]
+            raw_args = chunk.get("args", "{}")
+            try:
+                parsed = json.loads(raw_args) if raw_args else {}
+            except (json.JSONDecodeError, TypeError):
+                invalid2: InvalidToolCallBlock = {
+                    "type": "invalid_tool_call",
+                    "args": raw_args or "",
+                    "error": "Failed to parse tool call arguments as JSON",
+                }
+                if chunk.get("id"):
+                    invalid2["id"] = chunk["id"]
+                if chunk.get("name"):
+                    invalid2["name"] = chunk["name"]
+                self._invalid_tool_calls_acc.append(invalid2)
+                self._blocks[idx] = invalid2
+                continue
+            stc = ServerToolCallBlock(
+                type="server_tool_call",
+                id=chunk.get("id", ""),
+                name=chunk.get("name", ""),
+                args=parsed,
+            )
+            self._blocks[idx] = stc
+        self._server_tool_call_chunks.clear()
 
         self._text_proj.complete(self._text_acc)
         self._reasoning_proj.complete(self._reasoning_acc)
@@ -641,33 +717,25 @@ class ChatModelStream:
         self._tool_calls_proj.fail(error)
 
     def _assemble_message(self) -> AIMessage:
-        """Build an ``AIMessage`` from accumulated state."""
-        content: Any
-        has_reasoning = bool(self._reasoning_acc)
-        has_tool_calls = bool(self._tool_calls_acc)
-        has_invalid_tool_calls = bool(self._invalid_tool_calls_acc)
+        """Build an ``AIMessage`` from accumulated state.
 
-        if not has_reasoning and not has_tool_calls and not has_invalid_tool_calls:
+        Content is built from ``self._blocks``, an index-ordered snapshot of
+        finalized protocol blocks. The bare-string fast path is used when
+        the message has exactly one ``text`` block (the common chat case);
+        otherwise content is a list of protocol-shape block dicts.
+        """
+        content: Any
+        if not self._blocks:
             content = self._text_acc
         else:
-            content = []
-            if has_reasoning:
-                content.append(
-                    {"type": "reasoning", "reasoning": self._reasoning_acc},
-                )
-            if self._text_acc:
-                content.append({"type": "text", "text": self._text_acc})
-            for tc in self._tool_calls_acc:
-                content.append(
-                    {
-                        "type": "tool_use",
-                        "id": tc.get("id", ""),
-                        "name": tc.get("name", ""),
-                        "input": tc.get("args", {}),
-                    }
-                )
-            for itc in self._invalid_tool_calls_acc:
-                content.append(dict(itc))
+            ordered_blocks = [self._blocks[idx] for idx in sorted(self._blocks)]
+            if (
+                len(ordered_blocks) == 1
+                and ordered_blocks[0].get("type") == "text"
+            ):
+                content = cast("TextBlock", ordered_blocks[0]).get("text", "")
+            else:
+                content = [dict(b) for b in ordered_blocks]
 
         response_metadata: dict[str, Any] = {}
         if self._finish_reason:
