@@ -704,7 +704,6 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
-    agent_type: str | None = "root",
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -1651,7 +1650,7 @@ def create_agent(
     config: RunnableConfig = {
         "recursion_limit": 9_999,
         "configurable": {
-            "ls_agent_type": agent_type,
+            "ls_agent_type": "root",
         },
     }
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
