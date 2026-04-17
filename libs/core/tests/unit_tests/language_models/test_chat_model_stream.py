@@ -432,6 +432,106 @@ class TestChatModelStream:
 
         assert list(stream) == list(stream)  # Replay
 
+    def test_invalid_tool_call_preserved_on_finish(self) -> None:
+        """An ``invalid_tool_call`` finish lands on ``invalid_tool_calls``."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {
+                    "type": "invalid_tool_call",
+                    "id": "call_1",
+                    "name": "search",
+                    "args": '{"q": ',  # malformed
+                    "error": "Failed to parse tool call arguments as JSON",
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        assert msg.tool_calls == []
+        assert len(msg.invalid_tool_calls) == 1
+        assert msg.invalid_tool_calls[0]["name"] == "search"
+        assert msg.invalid_tool_calls[0]["args"] == '{"q": '
+        assert msg.invalid_tool_calls[0]["error"] == (
+            "Failed to parse tool call arguments as JSON"
+        )
+
+    def test_invalid_tool_call_survives_sweep(self) -> None:
+        """Regression: finish deletes stale chunk, sweep cannot revive it."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        # Stream a tool_call_chunk with malformed JSON args
+        dispatch_event(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {
+                    "type": "tool_call_chunk",
+                    "id": "call_1",
+                    "name": "search",
+                    "args": '{"q": ',
+                    "index": 0,
+                },
+            },
+            stream,
+        )
+        # Finish event declares the call invalid
+        dispatch_event(
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {
+                    "type": "invalid_tool_call",
+                    "id": "call_1",
+                    "name": "search",
+                    "args": '{"q": ',
+                    "error": "Failed to parse tool call arguments as JSON",
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        # The sweep must NOT have revived the chunk as an empty-args tool_call.
+        assert msg.tool_calls == []
+        assert len(msg.invalid_tool_calls) == 1
+
+    def test_sweep_of_unfinished_malformed_chunk_produces_invalid_tool_call(
+        self,
+    ) -> None:
+        """Unfinished chunk with malformed JSON sweeps to invalid_tool_call."""
+        stream = ChatModelStream()
+        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        dispatch_event(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {
+                    "type": "tool_call_chunk",
+                    "id": "call_1",
+                    "name": "search",
+                    "args": '{"q": ',  # malformed, never completed
+                    "index": 0,
+                },
+            },
+            stream,
+        )
+        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+
+        msg = stream.output
+        assert msg.tool_calls == []
+        assert len(msg.invalid_tool_calls) == 1
+        itc = msg.invalid_tool_calls[0]
+        assert itc["name"] == "search"
+        assert itc["args"] == '{"q": '
+        assert "Failed to parse" in (itc["error"] or "")
+
 
 # ---------------------------------------------------------------------------
 # AsyncChatModelStream unit tests

@@ -1,6 +1,9 @@
 """Tests for stream_v2 / astream_v2 and ChatModelStream."""
 
+from __future__ import annotations
+
 import asyncio
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_protocol.protocol import (
@@ -17,7 +20,56 @@ from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from langchain_core.callbacks import CallbackManagerForLLMRun
+    from langchain_core.messages import BaseMessage
+
+
+class _MalformedToolCallModel(BaseChatModel):
+    """Fake model that emits a tool_call_chunk with malformed JSON args."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "malformed-tool-call-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "name": "search",
+                        "args": '{"q": ',  # malformed JSON
+                        "id": "call_1",
+                        "index": 0,
+                    }
+                ],
+            )
+        )
 
 
 class TestChatModelStream:
@@ -220,6 +272,19 @@ class TestStreamV2:
         # FakeListChatModel doesn't emit usage, so it should be None
         assert stream.usage is None
         assert stream.done
+
+    def test_stream_v2_malformed_tool_args_produce_invalid_tool_call(self) -> None:
+        """End-to-end: malformed tool-call JSON becomes invalid_tool_calls."""
+        model = _MalformedToolCallModel()
+        stream = model.stream_v2("test")
+        msg = stream.output
+
+        assert msg.tool_calls == []
+        assert len(msg.invalid_tool_calls) == 1
+        itc = msg.invalid_tool_calls[0]
+        assert itc["name"] == "search"
+        assert itc["args"] == '{"q": '
+        assert itc["id"] == "call_1"
 
 
 class TestAstreamV2:

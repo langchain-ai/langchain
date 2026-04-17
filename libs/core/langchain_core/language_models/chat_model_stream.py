@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, cast
 from langchain_protocol.protocol import (
     ContentBlockDeltaData,
     ContentBlockFinishData,
+    InvalidToolCallBlock,
     MessageFinishData,
     MessageMetadata,
     MessageStartData,
@@ -319,6 +320,7 @@ class ChatModelStream:
         self._reasoning_acc: str = ""
         self._tool_call_chunks: dict[int, dict[str, Any]] = {}
         self._tool_calls_acc: list[ToolCallBlock] = []
+        self._invalid_tool_calls_acc: list[InvalidToolCallBlock] = []
         self._usage_value: UsageInfo | None = None
         self._finish_reason: str | None = None
         self._start_metadata: MessageMetadata | None = None
@@ -575,6 +577,14 @@ class ChatModelStream:
             idx = data.get("index")
             if idx is not None and idx in self._tool_call_chunks:
                 del self._tool_call_chunks[idx]
+        elif btype == "invalid_tool_call":
+            itc = cast("InvalidToolCallBlock", block)
+            self._invalid_tool_calls_acc.append(itc)
+            # Critical: drop the stale chunk so _finish's sweep doesn't revive
+            # it as an empty-args ToolCallBlock.
+            idx = data.get("index")
+            if idx is not None and idx in self._tool_call_chunks:
+                del self._tool_call_chunks[idx]
 
     def _finish(self, data: MessageFinishData) -> None:
         """Process a ``message-finish`` event."""
@@ -590,7 +600,17 @@ class ChatModelStream:
             try:
                 parsed = json.loads(raw_args) if raw_args else {}
             except (json.JSONDecodeError, TypeError):
-                parsed = {}
+                invalid: InvalidToolCallBlock = {
+                    "type": "invalid_tool_call",
+                    "args": raw_args or "",
+                    "error": "Failed to parse tool call arguments as JSON",
+                }
+                if chunk.get("id"):
+                    invalid["id"] = chunk["id"]
+                if chunk.get("name"):
+                    invalid["name"] = chunk["name"]
+                self._invalid_tool_calls_acc.append(invalid)
+                continue
             self._tool_calls_acc.append(
                 ToolCallBlock(
                     type="tool_call",
@@ -625,8 +645,9 @@ class ChatModelStream:
         content: Any
         has_reasoning = bool(self._reasoning_acc)
         has_tool_calls = bool(self._tool_calls_acc)
+        has_invalid_tool_calls = bool(self._invalid_tool_calls_acc)
 
-        if not has_reasoning and not has_tool_calls:
+        if not has_reasoning and not has_tool_calls and not has_invalid_tool_calls:
             content = self._text_acc
         else:
             content = []
@@ -645,6 +666,8 @@ class ChatModelStream:
                         "input": tc.get("args", {}),
                     }
                 )
+            for itc in self._invalid_tool_calls_acc:
+                content.append(dict(itc))
 
         response_metadata: dict[str, Any] = {}
         if self._finish_reason:
@@ -667,10 +690,22 @@ class ChatModelStream:
             for tc in self._tool_calls_acc
         ]
 
+        invalid_tool_calls = [
+            {
+                "type": "invalid_tool_call",
+                "id": itc.get("id") or None,
+                "name": itc.get("name") or None,
+                "args": itc.get("args") or None,
+                "error": itc.get("error"),
+            }
+            for itc in self._invalid_tool_calls_acc
+        ]
+
         return AIMessage(
             content=content,
             id=self._message_id,
             tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
             usage_metadata=self._usage_value,
             response_metadata=response_metadata,
         )
