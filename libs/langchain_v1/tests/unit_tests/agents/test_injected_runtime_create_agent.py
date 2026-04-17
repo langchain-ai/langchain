@@ -930,10 +930,10 @@ def test_ls_agent_type_is_overridable() -> None:
     with tracing_context(client=mock_client, enabled=True):
         agent.invoke(
             {"messages": [HumanMessage("hi?")]},
-            config={"configurable": {"ls_agent_type": "subagent"}},
+            config={"configurable": {"ls_agent_type": "subagent", "custom_key": "custom_value"}},
         )
 
-    # Verify that ls_agent_type is overridden in the tracer metadata
+    # Verify that ls_agent_type is overridden and configurable is merged in the tracer metadata
     posts = []
     for call in mock_session.request.mock_calls:
         if call.args and call.args[0] == "POST":
@@ -948,4 +948,8 @@ def test_ls_agent_type_is_overridable() -> None:
     metadata = root_post.get("extra", {}).get("metadata", {})
     assert metadata.get("ls_agent_type") == "subagent", (
         f"ls_agent_type should be 'subagent' in tracer metadata, but got: {metadata}"
+    )
+    # Verify that the additional configurable key is merged into metadata
+    assert metadata.get("custom_key") == "custom_value", (
+        f"custom_key should be 'custom_value' in tracer metadata, but got: {metadata}"
     )
