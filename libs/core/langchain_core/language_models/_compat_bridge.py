@@ -49,6 +49,8 @@ from langchain_protocol.protocol import (
     MessagesData,
     MessageStartData,
     ReasoningBlock,
+    ServerToolCallBlock,
+    ServerToolCallChunkBlock,
     TextBlock,
     ToolCallBlock,
     ToolCallChunkBlock,
@@ -64,7 +66,41 @@ if TYPE_CHECKING:
 
 
 CompatBlock = dict[str, Any]
-"""A protocol-shape content-block dict."""
+"""Internal working type for a content block.
+
+The bridge works with plain dicts internally because two separate but
+structurally similar ``ContentBlock`` Unions exist — one in
+:mod:`langchain_core.messages.content` (returned by
+``msg.content_blocks``), one in :mod:`langchain_protocol.protocol` (the
+wire/event shape).  They are not mypy-compatible despite being
+near-isomorphic.  Passing through ``dict[str, Any]`` launders between
+them.  See :func:`_to_protocol_block` for the single seam where the
+laundering cast lives.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Type laundering between core and protocol ``ContentBlock`` unions
+# ---------------------------------------------------------------------------
+
+
+def _to_protocol_block(block: CompatBlock) -> ContentBlock:
+    """Narrow an internal working dict to a protocol ``ContentBlock``.
+
+    Single seam between the two ``ContentBlock`` type systems:
+    :mod:`langchain_core.messages.content` (what ``msg.content_blocks``
+    returns) and :mod:`langchain_protocol.protocol` (what event payloads
+    require).  The two Unions overlap structurally but are nominally
+    distinct to mypy, so we launder through ``dict[str, Any]``.  When the
+    Unions are unified, this helper and its finalized counterpart can be
+    deleted.
+    """
+    return cast("ContentBlock", block)
+
+
+def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
+    """Counterpart of :func:`_to_protocol_block` for finalized blocks."""
+    return cast("FinalizedContentBlock", block)
 
 
 # ---------------------------------------------------------------------------
@@ -84,26 +120,21 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
     """
     try:
         raw = msg.content_blocks
-    except Exception:  # noqa: BLE001
+    except Exception:
         return []
 
     result: list[tuple[int, CompatBlock]] = []
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
             continue
-        block_dict = cast("dict[str, Any]", block)
-        raw_idx = block_dict.get("index", i)
+        raw_idx = block.get("index", i)
         idx = raw_idx if isinstance(raw_idx, int) else i
-        result.append((idx, dict(block_dict)))
+        result.append((idx, dict(block)))
 
     if not isinstance(msg, AIMessageChunk):
         # Finalized AIMessage: pull invalid_tool_calls from the dedicated
         # field — AIMessage.content_blocks does not currently include them.
-        invalid_tool_calls = cast(
-            "list[dict[str, Any]]",
-            getattr(msg, "invalid_tool_calls", None) or [],
-        )
-        for itc in invalid_tool_calls:
+        for itc in getattr(msg, "invalid_tool_calls", None) or []:
             itc_block: CompatBlock = {"type": "invalid_tool_call"}
             for key in ("id", "name", "args", "error"):
                 if itc.get(key) is not None:
@@ -140,13 +171,15 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
             skel["name"] = block["name"]
         return skel
     if btype == "server_tool_call_chunk":
-        s_skel: CompatBlock = {"type": "server_tool_call_chunk", "args": ""}
+        s_skel = ServerToolCallChunkBlock(
+            type="server_tool_call_chunk", args="",
+        )
         if block.get("id") is not None:
             s_skel["id"] = block["id"]
         if block.get("name") is not None:
             s_skel["name"] = block["name"]
-        return cast("ContentBlock", s_skel)
-    return cast("ContentBlock", block)
+        return s_skel
+    return _to_protocol_block(block)
 
 
 def _should_emit_delta(block: CompatBlock) -> bool:
@@ -224,15 +257,20 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
             if block.get("name") is not None:
                 invalid["name"] = block["name"]
             return invalid
-        final_type = "tool_call" if btype == "tool_call_chunk" else "server_tool_call"
-        finalized: CompatBlock = {
-            "type": final_type,
-            "id": block.get("id", ""),
-            "name": block.get("name", ""),
-            "args": parsed,
-        }
-        return cast("FinalizedContentBlock", finalized)
-    return cast("FinalizedContentBlock", block)
+        if btype == "tool_call_chunk":
+            return ToolCallBlock(
+                type="tool_call",
+                id=block.get("id", ""),
+                name=block.get("name", ""),
+                args=parsed,
+            )
+        return ServerToolCallBlock(
+            type="server_tool_call",
+            id=block.get("id", ""),
+            name=block.get("name", ""),
+            args=parsed,
+        )
+    return _to_finalized_block(block)
 
 
 # ---------------------------------------------------------------------------
@@ -411,7 +449,7 @@ def chunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=cast("ContentBlock", block),
+                    content_block=_to_protocol_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
@@ -473,7 +511,7 @@ async def achunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=cast("ContentBlock", block),
+                    content_block=_to_protocol_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
@@ -537,7 +575,7 @@ def message_to_events(
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=idx,
-                content_block=cast("ContentBlock", block),
+                content_block=_to_protocol_block(block),
             )
         finalized = _finalize_block(block)
         if finalized.get("type") == "tool_call":
