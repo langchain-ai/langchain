@@ -704,6 +704,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
+    agent_type: str | None = "root",
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -1647,7 +1648,12 @@ def create_agent(
 
     # Set recursion limit to 9_999
     # https://github.com/langchain-ai/langgraph/issues/7313
-    config: RunnableConfig = {"recursion_limit": 9_999}
+    config: RunnableConfig = {
+        "recursion_limit": 9_999,
+        "configurable": {
+            "ls_agent_type": agent_type,
+        },
+    }
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name
