@@ -203,7 +203,7 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
-    """Malformed tool-args become invalid_tool_call; finish_reason stays ``stop``."""
+    """Malformed tool-args become invalid_tool_call; finish_reason stays `stop`."""
     chunks = [
         ChatGenerationChunk(
             message=AIMessageChunk(
@@ -422,7 +422,7 @@ def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
     """`invalid_tool_calls` on AIMessage surface as protocol blocks.
 
     `AIMessage.content_blocks` does not currently include
-    ``invalid_tool_calls``, so the bridge merges them in explicitly.
+    `invalid_tool_calls`, so the bridge merges them in explicitly.
     """
     msg = AIMessage(
         content="",

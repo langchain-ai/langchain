@@ -326,10 +326,10 @@ class CallbackManagerMixin:
         !!! note
 
             When overriding this method, the signature **must** include the two
-            required positional arguments ``serialized`` and ``messages``.  Avoid
-            using ``*args`` in your override — doing so causes an ``IndexError``
-            in the fallback path when the callback system converts ``messages``
-            to prompt strings for ``on_llm_start``.  Always declare the
+            required positional arguments `serialized` and `messages`.  Avoid
+            using `*args` in your override — doing so causes an `IndexError`
+            in the fallback path when the callback system converts `messages`
+            to prompt strings for `on_llm_start`.  Always declare the
             signature explicitly:
 
             .. code-block:: python
@@ -595,10 +595,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         !!! note
 
             When overriding this method, the signature **must** include the two
-            required positional arguments ``serialized`` and ``messages``.  Avoid
-            using ``*args`` in your override — doing so causes an ``IndexError``
-            in the fallback path when the callback system converts ``messages``
-            to prompt strings for ``on_llm_start``.  Always declare the
+            required positional arguments `serialized` and `messages`.  Avoid
+            using `*args` in your override — doing so causes an `IndexError`
+            in the fallback path when the callback system converts `messages`
+            to prompt strings for `on_llm_start`.  Always declare the
             signature explicitly:
 
             .. code-block:: python

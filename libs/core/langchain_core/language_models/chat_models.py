@@ -807,8 +807,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Stream content-block lifecycle events for a single model call.
 
         Returns a :class:`ChatModelStream` with typed projections
-        (``.text``, ``.reasoning``, ``.tool_calls``, ``.usage``,
-        ``.output``).
+        (`.text`, `.reasoning`, `.tool_calls`, `.usage`,
+        `.output`).
 
         .. warning::
             This API is experimental and may change.

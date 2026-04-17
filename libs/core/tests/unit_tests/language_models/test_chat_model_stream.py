@@ -433,7 +433,7 @@ class TestChatModelStream:
         assert list(stream) == list(stream)  # Replay
 
     def test_invalid_tool_call_preserved_on_finish(self) -> None:
-        """An ``invalid_tool_call`` finish lands on ``invalid_tool_calls``."""
+        """An `invalid_tool_call` finish lands on `invalid_tool_calls`."""
         stream = ChatModelStream()
         dispatch_event({"event": "message-start", "role": "ai"}, stream)
         dispatch_event(

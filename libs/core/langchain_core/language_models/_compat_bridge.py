@@ -1,18 +1,18 @@
-"""Compat bridge: convert ``AIMessageChunk`` streams to protocol events.
+"""Compat bridge: convert `AIMessageChunk` streams to protocol events.
 
 The bridge trusts :meth:`AIMessageChunk.content_blocks` as the single
 protocol view of any chunk.  That property runs the three-tier lookup
-(``output_version == "v1"`` short-circuit, registered translator, or
-best-effort parsing) and returns a ``list[ContentBlock]`` for every
+(`output_version == "v1"` short-circuit, registered translator, or
+best-effort parsing) and returns a `list[ContentBlock]` for every
 well-formed message — whether the provider is a registered partner, an
 unregistered community model, or not tagged at all.
 
-Per-chunk ``content_blocks`` output is a **delta slice**, not accumulated
+Per-chunk `content_blocks` output is a **delta slice**, not accumulated
 state: providers in this ecosystem emit SSE-style chunks that each carry
 their own increment.  The bridge therefore forwards each slice straight
-through as a ``content-block-delta`` event, and accumulates per-index
-state only so the final ``content-block-finish`` event can report a
-finalized block (e.g. ``tool_call_chunk`` args parsed to a dict).
+through as a `content-block-delta` event, and accumulates per-index
+state only so the final `content-block-finish` event can report a
+finalized block (e.g. `tool_call_chunk` args parsed to a dict).
 
 Lifecycle::
 
@@ -69,29 +69,29 @@ CompatBlock = dict[str, Any]
 """Internal working type for a content block.
 
 The bridge works with plain dicts internally because two separate but
-structurally similar ``ContentBlock`` Unions exist — one in
+structurally similar `ContentBlock` Unions exist — one in
 :mod:`langchain_core.messages.content` (returned by
-``msg.content_blocks``), one in :mod:`langchain_protocol.protocol` (the
+`msg.content_blocks`), one in :mod:`langchain_protocol.protocol` (the
 wire/event shape).  They are not mypy-compatible despite being
-near-isomorphic.  Passing through ``dict[str, Any]`` launders between
+near-isomorphic.  Passing through `dict[str, Any]` launders between
 them.  See :func:`_to_protocol_block` for the single seam where the
 laundering cast lives.
 """
 
 
 # ---------------------------------------------------------------------------
-# Type laundering between core and protocol ``ContentBlock`` unions
+# Type laundering between core and protocol `ContentBlock` unions
 # ---------------------------------------------------------------------------
 
 
 def _to_protocol_block(block: CompatBlock) -> ContentBlock:
-    """Narrow an internal working dict to a protocol ``ContentBlock``.
+    """Narrow an internal working dict to a protocol `ContentBlock`.
 
-    Single seam between the two ``ContentBlock`` type systems:
-    :mod:`langchain_core.messages.content` (what ``msg.content_blocks``
+    Single seam between the two `ContentBlock` type systems:
+    :mod:`langchain_core.messages.content` (what `msg.content_blocks`
     returns) and :mod:`langchain_protocol.protocol` (what event payloads
     require).  The two Unions overlap structurally but are nominally
-    distinct to mypy, so we launder through ``dict[str, Any]``.  When the
+    distinct to mypy, so we launder through `dict[str, Any]`.  When the
     Unions are unified, this helper and its finalized counterpart can be
     deleted.
     """
@@ -109,13 +109,13 @@ def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
 
 
 def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
-    """Read per-chunk protocol blocks from ``msg.content_blocks``.
+    """Read per-chunk protocol blocks from `msg.content_blocks`.
 
-    Returns ``(index, block)`` pairs.  Block indices come from each
-    block's ``index`` field when present, falling back to positional.
+    Returns `(index, block)` pairs.  Block indices come from each
+    block's `index` field when present, falling back to positional.
 
-    For finalized :class:`AIMessage`, also surfaces ``invalid_tool_calls``
-    — which ``AIMessage.content_blocks`` currently omits from its return
+    For finalized :class:`AIMessage`, also surfaces `invalid_tool_calls`
+    — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
     """
     try:
@@ -150,12 +150,12 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
 
 
 def _start_skeleton(block: CompatBlock) -> ContentBlock:
-    """Empty-content placeholder for the ``content-block-start`` event.
+    """Empty-content placeholder for the `content-block-start` event.
 
-    Deltaable block types (text, reasoning, the ``_chunk`` tool variants)
+    Deltaable block types (text, reasoning, the `_chunk` tool variants)
     get an empty payload so the lifecycle's "start" signal is distinct
     from the first incremental delta.  Self-contained or already-finalized
-    block types pass through unchanged — their ``start`` event is also
+    block types pass through unchanged — their `start` event is also
     their only content-bearing event.
     """
     btype = block.get("type", "text")
@@ -186,7 +186,7 @@ def _should_emit_delta(block: CompatBlock) -> bool:
     """Whether a per-chunk block carries content worth a delta event.
 
     Deltaable types emit only when they have fresh content.  Self-contained
-    / already-finalized types skip the delta entirely — the ``finish``
+    / already-finalized types skip the delta entirely — the `finish`
     event carries them.
     """
     btype = block.get("type")
@@ -234,9 +234,9 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
 def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     """Promote chunk variants to their finalized form.
 
-    ``tool_call_chunk`` becomes ``tool_call`` — or ``invalid_tool_call``
-    if the accumulated ``args`` don't parse as JSON.
-    ``server_tool_call_chunk`` becomes ``server_tool_call`` under the same
+    `tool_call_chunk` becomes `tool_call` — or `invalid_tool_call`
+    if the accumulated `args` don't parse as JSON.
+    `server_tool_call_chunk` becomes `server_tool_call` under the same
     rule.  Everything else passes through: text/reasoning blocks carry
     their accumulated snapshot, and self-contained types are already in
     their terminal shape.
@@ -279,7 +279,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
 
 
 def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadata:
-    """Pull provider/model hints for the ``message-start`` event."""
+    """Pull provider/model hints for the `message-start` event."""
     metadata: MessageMetadata = {}
     if "model_provider" in response_metadata:
         metadata["provider"] = response_metadata["model_provider"]
@@ -319,7 +319,7 @@ def _accumulate_usage(
 
 
 def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
-    """Convert accumulated usage to the protocol's ``UsageInfo`` shape."""
+    """Convert accumulated usage to the protocol's `UsageInfo` shape."""
     if usage is None:
         return None
     result: UsageInfo = {}
@@ -378,10 +378,10 @@ def _build_message_finish(
 def _finish_all_blocks(
     state: dict[int, CompatBlock],
 ) -> tuple[list[MessagesData], bool]:
-    """Emit ``content-block-finish`` events for every open block.
+    """Emit `content-block-finish` events for every open block.
 
     Returns the event list plus a flag indicating whether any finalized
-    block was a valid ``tool_call`` (used for finish-reason inference).
+    block was a valid `tool_call` (used for finish-reason inference).
     """
     events: list[MessagesData] = []
     has_valid_tool_call = False
@@ -409,14 +409,14 @@ def chunks_to_events(
     *,
     message_id: str | None = None,
 ) -> Iterator[MessagesData]:
-    """Convert a stream of ``ChatGenerationChunk`` to protocol events.
+    """Convert a stream of `ChatGenerationChunk` to protocol events.
 
     Args:
-        chunks: Iterator of ``ChatGenerationChunk`` from ``_stream()``.
+        chunks: Iterator of `ChatGenerationChunk` from `_stream()`.
         message_id: Optional stable message ID.
 
     Yields:
-        ``MessagesData`` lifecycle events.
+        `MessagesData` lifecycle events.
     """
     started = False
     state: dict[int, CompatBlock] = {}
@@ -545,21 +545,21 @@ def message_to_events(
     """Replay a finalized message as a synthetic event lifecycle.
 
     For a message returned whole (from a graph node, checkpoint, or
-    cache), produce the same ``message-start`` / per-block /
-    ``message-finish`` event stream a live call would produce.  Consumers
+    cache), produce the same `message-start` / per-block /
+    `message-finish` event stream a live call would produce.  Consumers
     downstream see a uniform event shape regardless of source.
 
-    Text and reasoning blocks emit a single ``content-block-delta`` with
+    Text and reasoning blocks emit a single `content-block-delta` with
     the full accumulated content.  Already-finalized blocks (tool_call,
     server_tool_call, image, etc.) skip the delta and rely on the
-    ``content-block-finish`` event alone.
+    `content-block-finish` event alone.
 
     Args:
-        msg: The finalized message — typically an ``AIMessage``.
-        message_id: Optional stable message ID; falls back to ``msg.id``.
+        msg: The finalized message — typically an `AIMessage`.
+        message_id: Optional stable message ID; falls back to `msg.id`.
 
     Yields:
-        ``MessagesData`` lifecycle events.
+        `MessagesData` lifecycle events.
     """
     response_metadata = msg.response_metadata or {}
     yield _build_message_start(msg, message_id)

@@ -75,9 +75,9 @@ class _MalformedToolCallModel(BaseChatModel):
 class _AnthropicStyleServerToolModel(BaseChatModel):
     """Fake model that streams Anthropic-native server_tool_use shapes.
 
-    Exercises Phase E: the bridge should call ``content_blocks`` (which
-    invokes the Anthropic translator) to convert ``server_tool_use`` into
-    protocol ``server_tool_call`` blocks instead of silently dropping them.
+    Exercises Phase E: the bridge should call `content_blocks` (which
+    invokes the Anthropic translator) to convert `server_tool_use` into
+    protocol `server_tool_call` blocks instead of silently dropping them.
     """
 
     @property

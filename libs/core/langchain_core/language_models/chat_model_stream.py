@@ -1,11 +1,11 @@
 """Per-message streaming objects for content-block protocol events.
 
-``ChatModelStream`` is the synchronous variant returned by
-``BaseChatModel.stream_v2()``.  ``AsyncChatModelStream`` is the
-asynchronous variant returned by ``BaseChatModel.astream_v2()``.
+`ChatModelStream` is the synchronous variant returned by
+`BaseChatModel.stream_v2()`.  `AsyncChatModelStream` is the
+asynchronous variant returned by `BaseChatModel.astream_v2()`.
 
-Both expose typed projection properties (``.text``, ``.reasoning``,
-``.tool_calls``, ``.usage``, ``.output``) that accumulate protocol
+Both expose typed projection properties (`.text`, `.reasoning`,
+`.tool_calls`, `.usage`, `.output`) that accumulate protocol
 events as they arrive.  Projections can be iterated for deltas or
 drained for the final accumulated value.
 
@@ -72,10 +72,10 @@ def _sweep_chunk_store(
     tool_calls_acc: list[ToolCallBlock] | None,
     invalid_acc: list[InvalidToolCallBlock],
 ) -> None:
-    """Parse each unswept chunk's ``args``; record as ``finalized_type`` or invalid.
+    """Parse each unswept chunk's `args`; record as `finalized_type` or invalid.
 
-    ``tool_calls_acc`` is only populated when ``finalized_type == "tool_call"``
-    (server-side calls don't surface through ``.tool_calls``).
+    `tool_calls_acc` is only populated when `finalized_type == "tool_call"`
+    (server-side calls don't surface through `.tool_calls`).
     """
     for idx in sorted(store):
         chunk = store[idx]
@@ -214,7 +214,7 @@ class SyncProjection(_ProjectionBase):
                 return
 
     def get(self) -> Any:
-        """Drain via ``_request_more`` and return the final value."""
+        """Drain via `_request_more` and return the final value."""
         if not self._done and self._request_more is not None:
             while not self._done:
                 if not self._request_more():
@@ -227,8 +227,8 @@ class SyncProjection(_ProjectionBase):
 class SyncTextProjection(SyncProjection):
     """String-specialized sync projection.
 
-    Adds ``__str__``, ``__bool__``, ``__repr__`` for ergonomic use with
-    ``.text`` and ``.reasoning`` projections.
+    Adds `__str__`, `__bool__`, `__repr__` for ergonomic use with
+    `.text` and `.reasoning` projections.
     """
 
     __slots__ = ()
@@ -257,15 +257,15 @@ class SyncTextProjection(SyncProjection):
 class AsyncProjection(_ProjectionBase):
     """Async iterable of deltas that is also awaitable for the final value.
 
-    Uses an ``asyncio.Event`` to notify consumers of state changes. Each
-    waiter — the awaitable (``__await__``) and each async iterator cursor
+    Uses an `asyncio.Event` to notify consumers of state changes. Each
+    waiter — the awaitable (`__await__`) and each async iterator cursor
     — shares the event and re-checks its own condition on wake. The event
     is cleared before a waiter awaits, so stale "something happened"
     signals don't cause spin loops.
 
     This is single-loop only — producers and consumers must share an
     event loop. If cross-thread wake is ever required, revert to a
-    list-of-futures pattern with ``call_soon_threadsafe``.
+    list-of-futures pattern with `call_soon_threadsafe`.
     """
 
     __slots__ = ("_event",)
@@ -354,17 +354,17 @@ class _AsyncProjectionIterator:
 class ChatModelStream:
     """Synchronous per-message streaming object for a single LLM response.
 
-    Returned by ``BaseChatModel.stream_v2()``.  Content-block protocol
+    Returned by `BaseChatModel.stream_v2()`.  Content-block protocol
     events are fed into this object and accumulated into typed projections.
 
     Projections (always return the same cached object):
 
-    - ``.text`` — iterable of ``str`` deltas; ``str()`` for full text
-    - ``.reasoning`` — same as ``.text`` for reasoning content
-    - ``.tool_calls`` — iterable of ``ToolCallChunkBlock`` deltas;
-      ``.get()`` returns ``list[ToolCallBlock]``
-    - ``.usage`` — blocking property, returns ``UsageInfo | None``
-    - ``.output`` — blocking property, returns assembled ``AIMessage``
+    - `.text` — iterable of `str` deltas; `str()` for full text
+    - `.reasoning` — same as `.text` for reasoning content
+    - `.tool_calls` — iterable of `ToolCallChunkBlock` deltas;
+      `.get()` returns `list[ToolCallBlock]`
+    - `.usage` — blocking property, returns `UsageInfo | None`
+    - `.output` — blocking property, returns assembled `AIMessage`
 
     Raw event iteration::
 
@@ -420,14 +420,14 @@ class ChatModelStream:
         """Bind a pump for standalone streaming.
 
         Delegates to :meth:`set_request_more`.  Used by
-        ``BaseChatModel.stream_v2()``.
+        `BaseChatModel.stream_v2()`.
         """
         self.set_request_more(pump_one)
 
     def set_request_more(self, cb: Callable[[], bool]) -> None:
         """Set the pull callback on this stream and all its projections.
 
-        Used by langgraph's ``GraphRunStream._wire_request_more`` to
+        Used by langgraph's `GraphRunStream._wire_request_more` to
         connect the shared graph pump.
         """
         self._request_more = cb
@@ -439,7 +439,7 @@ class ChatModelStream:
 
     @property
     def text(self) -> SyncTextProjection:
-        """Text content — iterable of ``str`` deltas, ``str()`` for full."""
+        """Text content — iterable of `str` deltas, `str()` for full."""
         return self._text_proj
 
     @property
@@ -449,9 +449,9 @@ class ChatModelStream:
 
     @property
     def tool_calls(self) -> SyncProjection:
-        """Tool calls — iterable of ``ToolCallChunkBlock`` deltas.
+        """Tool calls — iterable of `ToolCallChunkBlock` deltas.
 
-        ``.get()`` returns finalized ``list[ToolCallBlock]``.
+        `.get()` returns finalized `list[ToolCallBlock]`.
         """
         return self._tool_calls_proj
 
@@ -465,7 +465,7 @@ class ChatModelStream:
 
     @property
     def output(self) -> AIMessage:
-        """Assembled ``AIMessage`` — blocks until the stream finishes."""
+        """Assembled `AIMessage` — blocks until the stream finishes."""
         self._drain()
         if self._error is not None:
             raise self._error
@@ -496,12 +496,12 @@ class ChatModelStream:
 
     @property
     def output_message(self) -> AIMessage | None:
-        """The assembled message if the stream has finished, else ``None``.
+        """The assembled message if the stream has finished, else `None`.
 
         Unlike :attr:`output`, this never blocks or pumps and never raises.
-        Intended for the stream driver (``stream_v2`` / ``astream_v2``) to
+        Intended for the stream driver (`stream_v2` / `astream_v2`) to
         check whether the stream produced a message before firing
-        ``on_llm_end`` callbacks.
+        `on_llm_end` callbacks.
         """
         return self._output_message
 
@@ -535,7 +535,7 @@ class ChatModelStream:
         """Route a protocol event to the appropriate internal handler.
 
         Public entry point for feeding events into the stream. Called by
-        the stream driver (``stream_v2`` / ``astream_v2``'s pump) and by
+        the stream driver (`stream_v2` / `astream_v2`'s pump) and by
         any observer or test that needs to inject protocol events.
         """
         self._record_event(event)
@@ -626,7 +626,7 @@ class ChatModelStream:
             )
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
-        """Process a ``content-block-finish`` event."""
+        """Process a `content-block-finish` event."""
         block = data.get("content_block")
         if block is None:
             return
@@ -691,7 +691,7 @@ class ChatModelStream:
             self._blocks[idx] = finalized
 
     def _finish(self, data: MessageFinishData) -> None:
-        """Process a ``message-finish`` event."""
+        """Process a `message-finish` event."""
         self._done = True
         self._usage_value = data.get("usage")
         self._finish_reason = data.get("reason")
@@ -721,9 +721,9 @@ class ChatModelStream:
     def fail(self, error: BaseException) -> None:
         """Mark the stream as errored and propagate to all projections.
 
-        Public API — called by the stream driver (``stream_v2`` /
-        ``astream_v2``) when the underlying producer raises, by
-        :meth:`dispatch` when an ``error`` protocol event arrives, and by
+        Public API — called by the stream driver (`stream_v2` /
+        `astream_v2`) when the underlying producer raises, by
+        :meth:`dispatch` when an `error` protocol event arrives, and by
         cancellation paths.
         """
         self._done = True
@@ -733,11 +733,11 @@ class ChatModelStream:
         self._tool_calls_proj.fail(error)
 
     def _assemble_message(self) -> AIMessage:
-        """Build an ``AIMessage`` from accumulated state.
+        """Build an `AIMessage` from accumulated state.
 
-        Content is built from ``self._blocks``, an index-ordered snapshot of
+        Content is built from `self._blocks`, an index-ordered snapshot of
         finalized protocol blocks. The bare-string fast path is used when
-        the message has exactly one ``text`` block (the common chat case);
+        the message has exactly one `text` block (the common chat case);
         otherwise content is a list of protocol-shape block dicts.
         """
         content: Any
@@ -803,20 +803,20 @@ class ChatModelStream:
 class AsyncChatModelStream(ChatModelStream):
     """Asynchronous per-message streaming object for a single LLM response.
 
-    Returned by ``BaseChatModel.astream_v2()``.  Content-block events
+    Returned by `BaseChatModel.astream_v2()`.  Content-block events
     are fed into this object by a background producer task.
 
     Projections:
 
-    - ``.text`` — async iterable of text deltas; awaitable for full text
-    - ``.reasoning`` — async iterable of reasoning deltas; awaitable
-    - ``.tool_calls`` — async iterable of ``ToolCallChunkBlock`` deltas;
-      awaitable for ``list[ToolCallBlock]``
-    - ``.usage`` — awaitable for ``UsageInfo``
-    - ``.output`` — awaitable for assembled ``AIMessage``
+    - `.text` — async iterable of text deltas; awaitable for full text
+    - `.reasoning` — async iterable of reasoning deltas; awaitable
+    - `.tool_calls` — async iterable of `ToolCallChunkBlock` deltas;
+      awaitable for `list[ToolCallBlock]`
+    - `.usage` — awaitable for `UsageInfo`
+    - `.output` — awaitable for assembled `AIMessage`
 
-    The stream itself is awaitable (``msg = await stream``) and
-    async-iterable (``async for event in stream``).
+    The stream itself is awaitable (`msg = await stream`) and
+    async-iterable (`async for event in stream`).
     """
 
     def __init__(  # noqa: D107
@@ -854,20 +854,20 @@ class AsyncChatModelStream(ChatModelStream):
 
     @property
     def usage(self) -> AsyncProjection:  # type: ignore[override]
-        """Usage info — awaitable for ``UsageInfo``."""
+        """Usage info — awaitable for `UsageInfo`."""
         return self._usage_proj
 
     @property
     def output(self) -> AsyncProjection:  # type: ignore[override]
-        """Assembled ``AIMessage`` — awaitable."""
+        """Assembled `AIMessage` — awaitable."""
         return self._output_proj
 
     def __await__(self) -> Generator[Any, None, AIMessage]:
-        """Await the assembled ``AIMessage`` and full producer lifecycle.
+        """Await the assembled `AIMessage` and full producer lifecycle.
 
         The producer task is awaited after the output projection resolves so
-        that post-stream work (notably ``on_llm_end`` callbacks) has run by
-        the time the caller's ``await`` returns.
+        that post-stream work (notably `on_llm_end` callbacks) has run by
+        the time the caller's `await` returns.
         """
         return self._await_full().__await__()
 
@@ -915,7 +915,7 @@ def dispatch_event(
     """Route a protocol event to the stream's :meth:`dispatch` method.
 
     .. deprecated::
-        Prefer ``stream.dispatch(event)`` directly. Kept for callers that
+        Prefer `stream.dispatch(event)` directly. Kept for callers that
         already import this helper.
     """
     stream.dispatch(event)
