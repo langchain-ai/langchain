@@ -49,10 +49,30 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
     @override
     def _diff(self, prev: Any | None, next: Any) -> Any:
+        """Compute JSONPatch operations between parsed outputs.
+
+        Args:
+            prev: The previously parsed JSON-compatible object.
+            next: The current parsed JSON-compatible object.
+
+        Returns:
+            A list of JSONPatch operations describing the change from `prev` to `next`.
+        """
         return jsonpatch.make_patch(prev, next).patch
 
     @staticmethod
     def _get_schema(pydantic_object: type[TBaseModel]) -> dict[str, Any]:
+        """Get a JSON schema from a Pydantic model class.
+
+        Uses `model_json_schema()` for Pydantic v2 models and `schema()` for
+        Pydantic v1 models.
+
+        Args:
+            pydantic_object: The Pydantic model class to introspect.
+
+        Returns:
+            The JSON schema dictionary for the model.
+        """
         if issubclass(pydantic_object, pydantic.BaseModel):
             return pydantic_object.model_json_schema()
         return pydantic_object.schema()
@@ -91,21 +111,31 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
                 raise OutputParserException(msg, llm_output=text) from e
 
     def parse(self, text: str) -> Any:
-        """Parse the output of an LLM call to a JSON object.
+        """Parse LLM output text to a JSON object.
+
+        Wraps `parse_result` by converting the input text into a single
+        `Generation` instance.
 
         Args:
-            text: The output of the LLM call.
+            text: LLM output text.
 
         Returns:
             The parsed JSON object.
+
+        Raises:
+            OutputParserException: If the output is not valid JSON.
         """
         return self.parse_result([Generation(text=text)])
 
     def get_format_instructions(self) -> str:
-        """Return the format instructions for the JSON output.
+        """Return format instructions for JSON output.
+
+        When `pydantic_object` is `None`, returns a minimal instruction to
+        produce a JSON object. When a Pydantic model is provided, returns
+        schema-constrained JSON instructions derived from that model.
 
         Returns:
-            The format instructions for the JSON output.
+            A string describing the expected JSON output format.
         """
         if self.pydantic_object is None:
             return "Return a JSON object."

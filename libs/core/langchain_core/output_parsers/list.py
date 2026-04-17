@@ -41,7 +41,12 @@ def droplastn(
 
 
 class ListOutputParser(BaseTransformOutputParser[list[str]]):
-    """Parse the output of a model to a list."""
+    """Base parser for converting LLM output text into `list[str]`.
+
+    Subclasses define the expected list format (for example, comma-separated,
+    numbered, or Markdown bullets) by implementing `parse` and optionally
+    `parse_iter` for incremental parsing in streaming mode.
+    """
 
     @property
     def _type(self) -> str:
@@ -49,13 +54,13 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
 
     @abstractmethod
     def parse(self, text: str) -> list[str]:
-        """Parse the output of an LLM call.
+        """Parse LLM output text into a list of strings.
 
         Args:
-            text: The output of an LLM call.
+            text: LLM output text.
 
         Returns:
-            A list of strings.
+            Parsed list items extracted from `text`.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:

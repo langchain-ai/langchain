@@ -59,5 +59,12 @@ class StrOutputParser(BaseTransformOutputParser[str]):
 
     @override
     def parse(self, text: str) -> str:
-        """Returns the input text with no changes."""
+        """Return the input text unchanged.
+
+        Args:
+            text: LLM output text.
+
+        Returns:
+            The input `text` without modification.
+        """
         return text
