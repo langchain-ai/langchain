@@ -896,9 +896,11 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
-                m.wrap_tool_call
-            )
+            traceable(
+                name=f"{m.name}.wrap_tool_call",
+                process_inputs=_scrub_inputs,
+                metadata={"ls_agent_type": "middleware"},
+            )(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -917,9 +919,11 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
-                m.awrap_tool_call
-            )
+            traceable(
+                name=f"{m.name}.awrap_tool_call",
+                process_inputs=_scrub_inputs,
+                metadata={"ls_agent_type": "middleware"},
+            )(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -1005,9 +1009,11 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
-                m.wrap_model_call
-            )
+            traceable(
+                name=f"{m.name}.wrap_model_call",
+                process_inputs=_scrub_inputs,
+                metadata={"ls_agent_type": "middleware"},
+            )(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1016,9 +1022,11 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
-                m.awrap_model_call
-            )
+            traceable(
+                name=f"{m.name}.awrap_model_call",
+                process_inputs=_scrub_inputs,
+                metadata={"ls_agent_type": "middleware"},
+            )(m.awrap_model_call)
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
