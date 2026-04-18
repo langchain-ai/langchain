@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _normalize_reasoning_item_for_lc,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -1648,6 +1649,66 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
         {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
     ]
     assert result.generations[0].message.id == "resp_123"
+
+
+def test_reasoning_content_promoted_to_summary_for_responses_v1_aimessage() -> None:
+    """Hosts may return reasoning under ``content`` with an empty ``summary``."""
+    reasoning_host_shape: dict[str, Any] = {
+        "type": "reasoning",
+        "id": "rs_azure",
+        "summary": [],
+        "content": [{"type": "reasoning_text", "text": "Internal chain-of-thought."}],
+    }
+    normalized = _normalize_reasoning_item_for_lc(reasoning_host_shape)
+    assert normalized == {
+        "type": "reasoning",
+        "id": "rs_azure",
+        "summary": [{"type": "summary_text", "text": "Internal chain-of-thought."}],
+    }
+
+    with_summary: dict[str, Any] = {
+        "type": "reasoning",
+        "id": "rs_openai",
+        "summary": [Summary(type="summary_text", text="Already summarized.")],
+        "content": [{"type": "reasoning_text", "text": "Should be ignored."}],
+    }
+    assert _normalize_reasoning_item_for_lc(with_summary) == dict(with_summary)
+
+    response = Response(
+        id="resp_reasoning",
+        created_at=1234567890,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_1",
+                summary=[],
+                content=[{"type": "reasoning_text", "text": "From content field."}],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_1",
+                content=[
+                    ResponseOutputText(type="output_text", text="ok", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {
+            "type": "reasoning",
+            "id": "rs_1",
+            "summary": [{"type": "summary_text", "text": "From content field."}],
+        },
+        {"type": "text", "text": "ok", "annotations": [], "id": "msg_1"},
+    ]
 
 
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:

@@ -4409,6 +4409,38 @@ def _get_output_text(response: Response) -> str:
     return "".join(texts)
 
 
+def _normalize_reasoning_item_for_lc(block: Mapping[str, Any]) -> dict[str, Any]:
+    """Promote reasoning ``content`` into ``summary`` when ``summary`` is empty.
+
+    Some Responses API hosts return ``reasoning_text`` items under ``content``
+    while leaving ``summary`` empty. The ``responses/v1`` AIMessage format expects
+    human-readable reasoning in ``summary`` as ``summary_text`` dicts.
+    """
+    if block.get("type") != "reasoning":
+        return dict(block)
+    merged = dict(block)
+    summary = merged.get("summary")
+    if summary:
+        return merged
+    raw_content = merged.get("content")
+    if not isinstance(raw_content, list):
+        return merged
+    synthetic: list[dict[str, str]] = []
+    for piece in raw_content:
+        if not isinstance(piece, dict):
+            continue
+        if piece.get("type") == "reasoning_text":
+            text = piece.get("text")
+            if text is None:
+                continue
+            synthetic.append({"type": "summary_text", "text": text})
+    if not synthetic:
+        return merged
+    merged["summary"] = synthetic
+    merged.pop("content", None)
+    return merged
+
+
 def _construct_lc_result_from_responses_api(
     response: Response,
     schema: type[_BM] | None = None,
@@ -4537,7 +4569,10 @@ def _construct_lc_result_from_responses_api(
             "tool_search_call",
             "tool_search_output",
         ):
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            block = output.model_dump(exclude_none=True, mode="json")
+            if output.type == "reasoning":
+                block = _normalize_reasoning_item_for_lc(block)
+            content_blocks.append(block)
 
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
