@@ -38,7 +38,7 @@ from langchain_protocol.protocol import (
 from langchain_core.messages import AIMessage
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterator
+    from collections.abc import Awaitable, Callable, Generator, Iterator
 
     from langchain_protocol.protocol import FinalizedContentBlock, MessagesData
 
@@ -267,12 +267,24 @@ class AsyncProjection(_ProjectionBase):
     list-of-futures pattern with `call_soon_threadsafe`.
     """
 
-    __slots__ = ("_event",)
+    __slots__ = ("_arequest_more", "_event")
 
     def __init__(self) -> None:
-        """Initialize with an un-set event."""
+        """Initialize with an un-set event and no pump callback."""
         super().__init__()
         self._event = asyncio.Event()
+        self._arequest_more: Callable[[], Awaitable[bool]] | None = None
+
+    def set_arequest_more(
+        self, cb: Callable[[], Awaitable[bool]] | None
+    ) -> None:
+        """Wire the async pull callback iterators use to drive the source.
+
+        Mirrors `SyncProjection.set_request_more`. Under caller-driven
+        streaming, consumers call this callback when their buffer is
+        empty so that the owning graph advances one step.
+        """
+        self._arequest_more = cb
 
     def push(self, delta: Any) -> None:
         """Append a delta and notify waiters."""
@@ -302,12 +314,25 @@ class AsyncProjection(_ProjectionBase):
         return self._await_impl().__await__()
 
     async def _await_impl(self) -> Any:
-        """Wait until the final value is set and return it."""
+        """Wait until the final value is set and return it.
+
+        When a caller-driven pump is wired via `set_arequest_more`, drive
+        it instead of blocking on `self._event`; otherwise fall back to
+        the event (used by tests that dispatch manually).
+        """
         while not self._final_set:
             if self._error is not None:
                 raise self._error
-            self._event.clear()
-            await self._event.wait()
+            if self._arequest_more is not None:
+                if not await self._arequest_more() and not self._final_set:
+                    # Pump exhausted without completing this projection —
+                    # nothing more will arrive. Return current state and
+                    # let callers observe the missing final via the
+                    # returned None / unset error.
+                    break
+            else:
+                self._event.clear()
+                await self._event.wait()
         if self._error is not None:
             raise self._error
         return self._final_value
@@ -328,21 +353,47 @@ class _AsyncProjectionIterator:
         return self
 
     async def __anext__(self) -> Any:
-        """Return the next delta, awaiting if necessary."""
+        """Return the next delta, awaiting if necessary.
+
+        When the projection has an `_arequest_more` pump wired, drain it
+        in an inner loop (mirrors `SyncProjection.__iter__`) until this
+        cursor advances or the pump reports exhaustion. Without a pump,
+        fall back to waiting on the shared event.
+        """
+        proj = self._proj
         while True:
             # Direct access to the projection's internal list/event is
             # intentional — the iterator is the projection's sidekick and
             # depends on reading the shared buffer by cursor.
-            if self._offset < len(self._proj._deltas):  # noqa: SLF001
-                item = self._proj._deltas[self._offset]  # noqa: SLF001
+            if self._offset < len(proj._deltas):  # noqa: SLF001
+                item = proj._deltas[self._offset]  # noqa: SLF001
                 self._offset += 1
                 return item
-            if self._proj.error is not None:
-                raise self._proj.error
-            if self._proj.done:
+            if proj.error is not None:
+                raise proj.error
+            if proj.done:
                 raise StopAsyncIteration
-            self._proj._event.clear()  # noqa: SLF001
-            await self._proj._event.wait()  # noqa: SLF001
+            if proj._arequest_more is not None:  # noqa: SLF001
+                # Caller-driven: drive the producer. Pump may land new
+                # deltas for a sibling projection — loop until our cursor
+                # advances, the projection terminates, or the pump is
+                # exhausted.
+                while (
+                    self._offset >= len(proj._deltas)  # noqa: SLF001
+                    and not proj.done
+                ):
+                    if not await proj._arequest_more():  # noqa: SLF001
+                        break
+                if (
+                    self._offset >= len(proj._deltas)  # noqa: SLF001
+                    and not proj.done
+                ):
+                    if proj.error is not None:
+                        raise proj.error
+                    raise StopAsyncIteration
+            else:
+                proj._event.clear()  # noqa: SLF001
+                await proj._event.wait()  # noqa: SLF001
 
 
 # ---------------------------------------------------------------------------
@@ -832,6 +883,27 @@ class AsyncChatModelStream(ChatModelStream):
         self._output_proj = AsyncProjection()
         self._events_proj = AsyncProjection()
         self._producer_task: asyncio.Task[None] | None = None
+
+    # -- Pump/pull wiring (async) ------------------------------------------
+
+    def set_arequest_more(
+        self, cb: Callable[[], Awaitable[bool]] | None
+    ) -> None:
+        """Fan the async pump callback out to every projection.
+
+        Used by langgraph's `AsyncGraphRunStream._wire_arequest_more` so
+        cursors on `stream.text`, `stream.reasoning`, etc. can drive the
+        shared graph pump when their buffer is empty.
+        """
+        for proj in (
+            self._text_proj,
+            self._reasoning_proj,
+            self._tool_calls_proj,
+            self._usage_proj,
+            self._output_proj,
+            self._events_proj,
+        ):
+            cast("AsyncProjection", proj).set_arequest_more(cb)
 
     # -- Public projections (override sync properties) ---------------------
 

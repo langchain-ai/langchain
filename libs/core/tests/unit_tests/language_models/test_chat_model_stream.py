@@ -166,6 +166,131 @@ class TestAsyncProjection:
             async for _ in proj:
                 pass
 
+    @pytest.mark.asyncio
+    async def test_arequest_more_drives_iteration(self) -> None:
+        """Cursor drives the async pump when the buffer is empty."""
+        proj = AsyncProjection()
+        deltas = iter(["a", "b", "c"])
+
+        async def pump() -> bool:
+            try:
+                proj.push(next(deltas))
+            except StopIteration:
+                proj.complete("abc")
+                return False
+            return True
+
+        proj.set_arequest_more(pump)
+        collected = [d async for d in proj]
+        assert collected == ["a", "b", "c"]
+        assert await proj == "abc"
+
+    @pytest.mark.asyncio
+    async def test_arequest_more_drives_await(self) -> None:
+        """`await projection` drives the pump too, not just iteration."""
+        proj = AsyncProjection()
+        steps = iter([("push", "x"), ("push", "y"), ("complete", "xy")])
+
+        async def pump() -> bool:
+            try:
+                action, value = next(steps)
+            except StopIteration:
+                return False
+            if action == "push":
+                proj.push(value)
+            else:
+                proj.complete(value)
+            return True
+
+        proj.set_arequest_more(pump)
+        assert await proj == "xy"
+
+    @pytest.mark.asyncio
+    async def test_arequest_more_stops_when_pump_exhausts(self) -> None:
+        """Pump returning False without completing ends iteration cleanly."""
+        proj = AsyncProjection()
+        pushed = [False]
+
+        async def pump() -> bool:
+            if not pushed[0]:
+                proj.push("only")
+                pushed[0] = True
+                return True
+            return False
+
+        proj.set_arequest_more(pump)
+        collected = [d async for d in proj]
+        assert collected == ["only"]
+
+    @pytest.mark.asyncio
+    async def test_async_chat_model_stream_set_arequest_more_fans_out(self) -> None:
+        """`set_arequest_more` wires every projection on AsyncChatModelStream."""
+        stream = AsyncChatModelStream(message_id="m1")
+
+        async def pump() -> bool:
+            return False
+
+        stream.set_arequest_more(pump)
+        for proj in (
+            stream._text_proj,
+            stream._reasoning_proj,
+            stream._tool_calls_proj,
+            stream._usage_proj,
+            stream._output_proj,
+            stream._events_proj,
+        ):
+            assert cast("AsyncProjection", proj)._arequest_more is pump
+
+    @pytest.mark.asyncio
+    async def test_concurrent_text_and_output_share_pump(self) -> None:
+        """Concurrent `stream.text` + `await stream.output` both drive the pump."""
+        stream = AsyncChatModelStream(message_id="m1")
+
+        events: list[MessagesData] = [
+            {
+                "event": "message-start",
+                "message_id": "m1",
+                "metadata": {"provider": "test", "model": "fake"},
+            },
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {"type": "text", "text": "hello "},
+            },
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "content_block": {"type": "text", "text": "world"},
+            },
+            {
+                "event": "content-block-finish",
+                "index": 0,
+                "content_block": {"type": "text", "text": "hello world"},
+            },
+            {"event": "message-finish", "reason": "stop"},
+        ]
+        cursor = iter(events)
+        pump_lock = asyncio.Lock()
+
+        async def pump() -> bool:
+            async with pump_lock:
+                try:
+                    evt = next(cursor)
+                except StopIteration:
+                    return False
+                stream.dispatch(evt)
+                return True
+
+        stream.set_arequest_more(pump)
+
+        async def drain_text() -> str:
+            buf = [delta async for delta in stream.text]
+            return "".join(buf)
+
+        text, message = await asyncio.gather(drain_text(), stream.output)
+        assert text == "hello world"
+        assert message.content == "hello world"
+
 
 # ---------------------------------------------------------------------------
 # ChatModelStream unit tests
