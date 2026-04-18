@@ -283,6 +283,11 @@ class AsyncProjection(_ProjectionBase):
         Mirrors `SyncProjection.set_request_more`. Under caller-driven
         streaming, consumers call this callback when their buffer is
         empty so that the owning graph advances one step.
+
+        Args:
+            cb: Async no-arg callable returning `True` when a new event
+                was produced, `False` when the source is exhausted. Pass
+                `None` to unwire.
         """
         self._arequest_more = cb
 
@@ -894,6 +899,11 @@ class AsyncChatModelStream(ChatModelStream):
         Used by langgraph's `AsyncGraphRunStream._wire_arequest_more` so
         cursors on `stream.text`, `stream.reasoning`, etc. can drive the
         shared graph pump when their buffer is empty.
+
+        Args:
+            cb: Async no-arg callable returning `True` when a new event
+                was produced, `False` when the source is exhausted. Pass
+                `None` to unwire.
         """
         for proj in (
             self._text_proj,
