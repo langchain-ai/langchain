@@ -45,6 +45,24 @@ def _validate_path(path: Path) -> None:
         raise ValueError(msg)
 
 
+def _resolve_and_validate_path(path: Path) -> Path:
+    """Resolve a user-supplied relative path and ensure it stays under cwd."""
+    _validate_path(path)
+
+    base_dir = Path.cwd().resolve()
+    resolved_path = path.resolve()
+
+    if not resolved_path.is_relative_to(base_dir):
+        msg = (
+            f"Resolved path '{resolved_path}' escapes the current working directory "
+            f"'{base_dir}'. Relative paths must remain within the working directory "
+            f"unless `allow_dangerous_paths=True`."
+        )
+        raise ValueError(msg)
+
+    return resolved_path
+
+
 @deprecated(
     since="1.2.21",
     removal="2.0.0",
@@ -95,10 +113,11 @@ def _load_template(
         # Pop the template path from the config.
         template_path = Path(config.pop(f"{var_name}_path"))
         if not allow_dangerous_paths:
-            _validate_path(template_path)
+            resolved_path = _resolve_and_validate_path(template_path)
+        else:
+            resolved_path = template_path.resolve()
         # Resolve symlinks before checking the suffix so that a symlink named
         # "exploit.txt" pointing to a non-.txt file is caught.
-        resolved_path = template_path.resolve()
         # Load the template.
         if resolved_path.suffix == ".txt":
             template = resolved_path.read_text(encoding="utf-8")
@@ -116,11 +135,14 @@ def _load_examples(config: dict, *, allow_dangerous_paths: bool = False) -> dict
     elif isinstance(config["examples"], str):
         path = Path(config["examples"])
         if not allow_dangerous_paths:
-            _validate_path(path)
-        with path.open(encoding="utf-8") as f:
-            if path.suffix == ".json":
+            resolved_path = _resolve_and_validate_path(path)
+        else:
+            resolved_path = path.resolve()
+
+        with resolved_path.open(encoding="utf-8") as f:
+            if resolved_path.suffix == ".json":
                 examples = json.load(f)
-            elif path.suffix in {".yaml", ".yml"}:
+            elif resolved_path.suffix in {".yaml", ".yml"}:
                 examples = yaml.safe_load(f)
             else:
                 msg = "Invalid file format. Only json or yaml formats are supported."
@@ -163,7 +185,7 @@ def _load_few_shot_prompt(
             raise ValueError(msg)
         example_prompt_path = Path(config.pop("example_prompt_path"))
         if not allow_dangerous_paths:
-            _validate_path(example_prompt_path)
+            example_prompt_path = _resolve_and_validate_path(example_prompt_path)
         config["example_prompt"] = load_prompt(
             example_prompt_path, allow_dangerous_paths=allow_dangerous_paths
         )

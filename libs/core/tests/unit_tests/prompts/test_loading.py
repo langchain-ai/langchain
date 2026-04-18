@@ -423,3 +423,102 @@ def test_loading_few_shot_prompt_example_prompt() -> None:
             suffix="Input: {adjective}\nOutput:",
         )
         assert prompt == expected_prompt
+
+
+def test_template_path_symlink_escape_blocked(tmp_path: Path) -> None:
+    safe = tmp_path / "safe"
+    outside = tmp_path / "outside"
+    safe.mkdir()
+    outside.mkdir()
+
+    (outside / "secret.txt").write_text("SECRET", encoding="utf-8")
+    (safe / "template.txt").symlink_to(outside / "secret.txt")
+
+    cwd = Path.cwd()
+    os.chdir(safe)
+
+    try:
+        with (
+            suppress_langchain_deprecation_warning(),
+            pytest.raises(
+                ValueError,
+                match="escapes the current working directory",
+            ),
+        ):
+            load_prompt_from_config(
+                {
+                    "_type": "prompt",
+                    "template_path": "template.txt",
+                    "input_variables": [],
+                },
+                allow_dangerous_paths=False,
+            )
+    finally:
+        os.chdir(cwd)
+
+
+def test_template_path_safe_relative(tmp_path: Path) -> None:
+    safe = tmp_path / "safe"
+    safe.mkdir()
+
+    (safe / "template.txt").write_text("SAFE_TEMPLATE", encoding="utf-8")
+
+    cwd = Path.cwd()
+    os.chdir(safe)
+    try:
+        with suppress_langchain_deprecation_warning():
+            prompt = load_prompt_from_config(
+                {
+                    "_type": "prompt",
+                    "template_path": "template.txt",
+                    "input_variables": [],
+                },
+                allow_dangerous_paths=False,
+            )
+
+        assert isinstance(prompt, PromptTemplate)
+        assert prompt.template == "SAFE_TEMPLATE"
+    finally:
+        os.chdir(cwd)
+
+
+def test_examples_symlink_escape_blocked(tmp_path: Path) -> None:
+    safe = tmp_path / "safe"
+    outside = tmp_path / "outside"
+    safe.mkdir()
+    outside.mkdir()
+
+    (outside / "examples.json").write_text(
+        json.dumps([{"input": "TOP_SECRET", "output": "LEAKED"}]),
+        encoding="utf-8",
+    )
+    (safe / "examples.json").symlink_to(outside / "examples.json")
+
+    cwd = Path.cwd()
+    os.chdir(safe)
+
+    try:
+        with (
+            suppress_langchain_deprecation_warning(),
+            pytest.raises(
+                ValueError,
+                match="escapes the current working directory",
+            ),
+        ):
+            load_prompt_from_config(
+                {
+                    "_type": "few_shot",
+                    "input_variables": ["query"],
+                    "prefix": "Examples:",
+                    "example_prompt": {
+                        "_type": "prompt",
+                        "input_variables": ["input", "output"],
+                        "template": "{input}: {output}",
+                    },
+                    "examples": "examples.json",
+                    "suffix": "Query: {query}",
+                },
+                allow_dangerous_paths=False,
+            )
+    finally:
+        os.chdir(cwd)
