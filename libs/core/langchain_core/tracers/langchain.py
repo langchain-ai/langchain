@@ -174,10 +174,7 @@ class LangChainTracer(BaseTracer):
         elif base_metadata is None:
             merged_metadata = dict(metadata)
         else:
-            merged_metadata = dict(base_metadata)
-            for key, value in metadata.items():
-                if key not in merged_metadata:
-                    merged_metadata[key] = value
+            merged_metadata = {**base_metadata, **metadata}
 
         merged_tags = sorted(set(self.tags + tags)) if tags else self.tags
 
