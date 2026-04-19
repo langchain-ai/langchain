@@ -14,6 +14,7 @@ from langchain.agents.middleware.todo import (
     WRITE_TODOS_TOOL_DESCRIPTION,
     PlanningState,
     TodoListMiddleware,
+    _validate_todos,
     write_todos,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
@@ -363,6 +364,117 @@ def test_todo_middleware_write_todos_tool_validation_errors(
     }
     with pytest.raises(ValueError, match="1 validation error for write_todos"):
         write_todos.invoke(tool_call)
+
+
+def test_validate_todos_flat_list_without_ids() -> None:
+    """Regression: simple lists do not require id or depends_on."""
+    assert _validate_todos([]) is None
+    assert _validate_todos([{"content": "Task 1", "status": "pending"}]) is None
+
+
+def test_validate_todos_valid_dag_and_transitions() -> None:
+    """Dependencies form a DAG and statuses respect completion order."""
+    todos = [
+        {"id": "a", "content": "First", "status": "completed", "depends_on": []},
+        {
+            "id": "b",
+            "content": "Second",
+            "status": "in_progress",
+            "depends_on": ["a"],
+        },
+    ]
+    assert _validate_todos(todos) is None
+
+
+def test_validate_todos_missing_id_when_depends_on_used() -> None:
+    err = _validate_todos(
+        [
+            {"content": "A", "status": "pending"},
+            {"id": "b", "content": "B", "status": "pending", "depends_on": ["a"]},
+        ]
+    )
+    assert err is not None
+    assert "non-empty id" in err
+
+
+def test_validate_todos_duplicate_id() -> None:
+    err = _validate_todos(
+        [
+            {"id": "a", "content": "A", "status": "completed", "depends_on": []},
+            {"id": "x", "content": "B1", "status": "pending", "depends_on": ["a"]},
+            {"id": "x", "content": "B2", "status": "pending", "depends_on": ["a"]},
+        ]
+    )
+    assert err is not None
+    assert "Duplicate" in err
+
+
+def test_validate_todos_unknown_dependency() -> None:
+    err = _validate_todos(
+        [
+            {"id": "a", "content": "A", "status": "completed", "depends_on": []},
+            {
+                "id": "b",
+                "content": "B",
+                "status": "pending",
+                "depends_on": ["missing"],
+            },
+        ]
+    )
+    assert err is not None
+    assert "unknown id" in err
+
+
+def test_validate_todos_self_dependency() -> None:
+    err = _validate_todos([{"id": "a", "content": "A", "status": "pending", "depends_on": ["a"]}])
+    assert err is not None
+    assert "cannot depend on itself" in err
+
+
+def test_validate_todos_cycle() -> None:
+    err = _validate_todos(
+        [
+            {"id": "a", "content": "A", "status": "pending", "depends_on": ["b"]},
+            {"id": "b", "content": "B", "status": "pending", "depends_on": ["a"]},
+        ]
+    )
+    assert err is not None
+    assert "cycle" in err
+
+
+def test_validate_todos_illegal_transition() -> None:
+    err = _validate_todos(
+        [
+            {"id": "a", "content": "A", "status": "pending", "depends_on": []},
+            {
+                "id": "b",
+                "content": "B",
+                "status": "in_progress",
+                "depends_on": ["a"],
+            },
+        ]
+    )
+    assert err is not None
+    assert "not completed" in err
+
+
+def test_write_todos_tool_returns_error_without_todos_update() -> None:
+    """Invalid DAG returns error ToolMessage and does not set todos in the command."""
+    tool_call = {
+        "args": {
+            "todos": [
+                {"id": "a", "content": "A", "status": "pending", "depends_on": ["b"]},
+                {"id": "b", "content": "B", "status": "pending", "depends_on": ["a"]},
+            ]
+        },
+        "name": "write_todos",
+        "type": "tool_call",
+        "id": "test_call",
+    }
+    result = write_todos.invoke(tool_call)
+    assert "todos" not in result.update
+    assert result.update["messages"][0].status == "error"
+    assert "cycle" in result.update["messages"][0].content
 
 
 def test_todo_middleware_agent_creation_with_middleware() -> None:

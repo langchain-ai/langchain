@@ -1,5 +1,6 @@
 """Planning and task management middleware for agents."""
 
+from collections import deque
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, Literal, cast
 
@@ -31,6 +32,12 @@ class Todo(TypedDict):
     status: Literal["pending", "in_progress", "completed"]
     """The current status of the todo item."""
 
+    id: NotRequired[str]
+    """Stable identifier for this item. Required when any item uses ``depends_on``."""
+
+    depends_on: NotRequired[list[str]]
+    """Ids that must be ``completed`` before this item is ``in_progress`` or ``completed``."""
+
 
 class PlanningState(AgentState[ResponseT]):
     """State schema for the todo middleware.
@@ -47,6 +54,82 @@ class WriteTodosInput(BaseModel):
     """Input schema for the `write_todos` tool."""
 
     todos: list[Todo]
+
+
+def _normalize_depends(item: Todo) -> list[str]:
+    raw = item.get("depends_on")
+    if not raw:
+        return []
+    return [str(x) for x in raw]
+
+
+def _validate_todos(todos: list[Todo]) -> str | None:
+    """Return an error message if the payload is invalid, else ``None``."""
+    if not todos:
+        return None
+
+    has_deps = any(_normalize_depends(t) for t in todos)
+    if not has_deps:
+        return None
+
+    id_set: set[str] = set()
+    for t in todos:
+        tid = t.get("id")
+        if tid is None or not str(tid).strip():
+            return (
+                "Error: When using depends_on, every todo item must have a non-empty id. "
+                "Give each task a short unique id string."
+            )
+        tid_s = str(tid)
+        if tid_s in id_set:
+            return f"Error: Duplicate todo id {tid_s!r}. Each id must appear at most once."
+        id_set.add(tid_s)
+
+    by_id: dict[str, Todo] = {str(t["id"]): t for t in todos}
+
+    for t in todos:
+        tid_s = str(t["id"])
+        for d in _normalize_depends(t):
+            if d == tid_s:
+                return f"Error: Todo {tid_s!r} cannot depend on itself."
+            if d not in id_set:
+                return f"Error: Todo {tid_s!r} depends on unknown id {d!r}."
+
+    indeg = dict.fromkeys(id_set, 0)
+    adj: dict[str, list[str]] = {i: [] for i in id_set}
+    for t in todos:
+        tid_s = str(t["id"])
+        for d in _normalize_depends(t):
+            adj[d].append(tid_s)
+            indeg[tid_s] += 1
+
+    q: deque[str] = deque([n for n in id_set if indeg[n] == 0])
+    visited = 0
+    while q:
+        u = q.popleft()
+        visited += 1
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+
+    if visited != len(id_set):
+        return "Error: Todo dependencies contain a cycle. Remove a dependency or reorder tasks."
+
+    for t in todos:
+        tid_s = str(t["id"])
+        st = t["status"]
+        if st not in ("in_progress", "completed"):
+            continue
+        for d in _normalize_depends(t):
+            dep_status = by_id[d]["status"]
+            if dep_status != "completed":
+                return (
+                    f"Error: Todo {tid_s!r} cannot be {st} because dependency "
+                    f"{d!r} is not completed."
+                )
+
+    return None
 
 
 WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -74,6 +157,16 @@ It is important to skip using this tool when:
 2. The task is trivial and tracking it provides no benefit
 3. The task can be completed in less than 3 trivial steps
 4. The task is purely conversational or informational
+
+## Optional task dependencies (DAG)
+
+You may assign each task a short unique ``id`` and set ``depends_on`` to a list of ids that must be ``completed`` before this task may be ``in_progress`` or ``completed``.
+
+Rules enforced by this tool:
+- If **no** task uses ``depends_on``, you may omit ``id`` (simple flat lists work as before).
+- If **any** task has a non-empty ``depends_on`` list, **every** task in the same update must have a unique ``id``.
+- Dependencies must reference ids that exist in the same update; a task cannot depend on itself; dependencies must form a **DAG** (no cycles).
+- You cannot set a task to ``in_progress`` or ``completed`` until every listed dependency is ``completed``.
 
 ## Task States and Management
 
@@ -121,7 +214,11 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 ## Important To-Do List Usage Notes to Remember
 - The `write_todos` tool should never be called multiple times in parallel.
-- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
+- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant.
+
+## Optional dependencies
+- Use a unique `id` per task when you use `depends_on` (list of ids that must be `completed` first). Omit ids only for simple flat lists with no dependencies.
+- The tool rejects cycles, unknown dependency ids, and invalid status transitions (starting a task before its dependencies are `completed`)."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
@@ -129,6 +226,15 @@ def write_todos(
     todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command[Any]:
     """Create and manage a structured task list for your current work session."""
+    err = _validate_todos(todos)
+    if err is not None:
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(content=err, tool_call_id=tool_call_id, status="error"),
+                ],
+            },
+        )
     return Command(
         update={
             "todos": todos,
@@ -142,6 +248,19 @@ def _write_todos(
     runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
 ) -> Command[Any]:
     """Create and manage a structured task list for your current work session."""
+    err = _validate_todos(todos)
+    if err is not None:
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=err,
+                        tool_call_id=runtime.tool_call_id,
+                        status="error",
+                    ),
+                ],
+            },
+        )
     return Command(
         update={
             "todos": todos,
