@@ -85,7 +85,7 @@ def test_profile_prefers_model_name_over_known_deployment_name() -> None:
     assert llm.profile["name"] == "GPT-4o"
 
 
-def test_profile_does_not_fall_back_to_deployment_name_with_unknown_model() -> None:
+def test_profile_falls_back_to_deployment_name_with_unknown_model() -> None:
     llm = AzureChatOpenAI(
         model="unknown-model",
         azure_deployment="gpt-4o",
@@ -94,7 +94,7 @@ def test_profile_does_not_fall_back_to_deployment_name_with_unknown_model() -> N
         api_version="2023-05-15",
     )
 
-    assert llm.profile is None
+    assert llm.profile
 
 
 def test_profile_resolves_from_deployment_name_without_model() -> None:
