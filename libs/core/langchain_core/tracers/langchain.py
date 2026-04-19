@@ -37,6 +37,23 @@ _LOGGED = set()
 _EXECUTOR: ThreadPoolExecutor | None = None
 
 
+LANGSMITH_INHERITABLE_METADATA_KEYS: frozenset[str] = frozenset(("ls_agent_type",))
+"""Allowlist of metadata keys that can be overridden mid-run via
+``langsmith.run_helpers.tracing_context(metadata=...)``.
+
+For keys in this set, the tracer reads the live ``tracing_context`` at
+run-start/post time and *overwrites* any existing value on the run
+(last-wins). This lets nested code rescope keys like ``ls_agent_type``
+without needing a fresh ``CallbackManager.configure`` call -- important
+when a compiled graph reuses an outer ``CallbackManager`` and never
+re-reads the tracing context via ``configure``.
+
+Non-allowlisted keys set via ``tracing_context(metadata=...)`` keep the
+existing first-wins semantics applied at ``configure`` time.
+"""
+# TODO: Expand this to cover all ``ls_``-prefixed metadata keys.
+
+
 def log_error_once(method: str, exception: Exception) -> None:
     """Log an error once.
 
@@ -443,14 +460,36 @@ class LangChainTracer(BaseTracer):
 
 
 def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
-    if not self.tracing_metadata:
-        return
     metadata = run.metadata
-    patched = None
-    for k, v in self.tracing_metadata.items():
-        if k not in metadata:
+    patched: dict[str, Any] | None = None
+
+    # Apply tracer-level defaults (first-wins: only fill missing keys).
+    if self.tracing_metadata:
+        for k, v in self.tracing_metadata.items():
+            if k not in metadata:
+                if patched is None:
+                    # Copy on first write to avoid mutating the shared dict.
+                    patched = {**metadata}
+                    run.extra["metadata"] = patched
+                    metadata = patched
+                patched[k] = v
+
+    # Apply live ``tracing_context`` metadata (last-wins) for allowlisted
+    # keys. This lets nested code rescope keys like ``ls_agent_type``
+    # mid-flight without a fresh ``CallbackManager.configure`` call --
+    # important when a compiled graph reuses an outer ``CallbackManager``
+    # (e.g. LangGraph's ``get_callback_manager_for_config`` reuse path)
+    # and therefore never re-reads ``get_tracing_context()`` via
+    # ``configure``.
+    tc_metadata = get_tracing_context().get("metadata")
+    if tc_metadata:
+        for k, v in tc_metadata.items():
+            if k not in LANGSMITH_INHERITABLE_METADATA_KEYS:
+                continue
+            if metadata.get(k) == v:
+                continue
             if patched is None:
-                # Copy on first miss to avoid mutating the shared dict.
                 patched = {**metadata}
                 run.extra["metadata"] = patched
+                metadata = patched
             patched[k] = v

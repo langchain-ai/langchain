@@ -1299,3 +1299,81 @@ class TestLangsmithInheritableTracingDefaultsInConfigure:
         } == {"alpha", "beta"}
         assert tracer.run_map == {}
         assert len(tracer.order_map) == 2
+
+    def test_live_tracing_context_overrides_allowlisted_keys_tracer_only(
+        self,
+    ) -> None:
+        """Mid-flight ``tracing_context`` rescopes allowlisted tracer metadata.
+
+        Covers the path where a compiled graph reuses an outer
+        ``CallbackManager`` (so ``configure`` is never called again for
+        child runs) but inner code enters ``tracing_context`` to rescope
+        ``ls_agent_type``. Asserts:
+
+        - outer run keeps the original ``ls_agent_type`` from
+          ``langsmith_inheritable_metadata``,
+        - inner run picks up the rescoped value from ``tracing_context``,
+        - non-tracer handlers never observe ``ls_agent_type`` at all.
+        """
+        tracer = _create_tracer_with_mocked_client()
+        captured: list[dict[str, Any]] = []
+
+        class MetadataCapture(BaseCallbackHandler):
+            def on_chain_start(self, *_args: Any, **kwargs: Any) -> None:
+                captured.append(dict(kwargs.get("metadata", {})))
+
+        @RunnableLambda
+        def inner(x: int) -> int:
+            return x
+
+        @RunnableLambda
+        def outer(x: int) -> int:
+            with tracing_context(metadata={"ls_agent_type": "subagent"}):
+                return inner.invoke(x)
+
+        cm = CallbackManager.configure(
+            inheritable_callbacks=[tracer, MetadataCapture()],
+            langsmith_inheritable_metadata={"ls_agent_type": "root"},
+        )
+        outer.invoke(1, {"callbacks": cm})
+
+        posts = _get_posts(tracer.client)
+        by_name = {post["name"]: post for post in posts}
+        assert {"outer", "inner"} <= by_name.keys()
+        assert (
+            by_name["outer"].get("extra", {}).get("metadata", {}).get("ls_agent_type")
+            == "root"
+        )
+        assert (
+            by_name["inner"].get("extra", {}).get("metadata", {}).get("ls_agent_type")
+            == "subagent"
+        )
+        for md in captured:
+            assert "ls_agent_type" not in md
+
+    def test_live_tracing_context_non_allowlisted_keys_do_not_override(
+        self,
+    ) -> None:
+        """Non-allowlisted ``tracing_context`` metadata keys keep first-wins."""
+        tracer = _create_tracer_with_mocked_client()
+
+        @RunnableLambda
+        def inner(x: int) -> int:
+            return x
+
+        @RunnableLambda
+        def outer(x: int) -> int:
+            with tracing_context(metadata={"env": "staging"}):
+                return inner.invoke(x)
+
+        cm = CallbackManager.configure(
+            inheritable_callbacks=[tracer],
+            langsmith_inheritable_metadata={"env": "prod"},
+        )
+        outer.invoke(1, {"callbacks": cm})
+
+        # ``env`` is not in LANGSMITH_INHERITABLE_METADATA_KEYS, so the
+        # outer tracer default ("prod") must not be overridden by the
+        # live tracing_context value ("staging").
+        for post in _get_posts(tracer.client):
+            assert post.get("extra", {}).get("metadata", {}).get("env") == "prod"
