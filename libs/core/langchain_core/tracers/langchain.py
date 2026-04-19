@@ -23,6 +23,7 @@ from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.tracers._compat import run_construct, run_to_dict
+from langchain_core.tracers._constants import LANGSMITH_INHERITABLE_METADATA_KEYS
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
@@ -167,7 +168,16 @@ class LangChainTracer(BaseTracer):
         metadata: Mapping[str, str] | None = None,
         tags: list[str] | None = None,
     ) -> LangChainTracer:
-        """Return a new tracer with merged tracer-only defaults."""
+        """Return a new tracer with merged tracer-only defaults.
+
+        By default, keys already present on this tracer take precedence over
+        ``metadata`` (first-wins). Keys in
+        :data:`langchain_core.tracers._constants.LANGSMITH_INHERITABLE_METADATA_KEYS`
+        are the exception: they are treated as narrowly scoped, overridable
+        defaults so that a nested ``RunnableConfig`` /
+        ``CallbackManager.configure`` call can rescope them to the innermost
+        run (e.g. ``ls_agent_type``).
+        """
         base_metadata = self.tracing_metadata
         if metadata is None:
             merged_metadata = dict(base_metadata) if base_metadata is not None else None
@@ -176,7 +186,9 @@ class LangChainTracer(BaseTracer):
         else:
             merged_metadata = dict(base_metadata)
             for key, value in metadata.items():
-                if key not in merged_metadata:
+                if key in LANGSMITH_INHERITABLE_METADATA_KEYS or (
+                    key not in merged_metadata
+                ):
                     merged_metadata[key] = value
 
         merged_tags = sorted(set(self.tags + tags)) if tags else self.tags

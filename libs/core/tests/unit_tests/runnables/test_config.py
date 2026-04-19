@@ -286,25 +286,28 @@ def test_get_langsmith_inheritable_metadata_extra_metadata_overrides_configurabl
 
 
 def test_get_callback_manager_for_config_filters_allowlisted_metadata() -> None:
+    # Allowlisted keys (LangSmith-only) are stripped from general inheritable
+    # metadata so they don't reach non-tracer callback handlers or
+    # `stream_events` output. They reach tracers via the
+    # `langsmith_inheritable_metadata` path instead.
     config: RunnableConfig = {
         "metadata": {
             "foo": "bar",
             "ls_agent_type": "react",
-            # Not on the allowlist - should pass through as regular metadata.
-            "ls_provider": "openai",
+            "ls_provider": "openai",  # not on the allowlist
         },
     }
 
     manager = get_callback_manager_for_config(config)
 
-    # Allowlisted ls_ keys should be stripped from general inheritable metadata,
-    # while regular keys (including non-allowlisted ls_* keys) pass through.
+    # Allowlisted keys are stripped; regular keys (including non-allowlisted
+    # ls_* keys) pass through.
     assert manager.inheritable_metadata == {"foo": "bar", "ls_provider": "openai"}
 
 
 def test_get_callback_manager_for_config_preserves_empty_metadata() -> None:
     # When no metadata is supplied, inheritable_metadata should remain empty
-    # (and filtering should not raise on a missing metadata key).
+    # (and the split should not raise on a missing metadata key).
     manager = get_callback_manager_for_config({})
     assert not manager.inheritable_metadata
 

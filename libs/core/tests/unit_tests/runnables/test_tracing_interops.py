@@ -1040,6 +1040,95 @@ class TestLangsmithInheritableTracingDefaultsInConfigure:
         md = posts[0].get("extra", {}).get("metadata", {})
         assert md["env"] == "prod"
 
+    def test_nested_ls_agent_type_is_scoped_to_each_runnable(self) -> None:
+        """Allowlisted `ls_` metadata set on a nested runnable overrides the outer.
+
+        An outer runnable bound with `ls_agent_type="root"` that invokes an
+        inner runnable bound with `ls_agent_type="subagent"` should post two
+        runs where each carries its own `ls_agent_type`. In particular, the
+        inner run's metadata must NOT inherit `"root"` from the outer.
+        """
+        tracer = _create_tracer_with_mocked_client()
+
+        @RunnableLambda
+        def inner(x: int) -> int:
+            return x + 1
+
+        inner_with_config = inner.with_config(
+            {"metadata": {"ls_agent_type": "subagent"}, "run_name": "inner"}
+        )
+
+        @RunnableLambda
+        def outer(x: int) -> int:
+            return inner_with_config.invoke(x)
+
+        outer_with_config = outer.with_config(
+            {"metadata": {"ls_agent_type": "root"}, "run_name": "outer"}
+        )
+
+        outer_with_config.invoke(1, {"callbacks": [tracer]})
+
+        posts = _get_posts(tracer.client)
+        posts_by_name = {post.get("name"): post for post in posts}
+        assert set(posts_by_name) >= {"outer", "inner"}, (
+            f"expected both outer and inner runs, got {list(posts_by_name)}"
+        )
+
+        outer_md = posts_by_name["outer"].get("extra", {}).get("metadata", {})
+        inner_md = posts_by_name["inner"].get("extra", {}).get("metadata", {})
+
+        assert outer_md.get("ls_agent_type") == "root"
+        assert inner_md.get("ls_agent_type") == "subagent"
+
+    def test_ls_agent_type_not_visible_to_non_tracer_handlers(self) -> None:
+        """Allowlisted `ls_` metadata is tracer-only.
+
+        It must not reach non-tracer callback handlers (which would surface
+        it in ``stream_events``, ``astream_log``, and user-provided handlers).
+        """
+        seen_metadata: list[dict[str, Any]] = []
+
+        class RecordingHandler(BaseCallbackHandler):
+            def on_chain_start(
+                self,
+                serialized: dict[str, Any] | None,
+                inputs: dict[str, Any] | Any,
+                *,
+                metadata: dict[str, Any] | None = None,
+                **kwargs: Any,
+            ) -> None:
+                seen_metadata.append(dict(metadata or {}))
+
+        @RunnableLambda
+        def inner(x: int) -> int:
+            return x + 1
+
+        inner_with_config = inner.with_config(
+            {"metadata": {"ls_agent_type": "subagent", "visible": "inner"}}
+        )
+
+        @RunnableLambda
+        def outer(x: int) -> int:
+            return inner_with_config.invoke(x)
+
+        outer_with_config = outer.with_config(
+            {"metadata": {"ls_agent_type": "root", "visible": "outer"}}
+        )
+
+        outer_with_config.invoke(1, {"callbacks": [RecordingHandler()]})
+
+        # Every non-tracer callback invocation must exclude `ls_agent_type`.
+        assert seen_metadata, "expected on_chain_start to fire"
+        for md in seen_metadata:
+            assert "ls_agent_type" not in md, (
+                f"ls_agent_type leaked to non-tracer handler: {md}"
+            )
+
+        # Regular metadata keys should still be visible so the filter is
+        # correctly scoped to the allowlist.
+        assert any(md.get("visible") == "outer" for md in seen_metadata)
+        assert any(md.get("visible") == "inner" for md in seen_metadata)
+
     def test_runnable_config_copies_configurable_values_to_tracing_metadata(
         self,
     ) -> None:

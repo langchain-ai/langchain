@@ -37,6 +37,7 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
 )
+from langchain_core.tracers._constants import LANGSMITH_INHERITABLE_METADATA_KEYS
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
@@ -150,12 +151,6 @@ COPIABLE_KEYS = [
 # Users are expected to use the `context` API with a context object
 # (which does not get traced)
 CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
-
-# Allowlist of `ls_`-prefixed metadata keys that should be surfaced as
-# LangSmith-only inheritable metadata (and stripped from the general
-# inheritable metadata passed to non-LangSmith callbacks).
-# TODO: Expand this to cover all `ls_`-prefixed metadata keys.
-LANGSMITH_INHERITABLE_METADATA_KEYS = frozenset(("ls_agent_type",))
 
 
 def _get_langsmith_inheritable_metadata_from_config(
@@ -552,12 +547,18 @@ def _split_inheritable_metadata(
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """Split ``config["metadata"]`` into general and LangSmith-only halves.
 
+    Allowlisted keys (see
+    :data:`langchain_core.tracers._constants.LANGSMITH_INHERITABLE_METADATA_KEYS`)
+    are *moved* out of the general inheritable metadata so they don't reach
+    non-tracer callback handlers (e.g. ``stream_events`` output). Nested
+    override semantics are preserved on the tracer side by
+    ``LangChainTracer.copy_with_metadata_defaults``, which treats the same
+    allowlist as last-wins.
+
     Returns a tuple of ``(general_metadata, langsmith_only_metadata)``. The
     first element preserves ``None`` when the config has no ``metadata`` key
     so callers can forward it unchanged to ``CallbackManager.configure``.
     """
-    # TODO: Filter all `ls_`-prefixed metadata keys once the allowlist
-    # is expanded to cover them.
     metadata = config.get("metadata")
     if metadata is None:
         return None, {}
