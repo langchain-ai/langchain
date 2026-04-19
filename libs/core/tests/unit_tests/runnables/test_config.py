@@ -19,6 +19,8 @@ from langchain_core.runnables.config import (
     _get_langsmith_inheritable_metadata_from_config,
     _set_config_context,
     ensure_config,
+    get_async_callback_manager_for_config,
+    get_callback_manager_for_config,
     merge_configs,
     run_in_executor,
 )
@@ -228,6 +230,91 @@ def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules
         "temperature": 0.5,
         "streaming": True,
     }
+
+
+def test_get_langsmith_inheritable_metadata_pulls_allowlisted_metadata() -> None:
+    config: RunnableConfig = {
+        "metadata": {
+            "foo": "bar",
+            "ls_agent_type": "react",
+            # Not on the allowlist - should NOT be pulled into LangSmith-only
+            # inheritable metadata.
+            "ls_provider": "openai",
+        },
+        "configurable": {"baz": "qux"},
+    }
+
+    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+        "baz": "qux",
+        "ls_agent_type": "react",
+    }
+
+
+def test_get_langsmith_inheritable_metadata_handles_missing_metadata() -> None:
+    # No metadata key at all
+    assert _get_langsmith_inheritable_metadata_from_config(
+        {"configurable": {"baz": "qux"}}
+    ) == {"baz": "qux"}
+
+    # metadata present but no allowlisted keys and no configurable contributions
+    assert (
+        _get_langsmith_inheritable_metadata_from_config({"metadata": {"foo": "bar"}})
+        is None
+    )
+
+
+def test_get_langsmith_inheritable_metadata_allowlisted_overrides_configurable() -> (
+    None
+):
+    # Allowlisted metadata keys take precedence over configurable entries
+    # with the same name (applied after the initial dict is built).
+    config: RunnableConfig = {
+        "metadata": {"ls_agent_type": "from-metadata"},
+        "configurable": {"ls_agent_type": "from-configurable"},
+    }
+
+    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+        "ls_agent_type": "from-metadata",
+    }
+
+
+def test_get_callback_manager_for_config_filters_allowlisted_metadata() -> None:
+    config: RunnableConfig = {
+        "metadata": {
+            "foo": "bar",
+            "ls_agent_type": "react",
+            # Not on the allowlist - should pass through as regular metadata.
+            "ls_provider": "openai",
+        },
+    }
+
+    manager = get_callback_manager_for_config(config)
+
+    # Allowlisted ls_ keys should be stripped from general inheritable metadata,
+    # while regular keys (including non-allowlisted ls_* keys) pass through.
+    assert manager.inheritable_metadata == {"foo": "bar", "ls_provider": "openai"}
+
+
+def test_get_callback_manager_for_config_preserves_empty_metadata() -> None:
+    # When no metadata is supplied, inheritable_metadata should remain empty
+    # (and filtering should not raise on a missing metadata key).
+    manager = get_callback_manager_for_config({})
+    assert not manager.inheritable_metadata
+
+
+async def test_get_async_callback_manager_for_config_filters_allowlisted_metadata() -> (
+    None
+):
+    config: RunnableConfig = {
+        "metadata": {
+            "foo": "bar",
+            "ls_agent_type": "react",
+        },
+    }
+
+    manager = get_async_callback_manager_for_config(config)
+
+    assert manager.inheritable_metadata == {"foo": "bar"}
 
 
 async def test_merge_config_callbacks() -> None:

@@ -143,20 +143,34 @@ COPIABLE_KEYS = [
 # (which does not get traced)
 CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 
+# Allowlist of `ls_`-prefixed metadata keys that should be surfaced as
+# LangSmith-only inheritable metadata (and stripped from the general
+# inheritable metadata passed to non-LangSmith callbacks).
+# TODO: Expand this to cover all `ls_`-prefixed metadata keys.
+LANGSMITH_INHERITABLE_METADATA_KEYS = frozenset(("ls_agent_type",))
+
 
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
 ) -> dict[str, Any] | None:
     """Get LangSmith-only inheritable metadata defaults derived from config."""
     configurable = config.get("configurable") or {}
+    config_metadata = config.get("metadata") or {}
     metadata = {
         key: value
         for key, value in configurable.items()
         if not key.startswith("__")
         and isinstance(value, (str, int, float, bool))
-        and key not in config.get("metadata", {})
+        and key not in config_metadata
         and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
     }
+    metadata.update(
+        {
+            key: value
+            for key, value in config_metadata.items()
+            if key in LANGSMITH_INHERITABLE_METADATA_KEYS
+        }
+    )
     return metadata or None
 
 
@@ -529,10 +543,19 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
     Returns:
         The callback manager.
     """
+    metadata = config.get("metadata")
+    if metadata is not None:
+        # TODO: Filter all `ls_`-prefixed metadata keys once the allowlist
+        # is expanded to cover them.
+        metadata = {
+            k: v
+            for k, v in metadata.items()
+            if k not in LANGSMITH_INHERITABLE_METADATA_KEYS
+        }
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
-        inheritable_metadata=config.get("metadata"),
+        inheritable_metadata=metadata,
         langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
             config
         ),
@@ -550,10 +573,19 @@ def get_async_callback_manager_for_config(
     Returns:
         The async callback manager.
     """
+    metadata = config.get("metadata")
+    if metadata is not None:
+        # TODO: Filter all `ls_`-prefixed metadata keys once the allowlist
+        # is expanded to cover them.
+        metadata = {
+            k: v
+            for k, v in metadata.items()
+            if k not in LANGSMITH_INHERITABLE_METADATA_KEYS
+        }
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
-        inheritable_metadata=config.get("metadata"),
+        inheritable_metadata=metadata,
         langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
             config
         ),
