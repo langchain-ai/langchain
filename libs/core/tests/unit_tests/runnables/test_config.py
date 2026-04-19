@@ -233,18 +233,20 @@ def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules
 
 
 def test_get_langsmith_inheritable_metadata_pulls_allowlisted_metadata() -> None:
+    # Callers pre-extract allowlisted metadata and pass it via `extra_metadata`
+    # so that `config["metadata"]` is only iterated once.
     config: RunnableConfig = {
         "metadata": {
             "foo": "bar",
             "ls_agent_type": "react",
-            # Not on the allowlist - should NOT be pulled into LangSmith-only
-            # inheritable metadata.
-            "ls_provider": "openai",
+            "ls_provider": "openai",  # not on the allowlist
         },
         "configurable": {"baz": "qux"},
     }
 
-    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+    assert _get_langsmith_inheritable_metadata_from_config(
+        config, extra_metadata={"ls_agent_type": "react"}
+    ) == {
         "baz": "qux",
         "ls_agent_type": "react",
     }
@@ -263,17 +265,22 @@ def test_get_langsmith_inheritable_metadata_handles_missing_metadata() -> None:
     )
 
 
-def test_get_langsmith_inheritable_metadata_allowlisted_overrides_configurable() -> (
+def test_get_langsmith_inheritable_metadata_extra_metadata_overrides_configurable() -> (
     None
 ):
-    # Allowlisted metadata keys take precedence over configurable entries
-    # with the same name (applied after the initial dict is built).
+    # `extra_metadata` takes precedence over configurable entries with the
+    # same name (applied after the initial dict is built). The existing
+    # `key not in config_metadata` guard in the configurable pass also
+    # prevents configurable entries from shadowing metadata keys that the
+    # caller intentionally routed into `extra_metadata`.
     config: RunnableConfig = {
         "metadata": {"ls_agent_type": "from-metadata"},
         "configurable": {"ls_agent_type": "from-configurable"},
     }
 
-    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+    assert _get_langsmith_inheritable_metadata_from_config(
+        config, extra_metadata={"ls_agent_type": "from-metadata"}
+    ) == {
         "ls_agent_type": "from-metadata",
     }
 
