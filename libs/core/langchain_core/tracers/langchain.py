@@ -36,6 +36,20 @@ logger = logging.getLogger(__name__)
 _LOGGED = set()
 _EXECUTOR: ThreadPoolExecutor | None = None
 
+LANGSMITH_INHERITABLE_METADATA_KEYS: frozenset[str] = frozenset({"ls_agent_type"})
+"""Allowlist of LangSmith-only tracing metadata keys that bypass the default
+"first wins" merge semantics used when propagating tracer metadata to nested
+runs.
+
+Keys in this set are ALWAYS overridden by the nearest enclosing tracer config,
+so nested callers (e.g. a subagent) can replace a value inherited from an
+ancestor.
+
+Keep this list very small: every key here loses the default "first wins"
+protection and is always clobbered by the nearest enclosing tracer config.
+Only keys that are strictly for LangSmith tracing bookkeeping should be added.
+"""
+
 
 def log_error_once(method: str, exception: Exception) -> None:
     """Log an error once.
@@ -176,7 +190,16 @@ class LangChainTracer(BaseTracer):
         else:
             merged_metadata = dict(base_metadata)
             for key, value in metadata.items():
-                if key not in merged_metadata:
+                # For allowlisted LangSmith-only inheritable metadata keys
+                # (e.g. ``ls_agent_type``), nested callers are allowed to
+                # OVERRIDE the value inherited from an ancestor. For all
+                # other keys we keep the existing "first wins" behavior so
+                # that ancestor-provided tracing metadata is not accidentally
+                # clobbered by child runs.
+                if (
+                    key not in merged_metadata
+                    or key in LANGSMITH_INHERITABLE_METADATA_KEYS
+                ):
                     merged_metadata[key] = value
 
         merged_tags = sorted(set(self.tags + tags)) if tags else self.tags
@@ -448,7 +471,12 @@ def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
     metadata = run.metadata
     patched = None
     for k, v in self.tracing_metadata.items():
-        if k not in metadata:
+        # ``LANGSMITH_INHERITABLE_METADATA_KEYS`` are a small, LangSmith-only
+        # allowlist that bypasses the "first wins" merge so a nested caller
+        # (e.g. a subagent) can override a parent-set value.
+        if k not in metadata or k in LANGSMITH_INHERITABLE_METADATA_KEYS:
+            if metadata.get(k) == v:
+                continue
             if patched is None:
                 # Copy on first miss to avoid mutating the shared dict.
                 patched = {**metadata}
