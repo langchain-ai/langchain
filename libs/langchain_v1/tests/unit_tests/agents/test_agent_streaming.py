@@ -1,4 +1,4 @@
-"""Unit tests for `AgentStreamer` and `AgentRunStream`."""
+"""Unit tests for create_agent graphs streaming via stream_v2."""
 
 from __future__ import annotations
 
@@ -8,14 +8,9 @@ import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langgraph.config import emit_tool_output_delta
-from langgraph.stream import EventLog, GraphStreamer, StreamTransformer
+from langgraph.stream import EventLog, StreamTransformer
 
-from langchain.agents import (
-    AgentRunStream,
-    AgentStreamer,
-    AsyncAgentRunStream,
-    create_agent,
-)
+from langchain.agents import create_agent
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -60,13 +55,12 @@ def _single_tool_call_script(name: str, **args: Any) -> list[list[dict[str, Any]
     ]
 
 
-class TestAgentStreamerSync:
+class TestAgentStreamV2Sync:
     def test_stream_returns_agent_run_stream(self) -> None:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
-        assert isinstance(run, AgentRunStream)
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         # Drain so the run closes cleanly.
         list(run.tool_calls)
@@ -76,7 +70,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = list(run.tool_calls)
         assert len(collected) == 1
@@ -90,7 +84,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("streamer", text="x"))
         agent = create_agent(model, [streamer])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         tool_calls: list[ToolCallStream] = []
         for tc in run.tool_calls:
@@ -103,7 +97,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel()  # no tool calls scripted
         agent = create_agent(model, [])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         assert list(run.tool_calls) == []
         assert run.output is not None
 
@@ -112,7 +106,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         # The native `messages` projection is bound as an instance attribute
         # by `BaseRunStream.__init__` whenever `MessagesTransformer` is
         # registered. Content population is covered by langgraph tests —
@@ -143,7 +137,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = AgentStreamer(agent).stream(
+        run = agent.stream_v2(
             {"messages": [HumanMessage("hi")]},
             transformers=[_Marker],
         )
@@ -162,7 +156,7 @@ class TestAgentStreamerSync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("boom"))
         agent = create_agent(model, [boom])
 
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = []
 
@@ -178,37 +172,24 @@ class TestAgentStreamerSync:
         assert "nope" in collected[0].error
         assert collected[0].completed is True
 
-    def test_plain_graph_streamer_still_works(self) -> None:
-        """Base `GraphStreamer` on an agent graph works; just no `tool_calls`."""
-        model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
-        agent = create_agent(model, [echo])
 
-        run = GraphStreamer(agent).stream({"messages": [HumanMessage("hi")]})
-        # Without `ToolCallTransformer` the projection is absent.
-        assert "tool_calls" not in run._mux.extensions  # type: ignore[attr-defined]
-        assert run.output is not None
-
-
-class TestAgentStreamerAsync:
+class TestAgentStreamV2Async:
     @pytest.mark.anyio
     async def test_astream_returns_async_agent_run_stream(self) -> None:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = await AgentStreamer(agent).astream({"messages": [HumanMessage("hi")]})
-        assert isinstance(run, AsyncAgentRunStream)
+        run = await agent.astream_v2({"messages": [HumanMessage("hi")]})
         async for tc in run.tool_calls:
             async for _ in tc.output_deltas:
                 pass
 
     @pytest.mark.anyio
     async def test_async_tool_deltas_flow(self) -> None:
-        model = FakeToolCallingModel(
-            tool_calls=_single_tool_call_script("astreamer", text="hi")
-        )
+        model = FakeToolCallingModel(tool_calls=_single_tool_call_script("astreamer", text="hi"))
         agent = create_agent(model, [astreamer])
 
-        run = await AgentStreamer(agent).astream({"messages": [HumanMessage("hi")]})
+        run = await agent.astream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = []
         async for tc in run.tool_calls:

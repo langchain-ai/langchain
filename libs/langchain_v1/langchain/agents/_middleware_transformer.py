@@ -30,15 +30,11 @@ if TYPE_CHECKING:
     from langgraph.stream._types import ProtocolEvent
 
 
-MiddlewarePhase = Literal[
-    "before_agent", "before_model", "after_model", "after_agent"
-]
+MiddlewarePhase = Literal["before_agent", "before_model", "after_model", "after_agent"]
 """Lifecycle phase a middleware node represents."""
 
 
-_PHASES: frozenset[str] = frozenset(
-    ("before_agent", "before_model", "after_model", "after_agent")
-)
+_PHASES: frozenset[str] = frozenset(("before_agent", "before_model", "after_model", "after_agent"))
 
 
 @dataclass(frozen=True)

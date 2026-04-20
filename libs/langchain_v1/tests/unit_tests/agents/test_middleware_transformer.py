@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.agents import (
-    AgentStreamer,
     MiddlewareEvent,
     MiddlewareTransformer,
     create_agent,
@@ -56,9 +55,7 @@ class TestMiddlewareTransformerProcess:
 
     def test_emits_event_for_middleware_node(self) -> None:
         tr = _fresh_transformer()
-        kept = tr.process(
-            _updates_event({"MyMW.before_model": {"messages": ["hi"]}})
-        )
+        kept = tr.process(_updates_event({"MyMW.before_model": {"messages": ["hi"]}}))
         assert kept is True  # event passes through
         events = list(tr._log._items)
         assert len(events) == 1
@@ -144,7 +141,7 @@ class TestMiddlewareTransformerProcess:
 
 
 # ---------------------------------------------------------------------------
-# Integration: AgentStreamer auto-registers it; run.middleware works
+# Integration: create_agent auto-registers it; run.middleware works
 # ---------------------------------------------------------------------------
 
 
@@ -153,17 +150,15 @@ class _MarkerMiddleware(AgentMiddleware):
 
     name = "MarkerMW"
 
-    def before_model(
-        self, state: AgentState, runtime: Any
-    ) -> dict[str, Any] | None:
+    def before_model(self, state: AgentState, runtime: Any) -> dict[str, Any] | None:
         return {"messages": []}
 
 
-class TestAgentStreamerRegistersMiddlewareTransformer:
+class TestCreateAgentRegistersMiddlewareTransformer:
     def test_middleware_projection_present(self) -> None:
         model = FakeToolCallingModel(tool_calls=[[], []])
         agent = create_agent(model, [], middleware=[_MarkerMiddleware()])
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         assert "middleware" in run.extensions
         assert hasattr(run, "middleware")
         # Drive to completion.
@@ -176,11 +171,10 @@ class TestAgentStreamerRegistersMiddlewareTransformer:
             responses=[AIMessage(content="done", id="a1", tool_calls=[])],
         )
         agent = create_agent(model, [], middleware=[_MarkerMiddleware()])
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         events: list[MiddlewareEvent] = list(run.middleware)
         assert any(
-            ev.phase == "before_model" and ev.middleware_name == "MarkerMW"
-            for ev in events
+            ev.phase == "before_model" and ev.middleware_name == "MarkerMW" for ev in events
         ), f"expected a MarkerMW.before_model event; got {events}"
 
     def test_no_events_when_no_middleware(self) -> None:
@@ -189,6 +183,6 @@ class TestAgentStreamerRegistersMiddlewareTransformer:
             responses=[AIMessage(content="done", id="a1", tool_calls=[])],
         )
         agent = create_agent(model, [])
-        run = AgentStreamer(agent).stream({"messages": [HumanMessage("hi")]})
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         events = list(run.middleware)
         assert events == []

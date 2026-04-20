@@ -22,11 +22,13 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
 
+from langchain.agents._middleware_transformer import MiddlewareTransformer
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -1660,6 +1662,7 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
+        transformers=[ToolCallTransformer, MiddlewareTransformer],
     ).with_config(config)
 
 
