@@ -12,6 +12,10 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.reject_system_messages import (
+    RejectSystemMessagesMiddleware,
+    SystemMessageViolationError,
+)
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -66,9 +70,11 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",
+    "RejectSystemMessagesMiddleware",
     "Runtime",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
+    "SystemMessageViolationError",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
