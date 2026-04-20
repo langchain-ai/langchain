@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.3.0a2"
+version = "1.3.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -58,12 +58,12 @@ dev = [
     "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
-    "pytest>=8.0.0,<10.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
-    "syrupy>=4.0.2,<6.0.0",
+    "syrupy>=5.0.0,<6.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<2.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
     "grandalf>=0.8.0,<1.0.0",
     "responses>=0.25.0,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
@@ -135,8 +135,10 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "PLR2004", "S", "SLF",]
+"tests/**" = [ "ARG", "D1", "PLR2004", "S", "SLF",]
 "scripts/**" = [ "INP", "S", "T201",]
+"langchain_core/_security/_policy.py" = [ "EM101", "EM102", "TRY003", "B008", "TRY300",]
+"langchain_core/_security/_transport.py" = [ "EM101", "EM102", "TRY003", "TRY203", "B008",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
