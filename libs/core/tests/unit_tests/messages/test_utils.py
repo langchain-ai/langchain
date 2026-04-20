@@ -2612,6 +2612,42 @@ def test_get_buffer_string_xml_server_tool_call_args_truncation() -> None:
     # The full 600-char value should not appear
     assert long_value not in result
 
+def test_extract_reasoning_from_additional_kwargs_ignores_empty_string() -> None:
+    """Empty reasoning_content should return None, not an empty block."""
+    from langchain_core.messages import AIMessage
+    from langchain_core.messages.base import _extract_reasoning_from_additional_kwargs
+
+    # Empty string should be ignored
+    msg_empty = AIMessage(
+        content="hello",
+        additional_kwargs={"reasoning_content": ""},
+    )
+    assert _extract_reasoning_from_additional_kwargs(msg_empty) is None
+
+    # Non-empty string should still work
+    msg_valid = AIMessage(
+        content="hello",
+        additional_kwargs={"reasoning_content": "I think therefore I am"},
+    )
+    result = _extract_reasoning_from_additional_kwargs(msg_valid)
+    assert result is not None
+    assert result["type"] == "reasoning"
+    assert result["reasoning"] == "I think therefore I am"
+
+    # None should return None
+    msg_none = AIMessage(
+        content="hello",
+        additional_kwargs={"reasoning_content": None},
+    )
+    assert _extract_reasoning_from_additional_kwargs(msg_none) is None
+
+    # Missing key should return None
+    msg_missing = AIMessage(
+        content="hello",
+        additional_kwargs={},
+    )
+    assert _extract_reasoning_from_additional_kwargs(msg_missing) is None
+
 
 def test_get_buffer_string_xml_server_tool_result_output_truncation() -> None:
     """Test that server_tool_result output is truncated to 500 chars."""
@@ -2958,3 +2994,6 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+
