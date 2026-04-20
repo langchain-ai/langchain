@@ -1,5 +1,10 @@
 """Entrypoint to building [Agents](https://docs.langchain.com/oss/python/langchain/agents) with LangChain."""  # noqa: E501
 
+from langchain.agents._middleware_transformer import (
+    MiddlewareEvent,
+    MiddlewarePhase,
+    MiddlewareTransformer,
+)
 from langchain.agents._streaming import (
     AgentRunStream,
     AgentStreamer,
@@ -13,5 +18,8 @@ __all__ = [
     "AgentState",
     "AgentStreamer",
     "AsyncAgentRunStream",
+    "MiddlewareEvent",
+    "MiddlewarePhase",
+    "MiddlewareTransformer",
     "create_agent",
 ]

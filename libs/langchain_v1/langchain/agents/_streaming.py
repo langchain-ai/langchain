@@ -1,7 +1,8 @@
 """Streaming entry point for `create_agent` graphs.
 
-`AgentStreamer` pre-registers `ToolCallTransformer` so every agent run
-exposes `run.tool_calls` without the caller opting in.
+`AgentStreamer` pre-registers `ToolCallTransformer` and
+`MiddlewareTransformer` so every agent run exposes `run.tool_calls`
+and `run.middleware` without the caller opting in.
 
 Example:
     ```python
@@ -25,6 +26,8 @@ from langgraph.prebuilt import ToolCallTransformer
 from langgraph.stream import GraphStreamer
 from langgraph.stream.run_stream import AsyncGraphRunStream, GraphRunStream
 
+from langchain.agents._middleware_transformer import MiddlewareTransformer
+
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
 
@@ -34,11 +37,11 @@ if TYPE_CHECKING:
 class AgentRunStream(GraphRunStream):
     """Sync run stream for a `create_agent` graph.
 
-    Native projections (`tool_calls`, `messages`, `values`) are bound as
-    instance attributes by `BaseRunStream.__init__` whenever the
-    matching transformer is registered — this subclass exists for
-    `isinstance` checks and as an extension point for downstream
-    streamers (e.g. a deepagents-layer `DeepAgentRunStream`).
+    Native projections (`tool_calls`, `middleware`, `messages`, `values`)
+    are bound as instance attributes by `BaseRunStream.__init__`
+    whenever the matching transformer is registered — this subclass
+    exists for `isinstance` checks and as an extension point for
+    downstream streamers (e.g. a deepagents-layer `DeepAgentRunStream`).
     """
 
 
@@ -50,8 +53,8 @@ class AgentStreamer(GraphStreamer):
     """`GraphStreamer` pre-configured for `create_agent` graphs.
 
     Extends `GraphStreamer.builtin_factories` with `ToolCallTransformer`
-    so `run.tool_calls` is populated on every run without the caller
-    passing `transformers=[ToolCallTransformer]`. Returns
+    and `MiddlewareTransformer` so `run.tool_calls` and `run.middleware`
+    are populated on every run without the caller opting in. Returns
     `AgentRunStream` / `AsyncAgentRunStream` for `isinstance` checks.
 
     Caller-supplied `transformers=[...]` on `stream()` / `astream()`
@@ -62,6 +65,7 @@ class AgentStreamer(GraphStreamer):
     builtin_factories: ClassVar[tuple[TransformerFactory, ...]] = (
         *GraphStreamer.builtin_factories,
         ToolCallTransformer,
+        MiddlewareTransformer,
     )
 
     def _make_run_stream(
