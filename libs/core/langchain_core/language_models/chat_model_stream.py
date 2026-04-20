@@ -807,7 +807,7 @@ class ChatModelStream:
             else:
                 content = [dict(b) for b in ordered_blocks]
 
-        response_metadata: dict[str, Any] = {}
+        response_metadata: dict[str, Any] = {"output_version": "v1"}
         if self._finish_reason:
             response_metadata["finish_reason"] = self._finish_reason
         if self._start_metadata:
