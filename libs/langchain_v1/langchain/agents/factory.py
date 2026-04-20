@@ -705,6 +705,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
+    transformers: Sequence[Callable[..., Any]] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -800,6 +801,11 @@ def create_agent(
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        transformers: Optional sequence of scope-aware `StreamTransformer`
+            factories to register on the compiled graph in addition to
+            the agent defaults. Each factory is invoked per-scope
+            (`factory(scope)`) so subgraph mini-muxes get fresh
+            instances. Appended after the built-in `ToolCallTransformer`.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -1661,7 +1667,7 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[ToolCallTransformer],
+        transformers=[ToolCallTransformer, *(transformers or ())],
     ).with_config(config)
 
 
