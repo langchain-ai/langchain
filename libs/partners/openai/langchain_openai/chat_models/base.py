@@ -4589,6 +4589,15 @@ def _construct_lc_result_from_responses_api(
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
+def _coerce_chunk_response(resp: Any) -> Any:
+    # dict `response` items on stream events have been observed in the wild
+    if isinstance(resp, dict):
+        from openai.types.responses import Response
+
+        return Response.model_validate(resp)
+    return resp
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -4686,14 +4695,16 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.created":
-        id = chunk.response.id
-        response_metadata["id"] = chunk.response.id  # Backwards compatibility
+        response = _coerce_chunk_response(chunk.response)
+        id = response.id
+        response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type in ("response.completed", "response.incomplete"):
+        response = _coerce_chunk_response(chunk.response)
         msg = cast(
             AIMessage,
             (
                 _construct_lc_result_from_responses_api(
-                    chunk.response, schema=schema, output_version=output_version
+                    response, schema=schema, output_version=output_version
                 )
                 .generations[0]
                 .message
