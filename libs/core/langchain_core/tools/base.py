@@ -555,6 +555,12 @@ class ChildTool(BaseTool):
         ignored_types=(functools.cached_property,),
     )
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name in {"args_schema", "description", "name"}:
+            self.__dict__.pop("tool_call_schema", None)
+            self.__dict__.pop("args", None)
+
     @property
     def is_single_input(self) -> bool:
         """Check if the tool accepts only a single input argument.

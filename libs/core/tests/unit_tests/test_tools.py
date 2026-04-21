@@ -3653,3 +3653,42 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+def test_tool_call_schema_cache_invalidated_on_field_mutation() -> None:
+    """Verify cached tool_call_schema is invalidated when schema-affecting fields change."""
+
+    @tool
+    def my_tool(x: int) -> str:
+        """Original description."""
+        return str(x)
+
+    schema_before = my_tool.tool_call_schema
+    my_tool.description = "Updated description"
+    schema_after = my_tool.tool_call_schema
+
+    assert schema_before is not schema_after
+    assert schema_after.__doc__ == "Updated description"
+
+
+def test_args_cache_invalidated_on_args_schema_change() -> None:
+    """Verify cached args is invalidated when args_schema changes."""
+
+    class SchemaA(BaseModel):
+        x: int
+
+    class SchemaB(BaseModel):
+        y: str
+
+    @tool(args_schema=SchemaA)
+    def my_tool(x: int) -> str:
+        """A tool."""
+        return str(x)
+
+    args_before = my_tool.args
+    assert "x" in args_before
+
+    my_tool.args_schema = SchemaB
+    args_after = my_tool.args
+    assert "y" in args_after
+    assert "x" not in args_after
