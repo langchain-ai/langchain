@@ -228,6 +228,7 @@ class ShellSession:
             payload = command if command.endswith("\n") else f"{command}\n"
             try:
                 self._stdin.write(payload)
+                self._stdin.write("printf '\\n'")
                 self._stdin.write(f"printf '{marker} %s\\n' $?\n")
                 self._stdin.flush()
             except (BrokenPipeError, OSError):
