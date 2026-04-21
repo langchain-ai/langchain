@@ -275,9 +275,7 @@ class AsyncProjection(_ProjectionBase):
         self._event = asyncio.Event()
         self._arequest_more: Callable[[], Awaitable[bool]] | None = None
 
-    def set_arequest_more(
-        self, cb: Callable[[], Awaitable[bool]] | None
-    ) -> None:
+    def set_arequest_more(self, cb: Callable[[], Awaitable[bool]] | None) -> None:
         """Wire the async pull callback iterators use to drive the source.
 
         Mirrors `SyncProjection.set_request_more`. Under caller-driven
@@ -891,9 +889,7 @@ class AsyncChatModelStream(ChatModelStream):
 
     # -- Pump/pull wiring (async) ------------------------------------------
 
-    def set_arequest_more(
-        self, cb: Callable[[], Awaitable[bool]] | None
-    ) -> None:
+    def set_arequest_more(self, cb: Callable[[], Awaitable[bool]] | None) -> None:
         """Fan the async pump callback out to every projection.
 
         Used by langgraph's `AsyncGraphRunStream._wire_arequest_more` so
