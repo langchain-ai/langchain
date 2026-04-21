@@ -71,9 +71,7 @@ def build_tool_exchange_signature(
     )
 
 
-def validate_max_consecutive_steps(
-    max_consecutive_steps: int, *, parameter_name: str
-) -> None:
+def validate_max_consecutive_steps(max_consecutive_steps: int, *, parameter_name: str) -> None:
     """Validate a progress detection threshold."""
     if max_consecutive_steps < _MIN_CONSECUTIVE_STEPS:
         msg = f"{parameter_name} must be >= {_MIN_CONSECUTIVE_STEPS}"

@@ -489,8 +489,7 @@ class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, R
                 consecutive_steps=consecutive_failures,
                 max_consecutive_identical_steps=max_consecutive_failures,
                 description=(
-                    f"{tool_name}({request.tool_call['args']!r}) -> "
-                    f"error: {tool_message.text}"
+                    f"{tool_name}({request.tool_call['args']!r}) -> error: {tool_message.text}"
                 ),
                 exchange_signature=signature,
             )
@@ -538,9 +537,7 @@ class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, R
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
-                    tool_message = self._handle_failure(
-                        tool_name, tool_call_id, exc, attempts_made
-                    )
+                    tool_message = self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
                     return self._handle_exhausted_failure(request, tool_name, tool_message)
 
                 # Check if we have more retries left
@@ -558,9 +555,7 @@ class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, R
                     # Continue to next retry
                 else:
                     # No more retries, handle failure
-                    tool_message = self._handle_failure(
-                        tool_name, tool_call_id, exc, attempts_made
-                    )
+                    tool_message = self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
                     return self._handle_exhausted_failure(request, tool_name, tool_message)
 
         # Unreachable: loop always returns via handler success or _handle_failure
@@ -603,9 +598,7 @@ class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, R
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
-                    tool_message = self._handle_failure(
-                        tool_name, tool_call_id, exc, attempts_made
-                    )
+                    tool_message = self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
                     return self._handle_exhausted_failure(request, tool_name, tool_message)
 
                 # Check if we have more retries left
@@ -623,9 +616,7 @@ class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, R
                     # Continue to next retry
                 else:
                     # No more retries, handle failure
-                    tool_message = self._handle_failure(
-                        tool_name, tool_call_id, exc, attempts_made
-                    )
+                    tool_message = self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
                     return self._handle_exhausted_failure(request, tool_name, tool_message)
 
         # Unreachable: loop always returns via handler success or _handle_failure

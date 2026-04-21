@@ -280,9 +280,7 @@ def test_progress_guard_end_behavior_appends_final_ai_message() -> None:
 
     result = agent.invoke({"messages": [HumanMessage("keep trying")]})
 
-    assert result["messages"][-1].content.startswith(
-        "Agent stopped because no_progress_detected"
-    )
+    assert result["messages"][-1].content.startswith("Agent stopped because no_progress_detected")
     assert model.index == 2
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import AIMessage, AnyMessage, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -27,6 +27,8 @@ from langchain.agents.middleware.types import (
     ToolCallRequest,
     hook_config,
 )
+
+__all__ = ["AgentProgressStalledError", "ProgressGuardMiddleware"]
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -58,9 +60,7 @@ class ProgressGuardState(AgentState[ResponseT]):
     the current consecutive equivalent exchange streak.
     """
 
-    run_progress_guard_initialized: NotRequired[
-        Annotated[bool, UntrackedValue, PrivateStateAttr]
-    ]
+    run_progress_guard_initialized: NotRequired[Annotated[bool, UntrackedValue, PrivateStateAttr]]
     run_progress_guard_last_processed_exchange_id: NotRequired[
         Annotated[str | None, UntrackedValue, PrivateStateAttr]
     ]
@@ -97,9 +97,7 @@ def _build_exchange_id(message: AIMessage) -> str:
     )
 
 
-class ProgressGuardMiddleware(
-    AgentMiddleware[ProgressGuardState[ResponseT], ContextT, ResponseT]
-):
+class ProgressGuardMiddleware(AgentMiddleware[ProgressGuardState[ResponseT], ContextT, ResponseT]):
     """Stop agent loops that repeat the same completed tool exchange.
 
     Use this guard when an agent keeps making the same tool calls and receives the
@@ -417,7 +415,7 @@ class ProgressGuardMiddleware(
             return self._reset_state(exchange_id=current_exchange_id)
 
         previous_signature = state.get(_LAST_SIGNATURE_KEY)
-        previous_count = state.get(_CONSECUTIVE_COUNT_KEY, 0)
+        previous_count = cast("int", state.get(_CONSECUTIVE_COUNT_KEY, 0))
         consecutive_steps = previous_count + 1 if previous_signature == observation.signature else 1
 
         if consecutive_steps >= self.max_consecutive_identical_steps:
