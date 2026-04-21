@@ -264,6 +264,18 @@ def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     assert parsed == json.loads(expected)
 
 
+@pytest.mark.parametrize(
+    "raw_char",
+    ["\r", "\t", "\b", "\f", "\x00", "\x1f"],
+)
+def test_parse_partial_json_control_characters(raw_char: str) -> None:
+    s = '{"key": "before' + raw_char + 'after"}'
+    parsed = parse_partial_json(s)
+    assert parsed is not None
+    assert "before" in parsed["key"]
+    assert "after" in parsed["key"]
+
+
 STREAMED_TOKENS = """
 {
 
