@@ -226,9 +226,11 @@ class InMemoryCache(BaseCache):
 
                 The value is a list of `Generation` (or subclasses).
         """
-        if self._maxsize is not None and len(self._cache) == self._maxsize:
-            del self._cache[next(iter(self._cache))]
-        self._cache[prompt, llm_string] = return_val
+        key = (prompt, llm_string)
+        if key not in self._cache:
+            if self._maxsize is not None and len(self._cache) == self._maxsize:
+                del self._cache[next(iter(self._cache))]
+        self._cache[key] = return_val
 
     @override
     def clear(self, **kwargs: Any) -> None:
