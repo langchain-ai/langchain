@@ -4757,6 +4757,25 @@ def _convert_responses_chunk_to_generation_chunk(
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
         content.append(function_call_content)
+    elif chunk.type == "response.output_item.added" and chunk.item.type in (
+        "web_search_call",
+        "file_search_call",
+        "computer_call",
+        "code_interpreter_call",
+        "mcp_call",
+        "mcp_list_tools",
+        "mcp_approval_request",
+        "image_generation_call",
+    ):
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "type": chunk.item.type,
+                "id": chunk.item.id,
+                "status": getattr(chunk.item, "status", "in_progress"),
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
