@@ -548,6 +548,29 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
+def _extract_raw_response_dict(raw_response: Any) -> dict | None:
+    """Try to read the raw HTTP JSON body from an OpenAI raw response wrapper.
+
+    Some OpenAI-compatible APIs (e.g., vLLM) return responses where the
+    OpenAI Python SDK's Pydantic parser drops the `choices` field (setting
+    it to None) even though the raw HTTP body contains valid choices.
+    When that happens, fall back to the raw JSON body attached to the
+    response by the OpenAI SDK's `with_raw_response` wrapper.
+
+    Returns a dict on success, or None if the raw body cannot be recovered.
+    """
+    if raw_response is None:
+        return None
+    http_response = getattr(raw_response, "http_response", None)
+    if http_response is None:
+        return None
+    try:
+        raw = http_response.json()
+    except (ValueError, AttributeError):
+        return None
+    return raw if isinstance(raw, dict) else None
+
+
 _RESPONSES_API_ONLY_PREFIXES = (
     "gpt-5-pro",
     "gpt-5.2-pro",
@@ -1511,7 +1534,7 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
-        return self._create_chat_result(response, generation_info)
+        return self._create_chat_result(response, generation_info, raw_response)
 
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
@@ -1563,6 +1586,7 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         response: dict | openai.BaseModel,
         generation_info: dict | None = None,
+        raw_response: Any = None,
     ) -> ChatResult:
         generations = []
 
@@ -1590,16 +1614,25 @@ class BaseChatOpenAI(BaseChatModel):
             raise KeyError(msg) from e
 
         if choices is None:
-            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
-            # when the response format differs or an error occurs without
-            # populating the error field. Provide a more helpful error message.
-            msg = (
-                "Received response with null value for 'choices'. "
-                "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
-                "that return a response in an unexpected format. "
-                f"Full response keys: {list(response_dict.keys())}"
-            )
-            raise TypeError(msg)
+            # Some OpenAI-compatible APIs (e.g., vLLM on certain runtimes) return
+            # a response where the parsed `ChatCompletion` has `choices=None`
+            # even though the raw HTTP body contains valid choices (this happens
+            # when the OpenAI Python SDK silently drops fields that fail strict
+            # validation). Fall back to the raw HTTP response body if available.
+            # See: https://github.com/langchain-ai/langchain/issues/32252
+            raw_dict = _extract_raw_response_dict(raw_response)
+            if raw_dict is not None and raw_dict.get("choices"):
+                response_dict = raw_dict
+                choices = response_dict["choices"]
+            else:
+                msg = (
+                    "Received response with null value for 'choices'. "
+                    "This can happen when using OpenAI-compatible APIs "
+                    "(e.g., vLLM) that return a response in an unexpected "
+                    "format. "
+                    f"Full response keys: {list(response_dict.keys())}"
+                )
+                raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
@@ -1778,7 +1811,7 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             generation_info = {"headers": dict(raw_response.headers)}
         return await run_in_executor(
-            None, self._create_chat_result, response, generation_info
+            None, self._create_chat_result, response, generation_info, raw_response
         )
 
     @property

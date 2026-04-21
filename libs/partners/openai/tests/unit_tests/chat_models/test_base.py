@@ -1446,6 +1446,88 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     assert result.generations[0].message.additional_kwargs["parsed"] == parsed_response
 
 
+def test_create_chat_result_null_choices_falls_back_to_raw_response() -> None:
+    """When the parsed response has choices=None but the raw HTTP body has
+    valid choices (as happens with some vLLM setups), we should use the raw
+    body instead of raising TypeError.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/32252
+    """
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-vllm"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "vllm-model"
+        choices: list[Any] | None = None
+        usage: dict[str, int] | None = None
+
+    # Parsed response has choices=None (the bug scenario)
+    parsed_response = MockChatCompletion.model_construct(choices=None)
+
+    # Raw HTTP body contains valid choices
+    raw_body = {
+        "id": "chatcmpl-vllm",
+        "object": "chat.completion",
+        "created": 0,
+        "model": "vllm-model",
+        "choices": [
+            {
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": "Hello from vLLM"},
+            }
+        ],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+    }
+    raw_response = MagicMock()
+    raw_response.http_response.json.return_value = raw_body
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="test")
+    result = llm._create_chat_result(parsed_response, raw_response=raw_response)
+
+    assert len(result.generations) == 1
+    assert result.generations[0].message.content == "Hello from vLLM"
+
+
+def test_create_chat_result_null_choices_no_raw_response_raises() -> None:
+    """If choices is null and no raw response is available, the informative
+    TypeError should still be raised.
+    """
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-1"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "some-model"
+        choices: list[Any] | None = None
+
+    parsed_response = MockChatCompletion.model_construct(choices=None)
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="test")
+    with pytest.raises(TypeError, match="null value for 'choices'"):
+        llm._create_chat_result(parsed_response)
+
+
+def test_create_chat_result_null_choices_raw_also_null_raises() -> None:
+    """If both parsed and raw response have null choices, still raise."""
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-1"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "some-model"
+        choices: list[Any] | None = None
+
+    parsed_response = MockChatCompletion.model_construct(choices=None)
+    raw_response = MagicMock()
+    raw_response.http_response.json.return_value = {"choices": None}
+
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="test")
+    with pytest.raises(TypeError, match="null value for 'choices'"):
+        llm._create_chat_result(parsed_response, raw_response=raw_response)
+
+
 def test_structured_outputs_parser_valid_falsy_response() -> None:
     class LunchBox(BaseModel):
         sandwiches: list[str]
