@@ -121,6 +121,25 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     For finalized :class:`AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
+
+    The positional fallback is a known fragility: when a provider emits
+    blocks without an `index` field (e.g. Anthropic's `_stream` with
+    `coerce_content_to_string=True`, where text chunks lose their
+    source-side index), every such chunk gets positional key 0 and
+    successive chunks merge into one block. This works correctly for
+    single-type streams (pure-text responses merge cleanly) because all
+    chunks share the same key and the open-block logic collapses them.
+    It would miscategorise a stream that mixed indexed structured
+    blocks with non-indexed coerced-text blocks, since an indexed
+    block with `index == 0` would collide with the anonymous text
+    block's positional-0 key.  In the anthropic integration this
+    cannot currently occur: coerce-to-string mode is only selected
+    when no tools, thinking, or documents are present, and any of
+    those flips the stream to structured mode where every block
+    carries an integer index.  A native `_stream_chat_model_events`
+    hook per provider (or a bridge-level "continue the open block when
+    the source has no identity" rule) would close the gap if another
+    integration ever emits mixed content.
     """
     try:
         raw = msg.content_blocks
