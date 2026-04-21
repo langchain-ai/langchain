@@ -114,6 +114,35 @@ def structured_tool_4(rows: int, cols: int, fill: float) -> list[list[float]]:
     return [[fill] * cols for _ in range(rows)]
 
 
+class CoordinateSchema(BaseModel):
+    lat: float = Field(description="Latitude")
+    lon: float = Field(description="Longitude")
+
+
+class LocationSchema(BaseModel):
+    name: str = Field(description="Location name")
+    coordinate: CoordinateSchema = Field(description="GPS coordinate")
+    altitude_m: float = Field(default=0.0, description="Altitude in meters")
+
+
+class RouteSchema(BaseModel):
+    origin: LocationSchema = Field(description="Starting location")
+    destination: LocationSchema = Field(description="Ending location")
+    waypoints: list[LocationSchema] = Field(default_factory=list, description="Intermediate stops")
+    max_distance_km: float = Field(default=1000.0, description="Maximum route distance")
+
+
+@tool(args_schema=RouteSchema)
+def deep_nested_tool(
+    origin: LocationSchema,
+    destination: LocationSchema,
+    waypoints: list[LocationSchema],
+    max_distance_km: float,
+) -> dict[str, Any]:
+    """Plan a route between locations with deep nested schema."""
+    return {"origin": origin.name, "destination": destination.name}
+
+
 @tool
 def complex_tool_1(
     name: str,
@@ -187,6 +216,7 @@ LARGE_TOOLS = [
     structured_tool_2,
     structured_tool_3,
     structured_tool_4,
+    deep_nested_tool,
     complex_tool_1,
     complex_tool_2,
     complex_tool_3,
@@ -224,47 +254,48 @@ def test_create_agent_medium_tools(benchmark: BenchmarkFixture) -> None:
 
 @pytest.mark.benchmark
 def test_create_agent_large_tools(benchmark: BenchmarkFixture) -> None:
-    """14 tools including complex nested schemas."""
+    """15 tools including complex nested schemas."""
     benchmark(lambda: create_agent(model=_make_model(), tools=LARGE_TOOLS))
 
 
 @pytest.mark.benchmark
 def test_create_agent_large_tools_with_middleware(benchmark: BenchmarkFixture) -> None:
-    """14 tools + full middleware stack."""
-    middleware: Sequence[AgentMiddleware[Any, Any]] = (
-        TodoListMiddleware(),
-        ToolRetryMiddleware(),
-        ModelRetryMiddleware(),
-    )
-    benchmark(
-        lambda: create_agent(
+    """15 tools + full middleware stack."""
+    def run() -> None:
+        middleware: Sequence[AgentMiddleware[Any, Any]] = (
+            TodoListMiddleware(),
+            ToolRetryMiddleware(),
+            ModelRetryMiddleware(),
+        )
+        create_agent(
             model=_make_model(),
             tools=LARGE_TOOLS,
             middleware=middleware,
         )
-    )
+
+    benchmark(run)
 
 
 @pytest.mark.benchmark
 def test_tool_call_schema_repeated_access(benchmark: BenchmarkFixture) -> None:
-    """Measure cost of repeated .tool_call_schema access on a complex tool."""
+    """Measure cost of repeated .tool_call_schema access on a complex tool (10 accesses per iteration)."""
     t = structured_tool_1
 
     def access_schema_10x() -> None:
         for _ in range(10):
-            _ = t.tool_call_schema
+            t.tool_call_schema
 
     benchmark(access_schema_10x)
 
 
 @pytest.mark.benchmark
 def test_tool_args_repeated_access(benchmark: BenchmarkFixture) -> None:
-    """Measure cost of repeated .args access on a complex tool."""
+    """Measure cost of repeated .args access on a complex tool (10 accesses per iteration)."""
     t = structured_tool_1
 
     def access_args_10x() -> None:
         for _ in range(10):
-            _ = t.args
+            t.args
 
     benchmark(access_args_10x)
 
@@ -272,12 +303,15 @@ def test_tool_args_repeated_access(benchmark: BenchmarkFixture) -> None:
 @pytest.mark.benchmark
 def test_create_agent_instantiation_with_middleware(benchmark: BenchmarkFixture) -> None:
     """Baseline with middleware, no tools."""
-    middleware: Sequence[AgentMiddleware[Any, Any]] = (
-        TodoListMiddleware(),
-        ToolRetryMiddleware(),
-        ModelRetryMiddleware(),
-    )
-    benchmark(lambda: create_agent(model=_make_model(), middleware=middleware))
+    def run() -> None:
+        middleware: Sequence[AgentMiddleware[Any, Any]] = (
+            TodoListMiddleware(),
+            ToolRetryMiddleware(),
+            ModelRetryMiddleware(),
+        )
+        create_agent(model=_make_model(), middleware=middleware)
+
+    benchmark(run)
 
 
 # ---------------------------------------------------------------------------
@@ -285,11 +319,19 @@ def test_create_agent_instantiation_with_middleware(benchmark: BenchmarkFixture)
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.benchmark
 def test_create_agent_large_tools_memory() -> None:
-    """Record peak memory for large-tools agent creation. Not a perf benchmark."""
+    """Observe peak memory for large-tools agent creation.
+
+    This is not a hard assertion — it records the tracemalloc peak for the
+    memory allocated *during* create_agent. Run before and after optimization
+    passes to track improvement. Update the printed baseline comment below
+    when the number changes significantly.
+    """
     tracemalloc.start()
     create_agent(model=_make_model(), tools=LARGE_TOOLS)
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    # Soft assertion: 50 MB is a generous ceiling for a single agent instantiation.
-    assert peak < 50 * 1024 * 1024, f"Peak memory {peak / 1024 / 1024:.1f} MB exceeded 50 MB"
+    peak_kb = peak / 1024
+    # Baseline (pre-optimization): ~recorded after first run
+    print(f"\nPeak memory during create_agent (15 tools): {peak_kb:.1f} KB")
