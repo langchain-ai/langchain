@@ -258,6 +258,17 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         state["text"] = state.get("text", "") + delta.get("text", "")
     elif btype == "reasoning" and dtype == "reasoning":
         state["reasoning"] = state.get("reasoning", "") + delta.get("reasoning", "")
+        # Providers may ship non-text fields on later deltas. Claude's
+        # `signature_delta` arrives after the reasoning text, surfaced
+        # as `extras.signature`; merging (not replacing) keeps earlier
+        # keys intact.
+        for key, value in delta.items():
+            if key in ("type", "reasoning") or value is None:
+                continue
+            if key == "extras" and isinstance(value, dict):
+                state["extras"] = {**(state.get("extras") or {}), **value}
+            else:
+                state[key] = value
     elif btype in ("tool_call_chunk", "server_tool_call_chunk") and dtype == btype:
         state["args"] = state.get("args", "") + (delta.get("args") or "")
         if delta.get("id") is not None:

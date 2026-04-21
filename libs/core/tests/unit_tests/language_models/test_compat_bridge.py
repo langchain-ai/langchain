@@ -814,6 +814,45 @@ def test_lifecycle_validator_anthropic_style_text_and_thinking() -> None:
     assert finishes[1]["content_block"]["text"] == "The answer is 42."
 
 
+def test_lifecycle_validator_anthropic_reasoning_preserves_signature() -> None:
+    """A later reasoning delta's `extras.signature` must land on the finish block.
+
+    Anthropic emits reasoning content as `thinking_delta` events (text),
+    followed by a `signature_delta` event carrying the cryptographic
+    signature that the API requires on any follow-up turn. After the
+    content-block-start/delta translation, that signature arrives as
+    `extras.signature` on a reasoning delta that has no new text. If
+    the bridge drops it, Claude rejects the next request with
+    `messages.<n>.content.<k>.thinking.signature: Field required`.
+    """
+    chunks = [
+        _aimsg_chunk([{"type": "reasoning", "reasoning": "Let me think", "index": 0}]),
+        _aimsg_chunk([{"type": "reasoning", "reasoning": " more", "index": 0}]),
+        # signature_delta arrives after the text; no new reasoning text
+        # but carries the signature under `extras`.
+        _aimsg_chunk(
+            [
+                {
+                    "type": "reasoning",
+                    "reasoning": "",
+                    "index": 0,
+                    "extras": {"signature": "sig-abc123"},
+                }
+            ]
+        ),
+        _aimsg_chunk([{"type": "text", "text": "Hi.", "index": 1}]),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="m"))
+    assert_valid_event_stream(events)
+
+    finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
+    reasoning_finish = finishes[0]["content_block"]
+    assert reasoning_finish["type"] == "reasoning"
+    assert reasoning_finish["reasoning"] == "Let me think more"
+    assert reasoning_finish.get("extras", {}).get("signature") == "sig-abc123"
+
+
 def test_lifecycle_validator_anthropic_style_tool_use_after_text() -> None:
     """Text then tool_use (tool_call_chunk) — Anthropic tool-calling pattern."""
     chunks = [

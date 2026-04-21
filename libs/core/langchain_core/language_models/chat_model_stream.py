@@ -703,9 +703,16 @@ class ChatModelStream:
             full_r = reasoning_block.get("reasoning", "")
             if full_r and full_r != self._reasoning_acc:
                 self._reasoning_acc = full_r
+            # Keep provider-specific fields alongside the accumulated
+            # reasoning text. Anthropic's `signature` arrives under
+            # `extras` and is required on follow-up turns.
             finalized = cast(
                 "FinalizedContentBlock",
-                {"type": "reasoning", "reasoning": self._reasoning_acc},
+                {
+                    **reasoning_block,
+                    "type": "reasoning",
+                    "reasoning": self._reasoning_acc,
+                },
             )
         elif btype == "tool_call":
             tcb = cast("ToolCallBlock", block)
