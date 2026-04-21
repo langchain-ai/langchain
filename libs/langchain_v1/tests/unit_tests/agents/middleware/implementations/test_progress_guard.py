@@ -53,6 +53,7 @@ def test_progress_guard_initialization_defaults() -> None:
     assert guard.max_consecutive_identical_steps == 3
     assert guard.exit_behavior == "error"
     assert guard.catch_tool_exceptions is False
+    assert guard.failure_only is True
     assert guard.tools == []
     assert guard._tool_filter is None
 
@@ -66,8 +67,8 @@ def test_progress_guard_invalid_initialization() -> None:
         ProgressGuardMiddleware(exit_behavior="continue")  # type: ignore[arg-type]
 
 
-def test_progress_guard_detects_repeated_successful_tool_output() -> None:
-    """Test repeated successful tool exchanges are treated as no progress."""
+def test_progress_guard_ignores_repeated_successful_tool_output_by_default() -> None:
+    """Test repeated successful tool exchanges are ignored by default."""
     model = FakeToolCallingModel(
         tool_calls=[
             [ToolCall(name="working_tool", args={"value": "same"}, id="call-1")],
@@ -81,6 +82,35 @@ def test_progress_guard_detects_repeated_successful_tool_output() -> None:
         model=model,
         tools=[working_tool],
         middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=3)],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("keep trying")]})
+
+    tool_messages = [message for message in result["messages"] if isinstance(message, ToolMessage)]
+    assert len(tool_messages) == 3
+    assert model.index == 4
+
+
+def test_progress_guard_can_detect_repeated_successful_tool_output() -> None:
+    """Test repeated successful tool exchanges can be treated as no progress."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="working_tool", args={"value": "same"}, id="call-1")],
+            [ToolCall(name="working_tool", args={"value": "same"}, id="call-2")],
+            [ToolCall(name="working_tool", args={"value": "same"}, id="call-3")],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[working_tool],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=3,
+                failure_only=False,
+            )
+        ],
     )
 
     with pytest.raises(AgentProgressStalledError, match="no_progress_detected") as exc_info:
@@ -146,7 +176,12 @@ def test_progress_guard_detects_repeated_multi_tool_exchange() -> None:
     agent = create_agent(
         model=model,
         tools=[working_tool, other_working_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=2)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=2,
+                failure_only=False,
+            )
+        ],
     )
 
     with pytest.raises(AgentProgressStalledError, match="no_progress_detected"):
@@ -238,6 +273,7 @@ def test_progress_guard_end_behavior_appends_final_ai_message() -> None:
             ProgressGuardMiddleware(
                 max_consecutive_identical_steps=2,
                 exit_behavior="end",
+                failure_only=False,
             )
         ],
     )
@@ -301,7 +337,12 @@ def test_progress_guard_resets_when_args_change() -> None:
     agent = create_agent(
         model=model,
         tools=[working_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=3)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=3,
+                failure_only=False,
+            )
+        ],
     )
 
     result = agent.invoke({"messages": [HumanMessage("keep trying")]})
@@ -324,7 +365,12 @@ def test_progress_guard_resets_when_tool_name_changes() -> None:
     agent = create_agent(
         model=model,
         tools=[working_tool, other_working_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=2)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=2,
+                failure_only=False,
+            )
+        ],
     )
 
     result = agent.invoke({"messages": [HumanMessage("keep trying")]})
@@ -355,7 +401,12 @@ def test_progress_guard_resets_when_output_changes() -> None:
     agent = create_agent(
         model=model,
         tools=[changing_output_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=2)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=2,
+                failure_only=False,
+            )
+        ],
     )
 
     result = agent.invoke({"messages": [HumanMessage("keep trying")]})
@@ -392,7 +443,10 @@ def test_progress_guard_resets_when_status_changes() -> None:
         model=model,
         tools=[working_tool],
         middleware=[
-            ProgressGuardMiddleware(max_consecutive_identical_steps=2),
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=2,
+                failure_only=False,
+            ),
             changing_status_middleware,
         ],
     )
@@ -422,6 +476,7 @@ def test_progress_guard_resets_on_unmonitored_tool() -> None:
             ProgressGuardMiddleware(
                 max_consecutive_identical_steps=2,
                 tools=["working_tool"],
+                failure_only=False,
             )
         ],
     )
@@ -487,7 +542,12 @@ def test_progress_guard_ignores_preexisting_history_on_run_start() -> None:
     agent = create_agent(
         model=model,
         tools=[working_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=2)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=2,
+                failure_only=False,
+            )
+        ],
     )
 
     result = agent.invoke({"messages": prior_messages})
@@ -511,7 +571,12 @@ async def test_progress_guard_async_parity() -> None:
     agent = create_agent(
         model=model,
         tools=[working_tool],
-        middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=3)],
+        middleware=[
+            ProgressGuardMiddleware(
+                max_consecutive_identical_steps=3,
+                failure_only=False,
+            )
+        ],
     )
 
     with pytest.raises(AgentProgressStalledError, match="no_progress_detected"):

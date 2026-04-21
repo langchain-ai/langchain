@@ -103,9 +103,12 @@ class ProgressGuardMiddleware(
     """Stop agent loops that repeat the same completed tool exchange.
 
     Use this guard when an agent keeps making the same tool calls and receives the
-    same tool outputs. It detects repeated successful outputs and repeated error
-    outputs by comparing the tool name, tool arguments, output status, and normalized
-    output content.
+    same error outputs. It detects repeated failures by comparing the tool name, tool
+    arguments, output status, and normalized output content.
+
+    By default, `failure_only=True` so repeated successful outputs are ignored. Set
+    `failure_only=False` only when you want broader detection of repeated successful
+    outputs as well.
 
     By default, this middleware only observes completed `ToolMessage` objects that
     already exist. It does not catch raw tool exceptions. Set
@@ -124,7 +127,7 @@ class ProgressGuardMiddleware(
     intentional.
 
     Examples:
-        !!! example "Stop repeated no-progress tool exchanges"
+        !!! example "Stop repeated failures for one tool"
 
             ```python
             from langchain.agents import create_agent
@@ -132,10 +135,18 @@ class ProgressGuardMiddleware(
 
             agent = create_agent(
                 model,
-                tools=[search_tool],
-                middleware=[ProgressGuardMiddleware(max_consecutive_identical_steps=3)],
+                tools=[search_db],
+                middleware=[
+                    ProgressGuardMiddleware(
+                        tools=["search_db"],
+                        max_consecutive_identical_steps=3,
+                    )
+                ],
             )
             ```
+
+            Tool scoping is optional, but recommended when only some tools are likely
+            to get stuck on repeated failures.
 
         !!! example "End gracefully instead of raising"
 
@@ -173,6 +184,18 @@ class ProgressGuardMiddleware(
 
             guard = ProgressGuardMiddleware(output_normalizer=normalize_search_output)
             ```
+
+        !!! example "Detect repeated successful outputs"
+
+            ```python
+            guard = ProgressGuardMiddleware(
+                tools=["poll_job"],
+                failure_only=False,
+            )
+            ```
+
+            Use this broader mode only for tools where unchanged successful output
+            means the agent is not making progress.
     """
 
     state_schema = ProgressGuardState  # type: ignore[assignment]
@@ -185,6 +208,7 @@ class ProgressGuardMiddleware(
         exit_behavior: Literal["error", "end"] = "error",
         output_normalizer: Callable[[str], str] | None = None,
         catch_tool_exceptions: bool = False,
+        failure_only: bool = True,
     ) -> None:
         """Initialize the progress guard.
 
@@ -204,6 +228,9 @@ class ProgressGuardMiddleware(
                 whitespace.
             catch_tool_exceptions: Whether to convert monitored tool exceptions into
                 `ToolMessage(status="error")`.
+            failure_only: Whether to count only exchanges whose tool outputs all have
+                `status="error"`. Set to `False` to also detect repeated successful
+                outputs.
 
         Raises:
             ValueError: If `max_consecutive_identical_steps < 2` or `exit_behavior`
@@ -224,6 +251,7 @@ class ProgressGuardMiddleware(
         self.exit_behavior = exit_behavior
         self._output_normalizer = output_normalizer or default_progress_output_normalizer
         self.catch_tool_exceptions = catch_tool_exceptions
+        self.failure_only = failure_only
         self.tools = []
         self._tool_filter = (
             {tool.name if not isinstance(tool, str) else tool for tool in tools}
@@ -269,6 +297,9 @@ class ProgressGuardMiddleware(
             if len(matching_tool_messages) != 1:
                 return None
             tool_message = matching_tool_messages[0]
+
+            if self.failure_only and tool_message.status != "error":
+                return None
 
             raw_output = tool_message.text
             normalized_output = self._output_normalizer(raw_output)
