@@ -340,17 +340,18 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     is_simple_oai_tool = (
         isinstance(tool, langchain_core.tools.simple.Tool) and not tool.args_schema
     )
-    if tool.tool_call_schema and not is_simple_oai_tool:
-        if isinstance(tool.tool_call_schema, dict):
+    schema = tool.tool_call_schema
+    if schema and not is_simple_oai_tool:
+        if isinstance(schema, dict):
             return _convert_json_schema_to_openai_function(
-                tool.tool_call_schema, name=tool.name, description=tool.description
+                schema, name=tool.name, description=tool.description
             )
-        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(schema, (BaseModel, BaseModelV1)):
             return _convert_pydantic_to_openai_function(
-                tool.tool_call_schema, name=tool.name, description=tool.description
+                schema, name=tool.name, description=tool.description
             )
         error_msg = (
-            f"Unsupported tool call schema: {tool.tool_call_schema}. "
+            f"Unsupported tool call schema: {schema}. "
             "Tool call schema must be a JSON schema dict or a Pydantic model."
         )
         raise ValueError(error_msg)
