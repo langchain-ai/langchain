@@ -147,7 +147,6 @@ async def test_async_batch_size(
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-@pytest.mark.xfail(reason="This test is failing due to a bug in the testing code")
 async def test_stream_error_callback() -> None:
     message = "test"
 
@@ -156,7 +155,7 @@ async def test_stream_error_callback() -> None:
         assert len(callback.errors_args) == 1
         llm_result: LLMResult = callback.errors_args[0]["kwargs"]["response"]
         if i == 0:
-            assert llm_result.generations == []
+            assert llm_result.generations == [[]]
         else:
             assert llm_result.generations[0][0].text == message[:i]
 
