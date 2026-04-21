@@ -2986,10 +2986,13 @@ def test_anthropic_stream_v2_lifecycle() -> None:
     assert wire_indices == [0, 1, 2]
 
     # Content accumulation reaches content-block-finish intact.
-    assert finishes[0]["content_block"]["reasoning"] == "Let me think."
-    assert finishes[1]["content_block"]["text"] == "The answer is 42."
-    assert finishes[2]["content_block"]["args"] == {"q": "weather"}
-    assert finishes[2]["content_block"]["name"] == "search"
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content_block"])
+    text_block = cast("dict[str, Any]", finishes[1]["content_block"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content_block"])
+    assert reasoning_block["reasoning"] == "Let me think."
+    assert text_block["text"] == "The answer is 42."
+    assert tool_block["args"] == {"q": "weather"}
+    assert tool_block["name"] == "search"
 
     # message-finish carries the tool_use stop reason.
     message_finish = stream_events[-1]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -813,7 +813,10 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
     )
 
     # Finish events must carry the accumulated reasoning text.
-    reasoning_texts = [f["content_block"]["reasoning"] for f in reasoning_finishes]
+    reasoning_texts = [
+        cast("dict[str, Any]", f["content_block"])["reasoning"]
+        for f in reasoning_finishes
+    ]
     assert reasoning_texts == [
         "reasoning block one",
         "another reasoning block",
