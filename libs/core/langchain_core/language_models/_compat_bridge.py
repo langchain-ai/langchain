@@ -108,11 +108,15 @@ def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
 # ---------------------------------------------------------------------------
 
 
-def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
+def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     """Read per-chunk protocol blocks from `msg.content_blocks`.
 
-    Returns `(index, block)` pairs.  Block indices come from each
-    block's `index` field when present, falling back to positional.
+    Returns `(key, block)` pairs.  The key is the block's stable identifier
+    across the stream: the block's `index` field when present (can be an
+    int or a string — some providers use string identifiers like
+    `"lc_rs_305f30"`), or the positional index within the message as a
+    fallback.  Callers are responsible for allocating wire-level `uint`
+    indices; this helper only surfaces the source-side identity.
 
     For finalized :class:`AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
@@ -123,22 +127,21 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
     except Exception:
         return []
 
-    result: list[tuple[int, CompatBlock]] = []
+    result: list[tuple[Any, CompatBlock]] = []
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
             continue
-        raw_idx = block.get("index", i)
-        idx = raw_idx if isinstance(raw_idx, int) else i
-        result.append((idx, dict(block)))
+        key = block.get("index", i)
+        result.append((key, dict(block)))
 
     if not isinstance(msg, AIMessageChunk):
         # Finalized AIMessage: pull invalid_tool_calls from the dedicated
         # field — AIMessage.content_blocks does not currently include them.
         for itc in getattr(msg, "invalid_tool_calls", None) or []:
             itc_block: CompatBlock = {"type": "invalid_tool_call"}
-            for key in ("id", "name", "args", "error"):
-                if itc.get(key) is not None:
-                    itc_block[key] = itc[key]
+            for key_name in ("id", "name", "args", "error"):
+                if itc.get(key_name) is not None:
+                    itc_block[key_name] = itc[key_name]
             result.append((len(result), itc_block))
 
     return result
@@ -393,28 +396,23 @@ def _build_message_finish(
     return finish_data
 
 
-def _finish_all_blocks(
-    state: dict[int, CompatBlock],
-) -> tuple[list[MessagesData], bool]:
-    """Emit `content-block-finish` events for every open block.
+def _finalize_and_build_finish(
+    wire_idx: int,
+    block: CompatBlock,
+) -> tuple[MessagesData, bool]:
+    """Finalize a block and wrap it in a `content-block-finish` event.
 
-    Returns the event list plus a flag indicating whether any finalized
-    block was a valid `tool_call` (used for finish-reason inference).
+    Returns the event plus a flag indicating whether the finalized block
+    was a valid `tool_call` (used for finish-reason inference).
     """
-    events: list[MessagesData] = []
-    has_valid_tool_call = False
-    for idx in sorted(state):
-        finalized = _finalize_block(state[idx])
-        if finalized.get("type") == "tool_call":
-            has_valid_tool_call = True
-        events.append(
-            ContentBlockFinishData(
-                event="content-block-finish",
-                index=idx,
-                content_block=finalized,
-            )
-        )
-    return events, has_valid_tool_call
+    finalized = _finalize_block(block)
+    has_valid_tool_call = finalized.get("type") == "tool_call"
+    event = ContentBlockFinishData(
+        event="content-block-finish",
+        index=wire_idx,
+        content_block=finalized,
+    )
+    return event, has_valid_tool_call
 
 
 # ---------------------------------------------------------------------------
@@ -429,6 +427,13 @@ def chunks_to_events(
 ) -> Iterator[MessagesData]:
     """Convert a stream of `ChatGenerationChunk` to protocol events.
 
+    Blocks stream one at a time: when a chunk carries a different block
+    identifier than the currently-open one, the open block is finished
+    before the new block starts, matching the protocol's no-interleave
+    rule.  Source-side identifiers (from the block's `index` field, which
+    may be int or string) are translated to sequential `uint` wire
+    indices.
+
     Args:
         chunks: Iterator of `ChatGenerationChunk` from `_stream()`.
         message_id: Optional stable message ID.
@@ -437,8 +442,11 @@ def chunks_to_events(
         `MessagesData` lifecycle events.
     """
     started = False
-    state: dict[int, CompatBlock] = {}
-    first_seen: set[int] = set()
+    open_key: Any = None
+    open_block: CompatBlock | None = None
+    open_wire_idx: int = 0
+    next_wire_idx = 0
+    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
     finish_reason: FinishReason = "stop"
@@ -455,21 +463,29 @@ def chunks_to_events(
             started = True
             yield _build_message_start(msg, message_id)
 
-        for idx, block in _iter_protocol_blocks(msg):
-            if idx not in first_seen:
-                first_seen.add(idx)
+        for key, block in _iter_protocol_blocks(msg):
+            if key != open_key:
+                if open_block is not None:
+                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
+                    has_valid_tool_call = has_valid_tool_call or tc
+                    yield event
+                open_key = key
+                open_wire_idx = next_wire_idx
+                next_wire_idx += 1
+                open_block = dict(block)
                 yield ContentBlockStartData(
                     event="content-block-start",
-                    index=idx,
+                    index=open_wire_idx,
                     content_block=_start_skeleton(block),
                 )
+            else:
+                open_block = _accumulate(open_block, block)
             if _should_emit_delta(block):
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
-                    index=idx,
+                    index=open_wire_idx,
                     content_block=_to_protocol_block(block),
                 )
-            state[idx] = _accumulate(state.get(idx), block)
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
@@ -482,8 +498,11 @@ def chunks_to_events(
     if not started:
         return
 
-    finish_events, has_valid_tool_call = _finish_all_blocks(state)
-    yield from finish_events
+    if open_block is not None:
+        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
+        has_valid_tool_call = has_valid_tool_call or tc
+        yield event
+
     yield _build_message_finish(
         finish_reason=finish_reason,
         has_valid_tool_call=has_valid_tool_call,
@@ -499,8 +518,11 @@ async def achunks_to_events(
 ) -> AsyncIterator[MessagesData]:
     """Async variant of :func:`chunks_to_events`."""
     started = False
-    state: dict[int, CompatBlock] = {}
-    first_seen: set[int] = set()
+    open_key: Any = None
+    open_block: CompatBlock | None = None
+    open_wire_idx: int = 0
+    next_wire_idx = 0
+    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
     finish_reason: FinishReason = "stop"
@@ -517,21 +539,29 @@ async def achunks_to_events(
             started = True
             yield _build_message_start(msg, message_id)
 
-        for idx, block in _iter_protocol_blocks(msg):
-            if idx not in first_seen:
-                first_seen.add(idx)
+        for key, block in _iter_protocol_blocks(msg):
+            if key != open_key:
+                if open_block is not None:
+                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
+                    has_valid_tool_call = has_valid_tool_call or tc
+                    yield event
+                open_key = key
+                open_wire_idx = next_wire_idx
+                next_wire_idx += 1
+                open_block = dict(block)
                 yield ContentBlockStartData(
                     event="content-block-start",
-                    index=idx,
+                    index=open_wire_idx,
                     content_block=_start_skeleton(block),
                 )
+            else:
+                open_block = _accumulate(open_block, block)
             if _should_emit_delta(block):
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
-                    index=idx,
+                    index=open_wire_idx,
                     content_block=_to_protocol_block(block),
                 )
-            state[idx] = _accumulate(state.get(idx), block)
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
@@ -544,9 +574,11 @@ async def achunks_to_events(
     if not started:
         return
 
-    finish_events, has_valid_tool_call = _finish_all_blocks(state)
-    for event in finish_events:
+    if open_block is not None:
+        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
+        has_valid_tool_call = has_valid_tool_call or tc
         yield event
+
     yield _build_message_finish(
         finish_reason=finish_reason,
         has_valid_tool_call=has_valid_tool_call,
@@ -583,16 +615,16 @@ def message_to_events(
     yield _build_message_start(msg, message_id)
 
     has_valid_tool_call = False
-    for idx, block in _iter_protocol_blocks(msg):
+    for wire_idx, (_key, block) in enumerate(_iter_protocol_blocks(msg)):
         yield ContentBlockStartData(
             event="content-block-start",
-            index=idx,
+            index=wire_idx,
             content_block=_start_skeleton(block),
         )
         if _should_emit_delta(block):
             yield ContentBlockDeltaData(
                 event="content-block-delta",
-                index=idx,
+                index=wire_idx,
                 content_block=_to_protocol_block(block),
             )
         finalized = _finalize_block(block)
@@ -600,7 +632,7 @@ def message_to_events(
             has_valid_tool_call = True
         yield ContentBlockFinishData(
             event="content-block-finish",
-            index=idx,
+            index=wire_idx,
             content_block=finalized,
         )
 

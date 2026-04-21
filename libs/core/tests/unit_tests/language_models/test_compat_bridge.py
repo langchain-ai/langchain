@@ -150,6 +150,98 @@ def test_chunks_to_events_empty_iterator() -> None:
     assert list(chunks_to_events(iter([]))) == []
 
 
+def test_chunks_to_events_block_transitions_close_previous_block() -> None:
+    """String-keyed blocks that transition mid-stream each get their own lifecycle.
+
+    Regression test for OpenAI `responses/v1` style streams where
+    `content_blocks` uses string identifiers (e.g. `"lc_rs_305f30"`) to
+    distinguish blocks. Each distinct block must get its own
+    `content-block-start` / `content-block-finish` pair, with sequential
+    `uint` wire indices, and blocks must not interleave.
+    """
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "reasoning", "reasoning": "hmm", "index": "rs_a"},
+                ],
+                id="msg-1",
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "reasoning", "reasoning": " then", "index": "rs_a"},
+                ],
+                id="msg-1",
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "reasoning", "reasoning": "different", "index": "rs_b"},
+                ],
+                id="msg-1",
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "text", "text": "answer: ", "index": "txt_1"},
+                ],
+                id="msg-1",
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "text", "text": "42", "index": "txt_1"},
+                ],
+                id="msg-1",
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+
+    starts = [e for e in events if e["event"] == "content-block-start"]
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert [s["content_block"]["type"] for s in starts] == [
+        "reasoning",
+        "reasoning",
+        "text",
+    ]
+    assert [f["content_block"]["type"] for f in finishes] == [
+        "reasoning",
+        "reasoning",
+        "text",
+    ]
+    # Wire indices are sequential uints regardless of source-side keys.
+    assert [s["index"] for s in starts] == [0, 1, 2]
+    assert [f["index"] for f in finishes] == [0, 1, 2]
+
+    # Finish events must be interleaved with starts (no-interleave rule):
+    # block 0 finishes before block 1 starts, etc.
+    lifecycle = [
+        (e["event"], e["index"])
+        for e in events
+        if e["event"] in ("content-block-start", "content-block-finish")
+    ]
+    assert lifecycle == [
+        ("content-block-start", 0),
+        ("content-block-finish", 0),
+        ("content-block-start", 1),
+        ("content-block-finish", 1),
+        ("content-block-start", 2),
+        ("content-block-finish", 2),
+    ]
+
+    # Each finish carries the accumulated content for its block.
+    assert finishes[0]["content_block"]["reasoning"] == "hmm then"
+    assert finishes[1]["content_block"]["reasoning"] == "different"
+    assert finishes[2]["content_block"]["text"] == "answer: 42"
+
+
 def test_chunks_to_events_tool_call_multichunk() -> None:
     """Partial tool-call args across chunks finalize to a single tool_call."""
     chunks = [
