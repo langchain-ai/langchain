@@ -616,6 +616,28 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
+def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_v2` on chat completions emits a spec-conformant lifecycle."""
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    llm = ChatOpenAI(model="gpt-4o")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events = list(llm.stream_v2("你的名字叫什么？只回答名字"))
+
+    assert_valid_event_stream(events)
+    # At minimum, a text block with the accumulated answer.
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len(finishes) >= 1
+    text_finishes = [f for f in finishes if f["content_block"]["type"] == "text"]
+    assert len(text_finishes) == 1
+
+
 @pytest.fixture
 def mock_completion() -> dict:
     return {

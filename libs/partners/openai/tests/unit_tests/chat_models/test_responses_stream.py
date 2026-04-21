@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -769,9 +770,7 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
     (`content-block-start` / `content-block-delta` / `content-block-finish`)
     for every reasoning block observed on the wire, not just text blocks.
     """
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="v1"
-    )
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -781,6 +780,8 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
 
     with patch.object(llm, "root_client", mock_client):
         events = list(llm.stream_v2("test"))
+
+    assert_valid_event_stream(events)
 
     reasoning_starts = [
         e
@@ -801,10 +802,14 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
     assert len(reasoning_starts) == 4, (
         f"expected 4 reasoning start events, got {len(reasoning_starts)}"
     )
+    all_finish_types = [
+        e["content_block"]["type"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
     assert len(reasoning_finishes) == 4, (
         f"expected 4 reasoning finish events, got {len(reasoning_finishes)}: "
-        f"all finish events = "
-        f"{[e['content_block']['type'] for e in events if e['event'] == 'content-block-finish']}"
+        f"all finish events = {all_finish_types}"
     )
 
     # Finish events must carry the accumulated reasoning text.
