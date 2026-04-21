@@ -123,6 +123,7 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
+    ValidationError,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -4594,7 +4595,28 @@ def _coerce_chunk_response(resp: Any) -> Any:
     if isinstance(resp, dict):
         from openai.types.responses import Response
 
-        return Response.model_validate(resp)
+        # Known mismatch: API emits `prompt_cache_retention="in_memory"` while
+        # older `openai` packages declare only `"in-memory"` in the Literal
+        # (openai-python#2883). Pre-normalize so validation succeeds on
+        # currently-released SDK versions.
+        if resp.get("prompt_cache_retention") == "in_memory":
+            resp = {**resp, "prompt_cache_retention": "in-memory"}
+
+        try:
+            return Response.model_validate(resp)
+        except ValidationError as e:
+            # API sometimes drifts ahead of the installed SDK's Literal
+            # declarations. Fall back to a non-validating construct so streams
+            # still complete, and surface the drift so operators can upgrade.
+            logger.warning(
+                "OpenAI Responses payload failed SDK validation "
+                "(response id=%s); falling back to non-validating construct. "
+                "This usually means the OpenAI API has drifted ahead of the "
+                "installed `openai` package. Details: %s",
+                resp.get("id"),
+                e,
+            )
+            return Response.model_construct(**resp)
     return resp
 
 
