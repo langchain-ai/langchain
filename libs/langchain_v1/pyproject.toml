@@ -69,6 +69,7 @@ test = [
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
     "pytest-benchmark>=5.1.0,<6.0.0",
+    "pytest-codspeed>=3.0.0,<4.0.0",
     "syrupy>=5.0.0,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
