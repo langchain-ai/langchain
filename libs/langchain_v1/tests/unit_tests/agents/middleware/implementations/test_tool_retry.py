@@ -12,6 +12,7 @@ from langgraph.prebuilt.tool_node import ToolCallRequest
 from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import AgentProgressStalledError
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.types import wrap_tool_call
@@ -74,6 +75,7 @@ def test_tool_retry_initialization_defaults() -> None:
     assert retry.initial_delay == 1.0
     assert retry.max_delay == 60.0
     assert retry.jitter is True
+    assert retry.max_consecutive_identical_failures is None
 
 
 def test_tool_retry_initialization_custom() -> None:
@@ -148,6 +150,21 @@ def test_tool_retry_invalid_backoff_factor() -> None:
     """Test ToolRetryMiddlewareraises error for invalid backoff_factor."""
     with pytest.raises(ValueError, match="backoff_factor must be >= 0"):
         ToolRetryMiddleware(backoff_factor=-1.0)
+
+
+def test_tool_retry_invalid_stall_detection_threshold() -> None:
+    """Test ToolRetryMiddleware raises error for invalid stall threshold."""
+    with pytest.raises(ValueError, match="max_consecutive_identical_failures must be >= 2"):
+        ToolRetryMiddleware(max_consecutive_identical_failures=1)
+
+
+def test_tool_retry_stall_detection_rejects_error_failure_mode() -> None:
+    """Test stall detection cannot be combined with raw exception failure mode."""
+    with pytest.raises(ValueError, match="cannot be used with on_failure='error'"):
+        ToolRetryMiddleware(
+            max_consecutive_identical_failures=2,
+            on_failure="error",
+        )
 
 
 def test_tool_retry_working_tool_no_retry_needed() -> None:
@@ -748,6 +765,30 @@ async def test_tool_retry_async_failing_tool() -> None:
     assert tool_messages[0].status == "error"
 
 
+async def test_tool_retry_async_stall_detection_raises() -> None:
+    """Test async ToolRetryMiddleware raises after repeated exhausted failures."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="2")],
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="3")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(
+        max_retries=0,
+        max_consecutive_identical_failures=3,
+    )
+
+    agent = create_agent(model=model, tools=[failing_tool], middleware=[retry])
+
+    with pytest.raises(AgentProgressStalledError, match="no_progress_detected"):
+        await agent.ainvoke({"messages": [HumanMessage("Use failing tool repeatedly")]})
+
+    assert model.index == 3
+
+
 async def test_tool_retry_async_succeeds_after_retries() -> None:
     """Test ToolRetryMiddlewareasync execution succeeds after temporary failures."""
     temp_fail = TemporaryFailureTool(fail_count=2)
@@ -862,6 +903,253 @@ def test_tool_retry_zero_retries() -> None:
     # Should fail after 1 attempt (no retries)
     assert "1 attempt" in tool_messages[0].content
     assert tool_messages[0].status == "error"
+
+
+def test_tool_retry_stall_detection_raises_after_identical_exhausted_failures() -> None:
+    """Test ToolRetryMiddleware raises after repeated exhausted failures across turns."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="2")],
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="3")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(
+        max_retries=1,
+        initial_delay=0.01,
+        jitter=False,
+        max_consecutive_identical_failures=3,
+    )
+
+    agent = create_agent(model=model, tools=[failing_tool], middleware=[retry])
+
+    with pytest.raises(AgentProgressStalledError, match="no_progress_detected"):
+        agent.invoke({"messages": [HumanMessage("Use failing tool repeatedly")]})
+
+    # Each model turn exhausts initial attempt + one retry. Retry attempts are not
+    # counted as separate stall observations.
+    assert model.index == 3
+
+
+def test_tool_retry_stall_detection_does_not_count_retry_attempts() -> None:
+    """Test retry attempts inside one tool call do not trigger stall detection."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="1")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(
+        max_retries=3,
+        initial_delay=0.01,
+        jitter=False,
+        max_consecutive_identical_failures=2,
+    )
+
+    agent = create_agent(model=model, tools=[failing_tool], middleware=[retry])
+    result = agent.invoke({"messages": [HumanMessage("Use failing tool once")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert "4 attempts" in tool_messages[0].content
+    assert model.index == 2
+
+
+def test_tool_retry_stall_detection_resets_on_success() -> None:
+    """Test a successful monitored tool result resets the stall streak."""
+
+    @tool
+    def sometimes_failing_tool(value: str) -> str:
+        """Fail unless value is `ok`."""
+        if value == "ok":
+            return "Success: ok"
+        msg = f"Failed: {value}"
+        raise ValueError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="2")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "ok"}, id="3")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="4")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="5")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(
+        max_retries=0,
+        max_consecutive_identical_failures=3,
+    )
+
+    agent = create_agent(model=model, tools=[sometimes_failing_tool], middleware=[retry])
+    result = agent.invoke({"messages": [HumanMessage("Use tool repeatedly")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 5
+    assert model.index == 6
+
+
+def test_tool_retry_stall_detection_resets_on_command_success() -> None:
+    """Test a successful command-backed tool result resets the stall streak."""
+
+    @tool
+    def sometimes_failing_tool(value: str) -> str:
+        """Fail unless value is `ok`."""
+        if value == "ok":
+            return "Success: ok"
+        msg = f"Failed: {value}"
+        raise ValueError(msg)
+
+    @wrap_tool_call
+    def command_success_middleware(
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        result = handler(request)
+        if isinstance(result, ToolMessage) and result.status != "error":
+            return Command(update={"messages": [result]})
+        return result
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="2")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "ok"}, id="3")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="4")],
+            [ToolCall(name="sometimes_failing_tool", args={"value": "same"}, id="5")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(
+        max_retries=0,
+        max_consecutive_identical_failures=3,
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[sometimes_failing_tool],
+        middleware=[retry, command_success_middleware],
+    )
+    result = agent.invoke({"messages": [HumanMessage("Use tool repeatedly")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 5
+    assert model.index == 6
+
+
+def test_tool_retry_stall_detection_resets_on_changed_args() -> None:
+    """Test changed tool args break the stall signature."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"value": "one"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "two"}, id="2")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(max_retries=0, max_consecutive_identical_failures=2)
+
+    agent = create_agent(model=model, tools=[failing_tool], middleware=[retry])
+    result = agent.invoke({"messages": [HumanMessage("Use failing tool")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 2
+    assert model.index == 3
+
+
+def test_tool_retry_stall_detection_resets_on_changed_error() -> None:
+    """Test changed final error content breaks the stall signature."""
+    calls = {"count": 0}
+
+    @tool
+    def changing_error_tool(value: str) -> str:
+        """Fail with a different message on each call."""
+        calls["count"] += 1
+        msg = f"Failed: {value} attempt {calls['count']}"
+        raise ValueError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="changing_error_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="changing_error_tool", args={"value": "same"}, id="2")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(max_retries=0, max_consecutive_identical_failures=2)
+
+    agent = create_agent(model=model, tools=[changing_error_tool], middleware=[retry])
+    result = agent.invoke({"messages": [HumanMessage("Use changing error tool")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 2
+    assert model.index == 3
+
+
+def test_tool_retry_stall_detection_resets_on_changed_tool_name() -> None:
+    """Test changed tool name breaks the stall signature."""
+
+    @tool
+    def other_failing_tool(value: str) -> str:
+        """Tool that always fails."""
+        msg = f"Failed: {value}"
+        raise ValueError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="other_failing_tool", args={"value": "same"}, id="2")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(max_retries=0, max_consecutive_identical_failures=2)
+
+    agent = create_agent(
+        model=model,
+        tools=[failing_tool, other_failing_tool],
+        middleware=[retry],
+    )
+    result = agent.invoke({"messages": [HumanMessage("Use failing tools")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 2
+    assert model.index == 3
+
+
+def test_tool_retry_stall_detection_normalizes_volatile_error_details() -> None:
+    """Test changing request IDs still count as the same final failure."""
+    calls = {"count": 0}
+
+    @tool
+    def request_id_failing_tool(value: str) -> str:
+        """Fail with a volatile request ID."""
+        calls["count"] += 1
+        msg = f"Failed: {value} request_id=req-{calls['count']}"
+        raise ValueError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="request_id_failing_tool", args={"value": "same"}, id="1")],
+            [ToolCall(name="request_id_failing_tool", args={"value": "same"}, id="2")],
+            [ToolCall(name="request_id_failing_tool", args={"value": "same"}, id="3")],
+            [],
+        ]
+    )
+
+    retry = ToolRetryMiddleware(max_retries=0, max_consecutive_identical_failures=3)
+
+    agent = create_agent(model=model, tools=[request_id_failing_tool], middleware=[retry])
+
+    with pytest.raises(AgentProgressStalledError, match="no_progress_detected"):
+        agent.invoke({"messages": [HumanMessage("Use request id failing tool")]})
+
+    assert model.index == 3
 
 
 def test_tool_retry_multiple_middleware_composition() -> None:

@@ -5,10 +5,20 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING, Any
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.messages import ToolMessage
+from langgraph.channels.untracked_value import UntrackedValue
+from langgraph.types import Command
+from typing_extensions import NotRequired
 
+from langchain.agents.middleware._progress import (
+    AgentProgressStalledError,
+    build_tool_failure_signature,
+    default_progress_output_normalizer,
+    validate_max_consecutive_steps,
+)
 from langchain.agents.middleware._retry import (
     OnFailure,
     RetryOn,
@@ -16,18 +26,39 @@ from langchain.agents.middleware._retry import (
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    PrivateStateAttr,
+    ResponseT,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from langgraph.types import Command
-
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
 
+_PROGRESS_SIGNATURE_KEY = "run_tool_retry_last_failure_signature"
+_PROGRESS_COUNT_KEY = "run_tool_retry_consecutive_failure_count"
 
-class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+
+class ToolRetryState(AgentState[ResponseT]):
+    """State schema for `ToolRetryMiddleware`.
+
+    Adds run-scoped private fields used only when retry progress detection is enabled.
+    """
+
+    run_tool_retry_last_failure_signature: NotRequired[
+        Annotated[str | None, UntrackedValue, PrivateStateAttr]
+    ]
+    run_tool_retry_consecutive_failure_count: NotRequired[
+        Annotated[int, UntrackedValue, PrivateStateAttr]
+    ]
+
+
+class ToolRetryMiddleware(AgentMiddleware[ToolRetryState[ResponseT], ContextT, ResponseT]):
     """Middleware that automatically retries failed tool calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -123,7 +154,47 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
                 on_failure="error",  # Re-raise exception instead of returning message
             )
             ```
+
+        !!! example "Stop repeated retry-exhaustion loops"
+
+            Use this when the model keeps calling the same failing tool after retries
+            have already been exhausted.
+
+            ```python
+            from langchain.agents.middleware import (
+                AgentProgressStalledError,
+                ToolRetryMiddleware,
+            )
+
+
+            retry = ToolRetryMiddleware(
+                max_retries=2,
+                max_consecutive_identical_failures=3,
+            )
+
+            try:
+                agent.invoke({"messages": [{"role": "user", "content": "search again"}]})
+            except AgentProgressStalledError as exc:
+                print(exc.reason)  # "no_progress_detected"
+            ```
+
+            Stall detection is disabled by default. When enabled, it counts one failure
+            per tool call after retries are exhausted. Retry attempts inside the same
+            tool call do not count separately.
+
+            Keep the default `on_failure="continue"`. Do not use
+            `on_failure="error"` with this option. The constructor raises `ValueError`
+            for that combination because raw exceptions stop the run before repeated
+            failures can be counted.
+
+            Do not also enable `ProgressGuardMiddleware` for the same tool unless you
+            intentionally want layered detection.
+
+            Custom tool-call wrappers should pass through both `ToolMessage` and
+            `Command` results.
     """
+
+    state_schema = ToolRetryState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -136,6 +207,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         initial_delay: float = 1.0,
         max_delay: float = 60.0,
         jitter: bool = True,
+        max_consecutive_identical_failures: int | None = None,
+        stall_error_normalizer: Callable[[str], str] | None = None,
     ) -> None:
         """Initialize `ToolRetryMiddleware`.
 
@@ -178,14 +251,32 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
                 Caps exponential backoff growth.
             jitter: Whether to add random jitter (`±25%`) to delay to avoid thundering herd.
+            max_consecutive_identical_failures: Optional threshold for stopping an
+                agent loop that repeatedly exhausts retries for the same tool, same
+                arguments, and same normalized final error. Must be `>= 2` when set.
+
+                `None` disables stall detection. Retry attempts inside one tool call do
+                not increment this counter; only the final failure returned to the
+                model counts.
+            stall_error_normalizer: Optional callable used to normalize final failure
+                messages before comparing them for stall detection. The default
+                normalizer strips common volatile details such as tracebacks, request
+                IDs, UUIDs, timestamps, and repeated whitespace.
 
         Raises:
-            ValueError: If `max_retries < 0` or delays are negative.
+            ValueError: If `max_retries < 0`, delays are negative, the stall
+                threshold is invalid, or stall detection is enabled with
+                `on_failure='error'`.
         """
         super().__init__()
 
         # Validate parameters
         validate_retry_params(max_retries, initial_delay, max_delay, backoff_factor)
+        if max_consecutive_identical_failures is not None:
+            validate_max_consecutive_steps(
+                max_consecutive_identical_failures,
+                parameter_name="max_consecutive_identical_failures",
+            )
 
         # Handle backwards compatibility for deprecated on_failure values
         if on_failure == "raise":  # type: ignore[comparison-overlap]
@@ -203,6 +294,14 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "continue"
 
+        if max_consecutive_identical_failures is not None and on_failure == "error":
+            msg = (
+                "max_consecutive_identical_failures cannot be used with "
+                "on_failure='error' because raw exceptions abort the run before "
+                "repeated failure observations can be counted."
+            )
+            raise ValueError(msg)
+
         self.max_retries = max_retries
 
         # Extract tool names from BaseTool instances or strings
@@ -219,6 +318,10 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.jitter = jitter
+        self.max_consecutive_identical_failures = max_consecutive_identical_failures
+        self._failure_output_normalizer = (
+            stall_error_normalizer or default_progress_output_normalizer
+        )
 
     def _should_retry_tool(self, tool_name: str) -> bool:
         """Check if retry logic should apply to this tool.
@@ -285,6 +388,121 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             status="error",
         )
 
+    def _progress_detection_enabled(self) -> bool:
+        """Check whether retry-exhaustion stall detection is enabled."""
+        return self.max_consecutive_identical_failures is not None
+
+    @staticmethod
+    def _has_progress_state(state: Any) -> bool:
+        """Check whether there is retry stall state to clear."""
+        if not isinstance(state, Mapping):
+            return False
+        return state.get(_PROGRESS_SIGNATURE_KEY) is not None or bool(
+            state.get(_PROGRESS_COUNT_KEY)
+        )
+
+    @staticmethod
+    def _reset_progress_state_update() -> dict[str, Any]:
+        """Build an update that clears retry stall state for this run."""
+        return {
+            _PROGRESS_SIGNATURE_KEY: None,
+            _PROGRESS_COUNT_KEY: 0,
+        }
+
+    @staticmethod
+    def _as_tool_message_command(
+        tool_message: ToolMessage, state_update: dict[str, Any]
+    ) -> Command[Any]:
+        """Attach private state updates while preserving the tool message."""
+        return Command(update={"messages": [tool_message], **state_update})
+
+    @staticmethod
+    def _as_command_with_state_update(
+        command: Command[Any], state_update: dict[str, Any]
+    ) -> Command[Any]:
+        """Attach private state updates to a command with a dict update."""
+        if not isinstance(command.update, Mapping):
+            return command
+
+        return Command(
+            graph=command.graph,
+            update={**command.update, **state_update},
+            resume=command.resume,
+            goto=command.goto,
+        )
+
+    def _handle_success_result(
+        self,
+        request: ToolCallRequest,
+        result: ToolMessage | Command[Any],
+    ) -> ToolMessage | Command[Any]:
+        """Reset stall state after a successful observed tool result."""
+        if not self._progress_detection_enabled():
+            return result
+
+        if not self._has_progress_state(request.state):
+            return result
+
+        if isinstance(result, ToolMessage) and result.status != "error":
+            return self._as_tool_message_command(result, self._reset_progress_state_update())
+
+        if isinstance(result, Command):
+            messages = result.update.get("messages") if isinstance(result.update, Mapping) else None
+            if isinstance(messages, list) and any(
+                isinstance(message, ToolMessage) and message.status != "error"
+                for message in messages
+            ):
+                return self._as_command_with_state_update(
+                    result,
+                    self._reset_progress_state_update(),
+                )
+
+        return result
+
+    def _handle_exhausted_failure(
+        self,
+        request: ToolCallRequest,
+        tool_name: str,
+        tool_message: ToolMessage,
+    ) -> ToolMessage | Command[Any]:
+        """Count final retry failures and raise if they form a stall."""
+        if not self._progress_detection_enabled():
+            return tool_message
+
+        state = request.state if isinstance(request.state, Mapping) else {}
+        signature = build_tool_failure_signature(
+            tool_name=tool_name,
+            tool_args=request.tool_call["args"],
+            error_message=tool_message.text,
+            error_normalizer=self._failure_output_normalizer,
+        )
+        previous_signature = state.get(_PROGRESS_SIGNATURE_KEY)
+        previous_count = state.get(_PROGRESS_COUNT_KEY, 0)
+        consecutive_failures = previous_count + 1 if previous_signature == signature else 1
+
+        max_consecutive_failures = self.max_consecutive_identical_failures
+        if (
+            max_consecutive_failures is not None
+            and consecutive_failures >= max_consecutive_failures
+        ):
+            raise AgentProgressStalledError(
+                consecutive_steps=consecutive_failures,
+                max_consecutive_identical_steps=max_consecutive_failures,
+                description=(
+                    f"{tool_name}({request.tool_call['args']!r}) -> "
+                    f"error: {tool_message.text}"
+                ),
+                exchange_signature=signature,
+            )
+
+        return self._as_tool_message_command(
+            tool_message,
+            {
+                _PROGRESS_SIGNATURE_KEY: signature,
+                _PROGRESS_COUNT_KEY: consecutive_failures,
+            },
+        )
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
@@ -313,14 +531,17 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
             try:
-                return handler(request)
+                return self._handle_success_result(request, handler(request))
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    tool_message = self._handle_failure(
+                        tool_name, tool_call_id, exc, attempts_made
+                    )
+                    return self._handle_exhausted_failure(request, tool_name, tool_message)
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -337,7 +558,10 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
                     # Continue to next retry
                 else:
                     # No more retries, handle failure
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    tool_message = self._handle_failure(
+                        tool_name, tool_call_id, exc, attempts_made
+                    )
+                    return self._handle_exhausted_failure(request, tool_name, tool_message)
 
         # Unreachable: loop always returns via handler success or _handle_failure
         msg = "Unexpected: retry loop completed without returning"
@@ -372,14 +596,17 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
             try:
-                return await handler(request)
+                return self._handle_success_result(request, await handler(request))
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    tool_message = self._handle_failure(
+                        tool_name, tool_call_id, exc, attempts_made
+                    )
+                    return self._handle_exhausted_failure(request, tool_name, tool_message)
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -396,7 +623,10 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
                     # Continue to next retry
                 else:
                     # No more retries, handle failure
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    tool_message = self._handle_failure(
+                        tool_name, tool_call_id, exc, attempts_made
+                    )
+                    return self._handle_exhausted_failure(request, tool_name, tool_message)
 
         # Unreachable: loop always returns via handler success or _handle_failure
         msg = "Unexpected: retry loop completed without returning"

@@ -12,6 +12,10 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.progress_guard import (
+    AgentProgressStalledError,
+    ProgressGuardMiddleware,
+)
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -45,6 +49,7 @@ from langchain.agents.middleware.types import (
 
 __all__ = [
     "AgentMiddleware",
+    "AgentProgressStalledError",
     "AgentState",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
@@ -65,6 +70,7 @@ __all__ = [
     "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
+    "ProgressGuardMiddleware",
     "RedactionRule",
     "Runtime",
     "ShellToolMiddleware",
