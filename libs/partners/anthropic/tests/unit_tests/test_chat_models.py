@@ -2313,7 +2313,9 @@ def test_effort_in_output_config() -> None:
         model="claude-opus-4-5-20251101",
         output_config={"effort": "low"},
     )
-    assert model.model_kwargs["output_config"] == {"effort": "low"}
+    assert model.output_config == {"effort": "low"}
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
 
 
 def test_effort_priority() -> None:
@@ -2764,3 +2766,235 @@ def test_thinking_in_params_recognizes_adaptive() -> None:
     assert not _thinking_in_params({"thinking": {"type": "disabled"}})
     assert not _thinking_in_params({"thinking": {}})
     assert not _thinking_in_params({})
+
+
+def test_effort_xhigh() -> None:
+    """Test that xhigh effort level is accepted and lands in output_config."""
+    model = ChatAnthropic(model="claude-opus-4-6", effort="xhigh")
+    assert model.effort == "xhigh"
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "xhigh"
+
+
+def test_output_config_top_level_field() -> None:
+    """Test that output_config is a top-level field, not model_kwargs."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={
+            "effort": "low",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    assert model.output_config == {
+        "effort": "low",
+        "task_budget": {"type": "tokens", "total": 50000},
+    }
+    assert "output_config" not in model.model_kwargs
+
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_output_config_merged_with_kwargs() -> None:
+    """Test that call-time output_config overrides field-level output_config."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload(
+        "Test query",
+        output_config={
+            "effort": "high",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    # Call-time kwargs override field-level
+    assert payload["output_config"]["effort"] == "high"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_task_budget_auto_appends_beta() -> None:
+    """Test that task_budget in output_config triggers beta header."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "betas" in payload
+    assert "task-budgets-2026-03-13" in payload["betas"]
+
+
+def test_task_budget_beta_not_duplicated() -> None:
+    """Test that task_budget beta is not duplicated if already present."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["task-budgets-2026-03-13"],
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("task-budgets-2026-03-13") == 1
+
+
+def test_no_task_budget_no_beta() -> None:
+    """Test that task_budget beta is not added when no task_budget is set."""
+    model = ChatAnthropic(model=MODEL_NAME, output_config={"effort": "high"})
+    payload = model._get_request_payload("Test query")
+    betas = payload.get("betas")
+    if betas:
+        assert "task-budgets-2026-03-13" not in betas
+
+
+def test_anthropic_stream_v2_lifecycle() -> None:
+    """Validate lifecycle events across a thinking + text + tool_use stream.
+
+    Anthropic emits raw `content_block_start` / `content_block_delta` /
+    `content_block_stop` events with integer `index` fields, interleaved
+    with `message_start` and `message_delta`. This test threads a
+    realistic event sequence through `_stream` via a mocked raw client
+    and asserts that `stream_v2` produces a spec-conformant event
+    stream: paired start/finish per block, no interleaving, sequential
+    `uint` wire indices.
+    """
+    from unittest.mock import patch
+
+    from anthropic.types import (
+        InputJSONDelta,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+        ThinkingBlock,
+        ThinkingDelta,
+        ToolUseBlock,
+    )
+    from anthropic.types.raw_message_delta_event import Delta as RawMessageDelta
+    from anthropic.types.raw_message_delta_event import (
+        MessageDeltaUsage as RawMessageDeltaUsage,
+    )
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    msg = Message(
+        id="msg_1",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # thinking block (index=0)
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(signature="", thinking="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="Let me ", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        # text block (index=1)
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=1,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="The answer ", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="is 42.", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=1, type="content_block_stop"),
+        # tool_use block (index=2)
+        RawContentBlockStartEvent(
+            content_block=ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="search",
+                type="tool_use",
+            ),
+            index=2,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json='{"q":', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json=' "weather"}', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=2, type="content_block_stop"),
+        # message_delta with final usage and stop_reason
+        RawMessageDeltaEvent(
+            delta=RawMessageDelta(stop_reason="tool_use", stop_sequence=None),
+            type="message_delta",
+            usage=RawMessageDeltaUsage(
+                output_tokens=50,
+                input_tokens=10,
+                cache_read_input_tokens=0,
+                cache_creation_input_tokens=0,
+            ),
+        ),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+
+    # Enable thinking so `coerce_content_to_string=False` in `_stream`,
+    # which gives every content block an integer `index` field — the
+    # structured path the protocol bridge actually exercises.  Default
+    # (no tools / thinking / documents) coerces text to a plain string,
+    # which strips indices and is a separate code path not covered here.
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    def mock_create(_payload: Any) -> list:
+        return events
+
+    with patch.object(llm, "_create", mock_create):
+        stream_events = list(llm.stream_v2("Test query"))
+
+    assert_valid_event_stream(stream_events)
+
+    finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
+    types = [f["content_block"]["type"] for f in finishes]
+    assert types == ["reasoning", "text", "tool_call"]
+
+    wire_indices = [f["index"] for f in finishes]
+    assert wire_indices == [0, 1, 2]
+
+    # Content accumulation reaches content-block-finish intact.
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content_block"])
+    text_block = cast("dict[str, Any]", finishes[1]["content_block"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content_block"])
+    assert reasoning_block["reasoning"] == "Let me think."
+    assert text_block["text"] == "The answer is 42."
+    assert tool_block["args"] == {"q": "weather"}
+    assert tool_block["name"] == "search"
+
+    # message-finish carries the tool_use stop reason.
+    message_finish = stream_events[-1]
+    assert message_finish["event"] == "message-finish"
+    assert message_finish["reason"] == "tool_use"

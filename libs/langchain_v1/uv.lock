@@ -14,9 +14,6 @@ resolution-markers = [
     "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
 ]
 
-[options]
-prerelease-mode = "allow"
-
 [manifest]
 constraints = [
     { name = "pygments", specifier = ">=2.20.0" },
@@ -176,7 +173,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.85.0"
+version = "0.96.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -188,9 +185,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/08/c620a0eb8625539a8ea9f5a6e06f13d131be0bc8b5b714c235d4b25dd1b5/anthropic-0.85.0.tar.gz", hash = "sha256:d45b2f38a1efb1a5d15515a426b272179a0d18783efa2bb4c3925fa773eb50b9", size = 542034, upload-time = "2026-03-16T17:00:44.324Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/7e/672f533dee813028d2c699bfd2a7f52c9118d7353680d9aa44b9e23f717f/anthropic-0.96.0.tar.gz", hash = "sha256:9de947b737f39452f68aa520f1c2239d44119c9b73b0fb6d4e6ca80f00279ee6", size = 658210, upload-time = "2026-04-16T14:28:02.846Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/5a/9d85b85686d5cdd79f5488c8667e668d7920d06a0a1a1beb454a5b77b2db/anthropic-0.85.0-py3-none-any.whl", hash = "sha256:b4f54d632877ed7b7b29c6d9ba7299d5e21c4c92ae8de38947e9d862bff74adf", size = 458237, upload-time = "2026-03-16T17:00:45.877Z" },
+    { url = "https://files.pythonhosted.org/packages/48/5a/72f33204064b6e87601a71a6baf8d855769f8a0c1eaae8d06a1094872371/anthropic-0.96.0-py3-none-any.whl", hash = "sha256:9a6e335a354602a521cd9e777e92bfd46ba6e115bf9bbfe6135311e8fb2015b2", size = 635930, upload-time = "2026-04-16T14:28:01.436Z" },
 ]
 
 [[package]]
@@ -2039,15 +2036,15 @@ test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
-    { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23.2,<2.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-benchmark", specifier = ">=5.1.0,<6.0.0" },
     { name = "pytest-cov", specifier = ">=4.0.0,<8.0.0" },
     { name = "pytest-mock" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
@@ -2065,7 +2062,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.0"
+version = "1.4.1"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2075,7 +2072,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.85.0,<1.0.0" },
+    { name = "anthropic", specifier = ">=0.96.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -2091,15 +2088,15 @@ test = [
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "langgraph-prebuilt", specifier = ">=0.7.0a2" },
-    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
     { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
     { name = "pytest-timeout", specifier = ">=2.3.1,<3.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0,<4.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
 ]
 test-integration = [
@@ -2211,10 +2208,11 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.3.0a2"
+version = "1.3.0"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
+    { name = "langchain-protocol" },
     { name = "langsmith" },
     { name = "packaging" },
     { name = "pydantic" },
@@ -2227,6 +2225,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
+    { name = "langchain-protocol", specifier = ">=0.0.8" },
     { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
     { name = "packaging", specifier = ">=23.2.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
@@ -2250,8 +2249,8 @@ test = [
     { name = "langchain-tests", directory = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.1,<2.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -2259,7 +2258,7 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "responses", specifier = ">=0.25.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
 ]
 test-integration = []
 typing = [
@@ -2394,7 +2393,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.1.12"
+version = "1.1.15"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2419,15 +2418,15 @@ test = [
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
     { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
 ]
 test-integration = [
@@ -2456,6 +2455,18 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-protocol"
+version = "0.0.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/0b/34d23ad37c4ef14f96cf6990b619e2e7c4f9e58c7f1089f044f963af3b32/langchain_protocol-0.0.8.tar.gz", hash = "sha256:28fc94f3278cf0da6b9b2e8cc4cd40cafc9e79b6f2de8dc2d06879327af0762c", size = 6357, upload-time = "2026-04-16T20:01:38.218Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/02/2bd9075e6f7fb75155b1e8208535ca78be0f4f16c03994295c74c01cbc04/langchain_protocol-0.0.8-py3-none-any.whl", hash = "sha256:39c7b28f1f7a98317ca5353d2ddb111cbbab9d295d15246ffd34449417c0b614", size = 6559, upload-time = "2026-04-16T20:01:37.364Z" },
+]
+
+[[package]]
 name = "langchain-tests"
 version = "1.1.6"
 source = { editable = "../standard-tests" }
@@ -2480,13 +2491,13 @@ requires-dist = [
     { name = "langchain-core", editable = "../core" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.2" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pytest", specifier = ">=7.0.0,<10.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.20.0,<2.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=4.0.0,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
 ]
 
@@ -2502,7 +2513,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.1.1"
+version = "1.1.2"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
@@ -2523,8 +2534,8 @@ lint = [
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "../core" },
-    { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.1,<2.0.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
@@ -2592,7 +2603,7 @@ wheels = [
 
 [[package]]
 name = "langgraph"
-version = "1.1.5"
+version = "1.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
@@ -2602,9 +2613,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "xxhash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a4/8a/47b983e33d3afc8c2c2385d2d8f3731ddfb5cb08e88f307f75105252a94c/langgraph-1.1.5.tar.gz", hash = "sha256:24b85d2d40cd002766d489e76f18027f947e4151366ac7ed97bab030ce50e494", size = 548492, upload-time = "2026-04-03T14:12:33.14Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/ab/3398c9e564a5037a3b657b87af5ffa48af7704143e225d4c2a5b0cc3617e/langgraph-1.1.7.tar.gz", hash = "sha256:92e0d26c2b05972fce8a9a604dcf9b4e2348300e953e24bd6c3188e91da6ceca", size = 559971, upload-time = "2026-04-17T15:24:46.994Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/6a/542bb56c8270d3df858285be138aec5e292b4e43dadb6b0b6fe051f535c1/langgraph-1.1.5-py3-none-any.whl", hash = "sha256:cb25c20d135167837951906c0feeb26c91c733bd5001a920c4cb1ffb92a1097c", size = 169354, upload-time = "2026-04-03T14:12:31.879Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/0a/d742418bad268b122fbc9536e07f039f930d59f9c65acad07f2e25275ef9/langgraph-1.1.7-py3-none-any.whl", hash = "sha256:37fe5357508080fe0cda4dcf49735d32439eb211ef48ad09a097ee489d78d43b", size = 173768, upload-time = "2026-04-17T15:24:45.287Z" },
 ]
 
 [[package]]
@@ -2648,7 +2659,7 @@ wheels = [
 
 [[package]]
 name = "langsmith"
-version = "0.6.3"
+version = "0.7.31"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -2658,11 +2669,12 @@ dependencies = [
     { name = "requests" },
     { name = "requests-toolbelt" },
     { name = "uuid-utils" },
+    { name = "xxhash" },
     { name = "zstandard" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/02/ac91c812238cd232ff3270c253eea31b28253fdeb28df61571932cb26e88/langsmith-0.6.3.tar.gz", hash = "sha256:33246769c0bb24e2c17e0c34bb21931084437613cd37faf83bd0978a297b826f", size = 1739709, upload-time = "2026-01-14T19:26:23.529Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/11/696019490992db5c87774dc20515529ef42a01e1d770fb754ed6d9b12fb0/langsmith-0.7.31.tar.gz", hash = "sha256:331ee4f7c26bb5be4022b9859b7d7b122cbf8c9d01d9f530114c1914b0349ffb", size = 1178480, upload-time = "2026-04-14T17:55:41.242Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ff/11/22a56b615f1ca84f65fda68b1a53b6e2765f2bdb1c6d885793430a664bfe/langsmith-0.6.3-py3-none-any.whl", hash = "sha256:44fdf8084165513e6bede9dda715e7b460b1b3f57ac69f2ca3f03afa911233ec", size = 282991, upload-time = "2026-01-14T19:26:21.882Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/a1/a013cf458c301cda86a213dd153ce0a01c93f1ab5833f951e6a44c9763ce/langsmith-0.7.31-py3-none-any.whl", hash = "sha256:0291d49203f6e80dda011af1afda61eb0595a4d697adb684590a8805e1d61fb6", size = 373276, upload-time = "2026-04-14T17:55:39.677Z" },
 ]
 
 [[package]]

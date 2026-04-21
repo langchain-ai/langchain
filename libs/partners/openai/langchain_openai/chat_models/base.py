@@ -141,6 +141,7 @@ from langchain_openai.chat_models._compat import (
 from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    import httpx
     from langchain_core.language_models import ModelProfile
     from openai.types.responses import Response
 
@@ -149,6 +150,20 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_ssrf_client: httpx.Client | None = None
+
+
+def _get_ssrf_safe_client() -> httpx.Client:
+    global _ssrf_client
+    if _ssrf_client is None:
+        from langchain_core._security._transport import ssrf_safe_client
+
+        _ssrf_client = ssrf_safe_client(
+            verify=global_ssl_context, follow_redirects=False
+        )
+    return _ssrf_client
+
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
@@ -3638,28 +3653,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
         )
         return None
     if _is_url(image_source):
-        try:
-            import httpx
-        except ImportError:
-            logger.info(
-                "Unable to count image tokens. To count image tokens please install "
-                "`pip install -U httpx`."
-            )
-            return None
-
-        # Validate URL for SSRF protection
-        try:
-            from langchain_core._security._ssrf_protection import validate_safe_url
-
-            validate_safe_url(image_source, allow_private=False, allow_http=True)
-        except ImportError:
-            logger.warning(
-                "SSRF protection not available. "
-                "Update langchain-core to get SSRF protection."
-            )
-        except ValueError as e:
-            logger.warning("Image URL failed SSRF validation: %s", e)
-            return None
+        import httpx
 
         # Set reasonable limits to prevent resource exhaustion
         # Timeout prevents indefinite hangs on slow/malicious servers
@@ -3668,10 +3662,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
         max_size = 50 * 1024 * 1024  # 50 MB
 
         try:
-            response = httpx.get(
-                image_source,
-                timeout=timeout,
-            )
+            response = _get_ssrf_safe_client().get(image_source, timeout=timeout)
             response.raise_for_status()
 
             # Check response size before loading into memory
@@ -4598,6 +4589,15 @@ def _construct_lc_result_from_responses_api(
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
+def _coerce_chunk_response(resp: Any) -> Any:
+    # dict `response` items on stream events have been observed in the wild
+    if isinstance(resp, dict):
+        from openai.types.responses import Response
+
+        return Response.model_validate(resp)
+    return resp
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -4695,14 +4695,16 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.created":
-        id = chunk.response.id
-        response_metadata["id"] = chunk.response.id  # Backwards compatibility
+        response = _coerce_chunk_response(chunk.response)
+        id = response.id
+        response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type in ("response.completed", "response.incomplete"):
+        response = _coerce_chunk_response(chunk.response)
         msg = cast(
             AIMessage,
             (
                 _construct_lc_result_from_responses_api(
-                    chunk.response, schema=schema, output_version=output_version
+                    response, schema=schema, output_version=output_version
                 )
                 .generations[0]
                 .message

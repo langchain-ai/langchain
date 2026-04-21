@@ -108,7 +108,7 @@ class ModelCallLimitMiddleware(
 
     Example:
         ```python
-        from langchain.agents.middleware.call_tracking import ModelCallLimitMiddleware
+        from langchain.agents.middleware import ModelCallLimitMiddleware
         from langchain.agents import create_agent
 
         # Create middleware with limits

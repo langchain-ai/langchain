@@ -275,9 +275,7 @@ class AsyncProjection(_ProjectionBase):
         self._event = asyncio.Event()
         self._arequest_more: Callable[[], Awaitable[bool]] | None = None
 
-    def set_arequest_more(
-        self, cb: Callable[[], Awaitable[bool]] | None
-    ) -> None:
+    def set_arequest_more(self, cb: Callable[[], Awaitable[bool]] | None) -> None:
         """Wire the async pull callback iterators use to drive the source.
 
         Mirrors `SyncProjection.set_request_more`. Under caller-driven
@@ -705,9 +703,16 @@ class ChatModelStream:
             full_r = reasoning_block.get("reasoning", "")
             if full_r and full_r != self._reasoning_acc:
                 self._reasoning_acc = full_r
+            # Keep provider-specific fields alongside the accumulated
+            # reasoning text. Anthropic's `signature` arrives under
+            # `extras` and is required on follow-up turns.
             finalized = cast(
                 "FinalizedContentBlock",
-                {"type": "reasoning", "reasoning": self._reasoning_acc},
+                {
+                    **reasoning_block,
+                    "type": "reasoning",
+                    "reasoning": self._reasoning_acc,
+                },
             )
         elif btype == "tool_call":
             tcb = cast("ToolCallBlock", block)
@@ -891,9 +896,7 @@ class AsyncChatModelStream(ChatModelStream):
 
     # -- Pump/pull wiring (async) ------------------------------------------
 
-    def set_arequest_more(
-        self, cb: Callable[[], Awaitable[bool]] | None
-    ) -> None:
+    def set_arequest_more(self, cb: Callable[[], Awaitable[bool]] | None) -> None:
         """Fan the async pump callback out to every projection.
 
         Used by langgraph's `AsyncGraphRunStream._wire_arequest_more` so

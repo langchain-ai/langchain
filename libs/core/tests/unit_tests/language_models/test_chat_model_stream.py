@@ -249,6 +249,7 @@ class TestAsyncProjection:
         events: list[MessagesData] = [
             {
                 "event": "message-start",
+                "role": "ai",
                 "message_id": "m1",
                 "metadata": {"provider": "test", "model": "fake"},
             },
