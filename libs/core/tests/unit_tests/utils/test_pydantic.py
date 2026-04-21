@@ -115,7 +115,7 @@ def test_with_field_metadata() -> None:
             description="List of integers", min_length=10, max_length=15
         )
 
-    subset_model = _create_subset_model_v2("Foo", Foo, ["x"])
+    subset_model = _create_subset_model_v2("Foo", Foo, ("x",))
     assert subset_model.model_json_schema() == {
         "properties": {
             "x": {
@@ -199,7 +199,7 @@ def test_create_subset_model_v2_preserves_default_factory() -> None:
     subset = _create_subset_model_v2(
         "Subset",
         Original,
-        ["required_field", "names", "mapping"],
+        ("required_field", "names", "mapping"),
     )
     schema = subset.model_json_schema()
     assert schema.get("required") == ["required_field"]
