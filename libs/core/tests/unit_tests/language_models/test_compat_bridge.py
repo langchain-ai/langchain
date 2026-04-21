@@ -482,6 +482,97 @@ def test_message_to_events_message_id_override() -> None:
     assert start["message_id"] == "msg-override"
 
 
+def test_message_to_events_self_contained_start_strips_heavy_fields() -> None:
+    """`content-block-start` must not duplicate heavy payload fields.
+
+    For image/audio/video/file/non_standard and finalized tool_call blocks,
+    the large payload (base64 `data`, parsed `args`, arbitrary `value`)
+    should appear only on `content-block-finish`, not on `content-block-start`.
+    Start preserves correlation and small metadata fields.
+    """
+    msg = AIMessage(
+        content=[
+            {
+                "type": "image",
+                "id": "img-1",
+                "mime_type": "image/png",
+                "data": "A" * 1024,
+            },
+            {
+                "type": "audio",
+                "id": "aud-1",
+                "mime_type": "audio/mp3",
+                "data": "B" * 1024,
+                "transcript": "hello",
+            },
+            {
+                "type": "non_standard",
+                "id": "ns-1",
+                "value": {"big": "C" * 1024},
+            },
+        ],
+        id="msg-heavy",
+    )
+    events = list(message_to_events(msg))
+
+    starts = [e for e in events if e["event"] == "content-block-start"]
+    assert [s["content_block"]["type"] for s in starts] == [
+        "image",
+        "audio",
+        "non_standard",
+    ]
+
+    image_start = starts[0]["content_block"]
+    assert image_start["id"] == "img-1"
+    assert image_start["mime_type"] == "image/png"
+    assert "data" not in image_start
+
+    audio_start = starts[1]["content_block"]
+    assert audio_start["id"] == "aud-1"
+    assert audio_start["mime_type"] == "audio/mp3"
+    assert "data" not in audio_start
+    assert "transcript" not in audio_start
+
+    ns_start = starts[2]["content_block"]
+    assert ns_start["type"] == "non_standard"
+    assert ns_start["value"] == {}
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert finishes[0]["content_block"]["data"] == "A" * 1024
+    assert finishes[1]["content_block"]["data"] == "B" * 1024
+    assert finishes[1]["content_block"]["transcript"] == "hello"
+    assert finishes[2]["content_block"]["value"] == {"big": "C" * 1024}
+
+
+def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
+    """Finalized `tool_call` keeps id/name on start but not parsed args."""
+    msg = AIMessage(
+        content="",
+        id="msg-tc",
+        tool_calls=[
+            {
+                "id": "tc1",
+                "name": "search",
+                "args": {"q": "big payload " * 100},
+                "type": "tool_call",
+            },
+        ],
+    )
+    events = list(message_to_events(msg))
+
+    starts = [e for e in events if e["event"] == "content-block-start"]
+    assert len(starts) == 1
+    tc_start = starts[0]["content_block"]
+    assert tc_start["type"] == "tool_call"
+    assert tc_start["id"] == "tc1"
+    assert tc_start["name"] == "search"
+    assert tc_start["args"] == {}
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    tc_finish = cast("ToolCallBlock", finishes[0]["content_block"])
+    assert tc_finish["args"] == {"q": "big payload " * 100}
+
+
 @pytest.mark.asyncio
 async def test_amessage_to_events_matches_sync() -> None:
     msg = AIMessage(

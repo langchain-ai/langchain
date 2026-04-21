@@ -149,14 +149,23 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[int, CompatBlock]]:
 # ---------------------------------------------------------------------------
 
 
+# Fields that can carry large payloads (inline base64 media, parsed args,
+# arbitrary dicts).  Stripped from `content-block-start` for self-contained
+# block types so the payload rides on `content-block-finish` alone instead
+# of being serialized twice on the wire.
+_HEAVY_FIELDS = frozenset({"args", "data", "output", "transcript", "value"})
+
+
 def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """Empty-content placeholder for the `content-block-start` event.
 
     Deltaable block types (text, reasoning, the `_chunk` tool variants)
     get an empty payload so the lifecycle's "start" signal is distinct
-    from the first incremental delta.  Self-contained or already-finalized
-    block types pass through unchanged — their `start` event is also
-    their only content-bearing event.
+    from the first incremental delta.  Self-contained types (image,
+    audio, video, file, non_standard, finalized tool calls) drop their
+    heavy payload fields; those are carried by `content-block-finish`.
+    Correlation fields (id, name, toolCallId) and small metadata
+    (mime_type, url, status, …) are preserved on the start event.
     """
     btype = block.get("type", "text")
     if btype == "text":
@@ -180,7 +189,17 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
         if block.get("name") is not None:
             s_skel["name"] = block["name"]
         return s_skel
-    return _to_protocol_block(block)
+
+    stripped: CompatBlock = {k: v for k, v in block.items() if k not in _HEAVY_FIELDS}
+    # Restore required-but-heavy fields with minimal placeholders so the
+    # start event still validates against the CDDL shape of the block type.
+    if btype in ("tool_call", "server_tool_call"):
+        stripped["args"] = {}
+    elif btype == "server_tool_call_result":
+        stripped["output"] = None
+    elif btype == "non_standard":
+        stripped["value"] = {}
+    return _to_protocol_block(stripped)
 
 
 def _should_emit_delta(block: CompatBlock) -> bool:
