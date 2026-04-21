@@ -578,7 +578,7 @@ requires-dist = [
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
-    { name = "langgraph", editable = "../../../../langgraph/libs/langgraph" },
+    { name = "langgraph", specifier = ">=1.1.5,<1.2.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity"]
@@ -822,7 +822,7 @@ typing = [
 [[package]]
 name = "langgraph"
 version = "1.1.7a2"
-source = { editable = "../../../../langgraph/libs/langgraph" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -831,217 +831,48 @@ dependencies = [
     { name = "pydantic" },
     { name = "xxhash" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-    { name = "langgraph-prebuilt", editable = "../../../../langgraph/libs/prebuilt" },
-    { name = "langgraph-sdk", editable = "../../../../langgraph/libs/sdk-py" },
-    { name = "pydantic", specifier = ">=2.7.4" },
-    { name = "xxhash", specifier = ">=3.5.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx" },
-    { name = "jupyter" },
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-    { name = "langgraph-checkpoint-postgres", editable = "../../../../langgraph/libs/checkpoint-postgres" },
-    { name = "langgraph-checkpoint-sqlite", editable = "../../../../langgraph/libs/checkpoint-sqlite" },
-    { name = "langgraph-cli", marker = "python_full_version < '3.14'", editable = "../../../../langgraph/libs/cli" },
-    { name = "langgraph-cli", extras = ["inmem"], marker = "python_full_version < '3.14'", editable = "../../../../langgraph/libs/cli" },
-    { name = "langgraph-prebuilt", editable = "../../../../langgraph/libs/prebuilt" },
-    { name = "langgraph-sdk", editable = "../../../../langgraph/libs/sdk-py" },
-    { name = "mypy" },
-    { name = "psycopg", extras = ["binary"] },
-    { name = "py-spy" },
-    { name = "pycryptodome" },
-    { name = "pyperf" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-dotenv" },
-    { name = "pytest-mock" },
-    { name = "pytest-repeat" },
-    { name = "pytest-watcher" },
-    { name = "pytest-xdist", extras = ["psutil"] },
-    { name = "redis" },
-    { name = "ruff" },
-    { name = "syrupy" },
-    { name = "types-requests" },
-    { name = "uvloop", specifier = "==0.22.1" },
-]
-lint = [
-    { name = "mypy" },
-    { name = "ruff" },
-    { name = "types-requests" },
-]
-test = [
-    { name = "httpx" },
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-    { name = "langgraph-checkpoint-postgres", editable = "../../../../langgraph/libs/checkpoint-postgres" },
-    { name = "langgraph-checkpoint-sqlite", editable = "../../../../langgraph/libs/checkpoint-sqlite" },
-    { name = "langgraph-cli", marker = "python_full_version < '3.14'", editable = "../../../../langgraph/libs/cli" },
-    { name = "langgraph-cli", extras = ["inmem"], marker = "python_full_version < '3.14'", editable = "../../../../langgraph/libs/cli" },
-    { name = "langgraph-prebuilt", editable = "../../../../langgraph/libs/prebuilt" },
-    { name = "langgraph-sdk", editable = "../../../../langgraph/libs/sdk-py" },
-    { name = "psycopg", extras = ["binary"] },
-    { name = "py-spy" },
-    { name = "pycryptodome" },
-    { name = "pyperf" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-dotenv" },
-    { name = "pytest-mock" },
-    { name = "pytest-repeat" },
-    { name = "pytest-watcher" },
-    { name = "pytest-xdist", extras = ["psutil"] },
-    { name = "redis" },
-    { name = "syrupy" },
-    { name = "uvloop", specifier = "==0.22.1" },
+sdist = { url = "https://files.pythonhosted.org/packages/f3/2e/01069578943f9179507e277f53c0084c42754ecb2b43641ff317517b9e14/langgraph-1.1.7a2.tar.gz", hash = "sha256:9d65fb0351e73ff0ddb16ff13847ac081ed40bd27178f15584616dd9483f0061", size = 555322, upload-time = "2026-04-14T18:09:44.288Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/6d/c65937f378fc1b30291b620d13928b6219efb0a5b863c286c7505c13ea68/langgraph-1.1.7a2-py3-none-any.whl", hash = "sha256:367e99b209c0ef55ba277b3d6835b64736e175fd2c9632533dc4be262029d1ae", size = 173449, upload-time = "2026-04-14T18:09:43.138Z" },
 ]
 
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.0.1"
-source = { editable = "../../../../langgraph/libs/checkpoint" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "langchain-core", specifier = ">=0.2.38" },
-    { name = "ormsgpack", specifier = ">=1.12.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "codespell" },
-    { name = "dataclasses-json" },
-    { name = "mypy" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pandas-stubs", specifier = ">=2.2.2.240807" },
-    { name = "pycryptodome", specifier = ">=3.23.0" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watcher" },
-    { name = "redis" },
-    { name = "ruff" },
-]
-lint = [
-    { name = "codespell" },
-    { name = "mypy" },
-    { name = "ruff" },
-]
-test = [
-    { name = "dataclasses-json" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pandas-stubs", specifier = ">=2.2.2.240807" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watcher" },
-    { name = "redis" },
+sdist = { url = "https://files.pythonhosted.org/packages/b1/44/a8df45d1e8b4637e29789fa8bae1db022c953cc7ac80093cfc52e923547e/langgraph_checkpoint-4.0.1.tar.gz", hash = "sha256:b433123735df11ade28829e40ce25b9be614930cd50245ff2af60629234befd9", size = 158135, upload-time = "2026-02-27T21:06:16.092Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/65/4c/09a4a0c42f5d2fc38d6c4d67884788eff7fd2cfdf367fdf7033de908b4c0/langgraph_checkpoint-4.0.1-py3-none-any.whl", hash = "sha256:e3adcd7a0e0166f3b48b8cf508ce0ea366e7420b5a73aa81289888727769b034", size = 50453, upload-time = "2026-02-27T21:06:14.293Z" },
 ]
 
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.0.9"
-source = { editable = "../../../../langgraph/libs/prebuilt" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "codespell" },
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph", editable = "../../../../langgraph/libs/langgraph" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-    { name = "langgraph-checkpoint-postgres", editable = "../../../../langgraph/libs/checkpoint-postgres" },
-    { name = "langgraph-checkpoint-sqlite", editable = "../../../../langgraph/libs/checkpoint-sqlite" },
-    { name = "mypy" },
-    { name = "psycopg-binary" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watcher" },
-    { name = "ruff" },
-    { name = "syrupy" },
-]
-lint = [
-    { name = "codespell" },
-    { name = "mypy" },
-    { name = "ruff" },
-]
-test = [
-    { name = "langchain-core", editable = "../../core" },
-    { name = "langgraph", editable = "../../../../langgraph/libs/langgraph" },
-    { name = "langgraph-checkpoint", editable = "../../../../langgraph/libs/checkpoint" },
-    { name = "langgraph-checkpoint-postgres", editable = "../../../../langgraph/libs/checkpoint-postgres" },
-    { name = "langgraph-checkpoint-sqlite", editable = "../../../../langgraph/libs/checkpoint-sqlite" },
-    { name = "psycopg-binary" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watcher" },
-    { name = "syrupy" },
+sdist = { url = "https://files.pythonhosted.org/packages/99/4c/06dac899f4945bedb0c3a1583c19484c2cc894114ea30d9a538dd270086e/langgraph_prebuilt-1.0.9.tar.gz", hash = "sha256:93de7512e9caade4b77ead92428f6215c521fdb71b8ffda8cd55f0ad814e64de", size = 165850, upload-time = "2026-04-03T14:06:37.721Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/a2/8368ac187b75e7f9d938ca075d34f116683f5cfc48d924029ee79aea147b/langgraph_prebuilt-1.0.9-py3-none-any.whl", hash = "sha256:776c8e3154a5aef5ad0e5bf3f263f2dcaab3983786cc20014b7f955d99d2d1b2", size = 35958, upload-time = "2026-04-03T14:06:36.58Z" },
 ]
 
 [[package]]
 name = "langgraph-sdk"
-source = { editable = "../../../../langgraph/libs/sdk-py" }
+version = "0.3.13"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "orjson" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.25.2" },
-    { name = "orjson", specifier = ">=3.11.5" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "codespell" },
-    { name = "langgraph", editable = "../../../../langgraph/libs/langgraph" },
-    { name = "mypy", specifier = "==1.19.1" },
-    { name = "pydantic", specifier = ">=2.12.4" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watch" },
-    { name = "ruff", specifier = "==0.15.6" },
-    { name = "starlette" },
-    { name = "ty", specifier = "==0.0.23" },
-]
-lint = [
-    { name = "codespell" },
-    { name = "mypy", specifier = "==1.19.1" },
-    { name = "ruff", specifier = "==0.15.6" },
-    { name = "starlette" },
-    { name = "ty", specifier = "==0.0.23" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-watch" },
+sdist = { url = "https://files.pythonhosted.org/packages/0e/db/77a45127dddcfea5e4256ba916182903e4c31dc4cfca305b8c386f0a9e53/langgraph_sdk-0.3.13.tar.gz", hash = "sha256:419ca5663eec3cec192ad194ac0647c0c826866b446073eb40f384f950986cd5", size = 196360, upload-time = "2026-04-07T20:34:18.766Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/ef/64d64e9f8eea47ce7b939aa6da6863b674c8d418647813c20111645fcc62/langgraph_sdk-0.3.13-py3-none-any.whl", hash = "sha256:aee09e345c90775f6de9d6f4c7b847cfc652e49055c27a2aed0d981af2af3bd0", size = 96668, upload-time = "2026-04-07T20:34:17.866Z" },
 ]
 
 [[package]]
