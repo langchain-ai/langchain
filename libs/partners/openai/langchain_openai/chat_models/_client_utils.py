@@ -244,15 +244,15 @@ def _resolve_socket_options(
     """Normalize the user-facing field to the tuple form builders expect.
 
     - `None` => env-driven defaults (may itself be `()` if the user set
-      `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0`). This path runs through
-      `_filter_supported()` inside `_default_socket_options()` because
-      the library-computed option set is aspirational and silent degradation
-      is the right posture.
+        `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0`). This path runs through
+        `_filter_supported()` inside `_default_socket_options()` because
+        the library-computed option set is aspirational and silent degradation
+        is the right posture.
     - Any other sequence (including empty) => retupled for cache hashability.
-      An empty tuple is the explicit "disabled" signal. A non-empty sequence
-      is passed verbatim — **not** filtered. The user chose these options
-      explicitly, so an unsupported constant should surface as a clear
-      `OSError` at connect time, not be silently dropped.
+        An empty tuple is the explicit "disabled" signal. A non-empty sequence
+        is passed verbatim — **not** filtered. The user chose these options
+        explicitly, so an unsupported constant should surface as a clear
+        `OSError` at connect time, not be silently dropped.
 
     Always returns a tuple — never `None` — so downstream signatures take
     `tuple[SocketOption, ...]` with `()` as the single "no options" shape.
