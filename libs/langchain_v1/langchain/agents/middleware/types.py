@@ -30,6 +30,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langgraph.channels.delta import DeltaChannel
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
@@ -350,7 +351,7 @@ PrivateStateAttr = OmitFromSchema(input=True, output=True)
 class AgentState(TypedDict, Generic[ResponseT]):
     """State schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage], add_messages]]
+    messages: Required[Annotated[list[AnyMessage], DeltaChannel(add_messages)]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 
@@ -364,7 +365,7 @@ class _InputAgentState(TypedDict):  # noqa: PYI049
 class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
     """Output state schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage], add_messages]]
+    messages: Required[Annotated[list[AnyMessage], DeltaChannel(add_messages)]]
     structured_response: NotRequired[ResponseT]
 
 
