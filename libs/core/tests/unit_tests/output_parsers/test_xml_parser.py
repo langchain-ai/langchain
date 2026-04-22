@@ -147,6 +147,15 @@ MALICIOUS_XML = """<?xml version="1.0"?>
 <lolz>&lol9;</lolz>"""
 
 
+def test_mixed_content_preserves_children() -> None:
+    """Children of an element with text content must not be silently dropped."""
+    xml_parser = XMLOutputParser(parser="xml")
+    parsed = xml_parser.parse(
+        "```xml\n<result>Summary<detail>info</detail></result>\n```"
+    )
+    assert parsed == {"result": [{"detail": "info"}]}
+
+
 async def tests_billion_laughs_attack() -> None:
     # Testing with standard XML parser since it's safe to use in
     # newer versions of Python
