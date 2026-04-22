@@ -281,10 +281,11 @@ class AIMessage(BaseMessage):
                         "name": tool_call["name"],
                         "args": tool_call["args"],
                     }
-                    if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
-                    if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
+                    _tc = cast("dict[str, Any]", tool_call)
+                    if "index" in _tc:
+                        tool_call_block["index"] = _tc["index"]
+                    if "extras" in _tc:
+                        tool_call_block["extras"] = _tc["extras"]
                     blocks.append(tool_call_block)
 
         # Best-effort reasoning extraction from additional_kwargs
@@ -581,8 +582,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 ):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
                     if "extras" in block:
-                        # mypy does not account for instance check for dict above
-                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
+                        cast("dict[str, Any]", self.content[idx])["extras"] = block["extras"]
 
         return self
 
@@ -609,8 +609,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     try:
                         args = json.loads(args_str)
                         if isinstance(args, dict):
-                            self.content[idx]["type"] = "server_tool_call"  # type: ignore[index]
-                            self.content[idx]["args"] = args  # type: ignore[index]
+                            content_block = cast("dict[str, Any]", self.content[idx])
+                            content_block["type"] = "server_tool_call"
+                            content_block["args"] = args
                     except json.JSONDecodeError:
                         pass
         return self
