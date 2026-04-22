@@ -6,6 +6,7 @@ It contains the Chroma class which is a vector store for handling various tasks.
 from __future__ import annotations
 
 import base64
+import inspect
 import logging
 import uuid
 from collections.abc import Callable, Iterable, Sequence
@@ -367,6 +368,20 @@ class Chroma(VectorStore):
             raise ValueError(msg)
 
         if client is not None:
+            if inspect.iscoroutine(client):
+                msg = (
+                    "An async Chroma client (coroutine) was passed to `Chroma`, "
+                    "which only supports synchronous clients. If you are using "
+                    "`chromadb.AsyncHttpClient`, use `chromadb.HttpClient` instead."
+                )
+                raise ValueError(msg)
+            if isinstance(client, chromadb.AsyncClientAPI):
+                msg = (
+                    "An async Chroma client was passed to `Chroma`, which only "
+                    "supports synchronous clients. If you are using "
+                    "`chromadb.AsyncHttpClient`, use `chromadb.HttpClient` instead."
+                )
+                raise ValueError(msg)
             self._client = client
 
         # PersistentClient
