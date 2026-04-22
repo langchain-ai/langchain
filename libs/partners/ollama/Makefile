@@ -9,7 +9,7 @@ UV_FROZEN = true
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 PYTEST_EXTRA ?=
-integration_test integration_tests: TEST_FILE = tests/integration_tests/
+integration_test: TEST_FILE = tests/integration_tests/
 # TODO(erick) configure ollama server to run in CI, in separate repo
 
 # Define variables for test model configuration
