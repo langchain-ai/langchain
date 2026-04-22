@@ -26,7 +26,7 @@ test_watch:
 
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+integration_test:
 	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest -v --tb=short -p no:benchmark -n auto $(TEST_FILE)
 
 # CI integration tests - disabled until ollama service is configured in CI
