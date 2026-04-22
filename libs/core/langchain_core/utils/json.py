@@ -77,16 +77,18 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     is_inside_string = False
     escaped = False
 
+    # JSON forbids raw control characters inside strings (RFC 8259); replace the
+    # ones models commonly emit raw with their escape sequences.
+    _control_escapes = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}
+
     # Process each character in the string one at a time.
     for char in s:
         new_char = char
         if is_inside_string:
             if char == '"' and not escaped:
                 is_inside_string = False
-            elif char == "\n" and not escaped:
-                new_char = (
-                    "\\n"  # Replace the newline character with the escape sequence.
-                )
+            elif char in _control_escapes and not escaped:
+                new_char = _control_escapes[char]
             elif char == "\\":
                 escaped = not escaped
             else:

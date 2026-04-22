@@ -264,6 +264,22 @@ def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     assert parsed == json.loads(expected)
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ('{"key": "line1\nline2"}', {"key": "line1\nline2"}),
+        ('{"key": "line1\rline2"}', {"key": "line1\rline2"}),
+        ('{"key": "col1\tcol2"}', {"key": "col1\tcol2"}),
+        ('{"key": "a\rb\nc\td"}', {"key": "a\rb\nc\td"}),
+    ],
+)
+def test_parse_partial_json_escapes_raw_control_chars(
+    raw: str, expected: dict[str, str]
+) -> None:
+    r"""Raw `\n`, `\r`, `\t` inside string values must be escaped, not raised on."""
+    assert parse_partial_json(raw, strict=True) == expected
+
+
 STREAMED_TOKENS = """
 {
 
