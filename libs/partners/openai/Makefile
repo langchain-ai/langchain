@@ -25,7 +25,7 @@ test tests:
 	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -n auto $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -p no:benchmark -n auto $(TEST_FILE)
 
 # Run VCR cassette-backed integration tests in playback-only mode (no API keys needed).
 # Catches stale cassettes caused by test input changes without re-recording.
