@@ -306,7 +306,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 run_id=config.pop("run_id", None),
             )
             for cm, input_, config in zip(
-                callback_managers, inputs, configs, strict=False
+                callback_managers, inputs, configs, strict=True
             )
         ]
 
@@ -326,7 +326,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
             for (i, input_), output in zip(
-                sorted(run_again.copy().items()), outputs, strict=False
+                sorted(run_again.copy().items()), outputs, strict=True
             ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
@@ -403,7 +403,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_id=config.pop("run_id", None),
                 )
                 for cm, input_, config in zip(
-                    callback_managers, inputs, configs, strict=False
+                    callback_managers, inputs, configs, strict=True
                 )
             )
         )
@@ -425,7 +425,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             )
 
             for (i, input_), output in zip(
-                sorted(run_again.copy().items()), outputs, strict=False
+                sorted(run_again.copy().items()), outputs, strict=True
             ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
