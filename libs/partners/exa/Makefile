@@ -16,7 +16,7 @@ test:
 	uv run --group test --group test_integration pytest $(PYTEST_EXTRA) $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -p no:benchmark -n auto $(PYTEST_EXTRA) $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto $(PYTEST_EXTRA) $(TEST_FILE)
 
 tests:
 	uv run --group test pytest $(PYTEST_EXTRA) $(TEST_FILE)

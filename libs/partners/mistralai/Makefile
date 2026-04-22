@@ -21,7 +21,7 @@ test_watch:
 
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -p no:benchmark -n auto $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto $(TEST_FILE)
 
 
 ######################
