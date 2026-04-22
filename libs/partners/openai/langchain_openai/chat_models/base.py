@@ -138,6 +138,7 @@ from langchain_openai.chat_models._client_utils import (
     _get_default_httpx_client,
     _resolve_socket_options,
     _resolve_sync_and_async_api_keys,
+    _warn_if_proxy_env_shadowed,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -812,13 +813,13 @@ class BaseChatOpenAI(BaseChatModel):
     Accepted values:
 
     - `None` (default): use env-driven defaults. Matches the "unset" convention
-      used by `http_client` elsewhere on this class.
+        used by `http_client` elsewhere on this class.
     - `()` (empty): disable socket-option injection entirely. Inherits the OS
-      defaults and restores httpx's native env-proxy auto-detection.
+        defaults and restores httpx's native env-proxy auto-detection.
     - A non-empty sequence of `(level, option, value)` tuples: explicit
-      override; passed verbatim to the transport (not filtered). Unsupported
-      options raise `OSError` at connect time rather than being silently
-      dropped — the user chose them explicitly.
+        override; passed verbatim to the transport (not filtered). Unsupported
+        options raise `OSError` at connect time rather than being silently
+        dropped — the user chose them explicitly.
 
     Environment variables (only consulted when this field is `None`):
     `LANGCHAIN_OPENAI_TCP_KEEPALIVE` (set to `0` to disable entirely — the
@@ -826,8 +827,10 @@ class BaseChatOpenAI(BaseChatModel):
     `LANGCHAIN_OPENAI_TCP_KEEPINTVL`, `LANGCHAIN_OPENAI_TCP_KEEPCNT`,
     `LANGCHAIN_OPENAI_TCP_USER_TIMEOUT_MS`.
 
-    Ignored if `http_client` or `http_async_client` is provided — the
-    user-owned client's socket options are used as-is.
+    Applied per side: if `http_client` is supplied, the sync path uses
+    that user-owned client's socket options as-is; the async path still
+    gets `http_socket_options` applied to its default builder (and
+    vice-versa for `http_async_client`). Supply both to take full control.
 
     !!! note "Known limitation — env-proxy auto-detection"
 
@@ -862,26 +865,28 @@ class BaseChatOpenAI(BaseChatModel):
     **not** the same as httpx's `timeout.read`:
 
     - httpx's read timeout is inter-byte and gets reset every time *any* bytes
-      arrive on the socket — including OpenAI's SSE keepalive comments
-      (`: keepalive`) that trickle down during long model generations. A
-      stream that's silent on *content* but still producing keepalives looks
-      alive forever to httpx.
+        arrive on the socket — including OpenAI's SSE keepalive comments
+        (`: keepalive`) that trickle down during long model generations. A
+        stream that's silent on *content* but still producing keepalives looks
+        alive forever to httpx.
     - `stream_chunk_timeout` measures the gap between *parsed chunks*. The
-      openai SDK's SSE parser consumes keepalive comments internally and does
-      not emit them as chunks, so keepalives do *not* reset this timer. It
-      fires on genuine content silence.
+        openai SDK's SSE parser consumes keepalive comments internally and does
+        not emit them as chunks, so keepalives do *not* reset this timer. It
+        fires on genuine content silence.
 
     When it fires, a `StreamChunkTimeoutError`
     (subclass of `asyncio.TimeoutError`) is raised with a self-describing
-    message naming this knob and the env-var override. A WARNING log with
-    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>}` also
-    fires for aggregate-logging discrimination of P1 (app-layer) timeouts
-    from P2 (transport-layer) failures.
+    message naming this knob, the env-var override, the model, and the
+    number of chunks received before the stall. A WARNING log with
+    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>,
+    "model_name": <value>, "chunks_received": <value>}` also fires so
+    aggregate logging can distinguish app-layer timeouts from
+    transport-layer failures.
 
     Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
-    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var; unparseable values
-    fall back to the 120s default without crashing model init (so a
-    misconfigured helm values file can't take down the process).
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var; unparseable or
+    negative values fall back to the 120s default with a `WARNING` log, so
+    a misconfigured environment still boots but the fallback is visible.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
@@ -1150,6 +1155,9 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
         resolved_socket_options = _resolve_socket_options(self.http_socket_options)
+        _warn_if_proxy_env_shadowed(
+            resolved_socket_options, openai_proxy=self.openai_proxy
+        )
         if not self.client:
             if sync_api_key_value is None:
                 # No valid sync API key, leave client as None and raise informative
@@ -1421,7 +1429,9 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 async for chunk in _astream_with_chunk_timeout(
-                    response, self.stream_chunk_timeout
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
                 ):
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1774,7 +1784,9 @@ class BaseChatOpenAI(BaseChatModel):
             async with context_manager as response:
                 is_first_chunk = True
                 async for chunk in _astream_with_chunk_timeout(
-                    response, self.stream_chunk_timeout
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
                 ):
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()

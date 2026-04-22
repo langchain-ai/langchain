@@ -1,13 +1,13 @@
-"""Unit tests for ``_astream_with_chunk_timeout`` and ``StreamChunkTimeoutError``.
+"""Unit tests for `_astream_with_chunk_timeout` and `StreamChunkTimeoutError`.
 
 - Pass-through when items arrive in time.
 - Timeout fires with a self-describing message + subclasses TimeoutError.
-- Structured WARNING log carries ``source=stream_chunk_timeout`` +
-  ``timeout_s`` so aggregate logging can distinguish app-layer from
-  transport-layer timeouts.
-- Source iterator's ``aclose()`` is called on early exit to release the
-  underlying httpx connection promptly.
-- Garbage in ``LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S`` degrades safely.
+- Structured WARNING log carries `source=stream_chunk_timeout` +
+    `timeout_s` so aggregate logging can distinguish app-layer from
+    transport-layer timeouts.
+- Source iterator's `aclose()` is called on early exit to release the
+    underlying httpx connection promptly.
+- Garbage in `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` degrades safely.
 """
 
 from __future__ import annotations
@@ -15,15 +15,20 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncGenerator
+from types import TracebackType
 from typing import Any, cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from typing_extensions import Self
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._client_utils import (
     StreamChunkTimeoutError,
     _astream_with_chunk_timeout,
 )
+
+MODEL = "gpt-5.4"
 
 
 class _FakeSource:
@@ -74,7 +79,7 @@ async def test_astream_with_chunk_timeout_disabled_passes_through() -> None:
 
 @pytest.mark.asyncio
 async def test_astream_with_chunk_timeout_fires() -> None:
-    """Slow source + tight timeout: ``StreamChunkTimeoutError`` fires."""
+    """Slow source + tight timeout: `StreamChunkTimeoutError` fires."""
     source = _FakeSource(["a", "b"], per_item_sleep=0.2)
     with pytest.raises(StreamChunkTimeoutError) as exc_info:
         async for _ in _astream_with_chunk_timeout(source, 0.05):
@@ -151,5 +156,251 @@ def test_invalid_stream_chunk_timeout_env_degrades_safely(
     """Garbage env var -> model init succeeds with the 120s default."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "not-a-float")
-    model = ChatOpenAI(model="gpt-4o")
+    model = ChatOpenAI(model=MODEL)
     assert model.stream_chunk_timeout == 120.0
+
+
+def test_stream_chunk_timeout_env_kill_switch_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Env-var kill-switch: `_S=0` should disable the wrapper on the model."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "0")
+    model = ChatOpenAI(model=MODEL)
+    assert model.stream_chunk_timeout == 0.0
+
+
+def test_stream_chunk_timeout_kwarg_none_disables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Constructor kwarg opt-out: `stream_chunk_timeout=None` persists."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=None)
+    assert model.stream_chunk_timeout is None
+
+
+def test_stream_chunk_timeout_error_has_structured_attrs() -> None:
+    """Structured payload mirrors the log `extra=`; no message-regex needed."""
+    err = StreamChunkTimeoutError(0.5, model_name="gpt-4o", chunks_received=3)
+    assert err.timeout_s == 0.5
+    assert err.model_name == "gpt-4o"
+    assert err.chunks_received == 3
+    text = str(err)
+    assert "gpt-4o" in text
+    assert "chunks_received=3" in text
+
+
+@pytest.mark.asyncio
+async def test_astream_with_chunk_timeout_threads_model_name(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """`model_name` flows into both the raised error and the structured log."""
+    caplog.set_level(
+        logging.WARNING, logger="langchain_openai.chat_models._client_utils"
+    )
+    source = _FakeSource(["a", "b"], per_item_sleep=0.2)
+    with pytest.raises(StreamChunkTimeoutError) as exc_info:
+        async for _ in _astream_with_chunk_timeout(
+            source, 0.05, model_name="gpt-4o-mini"
+        ):
+            pass
+    assert exc_info.value.model_name == "gpt-4o-mini"
+    records = [
+        r
+        for r in caplog.records
+        if getattr(r, "source", None) == "stream_chunk_timeout"
+    ]
+    assert records
+    assert records[0].__dict__["model_name"] == "gpt-4o-mini"
+
+
+def test_invalid_stream_chunk_timeout_env_emits_warning(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fallback is logged at WARNING so the typo is discoverable."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "nonsense")
+    caplog.set_level(
+        logging.WARNING, logger="langchain_openai.chat_models._client_utils"
+    )
+    ChatOpenAI(model=MODEL)
+    assert any(
+        "LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
+    )
+
+
+def test_negative_stream_chunk_timeout_env_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative timeout typo must not silently disable the wrapper."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "-10")
+    caplog.set_level(
+        logging.WARNING, logger="langchain_openai.chat_models._client_utils"
+    )
+    model = ChatOpenAI(model=MODEL)
+    assert model.stream_chunk_timeout == 120.0
+    assert any(
+        "negative" in r.getMessage().lower()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
+    )
+
+
+class _SlowAsyncContextManager:
+    """Async context manager that sleeps between streamed items."""
+
+    def __init__(self, chunks: list[Any], per_item_sleep: float) -> None:
+        self._chunks = list(chunks)
+        self._sleep = per_item_sleep
+        self._iter = iter(chunks)
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        return None
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> Any:
+        await asyncio.sleep(self._sleep)
+        try:
+            return next(self._iter)
+        except StopIteration as exc:
+            raise StopAsyncIteration from exc
+
+
+class _SlowSyncContextManager:
+    """Sync context manager mirror of `_SlowAsyncContextManager`.
+
+    Sleeps between items in wall-clock time. The sync path never uses
+    `asyncio.wait_for`, so a tight `stream_chunk_timeout` should have no
+    effect here — that is the invariant we want to lock.
+    """
+
+    def __init__(self, chunks: list[Any], per_item_sleep: float) -> None:
+        self._chunks = list(chunks)
+        self._sleep = per_item_sleep
+        self._iter = iter(chunks)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        return None
+
+    def __iter__(self) -> Self:
+        return self
+
+    def __next__(self) -> Any:
+        import time as _time
+
+        _time.sleep(self._sleep)
+        try:
+            return next(self._iter)
+        except StopIteration:
+            raise
+
+
+@pytest.mark.asyncio
+async def test_astream_integration_raises_stream_chunk_timeout_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """End-to-end: slow async stream + tight timeout must raise.
+
+    Guards against a refactor that drops the `_astream_with_chunk_timeout`
+    wrapper from the `_astream` path — unit tests on the helper alone
+    wouldn't catch that regression.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    llm = ChatOpenAI(model=MODEL, stream_chunk_timeout=0.05)
+    fake_chunks = [
+        {
+            "id": "c1",
+            "object": "chat.completion.chunk",
+            "created": 1,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": "hi"},
+                    "finish_reason": None,
+                }
+            ],
+        },
+    ]
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> _SlowAsyncContextManager:
+        return _SlowAsyncContextManager(fake_chunks, per_item_sleep=0.3)
+
+    mock_client.create = mock_create
+    with (
+        patch.object(llm, "async_client", mock_client),
+        pytest.raises(StreamChunkTimeoutError) as exc_info,
+    ):
+        async for _ in llm.astream("hello"):
+            pass
+    assert exc_info.value.model_name == "gpt-4o"
+
+
+def test_stream_sync_not_wrapped_by_chunk_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sync `llm.stream()` must not be subject to `stream_chunk_timeout`.
+
+    Setting `stream_chunk_timeout=0.01` with a 100ms-per-chunk sync source
+    would raise if the wrapper were (incorrectly) applied to the sync path.
+    Completion without error proves the contract.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    llm = ChatOpenAI(model=MODEL, stream_chunk_timeout=0.01)
+    fake_chunks = [
+        {
+            "id": "c1",
+            "object": "chat.completion.chunk",
+            "created": 1,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": "hi"},
+                    "finish_reason": None,
+                }
+            ],
+        },
+        {
+            "id": "c2",
+            "object": "chat.completion.chunk",
+            "created": 1,
+            "model": "gpt-4o",
+            "choices": [
+                {"index": 0, "delta": {}, "finish_reason": "stop"},
+            ],
+        },
+    ]
+    mock_client = MagicMock()
+
+    def _create(*_args: Any, **_kwargs: Any) -> _SlowSyncContextManager:
+        return _SlowSyncContextManager(fake_chunks, per_item_sleep=0.1)
+
+    mock_client.create = _create
+    with patch.object(llm, "client", mock_client):
+        chunks = list(llm.stream("hello"))
+    assert chunks, "sync stream should have delivered chunks"

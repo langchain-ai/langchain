@@ -1,9 +1,12 @@
-"""Helpers for creating OpenAI API clients.
+"""Helpers for OpenAI httpx client construction, transport tuning, and streaming.
 
-This module allows for the caching of httpx clients to avoid creating new instances
-for each instance of ChatOpenAI.
+Covers cached default client builders, proxy-aware variants for the
+`openai_proxy` path, kernel-level TCP keepalive / `TCP_USER_TIMEOUT` socket
+options, and the `_astream_with_chunk_timeout` wrapper that bounds per-chunk
+wall-clock time on async SSE streams.
 
-Logic is largely replicated from openai._base_client.
+Client-builder boilerplate mirrors the patterns in `openai._base_client`;
+socket-option tuning and the streaming timeout are original to this module.
 """
 
 from __future__ import annotations
@@ -46,20 +49,67 @@ _DEFAULT_CONNECTION_LIMITS = httpx.Limits(
 )
 
 
-def _int_env(name: str, default: int) -> int:
-    """Read an int env var with graceful fallback on garbage input."""
-    try:
-        return int(os.environ.get(name, default))
-    except (TypeError, ValueError):
+def _int_env(name: str, default: int, *, allow_negative: bool = False) -> int:
+    """Read an int env var with graceful fallback + discoverable warning.
+
+    Unparseable or (by default) negative values fall back to `default` and
+    emit a single `WARNING` naming the offending variable. A misconfigured
+    environment still loads, but operators see the fallback in their logs
+    rather than silently getting a surprising default.
+    """
+    raw = os.environ.get(name)
+    if raw is None:
         return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        logger.warning(
+            "Invalid value for %s=%r (not an int); falling back to %d.",
+            name,
+            raw,
+            default,
+        )
+        return default
+    if not allow_negative and value < 0:
+        logger.warning(
+            "Invalid value for %s=%r (negative); falling back to %d.",
+            name,
+            raw,
+            default,
+        )
+        return default
+    return value
 
 
-def _float_env(name: str, default: float) -> float:
-    """Read a float env var with graceful fallback on garbage input."""
-    try:
-        return float(os.environ.get(name, default))
-    except (TypeError, ValueError):
+def _float_env(name: str, default: float, *, allow_negative: bool = False) -> float:
+    """Read a float env var with graceful fallback + discoverable warning.
+
+    See `_int_env`. Negative values are rejected by default so a typo in
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S=-10` can't silently disable the
+    wrapper it was meant to configure.
+    """
+    raw = os.environ.get(name)
+    if raw is None:
         return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        logger.warning(
+            "Invalid value for %s=%r (not a float); falling back to %s.",
+            name,
+            raw,
+            default,
+        )
+        return default
+    if not allow_negative and value < 0:
+        logger.warning(
+            "Invalid value for %s=%r (negative); falling back to %s.",
+            name,
+            raw,
+            default,
+        )
+        return default
+    return value
 
 
 def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
@@ -69,7 +119,9 @@ def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
     only those the kernel accepts. This keeps the library-computed defaults
     non-fatal across platforms that don't implement every Linux option —
     `TCP_USER_TIMEOUT` in particular is Linux-only and silently missing on
-    macOS, some minimal kernels, and older gVisor builds.
+    macOS, some minimal kernels, and older gVisor builds. Dropped options
+    are logged at `DEBUG` so an operator can confirm whether a kernel-level
+    knob took effect on their platform.
 
     If the probe socket cannot be created (sandboxed runtimes, `pytest-socket`
     under `--disable-socket`, tight seccomp policies), the input list is
@@ -80,17 +132,25 @@ def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
     """
     try:
         probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except Exception:
+    except OSError:
         return list(opts)
     try:
         supported: list[SocketOption] = []
+        dropped: list[SocketOption] = []
         for level, optname, optval in opts:
             try:
                 probe.setsockopt(level, optname, optval)
-                supported.append((level, optname, optval))
             except OSError:
-                # Platform doesn't support this option; silently skip.
-                pass
+                dropped.append((level, optname, optval))
+                continue
+            supported.append((level, optname, optval))
+        if dropped:
+            logger.debug(
+                "Dropped %d unsupported socket option(s) on %s: %s",
+                len(dropped),
+                sys.platform,
+                dropped,
+            )
         return supported
     finally:
         probe.close()
@@ -103,9 +163,11 @@ def _default_socket_options() -> tuple[SocketOption, ...]:
     remain uniform: `()` is the single shape for "no options".
 
     Target behavior on Linux/gVisor with the full option set: silent peers
-    are surfaced within ~90-135s via `SO_KEEPALIVE` + `TCP_USER_TIMEOUT`.
-    On platforms that reject some options, `_filter_supported` drops them
-    and the bound degrades to whatever the remaining options provide.
+    are surfaced within ~90-120s via `SO_KEEPALIVE` + `TCP_USER_TIMEOUT`
+    (keepalive path gives a ~90s floor at the defaults; `TCP_USER_TIMEOUT`
+    caps at 120s). On platforms that reject some options,
+    `_filter_supported` drops them and the bound degrades to whatever the
+    remaining options provide.
     """
     if os.environ.get("LANGCHAIN_OPENAI_TCP_KEEPALIVE", "1") == "0":
         return ()
@@ -131,6 +193,43 @@ def _default_socket_options() -> tuple[SocketOption, ...]:
         ]
     # Windows (win32): SO_KEEPALIVE only; per-option tuning requires WSAIoctl.
     return tuple(_filter_supported(opts))
+
+
+_PROXY_ENV_VARS = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")
+_proxy_env_warning_emitted = False
+
+
+def _warn_if_proxy_env_shadowed(
+    socket_options: tuple[SocketOption, ...],
+    *,
+    openai_proxy: str | None,
+) -> None:
+    """Warn once if a custom transport will shadow httpx's env-proxy detection.
+
+    When `socket_options` is non-empty we pass a custom `httpx` transport,
+    which disables httpx's native `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`
+    auto-detection (and macOS/Windows system proxy config). If the user
+    supplies `openai_proxy` explicitly we route through it and the env-var
+    handling is moot. Otherwise, a user whose app was transparently
+    relying on those env vars will silently stop using them on upgrade —
+    emit a single WARNING so the behavior change is discoverable.
+    """
+    global _proxy_env_warning_emitted
+    if _proxy_env_warning_emitted or not socket_options or openai_proxy:
+        return
+    active = [name for name in _PROXY_ENV_VARS if os.environ.get(name)]
+    if not active:
+        return
+    _proxy_env_warning_emitted = True
+    logger.warning(
+        "langchain-openai injected a custom httpx transport to apply "
+        "`http_socket_options`, which disables httpx's env-proxy "
+        "auto-detection (%s set in environment). Set "
+        "`LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` or pass `http_socket_options=()` "
+        "to restore env-proxy behavior, or supply `openai_proxy` / your own "
+        "`http_client` / `http_async_client` to take full control.",
+        ", ".join(active),
+    )
 
 
 def _resolve_socket_options(
@@ -369,37 +468,73 @@ _StreamChunkTimeoutBases: tuple[type, ...] = (
 class StreamChunkTimeoutError(*_StreamChunkTimeoutBases):  # type: ignore[misc]
     """Raised when no streaming chunk arrives within `stream_chunk_timeout`.
 
-    Subclasses both `asyncio.TimeoutError` and `TimeoutError` on all
-    supported Python versions, so both `except asyncio.TimeoutError:` and
-    `except TimeoutError:` handlers keep working.
+    `issubclass(StreamChunkTimeoutError, asyncio.TimeoutError)` and
+    `issubclass(StreamChunkTimeoutError, TimeoutError)` both hold on all
+    supported Python versions, so existing `except asyncio.TimeoutError:`
+    and `except TimeoutError:` handlers keep catching the exception. On
+    Python 3.11+ the two exceptions are the same object, so only
+    `asyncio.TimeoutError` appears in `__bases__`.
+
+    Structured attributes (`timeout_s`, `model_name`, `chunks_received`)
+    mirror the WARNING log's `extra=` payload so diagnostic code doesn't
+    need to regex the message.
     """
+
+    def __init__(
+        self,
+        timeout_s: float,
+        *,
+        model_name: str | None = None,
+        chunks_received: int = 0,
+    ) -> None:
+        self.timeout_s = timeout_s
+        self.model_name = model_name
+        self.chunks_received = chunks_received
+        context = []
+        if model_name:
+            context.append(f"model={model_name}")
+        context.append(f"chunks_received={chunks_received}")
+        suffix = f" ({', '.join(context)})"
+        super().__init__(
+            f"No streaming chunk received for {timeout_s:.1f}s{suffix}. The "
+            f"connection may be alive at the TCP layer but is not producing "
+            f"content. Tune or disable via the `stream_chunk_timeout` "
+            f"constructor kwarg (set to None or 0 to disable) or the "
+            f"`LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var. See also "
+            f"`http_socket_options` for the kernel-level TCP timeout that "
+            f"catches dead TCP peers."
+        )
 
 
 async def _astream_with_chunk_timeout(
     source: AsyncIterator[T],
     timeout: float | None,
+    *,
+    model_name: str | None = None,
 ) -> AsyncIterator[T]:
     """Yield from `source` but bound the per-chunk wait time.
 
     If `timeout` is None or <=0, yields directly with no wall-clock bound.
     Otherwise, each `__anext__` is wrapped in
     `asyncio.wait_for(..., timeout)`. A timeout raises
-    `StreamChunkTimeoutError` (a `TimeoutError` subclass) with a clear
-    message naming the knob and the env-var override. A single-line
-    structured log also fires at WARNING so the signal is visible in
-    aggregate logging systems even when the exception is caught upstream.
+    `StreamChunkTimeoutError` (a `TimeoutError` subclass) whose message
+    names the knob, the env-var override, the model, and how many chunks
+    were received before the stall. A single-line structured log also
+    fires at WARNING so the signal is visible in aggregate logging systems
+    even when the exception is caught upstream.
 
-    The source iterator is explicitly `aclose()`-d on early exit (timeout,
-    consumer break, any exception) so the underlying httpx streaming
-    connection is released promptly rather than left dangling.
+    When the timeout is active, the source iterator is explicitly
+    `aclose()`-d on early exit (timeout, consumer break, any exception) so
+    the underlying httpx streaming connection is released promptly. The
+    pass-through branch (timeout disabled) relies on httpx's GC-driven
+    cleanup instead — matching the behavior of unwrapped streams.
     """
     if not timeout or timeout <= 0:
-        # No wall-clock bound. No try/finally here — a consumer breaking early
-        # falls back on httpx's GC-driven cleanup, same as before this wrapper.
         async for item in source:
             yield item
         return
 
+    chunks_received = 0
     it = source.__aiter__()
     try:
         while True:
@@ -413,25 +548,28 @@ async def _astream_with_chunk_timeout(
                     extra={
                         "source": "stream_chunk_timeout",
                         "timeout_s": timeout,
+                        "model_name": model_name,
+                        "chunks_received": chunks_received,
                     },
                 )
-                msg = (
-                    f"No streaming chunk received for {timeout:.1f}s. The "
-                    f"connection may be alive at the TCP layer but is not "
-                    f"producing content. Tune or disable via the "
-                    f"`stream_chunk_timeout` constructor kwarg (set to None "
-                    f"or 0 to disable) or the "
-                    f"`LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var. See "
-                    f"also `http_socket_options` for the kernel-level TCP "
-                    f"timeout that catches dead TCP peers."
-                )
-                raise StreamChunkTimeoutError(msg) from e
+                raise StreamChunkTimeoutError(
+                    timeout,
+                    model_name=model_name,
+                    chunks_received=chunks_received,
+                ) from e
+            chunks_received += 1
             yield chunk
     finally:
         aclose = getattr(it, "aclose", None)
         if aclose is not None:
             try:
                 await aclose()
-            except Exception:  # noqa: S110
-                # Best-effort cleanup; don't mask the original exception.
-                pass
+            except Exception as cleanup_exc:
+                # Best-effort cleanup; don't mask the original exception,
+                # but leave a DEBUG trace so pool/transport bugs stay
+                # discoverable at the right log level.
+                logger.debug(
+                    "aclose() during _astream_with_chunk_timeout cleanup "
+                    "raised; ignoring",
+                    exc_info=cleanup_exc,
+                )
