@@ -1119,6 +1119,38 @@ def test__create_usage_metadata_responses() -> None:
     )
 
 
+def test__create_usage_metadata_service_tier_missing_token_details() -> None:
+    """`service_tier` arithmetic must tolerate missing cached/reasoning fields."""
+    usage_metadata = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "prompt_tokens_details": {},
+        "completion_tokens_details": {},
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["input_token_details"]["priority"] == 100
+    assert result["output_token_details"]["priority"] == 50
+
+
+def test__create_usage_metadata_responses_service_tier_missing_token_details() -> None:
+    """Same regression as above for the responses-API helper."""
+    usage_metadata = {
+        "input_tokens": 80,
+        "output_tokens": 40,
+        "total_tokens": 120,
+        "input_tokens_details": {},
+        "output_tokens_details": {},
+    }
+    result = _create_usage_metadata_responses(usage_metadata, service_tier="flex")
+    assert result["input_tokens"] == 80
+    assert result["output_tokens"] == 40
+    assert result["input_token_details"]["flex"] == 80
+    assert result["output_token_details"]["flex"] == 40
+
+
 def test__resize_caps_dimensions_preserving_ratio() -> None:
     """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
     assert _resize(2048, 4096) == (768, 1536)

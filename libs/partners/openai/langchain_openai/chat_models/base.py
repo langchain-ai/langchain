@@ -3856,12 +3856,13 @@ def _create_usage_metadata(
     }
     if service_tier is not None:
         # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        # counts, since service tier tokens are already priced differently.
+        # Use `or 0` because the keys above store None when the API omits them.
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read") or 0
         )
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning") or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -3897,12 +3898,13 @@ def _create_usage_metadata_responses(
     }
     if service_tier is not None:
         # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        # counts, since service tier tokens are already priced differently.
+        # Use `or 0` because the keys above store None when the API omits them.
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning") or 0
         )
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read") or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
