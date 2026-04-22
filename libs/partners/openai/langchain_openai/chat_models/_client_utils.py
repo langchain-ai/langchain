@@ -342,8 +342,14 @@ def _build_proxied_sync_httpx_client(
     """
     if not socket_options:
         return httpx.Client(proxy=proxy, verify=verify)
-    # httpx.HTTPTransport(proxy=...) is stricter about string coercion than
-    # httpx.Client(proxy=...); wrap in the public httpx.Proxy type for
+    # Mount under `all://` (not `transport=`) so `Client._mounts` mirrors the
+    # shape produced by httpx's own `proxy=` path — a single-entry dict keyed
+    # by `URLPattern("all://")`. Callers (and the existing proxy integration
+    # test) reach into `_mounts` to introspect the proxy URL; a bare
+    # `transport=` leaves `_mounts` empty.
+    #
+    # `httpx.HTTPTransport(proxy=...)` is stricter about string coercion than
+    # `httpx.Client(proxy=...)`; wrap in the public `httpx.Proxy` type for
     # version-stable behavior.
     transport = httpx.HTTPTransport(
         proxy=httpx.Proxy(proxy),
@@ -351,7 +357,7 @@ def _build_proxied_sync_httpx_client(
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.Client(transport=transport)
+    return httpx.Client(mounts={"all://": transport})
 
 
 def _build_proxied_async_httpx_client(
@@ -361,8 +367,9 @@ def _build_proxied_async_httpx_client(
 ) -> httpx.AsyncClient:
     """httpx.AsyncClient for the openai_proxy code path.
 
-    See `_build_proxied_sync_httpx_client` for the opt-out fallback
-    and the `httpx.Proxy` wrapping rationale.
+    See `_build_proxied_sync_httpx_client` for the opt-out fallback,
+    the `mounts={"all://": ...}` shape, and the `httpx.Proxy` wrapping
+    rationale.
     """
     if not socket_options:
         return httpx.AsyncClient(proxy=proxy, verify=verify)
@@ -372,7 +379,7 @@ def _build_proxied_async_httpx_client(
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.AsyncClient(transport=transport)
+    return httpx.AsyncClient(mounts={"all://": transport})
 
 
 @lru_cache
