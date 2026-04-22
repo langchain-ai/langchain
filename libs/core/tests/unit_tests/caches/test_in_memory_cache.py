@@ -69,6 +69,45 @@ def test_update_with_maxsize() -> None:
     assert cache.lookup(prompt3, llm_string3) == generations3
 
 
+def test_update_existing_key_does_not_evict() -> None:
+    """Updating an already-cached key must not evict another entry.
+
+    Regression test for a bug where `InMemoryCache.update` always pruned the
+    oldest entry when `len(cache) == maxsize`, shrinking the cache on an
+    in-place refresh of an existing key.
+    """
+    cache = InMemoryCache(maxsize=2)
+
+    prompt1, llm_string1, generations1 = cache_item(1)
+    prompt2, llm_string2, generations2 = cache_item(2)
+    cache.update(prompt1, llm_string1, generations1)
+    cache.update(prompt2, llm_string2, generations2)
+
+    new_generations = [Generation(text="refreshed")]
+    cache.update(prompt2, llm_string2, new_generations)
+
+    assert cache.lookup(prompt1, llm_string1) == generations1
+    assert cache.lookup(prompt2, llm_string2) == new_generations
+    assert len(cache._cache) == 2
+
+
+async def test_aupdate_existing_key_does_not_evict() -> None:
+    """Async counterpart of `test_update_existing_key_does_not_evict`."""
+    cache = InMemoryCache(maxsize=2)
+
+    prompt1, llm_string1, generations1 = cache_item(1)
+    prompt2, llm_string2, generations2 = cache_item(2)
+    await cache.aupdate(prompt1, llm_string1, generations1)
+    await cache.aupdate(prompt2, llm_string2, generations2)
+
+    new_generations = [Generation(text="refreshed")]
+    await cache.aupdate(prompt2, llm_string2, new_generations)
+
+    assert await cache.alookup(prompt1, llm_string1) == generations1
+    assert await cache.alookup(prompt2, llm_string2) == new_generations
+    assert len(cache._cache) == 2
+
+
 def test_clear(cache: InMemoryCache) -> None:
     """Test the clear method of InMemoryCache."""
     prompt, llm_string, generations = cache_item(1)
