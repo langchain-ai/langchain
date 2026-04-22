@@ -849,7 +849,8 @@ class BaseChatOpenAI(BaseChatModel):
     stream_chunk_timeout: float | None = Field(
         default_factory=lambda: _float_env(
             "LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0
-        )
+        ),
+        exclude=True,
     )
     """Per-chunk wall-clock timeout (seconds) on async streaming responses.
 
