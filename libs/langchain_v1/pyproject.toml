@@ -101,6 +101,13 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
+# TEMPORARY: pin langgraph + subpackages to the companion PR branch
+# (langchain-ai/langgraph#7594) so CI exercises the ToolNode change
+# together with this PR. Revert to published versions after the
+# langgraph release that ships that change lands.
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "sr/tool-call-no-state-inline", subdirectory = "libs/langgraph" }
+langgraph-prebuilt = { git = "https://github.com/langchain-ai/langgraph.git", branch = "sr/tool-call-no-state-inline", subdirectory = "libs/prebuilt" }
+langgraph-checkpoint = { git = "https://github.com/langchain-ai/langgraph.git", branch = "sr/tool-call-no-state-inline", subdirectory = "libs/checkpoint" }
 
 [tool.ruff]
 line-length = 100
