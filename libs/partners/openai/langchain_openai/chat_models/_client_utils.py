@@ -65,18 +65,18 @@ def _float_env(name: str, default: float) -> float:
 def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
     """Drop socket options the running platform rejects.
 
-    Probes each option against a throwaway socket via ``setsockopt`` and keeps
+    Probes each option against a throwaway socket via `setsockopt` and keeps
     only those the kernel accepts. This keeps the library-computed defaults
     non-fatal across platforms that don't implement every Linux option —
-    ``TCP_USER_TIMEOUT`` in particular is Linux-only and silently missing on
+    `TCP_USER_TIMEOUT` in particular is Linux-only and silently missing on
     macOS, some minimal kernels, and older gVisor builds.
 
-    If the probe socket cannot be created (sandboxed runtimes, ``pytest-socket``
-    under ``--disable-socket``, tight seccomp policies), the input list is
+    If the probe socket cannot be created (sandboxed runtimes, `pytest-socket`
+    under `--disable-socket`, tight seccomp policies), the input list is
     returned unfiltered. This preserves the pass-through behavior used for
     explicit user overrides: unsupported options will surface as a clear
-    ``OSError`` at the first real ``connect()`` rather than being silently
-    dropped during ``ChatOpenAI`` construction.
+    `OSError` at the first real `connect()` rather than being silently
+    dropped during `ChatOpenAI` construction.
     """
     try:
         probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,14 +97,14 @@ def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
 
 
 def _default_socket_options() -> tuple[SocketOption, ...]:
-    """Return default TCP socket options, or ``()`` if disabled via env.
+    """Return default TCP socket options, or `()` if disabled via env.
 
-    Always returns a tuple (never None) so callers and ``@lru_cache`` keys
-    remain uniform: ``()`` is the single shape for "no options".
+    Always returns a tuple (never None) so callers and `@lru_cache` keys
+    remain uniform: `()` is the single shape for "no options".
 
     Target behavior on Linux/gVisor with the full option set: silent peers
-    are surfaced within ~90-135s via ``SO_KEEPALIVE`` + ``TCP_USER_TIMEOUT``.
-    On platforms that reject some options, ``_filter_supported`` drops them
+    are surfaced within ~90-135s via `SO_KEEPALIVE` + `TCP_USER_TIMEOUT`.
+    On platforms that reject some options, `_filter_supported` drops them
     and the bound degrades to whatever the remaining options provide.
     """
     if os.environ.get("LANGCHAIN_OPENAI_TCP_KEEPALIVE", "1") == "0":
@@ -136,21 +136,21 @@ def _default_socket_options() -> tuple[SocketOption, ...]:
 def _resolve_socket_options(
     value: Sequence[SocketOption] | None,
 ) -> tuple[SocketOption, ...]:
-    """Normalise the user-facing field to the tuple form builders expect.
+    """Normalize the user-facing field to the tuple form builders expect.
 
-    - ``None`` => env-driven defaults (may itself be ``()`` if the user set
-      ``LANGCHAIN_OPENAI_TCP_KEEPALIVE=0``). This path runs through
-      ``_filter_supported()`` inside ``_default_socket_options()`` because
+    - `None` => env-driven defaults (may itself be `()` if the user set
+      `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0`). This path runs through
+      `_filter_supported()` inside `_default_socket_options()` because
       the library-computed option set is aspirational and silent degradation
       is the right posture.
     - Any other sequence (including empty) => retupled for cache hashability.
       An empty tuple is the explicit "disabled" signal. A non-empty sequence
       is passed verbatim — **not** filtered. The user chose these options
       explicitly, so an unsupported constant should surface as a clear
-      ``OSError`` at connect time, not be silently dropped.
+      `OSError` at connect time, not be silently dropped.
 
-    Always returns a tuple — never ``None`` — so downstream signatures take
-    ``tuple[SocketOption, ...]`` with ``()`` as the single "no options" shape.
+    Always returns a tuple — never `None` — so downstream signatures take
+    `tuple[SocketOption, ...]` with `()` as the single "no options" shape.
     """
     if value is None:
         return _default_socket_options()
@@ -232,8 +232,8 @@ def _build_proxied_sync_httpx_client(
 ) -> httpx.Client:
     """httpx.Client for the openai_proxy code path.
 
-    When socket options are disabled (``()``), returns a plain
-    ``httpx.Client(proxy=..., verify=...)`` with no transport injected.
+    When socket options are disabled (`()`), returns a plain
+    `httpx.Client(proxy=..., verify=...)` with no transport injected.
     """
     if not socket_options:
         return httpx.Client(proxy=proxy, verify=verify)
@@ -256,8 +256,8 @@ def _build_proxied_async_httpx_client(
 ) -> httpx.AsyncClient:
     """httpx.AsyncClient for the openai_proxy code path.
 
-    See :func:`_build_proxied_sync_httpx_client` for the opt-out fallback
-    and the ``httpx.Proxy`` wrapping rationale.
+    See `_build_proxied_sync_httpx_client` for the opt-out fallback
+    and the `httpx.Proxy` wrapping rationale.
     """
     if not socket_options:
         return httpx.AsyncClient(proxy=proxy, verify=verify)
@@ -356,7 +356,7 @@ T = TypeVar("T")
 
 # On Python ≤3.10, asyncio.TimeoutError and builtins.TimeoutError are distinct
 # hierarchies, so subclassing only asyncio.TimeoutError would not be caught by
-# ``except TimeoutError:``. On Python ≥3.11 they are the same object, so listing
+# `except TimeoutError:`. On Python ≥3.11 they are the same object, so listing
 # both bases would raise TypeError: duplicate base class. We resolve this at
 # class-definition time.
 _StreamChunkTimeoutBases: tuple[type, ...] = (
@@ -367,11 +367,11 @@ _StreamChunkTimeoutBases: tuple[type, ...] = (
 
 
 class StreamChunkTimeoutError(*_StreamChunkTimeoutBases):  # type: ignore[misc]
-    """Raised when no streaming chunk arrives within ``stream_chunk_timeout``.
+    """Raised when no streaming chunk arrives within `stream_chunk_timeout`.
 
-    Subclasses both ``asyncio.TimeoutError`` and ``TimeoutError`` on all
-    supported Python versions, so both ``except asyncio.TimeoutError:`` and
-    ``except TimeoutError:`` handlers keep working.
+    Subclasses both `asyncio.TimeoutError` and `TimeoutError` on all
+    supported Python versions, so both `except asyncio.TimeoutError:` and
+    `except TimeoutError:` handlers keep working.
     """
 
 
@@ -379,17 +379,17 @@ async def _astream_with_chunk_timeout(
     source: AsyncIterator[T],
     timeout: float | None,
 ) -> AsyncIterator[T]:
-    """Yield from ``source`` but bound the per-chunk wait time.
+    """Yield from `source` but bound the per-chunk wait time.
 
-    If ``timeout`` is None or <=0, yields directly with no wall-clock bound.
-    Otherwise, each ``__anext__`` is wrapped in
-    ``asyncio.wait_for(..., timeout)``. A timeout raises
-    ``StreamChunkTimeoutError`` (a ``TimeoutError`` subclass) with a clear
+    If `timeout` is None or <=0, yields directly with no wall-clock bound.
+    Otherwise, each `__anext__` is wrapped in
+    `asyncio.wait_for(..., timeout)`. A timeout raises
+    `StreamChunkTimeoutError` (a `TimeoutError` subclass) with a clear
     message naming the knob and the env-var override. A single-line
     structured log also fires at WARNING so the signal is visible in
     aggregate logging systems even when the exception is caught upstream.
 
-    The source iterator is explicitly ``aclose()``-d on early exit (timeout,
+    The source iterator is explicitly `aclose()`-d on early exit (timeout,
     consumer break, any exception) so the underlying httpx streaming
     connection is released promptly rather than left dangling.
     """

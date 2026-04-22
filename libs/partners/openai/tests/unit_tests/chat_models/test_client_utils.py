@@ -1,8 +1,8 @@
-"""Unit tests for ``langchain_openai.chat_models._client_utils``.
+"""Unit tests for `langchain_openai.chat_models._client_utils`.
 
 Asserts socket-options plumbing at the boundary between our helpers and the
 httpx layer — not on httpx internals. Locks the wiring, env-driven defaults,
-the ``()`` kill-switch contract, and the precedence between constructor kwargs,
+the `()` kill-switch contract, and the precedence between constructor kwargs,
 env vars, and user-supplied clients.
 """
 
@@ -51,7 +51,7 @@ def test_default_socket_options_linux() -> None:
 def test_default_socket_options_disabled_returns_empty_tuple(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Kill-switch: ``()`` is the single 'no options' shape, never None."""
+    """Kill-switch: `()` is the single 'no options' shape, never None."""
     monkeypatch.setenv("LANGCHAIN_OPENAI_TCP_KEEPALIVE", "0")
     opts = _client_utils._default_socket_options()
     assert opts == ()
@@ -63,9 +63,9 @@ def test_filter_supported_drops_unsupported() -> None:
     """An option with a deliberately-bogus level should be silently dropped.
 
     Requires a real probe socket, so opt out of the suite-wide
-    ``--disable-socket``. If the probe still cannot be created (unusual
+    `--disable-socket`. If the probe still cannot be created (unusual
     sandboxed runner), the helper falls back to pass-through; assert that
-    contract explicitly rather than masking the behaviour.
+    contract explicitly rather than masking the behavior.
     """
     good = (SOL_SOCKET, SO_KEEPALIVE, 1)
     # Very high level number the kernel will reject.
@@ -145,8 +145,8 @@ def test_http_socket_options_none_vs_empty_tuple_vs_populated(
     """Discriminates the three input shapes at the builder boundary.
 
     Also locks the no-filter contract for user overrides: the populated-case
-    assertion is verbatim, proving ``_resolve_socket_options`` does not run
-    user overrides through ``_filter_supported``.
+    assertion is verbatim, proving `_resolve_socket_options` does not run
+    user overrides through `_filter_supported`.
     """
     recorded: list[tuple[str, tuple, tuple]] = []
 
@@ -206,7 +206,7 @@ def test_http_socket_options_none_vs_empty_tuple_vs_populated(
 def test_openai_proxy_branch_applies_socket_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """``openai_proxy`` path must go through the socket-options-aware proxied helper."""
+    """`openai_proxy` path must go through the socket-options-aware proxied helper."""
     recorded: list[dict[str, Any]] = []
 
     def spy(proxy: str, verify: Any, socket_options: tuple = ()) -> httpx.AsyncClient:
@@ -295,7 +295,7 @@ def test_default_path_opt_out_is_strict_noop(
 ) -> None:
     """With LANGCHAIN_OPENAI_TCP_KEEPALIVE=0 we inject no transport.
 
-    Boundary assertion on ``_AsyncHttpxClientWrapper.__init__`` kwargs — our
+    Boundary assertion on `_AsyncHttpxClientWrapper.__init__` kwargs — our
     helper passed nothing, so httpx falls back to its own native behavior
     (env-proxy handling, pool defaults, trust_env, etc.) completely
     unaffected by this library.

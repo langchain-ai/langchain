@@ -800,48 +800,48 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """TCP socket options applied to the httpx transports built by this instance.
 
-    Defaults to a conservative TCP-keepalive + ``TCP_USER_TIMEOUT`` profile that
+    Defaults to a conservative TCP-keepalive + `TCP_USER_TIMEOUT` profile that
     targets a ~2-minute bound on silent connection hangs (silent mid-stream peer
     loss, gVisor/NAT idle timeouts, silent TCP black holes) on platforms that
     support the full option set. On platforms that only support a subset
-    (macOS without ``TCP_USER_TIMEOUT``, Windows with only ``SO_KEEPALIVE``,
+    (macOS without `TCP_USER_TIMEOUT`, Windows with only `SO_KEEPALIVE`,
     minimal kernels), unsupported options are silently dropped and the bound
     degrades to whatever the remaining options + OS defaults provide — still
     better than indefinite hang.
 
     Accepted values:
 
-    - ``None`` (default): use env-driven defaults. Matches the "unset" convention
-      used by ``http_client`` elsewhere on this class.
-    - ``()`` (empty): disable socket-option injection entirely. Inherits the OS
+    - `None` (default): use env-driven defaults. Matches the "unset" convention
+      used by `http_client` elsewhere on this class.
+    - `()` (empty): disable socket-option injection entirely. Inherits the OS
       defaults and restores httpx's native env-proxy auto-detection.
-    - A non-empty sequence of ``(level, option, value)`` tuples: explicit
+    - A non-empty sequence of `(level, option, value)` tuples: explicit
       override; passed verbatim to the transport (not filtered). Unsupported
-      options raise ``OSError`` at connect time rather than being silently
+      options raise `OSError` at connect time rather than being silently
       dropped — the user chose them explicitly.
 
-    Environment variables (only consulted when this field is ``None``):
-    ``LANGCHAIN_OPENAI_TCP_KEEPALIVE`` (set to ``0`` to disable entirely — the
-    kill-switch), ``LANGCHAIN_OPENAI_TCP_KEEPIDLE``,
-    ``LANGCHAIN_OPENAI_TCP_KEEPINTVL``, ``LANGCHAIN_OPENAI_TCP_KEEPCNT``,
-    ``LANGCHAIN_OPENAI_TCP_USER_TIMEOUT_MS``.
+    Environment variables (only consulted when this field is `None`):
+    `LANGCHAIN_OPENAI_TCP_KEEPALIVE` (set to `0` to disable entirely — the
+    kill-switch), `LANGCHAIN_OPENAI_TCP_KEEPIDLE`,
+    `LANGCHAIN_OPENAI_TCP_KEEPINTVL`, `LANGCHAIN_OPENAI_TCP_KEEPCNT`,
+    `LANGCHAIN_OPENAI_TCP_USER_TIMEOUT_MS`.
 
-    Ignored if ``http_client`` or ``http_async_client`` is provided — the
+    Ignored if `http_client` or `http_async_client` is provided — the
     user-owned client's socket options are used as-is.
 
     !!! note "Known limitation — env-proxy auto-detection"
 
         When socket options are active, langchain-openai passes a custom
-        ``httpx`` transport, and ``httpx`` disables its native env-proxy
-        auto-detection (``HTTP_PROXY`` / ``HTTPS_PROXY`` / ``ALL_PROXY`` /
-        ``NO_PROXY`` and macOS/Windows system proxy settings) whenever a
+        `httpx` transport, and `httpx` disables its native env-proxy
+        auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` /
+        `NO_PROXY` and macOS/Windows system proxy settings) whenever a
         transport is supplied. If OpenAI traffic in your environment is
         routed via those env/system proxies, set
-        ``LANGCHAIN_OPENAI_TCP_KEEPALIVE=0`` (or pass
-        ``http_socket_options=()``) to restore httpx's native env-proxy
-        behavior. Alternatively, pass a fully-configured ``http_async_client``
-        / ``http_client`` (with both your proxy config and your socket
-        options) to take full control. The ``openai_proxy`` constructor kwarg
+        `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` (or pass
+        `http_socket_options=()`) to restore httpx's native env-proxy
+        behavior. Alternatively, pass a fully-configured `http_async_client`
+        / `http_client` (with both your proxy config and your socket
+        options) to take full control. The `openai_proxy` constructor kwarg
         is not affected by this limitation — socket options are applied
         cleanly through the proxied transport on that path.
     """
@@ -854,33 +854,32 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Per-chunk wall-clock timeout (seconds) on async streaming responses.
 
-    Applies to async invocations only (``astream``, ``ainvoke`` with streaming,
-    etc.). Sync streaming (``stream``) is not affected.
+    Applies to async invocations only (`astream`, `ainvoke` with streaming,
+    etc.). Sync streaming (`stream`) is not affected.
 
     Fires between content chunks yielded by the openai SDK's streaming iterator
-    (i.e., each call to ``__anext__`` on the response). Crucially, this is
-    **not** the same as httpx's ``timeout.read``:
+    (i.e., each call to `__anext__` on the response). Crucially, this is
+    **not** the same as httpx's `timeout.read`:
 
     - httpx's read timeout is inter-byte and gets reset every time *any* bytes
       arrive on the socket — including OpenAI's SSE keepalive comments
-      (``: keepalive``) that trickle down during long model generations. A
+      (`: keepalive`) that trickle down during long model generations. A
       stream that's silent on *content* but still producing keepalives looks
       alive forever to httpx.
-    - ``stream_chunk_timeout`` measures the gap between *parsed chunks*. The
+    - `stream_chunk_timeout` measures the gap between *parsed chunks*. The
       openai SDK's SSE parser consumes keepalive comments internally and does
       not emit them as chunks, so keepalives do *not* reset this timer. It
       fires on genuine content silence.
 
-    When it fires, a
-    :class:`~langchain_openai.StreamChunkTimeoutError`
-    (subclass of ``asyncio.TimeoutError``) is raised with a self-describing
+    When it fires, a `StreamChunkTimeoutError`
+    (subclass of `asyncio.TimeoutError`) is raised with a self-describing
     message naming this knob and the env-var override. A WARNING log with
-    ``extra={"source": "stream_chunk_timeout", "timeout_s": <value>}`` also
+    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>}` also
     fires for aggregate-logging discrimination of P1 (app-layer) timeouts
     from P2 (transport-layer) failures.
 
-    Defaults to 120s. Set to ``None`` or ``0`` to disable. Overridable via the
-    ``LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S`` env var; unparseable values
+    Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var; unparseable values
     fall back to the 120s default without crashing model init (so a
     misconfigured helm values file can't take down the process).
     """
