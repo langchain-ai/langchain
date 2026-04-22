@@ -902,8 +902,17 @@ def test_agent_loop(output_version: Literal["v0", "v1"]) -> None:
 
 @pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("v0", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_agent_loop_streaming(
+    output_version: Literal["v0", "v1"], *, use_v2_stream: bool
+) -> None:
     @tool
     def get_weather(location: str) -> str:
         """Get the weather for a location."""
@@ -916,7 +925,10 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    tool_call_message = llm_with_tools.invoke([input_message])
+    if use_v2_stream:
+        tool_call_message = llm_with_tools.stream_v2([input_message]).output
+    else:
+        tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
 
     tool_calls = tool_call_message.tool_calls
@@ -924,20 +936,68 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
     tool_call = tool_calls[0]
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
-    response = llm_with_tools.invoke(
-        [
-            input_message,
-            tool_call_message,
-            tool_message,
-        ]
+    if use_v2_stream:
+        response = llm_with_tools.stream_v2(
+            [input_message, tool_call_message, tool_message]
+        ).output
+    else:
+        response = llm_with_tools.invoke(
+            [
+                input_message,
+                tool_call_message,
+                tool_message,
+            ]
+        )
+    assert isinstance(response, AIMessage)
+
+
+@pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
+@pytest.mark.vcr
+async def test_agent_loop_streaming_astream_v2_v1() -> None:
+    """Async multi-turn through `astream_v2`.
+
+    Mirrors `test_agent_loop_streaming` for `output_version="v1"` but
+    exercises `AsyncChatModelStream` end-to-end.
+    """
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        streaming=True,
+        output_version="v1",  # type: ignore[call-arg]
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = await (await llm_with_tools.astream_v2([input_message]))
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = await (
+        await llm_with_tools.astream_v2(
+            [input_message, tool_call_message, tool_message]
+        )
     )
     assert isinstance(response, AIMessage)
 
 
 @pytest.mark.default_cassette("test_citations.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_citations(output_version: Literal["v0", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("v0", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_citations(output_version: Literal["v0", "v1"], *, use_v2_stream: bool) -> None:
     llm = ChatAnthropic(model=MODEL_NAME, output_version=output_version)  # type: ignore[call-arg]
     messages = [
         {
@@ -967,10 +1027,19 @@ def test_citations(output_version: Literal["v0", "v1"]) -> None:
         assert any("citations" in block for block in response.content)
 
     # Test streaming
-    full: BaseMessageChunk | None = None
-    for chunk in llm.stream(messages):
-        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
+    full: BaseMessage
+    if use_v2_stream:
+        full = llm.stream_v2(messages).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm.stream(messages):
+            aggregated = (
+                cast("BaseMessageChunk", chunk)
+                if aggregated is None
+                else aggregated + chunk
+            )
+        assert isinstance(aggregated, AIMessageChunk)
+        full = aggregated
     assert isinstance(full.content, list)
     assert not any("citation" in block for block in full.content)
     if output_version == "v1":
@@ -1029,7 +1098,8 @@ def test_thinking() -> None:
 
 @pytest.mark.default_cassette("test_thinking.yaml.gz")
 @pytest.mark.vcr
-def test_thinking_v1() -> None:
+@pytest.mark.parametrize("use_v2_stream", [False, True])
+def test_thinking_v1(*, use_v2_stream: bool) -> None:
     llm = ChatAnthropic(
         model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
@@ -1051,10 +1121,19 @@ def test_thinking_v1() -> None:
             assert isinstance(signature, str)
 
     # Test streaming
-    full: BaseMessageChunk | None = None
-    for chunk in llm.stream([input_message]):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
+    full: BaseMessage
+    if use_v2_stream:
+        full = llm.stream_v2([input_message]).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm.stream([input_message]):
+            aggregated = (
+                cast(BaseMessageChunk, chunk)
+                if aggregated is None
+                else aggregated + chunk
+            )
+        assert isinstance(aggregated, AIMessageChunk)
+        full = aggregated
     assert isinstance(full.content, list)
     assert any("reasoning" in block for block in full.content)
     for block in full.content:

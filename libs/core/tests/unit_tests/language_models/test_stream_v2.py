@@ -318,7 +318,7 @@ class TestStreamV2:
         for _ in stream.text:
             pass
         # FakeListChatModel doesn't emit usage, so it should be None
-        assert stream.usage is None
+        assert stream.output.usage_metadata is None
         assert stream.done
 
     def test_stream_v2_malformed_tool_args_produce_invalid_tool_call(self) -> None:

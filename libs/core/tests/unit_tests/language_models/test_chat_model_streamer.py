@@ -39,7 +39,8 @@ class TestStreamV2Sync:
         stream = model.stream_v2("test")
 
         msg = stream.output
-        assert msg.content == "Hello!"
+        assert isinstance(msg.content, list)
+        assert msg.content == [{"type": "text", "text": "Hello!", "index": 0}]
         assert msg.id is not None
 
     def test_stream_usage_none_for_fake(self) -> None:
@@ -48,7 +49,7 @@ class TestStreamV2Sync:
         # Drain
         for _ in stream.text:
             pass
-        assert stream.usage is None
+        assert stream.output.usage_metadata is None
 
     def test_stream_raw_events(self) -> None:
         model = FakeListChatModel(responses=["ab"])
@@ -87,7 +88,7 @@ class TestAstreamV2:
         stream = await model.astream_v2("test")
 
         msg = await stream
-        assert msg.content == "Hey"
+        assert msg.content == [{"type": "text", "text": "Hey", "index": 0}]
 
 
 class _RecordingHandler(BaseCallbackHandler):
@@ -184,7 +185,7 @@ class TestCallbacks:
         assert response.generations
         gen = response.generations[0][0]
         assert isinstance(gen, ChatGeneration)
-        assert gen.message.content == "hello"
+        assert gen.message.content == [{"type": "text", "text": "hello", "index": 0}]
 
     @pytest.mark.asyncio
     async def test_on_llm_end_receives_assembled_message_async(self) -> None:
@@ -198,7 +199,7 @@ class TestCallbacks:
         assert response.generations
         gen = response.generations[0][0]
         assert isinstance(gen, ChatGeneration)
-        assert gen.message.content == "hello"
+        assert gen.message.content == [{"type": "text", "text": "hello", "index": 0}]
 
 
 class TestOnStreamEvent:

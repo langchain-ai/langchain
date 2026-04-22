@@ -78,6 +78,14 @@ def _sweep_chunk_store(
     """
     for idx in sorted(store):
         chunk = store[idx]
+        # Carry over any non-finalize-rewritten fields the chunk collected
+        # (e.g., `extras`, source-side `index`). We rewrite `type`, `id`,
+        # `name`, `args` below; everything else passes through.
+        extras = {
+            k: v
+            for k, v in chunk.items()
+            if k not in ("type", "id", "name", "args") and v is not None
+        }
         raw_args = chunk.get("args", "{}")
         try:
             parsed = json.loads(raw_args) if raw_args else {}
@@ -91,6 +99,8 @@ def _sweep_chunk_store(
                 invalid["id"] = chunk["id"]
             if chunk.get("name"):
                 invalid["name"] = chunk["name"]
+            invalid.update(extras)  # type: ignore[typeddict-item]
+            invalid.setdefault("index", idx)  # type: ignore[typeddict-item]
             invalid_acc.append(invalid)
             finalized_blocks[idx] = invalid
             continue
@@ -101,8 +111,10 @@ def _sweep_chunk_store(
                 "id": chunk.get("id", ""),
                 "name": chunk.get("name", ""),
                 "args": parsed,
+                **extras,
             },
         )
+        final_block.setdefault("index", idx)  # type: ignore[typeddict-item]
         if tool_calls_acc is not None and finalized_type == "tool_call":
             tool_calls_acc.append(cast("ToolCallBlock", final_block))
         finalized_blocks[idx] = final_block
@@ -404,28 +416,23 @@ class _AsyncProjectionIterator:
 # ---------------------------------------------------------------------------
 
 
-class ChatModelStream:
-    """Synchronous per-message streaming object for a single LLM response.
+class _ChatModelStreamBase:
+    """Shared state and event dispatch for chat-model streams.
 
-    Returned by `BaseChatModel.stream_v2()`.  Content-block protocol
-    events are fed into this object and accumulated into typed projections.
-
-    Projections (always return the same cached object):
-
-    - `.text` — iterable of `str` deltas; `str()` for full text
-    - `.reasoning` — same as `.text` for reasoning content
-    - `.tool_calls` — iterable of `ToolCallChunkBlock` deltas;
-      `.get()` returns `list[ToolCallBlock]`
-    - `.usage` — blocking property, returns `UsageInfo | None`
-    - `.output` — blocking property, returns assembled `AIMessage`
-
-    Raw event iteration::
-
-        for event in stream:
-            print(event)  # MessagesData dicts
+    Holds accumulated protocol state (text, reasoning, tool calls,
+    usage, metadata) and the event-dispatch machinery that drives the
+    typed projections. `ChatModelStream` (sync) and
+    `AsyncChatModelStream` (async) inherit from this base and add the
+    projection types and consumer APIs for their flavor.
     """
 
-    def __init__(  # noqa: D107
+    # Projection instances — concrete subclasses create them as sync or
+    # async variants in their own __init__ after calling super().
+    _text_proj: _ProjectionBase
+    _reasoning_proj: _ProjectionBase
+    _tool_calls_proj: _ProjectionBase
+
+    def __init__(
         self,
         *,
         namespace: list[str] | None = None,
@@ -459,73 +466,7 @@ class ChatModelStream:
         # Raw event replay buffer
         self._events: list[MessagesData] = []
 
-        # Projections — created eagerly
-        self._text_proj = SyncTextProjection()
-        self._reasoning_proj = SyncTextProjection()
-        self._tool_calls_proj = SyncProjection()
-
-        # Pull callback (set by bind_pump or set_request_more)
-        self._request_more: Callable[[], bool] | None = None
-
-    # -- Pump/pull wiring --------------------------------------------------
-
-    def bind_pump(self, pump_one: Callable[[], bool]) -> None:
-        """Bind a pump for standalone streaming.
-
-        Delegates to `set_request_more`.  Used by
-        `BaseChatModel.stream_v2()`.
-        """
-        self.set_request_more(pump_one)
-
-    def set_request_more(self, cb: Callable[[], bool]) -> None:
-        """Set the pull callback on this stream and all its projections.
-
-        Used by langgraph's `GraphRunStream._wire_request_more` to
-        connect the shared graph pump.
-        """
-        self._request_more = cb
-        self._text_proj.set_request_more(cb)
-        self._reasoning_proj.set_request_more(cb)
-        self._tool_calls_proj.set_request_more(cb)
-
-    # -- Public projections ------------------------------------------------
-
-    @property
-    def text(self) -> SyncTextProjection:
-        """Text content — iterable of `str` deltas, `str()` for full."""
-        return self._text_proj
-
-    @property
-    def reasoning(self) -> SyncTextProjection:
-        """Reasoning content — same interface as :attr:`text`."""
-        return self._reasoning_proj
-
-    @property
-    def tool_calls(self) -> SyncProjection:
-        """Tool calls — iterable of `ToolCallChunkBlock` deltas.
-
-        `.get()` returns finalized `list[ToolCallBlock]`.
-        """
-        return self._tool_calls_proj
-
-    @property
-    def usage(self) -> UsageInfo | None:
-        """Usage info — blocks until the stream finishes."""
-        self._drain()
-        if self._error is not None:
-            raise self._error
-        return self._usage_value
-
-    @property
-    def output(self) -> AIMessage:
-        """Assembled `AIMessage` — blocks until the stream finishes."""
-        self._drain()
-        if self._error is not None:
-            raise self._error
-        if self._output_message is None:
-            msg = "Stream finished without producing a message"
-            raise RuntimeError(msg)
-        return self._output_message
+    # -- Common properties ------------------------------------------------
 
     @property
     def namespace(self) -> list[str]:
@@ -551,36 +492,12 @@ class ChatModelStream:
     def output_message(self) -> AIMessage | None:
         """The assembled message if the stream has finished, else `None`.
 
-        Unlike :attr:`output`, this never blocks or pumps and never raises.
-        Intended for the stream driver (`stream_v2` / `astream_v2`) to
-        check whether the stream produced a message before firing
-        `on_llm_end` callbacks.
+        Unlike `ChatModelStream.output` (which blocks until the stream
+        finishes), this never pumps, blocks, or raises. Intended for the
+        stream driver (`stream_v2` / `astream_v2`) to check whether the
+        stream produced a message before firing `on_llm_end` callbacks.
         """
         return self._output_message
-
-    # -- Raw event iteration (replay buffer) -------------------------------
-
-    def __iter__(self) -> Iterator[MessagesData]:
-        """Iterate raw protocol events with replay-buffer semantics."""
-        cursor = 0
-        while True:
-            if cursor < len(self._events):
-                yield self._events[cursor]
-                cursor += 1
-            elif self._error is not None:
-                raise self._error
-            elif self._done:
-                return
-            elif self._request_more is not None:
-                while cursor >= len(self._events) and not self._done:
-                    if not self._request_more():
-                        break
-                if cursor >= len(self._events):
-                    if self._error is not None:
-                        raise self._error
-                    return
-            else:
-                return
 
     # -- Event ingestion (public) ------------------------------------------
 
@@ -604,21 +521,6 @@ class ChatModelStream:
         elif event_type == "error":
             self.fail(RuntimeError(event.get("message", "Unknown error")))
         # content-block-start is informational — no accumulation needed
-
-    # -- Internal helpers --------------------------------------------------
-
-    def _drain(self) -> None:
-        """Pull all remaining events until done."""
-        if self._done:
-            return
-        if self._request_more is not None:
-            while not self._done:
-                if not self._request_more():
-                    break
-        # If the source exhausted without a message-finish event
-        # (e.g., empty response), finalize with what we have.
-        if not self._done:
-            self._finish(MessageFinishData(event="message-finish", reason="stop"))
 
     # -- Internal push API (called by dispatch) ----------------------------
 
@@ -696,7 +598,11 @@ class ChatModelStream:
                 self._text_acc = full_text
             finalized = cast(
                 "FinalizedContentBlock",
-                {"type": "text", "text": self._text_acc},
+                {
+                    **text_block,
+                    "type": "text",
+                    "text": self._text_acc,
+                },
             )
         elif btype == "reasoning":
             reasoning_block = cast("ReasoningBlock", block)
@@ -705,22 +611,30 @@ class ChatModelStream:
                 self._reasoning_acc = full_r
             # Keep provider-specific fields alongside the accumulated
             # reasoning text. Anthropic's `signature` arrives under
-            # `extras` and is required on follow-up turns.
-            finalized = cast(
-                "FinalizedContentBlock",
-                {
-                    **reasoning_block,
-                    "type": "reasoning",
-                    "reasoning": self._reasoning_acc,
-                },
-            )
+            # `extras` and is required on follow-up turns. Only overwrite
+            # `reasoning` when we have accumulated content; OpenAI can
+            # emit a reasoning block with no text deltas, and writing an
+            # empty string there makes downstream serializers synthesize
+            # an empty summary entry.
+            finalized_dict: dict[str, Any] = {**reasoning_block, "type": "reasoning"}
+            if self._reasoning_acc:
+                finalized_dict["reasoning"] = self._reasoning_acc
+            finalized = cast("FinalizedContentBlock", finalized_dict)
         elif btype == "tool_call":
             tcb = cast("ToolCallBlock", block)
-            tc = ToolCallBlock(
-                type="tool_call",
-                id=tcb.get("id", ""),
-                name=tcb.get("name", ""),
-                args=tcb.get("args", {}),
+            # Preserve provider-specific fields (extras, index, etc.) on
+            # the content block. `_assemble_message` separately projects
+            # the minimal {id, name, args, type} shape onto
+            # `AIMessage.tool_calls`.
+            tc = cast(
+                "ToolCallBlock",
+                {
+                    **tcb,
+                    "type": "tool_call",
+                    "id": tcb.get("id", ""),
+                    "name": tcb.get("name", ""),
+                    "args": tcb.get("args", {}),
+                },
             )
             self._tool_calls_acc.append(tc)
             if idx is not None and idx in self._tool_call_chunks:
@@ -750,6 +664,14 @@ class ChatModelStream:
             finalized = block
 
         if finalized is not None and idx is not None:
+            # Backfill the wire index onto the finalized block when the
+            # source didn't supply one. `langchain_core.utils._merge`'s
+            # block-merger (used by `AIMessageChunk.__add__` /
+            # `add_ai_message_chunks`) keys on `block["index"]` to group
+            # deltas into the same output block — without it, a v2-
+            # assembled `AIMessage` that later re-enters the chunk
+            # aggregation path won't merge cleanly.
+            finalized.setdefault("index", idx)  # type: ignore[typeddict-item]
             self._blocks[idx] = finalized
 
     def _finish(self, data: MessageFinishData) -> None:
@@ -804,13 +726,18 @@ class ChatModelStream:
         """
         content: Any
         if not self._blocks:
+            # No protocol blocks ever arrived. Fall back to the accumulated
+            # text (possibly empty) as bare-string content.
             content = self._text_acc
         else:
+            # `ChatModelStream` is the v1 content-block surface: content
+            # is always a list of protocol blocks when any block arrived.
+            # Do not collapse a single text block down to a bare string —
+            # that would drop block-level fields (`id`, `index`,
+            # annotations, extras) that downstream serializers need to
+            # round-trip the message on a follow-up turn.
             ordered_blocks = [self._blocks[idx] for idx in sorted(self._blocks)]
-            if len(ordered_blocks) == 1 and ordered_blocks[0].get("type") == "text":
-                content = cast("TextBlock", ordered_blocks[0]).get("text", "")
-            else:
-                content = [dict(b) for b in ordered_blocks]
+            content = [dict(b) for b in ordered_blocks]
 
         response_metadata: dict[str, Any] = {"output_version": "v1"}
         if self._finish_reason:
@@ -855,11 +782,159 @@ class ChatModelStream:
 
 
 # ---------------------------------------------------------------------------
+# Sync stream
+# ---------------------------------------------------------------------------
+
+
+class ChatModelStream(_ChatModelStreamBase):
+    """Synchronous per-message streaming object for a single LLM response.
+
+    Returned by `BaseChatModel.stream_v2()`.  Content-block protocol
+    events are fed into this object and accumulated into typed projections.
+
+    Projections (always return the same cached object):
+
+    - `.text` — iterable of `str` deltas; `str()` for full text
+    - `.reasoning` — same as `.text` for reasoning content
+    - `.tool_calls` — iterable of `ToolCallChunkBlock` deltas;
+      `.get()` returns `list[ToolCallBlock]`
+    - `.output` — blocking property, returns assembled `AIMessage`
+
+    Usage info is available on `.output.usage_metadata` once the stream
+    has finished.
+
+    !!! note "Output shape is always v1 content blocks"
+
+        `.output.content` is always a list of v1 protocol blocks
+        (text, reasoning, tool_call, image, …), regardless of the
+        underlying model's `output_version` setting. That attribute
+        only controls the legacy `stream()` / `astream()` / `invoke()`
+        paths; `ChatModelStream` is built on the content-block
+        protocol and emits v1 shapes by construction.
+
+    Raw event iteration::
+
+        for event in stream:
+            print(event)  # MessagesData dicts
+    """
+
+    _text_proj: SyncTextProjection
+    _reasoning_proj: SyncTextProjection
+    _tool_calls_proj: SyncProjection
+
+    def __init__(  # noqa: D107
+        self,
+        *,
+        namespace: list[str] | None = None,
+        node: str | None = None,
+        message_id: str | None = None,
+    ) -> None:
+        super().__init__(namespace=namespace, node=node, message_id=message_id)
+        # Projections — created eagerly
+        self._text_proj = SyncTextProjection()
+        self._reasoning_proj = SyncTextProjection()
+        self._tool_calls_proj = SyncProjection()
+        # Pull callback (set by bind_pump or set_request_more)
+        self._request_more: Callable[[], bool] | None = None
+
+    # -- Pump/pull wiring --------------------------------------------------
+
+    def bind_pump(self, pump_one: Callable[[], bool]) -> None:
+        """Bind a pump for standalone streaming.
+
+        Delegates to `set_request_more`.  Used by
+        `BaseChatModel.stream_v2()`.
+        """
+        self.set_request_more(pump_one)
+
+    def set_request_more(self, cb: Callable[[], bool]) -> None:
+        """Set the pull callback on this stream and all its projections.
+
+        Used by langgraph's `GraphRunStream._wire_request_more` to
+        connect the shared graph pump.
+        """
+        self._request_more = cb
+        self._text_proj.set_request_more(cb)
+        self._reasoning_proj.set_request_more(cb)
+        self._tool_calls_proj.set_request_more(cb)
+
+    # -- Public projections ------------------------------------------------
+
+    @property
+    def text(self) -> SyncTextProjection:
+        """Text content — iterable of `str` deltas, `str()` for full."""
+        return self._text_proj
+
+    @property
+    def reasoning(self) -> SyncTextProjection:
+        """Reasoning content — same interface as :attr:`text`."""
+        return self._reasoning_proj
+
+    @property
+    def tool_calls(self) -> SyncProjection:
+        """Tool calls — iterable of `ToolCallChunkBlock` deltas.
+
+        `.get()` returns finalized `list[ToolCallBlock]`.
+        """
+        return self._tool_calls_proj
+
+    @property
+    def output(self) -> AIMessage:
+        """Assembled `AIMessage` — blocks until the stream finishes."""
+        self._drain()
+        if self._error is not None:
+            raise self._error
+        if self._output_message is None:
+            msg = "Stream finished without producing a message"
+            raise RuntimeError(msg)
+        return self._output_message
+
+    # -- Raw event iteration (replay buffer) -------------------------------
+
+    def __iter__(self) -> Iterator[MessagesData]:
+        """Iterate raw protocol events with replay-buffer semantics."""
+        cursor = 0
+        while True:
+            if cursor < len(self._events):
+                yield self._events[cursor]
+                cursor += 1
+            elif self._error is not None:
+                raise self._error
+            elif self._done:
+                return
+            elif self._request_more is not None:
+                while cursor >= len(self._events) and not self._done:
+                    if not self._request_more():
+                        break
+                if cursor >= len(self._events):
+                    if self._error is not None:
+                        raise self._error
+                    return
+            else:
+                return
+
+    # -- Internal helpers --------------------------------------------------
+
+    def _drain(self) -> None:
+        """Pull all remaining events until done."""
+        if self._done:
+            return
+        if self._request_more is not None:
+            while not self._done:
+                if not self._request_more():
+                    break
+        # If the source exhausted without a message-finish event
+        # (e.g., empty response), finalize with what we have.
+        if not self._done:
+            self._finish(MessageFinishData(event="message-finish", reason="stop"))
+
+
+# ---------------------------------------------------------------------------
 # Async stream
 # ---------------------------------------------------------------------------
 
 
-class AsyncChatModelStream(ChatModelStream):
+class AsyncChatModelStream(_ChatModelStreamBase):
     """Asynchronous per-message streaming object for a single LLM response.
 
     Returned by `BaseChatModel.astream_v2()`.  Content-block events
@@ -871,12 +946,24 @@ class AsyncChatModelStream(ChatModelStream):
     - `.reasoning` — async iterable of reasoning deltas; awaitable
     - `.tool_calls` — async iterable of `ToolCallChunkBlock` deltas;
       awaitable for `list[ToolCallBlock]`
-    - `.usage` — awaitable for `UsageInfo`
     - `.output` — awaitable for assembled `AIMessage`
+
+    Usage info is available on `.output.usage_metadata` once the stream
+    has finished.
+
+    !!! note "Output shape is always v1 content blocks"
+
+        The assembled message's content is always a list of v1
+        protocol blocks, regardless of the model's `output_version`
+        setting — see `ChatModelStream` for the full rationale.
 
     The stream itself is awaitable (`msg = await stream`) and
     async-iterable (`async for event in stream`).
     """
+
+    _text_proj: AsyncProjection
+    _reasoning_proj: AsyncProjection
+    _tool_calls_proj: AsyncProjection
 
     def __init__(  # noqa: D107
         self,
@@ -886,10 +973,9 @@ class AsyncChatModelStream(ChatModelStream):
         message_id: str | None = None,
     ) -> None:
         super().__init__(namespace=namespace, node=node, message_id=message_id)
-        self._text_proj = AsyncProjection()  # type: ignore[assignment]
-        self._reasoning_proj = AsyncProjection()  # type: ignore[assignment]
-        self._tool_calls_proj = AsyncProjection()  # type: ignore[assignment]
-        self._usage_proj = AsyncProjection()
+        self._text_proj = AsyncProjection()
+        self._reasoning_proj = AsyncProjection()
+        self._tool_calls_proj = AsyncProjection()
         self._output_proj = AsyncProjection()
         self._events_proj = AsyncProjection()
         self._producer_task: asyncio.Task[None] | None = None
@@ -912,36 +998,30 @@ class AsyncChatModelStream(ChatModelStream):
             self._text_proj,
             self._reasoning_proj,
             self._tool_calls_proj,
-            self._usage_proj,
             self._output_proj,
             self._events_proj,
         ):
-            cast("AsyncProjection", proj).set_arequest_more(cb)
+            proj.set_arequest_more(cb)
 
-    # -- Public projections (override sync properties) ---------------------
+    # -- Public projections ------------------------------------------------
 
     @property
-    def text(self) -> AsyncProjection:  # type: ignore[override]
+    def text(self) -> AsyncProjection:
         """Text content — async iterable of deltas, awaitable for full."""
-        return self._text_proj  # type: ignore[return-value]
+        return self._text_proj
 
     @property
-    def reasoning(self) -> AsyncProjection:  # type: ignore[override]
+    def reasoning(self) -> AsyncProjection:
         """Reasoning content — same interface as :attr:`text`."""
-        return self._reasoning_proj  # type: ignore[return-value]
+        return self._reasoning_proj
 
     @property
-    def tool_calls(self) -> AsyncProjection:  # type: ignore[override]
+    def tool_calls(self) -> AsyncProjection:
         """Tool calls — async iterable, awaitable for finalized list."""
-        return self._tool_calls_proj  # type: ignore[return-value]
+        return self._tool_calls_proj
 
     @property
-    def usage(self) -> AsyncProjection:  # type: ignore[override]
-        """Usage info — awaitable for `UsageInfo`."""
-        return self._usage_proj
-
-    @property
-    def output(self) -> AsyncProjection:  # type: ignore[override]
+    def output(self) -> AsyncProjection:
         """Assembled `AIMessage` — awaitable."""
         return self._output_proj
 
@@ -974,14 +1054,12 @@ class AsyncChatModelStream(ChatModelStream):
     def _finish(self, data: MessageFinishData) -> None:
         """Finish base projections and async-only projections."""
         super()._finish(data)
-        self._usage_proj.complete(self._usage_value)
         self._output_proj.complete(self._output_message)
         self._events_proj.complete(self._events)
 
     def fail(self, error: BaseException) -> None:
         """Fail base projections and async-only projections."""
         super().fail(error)
-        self._usage_proj.fail(error)
         self._output_proj.fail(error)
         self._events_proj.fail(error)
 

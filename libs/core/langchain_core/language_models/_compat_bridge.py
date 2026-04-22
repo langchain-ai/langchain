@@ -255,6 +255,16 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     dtype = delta.get("type")
     if btype == "text" and dtype == "text":
         state["text"] = state.get("text", "") + delta.get("text", "")
+        # Providers may send non-text fields (like `id`, or annotations)
+        # on later deltas. Merging (not replacing) keeps earlier keys
+        # intact while picking up these late-arriving fields.
+        for key, value in delta.items():
+            if key in ("type", "text") or value is None:
+                continue
+            if key == "extras" and isinstance(value, dict):
+                state["extras"] = {**(state.get("extras") or {}), **value}
+            else:
+                state[key] = value
     elif btype == "reasoning" and dtype == "reasoning":
         state["reasoning"] = state.get("reasoning", "") + delta.get("reasoning", "")
         # Providers may ship non-text fields on later deltas. Claude's
@@ -294,6 +304,14 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     btype = block.get("type")
     if btype in ("tool_call_chunk", "server_tool_call_chunk"):
         raw = block.get("args") or "{}"
+        # Carry provider-specific fields (extras, index, etc.) from the
+        # accumulated chunk onto the finalized block. Drop the chunk-only
+        # keys we rewrite explicitly below.
+        extras = {
+            k: v
+            for k, v in block.items()
+            if k not in ("type", "id", "name", "args") and v is not None
+        }
         try:
             parsed = json.loads(raw) if raw else {}
         except (json.JSONDecodeError, TypeError):
@@ -306,20 +324,25 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
                 invalid["id"] = block["id"]
             if block.get("name") is not None:
                 invalid["name"] = block["name"]
+            invalid.update(extras)  # type: ignore[typeddict-item]
             return invalid
         if btype == "tool_call_chunk":
-            return ToolCallBlock(
+            finalized_tc = ToolCallBlock(
                 type="tool_call",
                 id=block.get("id", ""),
                 name=block.get("name", ""),
                 args=parsed,
             )
-        return ServerToolCallBlock(
+            finalized_tc.update(extras)  # type: ignore[typeddict-item]
+            return finalized_tc
+        finalized_stc = ServerToolCallBlock(
             type="server_tool_call",
             id=block.get("id", ""),
             name=block.get("name", ""),
             args=parsed,
         )
+        finalized_stc.update(extras)  # type: ignore[typeddict-item]
+        return finalized_stc
     return _to_finalized_block(block)
 
 

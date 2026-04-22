@@ -978,11 +978,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Stream content-block lifecycle events for a single model call.
 
         Returns a `ChatModelStream` with typed projections
-        (`.text`, `.reasoning`, `.tool_calls`, `.usage`, `.output`).
+        (`.text`, `.reasoning`, `.tool_calls`, `.output`).
 
         !!! warning
 
             This API is experimental and may change.
+
+        !!! note "Always produces v1-shaped content"
+
+            `ChatModelStream.output.content` is always a list of v1
+            content blocks (text / reasoning / tool_call / image / …),
+            regardless of the model's `output_version` attribute. The
+            setting only affects the legacy `stream()` / `astream()` /
+            `invoke()` paths. If you're mixing `stream_v2` with those
+            paths in the same pipeline and need a consistent output
+            shape across them, set `output_version="v1"` on the model.
 
         Args:
             input: The model input.
@@ -1082,6 +1092,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         !!! warning
 
             This API is experimental and may change.
+
+        !!! note "Always produces v1-shaped content"
+
+            The assembled message's content is always a list of v1
+            content blocks, regardless of the model's `output_version`
+            attribute — see `stream_v2` for the full rationale.
 
         Args:
             input: The model input.

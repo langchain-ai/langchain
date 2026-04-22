@@ -91,8 +91,17 @@ def test_incomplete_response() -> None:
 
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
-def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("responses/v1", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_web_search(
+    output_version: Literal["responses/v1", "v1"], use_v2_stream: bool
+) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     first_response = llm.invoke(
         "What was a positive news story from today?",
@@ -101,13 +110,22 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     _check_response(first_response)
 
     # Test streaming
-    full: BaseMessageChunk | None = None
-    for chunk in llm.stream(
-        "What was a positive news story from today?",
-        tools=[{"type": "web_search_preview"}],
-    ):
-        assert isinstance(chunk, AIMessageChunk)
-        full = chunk if full is None else full + chunk
+    full: BaseMessage
+    if use_v2_stream:
+        full = llm.stream_v2(
+            "What was a positive news story from today?",
+            tools=[{"type": "web_search_preview"}],
+        ).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm.stream(
+            "What was a positive news story from today?",
+            tools=[{"type": "web_search_preview"}],
+        ):
+            assert isinstance(chunk, AIMessageChunk)
+            aggregated = chunk if aggregated is None else aggregated + chunk
+        assert aggregated is not None
+        full = aggregated
     _check_response(full)
 
     # Use OpenAI's stateful API
@@ -238,8 +256,17 @@ def test_agent_loop(output_version: Literal["responses/v1", "v1"]) -> None:
 
 @pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
-def test_agent_loop_streaming(output_version: Literal["responses/v1", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("responses/v1", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_agent_loop_streaming(
+    output_version: Literal["responses/v1", "v1"], use_v2_stream: bool
+) -> None:
     @tool
     def get_weather(location: str) -> str:
         """Get the weather for a location."""
@@ -254,19 +281,69 @@ def test_agent_loop_streaming(output_version: Literal["responses/v1", "v1"]) -> 
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    tool_call_message = llm_with_tools.invoke([input_message])
+    if use_v2_stream:
+        tool_call_message = llm_with_tools.stream_v2([input_message]).output
+    else:
+        tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
     tool_calls = tool_call_message.tool_calls
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
-    response = llm_with_tools.invoke(
-        [
-            input_message,
-            tool_call_message,
-            tool_message,
-        ]
+    if use_v2_stream:
+        response = llm_with_tools.stream_v2(
+            [input_message, tool_call_message, tool_message]
+        ).output
+    else:
+        response = llm_with_tools.invoke(
+            [
+                input_message,
+                tool_call_message,
+                tool_message,
+            ]
+        )
+    assert isinstance(response, AIMessage)
+
+
+@pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
+@pytest.mark.vcr
+async def test_agent_loop_streaming_astream_v2_v1() -> None:
+    """Async multi-turn through `astream_v2`.
+
+    Mirrors `test_agent_loop_streaming` for `output_version="v1"` but
+    exercises `AsyncChatModelStream` end-to-end: aggregation in the
+    async state machine, async projections, and the background
+    producer task. Cassette byte-matches guarantee the aggregated
+    message serializes identically to the legacy path on the
+    follow-up turn.
+    """
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatOpenAI(
+        model="gpt-5.2",
+        use_responses_api=True,
+        reasoning={"effort": "medium", "summary": "auto"},
+        streaming=True,
+        output_version="v1",
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = await (await llm_with_tools.astream_v2([input_message]))
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = await (
+        await llm_with_tools.astream_v2(
+            [input_message, tool_call_message, tool_message]
+        )
     )
     assert isinstance(response, AIMessage)
 
@@ -543,9 +620,18 @@ def test_file_search(
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("v0", False),
+        ("responses/v1", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
 def test_stream_reasoning_summary(
     output_version: Literal["v0", "responses/v1", "v1"],
+    use_v2_stream: bool,
 ) -> None:
     llm = ChatOpenAI(
         model="o4-mini",
@@ -557,11 +643,16 @@ def test_stream_reasoning_summary(
         "role": "user",
         "content": "What was the third tallest buliding in the year 2000?",
     }
-    response_1: BaseMessageChunk | None = None
-    for chunk in llm.stream([message_1]):
-        assert isinstance(chunk, AIMessageChunk)
-        response_1 = chunk if response_1 is None else response_1 + chunk
-    assert isinstance(response_1, AIMessageChunk)
+    response_1: BaseMessage
+    if use_v2_stream:
+        response_1 = llm.stream_v2([message_1]).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm.stream([message_1]):
+            assert isinstance(chunk, AIMessageChunk)
+            aggregated = chunk if aggregated is None else aggregated + chunk
+        assert isinstance(aggregated, AIMessageChunk)
+        response_1 = aggregated
     if output_version == "v0":
         reasoning = response_1.additional_kwargs["reasoning"]
         assert set(reasoning.keys()) == {"id", "type", "summary"}
@@ -610,8 +701,18 @@ def test_stream_reasoning_summary(
 
 @pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
-def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("v0", False),
+        ("responses/v1", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_code_interpreter(
+    output_version: Literal["v0", "responses/v1", "v1"], use_v2_stream: bool
+) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
@@ -664,11 +765,16 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         [{"type": "code_interpreter", "container": container_id}]
     )
 
-    full: BaseMessageChunk | None = None
-    for chunk in llm_with_tools.stream([input_message]):
-        assert isinstance(chunk, AIMessageChunk)
-        full = chunk if full is None else full + chunk
-    assert isinstance(full, AIMessageChunk)
+    full: BaseMessage
+    if use_v2_stream:
+        full = llm_with_tools.stream_v2([input_message]).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm_with_tools.stream([input_message]):
+            assert isinstance(chunk, AIMessageChunk)
+            aggregated = chunk if aggregated is None else aggregated + chunk
+        assert isinstance(aggregated, AIMessageChunk)
+        full = aggregated
     if output_version == "v0":
         tool_outputs = [
             item
@@ -796,7 +902,8 @@ def test_mcp_builtin_zdr() -> None:
 
 @pytest.mark.default_cassette("test_mcp_builtin_zdr.yaml.gz")
 @pytest.mark.vcr
-def test_mcp_builtin_zdr_v1() -> None:
+@pytest.mark.parametrize("use_v2_stream", [False, True])
+def test_mcp_builtin_zdr_v1(use_v2_stream: bool) -> None:
     llm = ChatOpenAI(
         model="gpt-5-nano",
         output_version="v1",
@@ -822,12 +929,18 @@ def test_mcp_builtin_zdr_v1() -> None:
             "spec (modelcontextprotocol/modelcontextprotocol) support?"
         ),
     }
-    full: BaseMessageChunk | None = None
-    for chunk in llm_with_tools.stream([input_message]):
-        assert isinstance(chunk, AIMessageChunk)
-        full = chunk if full is None else full + chunk
+    full: BaseMessage
+    if use_v2_stream:
+        full = llm_with_tools.stream_v2([input_message]).output
+    else:
+        aggregated: BaseMessageChunk | None = None
+        for chunk in llm_with_tools.stream([input_message]):
+            assert isinstance(chunk, AIMessageChunk)
+            aggregated = chunk if aggregated is None else aggregated + chunk
+        assert isinstance(aggregated, AIMessageChunk)
+        full = aggregated
 
-    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full, AIMessage)
     assert all(isinstance(block, dict) for block in full.content)
 
     approval_message = HumanMessage(
@@ -1229,8 +1342,17 @@ def test_compaction(output_version: Literal["responses/v1", "v1"]) -> None:
 
 @pytest.mark.default_cassette("test_compaction_streaming.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
-def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> None:
+@pytest.mark.parametrize(
+    ("output_version", "use_v2_stream"),
+    [
+        ("responses/v1", False),
+        ("v1", False),
+        ("v1", True),
+    ],
+)
+def test_compaction_streaming(
+    output_version: Literal["responses/v1", "v1"], use_v2_stream: bool
+) -> None:
     """Test the compaction beta feature."""
     llm = ChatOpenAI(
         model="gpt-5.2",
@@ -1239,13 +1361,20 @@ def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> 
         streaming=True,
     )
 
+    def _run(messages: list) -> AIMessage:
+        if use_v2_stream:
+            return llm.stream_v2(messages).output
+        result = llm.invoke(messages)
+        assert isinstance(result, AIMessage)
+        return result
+
     input_message = {
         "role": "user",
         "content": f"Generate a one-sentence summary of this:\n\n{'a' * 50000}",
     }
     messages: list = [input_message]
 
-    first_response = llm.invoke(messages)
+    first_response = _run(messages)
     messages.append(first_response)
 
     second_message = {
@@ -1254,7 +1383,7 @@ def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> 
     }
     messages.append(second_message)
 
-    second_response = llm.invoke(messages)
+    second_response = _run(messages)
     messages.append(second_response)
 
     content_blocks = second_response.content_blocks
@@ -1270,7 +1399,7 @@ def test_compaction_streaming(output_version: Literal["responses/v1", "v1"]) -> 
         "content": "What are we talking about?",
     }
     messages.append(third_message)
-    third_response = llm.invoke(messages)
+    third_response = _run(messages)
     assert third_response.text
 
 

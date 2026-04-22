@@ -234,11 +234,10 @@ class TestAsyncProjection:
             stream._text_proj,
             stream._reasoning_proj,
             stream._tool_calls_proj,
-            stream._usage_proj,
             stream._output_proj,
             stream._events_proj,
         ):
-            assert cast("AsyncProjection", proj)._arequest_more is pump
+            assert proj._arequest_more is pump
 
     @pytest.mark.asyncio
     async def test_concurrent_text_and_output_share_pump(self) -> None:
@@ -289,7 +288,7 @@ class TestAsyncProjection:
 
         text, message = await asyncio.gather(drain_text(), stream.output)
         assert text == "hello world"
-        assert message.content == "hello world"
+        assert message.content == [{"type": "text", "text": "hello world", "index": 0}]
 
 
 # ---------------------------------------------------------------------------
@@ -496,7 +495,7 @@ class TestChatModelStream:
         )
 
         msg = stream.output
-        assert msg.content == "Hello"
+        assert msg.content == [{"type": "text", "text": "Hello", "index": 0}]
         assert msg.id == "msg-1"
         assert msg.response_metadata["finish_reason"] == "stop"
         assert msg.response_metadata["model_provider"] == "anthropic"
@@ -754,6 +753,7 @@ class TestChatModelStream:
             "type": "image",
             "url": "https://example.com/cat.png",
             "mime_type": "image/png",
+            "index": 0,
         }
 
     def test_sweep_of_unfinished_malformed_chunk_produces_invalid_tool_call(
