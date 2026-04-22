@@ -21,7 +21,7 @@ test_watch:
 
 # integration tests are run without the --disable-socket flag to allow network calls
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest --timeout=120 $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -p no:benchmark -n auto --timeout=120 $(TEST_FILE)
 
 ######################
 # LINTING AND FORMATTING
