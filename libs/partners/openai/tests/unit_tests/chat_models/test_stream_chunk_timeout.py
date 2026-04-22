@@ -251,6 +251,37 @@ def test_negative_stream_chunk_timeout_env_rejected(
     )
 
 
+def test_negative_stream_chunk_timeout_kwarg_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative kwarg (e.g., from YAML/JSON configs) must not disable the wrapper.
+
+    Mirrors the env-var path: fall back to the default and emit a WARNING
+    rather than silently treating a negative value as an opt-out — `None` /
+    `0` are the documented off switches.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    caplog.set_level(logging.WARNING, logger="langchain_openai.chat_models.base")
+    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=-10)
+    assert model.stream_chunk_timeout == 120.0
+    assert any(
+        "negative" in r.getMessage().lower()
+        and "stream_chunk_timeout" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
+    )
+
+
+def test_zero_stream_chunk_timeout_kwarg_preserved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`stream_chunk_timeout=0` is the documented opt-out and must persist."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=0)
+    assert model.stream_chunk_timeout == 0
+
+
 class _SlowAsyncContextManager:
     """Async context manager that sleeps between streamed items."""
 

@@ -124,6 +124,7 @@ from pydantic import (
     Field,
     SecretStr,
     ValidationError,
+    field_validator,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -884,9 +885,11 @@ class BaseChatOpenAI(BaseChatModel):
     transport-layer failures.
 
     Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
-    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var; unparseable or
-    negative values fall back to the 120s default with a `WARNING` log, so
-    a misconfigured environment still boots but the fallback is visible.
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var. Negative values
+    (from either the env var or the constructor kwarg — e.g., hydrated
+    from YAML/JSON configs) fall back to the default with a `WARNING` log
+    rather than silently disabling the wrapper, so a misconfigured value
+    still boots safely and the fallback is visible.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
@@ -1051,6 +1054,27 @@ class BaseChatOpenAI(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @field_validator("stream_chunk_timeout", mode="after")
+    @classmethod
+    def _validate_stream_chunk_timeout(cls, value: float | None) -> float | None:
+        """Reject negative constructor values; fall back to the env-driven default.
+
+        Matches the env-var path in `_float_env`: a negative value is a typo,
+        not an opt-out (`None`/`0` are the documented off switches). Configs
+        hydrated from YAML/JSON would otherwise silently disable the wrapper
+        and reintroduce the indefinite-stream hang the feature prevents.
+        """
+        if value is not None and value < 0:
+            fallback = _float_env("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0)
+            logger.warning(
+                "Invalid `stream_chunk_timeout=%r` (negative); "
+                "falling back to %s. Pass `None` or `0` to disable.",
+                value,
+                fallback,
+            )
+            return fallback
+        return value
 
     @model_validator(mode="before")
     @classmethod

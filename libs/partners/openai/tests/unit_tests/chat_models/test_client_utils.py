@@ -510,6 +510,54 @@ def test_warn_if_proxy_env_shadowed_emits_once(
     assert len(warnings) == 1
 
 
+def test_warn_if_proxy_env_shadowed_detects_lowercase(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Lowercase `http_proxy` is picked up by httpx; the warning must fire for it."""
+    for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("http_proxy", "http://proxy.example:3128")
+    monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
+    caplog.set_level(
+        logging.WARNING, logger="langchain_openai.chat_models._client_utils"
+    )
+    opts = ((SOL_SOCKET, SO_KEEPALIVE, 1),)
+    _client_utils._warn_if_proxy_env_shadowed(opts, openai_proxy=None)
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "http_proxy" in r.getMessage()
+    ]
+    assert len(warnings) == 1
+
+
+def test_warn_if_proxy_env_shadowed_detects_system_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """macOS/Windows system proxies shadow the transport too; warning should fire."""
+    for name in _client_utils._PROXY_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
+    monkeypatch.setattr(
+        _client_utils.urllib.request,
+        "getproxies",
+        lambda: {"http": "http://system.proxy:3128"},
+    )
+    caplog.set_level(
+        logging.WARNING, logger="langchain_openai.chat_models._client_utils"
+    )
+    opts = ((SOL_SOCKET, SO_KEEPALIVE, 1),)
+    _client_utils._warn_if_proxy_env_shadowed(opts, openai_proxy=None)
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "system proxy" in r.getMessage()
+    ]
+    assert len(warnings) == 1
+
+
 def test_warn_if_proxy_env_shadowed_skipped_when_openai_proxy_set(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
