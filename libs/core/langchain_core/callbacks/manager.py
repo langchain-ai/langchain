@@ -2414,6 +2414,14 @@ def _configure(
     if tracing_tags:
         callback_manager.add_tags(tracing_tags.copy())
 
+    # Fix for issue #30870: Ensure tracing works when callbacks=None
+    # This handles async contexts where contextvars may not propagate automatically.
+    if inheritable_callbacks is None and local_callbacks is None:
+        if tracing_tags:
+            callback_manager.add_tags(tracing_tags.copy())
+        if tracing_metadata:
+            callback_manager.add_metadata(tracing_metadata.copy())
+
     v1_tracing_enabled_ = env_var_is_set("LANGCHAIN_TRACING") or env_var_is_set(
         "LANGCHAIN_HANDLER"
     )
