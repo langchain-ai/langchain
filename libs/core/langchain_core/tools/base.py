@@ -552,7 +552,14 @@ class ChildTool(BaseTool):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
+        ignored_types=(functools.cached_property,),
     )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name in {"args_schema", "description", "name"}:
+            self.__dict__.pop("tool_call_schema", None)
+            self.__dict__.pop("args", None)
 
     @property
     def is_single_input(self) -> bool:
@@ -564,7 +571,7 @@ class ChildTool(BaseTool):
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
 
-    @property
+    @functools.cached_property
     def args(self) -> dict:
         """Get the tool's input arguments schema.
 
@@ -583,7 +590,7 @@ class ChildTool(BaseTool):
                 json_schema = input_schema.model_json_schema()
         return cast("dict", json_schema["properties"])
 
-    @property
+    @functools.cached_property
     def tool_call_schema(self) -> ArgsSchema:
         """Get the schema for tool calls, excluding injected arguments.
 
