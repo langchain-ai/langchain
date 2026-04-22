@@ -12,6 +12,7 @@ from pydantic import model_validator
 from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -42,6 +43,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -460,6 +462,26 @@ async def test_streaming_attribute_overrides_streaming_callback() -> None:
     model = StreamingModel(streaming=False)
     assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+
+
+class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Minimal v2 handler marker for routing tests; records nothing."""
+
+
+async def test_streaming_attribute_overrides_v2_callback() -> None:
+    """`self.streaming=False` must opt out of the v2 event path too.
+
+    `_should_stream_v2` shares the `_streaming_disabled` opt-outs with
+    `_should_stream`, so an instance-level `streaming=False` takes
+    precedence over an attached `_V2StreamingCallbackHandler`.
+    """
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [_FakeV2Handler()]})
     ).content == "invoke"
 
 

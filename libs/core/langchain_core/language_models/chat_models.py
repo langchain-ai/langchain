@@ -502,6 +502,30 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             "AIMessage", cast("ChatGeneration", llm_result.generations[0][0]).message
         )
 
+    def _streaming_disabled(self, **kwargs: Any) -> bool:
+        """Return whether streaming is hard-disabled for this call.
+
+        Shared opt-outs honored by both `_should_stream` and
+        `_should_stream_v2` — these override any affirmative trigger
+        (attached handler, `stream=True`, etc.):
+
+        - `self.disable_streaming is True`
+        - `self.disable_streaming == "tool_calling"` with `tools` passed
+        - `stream=<falsy>` in call kwargs
+        - `self.streaming is False` on the instance
+        """
+        if self.disable_streaming is True:
+            return True
+        # We assume tools are passed in via "tools" kwarg in all models.
+        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
+            return True
+        if "stream" in kwargs and not kwargs["stream"]:
+            return True
+        return (
+            "streaming" in self.model_fields_set
+            and getattr(self, "streaming", None) is False
+        )
+
     def _should_stream(
         self,
         *,
@@ -522,23 +546,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if async_api and async_not_implemented and sync_not_implemented:
             return False
 
-        # Check if streaming has been disabled on this instance.
-        if self.disable_streaming is True:
-            return False
-        # We assume tools are passed in via "tools" kwarg in all models.
-        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
+        if self._streaming_disabled(**kwargs):
             return False
 
-        # Check if a runtime streaming flag has been passed in.
-        if "stream" in kwargs:
-            return bool(kwargs["stream"])
+        # Affirmative: explicit `stream=<truthy>` kwarg.
+        if kwargs.get("stream"):
+            return True
 
-        if "streaming" in self.model_fields_set:
-            streaming_value = getattr(self, "streaming", None)
-            if isinstance(streaming_value, bool):
-                return streaming_value
+        # Affirmative: instance-level `streaming=True` attribute.
+        if (
+            "streaming" in self.model_fields_set
+            and getattr(self, "streaming", None) is True
+        ):
+            return True
 
-        # Check if any streaming callback handlers have been passed in.
+        # Affirmative: a v1 streaming callback handler is attached.
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
@@ -598,11 +620,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if not has_source:
             return False
 
-        if self.disable_streaming is True:
-            return False
-        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
-            return False
-        return bool(kwargs.get("stream", True))
+        return not self._streaming_disabled(**kwargs)
 
     def _iter_v2_events(
         self,
