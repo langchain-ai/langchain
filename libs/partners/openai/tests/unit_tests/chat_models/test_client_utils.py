@@ -1,12 +1,9 @@
 """Unit tests for ``langchain_openai.chat_models._client_utils``.
 
-These tests assert P2 (socket options) plumbing at the boundary between
-our helpers and the httpx layer — *not* on httpx internals. The behavioural
-proof that these options actually bound silent connection hangs on
-Linux/gVisor lives outside CI (see the Metaview investigation scripts);
-here we lock the wiring, the env-driven defaults, the `()` kill-switch
-contract, and the precedence between constructor kwargs / env vars /
-user-supplied clients.
+Asserts socket-options plumbing at the boundary between our helpers and the
+httpx layer — not on httpx internals. Locks the wiring, env-driven defaults,
+the ``()`` kill-switch contract, and the precedence between constructor kwargs,
+env vars, and user-supplied clients.
 """
 
 from __future__ import annotations
@@ -32,11 +29,6 @@ def _clear_langchain_openai_env(monkeypatch: pytest.MonkeyPatch) -> None:
         if name.startswith("LANGCHAIN_OPENAI_") or name == "OPENAI_API_KEY":
             monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-
-
-# ---------------------------------------------------------------------------
-# _default_socket_options / _filter_supported
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.skipif(
@@ -85,11 +77,6 @@ def test_filter_supported_drops_unsupported() -> None:
     result = _client_utils._filter_supported([good, bogus])
     assert good in result
     assert bogus not in result
-
-
-# ---------------------------------------------------------------------------
-# _build_{sync,async}_httpx_client boundary kwargs
-# ---------------------------------------------------------------------------
 
 
 def test_build_async_httpx_client_boundary_kwargs(
@@ -152,11 +139,6 @@ def test_build_async_httpx_client_transport_carries_socket_options(
     assert kwargs.get("limits") is _client_utils._DEFAULT_CONNECTION_LIMITS
 
 
-# ---------------------------------------------------------------------------
-# BaseChatOpenAI wiring — None / () / populated trichotomy
-# ---------------------------------------------------------------------------
-
-
 def test_http_socket_options_none_vs_empty_tuple_vs_populated(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -203,7 +185,6 @@ def test_http_socket_options_none_vs_empty_tuple_vs_populated(
     assert recorded, "expected a default-client build"
     _, _, opts1 = recorded[-1]
     assert isinstance(opts1, tuple)
-    # Env-driven defaults should be populated on linux/darwin runners.
 
     # (2) Explicit empty tuple -> ().
     recorded.clear()
@@ -225,7 +206,7 @@ def test_http_socket_options_none_vs_empty_tuple_vs_populated(
 def test_openai_proxy_branch_applies_socket_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """``openai_proxy`` path must go through the P2-aware proxied helper."""
+    """``openai_proxy`` path must go through the socket-options-aware proxied helper."""
     recorded: list[dict[str, Any]] = []
 
     def spy(proxy: str, verify: Any, socket_options: tuple = ()) -> httpx.AsyncClient:
@@ -315,7 +296,7 @@ def test_default_path_opt_out_is_strict_noop(
     """With LANGCHAIN_OPENAI_TCP_KEEPALIVE=0 we inject no transport.
 
     Boundary assertion on ``_AsyncHttpxClientWrapper.__init__`` kwargs — our
-    helper passed nothing, so httpx falls back to its own native behaviour
+    helper passed nothing, so httpx falls back to its own native behavior
     (env-proxy handling, pool defaults, trust_env, etc.) completely
     unaffected by this library.
     """
@@ -344,11 +325,6 @@ def test_default_path_opt_out_is_strict_noop(
     assert "transport" not in recorded_sync[-1]
     assert recorded_async, "expected the async default client to be built"
     assert "transport" not in recorded_async[-1]
-
-
-# ---------------------------------------------------------------------------
-# Env-var parse safety
-# ---------------------------------------------------------------------------
 
 
 def test_invalid_env_values_degrade_safely(monkeypatch: pytest.MonkeyPatch) -> None:

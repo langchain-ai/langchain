@@ -26,11 +26,7 @@ logger = logging.getLogger(__name__)
 
 SocketOption = tuple[int, int, int]
 
-# Linux TCP-level constants. `socket.TCP_KEEPIDLE` etc. exist on Linux builds
-# of Python but not on darwin/win32 builds, so we reference the raw protocol
-# numbers directly to keep the module import-safe across platforms. These
-# values are the Linux kernel UAPI constants from `linux/tcp.h` and have been
-# stable for over a decade.
+# socket.TCP_KEEPIDLE etc. are absent on darwin/win32; use raw UAPI constants.
 _LINUX_TCP_KEEPIDLE = 4
 _LINUX_TCP_KEEPINTVL = 5
 _LINUX_TCP_KEEPCNT = 6
@@ -41,15 +37,8 @@ _DARWIN_TCP_KEEPALIVE = 0x10  # idle seconds before first probe
 _DARWIN_TCP_KEEPINTVL = 0x101
 _DARWIN_TCP_KEEPCNT = 0x102
 
-# Mirrors openai._constants.DEFAULT_CONNECTION_LIMITS as of openai 2.x.
-# The openai SDK writes ``httpx.Limits(max_connections=1000,
-# max_keepalive_connections=100)`` without an explicit keepalive_expiry,
-# which resolves to httpx's default of 5.0s. We mirror that explicitly here
-# so that enabling or disabling the kill-switch (LANGCHAIN_OPENAI_TCP_KEEPALIVE=0)
-# never silently changes connection pool retention relative to the pre-PR
-# openai SDK default. Hardcoded rather than imported to avoid depending on
-# an internal module path that moves across SDK versions. If upstream
-# changes, revisit here.
+# Mirrors the openai SDK's pool defaults. Hardcoded to avoid depending on
+# an internal module path (openai._constants) that can move across SDK versions.
 _DEFAULT_CONNECTION_LIMITS = httpx.Limits(
     max_connections=1000,
     max_keepalive_connections=100,
@@ -207,14 +196,8 @@ def _build_sync_httpx_client(
         "timeout": timeout,
     }
     if socket_options:
-        # Client ignores ``limits=`` when a transport is provided, so configure
-        # limits explicitly on the transport, mirroring the openai SDK's pool
-        # config to avoid a silent 10x downgrade.
-        # NB: passing ``transport=`` also disables httpx's env-proxy
-        # auto-detection (HTTP_PROXY/HTTPS_PROXY/...). This is a documented
-        # known limitation; users relying on env proxies for OpenAI traffic
-        # can opt out via LANGCHAIN_OPENAI_TCP_KEEPALIVE=0 or bring their
-        # own http_client.
+        # httpx ignores limits= when transport= is provided; set it explicitly
+        # on the transport to avoid silently shrinking the connection pool.
         kwargs["transport"] = httpx.HTTPTransport(
             socket_options=list(socket_options),
             limits=_DEFAULT_CONNECTION_LIMITS,
@@ -234,8 +217,7 @@ def _build_async_httpx_client(
         "timeout": timeout,
     }
     if socket_options:
-        # See _build_sync_httpx_client for the rationale on the explicit
-        # limits= and the env-proxy-detection caveat.
+        # See _build_sync_httpx_client for the limits= rationale.
         kwargs["transport"] = httpx.AsyncHTTPTransport(
             socket_options=list(socket_options),
             limits=_DEFAULT_CONNECTION_LIMITS,
@@ -248,12 +230,10 @@ def _build_proxied_sync_httpx_client(
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
 ) -> httpx.Client:
-    """httpx.Client for the openai_proxy code path, with P2 applied.
+    """httpx.Client for the openai_proxy code path.
 
-    When the user has explicitly disabled socket options (``()``), we return
-    the original ``httpx.Client(proxy=..., verify=...)`` shape — no transport,
-    no ``_DEFAULT_CONNECTION_LIMITS`` — so the opt-out is a *strict no-op* on
-    the proxy path and pre-PR behavior is byte-identical.
+    When socket options are disabled (``()``), returns a plain
+    ``httpx.Client(proxy=..., verify=...)`` with no transport injected.
     """
     if not socket_options:
         return httpx.Client(proxy=proxy, verify=verify)
@@ -274,10 +254,10 @@ def _build_proxied_async_httpx_client(
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
 ) -> httpx.AsyncClient:
-    """httpx.AsyncClient for the openai_proxy code path, with P2 applied.
+    """httpx.AsyncClient for the openai_proxy code path.
 
-    See :func:`_build_proxied_sync_httpx_client` for rationale on the opt-out
-    fallback and the ``httpx.Proxy`` wrapping.
+    See :func:`_build_proxied_sync_httpx_client` for the opt-out fallback
+    and the ``httpx.Proxy`` wrapping rationale.
     """
     if not socket_options:
         return httpx.AsyncClient(proxy=proxy, verify=verify)
@@ -372,20 +352,26 @@ def _resolve_sync_and_async_api_keys(
     return sync_api_key_value, async_api_key_value
 
 
-# ---------------------------------------------------------------------------
-# P1 — per-chunk wall-clock timeout for async streaming iterators.
-# ---------------------------------------------------------------------------
-
 T = TypeVar("T")
 
+# On Python ≤3.10, asyncio.TimeoutError and builtins.TimeoutError are distinct
+# hierarchies, so subclassing only asyncio.TimeoutError would not be caught by
+# ``except TimeoutError:``. On Python ≥3.11 they are the same object, so listing
+# both bases would raise TypeError: duplicate base class. We resolve this at
+# class-definition time.
+_StreamChunkTimeoutBases: tuple[type, ...] = (
+    (asyncio.TimeoutError,)
+    if issubclass(asyncio.TimeoutError, TimeoutError)
+    else (asyncio.TimeoutError, TimeoutError)
+)
 
-class StreamChunkTimeoutError(asyncio.TimeoutError):
+
+class StreamChunkTimeoutError(*_StreamChunkTimeoutBases):  # type: ignore[misc]
     """Raised when no streaming chunk arrives within ``stream_chunk_timeout``.
 
-    Subclasses ``asyncio.TimeoutError`` so existing ``except TimeoutError:``
-    handlers keep working, but carries a structured, self-describing message
-    so the first thing an operator sees in logs names the knob and how to
-    tune it.
+    Subclasses both ``asyncio.TimeoutError`` and ``TimeoutError`` on all
+    supported Python versions, so both ``except asyncio.TimeoutError:`` and
+    ``except TimeoutError:`` handlers keep working.
     """
 
 
@@ -408,10 +394,8 @@ async def _astream_with_chunk_timeout(
     connection is released promptly rather than left dangling.
     """
     if not timeout or timeout <= 0:
-        # Fast path: no wall-clock bound. We don't wrap this in try/finally
-        # to aclose() the source — if a consumer breaks early, source falls
-        # back on httpx's GC-driven cleanup, which is pre-existing behavior
-        # and out of scope for this PR.
+        # No wall-clock bound. No try/finally here — a consumer breaking early
+        # falls back on httpx's GC-driven cleanup, same as before this wrapper.
         async for item in source:
             yield item
         return

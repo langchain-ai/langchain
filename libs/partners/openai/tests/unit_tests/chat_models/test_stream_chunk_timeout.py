@@ -1,13 +1,12 @@
 """Unit tests for ``_astream_with_chunk_timeout`` and ``StreamChunkTimeoutError``.
 
-Covers the P1 wall-clock per-chunk timeout wrapper:
-
 - Pass-through when items arrive in time.
 - Timeout fires with a self-describing message + subclasses TimeoutError.
 - Structured WARNING log carries ``source=stream_chunk_timeout`` +
-  ``timeout_s`` so aggregate logging can split P1 from P2 failures.
-- Source iterator's ``aclose()`` is called on early exit (regression test
-  for the connection-leak bug).
+  ``timeout_s`` so aggregate logging can distinguish app-layer from
+  transport-layer timeouts.
+- Source iterator's ``aclose()`` is called on early exit to release the
+  underlying httpx connection promptly.
 - Garbage in ``LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S`` degrades safely.
 """
 
@@ -121,11 +120,9 @@ async def test_astream_with_chunk_timeout_logs_on_fire(
 
 @pytest.mark.asyncio
 async def test_astream_with_chunk_timeout_closes_source_on_early_exit() -> None:
-    """Regression test for the connection-leak bug.
+    """aclose() is called on early exit so the httpx connection is released promptly.
 
-    If the timeout fires, we must ``aclose()`` the underlying iterator so the
-    httpx streaming connection is released promptly; ditto if a consumer
-    explicitly closes our wrapper.
+    Covers both the timeout-fires path and the consumer-closes-wrapper path.
     """
     # Case 1: timeout fires -> aclose() propagates.
     timed_out_source = _FakeSource(["a"], per_item_sleep=0.2)
