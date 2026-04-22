@@ -22,7 +22,7 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
+from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
@@ -933,6 +933,15 @@ def create_agent(
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
+    # Resolve the agent state schema now so we can tell `ToolNode` which state
+    # keys to hydrate from channels when it receives `Send("tools", [tool_call])`
+    # (list-form dispatch that carries no inlined state).
+    state_schemas: set[type] = {m.state_schema for m in middleware}
+    base_state = state_schema if state_schema is not None else AgentState
+    state_schemas.add(base_state)
+    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
+    agent_state_keys = tuple(resolved_state_schema.__annotations__)
+
     # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
     # (which may handle dynamically registered tools)
     tool_node = (
@@ -940,6 +949,7 @@ def create_agent(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
+            state_keys=agent_state_keys,
         )
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
@@ -1022,13 +1032,6 @@ def create_agent(
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
-
-    state_schemas: set[type] = {m.state_schema for m in middleware}
-    # Use provided state_schema if available, otherwise use base AgentState
-    base_state = state_schema if state_schema is not None else AgentState
-    state_schemas.add(base_state)
-
-    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
     # create graph, add nodes
     graph: StateGraph[
@@ -1740,19 +1743,12 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 4. If there are pending tool calls, jump to the tool node
+        # 4. If there are pending tool calls, jump to the tool node.
+        # The tool node hydrates ToolRuntime.state from channels via
+        # CONFIG_KEY_READ at execution time, so we no longer inline the
+        # full state into each Send (previously O(N^2) in TASKS writes).
         if pending_tool_calls:
-            return [
-                Send(
-                    "tools",
-                    ToolCallWithContext(
-                        __type="tool_call_with_context",
-                        tool_call=tool_call,
-                        state=state,
-                    ),
-                )
-                for tool_call in pending_tool_calls
-            ]
+            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 5. If there is a structured response, exit the loop
         if "structured_response" in state:
