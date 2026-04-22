@@ -556,7 +556,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Runs alongside `_should_stream` inside `_generate_with_cache` /
         `_agenerate_with_cache` — after the run manager is open — and
         wins over the v1 streaming branch when a handler has declared
-        itself a `_V2StreamingCallbackHandler`.
+        itself a `_V2StreamingCallbackHandler`. Parallel to
+        `_should_stream` rather than a delegation — v1 and v2 have
+        disjoint affirmative triggers.
 
         Args:
             async_api: Whether the caller is on the async path.
@@ -570,33 +572,37 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             event generator (natively or via the `_stream` compat
             bridge).
         """
-        # v2 fallback bridges through `_stream` / `_astream`, so streaming
-        # must be implemented for the requested flavor.
-        sync_not_implemented = type(self)._stream == BaseChatModel._stream  # noqa: SLF001
-        async_not_implemented = type(self)._astream == BaseChatModel._astream  # noqa: SLF001
-        native_sync = getattr(type(self), "_stream_chat_model_events", None) is not None
-        native_async = (
-            getattr(type(self), "_astream_chat_model_events", None) is not None
-        )
-        if not async_api and not (native_sync or not sync_not_implemented):
+        # Opt-in: only route through v2 when a v2 handler is attached.
+        handlers = run_manager.handlers if run_manager else []
+        if not any(isinstance(h, _V2StreamingCallbackHandler) for h in handlers):
             return False
-        if async_api and not (
-            native_async
-            or native_sync
-            or not async_not_implemented
-            or not sync_not_implemented
-        ):
+
+        # Need a source of v2 events on the requested flavor. A native
+        # `_(a)stream_chat_model_events` hook bypasses the bridge;
+        # otherwise the bridge wraps `_stream` / `_astream`. Async can
+        # fall back to sync.
+        #
+        # `cls._stream is not BaseChatModel._stream` is an identity
+        # check for "subclass overrode `_stream`" — same pattern as
+        # `_should_stream`.
+        cls = type(self)
+        has_native_sync = getattr(cls, "_stream_chat_model_events", None) is not None
+        has_native_async = getattr(cls, "_astream_chat_model_events", None) is not None
+        overrides_sync = cls._stream is not BaseChatModel._stream
+        overrides_async = cls._astream is not BaseChatModel._astream
+        has_sync_source = has_native_sync or overrides_sync
+        has_async_source = has_native_async or overrides_async
+        has_source = (
+            (has_sync_source or has_async_source) if async_api else has_sync_source
+        )
+        if not has_source:
             return False
 
         if self.disable_streaming is True:
             return False
         if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
             return False
-        if "stream" in kwargs and not kwargs["stream"]:
-            return False
-
-        handlers = run_manager.handlers if run_manager else []
-        return any(isinstance(h, _V2StreamingCallbackHandler) for h in handlers)
+        return bool(kwargs.get("stream", True))
 
     def _iter_v2_events(
         self,
@@ -657,9 +663,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[MessagesData]:
-        """Async counterpart to :meth:`_iter_v2_events`.
+        """Async counterpart to `_iter_v2_events`.
 
-        See :meth:`_iter_v2_events` for the shared contract.
+        See `_iter_v2_events` for the shared contract.
         """
         native = cast(
             "Callable[..., AsyncIterator[MessagesData]] | None",
@@ -953,11 +959,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> ChatModelStream:
         """Stream content-block lifecycle events for a single model call.
 
-        Returns a :class:`ChatModelStream` with typed projections
-        (`.text`, `.reasoning`, `.tool_calls`, `.usage`,
-        `.output`).
+        Returns a `ChatModelStream` with typed projections
+        (`.text`, `.reasoning`, `.tool_calls`, `.usage`, `.output`).
 
-        .. warning::
+        !!! warning
+
             This API is experimental and may change.
 
         Args:
@@ -967,7 +973,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs: Additional keyword arguments passed to the model.
 
         Returns:
-            A :class:`ChatModelStream` with typed projections.
+            A `ChatModelStream` with typed projections.
         """
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
@@ -1050,12 +1056,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncChatModelStream:
-        """Async variant of :meth:`stream_v2`.
+        """Async variant of `stream_v2`.
 
-        Returns an :class:`AsyncChatModelStream` whose projections are
+        Returns an `AsyncChatModelStream` whose projections are
         async-iterable and awaitable.
 
-        .. warning::
+        !!! warning
+
             This API is experimental and may change.
 
         Args:
@@ -1065,7 +1072,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs: Additional keyword arguments passed to the model.
 
         Returns:
-            An :class:`AsyncChatModelStream` with typed projections.
+            An `AsyncChatModelStream` with typed projections.
         """
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()

@@ -311,7 +311,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-42")
 
-        stream = bound.stream_v2("test")  # type: ignore[attr-defined]
+        stream = bound.stream_v2("test")
         for _ in stream.text:
             pass
 
@@ -323,7 +323,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="from-bind")
 
-        stream = bound.stream_v2("test", my_marker="from-call")  # type: ignore[attr-defined]
+        stream = bound.stream_v2("test", my_marker="from-call")
         for _ in stream.text:
             pass
 
@@ -335,7 +335,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        stream = await bound.astream_v2("test")  # type: ignore[attr-defined]
+        stream = await bound.astream_v2("test")
         _ = await stream
 
         assert len(model.received_kwargs) == 1

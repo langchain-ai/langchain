@@ -1169,6 +1169,46 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> Any:
+        """Stream content-block lifecycle events (v2 protocol).
+
+        Implemented by `BaseChatModel` (and forwarded by `RunnableBinding`).
+        Generic `Runnable`s don't participate in the v2 event protocol —
+        use `.stream()` instead.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `stream_v2`. "
+            "`stream_v2` is only implemented by chat models; use `.stream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
+
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> Any:
+        """Async variant of `stream_v2`. See that method.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `astream_v2`. "
+            "`astream_v2` is only implemented by chat models; use `.astream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
+
     @overload
     def astream_log(
         self,
@@ -5889,6 +5929,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         ):
             yield item
 
+    @override
     def stream_v2(
         self,
         input: Input,
@@ -5902,12 +5943,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         forward the call but drop `self.kwargs` — losing tools bound via
         `bind_tools`, `stop` sequences, etc.
         """
-        return self.bound.stream_v2(  # type: ignore[attr-defined]
+        return self.bound.stream_v2(
             input,
             self._merge_configs(config),
             **{**self.kwargs, **kwargs},
         )
 
+    @override
     async def astream_v2(
         self,
         input: Input,
@@ -5918,7 +5960,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
 
         Async variant of `stream_v2`. See that method for the full rationale.
         """
-        return await self.bound.astream_v2(  # type: ignore[attr-defined]
+        return await self.bound.astream_v2(
             input,
             self._merge_configs(config),
             **{**self.kwargs, **kwargs},

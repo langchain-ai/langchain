@@ -342,7 +342,7 @@ class AsyncProjection(_ProjectionBase):
 
 
 class _AsyncProjectionIterator:
-    """Async iterator over an :class:`AsyncProjection`'s deltas."""
+    """Async iterator over an `AsyncProjection`'s deltas."""
 
     __slots__ = ("_offset", "_proj")
 
@@ -472,7 +472,7 @@ class ChatModelStream:
     def bind_pump(self, pump_one: Callable[[], bool]) -> None:
         """Bind a pump for standalone streaming.
 
-        Delegates to :meth:`set_request_more`.  Used by
+        Delegates to `set_request_more`.  Used by
         `BaseChatModel.stream_v2()`.
         """
         self.set_request_more(pump_one)
@@ -785,7 +785,7 @@ class ChatModelStream:
 
         Public API — called by the stream driver (`stream_v2` /
         `astream_v2`) when the underlying producer raises, by
-        :meth:`dispatch` when an `error` protocol event arrives, and by
+        `dispatch` when an `error` protocol event arrives, and by
         cancellation paths.
         """
         self._done = True
@@ -986,29 +986,10 @@ class AsyncChatModelStream(ChatModelStream):
         self._events_proj.fail(error)
 
 
-# ---------------------------------------------------------------------------
-# Legacy dispatch helper (kept for backwards compatibility)
-# ---------------------------------------------------------------------------
-
-
-def dispatch_event(
-    event: MessagesData,
-    stream: ChatModelStream,
-) -> None:
-    """Route a protocol event to the stream's :meth:`dispatch` method.
-
-    .. deprecated::
-        Prefer `stream.dispatch(event)` directly. Kept for callers that
-        already import this helper.
-    """
-    stream.dispatch(event)
-
-
 __all__ = [
     "AsyncChatModelStream",
     "AsyncProjection",
     "ChatModelStream",
     "SyncProjection",
     "SyncTextProjection",
-    "dispatch_event",
 ]

@@ -1,6 +1,6 @@
 """Compat bridge: convert `AIMessageChunk` streams to protocol events.
 
-The bridge trusts :meth:`AIMessageChunk.content_blocks` as the single
+The bridge trusts `AIMessageChunk.content_blocks` as the single
 protocol view of any chunk.  That property runs the three-tier lookup
 (`output_version == "v1"` short-circuit, registered translator, or
 best-effort parsing) and returns a `list[ContentBlock]` for every
@@ -24,11 +24,11 @@ Lifecycle::
 
 Public API:
 
-- :func:`chunks_to_events` / :func:`achunks_to_events` — for live streams
-  where chunks arrive over time.
-- :func:`message_to_events` / :func:`amessage_to_events` — for replaying a
-  finalized :class:`AIMessage` (cache hit, checkpoint restore, graph-node
-  return value) as a synthetic event lifecycle.
+- `chunks_to_events` / `achunks_to_events` — for live streams where
+  chunks arrive over time.
+- `message_to_events` / `amessage_to_events` — for replaying a finalized
+  `AIMessage` (cache hit, checkpoint restore, graph-node return value)
+  as a synthetic event lifecycle.
 """
 
 from __future__ import annotations
@@ -70,12 +70,11 @@ CompatBlock = dict[str, Any]
 
 The bridge works with plain dicts internally because two separate but
 structurally similar `ContentBlock` Unions exist — one in
-:mod:`langchain_core.messages.content` (returned by
-`msg.content_blocks`), one in :mod:`langchain_protocol.protocol` (the
-wire/event shape).  They are not mypy-compatible despite being
-near-isomorphic.  Passing through `dict[str, Any]` launders between
-them.  See :func:`_to_protocol_block` for the single seam where the
-laundering cast lives.
+`langchain_core.messages.content` (returned by `msg.content_blocks`),
+one in `langchain_protocol.protocol` (the wire/event shape).  They are
+not mypy-compatible despite being near-isomorphic.  Passing through
+`dict[str, Any]` launders between them.  See `_to_protocol_block` for
+the single seam where the laundering cast lives.
 """
 
 
@@ -88,8 +87,8 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
     """Narrow an internal working dict to a protocol `ContentBlock`.
 
     Single seam between the two `ContentBlock` type systems:
-    :mod:`langchain_core.messages.content` (what `msg.content_blocks`
-    returns) and :mod:`langchain_protocol.protocol` (what event payloads
+    `langchain_core.messages.content` (what `msg.content_blocks`
+    returns) and `langchain_protocol.protocol` (what event payloads
     require).  The two Unions overlap structurally but are nominally
     distinct to mypy, so we launder through `dict[str, Any]`.  When the
     Unions are unified, this helper and its finalized counterpart can be
@@ -99,7 +98,7 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 
 
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
-    """Counterpart of :func:`_to_protocol_block` for finalized blocks."""
+    """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
 
 
@@ -118,7 +117,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     fallback.  Callers are responsible for allocating wire-level `uint`
     indices; this helper only surfaces the source-side identity.
 
-    For finalized :class:`AIMessage`, also surfaces `invalid_tool_calls`
+    For finalized `AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
 
@@ -546,7 +545,7 @@ async def achunks_to_events(
     *,
     message_id: str | None = None,
 ) -> AsyncIterator[MessagesData]:
-    """Async variant of :func:`chunks_to_events`."""
+    """Async variant of `chunks_to_events`."""
     started = False
     open_key: Any = None
     open_block: CompatBlock | None = None
@@ -685,7 +684,7 @@ async def amessage_to_events(
     *,
     message_id: str | None = None,
 ) -> AsyncIterator[MessagesData]:
-    """Async variant of :func:`message_to_events`."""
+    """Async variant of `message_to_events`."""
     for event in message_to_events(msg, message_id=message_id):
         yield event
 
