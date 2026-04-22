@@ -38,12 +38,20 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
-try:
-    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+_HAS_TRANSFORMERS: bool | None = None
 
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
+
+def _check_transformers() -> bool:
+    """Lazily check and cache whether transformers is available."""
+    global _HAS_TRANSFORMERS  # noqa: PLW0603
+    if _HAS_TRANSFORMERS is None:
+        try:
+            import transformers  # noqa: F401
+
+            _HAS_TRANSFORMERS = True
+        except ImportError:
+            _HAS_TRANSFORMERS = False
+    return _HAS_TRANSFORMERS
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -86,13 +94,15 @@ def get_tokenizer() -> Any:
         The GPT-2 tokenizer instance.
 
     """
-    if not _HAS_TRANSFORMERS:
+    if not _check_transformers():
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
         )
         raise ImportError(msg)
+    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
