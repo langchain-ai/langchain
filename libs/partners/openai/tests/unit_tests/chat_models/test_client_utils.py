@@ -427,6 +427,7 @@ def test_negative_tcp_env_is_rejected(
     )
 
 
+@pytest.mark.enable_socket
 def test_filter_supported_logs_drops_at_debug(
     caplog: pytest.LogCaptureFixture,
 ) -> None:

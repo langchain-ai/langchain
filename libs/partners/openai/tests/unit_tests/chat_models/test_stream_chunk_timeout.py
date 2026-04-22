@@ -181,12 +181,12 @@ def test_stream_chunk_timeout_kwarg_none_disables(
 
 def test_stream_chunk_timeout_error_has_structured_attrs() -> None:
     """Structured payload mirrors the log `extra=`; no message-regex needed."""
-    err = StreamChunkTimeoutError(0.5, model_name="gpt-4o", chunks_received=3)
+    err = StreamChunkTimeoutError(0.5, model_name=MODEL, chunks_received=3)
     assert err.timeout_s == 0.5
-    assert err.model_name == "gpt-4o"
+    assert err.model_name == "gpt-5.4"
     assert err.chunks_received == 3
     text = str(err)
-    assert "gpt-4o" in text
+    assert "gpt-5.4" in text
     assert "chunks_received=3" in text
 
 
@@ -357,7 +357,7 @@ async def test_astream_integration_raises_stream_chunk_timeout_error(
     ):
         async for _ in llm.astream("hello"):
             pass
-    assert exc_info.value.model_name == "gpt-4o"
+    assert exc_info.value.model_name == MODEL
 
 
 def test_stream_sync_not_wrapped_by_chunk_timeout(

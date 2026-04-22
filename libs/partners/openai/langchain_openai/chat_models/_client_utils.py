@@ -132,7 +132,13 @@ def _filter_supported(opts: list[SocketOption]) -> list[SocketOption]:
     """
     try:
         probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    except OSError:
+    except Exception:
+        # Broad catch is deliberate: `pytest_socket` under `--disable-socket`
+        # raises `SocketBlockedError` (a `RuntimeError`, not `OSError`), and
+        # seccomp/sandboxed runtimes have been observed to raise other
+        # `OSError` subclasses and `PermissionError`. The intent is "any
+        # inability to create a probe socket -> pass through unfiltered,"
+        # and narrowing the type would silently regress sandboxed CI.
         return list(opts)
     try:
         supported: list[SocketOption] = []
