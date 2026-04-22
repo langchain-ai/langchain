@@ -317,6 +317,49 @@ def test_convert_to_v1_from_openai_input() -> None:
     assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
 
 
+def test_convert_to_v1_file_block_preserves_non_pdf_mime_type() -> None:
+    """Base64 file blocks must preserve the MIME type from the data URI.
+
+    Regression: `_convert_openai_format_to_data_block` used to hard-code
+    `mime_type="application/pdf"` for any base64 file block, so non-PDF
+    attachments (e.g. CSVs, spreadsheets, text files) were silently
+    relabeled as PDFs on the way into the v1 content-block representation.
+    """
+    message = HumanMessage(
+        content=[
+            {
+                "type": "file",
+                "file": {
+                    "filename": "sheet.csv",
+                    "file_data": "data:text/csv;base64,aGVsbG8=",
+                },
+            },
+            {
+                "type": "file",
+                "file": {
+                    "file_data": "data:text/plain;base64,aGVsbG8=",
+                },
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {
+            "type": "file",
+            "base64": "aGVsbG8=",
+            "mime_type": "text/csv",
+            "extras": {"filename": "sheet.csv"},
+        },
+        {
+            "type": "file",
+            "base64": "aGVsbG8=",
+            "mime_type": "text/plain",
+        },
+    ]
+
+    assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
+
+
 def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 legacy message format
     message_v03 = AIMessage(
