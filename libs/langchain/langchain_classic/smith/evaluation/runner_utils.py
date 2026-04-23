@@ -1134,7 +1134,7 @@ class _DatasetRunContainer:
                 try:
                     result = evaluator(runs_list, self.examples)
                     if isinstance(result, EvaluationResult):
-                        result = result.dict()
+                        result = result.model_dump()
                     aggregate_feedback.append(cast("dict", result))
                     executor.submit(
                         self.client.create_feedback,

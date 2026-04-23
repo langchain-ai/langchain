@@ -1,28 +1,25 @@
 """Planning and task management middleware for agents."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
-    from langgraph.runtime import Runtime
+from collections.abc import Awaitable, Callable
+from typing import Annotated, Any, Literal, cast
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
-from langchain_core.tools import tool
+from langchain_core.tools import InjectedToolCallId, StructuredTool, tool
+from langgraph.runtime import Runtime
 from langgraph.types import Command
+from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    ModelCallResult,
+    ContextT,
     ModelRequest,
     ModelResponse,
     OmitFromInput,
+    ResponseT,
 )
-from langchain.tools import InjectedToolCallId
+from langchain.tools import ToolRuntime
 
 
 class Todo(TypedDict):
@@ -35,11 +32,21 @@ class Todo(TypedDict):
     """The current status of the todo item."""
 
 
-class PlanningState(AgentState[Any]):
-    """State schema for the todo middleware."""
+class PlanningState(AgentState[ResponseT]):
+    """State schema for the todo middleware.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
 
     todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
+
+
+class WriteTodosInput(BaseModel):
+    """Input schema for the `write_todos` tool."""
+
+    todos: list[Todo]
 
 
 WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -130,7 +137,29 @@ def write_todos(
     )
 
 
-class TodoListMiddleware(AgentMiddleware):
+# Dynamically create the write_todos tool with the custom description
+def _write_todos(
+    runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
+) -> Command[Any]:
+    """Create and manage a structured task list for your current work session."""
+    return Command(
+        update={
+            "todos": todos,
+            "messages": [
+                ToolMessage(f"Updated todo list to {todos}", tool_call_id=runtime.tool_call_id)
+            ],
+        }
+    )
+
+
+async def _awrite_todos(
+    runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
+) -> Command[Any]:
+    """Create and manage a structured task list for your current work session."""
+    return _write_todos(runtime, todos)
+
+
+class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, ResponseT]):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -157,7 +186,7 @@ class TodoListMiddleware(AgentMiddleware):
         ```
     """
 
-    state_schema = PlanningState
+    state_schema = PlanningState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -176,28 +205,22 @@ class TodoListMiddleware(AgentMiddleware):
         self.system_prompt = system_prompt
         self.tool_description = tool_description
 
-        # Dynamically create the write_todos tool with the custom description
-        @tool(description=self.tool_description)
-        def write_todos(
-            todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> Command[Any]:
-            """Create and manage a structured task list for your current work session."""
-            return Command(
-                update={
-                    "todos": todos,
-                    "messages": [
-                        ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)
-                    ],
-                }
+        self.tools = [
+            StructuredTool.from_function(
+                name="write_todos",
+                description=tool_description,
+                func=_write_todos,
+                coroutine=_awrite_todos,
+                args_schema=WriteTodosInput,
+                infer_schema=False,
             )
-
-        self.tools = [write_todos]
+        ]
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Update the system message to include the todo system prompt.
 
         Args:
@@ -222,9 +245,9 @@ class TodoListMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
         """Update the system message to include the todo system prompt.
 
         Args:
@@ -248,7 +271,9 @@ class TodoListMiddleware(AgentMiddleware):
         return await handler(request.override(system_message=new_system_message))
 
     @override
-    def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         The todo list is designed to be updated at most once per model turn. Since
@@ -298,7 +323,9 @@ class TodoListMiddleware(AgentMiddleware):
         return None
 
     @override
-    async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+    async def aafter_model(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check for parallel write_todos tool calls and return errors if detected.
 
         Async version of `after_model`. The todo list is designed to be updated at

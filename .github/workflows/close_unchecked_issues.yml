@@ -1,0 +1,196 @@
+# Auto-close issues that bypass or ignore the issue template checkboxes.
+#
+# GitHub issue forms enforce `required: true` checkboxes in the web UI,
+# but the API bypasses form validation entirely — bots/scripts can open
+# issues with every box unchecked or skip the template altogether.
+#
+# Rules:
+#   0. No issue type -> close unless author is an org member
+#   1. No checkboxes at all -> close unless author is an org member or bot
+#   2. Checkboxes present but none checked -> close
+#   3. "Submission checklist" section incomplete -> close
+#   4. "Package (Required)" section has no selection -> close
+#
+# Org membership check reuses the shared helper from pr-labeler.js and
+# the same GitHub App used by tag-external-issues.yml.
+
+name: Close Unchecked Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-boxes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
+        with:
+          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+
+      - name: Validate issue checkboxes
+        if: steps.app-token.outcome == 'success'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const body = context.payload.issue.body ?? '';
+            const allChecked = (body.match(/- \[x\]/gi) || []).length;
+            const allUnchecked = (body.match(/- \[ \]/g) || []).length;
+            const total = allChecked + allUnchecked;
+
+            // ── Helpers ─────────────────────────────────────────────────
+            // Extract checkboxes under a markdown H2/H3 heading.
+            // Returns { checked, unchecked } counts, or null if the
+            // section heading is not found in the body.
+            function parseSection(heading) {
+              const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              // Find the heading line
+              const headingRe = new RegExp(`^#{2,3}\\s+${escaped}\\s*$`, 'm');
+              const headingMatch = headingRe.exec(body);
+              if (!headingMatch) return null;
+              // Slice from after the heading to the next heading or end
+              const rest = body.slice(headingMatch.index + headingMatch[0].length);
+              const nextHeading = rest.search(/\n#{2,3}\s/);
+              const block = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+              return {
+                checked: (block.match(/- \[x\]/gi) || []).length,
+                unchecked: (block.match(/- \[ \]/g) || []).length,
+              };
+            }
+
+            let _cachedMember;
+            async function isOrgMember() {
+              if (_cachedMember) return _cachedMember;
+              const { h } = require('./.github/scripts/pr-labeler.js')
+                .loadAndInit(github, owner, repo, core);
+              const author = context.payload.sender.login;
+              const { isExternal } = await h.checkMembership(
+                author, context.payload.sender.type,
+              );
+              _cachedMember = { internal: !isExternal, author };
+              return _cachedMember;
+            }
+
+            async function closeWithComment(lines) {
+              const templateUrl = `https://github.com/${owner}/${repo}/issues/new/choose`;
+              lines.push(
+                '',
+                `Please use one of the [issue templates](${templateUrl}).`,
+              );
+
+              // Post comment first so the author sees the reason even if
+              // the subsequent close call fails.
+              await github.rest.issues.createComment({
+                owner, repo, issue_number,
+                body: lines.join('\n'),
+              });
+
+              await github.rest.issues.update({
+                owner, repo, issue_number,
+                state: 'closed',
+                state_reason: 'not_planned',
+              });
+            }
+
+            // ── Rule 0: no issue type (API/CLI bypass) ──────────────────
+            // Issue types are set automatically when using web UI templates.
+            // External users cannot set issue types via the API (requires
+            // write/triage permissions), so a missing type reliably indicates
+            // programmatic submission.
+            if (!context.payload.issue.type) {
+              let membership;
+              try {
+                membership = await isOrgMember();
+              } catch (e) {
+                // Org membership check failed — skip Rule 0 and let
+                // Rules 1-4 handle validation via checkboxes.
+                core.warning(`Rule 0: org membership check failed, skipping: ${e.message}`);
+              }
+              if (membership?.internal) {
+                console.log(`No issue type, but ${membership.author} is internal — OK`);
+              } else if (membership) {
+                console.log(`No issue type and ${membership.author} is external — closing`);
+                await closeWithComment([
+                  'This issue was automatically closed because it appears to have been submitted programmatically — issue types are automatically set when using the GitHub web interface, and this issue has none.',
+                  '',
+                  'We do not allow automated issue submission at this time.',
+                ]);
+                return;
+              }
+            }
+
+            // ── Rule 1: no checkboxes at all ────────────────────────────
+            if (total === 0) {
+              const { internal, author } = await isOrgMember();
+              if (internal) {
+                console.log(`No checkboxes, but ${author} is internal — OK`);
+                return;
+              }
+              console.log(`No checkboxes and ${author} is external — closing`);
+              await closeWithComment([
+                'This issue was automatically closed because no issue template was used.',
+              ]);
+              return;
+            }
+
+            // ── Rule 2: checkboxes present but none checked ─────────────
+            if (allChecked === 0) {
+              console.log(`${allUnchecked} checkbox(es) present, none checked — closing`);
+              await closeWithComment([
+                'This issue was automatically closed because none of the required checkboxes were checked. Please re-file using an issue template and complete the checklist.',
+              ]);
+              return;
+            }
+
+            // ── Rules 3–4: parse sections for targeted feedback ─────────
+            const checklist = parseSection('Submission checklist');
+            const pkg = parseSection('Package (Required)');
+            console.log(`Section parse — checklist: ${JSON.stringify(checklist)}, pkg: ${JSON.stringify(pkg)}`);
+
+            const problems = [];
+
+            if (checklist && checklist.unchecked > 0) {
+              problems.push(
+                'the submission checklist is incomplete — please confirm you searched for duplicates, included a reproduction, etc.'
+              );
+            }
+            if (pkg !== null && pkg.checked === 0) {
+              problems.push(
+                'no package was selected (e.g. langchain-core, langchain, langgraph) — this helps us route the issue to the right team'
+              );
+            } else if (pkg === null) {
+              problems.push(
+                'the package selection is missing (e.g. langchain-core, langchain, langgraph) — this helps us route the issue to the right team'
+              );
+            }
+
+            if (problems.length === 0) {
+              console.log(`All section checks passed (${allChecked} checked) — OK`);
+              return;
+            }
+
+            console.log(`Closing — problems: ${problems.join('; ')}`);
+            await closeWithComment([
+              'Thanks for opening an issue! It was automatically closed because:',
+              '',
+              ...problems.map(p => `- ${p}`),
+            ]);

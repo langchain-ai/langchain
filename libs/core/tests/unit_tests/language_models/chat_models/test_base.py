@@ -3,10 +3,13 @@
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import patch
 
 import pytest
-from typing_extensions import override
+from pydantic import model_validator
+from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -16,12 +19,19 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.chat_models import _generate_response_from_error
+from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
+    _normalize_messages,
+)
+from langchain_core.language_models.chat_models import (
+    SimpleChatModel,
+    _generate_response_from_error,
+)
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
 )
+from langchain_core.language_models.model_profile import ModelProfile
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -35,6 +45,7 @@ from langchain_core.tracers import LogStreamCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -317,6 +328,20 @@ class FakeTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
         self.traced_run_ids.append(run.id)
+
+
+class LangChainTracerRunCollector:
+    def __init__(self) -> None:
+        self.tracer = LangChainTracer()
+        self.runs: list[Run] = []
+
+    @contextmanager
+    def tracing_callback(self) -> Iterator[LangChainTracer]:
+        def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+            self.runs.append(run)
+
+        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+            yield self.tracer
 
 
 def test_pass_run_id() -> None:
@@ -1206,6 +1231,13 @@ def test_get_ls_params() -> None:
     ls_params = llm._get_ls_params(temperature=0.2)
     assert ls_params["ls_temperature"] == 0.2
 
+    # Test integer temperature values (regression test for issue #35300)
+    ls_params = llm._get_ls_params(temperature=0)
+    assert ls_params["ls_temperature"] == 0
+
+    ls_params = llm._get_ls_params(temperature=1)
+    assert ls_params["ls_temperature"] == 1
+
     ls_params = llm._get_ls_params(max_tokens=2048)
     assert ls_params["ls_max_tokens"] == 2048
 
@@ -1221,6 +1253,76 @@ def test_model_profiles() -> None:
         messages=iter([]), profile={"max_input_tokens": 100}
     )
     assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+def test_resolve_model_profile_hook_populates_profile() -> None:
+    """_resolve_model_profile is called when profile is None."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]))
+    assert model.profile == {"max_input_tokens": 500}
+
+
+def test_resolve_model_profile_hook_skipped_when_explicit() -> None:
+    """_resolve_model_profile is NOT called when profile is set explicitly."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]), profile={"max_input_tokens": 999})
+    assert model.profile is not None
+    assert model.profile["max_input_tokens"] == 999
+
+
+def test_resolve_model_profile_hook_exception_is_caught() -> None:
+    """Model is still usable if _resolve_model_profile raises."""
+
+    class BrokenProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            msg = "profile file not found"
+            raise RuntimeError(msg)
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        model = BrokenProfileModel(messages=iter([]))
+
+    assert model.profile is None
+
+
+def test_check_profile_keys_runs_despite_partner_override() -> None:
+    """Verify _check_profile_keys fires even when _set_model_profile is overridden.
+
+    Because _check_profile_keys has a distinct validator name from
+    _set_model_profile, a partner override of the latter does not suppress
+    the key-checking validator.
+    """
+
+    class PartnerModel(GenericFakeChatModel):
+        """Simulates a partner that overrides _set_model_profile."""
+
+        @model_validator(mode="after")
+        def _set_model_profile(self) -> Self:
+            if self.profile is None:
+                profile: dict[str, Any] = {
+                    "max_input_tokens": 100,
+                    "partner_only_field": True,
+                }
+                self.profile = profile  # type: ignore[assignment]
+            return self
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model = PartnerModel(messages=iter([]))
+
+    assert model.profile is not None
+    assert model.profile.get("partner_only_field") is True
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 1
+    assert "partner_only_field" in str(profile_warnings[0].message)
 
 
 class MockResponse:
@@ -1311,3 +1413,100 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["body"] is None
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+class FakeChatModelWithInvocationParams(SimpleChatModel):
+    """Fake chat model with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-chat-model-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _call(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return "test response"
+
+
+def test_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
+
+    assert len(collector.runs) == 1
+    run = collector.runs[0]
+
+    key = "LANGSMITH_LANGGRAPH_API_VARIANT"
+
+    if key in run.extra["metadata"]:
+        del run.extra["metadata"][key]
+
+    assert run.extra == {
+        "batch_size": 1,
+        "invocation_params": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "functions": [{"name": "test_function"}],
+            "messages": [{"content": "test", "role": "system"}],
+            "response_format": {"type": "json_object"},
+            "stop": None,
+            "temperature": 0.7,
+            "tools": [{"name": "test_tool"}],
+        },
+        "metadata": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "ls_integration": "langchain_chat_model",
+            "ls_model_type": "chat",
+            "ls_provider": "fakechatmodelwithinvocationparams",
+            "ls_temperature": 0.7,
+            "revision_id": run.extra["metadata"]["revision_id"],
+            "stop": None,
+            "temperature": 0.7,
+        },
+        "options": {"stop": None},
+        "runtime": run.extra["runtime"],
+    }
+    assert run.metadata == run.extra["metadata"]

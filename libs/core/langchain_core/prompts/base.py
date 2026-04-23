@@ -15,6 +15,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
@@ -350,6 +351,12 @@ class BasePromptTemplate(
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save the prompt.
 
@@ -382,11 +389,12 @@ class BasePromptTemplate(
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
-        if save_path.suffix == ".json":
-            with save_path.open("w", encoding="utf-8") as f:
+        resolved_path = save_path.resolve()
+        if resolved_path.suffix == ".json":
+            with resolved_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w", encoding="utf-8") as f:
+        elif resolved_path.suffix.endswith((".yaml", ".yml")):
+            with resolved_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

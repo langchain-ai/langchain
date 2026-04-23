@@ -8,4 +8,88 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  - package-ecosystem: "uv"
+    directories:
+      - "/libs/core/"
+      - "/libs/langchain/"
+      - "/libs/langchain_v1/"
+    schedule:
+      interval: "monthly"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  - package-ecosystem: "uv"
+    directories:
+      - "/libs/partners/anthropic/"
+      - "/libs/partners/chroma/"
+      - "/libs/partners/deepseek/"
+      - "/libs/partners/exa/"
+      - "/libs/partners/fireworks/"
+      - "/libs/partners/groq/"
+      - "/libs/partners/huggingface/"
+      - "/libs/partners/mistralai/"
+      - "/libs/partners/nomic/"
+      - "/libs/partners/ollama/"
+      - "/libs/partners/openai/"
+      - "/libs/partners/openrouter/"
+      - "/libs/partners/perplexity/"
+      - "/libs/partners/qdrant/"
+      - "/libs/partners/xai/"
+    schedule:
+      interval: "monthly"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+  - package-ecosystem: "uv"
+    directories:
+      - "/libs/text-splitters/"
+      - "/libs/standard-tests/"
+      - "/libs/model-profiles/"
+    schedule:
+      interval: "monthly"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"

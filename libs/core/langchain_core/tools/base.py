@@ -741,7 +741,7 @@ class ChildTool(BaseTool):
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
-                elif k in field_info and k not in ("args", "kwargs"):
+                elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
                     # Exclude "args"/"kwargs" as these are synthetic fields for variadic
                     # parameters that should not be passed as keyword arguments.
@@ -819,7 +819,8 @@ class ChildTool(BaseTool):
         filtered_keys.update(self._injected_args_keys)
 
         # If we have an args_schema, use it to identify injected args
-        if self.args_schema is not None:
+        # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
+        if self.args_schema is not None and not isinstance(self.args_schema, dict):
             try:
                 annotations = get_all_basemodel_annotations(self.args_schema)
                 for field_name, field_type in annotations.items():
@@ -1488,7 +1489,7 @@ def get_all_basemodel_annotations(
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
-            if fields and name not in fields and name not in alias_map:
+            if name not in fields and name not in alias_map:
                 continue
             field_name = alias_map.get(name, name)
             annotations[field_name] = param.annotation

@@ -5,6 +5,7 @@ import logging
 import os
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any
+from urllib.parse import urlparse
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -17,6 +18,19 @@ from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
+
+
+def _is_huggingface_hosted_url(url: str | None) -> bool:
+    """True if url is HF-hosted (huggingface.co or hf.space)."""
+    if not url:
+        return False
+    hostname = (urlparse(url).hostname or "").lower()
+    return (
+        hostname == "huggingface.co"
+        or hostname == "hf.space"
+        or hostname.endswith((".huggingface.co", ".hf.space"))
+    )
+
 
 VALID_TASKS = (
     "text2text-generation",
@@ -211,6 +225,13 @@ class HuggingFaceEndpoint(LLM):
         endpoint_url = values.get("endpoint_url")
         repo_id = values.get("repo_id")
 
+        if repo_id and repo_id.startswith(("http://", "https://")):
+            msg = (
+                "`repo_id` must be a HuggingFace repo ID, not a URL. "
+                "Use `endpoint_url` for direct endpoints."
+            )
+            raise ValueError(msg)
+
         if sum([bool(model), bool(endpoint_url), bool(repo_id)]) > 1:
             msg = (
                 "Please specify either a `model` OR an `endpoint_url` OR a `repo_id`,"
@@ -234,6 +255,11 @@ class HuggingFaceEndpoint(LLM):
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
         )
+        # Local/custom endpoint URL -> don't pass HF token (avoids 401s and egress).
+        if self.endpoint_url and not _is_huggingface_hosted_url(self.endpoint_url):
+            client_api_key: str | None = None
+        else:
+            client_api_key = huggingfacehub_api_token
 
         from huggingface_hub import (  # type: ignore[import]
             AsyncInferenceClient,  # type: ignore[import]
@@ -245,7 +271,7 @@ class HuggingFaceEndpoint(LLM):
         self.client = InferenceClient(
             model=self.model,
             timeout=self.timeout,
-            api_key=huggingfacehub_api_token,
+            api_key=client_api_key,
             provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value
@@ -258,7 +284,7 @@ class HuggingFaceEndpoint(LLM):
         self.async_client = AsyncInferenceClient(
             model=self.model,
             timeout=self.timeout,
-            api_key=huggingfacehub_api_token,
+            api_key=client_api_key,
             provider=self.provider,  # type: ignore[arg-type]
             **{
                 key: value

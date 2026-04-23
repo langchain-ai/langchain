@@ -87,7 +87,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                     the Pandas DataFrame {self.dataframe.index.max()}."
             raise OutputParserException(msg)
 
-        return parsed_array, original_request_params.split("[")[0]
+        return parsed_array, original_request_params.split("[", maxsplit=1)[0]
 
     @override
     def parse(self, request: str) -> dict[str, Any]:

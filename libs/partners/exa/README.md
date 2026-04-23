@@ -15,7 +15,7 @@ pip install langchain-exa
 
 ## 🤔 What is this?
 
-This package contains the LangChain integration with Exa.
+This package contains the LangChain integration with [Exa](https://exa.ai), a web search API built for AI. It lets you search the web and get clean, ready-to-use content from any page.
 
 ## 📖 Documentation
 

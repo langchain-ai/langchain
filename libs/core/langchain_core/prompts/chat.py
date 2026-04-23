@@ -22,6 +22,7 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -977,14 +978,14 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         input_vars: set[str] = set()
         optional_variables: set[str] = set()
         partial_vars: dict[str, Any] = {}
-        for _message in messages_:
-            if isinstance(_message, MessagesPlaceholder) and _message.optional:
-                partial_vars[_message.variable_name] = []
-                optional_variables.add(_message.variable_name)
+        for message in messages_:
+            if isinstance(message, MessagesPlaceholder) and message.optional:
+                partial_vars[message.variable_name] = []
+                optional_variables.add(message.variable_name)
             elif isinstance(
-                _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
+                message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
             ):
-                input_vars.update(_message.input_variables)
+                input_vars.update(message.input_variables)
 
         kwargs = {
             "input_variables": sorted(input_vars),
@@ -1305,6 +1306,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type. Used for serialization."""
         return "chat"
 
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save prompt to file.
 

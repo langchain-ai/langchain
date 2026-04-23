@@ -6,6 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        > **All contributions must be in English.** See the [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
+
         Thank you for taking the time to file a bug report.
 
         For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
@@ -20,7 +22,7 @@ body:
   - type: checkboxes
     id: checks
     attributes:
-      label: Checked other resources
+      label: Submission checklist
       description: Please confirm and check all the following options.
       options:
         - label: This is a bug, not a usage question.
@@ -65,11 +67,21 @@ body:
         - label: langchain-mistralai
         - label: langchain-nomic
         - label: langchain-ollama
+        - label: langchain-openrouter
         - label: langchain-perplexity
-        - label: langchain-prompty
         - label: langchain-qdrant
         - label: langchain-xai
         - label: Other / not sure / general
+  - type: textarea
+    id: related
+    validations:
+      required: false
+    attributes:
+      label: Related Issues / PRs
+      description: |
+        If this bug is related to any existing issues or pull requests, please link them here.
+      placeholder: |
+        * e.g. #123, #456
   - type: textarea
     id: reproduction
     validations:
