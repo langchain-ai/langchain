@@ -202,6 +202,35 @@ def _should_emit_delta(block: CompatBlock) -> bool:
     return False
 
 
+def _to_protocol_delta_block(block: CompatBlock) -> ContentBlock:
+    """Sanitize a per-chunk block for emission as a ``content-block-delta``.
+
+    Many provider integrations (notably Anthropic's ``input_json_delta``
+    path) emit subsequent tool-call chunks with ``id`` and ``name`` set
+    to ``None`` — the metadata only arrives on the first ``tool_use``
+    chunk and is implicit for the rest.  Forwarding those ``None``
+    values to the wire produces ``"id": null, "name": null`` payloads
+    that can clobber previously-observed identifiers on accumulating
+    consumers (e.g. SDK message assemblers that fold deltas via
+    ``{...target, ...delta}`` spread).
+
+    Normalize by dropping ``id``/``name`` keys when they would serialize
+    to ``null`` on tool-call-chunk-shaped deltas.  This matches the wire
+    shape produced by the JS ``toProtocolDeltaBlock`` in
+    ``langgraphjs``'s ``messages-v2`` pipeline, where id/name are only
+    surfaced when they carry a real value.
+    """
+    btype = block.get("type")
+    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+        cleaned = dict(block)
+        if cleaned.get("id") is None:
+            cleaned.pop("id", None)
+        if cleaned.get("name") is None:
+            cleaned.pop("name", None)
+        return cast("ContentBlock", cleaned)
+    return _to_protocol_block(block)
+
+
 def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     """Merge a per-chunk delta slice into accumulated per-index state.
 
@@ -448,7 +477,7 @@ def chunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=_to_protocol_block(block),
+                    content_block=_to_protocol_delta_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
@@ -510,7 +539,7 @@ async def achunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=_to_protocol_block(block),
+                    content_block=_to_protocol_delta_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
@@ -574,7 +603,7 @@ def message_to_events(
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=idx,
-                content_block=_to_protocol_block(block),
+                content_block=_to_protocol_delta_block(block),
             )
         finalized = _finalize_block(block)
         if finalized.get("type") == "tool_call":
