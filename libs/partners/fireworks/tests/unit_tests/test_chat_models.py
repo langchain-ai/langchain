@@ -383,3 +383,65 @@ async def test_acompletion_with_retry_does_not_retry_non_retryable() -> None:
     with pytest.raises(InvalidRequestError):
         await _acompletion_with_retry(llm, messages=[HumanMessage(content="hi")])
     assert call_count["n"] == 1
+
+
+async def test_acompletion_with_retry_retries_on_5xx_http_status_error() -> None:
+    """Async 5xx `httpx.HTTPStatusError` is promoted and retried."""
+    llm = _make_llm(max_retries=1)
+    call_count = {"n": 0}
+    response_504 = httpx.Response(status_code=504, request=httpx.Request("POST", "x"))
+
+    async def _acreate(**_kwargs: Any) -> dict[str, Any]:
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            msg = "504"
+            raise httpx.HTTPStatusError(
+                msg, request=response_504.request, response=response_504
+            )
+        return _success_response()
+
+    mock_async = MagicMock()
+    mock_async.acreate = _acreate
+    llm.async_client = mock_async
+
+    result = await _acompletion_with_retry(llm, messages=[])
+    assert result == _success_response()
+    assert call_count["n"] == 2
+
+
+async def test_acompletion_with_retry_raises_on_empty_stream() -> None:
+    """Async empty streams surface as a descriptive `FireworksError`."""
+    llm = _make_llm(max_retries=0)
+
+    def _acreate(**_kwargs: Any) -> Any:
+        async def _empty_agen() -> Any:
+            if False:
+                yield  # pragma: no cover
+            return
+
+        return _empty_agen()
+
+    mock_async = MagicMock()
+    mock_async.acreate = _acreate
+    llm.async_client = mock_async
+
+    with pytest.raises(FireworksError, match="empty stream"):
+        agen = await _acompletion_with_retry(llm, messages=[], stream=True)
+        async for _ in agen:
+            pass
+
+
+def test_completion_with_retry_retries_on_transport_error() -> None:
+    """`httpx.TransportError` is in the retryable set."""
+    llm = _make_llm(max_retries=1)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = [
+        httpx.ConnectError("refused"),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = _completion_with_retry(llm, messages=[])
+
+    assert result == _success_response()
+    assert mock_client.create.call_count == 2
