@@ -8,6 +8,7 @@ import contextlib
 import functools
 import inspect
 import threading
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import (
     AsyncGenerator,
@@ -6098,6 +6099,33 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
             config=self.config,
             config_factories=self.config_factories,
         )
+
+    def with_structured_output(self, *args: Any, **kwargs: Any) -> Runnable:
+        """Forward ``with_structured_output`` to the bound runnable.
+
+        Warns if this binding has pre-bound kwargs (e.g., ``tools``,
+        ``tool_choice``) that the underlying model's
+        ``with_structured_output`` cannot see and will silently drop.
+
+        See: https://github.com/langchain-ai/langchain/issues/35320
+        """
+        _conflicting_keys = {"tools", "tool_choice"}
+        pre_bound = _conflicting_keys.intersection(self.kwargs or {})
+        if pre_bound:
+            warnings.warn(
+                f"with_structured_output() was called on a RunnableBinding "
+                f"that has pre-bound {sorted(pre_bound)} via .bind(). "
+                f"These will be silently dropped because "
+                f"with_structured_output() creates new bindings internally "
+                f"that do not preserve previously bound kwargs. "
+                f"To combine tools with structured output, pass them "
+                f"directly: model.with_structured_output(schema, "
+                f"tools=[...], strict=True, include_raw=True). "
+                f"See: https://github.com/langchain-ai/langchain/issues/35320",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self.bound.with_structured_output(*args, **kwargs)
 
     @override
     def __getattr__(self, name: str) -> Any:  # type: ignore[misc]
