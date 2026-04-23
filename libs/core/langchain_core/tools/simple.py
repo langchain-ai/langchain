@@ -98,6 +98,7 @@ class Tool(BaseTool):
 
     def _run(
         self,
+        /,
         *args: Any,
         config: RunnableConfig,
         run_manager: CallbackManagerForToolRun | None = None,
@@ -125,6 +126,7 @@ class Tool(BaseTool):
 
     async def _arun(
         self,
+        /,
         *args: Any,
         config: RunnableConfig,
         run_manager: AsyncCallbackManagerForToolRun | None = None,
