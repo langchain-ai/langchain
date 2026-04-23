@@ -381,12 +381,13 @@ def _completion_with_retry(
             # boundary. `_prepend_chunk` then re-yields the consumed chunk
             # ahead of the rest so callers still see every event.
             try:
-                first = next(result)
+                iterator = iter(result)
+                first = next(iterator)
             except StopIteration:
                 _raise_empty_stream()
             except httpx.HTTPStatusError as e:
                 _promote_http_status_error(e)
-            return _prepend_chunk(first, result)
+            return _prepend_chunk(first, iterator)
         return result
 
     return _call()
@@ -404,7 +405,8 @@ async def _acompletion_with_retry(
     async def _call() -> Any:
         if kwargs.get("stream"):
             try:
-                agen = llm.async_client.acreate(**kwargs)
+                result = llm.async_client.acreate(**kwargs)
+                agen = result.__aiter__()
                 first = await agen.__anext__()
             except StopAsyncIteration:
                 _raise_empty_stream()

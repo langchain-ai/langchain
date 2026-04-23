@@ -217,6 +217,25 @@ def test_completion_with_retry_streaming_retries_on_setup() -> None:
     assert calls["n"] == 2
 
 
+def test_completion_with_retry_streaming_accepts_iterable_only_result() -> None:
+    """Streaming setup accepts iterable-only custom client wrappers."""
+
+    class _IterableOnlyStream:
+        def __iter__(self) -> Any:
+            yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+            yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.return_value = _IterableOnlyStream()
+    llm.client = mock_client
+
+    chunks = list(_completion_with_retry(llm, messages=[], stream=True))
+
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert mock_client.create.call_count == 1
+
+
 def test_completion_with_retry_retries_on_5xx_http_status_error() -> None:
     """5xx `httpx.HTTPStatusError` is promoted and retried."""
     llm = _make_llm(max_retries=1)
@@ -348,6 +367,31 @@ async def test_acompletion_with_retry_streaming_retries_on_setup() -> None:
 
     assert [c["id"] for c in chunks] == [0, 1]
     assert calls["n"] == 2
+
+
+async def test_acompletion_with_retry_streaming_accepts_async_iterable_only_result() -> (  # noqa: E501
+    None
+):
+    """Async streaming setup accepts async-iterable-only custom wrappers."""
+
+    class _AsyncIterableOnlyStream:
+        def __aiter__(self) -> Any:
+            async def _aiter() -> Any:
+                yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+                yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+            return _aiter()
+
+    llm = _make_llm(max_retries=0)
+    mock_async = MagicMock()
+    mock_async.acreate = MagicMock(return_value=_AsyncIterableOnlyStream())
+    llm.async_client = mock_async
+
+    agen = await _acompletion_with_retry(llm, messages=[], stream=True)
+    chunks = [c async for c in agen]
+
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert mock_async.acreate.call_count == 1
 
 
 async def test_achat_fireworks_ainvoke_routes_through_retry() -> None:
