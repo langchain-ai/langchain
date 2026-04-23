@@ -17,7 +17,6 @@ consumers supported).
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -35,6 +34,7 @@ from langchain_protocol.protocol import (
     UsageInfo,
 )
 
+from langchain_core.language_models._compat_bridge import finalize_tool_call_chunk
 from langchain_core.messages import AIMessage
 
 if TYPE_CHECKING:
@@ -75,49 +75,33 @@ def _sweep_chunk_store(
 
     `tool_calls_acc` is only populated when `finalized_type == "tool_call"`
     (server-side calls don't surface through `.tool_calls`).
+
+    Deliberately does not backfill `index` onto finalized tool-call blocks:
+    matches v1 (`AIMessage.init_tool_calls` drops `index` when substituting
+    `tool_call_chunk` → `tool_call`) and prevents `merge_lists` from
+    re-merging further chunks into an already-parsed args dict.
     """
     for idx in sorted(store):
         chunk = store[idx]
         # Carry over any non-finalize-rewritten fields the chunk collected
-        # (e.g., `extras`, source-side `index`). We rewrite `type`, `id`,
-        # `name`, `args` below; everything else passes through.
+        # (e.g., `extras`). `_merge_chunk_into_store` only populates
+        # `id` / `name` / `args`, so this is empty in practice today;
+        # future provider-specific fields would flow through here.
         extras = {
             k: v
             for k, v in chunk.items()
             if k not in ("type", "id", "name", "args") and v is not None
         }
-        raw_args = chunk.get("args", "{}")
-        try:
-            parsed = json.loads(raw_args) if raw_args else {}
-        except (json.JSONDecodeError, TypeError):
-            invalid: InvalidToolCall = {
-                "type": "invalid_tool_call",
-                "id": chunk.get("id"),
-                "name": chunk.get("name"),
-                "args": raw_args or "",
-                "error": "Failed to parse tool call arguments as JSON",
-            }
-            invalid.update(extras)  # type: ignore[typeddict-item]
-            # Deliberately do not backfill `index` onto finalized tool-call
-            # blocks: matches v1 (`AIMessage.init_tool_calls` drops `index`
-            # when substituting `tool_call_chunk` → `tool_call`) and
-            # prevents `merge_lists` from re-merging further chunks into
-            # an already-parsed args dict.
-            invalid_acc.append(invalid)
-            finalized_blocks[idx] = invalid
-            continue
-        final_block = cast(
-            "FinalizedContentBlock",
-            {
-                "type": finalized_type,
-                "id": chunk.get("id", ""),
-                "name": chunk.get("name", ""),
-                "args": parsed,
-                **extras,
-            },
+        final_block = finalize_tool_call_chunk(
+            raw_args=chunk.get("args"),
+            id_=chunk.get("id"),
+            name=chunk.get("name"),
+            extras=extras,
+            finalized_type=finalized_type,
         )
-        # Same rationale as above: no `index` backfill on finalized tool calls.
-        if tool_calls_acc is not None and finalized_type == "tool_call":
+        if final_block["type"] == "invalid_tool_call":
+            invalid_acc.append(final_block)
+        elif tool_calls_acc is not None and finalized_type == "tool_call":
             tool_calls_acc.append(cast("ToolCall", final_block))
         finalized_blocks[idx] = final_block
     store.clear()
@@ -933,9 +917,12 @@ class ChatModelStream(_ChatModelStreamBase):
                 if not self._request_more():
                     break
         # If the source exhausted without a message-finish event
-        # (e.g., empty response), finalize with what we have.
+        # (e.g., empty response), finalize with what we have. Route
+        # through `dispatch` so the synthetic event lands in the
+        # replay buffer — otherwise raw-event iteration after `.output`
+        # resolved would omit the terminal event.
         if not self._done:
-            self._finish(MessageFinishData(event="message-finish"))
+            self.dispatch(MessageFinishData(event="message-finish"))
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
@@ -1153,6 +1154,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     **kwargs,
                 ):
                     pass
+                # If the source exhausted without a `message-finish` event
+                # (empty response, provider bug, etc.), synthesize one so
+                # `await stream` doesn't hang on `_output_proj`. Mirrors
+                # `ChatModelStream._drain`'s sync safety net.
+                if not stream.done:
+                    stream.dispatch(MessageFinishData(event="message-finish"))
                 if stream.done and stream.output_message is not None:
                     await run_manager.on_llm_end(
                         LLMResult(

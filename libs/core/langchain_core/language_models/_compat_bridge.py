@@ -288,6 +288,71 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     return state
 
 
+def finalize_tool_call_chunk(
+    *,
+    raw_args: str | None,
+    id_: str | None,
+    name: str | None,
+    extras: dict[str, Any],
+    finalized_type: str,
+) -> FinalizedContentBlock:
+    """Parse accumulated tool-chunk args into a finalized block.
+
+    Shared between the compat bridge's `_finalize_block` and the
+    `ChatModelStream` end-of-stream sweep. Parses `raw_args` as JSON:
+    on success builds the requested finalized type (`tool_call` or
+    `server_tool_call`) with provider-specific fields (`extras`)
+    preserved; on failure falls back to `invalid_tool_call` carrying
+    the raw string so downstream consumers can still introspect the
+    malformed payload.
+
+    Args:
+        raw_args: Accumulated partial-JSON string; `None` or empty
+            treated as `{}`.
+        id_: Tool-call id collected across chunks.
+        name: Tool name collected across chunks.
+        extras: Provider-specific fields to carry onto the finalized
+            block. Callers are responsible for having already dropped
+            keys they don't want propagated (notably `type`, `id`,
+            `name`, `args`, and `index` on client-side `tool_call`).
+        finalized_type: `"tool_call"` or `"server_tool_call"`.
+
+    Returns:
+        A `ToolCall`, `ServerToolCall`, or `InvalidToolCall` — the
+        latter when `raw_args` is non-empty but not valid JSON.
+    """
+    raw = raw_args or "{}"
+    try:
+        parsed = json.loads(raw) if raw else {}
+    except (json.JSONDecodeError, TypeError):
+        invalid = InvalidToolCall(
+            type="invalid_tool_call",
+            id=id_,
+            name=name,
+            args=raw,
+            error="Failed to parse tool call arguments as JSON",
+        )
+        invalid.update(extras)  # type: ignore[typeddict-item]
+        return invalid
+    if finalized_type == "tool_call":
+        finalized_tc = ToolCall(
+            type="tool_call",
+            id=id_ or "",
+            name=name or "",
+            args=parsed,
+        )
+        finalized_tc.update(extras)  # type: ignore[typeddict-item]
+        return finalized_tc
+    finalized_stc = ServerToolCall(
+        type="server_tool_call",
+        id=id_ or "",
+        name=name or "",
+        args=parsed,
+    )
+    finalized_stc.update(extras)  # type: ignore[typeddict-item]
+    return finalized_stc
+
+
 def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     """Promote chunk variants to their finalized form.
 
@@ -300,10 +365,9 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     """
     btype = block.get("type")
     if btype in ("tool_call_chunk", "server_tool_call_chunk"):
-        raw = block.get("args") or "{}"
         # Carry provider-specific fields from the accumulated chunk onto
         # the finalized block. Drop the chunk-only keys we rewrite
-        # explicitly below. `index` is stripped on client-side
+        # explicitly. `index` is stripped on client-side
         # `tool_call` / `invalid_tool_call` finalizations to match v1
         # (`AIMessage.init_tool_calls` rebuilds tool_call blocks without
         # `index`), preventing `merge_lists` from re-merging further
@@ -317,35 +381,13 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
         extras = {
             k: v for k, v in block.items() if k not in extras_drop and v is not None
         }
-        try:
-            parsed = json.loads(raw) if raw else {}
-        except (json.JSONDecodeError, TypeError):
-            invalid = InvalidToolCall(
-                type="invalid_tool_call",
-                id=block.get("id"),
-                name=block.get("name"),
-                args=raw,
-                error="Failed to parse tool call arguments as JSON",
-            )
-            invalid.update(extras)  # type: ignore[typeddict-item]
-            return invalid
-        if client_tool_call:
-            finalized_tc = ToolCall(
-                type="tool_call",
-                id=block.get("id", ""),
-                name=block.get("name", ""),
-                args=parsed,
-            )
-            finalized_tc.update(extras)  # type: ignore[typeddict-item]
-            return finalized_tc
-        finalized_stc = ServerToolCall(
-            type="server_tool_call",
-            id=block.get("id", ""),
-            name=block.get("name", ""),
-            args=parsed,
+        return finalize_tool_call_chunk(
+            raw_args=block.get("args"),
+            id_=block.get("id"),
+            name=block.get("name"),
+            extras=extras,
+            finalized_type="tool_call" if client_tool_call else "server_tool_call",
         )
-        finalized_stc.update(extras)  # type: ignore[typeddict-item]
-        return finalized_stc
     return _to_finalized_block(block)
 
 
@@ -675,5 +717,6 @@ __all__ = [
     "achunks_to_events",
     "amessage_to_events",
     "chunks_to_events",
+    "finalize_tool_call_chunk",
     "message_to_events",
 ]

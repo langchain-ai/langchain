@@ -103,6 +103,10 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.language_models.chat_model_stream import (
+        AsyncChatModelStream,
+        ChatModelStream,
+    )
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
@@ -1174,7 +1178,7 @@ class Runnable(ABC, Generic[Input, Output]):
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> Any:
+    ) -> ChatModelStream:
         """Stream content-block lifecycle events (v2 protocol).
 
         Implemented by `BaseChatModel` (and forwarded by `RunnableBinding`).
@@ -1196,7 +1200,7 @@ class Runnable(ABC, Generic[Input, Output]):
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> Any:
+    ) -> AsyncChatModelStream:
         """Async variant of `stream_v2`. See that method.
 
         Raises:
@@ -5935,7 +5939,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> Any:
+    ) -> ChatModelStream:
         """Forward `stream_v2` to the bound runnable with bound kwargs merged.
 
         Chat-model-specific: the bound runnable must implement `stream_v2`
@@ -5955,7 +5959,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> Any:
+    ) -> AsyncChatModelStream:
         """Forward `astream_v2` to the bound runnable with bound kwargs merged.
 
         Async variant of `stream_v2`. See that method for the full rationale.
