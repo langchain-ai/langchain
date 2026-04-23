@@ -8,7 +8,7 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
-    _normalize_finish_reason,
+    _passthrough_finish_reason,
     _to_protocol_usage,
     amessage_to_events,
     chunks_to_events,
@@ -99,14 +99,18 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
-def test_normalize_finish_reason() -> None:
-    assert _normalize_finish_reason("stop") == "stop"
-    assert _normalize_finish_reason("end_turn") == "stop"
-    assert _normalize_finish_reason("length") == "length"
-    assert _normalize_finish_reason("tool_use") == "tool_use"
-    assert _normalize_finish_reason("tool_calls") == "tool_use"
-    assert _normalize_finish_reason("content_filter") == "content_filter"
-    assert _normalize_finish_reason(None) == "stop"
+def test_passthrough_finish_reason() -> None:
+    # Provider values are passed through unchanged: the protocol's
+    # closed `FinishReason` enum doesn't cover the actual set providers
+    # emit, so the bridge does not normalize. See docstring on
+    # `_passthrough_finish_reason` in `_compat_bridge.py`.
+    assert _passthrough_finish_reason("stop") == "stop"
+    assert _passthrough_finish_reason("end_turn") == "end_turn"
+    assert _passthrough_finish_reason("length") == "length"
+    assert _passthrough_finish_reason("tool_use") == "tool_use"
+    assert _passthrough_finish_reason("tool_calls") == "tool_calls"
+    assert _passthrough_finish_reason("content_filter") == "content_filter"
+    assert _passthrough_finish_reason("max_tokens") == "max_tokens"
 
 
 def test_to_protocol_usage_present() -> None:
@@ -296,8 +300,11 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     assert finalized["type"] == "tool_call"
     assert finalized["args"] == {"q": "test"}
 
-    # Valid tool_call at finish => finish_reason flips to tool_use.
-    assert cast("MessageFinishData", events[-1])["reason"] == "tool_use"
+    # No provider finish_reason in the fixture chunks, so the bridge's
+    # default `"stop"` is passed through. The bridge deliberately does
+    # not infer `"tool_use"` from the presence of a valid tool_call —
+    # terminal reasons are provider-specific (see `_build_message_finish`).
+    assert cast("MessageFinishData", events[-1])["reason"] == "stop"
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
@@ -489,7 +496,7 @@ def test_message_to_events_reasoning_text_order() -> None:
     assert cast("TextBlock", deltas[1]["content_block"])["text"] == "the answer"
 
 
-def test_message_to_events_tool_call_skips_delta_and_infers_tool_use() -> None:
+def test_message_to_events_tool_call_skips_delta() -> None:
     msg = AIMessage(
         content="",
         id="msg-3",
@@ -510,8 +517,11 @@ def test_message_to_events_tool_call_skips_delta_and_infers_tool_use() -> None:
     assert tc["type"] == "tool_call"
     assert tc["args"] == {"q": "hi"}
 
+    # Message has no `finish_reason` / `stop_reason` in metadata; the
+    # bridge defaults to `"stop"` and does not second-guess based on the
+    # presence of a tool_call.
     final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "tool_use"
+    assert final["reason"] == "stop"
 
 
 def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:

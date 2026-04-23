@@ -100,7 +100,11 @@ def _sweep_chunk_store(
             if chunk.get("name"):
                 invalid["name"] = chunk["name"]
             invalid.update(extras)  # type: ignore[typeddict-item]
-            invalid.setdefault("index", idx)  # type: ignore[typeddict-item]
+            # Deliberately do not backfill `index` onto finalized tool-call
+            # blocks: matches v1 (`AIMessage.init_tool_calls` drops `index`
+            # when substituting `tool_call_chunk` → `tool_call`) and
+            # prevents `merge_lists` from re-merging further chunks into
+            # an already-parsed args dict.
             invalid_acc.append(invalid)
             finalized_blocks[idx] = invalid
             continue
@@ -114,7 +118,7 @@ def _sweep_chunk_store(
                 **extras,
             },
         )
-        final_block.setdefault("index", idx)  # type: ignore[typeddict-item]
+        # Same rationale as above: no `index` backfill on finalized tool calls.
         if tool_calls_acc is not None and finalized_type == "tool_call":
             tool_calls_acc.append(cast("ToolCallBlock", final_block))
         finalized_blocks[idx] = final_block
@@ -622,14 +626,16 @@ class _ChatModelStreamBase:
             finalized = cast("FinalizedContentBlock", finalized_dict)
         elif btype == "tool_call":
             tcb = cast("ToolCallBlock", block)
-            # Preserve provider-specific fields (extras, index, etc.) on
-            # the content block. `_assemble_message` separately projects
-            # the minimal {id, name, args, type} shape onto
-            # `AIMessage.tool_calls`.
+            # Preserve provider-specific fields (extras, etc.) on the
+            # content block. `_assemble_message` separately projects the
+            # minimal {id, name, args, type} shape onto
+            # `AIMessage.tool_calls`. Strip `index` to match v1
+            # (`AIMessage.init_tool_calls` rebuilds the block without
+            # `index`); see `_finalize_block` in `_compat_bridge.py`.
             tc = cast(
                 "ToolCallBlock",
                 {
-                    **tcb,
+                    **{k: v for k, v in tcb.items() if k != "index"},
                     "type": "tool_call",
                     "id": tcb.get("id", ""),
                     "name": tcb.get("name", ""),
@@ -642,6 +648,12 @@ class _ChatModelStreamBase:
             finalized = tc
         elif btype == "invalid_tool_call":
             itc = cast("InvalidToolCallBlock", block)
+            # Strip `index` on the stored block to stay symmetric with
+            # the `tool_call` path.
+            itc = cast(
+                "InvalidToolCallBlock",
+                {k: v for k, v in itc.items() if k != "index"},
+            )
             self._invalid_tool_calls_acc.append(itc)
             # Critical: drop the stale chunk so _finish's sweep doesn't revive
             # it as an empty-args ToolCallBlock.
@@ -670,8 +682,12 @@ class _ChatModelStreamBase:
             # `add_ai_message_chunks`) keys on `block["index"]` to group
             # deltas into the same output block — without it, a v2-
             # assembled `AIMessage` that later re-enters the chunk
-            # aggregation path won't merge cleanly.
-            finalized.setdefault("index", idx)  # type: ignore[typeddict-item]
+            # aggregation path won't merge cleanly. Client-side
+            # `tool_call` / `invalid_tool_call` blocks are excluded: v1
+            # finalization drops `index` on them so further deltas
+            # cannot clobber already-parsed args, and v2 mirrors that.
+            if btype not in ("tool_call", "invalid_tool_call"):
+                finalized.setdefault("index", idx)  # type: ignore[typeddict-item]
             self._blocks[idx] = finalized
 
     def _finish(self, data: MessageFinishData) -> None:

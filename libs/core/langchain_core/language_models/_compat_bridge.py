@@ -304,13 +304,23 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     btype = block.get("type")
     if btype in ("tool_call_chunk", "server_tool_call_chunk"):
         raw = block.get("args") or "{}"
-        # Carry provider-specific fields (extras, index, etc.) from the
-        # accumulated chunk onto the finalized block. Drop the chunk-only
-        # keys we rewrite explicitly below.
+        # Carry provider-specific fields from the accumulated chunk onto
+        # the finalized block. Drop the chunk-only keys we rewrite
+        # explicitly below. `index` is stripped on client-side
+        # `tool_call` / `invalid_tool_call` finalizations to match v1
+        # (`AIMessage.init_tool_calls` rebuilds tool_call blocks without
+        # `index`), preventing `merge_lists` from re-merging further
+        # chunks into an already-parsed args dict. `server_tool_call`
+        # retains `index` because v1's `init_server_tool_calls`
+        # finalizes in-place and preserves it.
+        client_tool_call = btype == "tool_call_chunk"
+        extras_drop = {"type", "id", "name", "args"}
+        if client_tool_call:
+            extras_drop = extras_drop | {"index"}
         extras = {
             k: v
             for k, v in block.items()
-            if k not in ("type", "id", "name", "args") and v is not None
+            if k not in extras_drop and v is not None
         }
         try:
             parsed = json.loads(raw) if raw else {}
@@ -326,7 +336,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
                 invalid["name"] = block["name"]
             invalid.update(extras)  # type: ignore[typeddict-item]
             return invalid
-        if btype == "tool_call_chunk":
+        if client_tool_call:
             finalized_tc = ToolCallBlock(
                 type="tool_call",
                 id=block.get("id", ""),
@@ -361,15 +371,23 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     return metadata
 
 
-def _normalize_finish_reason(value: Any) -> FinishReason:
-    """Map provider-specific stop reasons to protocol finish reasons."""
-    if value == "length":
-        return "length"
-    if value == "content_filter":
-        return "content_filter"
-    if value in ("tool_use", "tool_calls"):
-        return "tool_use"
-    return "stop"
+def _passthrough_finish_reason(value: Any) -> FinishReason:
+    """Pass the provider's raw finish reason through unchanged.
+
+    Terminal reasons are provider-specific — OpenAI uses
+    `"stop"` / `"length"` / `"tool_calls"` / `"content_filter"`,
+    Anthropic uses `"end_turn"` / `"max_tokens"` / `"stop_sequence"` /
+    `"tool_use"`, Gemini / Cohere / others define their own vocabularies.
+    Forcing these into a closed enum (as the protocol's `FinishReason`
+    does today) loses information and makes consumers think the set is
+    canonical. The bridge does not normalize; a downstream consumer
+    that needs a canonical value should map on its own.
+
+    The `FinishReason` return type is a `Literal[...]` that disagrees
+    with reality; until the protocol relaxes it, `cast` keeps runtime
+    behavior honest while silencing type checkers.
+    """
+    return cast("FinishReason", value)
 
 
 def _accumulate_usage(
@@ -428,11 +446,14 @@ def _build_message_finish(
     usage: dict[str, Any] | None,
     response_metadata: dict[str, Any] | None,
 ) -> MessageFinishData:
-    # Infer tool_use only from finalized (parsed) tool_calls.  An
-    # invalid_tool_call means parsing failed — the model didn't
-    # successfully request a tool, so leave finish_reason alone.
-    if finish_reason == "stop" and has_valid_tool_call:
-        finish_reason = "tool_use"
+    # Pass the provider's finish reason through as-is. Terminal reasons
+    # are provider-specific (OpenAI's chat.completions can report
+    # `"stop"` even with a tool call; the Responses API doesn't include
+    # one at all; Anthropic uses `stop_reason`). The bridge should not
+    # second-guess the wire value — that's a consumer-side policy.
+    # `has_valid_tool_call` is kept in the signature for backwards
+    # compatibility but no longer drives normalization.
+    del has_valid_tool_call
     finish_data = MessageFinishData(event="message-finish", reason=finish_reason)
     usage_info = _to_protocol_usage(usage)
     if usage_info is not None:
@@ -508,8 +529,21 @@ def chunks_to_events(
         if not isinstance(msg, AIMessageChunk):
             continue
 
-        if msg.response_metadata:
-            response_metadata.update(msg.response_metadata)
+        # The v1 `stream()` wrapper merges `generation_info` into
+        # `response_metadata` before yielding (`chat_models.py` via
+        # `_gen_info_and_msg_metadata`). We bypass that wrapper by reading
+        # `_stream` directly, so reproduce the merge here with the same
+        # priority: `generation_info` first, then `message.response_metadata`
+        # overlays. This is how provider fields like `model_name`,
+        # `system_fingerprint`, and `finish_reason` reach the bridge when
+        # a provider emits them via `generation_info` instead of the
+        # message's `response_metadata`.
+        merged_rm: dict[str, Any] = {
+            **(chunk.generation_info or {}),
+            **(msg.response_metadata or {}),
+        }
+        if merged_rm:
+            response_metadata.update(merged_rm)
 
         if not started:
             started = True
@@ -542,10 +576,9 @@ def chunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
+        raw_reason = merged_rm.get("finish_reason") or merged_rm.get("stop_reason")
         if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
+            finish_reason = _passthrough_finish_reason(raw_reason)
 
     if not started:
         return
@@ -584,8 +617,15 @@ async def achunks_to_events(
         if not isinstance(msg, AIMessageChunk):
             continue
 
-        if msg.response_metadata:
-            response_metadata.update(msg.response_metadata)
+        # See sync twin for rationale: merge `generation_info` into the
+        # accumulated `response_metadata` with the same priority as the
+        # v1 `stream()` wrapper.
+        merged_rm: dict[str, Any] = {
+            **(chunk.generation_info or {}),
+            **(msg.response_metadata or {}),
+        }
+        if merged_rm:
+            response_metadata.update(merged_rm)
 
         if not started:
             started = True
@@ -618,10 +658,9 @@ async def achunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
+        raw_reason = merged_rm.get("finish_reason") or merged_rm.get("stop_reason")
         if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
+            finish_reason = _passthrough_finish_reason(raw_reason)
 
     if not started:
         return
@@ -692,7 +731,7 @@ def message_to_events(
         "stop_reason"
     )
     finish_reason: FinishReason = (
-        _normalize_finish_reason(raw_reason) if raw_reason else "stop"
+        _passthrough_finish_reason(raw_reason) if raw_reason else "stop"
     )
     yield _build_message_finish(
         finish_reason=finish_reason,
