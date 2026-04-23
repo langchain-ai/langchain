@@ -1265,8 +1265,15 @@ def _format_output(
         status: The execution status.
 
     Returns:
-        The formatted output, either as a `ToolMessage` or the original content.
+        The formatted output, either as a `ToolMessage`, the original content,
+        or an unchanged list of `ToolOutputMixin` instances.
     """
+    if (
+        isinstance(content, list)
+        and content
+        and all(isinstance(item, ToolOutputMixin) for item in content)
+    ):
+        return content
     if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
     if not _is_message_content_type(content):
