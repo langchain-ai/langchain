@@ -8,7 +8,6 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
-    _passthrough_finish_reason,
     _to_protocol_usage,
     amessage_to_events,
     chunks_to_events,
@@ -20,13 +19,13 @@ from langchain_core.outputs import ChatGenerationChunk
 if TYPE_CHECKING:
     from langchain_protocol.protocol import (
         ContentBlockDeltaData,
-        InvalidToolCallBlock,
+        InvalidToolCall,
         MessageFinishData,
         MessageStartData,
-        ReasoningBlock,
-        ServerToolCallBlock,
-        TextBlock,
-        ToolCallBlock,
+        ReasoningContentBlock,
+        ServerToolCall,
+        TextContentBlock,
+        ToolCall,
     )
 
 
@@ -38,7 +37,7 @@ if TYPE_CHECKING:
 def test_finalize_block_text_passes_through() -> None:
     block: CompatBlock = {"type": "text", "text": "hello"}
     result = _finalize_block(block)
-    text_result = cast("TextBlock", result)
+    text_result = cast("TextContentBlock", result)
     assert text_result["type"] == "text"
     assert text_result["text"] == "hello"
 
@@ -51,7 +50,7 @@ def test_finalize_block_tool_call_chunk_valid_json() -> None:
         "name": "search",
     }
     result = _finalize_block(block)
-    tool_call = cast("ToolCallBlock", result)
+    tool_call = cast("ToolCall", result)
     assert tool_call["type"] == "tool_call"
     assert tool_call["id"] == "tc1"
     assert tool_call["name"] == "search"
@@ -66,7 +65,7 @@ def test_finalize_block_tool_call_chunk_invalid_json() -> None:
         "name": "search",
     }
     result = _finalize_block(block)
-    invalid = cast("InvalidToolCallBlock", result)
+    invalid = cast("InvalidToolCall", result)
     assert invalid["type"] == "invalid_tool_call"
     assert invalid.get("error") is not None
 
@@ -79,7 +78,7 @@ def test_finalize_block_server_tool_call_chunk_valid_json() -> None:
         "name": "web_search",
     }
     result = _finalize_block(block)
-    server_result = cast("ServerToolCallBlock", result)
+    server_result = cast("ServerToolCall", result)
     assert server_result["type"] == "server_tool_call"
     assert server_result["id"] == "srv_1"
     assert server_result["name"] == "web_search"
@@ -94,23 +93,9 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
         "name": "web_search",
     }
     result = _finalize_block(block)
-    invalid = cast("InvalidToolCallBlock", result)
+    invalid = cast("InvalidToolCall", result)
     assert invalid["type"] == "invalid_tool_call"
     assert invalid.get("error") is not None
-
-
-def test_passthrough_finish_reason() -> None:
-    # Provider values are passed through unchanged: the protocol's
-    # closed `FinishReason` enum doesn't cover the actual set providers
-    # emit, so the bridge does not normalize. See docstring on
-    # `_passthrough_finish_reason` in `_compat_bridge.py`.
-    assert _passthrough_finish_reason("stop") == "stop"
-    assert _passthrough_finish_reason("end_turn") == "end_turn"
-    assert _passthrough_finish_reason("length") == "length"
-    assert _passthrough_finish_reason("tool_use") == "tool_use"
-    assert _passthrough_finish_reason("tool_calls") == "tool_calls"
-    assert _passthrough_finish_reason("content_filter") == "content_filter"
-    assert _passthrough_finish_reason("max_tokens") == "max_tokens"
 
 
 def test_to_protocol_usage_present() -> None:
@@ -147,7 +132,10 @@ def test_chunks_to_events_text_only() -> None:
     assert event_types[-1] == "message-finish"
 
     finish = cast("MessageFinishData", events[-1])
-    assert finish["reason"] == "stop"
+    # No provider finish_reason in fixtures — metadata carries no
+    # `finish_reason` key (the bridge passes response_metadata through
+    # unchanged).
+    assert "finish_reason" not in (finish.get("metadata") or {})
 
 
 def test_chunks_to_events_empty_iterator() -> None:
@@ -296,15 +284,17 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
         e for e in events if e["event"] == "content-block-finish"
     ]
     assert len(finish_events) == 1
-    finalized = cast("ToolCallBlock", finish_events[0]["content_block"])
+    finalized = cast("ToolCall", finish_events[0]["content_block"])
     assert finalized["type"] == "tool_call"
     assert finalized["args"] == {"q": "test"}
 
-    # No provider finish_reason in the fixture chunks, so the bridge's
-    # default `"stop"` is passed through. The bridge deliberately does
-    # not infer `"tool_use"` from the presence of a valid tool_call —
-    # terminal reasons are provider-specific (see `_build_message_finish`).
-    assert cast("MessageFinishData", events[-1])["reason"] == "stop"
+    # No provider finish_reason in the fixture chunks — the bridge does
+    # not synthesize one. It deliberately does not infer `"tool_use"`
+    # from the presence of a valid tool_call either; terminal reasons
+    # are provider-specific (see `_build_message_finish`).
+    assert "finish_reason" not in (
+        cast("MessageFinishData", events[-1]).get("metadata") or {}
+    )
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
@@ -334,7 +324,9 @@ def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
     ]
     assert len(finish_events) == 1
     assert finish_events[0]["content_block"]["type"] == "invalid_tool_call"
-    assert cast("MessageFinishData", events[-1])["reason"] == "stop"
+    assert "finish_reason" not in (
+        cast("MessageFinishData", events[-1]).get("metadata") or {}
+    )
 
 
 def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() -> None:
@@ -459,11 +451,11 @@ def test_message_to_events_text_only() -> None:
     assert start["message_id"] == "msg-1"
 
     delta_event = cast("ContentBlockDeltaData", events[2])
-    delta = cast("TextBlock", delta_event["content_block"])
+    delta = cast("TextContentBlock", delta_event["content_block"])
     assert delta["text"] == "Hello world"
 
     final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "stop"
+    assert "finish_reason" not in (final.get("metadata") or {})
 
 
 def test_message_to_events_empty_content_yields_start_finish_only() -> None:
@@ -490,10 +482,10 @@ def test_message_to_events_reasoning_text_order() -> None:
 
     deltas: list[Any] = [e for e in events if e["event"] == "content-block-delta"]
     assert len(deltas) == 2
-    assert cast("ReasoningBlock", deltas[0]["content_block"])["reasoning"] == (
+    assert cast("ReasoningContentBlock", deltas[0]["content_block"])["reasoning"] == (
         "think hard"
     )
-    assert cast("TextBlock", deltas[1]["content_block"])["text"] == "the answer"
+    assert cast("TextContentBlock", deltas[1]["content_block"])["text"] == "the answer"
 
 
 def test_message_to_events_tool_call_skips_delta() -> None:
@@ -513,15 +505,15 @@ def test_message_to_events_tool_call_skips_delta() -> None:
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) == 1
-    tc = cast("ToolCallBlock", finishes[0]["content_block"])
+    tc = cast("ToolCall", finishes[0]["content_block"])
     assert tc["type"] == "tool_call"
     assert tc["args"] == {"q": "hi"}
 
     # Message has no `finish_reason` / `stop_reason` in metadata; the
-    # bridge defaults to `"stop"` and does not second-guess based on the
-    # presence of a tool_call.
+    # bridge does not synthesize one and does not second-guess based on
+    # the presence of a tool_call.
     final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "stop"
+    assert "finish_reason" not in (final.get("metadata") or {})
 
 
 def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
@@ -563,10 +555,14 @@ def test_message_to_events_preserves_finish_reason_and_metadata() -> None:
     start = cast("MessageStartData", events[0])
     assert start["metadata"] == {"model": "test-model"}
 
+    # Passthrough: response_metadata lands on `metadata` unchanged,
+    # including the raw provider `finish_reason`.
     final = cast("MessageFinishData", events[-1])
-    assert final["reason"] == "length"
-    # finish_reason stripped from metadata; stop_sequence preserved
-    assert final["metadata"] == {"model_name": "test-model", "stop_sequence": "</end>"}
+    assert final["metadata"] == {
+        "finish_reason": "length",
+        "model_name": "test-model",
+        "stop_sequence": "</end>",
+    }
 
 
 def test_message_to_events_propagates_usage() -> None:
@@ -679,7 +675,7 @@ def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
     assert tc_start["args"] == {}
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    tc_finish = cast("ToolCallBlock", finishes[0]["content_block"])
+    tc_finish = cast("ToolCall", finishes[0]["content_block"])
     assert tc_finish["args"] == {"q": "big payload " * 100}
 
 

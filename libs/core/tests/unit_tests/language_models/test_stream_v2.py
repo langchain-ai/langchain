@@ -10,9 +10,9 @@ from langchain_protocol.protocol import (
     ContentBlockDeltaData,
     ContentBlockFinishData,
     MessageFinishData,
-    ReasoningBlock,
-    TextBlock,
-    ToolCallBlock,
+    ReasoningContentBlock,
+    TextContentBlock,
+    ToolCall,
     UsageInfo,
 )
 
@@ -129,7 +129,7 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextBlock(type="text", text="Hello"),
+                content_block=TextContentBlock(type="text", text="Hello"),
             )
         )
         assert stream._text_acc == "Hello"
@@ -140,7 +140,9 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningBlock(type="reasoning", reasoning="think"),
+                content_block=ReasoningContentBlock(
+                    type="reasoning", reasoning="think"
+                ),
             )
         )
         assert stream._reasoning_acc == "think"
@@ -151,7 +153,7 @@ class TestChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCallBlock(
+                content_block=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -166,9 +168,7 @@ class TestChatModelStream:
         stream = ChatModelStream()
         assert not stream.done
         usage = UsageInfo(input_tokens=10, output_tokens=5, total_tokens=15)
-        stream._finish(
-            MessageFinishData(event="message-finish", reason="stop", usage=usage)
-        )
+        stream._finish(MessageFinishData(event="message-finish", usage=usage))
         assert stream.done
         assert stream._usage_value == usage
 
@@ -184,15 +184,15 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextBlock(type="text", text="Hi"),
+                content_block=TextContentBlock(type="text", text="Hi"),
             ),
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextBlock(type="text", text=" there"),
+                content_block=TextContentBlock(type="text", text=" there"),
             ),
         ]
-        finish = MessageFinishData(event="message-finish", reason="stop")
+        finish = MessageFinishData(event="message-finish")
         idx = 0
 
         def pump_one() -> bool:
@@ -224,17 +224,17 @@ class TestAsyncChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextBlock(type="text", text="Hello"),
+                content_block=TextContentBlock(type="text", text="Hello"),
             )
         )
         stream._push_content_block_delta(
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextBlock(type="text", text=" world"),
+                content_block=TextContentBlock(type="text", text=" world"),
             )
         )
-        stream._finish(MessageFinishData(event="message-finish", reason="stop"))
+        stream._finish(MessageFinishData(event="message-finish"))
 
         full = await stream.text
         assert full == "Hello world"
@@ -249,7 +249,7 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextBlock(type="text", text="a"),
+                    content_block=TextContentBlock(type="text", text="a"),
                 )
             )
             await asyncio.sleep(0)
@@ -257,11 +257,11 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextBlock(type="text", text="b"),
+                    content_block=TextContentBlock(type="text", text="b"),
                 )
             )
             await asyncio.sleep(0)
-            stream._finish(MessageFinishData(event="message-finish", reason="stop"))
+            stream._finish(MessageFinishData(event="message-finish"))
 
         asyncio.get_running_loop().create_task(produce())
 
@@ -275,7 +275,7 @@ class TestAsyncChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCallBlock(
+                content_block=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -283,7 +283,7 @@ class TestAsyncChatModelStream:
                 ),
             )
         )
-        stream._finish(MessageFinishData(event="message-finish", reason="tool_use"))
+        stream._finish(MessageFinishData(event="message-finish"))
 
         tool_calls = await stream.tool_calls
         assert len(tool_calls) == 1

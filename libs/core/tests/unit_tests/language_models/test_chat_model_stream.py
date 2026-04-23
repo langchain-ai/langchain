@@ -266,7 +266,7 @@ class TestAsyncProjection:
                 "index": 0,
                 "content_block": {"type": "text", "text": "hello world"},
             },
-            {"event": "message-finish", "reason": "stop"},
+            {"event": "message-finish"},
         ]
         cursor = iter(events)
         pump_lock = asyncio.Lock()
@@ -330,7 +330,7 @@ class TestChatModelStream:
                 "index": 0,
                 "content_block": {"type": "text", "text": "Hi there"},
             },
-            {"event": "message-finish", "reason": "stop"},
+            {"event": "message-finish"},
         ]
         idx = 0
 
@@ -363,7 +363,7 @@ class TestChatModelStream:
             }
         )
         stream.dispatch(
-            {
+            {  # type: ignore[arg-type,misc]
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {
@@ -385,7 +385,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "tool_use"})
+        stream.dispatch({"event": "message-finish"})
 
         # Check chunk deltas were pushed
         chunks = list(stream.tool_calls)
@@ -456,7 +456,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "tool_use"})
+        stream.dispatch({"event": "message-finish"})
 
         finalized = stream.tool_calls.get()
         assert len(finalized) == 2
@@ -489,7 +489,7 @@ class TestChatModelStream:
         stream.dispatch(
             {
                 "event": "message-finish",
-                "reason": "stop",
+                "metadata": {"finish_reason": "stop"},
                 "usage": {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
             }
         )
@@ -529,7 +529,7 @@ class TestChatModelStream:
                 "content_block": {"type": "text", "text": "hi"},
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         events = list(stream)
         assert len(events) == 3
@@ -539,7 +539,7 @@ class TestChatModelStream:
     def test_raw_event_multi_cursor(self) -> None:
         stream = ChatModelStream()
         stream.dispatch({"event": "message-start", "role": "ai"})
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         assert list(stream) == list(stream)  # Replay
 
@@ -560,7 +560,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert msg.tool_calls == []
@@ -603,7 +603,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         # The sweep must NOT have revived the chunk as an empty-args tool_call.
@@ -640,7 +640,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "tool_use"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -685,7 +685,7 @@ class TestChatModelStream:
                 },
             )
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -721,7 +721,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -745,7 +745,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -775,7 +775,7 @@ class TestChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "stop"})
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert msg.tool_calls == []
@@ -808,7 +808,7 @@ class TestAsyncChatModelStream:
                     "content_block": {"type": "text", "text": "Hi"},
                 }
             )
-            stream.dispatch({"event": "message-finish", "reason": "stop"})
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         msg = await stream
@@ -838,7 +838,7 @@ class TestAsyncChatModelStream:
                 }
             )
             await asyncio.sleep(0)
-            stream.dispatch({"event": "message-finish", "reason": "stop"})
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         deltas = [d async for d in stream.text]
@@ -873,7 +873,7 @@ class TestAsyncChatModelStream:
                 },
             }
         )
-        stream.dispatch({"event": "message-finish", "reason": "tool_use"})
+        stream.dispatch({"event": "message-finish"})
 
         result = await stream.tool_calls
         assert len(result) == 1
@@ -887,7 +887,7 @@ class TestAsyncChatModelStream:
             await asyncio.sleep(0)
             stream.dispatch({"event": "message-start", "role": "ai"})
             await asyncio.sleep(0)
-            stream.dispatch({"event": "message-finish", "reason": "stop"})
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         events = [e async for e in stream]

@@ -1338,5 +1338,3 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
     # provider's raw `finish_reason` through without normalization, so
     # OpenAI's `"stop"` on a forced tool call appears on both paths.
     assert v1.response_metadata == v2.response_metadata
-
-

@@ -42,18 +42,17 @@ from langchain_protocol.protocol import (
     ContentBlockFinishData,
     ContentBlockStartData,
     FinalizedContentBlock,
-    FinishReason,
-    InvalidToolCallBlock,
+    InvalidToolCall,
     MessageFinishData,
     MessageMetadata,
     MessagesData,
     MessageStartData,
-    ReasoningBlock,
-    ServerToolCallBlock,
-    ServerToolCallChunkBlock,
-    TextBlock,
-    ToolCallBlock,
-    ToolCallChunkBlock,
+    ReasoningContentBlock,
+    ServerToolCall,
+    ServerToolCallChunk,
+    TextContentBlock,
+    ToolCall,
+    ToolCallChunk,
     UsageInfo,
 )
 
@@ -190,18 +189,18 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextBlock(type="text", text="")
+        return TextContentBlock(type="text", text="")
     if btype == "reasoning":
-        return ReasoningBlock(type="reasoning", reasoning="")
+        return ReasoningContentBlock(type="reasoning", reasoning="")
     if btype == "tool_call_chunk":
-        skel = ToolCallChunkBlock(type="tool_call_chunk", args="")
-        if block.get("id") is not None:
-            skel["id"] = block["id"]
-        if block.get("name") is not None:
-            skel["name"] = block["name"]
-        return skel
+        return ToolCallChunk(
+            type="tool_call_chunk",
+            id=block.get("id"),
+            name=block.get("name"),
+            args="",
+        )
     if btype == "server_tool_call_chunk":
-        s_skel = ServerToolCallChunkBlock(
+        s_skel = ServerToolCallChunk(
             type="server_tool_call_chunk",
             args="",
         )
@@ -216,8 +215,6 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     # start event still validates against the CDDL shape of the block type.
     if btype in ("tool_call", "server_tool_call"):
         stripped["args"] = {}
-    elif btype == "server_tool_call_result":
-        stripped["output"] = None
     elif btype == "non_standard":
         stripped["value"] = {}
     return _to_protocol_block(stripped)
@@ -318,26 +315,22 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
         if client_tool_call:
             extras_drop = extras_drop | {"index"}
         extras = {
-            k: v
-            for k, v in block.items()
-            if k not in extras_drop and v is not None
+            k: v for k, v in block.items() if k not in extras_drop and v is not None
         }
         try:
             parsed = json.loads(raw) if raw else {}
         except (json.JSONDecodeError, TypeError):
-            invalid = InvalidToolCallBlock(
+            invalid = InvalidToolCall(
                 type="invalid_tool_call",
+                id=block.get("id"),
+                name=block.get("name"),
                 args=raw,
                 error="Failed to parse tool call arguments as JSON",
             )
-            if block.get("id") is not None:
-                invalid["id"] = block["id"]
-            if block.get("name") is not None:
-                invalid["name"] = block["name"]
             invalid.update(extras)  # type: ignore[typeddict-item]
             return invalid
         if client_tool_call:
-            finalized_tc = ToolCallBlock(
+            finalized_tc = ToolCall(
                 type="tool_call",
                 id=block.get("id", ""),
                 name=block.get("name", ""),
@@ -345,7 +338,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
             )
             finalized_tc.update(extras)  # type: ignore[typeddict-item]
             return finalized_tc
-        finalized_stc = ServerToolCallBlock(
+        finalized_stc = ServerToolCall(
             type="server_tool_call",
             id=block.get("id", ""),
             name=block.get("name", ""),
@@ -369,25 +362,6 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     if "model_name" in response_metadata:
         metadata["model"] = response_metadata["model_name"]
     return metadata
-
-
-def _passthrough_finish_reason(value: Any) -> FinishReason:
-    """Pass the provider's raw finish reason through unchanged.
-
-    Terminal reasons are provider-specific — OpenAI uses
-    `"stop"` / `"length"` / `"tool_calls"` / `"content_filter"`,
-    Anthropic uses `"end_turn"` / `"max_tokens"` / `"stop_sequence"` /
-    `"tool_use"`, Gemini / Cohere / others define their own vocabularies.
-    Forcing these into a closed enum (as the protocol's `FinishReason`
-    does today) loses information and makes consumers think the set is
-    canonical. The bridge does not normalize; a downstream consumer
-    that needs a canonical value should map on its own.
-
-    The `FinishReason` return type is a `Literal[...]` that disagrees
-    with reality; until the protocol relaxes it, `cast` keeps runtime
-    behavior honest while silencing type checkers.
-    """
-    return cast("FinishReason", value)
 
 
 def _accumulate_usage(
@@ -441,51 +415,32 @@ def _build_message_start(
 
 def _build_message_finish(
     *,
-    finish_reason: FinishReason,
-    has_valid_tool_call: bool,
     usage: dict[str, Any] | None,
     response_metadata: dict[str, Any] | None,
 ) -> MessageFinishData:
-    # Pass the provider's finish reason through as-is. Terminal reasons
-    # are provider-specific (OpenAI's chat.completions can report
-    # `"stop"` even with a tool call; the Responses API doesn't include
-    # one at all; Anthropic uses `stop_reason`). The bridge should not
-    # second-guess the wire value — that's a consumer-side policy.
-    # `has_valid_tool_call` is kept in the signature for backwards
-    # compatibility but no longer drives normalization.
-    del has_valid_tool_call
-    finish_data = MessageFinishData(event="message-finish", reason=finish_reason)
+    # Protocol 0.0.9 removed the top-level `reason` field from
+    # `MessageFinishData`; the provider's raw `finish_reason` /
+    # `stop_reason` now rides inside `metadata` alongside other
+    # response metadata. Pass it through unchanged.
+    finish_data = MessageFinishData(event="message-finish")
     usage_info = _to_protocol_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
-        metadata = {
-            k: v
-            for k, v in response_metadata.items()
-            if k not in ("finish_reason", "stop_reason")
-        }
-        if metadata:
-            finish_data["metadata"] = metadata
+        finish_data["metadata"] = dict(response_metadata)
     return finish_data
 
 
 def _finalize_and_build_finish(
     wire_idx: int,
     block: CompatBlock,
-) -> tuple[MessagesData, bool]:
-    """Finalize a block and wrap it in a `content-block-finish` event.
-
-    Returns the event plus a flag indicating whether the finalized block
-    was a valid `tool_call` (used for finish-reason inference).
-    """
-    finalized = _finalize_block(block)
-    has_valid_tool_call = finalized.get("type") == "tool_call"
-    event = ContentBlockFinishData(
+) -> MessagesData:
+    """Finalize a block and wrap it in a `content-block-finish` event."""
+    return ContentBlockFinishData(
         event="content-block-finish",
         index=wire_idx,
-        content_block=finalized,
+        content_block=_finalize_block(block),
     )
-    return event, has_valid_tool_call
 
 
 # ---------------------------------------------------------------------------
@@ -519,10 +474,8 @@ def chunks_to_events(
     open_block: CompatBlock | None = None
     open_wire_idx: int = 0
     next_wire_idx = 0
-    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     for chunk in chunks:
         msg = chunk.message
@@ -552,9 +505,7 @@ def chunks_to_events(
         for key, block in _iter_protocol_blocks(msg):
             if key != open_key:
                 if open_block is not None:
-                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-                    has_valid_tool_call = has_valid_tool_call or tc
-                    yield event
+                    yield _finalize_and_build_finish(open_wire_idx, open_block)
                 open_key = key
                 open_wire_idx = next_wire_idx
                 next_wire_idx += 1
@@ -576,21 +527,13 @@ def chunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        raw_reason = merged_rm.get("finish_reason") or merged_rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _passthrough_finish_reason(raw_reason)
-
     if not started:
         return
 
     if open_block is not None:
-        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-        has_valid_tool_call = has_valid_tool_call or tc
-        yield event
+        yield _finalize_and_build_finish(open_wire_idx, open_block)
 
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -607,10 +550,8 @@ async def achunks_to_events(
     open_block: CompatBlock | None = None
     open_wire_idx: int = 0
     next_wire_idx = 0
-    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     async for chunk in chunks:
         msg = chunk.message
@@ -634,9 +575,7 @@ async def achunks_to_events(
         for key, block in _iter_protocol_blocks(msg):
             if key != open_key:
                 if open_block is not None:
-                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-                    has_valid_tool_call = has_valid_tool_call or tc
-                    yield event
+                    yield _finalize_and_build_finish(open_wire_idx, open_block)
                 open_key = key
                 open_wire_idx = next_wire_idx
                 next_wire_idx += 1
@@ -658,21 +597,13 @@ async def achunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        raw_reason = merged_rm.get("finish_reason") or merged_rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _passthrough_finish_reason(raw_reason)
-
     if not started:
         return
 
     if open_block is not None:
-        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-        has_valid_tool_call = has_valid_tool_call or tc
-        yield event
+        yield _finalize_and_build_finish(open_wire_idx, open_block)
 
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -705,7 +636,6 @@ def message_to_events(
     response_metadata = msg.response_metadata or {}
     yield _build_message_start(msg, message_id)
 
-    has_valid_tool_call = False
     for wire_idx, (_key, block) in enumerate(_iter_protocol_blocks(msg)):
         yield ContentBlockStartData(
             event="content-block-start",
@@ -718,24 +648,13 @@ def message_to_events(
                 index=wire_idx,
                 content_block=_to_protocol_block(block),
             )
-        finalized = _finalize_block(block)
-        if finalized.get("type") == "tool_call":
-            has_valid_tool_call = True
         yield ContentBlockFinishData(
             event="content-block-finish",
             index=wire_idx,
-            content_block=finalized,
+            content_block=_finalize_block(block),
         )
 
-    raw_reason = response_metadata.get("finish_reason") or response_metadata.get(
-        "stop_reason"
-    )
-    finish_reason: FinishReason = (
-        _passthrough_finish_reason(raw_reason) if raw_reason else "stop"
-    )
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
     )
