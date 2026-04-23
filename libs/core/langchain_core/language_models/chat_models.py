@@ -1038,36 +1038,47 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 params
             ),
         )
-        (run_manager,) = callback_manager.on_chat_model_start(
-            self._serialized,
-            [_format_for_tracing(messages)],
-            invocation_params=params,
-            options=options,
-            name=config.get("run_name"),
-            run_id=config.pop("run_id", None),
-            batch_size=1,
-        )
-
-        run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
-        stream = ChatModelStream(message_id=run_id)
-
-        event_iter_ref = iter(
-            self._iter_v2_events(
-                input_messages,
-                run_manager=run_manager,
-                stream=stream,
-                stop=stop,
-                **kwargs,
-            )
-        )
+        stream = ChatModelStream()
+        run_manager: CallbackManagerForLLMRun | None = None
+        event_iter_ref: Iterator[MessagesData] | None = None
         rate_limiter_acquired = self.rate_limiter is None
+        run_name = config.get("run_name")
+        run_id = config.pop("run_id", None)
+
+        def ensure_started() -> None:
+            nonlocal event_iter_ref, run_manager
+            if event_iter_ref is not None:
+                return
+
+            (run_manager,) = callback_manager.on_chat_model_start(
+                self._serialized,
+                [_format_for_tracing(messages)],
+                invocation_params=params,
+                options=options,
+                name=run_name,
+                run_id=run_id,
+                batch_size=1,
+            )
+            stream.set_message_id("-".join((LC_ID_PREFIX, str(run_manager.run_id))))
+            event_iter_ref = iter(
+                self._iter_v2_events(
+                    input_messages,
+                    run_manager=run_manager,
+                    stream=stream,
+                    stop=stop,
+                    **kwargs,
+                )
+            )
 
         def pump_one() -> bool:
             nonlocal rate_limiter_acquired
+            ensure_started()
             if not rate_limiter_acquired:
                 assert self.rate_limiter is not None  # noqa: S101
                 self.rate_limiter.acquire(blocking=True)
                 rate_limiter_acquired = True
+            assert event_iter_ref is not None  # noqa: S101
+            assert run_manager is not None  # noqa: S101
             try:
                 next(event_iter_ref)
             except StopIteration:
@@ -1113,6 +1124,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
             return True
 
+        stream.set_start(ensure_started)
         stream.bind_pump(pump_one)
         return stream
 
@@ -1179,20 +1191,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 params
             ),
         )
-        (run_manager,) = await callback_manager.on_chat_model_start(
-            self._serialized,
-            [_format_for_tracing(messages)],
-            invocation_params=params,
-            options=options,
-            name=config.get("run_name"),
-            run_id=config.pop("run_id", None),
-            batch_size=1,
-        )
-
-        run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
-        stream = AsyncChatModelStream(message_id=run_id)
+        stream = AsyncChatModelStream()
+        run_manager: AsyncCallbackManagerForLLMRun | None = None
+        run_name = config.get("run_name")
+        run_id = config.pop("run_id", None)
+        start_lock = asyncio.Lock()
 
         async def _produce() -> None:
+            assert run_manager is not None  # noqa: S101
             try:
                 if self.rate_limiter:
                     await self.rate_limiter.aacquire(blocking=True)
@@ -1249,7 +1255,31 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     response=LLMResult(generations=[]),
                 )
 
+        async def ensure_started() -> None:
+            nonlocal run_manager
+            if stream._producer_task is not None:  # noqa: SLF001
+                return
+
+            async with start_lock:
+                if stream._producer_task is not None:  # noqa: SLF001
+                    return
+
+                (run_manager,) = await callback_manager.on_chat_model_start(
+                    self._serialized,
+                    [_format_for_tracing(messages)],
+                    invocation_params=params,
+                    options=options,
+                    name=run_name,
+                    run_id=run_id,
+                    batch_size=1,
+                )
+                stream.set_message_id("-".join((LC_ID_PREFIX, str(run_manager.run_id))))
+                stream._producer_task = asyncio.get_running_loop().create_task(  # noqa: SLF001
+                    _produce()
+                )
+
         async def _on_aclose_fail(exc: BaseException) -> None:
+            assert run_manager is not None  # noqa: S101
             # Invoked by `stream.aclose()` only when the producer was
             # cancelled before `_produce` ran — so `on_llm_error` from
             # the CancelledError handler never fired. Shielded by the
@@ -1260,8 +1290,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 response=LLMResult(generations=[]),
             )
 
+        stream.set_start(ensure_started)
         stream._on_aclose_fail = _on_aclose_fail  # noqa: SLF001
-        stream._producer_task = asyncio.get_running_loop().create_task(_produce())  # noqa: SLF001
         return stream
 
     # --- Custom methods ---

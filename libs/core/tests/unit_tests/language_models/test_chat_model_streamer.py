@@ -195,6 +195,18 @@ class _EmptyStreamModel(BaseChatModel):
 class TestCallbacks:
     """Verify stream_v2 fires on_llm_end / on_llm_error callbacks."""
 
+    def test_stream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+        handler = _RecordingHandler()
+        model = FakeListChatModel(responses=["done"], callbacks=[handler])
+
+        stream = model.stream_v2("test")
+
+        assert handler.events == []
+
+        _ = stream.output
+
+        assert handler.events[0] == "on_chat_model_start"
+
     def test_on_llm_end_fires_after_drain(self) -> None:
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
@@ -218,6 +230,19 @@ class TestCallbacks:
 
         assert "on_chat_model_start" in handler.events
         assert "on_llm_end" in handler.events
+
+    @pytest.mark.asyncio
+    async def test_astream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+        handler = _AsyncRecordingHandler()
+        model = FakeListChatModel(responses=["done"], callbacks=[handler])
+
+        stream = await model.astream_v2("test")
+
+        assert handler.events == []
+
+        _ = await stream
+
+        assert handler.events[0] == "on_chat_model_start"
 
     def test_on_llm_end_receives_assembled_message(self) -> None:
         """The LLMResult passed to on_llm_end must carry the final message.
@@ -265,11 +290,11 @@ class TestCallbacks:
     async def test_empty_astream_reports_error(self) -> None:
         handler = _AsyncRecordingHandler()
         stream = await _EmptyStreamModel(callbacks=[handler]).astream_v2("test")
-        task = stream._producer_task
-        assert task is not None
 
         with pytest.raises(ValueError, match="No generation chunks were returned"):
             await stream
+        task = stream._producer_task
+        assert task is not None
         await task
 
         assert handler.stream_events == []
@@ -333,6 +358,8 @@ class TestCancellation:
         """
         model = FakeListChatModel(responses=["abcdefghij"], sleep=0.05)
         stream = await model.astream_v2("test")
+        aiter_ = stream.text.__aiter__()
+        await aiter_.__anext__()
         task = stream._producer_task
         assert task is not None
 

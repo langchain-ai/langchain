@@ -179,12 +179,17 @@ class SyncProjection(_ProjectionBase):
     Multiple iterators replay all deltas from the start.
     """
 
-    __slots__ = ("_request_more",)
+    __slots__ = ("_ensure_started", "_request_more")
 
     def __init__(self) -> None:
         """Initialize with no pull callback."""
         super().__init__()
+        self._ensure_started: Callable[[], None] | None = None
         self._request_more: Callable[[], bool] | None = None
+
+    def set_start(self, cb: Callable[[], None] | None) -> None:
+        """Install a lazy-start callback invoked on first consumption."""
+        self._ensure_started = cb
 
     def set_request_more(self, cb: Callable[[], bool] | None) -> None:
         """Install the pull callback the iterator uses to drain the source."""
@@ -192,6 +197,8 @@ class SyncProjection(_ProjectionBase):
 
     def __iter__(self) -> Iterator[Any]:
         """Yield deltas, pulling via `_request_more` when caught up."""
+        if self._ensure_started is not None:
+            self._ensure_started()
         cursor = 0
         while True:
             if cursor < len(self._deltas):
@@ -214,6 +221,8 @@ class SyncProjection(_ProjectionBase):
 
     def get(self) -> Any:
         """Drain via `_request_more` and return the final value."""
+        if self._ensure_started is not None:
+            self._ensure_started()
         if not self._done and self._request_more is not None:
             while not self._done:
                 if not self._request_more():
@@ -267,13 +276,18 @@ class AsyncProjection(_ProjectionBase):
     list-of-futures pattern with `call_soon_threadsafe`.
     """
 
-    __slots__ = ("_arequest_more", "_event")
+    __slots__ = ("_arequest_more", "_ensure_started", "_event")
 
     def __init__(self) -> None:
         """Initialize with an un-set event and no pump callback."""
         super().__init__()
         self._event = asyncio.Event()
         self._arequest_more: Callable[[], Awaitable[bool]] | None = None
+        self._ensure_started: Callable[[], Awaitable[None]] | None = None
+
+    def set_start(self, cb: Callable[[], Awaitable[None]] | None) -> None:
+        """Install a lazy-start callback invoked on first consumption."""
+        self._ensure_started = cb
 
     def set_arequest_more(self, cb: Callable[[], Awaitable[bool]] | None) -> None:
         """Wire the async pull callback iterators use to drive the source.
@@ -323,6 +337,8 @@ class AsyncProjection(_ProjectionBase):
         it instead of blocking on `self._event`; otherwise fall back to
         the event (used by tests that dispatch manually).
         """
+        if self._ensure_started is not None:
+            await self._ensure_started()
         while not self._final_set:
             if self._error is not None:
                 raise self._error
@@ -364,6 +380,8 @@ class _AsyncProjectionIterator:
         fall back to waiting on the shared event.
         """
         proj = self._proj
+        if proj._ensure_started is not None:  # noqa: SLF001
+            await proj._ensure_started()  # noqa: SLF001
         while True:
             # Direct access to the projection's internal list/event is
             # intentional — the iterator is the projection's sidekick and
@@ -476,6 +494,15 @@ class _ChatModelStreamBase:
     def message_id(self) -> str | None:
         """Stable message identifier."""
         return self._message_id
+
+    def set_message_id(self, message_id: str) -> None:
+        """Assign the stable message identifier once the run starts.
+
+        Called by the stream driver (`stream_v2` / `astream_v2`) after
+        `on_chat_model_start` produces a run id. Not intended for
+        end-user code.
+        """
+        self._message_id = message_id
 
     @property
     def done(self) -> bool:
@@ -930,6 +957,7 @@ class ChatModelStream(_ChatModelStreamBase):
         self._reasoning_proj = SyncTextProjection()
         self._tool_calls_proj = SyncProjection()
         # Pull callback (set by bind_pump or set_request_more)
+        self._ensure_started: Callable[[], None] | None = None
         self._request_more: Callable[[], bool] | None = None
 
     # -- Pump/pull wiring --------------------------------------------------
@@ -941,6 +969,13 @@ class ChatModelStream(_ChatModelStreamBase):
         `BaseChatModel.stream_v2()`.
         """
         self.set_request_more(pump_one)
+
+    def set_start(self, cb: Callable[[], None] | None) -> None:
+        """Install a lazy-start callback on this stream and its projections."""
+        self._ensure_started = cb
+        self._text_proj.set_start(cb)
+        self._reasoning_proj.set_start(cb)
+        self._tool_calls_proj.set_start(cb)
 
     def set_request_more(self, cb: Callable[[], bool]) -> None:
         """Set the pull callback on this stream and all its projections.
@@ -988,6 +1023,8 @@ class ChatModelStream(_ChatModelStreamBase):
 
     def __iter__(self) -> Iterator[MessagesData]:
         """Iterate raw protocol events with replay-buffer semantics."""
+        if self._ensure_started is not None:
+            self._ensure_started()
         cursor = 0
         while True:
             if cursor < len(self._events):
@@ -1014,6 +1051,8 @@ class ChatModelStream(_ChatModelStreamBase):
         """Pull all remaining events until done."""
         if self._done:
             return
+        if self._ensure_started is not None:
+            self._ensure_started()
         if self._request_more is not None:
             while not self._done:
                 if not self._request_more():
@@ -1069,6 +1108,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         self._tool_calls_proj = AsyncProjection()
         self._output_proj = AsyncProjection()
         self._events_proj = AsyncProjection()
+        self._ensure_started: Callable[[], Awaitable[None]] | None = None
         self._producer_task: asyncio.Task[None] | None = None
         # Teardown callback invoked by `aclose()` only when the producer
         # task was cancelled before its body ran (so the normal
@@ -1098,6 +1138,18 @@ class AsyncChatModelStream(_ChatModelStreamBase):
             self._events_proj,
         ):
             proj.set_arequest_more(cb)
+
+    def set_start(self, cb: Callable[[], Awaitable[None]] | None) -> None:
+        """Install a lazy-start callback on this stream and its projections."""
+        self._ensure_started = cb
+        for proj in (
+            self._text_proj,
+            self._reasoning_proj,
+            self._tool_calls_proj,
+            self._output_proj,
+            self._events_proj,
+        ):
+            proj.set_start(cb)
 
     # -- Public projections ------------------------------------------------
 
@@ -1131,6 +1183,8 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         return self._await_full().__await__()
 
     async def _await_full(self) -> AIMessage:
+        if self._ensure_started is not None:
+            await self._ensure_started()
         message: AIMessage = await self._output_proj
         if self._producer_task is not None:
             await self._producer_task
@@ -1162,6 +1216,9 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         stream has finished normally. Also invoked by the async context
         manager protocol on `__aexit__`.
         """
+        if self._ensure_started is not None and self._producer_task is None:
+            await self._ensure_started()
+
         task = self._producer_task
         if task is None:
             return
