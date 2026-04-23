@@ -138,6 +138,9 @@ class _FakeOutput(ToolOutputMixin):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, _FakeOutput) and self.value == other.value
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
     def __repr__(self) -> str:
         return f"_FakeOutput({self.value})"
 
