@@ -42,18 +42,17 @@ from langchain_protocol.protocol import (
     ContentBlockFinishData,
     ContentBlockStartData,
     FinalizedContentBlock,
-    FinishReason,
-    InvalidToolCallBlock,
+    InvalidToolCall,
     MessageFinishData,
     MessageMetadata,
     MessagesData,
     MessageStartData,
-    ReasoningBlock,
-    ServerToolCallBlock,
-    ServerToolCallChunkBlock,
-    TextBlock,
-    ToolCallBlock,
-    ToolCallChunkBlock,
+    ReasoningContentBlock,
+    ServerToolCall,
+    ServerToolCallChunk,
+    TextContentBlock,
+    ToolCall,
+    ToolCallChunk,
     UsageInfo,
 )
 
@@ -160,18 +159,18 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextBlock(type="text", text="")
+        return TextContentBlock(type="text", text="")
     if btype == "reasoning":
-        return ReasoningBlock(type="reasoning", reasoning="")
+        return ReasoningContentBlock(type="reasoning", reasoning="")
     if btype == "tool_call_chunk":
-        skel = ToolCallChunkBlock(type="tool_call_chunk", args="")
+        skel = ToolCallChunk(type="tool_call_chunk", args="")
         if block.get("id") is not None:
             skel["id"] = block["id"]
         if block.get("name") is not None:
             skel["name"] = block["name"]
         return skel
     if btype == "server_tool_call_chunk":
-        s_skel = ServerToolCallChunkBlock(
+        s_skel = ServerToolCallChunk(
             type="server_tool_call_chunk",
             args="",
         )
@@ -200,6 +199,35 @@ def _should_emit_delta(block: CompatBlock) -> bool:
             block.get("args") or block.get("id") or block.get("name"),
         )
     return False
+
+
+def _to_protocol_delta_block(block: CompatBlock) -> ContentBlock:
+    """Sanitize a per-chunk block for emission as a ``content-block-delta``.
+
+    Many provider integrations (notably Anthropic's ``input_json_delta``
+    path) emit subsequent tool-call chunks with ``id`` and ``name`` set
+    to ``None`` — the metadata only arrives on the first ``tool_use``
+    chunk and is implicit for the rest.  Forwarding those ``None``
+    values to the wire produces ``"id": null, "name": null`` payloads
+    that can clobber previously-observed identifiers on accumulating
+    consumers (e.g. SDK message assemblers that fold deltas via
+    ``{...target, ...delta}`` spread).
+
+    Normalize by dropping ``id``/``name`` keys when they would serialize
+    to ``null`` on tool-call-chunk-shaped deltas.  This matches the wire
+    shape produced by the JS ``toProtocolDeltaBlock`` in
+    ``langgraphjs``'s ``messages-v2`` pipeline, where id/name are only
+    surfaced when they carry a real value.
+    """
+    btype = block.get("type")
+    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+        cleaned = dict(block)
+        if cleaned.get("id") is None:
+            cleaned.pop("id", None)
+        if cleaned.get("name") is None:
+            cleaned.pop("name", None)
+        return cast("ContentBlock", cleaned)
+    return _to_protocol_block(block)
 
 
 def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
@@ -246,7 +274,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
         try:
             parsed = json.loads(raw) if raw else {}
         except (json.JSONDecodeError, TypeError):
-            invalid = InvalidToolCallBlock(
+            invalid = InvalidToolCall(
                 type="invalid_tool_call",
                 args=raw,
                 error="Failed to parse tool call arguments as JSON",
@@ -257,13 +285,13 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
                 invalid["name"] = block["name"]
             return invalid
         if btype == "tool_call_chunk":
-            return ToolCallBlock(
+            return ToolCall(
                 type="tool_call",
                 id=block.get("id", ""),
                 name=block.get("name", ""),
                 args=parsed,
             )
-        return ServerToolCallBlock(
+        return ServerToolCall(
             type="server_tool_call",
             id=block.get("id", ""),
             name=block.get("name", ""),
@@ -285,17 +313,6 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     if "model_name" in response_metadata:
         metadata["model"] = response_metadata["model_name"]
     return metadata
-
-
-def _normalize_finish_reason(value: Any) -> FinishReason:
-    """Map provider-specific stop reasons to protocol finish reasons."""
-    if value == "length":
-        return "length"
-    if value == "content_filter":
-        return "content_filter"
-    if value in ("tool_use", "tool_calls"):
-        return "tool_use"
-    return "stop"
 
 
 def _accumulate_usage(
@@ -349,45 +366,29 @@ def _build_message_start(
 
 def _build_message_finish(
     *,
-    finish_reason: FinishReason,
-    has_valid_tool_call: bool,
     usage: dict[str, Any] | None,
     response_metadata: dict[str, Any] | None,
 ) -> MessageFinishData:
-    # Infer tool_use only from finalized (parsed) tool_calls.  An
-    # invalid_tool_call means parsing failed — the model didn't
-    # successfully request a tool, so leave finish_reason alone.
-    if finish_reason == "stop" and has_valid_tool_call:
-        finish_reason = "tool_use"
-    finish_data = MessageFinishData(event="message-finish", reason=finish_reason)
+    # Protocol v0.0.11 dropped ``reason`` from ``MessageFinishData``.
+    # ``finish_reason`` / ``stop_reason`` are still surfaced via
+    # ``metadata`` for consumers that want the raw provider hint; the
+    # wire event itself no longer advertises a normalized reason.
+    finish_data = MessageFinishData(event="message-finish")
     usage_info = _to_protocol_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
-        metadata = {
-            k: v
-            for k, v in response_metadata.items()
-            if k not in ("finish_reason", "stop_reason")
-        }
-        if metadata:
-            finish_data["metadata"] = metadata
+        finish_data["metadata"] = dict(response_metadata)
     return finish_data
 
 
 def _finish_all_blocks(
     state: dict[int, CompatBlock],
-) -> tuple[list[MessagesData], bool]:
-    """Emit `content-block-finish` events for every open block.
-
-    Returns the event list plus a flag indicating whether any finalized
-    block was a valid `tool_call` (used for finish-reason inference).
-    """
+) -> list[MessagesData]:
+    """Emit `content-block-finish` events for every open block."""
     events: list[MessagesData] = []
-    has_valid_tool_call = False
     for idx in sorted(state):
         finalized = _finalize_block(state[idx])
-        if finalized.get("type") == "tool_call":
-            has_valid_tool_call = True
         events.append(
             ContentBlockFinishData(
                 event="content-block-finish",
@@ -395,7 +396,7 @@ def _finish_all_blocks(
                 content_block=finalized,
             )
         )
-    return events, has_valid_tool_call
+    return events
 
 
 # ---------------------------------------------------------------------------
@@ -422,7 +423,6 @@ def chunks_to_events(
     first_seen: set[int] = set()
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     for chunk in chunks:
         msg = chunk.message
@@ -448,26 +448,18 @@ def chunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=_to_protocol_block(block),
+                    content_block=_to_protocol_delta_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
-
     if not started:
         return
 
-    finish_events, has_valid_tool_call = _finish_all_blocks(state)
-    yield from finish_events
+    yield from _finish_all_blocks(state)
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -484,7 +476,6 @@ async def achunks_to_events(
     first_seen: set[int] = set()
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     async for chunk in chunks:
         msg = chunk.message
@@ -510,27 +501,19 @@ async def achunks_to_events(
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=idx,
-                    content_block=_to_protocol_block(block),
+                    content_block=_to_protocol_delta_block(block),
                 )
             state[idx] = _accumulate(state.get(idx), block)
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
-
     if not started:
         return
 
-    finish_events, has_valid_tool_call = _finish_all_blocks(state)
-    for event in finish_events:
+    for event in _finish_all_blocks(state):
         yield event
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -563,7 +546,6 @@ def message_to_events(
     response_metadata = msg.response_metadata or {}
     yield _build_message_start(msg, message_id)
 
-    has_valid_tool_call = False
     for idx, block in _iter_protocol_blocks(msg):
         yield ContentBlockStartData(
             event="content-block-start",
@@ -574,26 +556,15 @@ def message_to_events(
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=idx,
-                content_block=_to_protocol_block(block),
+                content_block=_to_protocol_delta_block(block),
             )
-        finalized = _finalize_block(block)
-        if finalized.get("type") == "tool_call":
-            has_valid_tool_call = True
         yield ContentBlockFinishData(
             event="content-block-finish",
             index=idx,
-            content_block=finalized,
+            content_block=_finalize_block(block),
         )
 
-    raw_reason = response_metadata.get("finish_reason") or response_metadata.get(
-        "stop_reason"
-    )
-    finish_reason: FinishReason = (
-        _normalize_finish_reason(raw_reason) if raw_reason else "stop"
-    )
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
     )

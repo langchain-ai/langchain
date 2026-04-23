@@ -204,6 +204,92 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     assert cast("MessageFinishData", events[-1])["reason"] == "tool_use"
 
 
+def test_chunks_to_events_tool_call_delta_omits_null_id_name() -> None:
+    """Subsequent ``input_json_delta`` chunks must not serialize null id/name.
+
+    Many providers (notably Anthropic) only attach ``id`` and ``name`` to
+    the very first ``tool_use`` chunk; every subsequent ``input_json_delta``
+    chunk carries ``id=None, name=None``. Forwarding those ``None`` values
+    on the wire produces ``"id": null, "name": null`` payloads that can
+    clobber previously-observed identifiers on consumers that fold deltas
+    via ``{...target, ...delta}`` spread (e.g. langgraph-js SDK's
+    ``MessageAssembler.applyContentDelta``). The bridge must drop those
+    keys entirely so the delta only carries the newly-observed fields.
+    """
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": "tc1",
+                        "name": "search",
+                        "args": "",
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": None,
+                        "args": '{"q":',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": None,
+                        "args": ' "test"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+    deltas = [e for e in events if e["event"] == "content-block-delta"]
+    # One delta per chunk (the first carries id/name, the remaining
+    # two carry only args).
+    assert len(deltas) == 3
+    for delta in deltas:
+        block = cast("dict", delta["content_block"])
+        assert block["type"] == "tool_call_chunk"
+        # ``None`` id/name must not appear on the wire — they would
+        # otherwise null out the identifiers captured via
+        # ``content-block-start``.
+        assert "id" not in block or block["id"] is not None
+        assert "name" not in block or block["name"] is not None
+
+    # Only the first delta carries the identifying id/name; subsequent
+    # deltas omit those keys entirely so the wire payload can't
+    # accidentally overwrite previously-observed values.
+    first_block = cast("dict", deltas[0]["content_block"])
+    assert first_block["id"] == "tc1"
+    assert first_block["name"] == "search"
+    for delta in deltas[1:]:
+        block = cast("dict", delta["content_block"])
+        assert "id" not in block
+        assert "name" not in block
+
+
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
     """Malformed tool-args become invalid_tool_call; finish_reason stays `stop`."""
     chunks = [

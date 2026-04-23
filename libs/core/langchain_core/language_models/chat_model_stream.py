@@ -23,15 +23,15 @@ from typing import TYPE_CHECKING, Any, cast
 from langchain_protocol.protocol import (
     ContentBlockDeltaData,
     ContentBlockFinishData,
-    InvalidToolCallBlock,
+    InvalidToolCall,
     MessageFinishData,
     MessageMetadata,
     MessageStartData,
-    ReasoningBlock,
-    ServerToolCallChunkBlock,
-    TextBlock,
-    ToolCallBlock,
-    ToolCallChunkBlock,
+    ReasoningContentBlock,
+    ServerToolCallChunk,
+    TextContentBlock,
+    ToolCall,
+    ToolCallChunk,
     UsageInfo,
 )
 
@@ -68,8 +68,8 @@ def _sweep_chunk_store(
     *,
     finalized_type: str,
     finalized_blocks: dict[int, FinalizedContentBlock],
-    tool_calls_acc: list[ToolCallBlock] | None,
-    invalid_acc: list[InvalidToolCallBlock],
+    tool_calls_acc: list[ToolCall] | None,
+    invalid_acc: list[InvalidToolCall],
 ) -> None:
     """Parse each unswept chunk's `args`; record as `finalized_type` or invalid.
 
@@ -82,7 +82,7 @@ def _sweep_chunk_store(
         try:
             parsed = json.loads(raw_args) if raw_args else {}
         except (json.JSONDecodeError, TypeError):
-            invalid: InvalidToolCallBlock = {
+            invalid: InvalidToolCall = {
                 "type": "invalid_tool_call",
                 "args": raw_args or "",
                 "error": "Failed to parse tool call arguments as JSON",
@@ -104,7 +104,7 @@ def _sweep_chunk_store(
             },
         )
         if tool_calls_acc is not None and finalized_type == "tool_call":
-            tool_calls_acc.append(cast("ToolCallBlock", final_block))
+            tool_calls_acc.append(cast("ToolCall", final_block))
         finalized_blocks[idx] = final_block
     store.clear()
 
@@ -416,8 +416,8 @@ class ChatModelStream:
 
     - `.text` — iterable of `str` deltas; `str()` for full text
     - `.reasoning` — same as `.text` for reasoning content
-    - `.tool_calls` — iterable of `ToolCallChunkBlock` deltas;
-      `.get()` returns `list[ToolCallBlock]`
+    - `.tool_calls` — iterable of `ToolCallChunk` deltas;
+      `.get()` returns `list[ToolCall]`
     - `.usage` — blocking property, returns `UsageInfo | None`
     - `.output` — blocking property, returns assembled `AIMessage`
 
@@ -442,8 +442,8 @@ class ChatModelStream:
         self._text_acc: str = ""
         self._reasoning_acc: str = ""
         self._tool_call_chunks: dict[int, dict[str, Any]] = {}
-        self._tool_calls_acc: list[ToolCallBlock] = []
-        self._invalid_tool_calls_acc: list[InvalidToolCallBlock] = []
+        self._tool_calls_acc: list[ToolCall] = []
+        self._invalid_tool_calls_acc: list[InvalidToolCall] = []
         self._server_tool_call_chunks: dict[int, dict[str, Any]] = {}
         # Ordered snapshot of every finalized block, keyed by event index.
         # Single source of truth for .output.content. Typed accumulators
@@ -451,7 +451,6 @@ class ChatModelStream:
         # the public projections.
         self._blocks: dict[int, FinalizedContentBlock] = {}
         self._usage_value: UsageInfo | None = None
-        self._finish_reason: str | None = None
         self._start_metadata: MessageMetadata | None = None
         self._finish_metadata: dict[str, Any] | None = None
         self._done: bool = False
@@ -504,9 +503,9 @@ class ChatModelStream:
 
     @property
     def tool_calls(self) -> SyncProjection:
-        """Tool calls — iterable of `ToolCallChunkBlock` deltas.
+        """Tool calls — iterable of `ToolCallChunk` deltas.
 
-        `.get()` returns finalized `list[ToolCallBlock]`.
+        `.get()` returns finalized `list[ToolCall]`.
         """
         return self._tool_calls_proj
 
@@ -620,7 +619,7 @@ class ChatModelStream:
         # If the source exhausted without a message-finish event
         # (e.g., empty response), finalize with what we have.
         if not self._done:
-            self._finish(MessageFinishData(event="message-finish", reason="stop"))
+            self._finish(MessageFinishData(event="message-finish"))
 
     # -- Internal push API (called by dispatch) ----------------------------
 
@@ -640,19 +639,19 @@ class ChatModelStream:
         btype = block.get("type", "")
 
         if btype == "text":
-            text_block = cast("TextBlock", block)
+            text_block = cast("TextContentBlock", block)
             delta_text = text_block.get("text", "")
             if delta_text:
                 self._text_acc += delta_text
                 self._text_proj.push(delta_text)
         elif btype == "reasoning":
-            reasoning_block = cast("ReasoningBlock", block)
+            reasoning_block = cast("ReasoningContentBlock", block)
             delta_r = reasoning_block.get("reasoning", "")
             if delta_r:
                 self._reasoning_acc += delta_r
                 self._reasoning_proj.push(delta_r)
         elif btype == "tool_call_chunk":
-            tcc = cast("ToolCallChunkBlock", block)
+            tcc = cast("ToolCallChunk", block)
             # The protocol puts the block index on the event
             # (``ContentBlockDeltaData``), not inside ``content_block``.
             # Fall back to ``content_block.index`` for providers that echo
@@ -661,7 +660,7 @@ class ChatModelStream:
             if idx is None:
                 idx = tcc.get("index", len(self._tool_call_chunks))
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
-            chunk_block = ToolCallChunkBlock(type="tool_call_chunk")
+            chunk_block = ToolCallChunk(type="tool_call_chunk")
             if tcc.get("id"):
                 chunk_block["id"] = tcc["id"]
             if tcc.get("name"):
@@ -672,7 +671,7 @@ class ChatModelStream:
                 chunk_block["index"] = tcc["index"]
             self._tool_calls_proj.push(chunk_block)
         elif btype == "server_tool_call_chunk":
-            stcc = cast("ServerToolCallChunkBlock", block)
+            stcc = cast("ServerToolCallChunk", block)
             idx = data.get("index")
             if idx is None:
                 idx = len(self._server_tool_call_chunks)
@@ -692,7 +691,7 @@ class ChatModelStream:
         finalized: FinalizedContentBlock | None = None
 
         if btype == "text":
-            text_block = cast("TextBlock", block)
+            text_block = cast("TextContentBlock", block)
             full_text = text_block.get("text", "")
             if full_text and full_text != self._text_acc:
                 self._text_acc = full_text
@@ -701,7 +700,7 @@ class ChatModelStream:
                 {"type": "text", "text": self._text_acc},
             )
         elif btype == "reasoning":
-            reasoning_block = cast("ReasoningBlock", block)
+            reasoning_block = cast("ReasoningContentBlock", block)
             full_r = reasoning_block.get("reasoning", "")
             if full_r and full_r != self._reasoning_acc:
                 self._reasoning_acc = full_r
@@ -710,8 +709,8 @@ class ChatModelStream:
                 {"type": "reasoning", "reasoning": self._reasoning_acc},
             )
         elif btype == "tool_call":
-            tcb = cast("ToolCallBlock", block)
-            tc = ToolCallBlock(
+            tcb = cast("ToolCall", block)
+            tc = ToolCall(
                 type="tool_call",
                 id=tcb.get("id", ""),
                 name=tcb.get("name", ""),
@@ -722,10 +721,10 @@ class ChatModelStream:
                 del self._tool_call_chunks[idx]
             finalized = tc
         elif btype == "invalid_tool_call":
-            itc = cast("InvalidToolCallBlock", block)
+            itc = cast("InvalidToolCall", block)
             self._invalid_tool_calls_acc.append(itc)
             # Critical: drop the stale chunk so _finish's sweep doesn't revive
-            # it as an empty-args ToolCallBlock.
+            # it as an empty-args ToolCall.
             if idx is not None and idx in self._tool_call_chunks:
                 del self._tool_call_chunks[idx]
             if idx is not None and idx in self._server_tool_call_chunks:
@@ -751,7 +750,6 @@ class ChatModelStream:
         """Process a `message-finish` event."""
         self._done = True
         self._usage_value = data.get("usage")
-        self._finish_reason = data.get("reason")
         self._finish_metadata = data.get("metadata")
 
         # Finalize any unswept chunks — both client- and server-side.
@@ -803,13 +801,11 @@ class ChatModelStream:
         else:
             ordered_blocks = [self._blocks[idx] for idx in sorted(self._blocks)]
             if len(ordered_blocks) == 1 and ordered_blocks[0].get("type") == "text":
-                content = cast("TextBlock", ordered_blocks[0]).get("text", "")
+                content = cast("TextContentBlock", ordered_blocks[0]).get("text", "")
             else:
                 content = [dict(b) for b in ordered_blocks]
 
         response_metadata: dict[str, Any] = {"output_version": "v1"}
-        if self._finish_reason:
-            response_metadata["finish_reason"] = self._finish_reason
         if self._start_metadata:
             if "provider" in self._start_metadata:
                 response_metadata["model_provider"] = self._start_metadata["provider"]
@@ -864,8 +860,8 @@ class AsyncChatModelStream(ChatModelStream):
 
     - `.text` — async iterable of text deltas; awaitable for full text
     - `.reasoning` — async iterable of reasoning deltas; awaitable
-    - `.tool_calls` — async iterable of `ToolCallChunkBlock` deltas;
-      awaitable for `list[ToolCallBlock]`
+    - `.tool_calls` — async iterable of `ToolCallChunk` deltas;
+      awaitable for `list[ToolCall]`
     - `.usage` — awaitable for `UsageInfo`
     - `.output` — awaitable for assembled `AIMessage`
 
