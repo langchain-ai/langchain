@@ -27,7 +27,9 @@ from langchain_core.callbacks import (
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._compat_bridge import (
     achunks_to_events,
+    amessage_to_events,
     chunks_to_events,
+    message_to_events,
 )
 from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
@@ -1338,6 +1340,52 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 converted_generations.append(gen)
         return converted_generations
 
+    def _replay_v2_events_for_cache_hit(
+        self,
+        generations: list[ChatGeneration],
+        *,
+        run_manager: CallbackManagerForLLMRun | None,
+        **kwargs: Any,
+    ) -> None:
+        """Replay cached messages as v2 events when a v2 handler is attached.
+
+        A warm cache must produce the same `on_stream_event` stream as a cold
+        call so LangGraph-style consumers do not observe behavior that depends
+        on cache state. Gated by `_should_stream_v2` so a `disable_streaming`
+        config that suppresses v2 on cold calls also suppresses it here.
+        """
+        if run_manager is None or not self._should_stream_v2(
+            async_api=False, run_manager=run_manager, **kwargs
+        ):
+            return
+        message_id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+        for gen in generations:
+            msg = getattr(gen, "message", None)
+            if not isinstance(msg, AIMessage):
+                continue
+            for event in message_to_events(msg, message_id=message_id):
+                run_manager.on_stream_event(event)
+
+    async def _areplay_v2_events_for_cache_hit(
+        self,
+        generations: list[ChatGeneration],
+        *,
+        run_manager: AsyncCallbackManagerForLLMRun | None,
+        **kwargs: Any,
+    ) -> None:
+        """Async counterpart to `_replay_v2_events_for_cache_hit`."""
+        if run_manager is None or not self._should_stream_v2(
+            async_api=True, run_manager=run_manager, **kwargs
+        ):
+            return
+        message_id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+        for gen in generations:
+            msg = getattr(gen, "message", None)
+            if not isinstance(msg, AIMessage):
+                continue
+            async for event in amessage_to_events(msg, message_id=message_id):
+                await run_manager.on_stream_event(event)
+
     def _get_invocation_params(
         self,
         stop: list[str] | None = None,
@@ -1740,6 +1788,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
+                    self._replay_v2_events_for_cache_hit(
+                        converted_generations,
+                        run_manager=run_manager,
+                        **kwargs,
+                    )
                     return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
@@ -1896,6 +1949,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
+                    await self._areplay_v2_events_for_cache_hit(
+                        converted_generations,
+                        run_manager=run_manager,
+                        **kwargs,
+                    )
                     return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass

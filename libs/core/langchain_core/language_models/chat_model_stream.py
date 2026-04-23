@@ -863,7 +863,7 @@ class _ChatModelStreamBase:
             ordered_blocks = [self._blocks[idx] for idx in sorted(self._blocks)]
             content = [dict(b) for b in ordered_blocks]
 
-        response_metadata: dict[str, Any] = {"output_version": "v1"}
+        response_metadata: dict[str, Any] = {}
         if self._start_metadata:
             if "provider" in self._start_metadata:
                 response_metadata["model_provider"] = self._start_metadata["provider"]
@@ -871,6 +871,13 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
+        # Pin `output_version` last: `stream_v2` always assembles content as v1
+        # protocol blocks, regardless of the provider's configured output format.
+        # A provider-supplied `output_version` in finish metadata (e.g.
+        # `"responses/v1"` from `ChatOpenAI(use_responses_api=True, ...)`) would
+        # otherwise cause `AIMessage.content_blocks` to re-run the wrong
+        # translator on already-v1 content.
+        response_metadata["output_version"] = "v1"
 
         tool_calls = [
             {

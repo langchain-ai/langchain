@@ -17,7 +17,8 @@ from langchain_protocol.protocol import (
     UsageInfo,
 )
 
-from langchain_core.callbacks import AsyncCallbackHandler
+from langchain_core.caches import InMemoryCache
+from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
@@ -26,6 +27,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -1068,3 +1070,145 @@ class TestAsyncStreamAclose:
         assert stream._error is None
         # And the output projection is still resolvable.
         assert (await stream.output).text == "ok"
+
+
+class _V2RecordingHandler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Records every protocol event dispatched via `on_stream_event`."""
+
+    def __init__(self) -> None:
+        self.events: list[Any] = []
+
+    def on_stream_event(self, event: Any, **_: Any) -> None:
+        self.events.append(event)
+
+
+class _AsyncV2RecordingHandler(AsyncCallbackHandler, _V2StreamingCallbackHandler):
+    """Async counterpart to `_V2RecordingHandler`."""
+
+    def __init__(self) -> None:
+        self.events: list[Any] = []
+
+    async def on_stream_event(self, event: Any, **_: Any) -> None:
+        self.events.append(event)
+
+
+class TestCacheHitV2Replay:
+    """Cache hits must replay protocol events for v2 handlers.
+
+    Without replay, `on_stream_event` fires on cache misses but not on
+    warm-cache calls — LangGraph-style consumers would see behavior
+    that depends on cache state alone.
+    """
+
+    def test_cache_hit_replays_events_to_v2_handler(self) -> None:
+        cache = InMemoryCache()
+        model = FakeListChatModel(responses=["Hello"], cache=cache)
+        handler = _V2RecordingHandler()
+
+        # Cold call: populates cache and fires events.
+        model.invoke("prompt", config={"callbacks": [handler]})
+        cold_events = list(handler.events)
+        handler.events.clear()
+
+        # Warm call: events must fire again from the replayed cache hit.
+        model.invoke("prompt", config={"callbacks": [handler]})
+        warm_events = list(handler.events)
+
+        assert warm_events, "cache hit must replay v2 events"
+        warm_types = [e["event"] for e in warm_events]
+        # Lifecycle anchors must be present on the warm path, matching cold.
+        # Replay collapses per-chunk deltas into a single delta per block,
+        # so we assert shape equivalence at the anchor level rather than
+        # exact event-count equality.
+        assert warm_types[0] == "message-start"
+        assert warm_types[-1] == "message-finish"
+        assert "content-block-start" in warm_types
+        assert "content-block-finish" in warm_types
+        cold_types = [e["event"] for e in cold_events]
+        assert cold_types[0] == "message-start"
+        assert cold_types[-1] == "message-finish"
+
+    def test_cache_hit_skips_replay_without_v2_handler(self) -> None:
+        """A v1-only callback set must not accidentally trigger v2 replay."""
+        cache = InMemoryCache()
+        model = FakeListChatModel(responses=["Hi"], cache=cache)
+
+        # Prime the cache.
+        model.invoke("prompt")
+
+        class _V1OnlyHandler(BaseCallbackHandler):
+            def __init__(self) -> None:
+                self.stream_events: list[Any] = []
+
+            def on_stream_event(self, event: Any, **_: Any) -> None:
+                self.stream_events.append(event)
+
+        handler = _V1OnlyHandler()
+        model.invoke("prompt", config={"callbacks": [handler]})
+        # No `_V2StreamingCallbackHandler` marker -> no replay.
+        assert handler.stream_events == []
+
+    @pytest.mark.asyncio
+    async def test_acache_hit_replays_events_to_v2_handler(self) -> None:
+        cache = InMemoryCache()
+        model = FakeListChatModel(responses=["Hello"], cache=cache)
+        handler = _AsyncV2RecordingHandler()
+
+        await model.ainvoke("prompt", config={"callbacks": [handler]})
+        handler.events.clear()
+
+        await model.ainvoke("prompt", config={"callbacks": [handler]})
+        assert handler.events, "async cache hit must replay v2 events"
+        types = [e["event"] for e in handler.events]
+        assert "message-start" in types
+        assert "message-finish" in types
+
+
+class _ProviderMetadataStreamModel(BaseChatModel):
+    """Fake model that advertises `output_version="responses/v1"` in metadata.
+
+    Verifies `stream_v2` pins the assembled message's `output_version` to
+    `"v1"` — the shape it actually produces — regardless of what the
+    provider's chunk metadata claims.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "provider-metadata-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="hi",
+                response_metadata={"output_version": "responses/v1"},
+            )
+        )
+
+
+class TestOutputVersionPinning:
+    """`stream_v2().output` always serializes as v1 content blocks."""
+
+    def test_output_version_pinned_to_v1(self) -> None:
+        model = _ProviderMetadataStreamModel()
+        stream = model.stream_v2("hi")
+        msg = stream.output
+        # Assembled message must claim `"v1"` even though the provider
+        # chunk metadata advertised `"responses/v1"`.
+        assert msg.response_metadata.get("output_version") == "v1"
