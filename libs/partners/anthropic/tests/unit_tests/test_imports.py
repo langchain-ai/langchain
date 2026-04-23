@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ChatAnthropic",
     "convert_to_anthropic_tool",
     "AnthropicLLM",
+    "StreamChunkTimeoutError",
 ]
 
 

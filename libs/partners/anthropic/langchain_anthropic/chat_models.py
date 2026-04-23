@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import datetime
 import json
+import logging
 import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -54,17 +55,33 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    field_validator,
+    model_validator,
+)
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
+    SocketOption,
+    _astream_with_chunk_timeout,
+    _float_env,
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _log_proxy_env_bypass_once,
+    _resolve_socket_options,
+    _should_bypass_socket_options_for_proxy_env,
+    _warn_if_proxy_env_shadowed,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
+
+logger = logging.getLogger(__name__)
 
 _message_type_lookups = {
     "human": "user",
@@ -802,6 +819,106 @@ class ChatAnthropic(BaseChatModel):
     variable.
     """
 
+    http_socket_options: Sequence[SocketOption] | None = Field(
+        default=None, exclude=True
+    )
+    """TCP socket options applied to the httpx transports built by this instance.
+
+    Defaults to a conservative TCP-keepalive + `TCP_USER_TIMEOUT` profile that
+    targets a ~2-minute bound on silent connection hangs (silent mid-stream peer
+    loss, gVisor/NAT idle timeouts, silent TCP black holes) on platforms that
+    support the full option set. On platforms that only support a subset
+    (macOS without `TCP_USER_TIMEOUT`, Windows with only `SO_KEEPALIVE`,
+    minimal kernels), unsupported options are silently dropped and the bound
+    degrades to whatever the remaining options + OS defaults provide — still
+    better than indefinite hang.
+
+    Accepted values:
+
+    - `None` (default): use env-driven defaults. Matches the "unset" convention
+        used elsewhere on this class.
+    - `()` (empty): disable socket-option injection entirely. Inherits the OS
+        defaults and restores httpx's native env-proxy auto-detection.
+    - A non-empty sequence of `(level, option, value)` tuples: explicit
+        override; passed verbatim to the transport (not filtered). Unsupported
+        options raise `OSError` at connect time rather than being silently
+        dropped — the user chose them explicitly.
+
+    Environment variables (only consulted when this field is `None`):
+    `LANGCHAIN_ANTHROPIC_TCP_KEEPALIVE` (set to `0` to disable entirely — the
+    kill-switch), `LANGCHAIN_ANTHROPIC_TCP_KEEPIDLE`,
+    `LANGCHAIN_ANTHROPIC_TCP_KEEPINTVL`, `LANGCHAIN_ANTHROPIC_TCP_KEEPCNT`,
+    `LANGCHAIN_ANTHROPIC_TCP_USER_TIMEOUT_MS`.
+
+    !!! note "Interaction with env-proxy auto-detection"
+
+        When a custom `httpx` transport is active, `httpx` disables its
+        native env-proxy auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` /
+        `ALL_PROXY` / `NO_PROXY` and macOS/Windows system proxy settings).
+
+        To keep the default shape safe, `ChatAnthropic` detects the
+        "proxy-env-shadow" pattern and **skips the custom transport
+        entirely** when **all** of the following hold:
+
+        - `http_socket_options` is left at its default (`None`)
+        - No `anthropic_proxy` supplied
+        - A proxy env var or system proxy is visible to httpx
+
+        On that specific shape, the instance falls back to pre-PR behavior
+        and httpx's env-proxy auto-detection applies (a one-time `INFO` log
+        records the bypass for observability).
+
+        If you explicitly set `http_socket_options=[...]` while a proxy
+        env var is also set, no bypass — you opted into the transport, and
+        a one-time `WARNING` records the shadowing. Set
+        `http_socket_options=()` or `LANGCHAIN_ANTHROPIC_TCP_KEEPALIVE=0` to
+        disable transport injection explicitly. The `anthropic_proxy`
+        constructor kwarg is unaffected — socket options are applied
+        cleanly through the proxied transport on that path.
+    """
+
+    stream_chunk_timeout: float | None = Field(
+        default_factory=lambda: _float_env(
+            "LANGCHAIN_ANTHROPIC_STREAM_CHUNK_TIMEOUT_S", 120.0
+        ),
+        exclude=True,
+    )
+    """Per-chunk wall-clock timeout (seconds) on async streaming responses.
+
+    Applies to async invocations only (`astream`, `ainvoke` with streaming,
+    etc.). Sync streaming (`stream`) is not affected.
+
+    Fires between content chunks yielded by the anthropic SDK's streaming
+    iterator (i.e., each call to `__anext__` on the response). Crucially, this
+    is **not** the same as httpx's `timeout.read`:
+
+    - httpx's read timeout is inter-byte and gets reset every time *any* bytes
+        arrive on the socket — including the SSE `ping` heartbeat events the
+        Messages API sends during long model generations. A stream that's
+        silent on *content* but still producing pings looks alive forever
+        to httpx.
+    - `stream_chunk_timeout` measures the gap between *parsed chunks*. The
+        anthropic SDK's SSE parser filters `event: ping` heartbeats internally
+        and does not emit them as chunks, so pings do *not* reset this timer.
+        It fires on genuine content silence.
+
+    When it fires, a `StreamChunkTimeoutError`
+    (subclass of `asyncio.TimeoutError`) is raised with a self-describing
+    message naming this knob, the env-var override, the model, and the
+    number of chunks received before the stall. A WARNING log with
+    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>,
+    "model_name": <value>, "chunks_received": <value>}` also fires so
+    aggregate logging can distinguish app-layer timeouts from
+    transport-layer failures.
+
+    Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
+    `LANGCHAIN_ANTHROPIC_STREAM_CHUNK_TIMEOUT_S` env var. Negative values
+    (from either the env var or the constructor kwarg — e.g., hydrated
+    from YAML/JSON configs) fall back to the default with a `WARNING` log
+    rather than silently disabling the wrapper, so a misconfigured value
+    still boots safely and the fallback is visible.
+    """
+
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -999,6 +1116,27 @@ class ChatAnthropic(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @field_validator("stream_chunk_timeout", mode="after")
+    @classmethod
+    def _validate_stream_chunk_timeout(cls, value: float | None) -> float | None:
+        """Reject negative constructor values; fall back to the env-driven default.
+
+        Matches the env-var path in `_float_env`: a negative value is a typo,
+        not an opt-out (`None`/`0` are the documented off switches). Configs
+        hydrated from YAML/JSON would otherwise silently disable the wrapper
+        and reintroduce the indefinite-stream hang the feature prevents.
+        """
+        if value is not None and value < 0:
+            fallback = _float_env("LANGCHAIN_ANTHROPIC_STREAM_CHUNK_TIMEOUT_S", 120.0)
+            logger.warning(
+                "Invalid `stream_chunk_timeout=%r` (negative); "
+                "falling back to %s. Pass `None` or `0` to disable.",
+                value,
+                fallback,
+            )
+            return fallback
+        return value
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
         if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
@@ -1027,9 +1165,32 @@ class ChatAnthropic(BaseChatModel):
         return client_params
 
     @cached_property
+    def _resolved_socket_options(self) -> tuple[SocketOption, ...]:
+        """Resolve `http_socket_options` with proxy-env-shadow bypass applied.
+
+        When the default-shape construction coincides with a proxy env var
+        visible to httpx, return `()` so no custom transport is injected and
+        httpx's env-proxy auto-detection still applies. Otherwise, normalize
+        the user-facing field to the tuple form the builders expect and emit
+        the shadowing warning if applicable.
+        """
+        if _should_bypass_socket_options_for_proxy_env(
+            http_socket_options=self.http_socket_options,
+            anthropic_proxy=self.anthropic_proxy,
+        ):
+            _log_proxy_env_bypass_once()
+            return ()
+        resolved = _resolve_socket_options(self.http_socket_options)
+        _warn_if_proxy_env_shadowed(resolved, anthropic_proxy=self.anthropic_proxy)
+        return resolved
+
+    @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
+        http_client_params: dict[str, Any] = {
+            "base_url": client_params["base_url"],
+            "socket_options": self._resolved_socket_options,
+        }
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
@@ -1044,7 +1205,10 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
+        http_client_params: dict[str, Any] = {
+            "base_url": client_params["base_url"],
+            "socket_options": self._resolved_socket_options,
+        }
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
@@ -1292,7 +1456,11 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
-            async for event in stream:
+            async for event in _astream_with_chunk_timeout(
+                stream,
+                self.stream_chunk_timeout,
+                model_name=self.model,
+            ):
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
