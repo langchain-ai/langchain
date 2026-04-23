@@ -1212,3 +1212,146 @@ class TestOutputVersionPinning:
         # Assembled message must claim `"v1"` even though the provider
         # chunk metadata advertised `"responses/v1"`.
         assert msg.response_metadata.get("output_version") == "v1"
+
+
+class _BedrockConverseToolCallModel(BaseChatModel):
+    """Replays a captured `ChatBedrockConverse` tool-calling stream.
+
+    Bedrock opens a tool block with `args=None` (name + id only) and
+    starts streaming JSON args in the *next* chunk. Other providers
+    emit `args=""` on the opener, so the compat bridge's accumulator
+    never saw `None` on the state side until Bedrock hit it.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "bedrock-converse-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        meta = {"model_provider": "bedrock_converse", "ls_provider": "amazon_bedrock"}
+
+        # Text at content index 0.
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "text", "text": "Hello ", "index": 0}],
+                response_metadata=meta,
+            )
+        )
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "text", "text": "Boston!", "index": 0}],
+                response_metadata=meta,
+            )
+        )
+        # Tool opener: name + id, args=None (the Bedrock-specific shape).
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_use",
+                        "name": "get_weather",
+                        "id": "tooluse_1",
+                        "index": 1,
+                    }
+                ],
+                response_metadata=meta,
+                tool_call_chunks=[
+                    {
+                        "name": "get_weather",
+                        "args": None,
+                        "id": "tooluse_1",
+                        "index": 1,
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        )
+        # Args deltas; each intermediate JSON slice is itself unparseable.
+        for slice_ in ('{"location":', ' "Boston', '"}'):
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[
+                        {"type": "tool_use", "input": slice_, "id": None, "index": 1}
+                    ],
+                    response_metadata=meta,
+                    tool_call_chunks=[
+                        {
+                            "name": None,
+                            "args": slice_,
+                            "id": None,
+                            "index": 1,
+                            "type": "tool_call_chunk",
+                        }
+                    ],
+                )
+            )
+        # Terminal chunk carrying usage + stop reason.
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                response_metadata={"stopReason": "tool_use", **meta},
+                usage_metadata={
+                    "input_tokens": 10,
+                    "output_tokens": 5,
+                    "total_tokens": 15,
+                },
+                chunk_position="last",
+            )
+        )
+
+
+class TestBedrockConverseToolCallArgs:
+    """Regression: Bedrock's `args=None` tool opener must not break accumulation.
+
+    The compat bridge's `_accumulate` used to do
+    `state.get("args", "") + (delta.get("args") or "")`; `state.get("args", "")`
+    returns the stored value when the key exists, so a Bedrock opener that
+    stores `args=None` poisoned the state and the next delta raised
+    `TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'`.
+    """
+
+    def test_bedrock_tool_call_assembles_without_error(self) -> None:
+        model = _BedrockConverseToolCallModel()
+        stream = model.stream_v2("What's the weather in Boston?")
+        # Drive the stream to completion — the raise would have surfaced here.
+        events = list(stream)
+
+        kinds = [e["event"] for e in events]
+        assert kinds[0] == "message-start"
+        assert kinds[-1] == "message-finish"
+
+        msg = stream.output
+        assert msg.tool_calls == [
+            {
+                "name": "get_weather",
+                "args": {"location": "Boston"},
+                "id": "tooluse_1",
+                "type": "tool_call",
+            }
+        ]
+        # The args are assembled by concatenating deltas, so no
+        # partial-JSON slice should register as an `invalid_tool_call`.
+        assert msg.invalid_tool_calls == []
+        # Text block round-trips alongside the tool call.
+        text_blocks = [
+            b for b in msg.content if isinstance(b, dict) and b.get("type") == "text"
+        ]
+        assert len(text_blocks) == 1
+        assert text_blocks[0]["text"] == "Hello Boston!"
