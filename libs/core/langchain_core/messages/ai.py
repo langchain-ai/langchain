@@ -282,9 +282,13 @@ class AIMessage(BaseMessage):
                         "args": tool_call["args"],
                     }
                     if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
+                        tool_call_block["index"] = cast("dict[str, Any]", tool_call)[
+                            "index"
+                        ]
                     if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
+                        tool_call_block["extras"] = cast("dict[str, Any]", tool_call)[
+                            "extras"
+                        ]
                     blocks.append(tool_call_block)
 
         # Best-effort reasoning extraction from additional_kwargs
@@ -581,8 +585,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 ):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
                     if "extras" in block:
-                        # mypy does not account for instance check for dict above
-                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
+                        cast("dict[str, Any]", self.content[idx])["extras"] = block[
+                            "extras"
+                        ]
 
         return self
 
@@ -609,8 +614,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     try:
                         args = json.loads(args_str)
                         if isinstance(args, dict):
-                            self.content[idx]["type"] = "server_tool_call"  # type: ignore[index]
-                            self.content[idx]["args"] = args  # type: ignore[index]
+                            block_dict = cast("dict[str, Any]", self.content[idx])
+                            block_dict["type"] = "server_tool_call"
+                            block_dict["args"] = args
                     except json.JSONDecodeError:
                         pass
         return self
