@@ -193,10 +193,15 @@ def _build_commands(
     Returns:
         List of ``Command`` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
-
-    if model_response.structured_response is not None:
-        state["structured_response"] = model_response.structured_response
+    # Always write `structured_response` (even when None) so that a value
+    # produced in a previous turn and persisted in a checkpoint is overwritten
+    # at the start of each new turn.  Routing edges must therefore test
+    # ``state.get("structured_response") is not None`` rather than
+    # ``"structured_response" in state``.
+    state: dict[str, Any] = {
+        "messages": model_response.result,
+        "structured_response": model_response.structured_response,
+    }
 
     for cmd in middleware_commands or []:
         if cmd.goto:
@@ -1755,7 +1760,7 @@ def _make_model_to_tools_edge(
             ]
 
         # 5. If there is a structured response, exit the loop
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
@@ -1782,7 +1787,7 @@ def _make_model_to_model_edge(
             )
 
         # 2. Exit condition: A structured response was generated
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 3. Default: Continue the loop, there may have been an issue with structured

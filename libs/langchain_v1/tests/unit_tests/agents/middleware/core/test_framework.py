@@ -119,6 +119,7 @@ def test_create_agent_invoke(
                 id="1",
             ),
         ],
+        "structured_response": None,
     }
     assert calls == [
         "NoopSeven.before_model",

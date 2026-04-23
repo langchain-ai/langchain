@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 from unittest.mock import patch
 
+from langgraph.checkpoint.memory import InMemorySaver
+
 import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -939,3 +941,70 @@ class TestSupportsProviderStrategy:
         """Latest aliases stay blocked until they point to Gemini 3."""
         model = self._make_structured_model(alias)
         assert not _supports_provider_strategy(model, tools=[get_weather])
+
+
+class TestCheckpointStaleStructuredResponse:
+    """Regression tests for stale `structured_response` from a checkpoint.
+
+    When a checkpointer is used, `structured_response` from a previous turn is
+    restored into state at the start of the next turn.  The routing edges must
+    not treat that stale value as an exit condition for the new turn.
+    """
+
+    def test_second_turn_not_short_circuited_by_stale_checkpoint(self) -> None:
+        """Turn 2 must not return turn 1's `structured_response` from the checkpoint.
+
+        Regression test for https://github.com/langchain-ai/langchain/issues/36957.
+        """
+        turn2_data: dict[str, float | str] = {"temperature": 60.0, "condition": "cloudy"}
+        tool_calls = [
+            [{"name": "WeatherBaseModel", "id": "0", "args": WEATHER_DATA}],
+            [{"name": "WeatherBaseModel", "id": "1", "args": turn2_data}],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel),
+            checkpointer=InMemorySaver(),
+        )
+        thread = {"configurable": {"thread_id": "t1"}}
+
+        r1 = agent.invoke({"messages": [HumanMessage("turn 1")]}, config=thread)
+        r2 = agent.invoke({"messages": [HumanMessage("turn 2")]}, config=thread)
+
+        assert r1["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        # Turn 2 must produce a fresh response, not the stale turn-1 value
+        assert r2["structured_response"] == WeatherBaseModel(temperature=60.0, condition="cloudy")
+
+    def test_second_turn_with_validation_error_retry(self) -> None:
+        """Turn 2 must retry on validation failure, not exit with turn 1's value.
+
+        If the first model call in turn 2 fails validation, the agent should
+        retry rather than returning the stale `structured_response` from turn 1.
+        """
+        # Turn 1: valid; Turn 2 attempt 1: invalid; Turn 2 attempt 2: valid
+        tool_calls = [
+            [{"name": "WeatherBaseModel", "id": "0", "args": WEATHER_DATA}],
+            [{"name": "WeatherBaseModel", "id": "1", "args": {"invalid": "data"}}],
+            [{"name": "WeatherBaseModel", "id": "2", "args": {"temperature": 60.0, "condition": "cloudy"}}],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        thread = {"configurable": {"thread_id": "t2"}}
+
+        r1 = agent.invoke({"messages": [HumanMessage("turn 1")]}, config=thread)
+        r2 = agent.invoke({"messages": [HumanMessage("turn 2")]}, config=thread)
+
+        assert r1["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        # Turn 2 must have retried and returned the third queued response
+        assert r2["structured_response"] == WeatherBaseModel(temperature=60.0, condition="cloudy")
+
+
