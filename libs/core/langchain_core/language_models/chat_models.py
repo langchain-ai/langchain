@@ -1008,8 +1008,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
+        # Strip tracing-only kwargs before forwarding to `_stream` — matches
+        # `stream()` / `astream()`. Provider clients reject unknown kwargs, so
+        # `.with_structured_output().stream_v2(...)` and any other binding that
+        # carries `ls_structured_output_format` / `structured_output_format`
+        # would raise without this pop.
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
+
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs}
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1113,8 +1125,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
+        # Strip tracing-only kwargs before forwarding — see `stream_v2` for the
+        # full rationale.
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
+
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs}
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1170,6 +1191,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
             except asyncio.CancelledError as exc:
                 stream.fail(exc)
+                # Close the callback lifecycle so tracing observes a
+                # matching end event for the earlier `on_chat_model_start`.
+                # `on_llm_error` is `@shielded`, so the callback runs to
+                # completion in the background even though the `await`
+                # here re-raises our cancellation.
+                with contextlib.suppress(Exception):
+                    await run_manager.on_llm_error(
+                        exc,
+                        response=LLMResult(generations=[]),
+                    )
                 raise
             except BaseException as exc:
                 stream.fail(exc)
@@ -1178,6 +1209,18 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     response=LLMResult(generations=[]),
                 )
 
+        async def _on_aclose_fail(exc: BaseException) -> None:
+            # Invoked by `stream.aclose()` only when the producer was
+            # cancelled before `_produce` ran — so `on_llm_error` from
+            # the CancelledError handler never fired. Shielded by the
+            # callback manager; runs to completion even if our caller
+            # is being cancelled.
+            await run_manager.on_llm_error(
+                exc,
+                response=LLMResult(generations=[]),
+            )
+
+        stream._on_aclose_fail = _on_aclose_fail  # noqa: SLF001
         stream._producer_task = asyncio.get_running_loop().create_task(_produce())  # noqa: SLF001
         return stream
 

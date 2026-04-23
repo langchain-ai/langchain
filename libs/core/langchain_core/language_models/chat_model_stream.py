@@ -17,6 +17,7 @@ consumers supported).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -41,6 +42,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator, Iterator
 
     from langchain_protocol.protocol import FinalizedContentBlock, MessagesData
+    from typing_extensions import Self
 
 
 # ---------------------------------------------------------------------------
@@ -115,11 +117,11 @@ def _sweep_chunk_store(
 class _ProjectionBase:
     """Shared state and producer API for sync and async projections.
 
-    The ``push`` / ``complete`` / ``fail`` methods are the producer-side
+    The `push` / `complete` / `fail` methods are the producer-side
     API — called by the stream as events arrive. Subclasses add the
     consumer protocol (sync iteration or async iteration + await).
 
-    ``done`` and ``error`` are safe read-only views of the terminal state
+    `done` and `error` are safe read-only views of the terminal state
     for iterators and other siblings that need to observe lifecycle
     without reaching into the underlying fields.
     """
@@ -168,12 +170,12 @@ class _ProjectionBase:
 class SyncProjection(_ProjectionBase):
     """Sync iterable of deltas with pull-based backpressure.
 
-    Follows the same ``_request_more`` convention as langgraph's
-    ``EventLog``: when the cursor catches up to the buffer and the
-    projection is not done, it calls ``_request_more()`` to pull more
+    Follows the same `_request_more` convention as langgraph's
+    `EventLog`: when the cursor catches up to the buffer and the
+    projection is not done, it calls `_request_more()` to pull more
     events from the producer.
 
-    Each call to ``__iter__`` creates a new cursor at position 0.
+    Each call to `__iter__` creates a new cursor at position 0.
     Multiple iterators replay all deltas from the start.
     """
 
@@ -189,7 +191,7 @@ class SyncProjection(_ProjectionBase):
         self._request_more = cb
 
     def __iter__(self) -> Iterator[Any]:
-        """Yield deltas, pulling via ``_request_more`` when caught up."""
+        """Yield deltas, pulling via `_request_more` when caught up."""
         cursor = 0
         while True:
             if cursor < len(self._deltas):
@@ -432,6 +434,13 @@ class _ChatModelStreamBase:
         # Accumulated state
         self._text_acc: str = ""
         self._reasoning_acc: str = ""
+        # Per-block text / reasoning storage keyed by wire index. Used to
+        # populate the finalized block payload without cross-contaminating
+        # other blocks of the same type in the same message. Without
+        # per-block storage the message-wide accumulator would bleed
+        # earlier block text into later finalized blocks.
+        self._text_per_block: dict[int, str] = {}
+        self._reasoning_per_block: dict[int, str] = {}
         self._tool_call_chunks: dict[int, dict[str, Any]] = {}
         self._tool_calls_acc: list[ToolCall] = []
         self._invalid_tool_calls_acc: list[InvalidToolCall] = []
@@ -514,33 +523,42 @@ class _ChatModelStreamBase:
         self._events.append(event)
 
     def _push_message_start(self, data: MessageStartData) -> None:
-        """Process a ``message-start`` event."""
+        """Process a `message-start` event."""
         self._start_metadata = data.get("metadata")
 
     def _push_content_block_delta(self, data: ContentBlockDeltaData) -> None:
-        """Process a ``content-block-delta`` event."""
+        """Process a `content-block-delta` event."""
         block = data.get("content_block")
         if block is None:
             return
         btype = block.get("type", "")
+        event_idx = data.get("index")
 
         if btype == "text":
             text_block = cast("TextContentBlock", block)
             delta_text = text_block.get("text", "")
             if delta_text:
                 self._text_acc += delta_text
+                if event_idx is not None:
+                    self._text_per_block[event_idx] = (
+                        self._text_per_block.get(event_idx, "") + delta_text
+                    )
                 self._text_proj.push(delta_text)
         elif btype == "reasoning":
             reasoning_block = cast("ReasoningContentBlock", block)
             delta_r = reasoning_block.get("reasoning", "")
             if delta_r:
                 self._reasoning_acc += delta_r
+                if event_idx is not None:
+                    self._reasoning_per_block[event_idx] = (
+                        self._reasoning_per_block.get(event_idx, "") + delta_r
+                    )
                 self._reasoning_proj.push(delta_r)
         elif btype == "tool_call_chunk":
             tcc = cast("ToolCallChunk", block)
             # The protocol puts the block index on the event
-            # (``ContentBlockDeltaData``), not inside ``content_block``.
-            # Fall back to ``content_block.index`` for providers that echo
+            # (`ContentBlockDeltaData`), not inside `content_block`.
+            # Fall back to `content_block.index` for providers that echo
             # it there.
             idx = data.get("index")
             if idx is None:
@@ -566,6 +584,69 @@ class _ChatModelStreamBase:
                 dict(stcc),
             )
 
+    def _resolve_block_text(self, idx: int | None, full_text: str) -> str:
+        """Return authoritative text for a single text block at `idx`.
+
+        Prefers per-block delta accumulation; reconciles with the finish
+        event's `full_text` when the provider emits authoritative text
+        that differs from what the deltas built up.
+
+        Does not mutate `self._text_acc` (the delta-sum accumulator) —
+        the message-wide projection value is derived from per-block
+        storage at `_finish` time, so reconciliation remains correct
+        regardless of finish ordering across blocks.
+        """
+        if idx is None:
+            # No wire index — legacy behavior: use the message-wide
+            # accumulator. Preserved for pre-index semantics; not
+            # exercised by the compat bridge or any in-tree provider.
+            if full_text and full_text != self._text_acc:
+                self._text_acc = full_text
+            return self._text_acc
+        existing = self._text_per_block.get(idx, "")
+        if full_text and full_text != existing:
+            if not existing:
+                # No deltas arrived for this block — surface the full
+                # text as a single delta so the stream projection
+                # reflects it.
+                self._text_acc += full_text
+                self._text_proj.push(full_text)
+            elif full_text.startswith(existing):
+                # Authoritative text extends the partial deltas — emit
+                # the tail so delta consumers see the completion.
+                tail = full_text[len(existing) :]
+                self._text_acc += tail
+                self._text_proj.push(tail)
+            # else: authoritative text replaces the partial deltas
+            # entirely. No corrective delta is emitted (semantics
+            # would be ambiguous mid-stream). `_text_acc` is not
+            # spliced — the final value is computed from per-block
+            # storage at `_finish`, so this remains correct even when
+            # other blocks have added to `_text_acc` in between.
+            self._text_per_block[idx] = full_text
+        return self._text_per_block.get(idx, "")
+
+    def _resolve_block_reasoning(self, idx: int | None, full_r: str) -> str:
+        """Return authoritative reasoning text for a single block at `idx`.
+
+        Mirrors `_resolve_block_text` for the reasoning projection.
+        """
+        if idx is None:
+            if full_r and full_r != self._reasoning_acc:
+                self._reasoning_acc = full_r
+            return self._reasoning_acc
+        existing = self._reasoning_per_block.get(idx, "")
+        if full_r and full_r != existing:
+            if not existing:
+                self._reasoning_acc += full_r
+                self._reasoning_proj.push(full_r)
+            elif full_r.startswith(existing):
+                tail = full_r[len(existing) :]
+                self._reasoning_acc += tail
+                self._reasoning_proj.push(tail)
+            self._reasoning_per_block[idx] = full_r
+        return self._reasoning_per_block.get(idx, "")
+
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
         """Process a `content-block-finish` event."""
         block = data.get("content_block")
@@ -578,21 +659,19 @@ class _ChatModelStreamBase:
         if btype == "text":
             text_block = cast("TextContentBlock", block)
             full_text = text_block.get("text", "")
-            if full_text and full_text != self._text_acc:
-                self._text_acc = full_text
+            block_text = self._resolve_block_text(idx, full_text)
             finalized = cast(
                 "FinalizedContentBlock",
                 {
                     **text_block,
                     "type": "text",
-                    "text": self._text_acc,
+                    "text": block_text,
                 },
             )
         elif btype == "reasoning":
             reasoning_block = cast("ReasoningContentBlock", block)
             full_r = reasoning_block.get("reasoning", "")
-            if full_r and full_r != self._reasoning_acc:
-                self._reasoning_acc = full_r
+            block_reasoning = self._resolve_block_reasoning(idx, full_r)
             # Keep provider-specific fields alongside the accumulated
             # reasoning text. Anthropic's `signature` arrives under
             # `extras` and is required on follow-up turns. Only overwrite
@@ -601,8 +680,8 @@ class _ChatModelStreamBase:
             # empty string there makes downstream serializers synthesize
             # an empty summary entry.
             finalized_dict: dict[str, Any] = {**reasoning_block, "type": "reasoning"}
-            if self._reasoning_acc:
-                finalized_dict["reasoning"] = self._reasoning_acc
+            if block_reasoning:
+                finalized_dict["reasoning"] = block_reasoning
             finalized = cast("FinalizedContentBlock", finalized_dict)
         elif btype == "tool_call":
             tcb = cast("ToolCall", block)
@@ -692,8 +771,26 @@ class _ChatModelStreamBase:
             invalid_acc=self._invalid_tool_calls_acc,
         )
 
-        self._text_proj.complete(self._text_acc)
-        self._reasoning_proj.complete(self._reasoning_acc)
+        # Prefer the per-block sum when any indexed text / reasoning
+        # arrived — it stays correct regardless of finish ordering and
+        # of whether finish events carried authoritative text that
+        # differed from the deltas. Fall back to the delta-sum
+        # accumulator only for the legacy no-index path.
+        if self._text_per_block:
+            text_final = "".join(
+                self._text_per_block[i] for i in sorted(self._text_per_block)
+            )
+        else:
+            text_final = self._text_acc
+        if self._reasoning_per_block:
+            reasoning_final = "".join(
+                self._reasoning_per_block[i] for i in sorted(self._reasoning_per_block)
+            )
+        else:
+            reasoning_final = self._reasoning_acc
+
+        self._text_proj.complete(text_final)
+        self._reasoning_proj.complete(reasoning_final)
         self._tool_calls_proj.complete(self._tool_calls_acc)
         self._output_message = self._assemble_message()
 
@@ -975,6 +1072,11 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         self._output_proj = AsyncProjection()
         self._events_proj = AsyncProjection()
         self._producer_task: asyncio.Task[None] | None = None
+        # Teardown callback invoked by `aclose()` only when the producer
+        # task was cancelled before its body ran (so the normal
+        # `_produce` CancelledError handler — which fires
+        # `on_llm_error` — never executed). Set by `astream_v2`.
+        self._on_aclose_fail: Callable[[BaseException], Awaitable[None]] | None = None
 
     # -- Pump/pull wiring (async) ------------------------------------------
 
@@ -1039,6 +1141,84 @@ class AsyncChatModelStream(_ChatModelStreamBase):
     def __aiter__(self) -> _AsyncProjectionIterator:
         """Iterate raw protocol events asynchronously."""
         return _AsyncProjectionIterator(self._events_proj)
+
+    # -- Cleanup -----------------------------------------------------------
+
+    async def aclose(self) -> None:
+        """Cancel the background producer task and release resources.
+
+        If a consumer cancels mid-stream or decides to stop iterating
+        early, the producer task keeps pumping the provider HTTP call to
+        completion because `asyncio.Task` has no implicit link to its
+        awaiter. Call this method to cancel the producer explicitly; the
+        stream transitions to an errored state with `CancelledError`.
+
+        If the stream has already produced a message successfully (for
+        example, after `await stream.output`), the producer may still be
+        running post-stream work such as `on_llm_end` callbacks. In that
+        case `aclose()` awaits the task rather than cancelling it —
+        turning a successful run into a cancelled one would drop the
+        end callback and corrupt tracing.
+
+        Idempotent: safe to call multiple times, including after the
+        stream has finished normally. Also invoked by the async context
+        manager protocol on `__aexit__`.
+        """
+        task = self._producer_task
+        if task is None:
+            return
+        if task.done() and self._done:
+            return
+
+        we_cancelled = not (self._output_message is not None and self._error is None)
+        if we_cancelled and not task.done():
+            task.cancel()
+
+        # Producer's own errors are already routed through `stream.fail()`
+        # and `on_llm_error` by `_produce`; swallow so `aclose()` stays
+        # side-effect-only. `CancelledError` is a `BaseException` (not
+        # `Exception`), so it falls through to the inner handler below.
+        with contextlib.suppress(Exception):
+            try:
+                await task
+            except asyncio.CancelledError:
+                # Distinguish our-cancel from caller-cancel:
+                # - caller-cancel: `cancelling()` > 0 (3.11+), or the
+                #   task isn't done yet. Propagate.
+                # - our-cancel: task finished with cancellation from
+                #   `task.cancel()` above. Swallow.
+                current = asyncio.current_task()
+                caller_cancelling = getattr(current, "cancelling", lambda: 0)() > 0
+                if caller_cancelling or not (we_cancelled and task.done()):
+                    raise
+
+        # If the task was cancelled before `_produce` ran (e.g.
+        # `astream_v2()` immediately followed by `aclose()`), the stream
+        # never reached `_produce`'s CancelledError handler — its
+        # projections are still pending and no end-of-lifecycle callback
+        # has fired. Resolve both here so callers of `await stream.output`
+        # don't hang and tracing sees a matching end event.
+        if we_cancelled and not self._done:
+            cancel_exc = asyncio.CancelledError()
+            self.fail(cancel_exc)
+            teardown = self._on_aclose_fail
+            if teardown is not None:
+                with contextlib.suppress(Exception):
+                    await teardown(cancel_exc)
+
+    async def __aenter__(self) -> Self:
+        """Enter the async context — returns self."""
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
+        """Exit the async context — cancels the producer via `aclose()`."""
+        del exc_type, exc, tb
+        await self.aclose()
 
     # -- Internal API (extend base to drive async projections) -------------
 
