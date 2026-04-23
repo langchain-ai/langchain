@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -742,6 +743,55 @@ class TestStructuredOutputKwargStripping:
         )
 
 
+class _SlowTeardownModel(BaseChatModel):
+    """Fake model whose `_astream` blocks cancellation teardown on a gate.
+
+    Used to exercise the caller-cancellation path in `aclose()`:
+    cancelling the producer causes it to enter a `CancelledError`
+    handler that waits on `teardown_gate` before re-raising. That
+    keeps the producer task in a "cancelled-but-not-done" state long
+    enough for the test to cancel `aclose`'s caller deterministically.
+    """
+
+    def __init__(self, teardown_gate: asyncio.Event, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._teardown_gate = teardown_gate
+
+    @property
+    def _llm_type(self) -> str:
+        return "slow-teardown-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="first"))
+        # Block forever; cancellation is the only way out.
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            # Hold the cancellation teardown open until the test releases
+            # the gate. The task stays in a pending state while this
+            # handler is suspended, so `await task` on the `aclose()`
+            # side remains blocked.
+            await self._teardown_gate.wait()
+            raise
+
+
 class _GatedStreamModel(BaseChatModel):
     """Fake model whose _astream blocks on an event until released.
 
@@ -840,46 +890,60 @@ class TestAsyncStreamAclose:
     async def test_aclose_propagates_caller_cancellation(self) -> None:
         """`aclose()` must not swallow cancellation of its caller.
 
-        If the coroutine awaiting `aclose()` is itself cancelled (for
-        example via `async with stream` teardown under an outer cancel),
-        `aclose()` must propagate `CancelledError` rather than
-        absorbing it and returning normally.
+        Uses `_SlowTeardownModel`, whose cancelled producer blocks
+        inside its `CancelledError` handler waiting on `teardown_gate`.
+        That keeps the producer task pending long enough for the test
+        to cancel the closer task while it is genuinely suspended
+        inside `aclose()` — exercising the caller-cancel propagation
+        path deterministically on all Python versions.
         """
-        gate = asyncio.Event()
-        model = _GatedStreamModel(gate=gate)
+        teardown_gate = asyncio.Event()
+        model = _SlowTeardownModel(teardown_gate=teardown_gate)
         stream = await model.astream_v2("test")
 
-        # Prime the producer so it's parked inside the gate.
+        # Prime the producer so it enters `_astream`'s forever-blocking
+        # await.
         aiter_ = stream.text.__aiter__()
         await aiter_.__anext__()
 
-        closer_started = asyncio.Event()
         closer_returned_normally = False
 
         async def closer() -> None:
             nonlocal closer_returned_normally
-            closer_started.set()
-            # Install a no-op cancel-target on the producer to make
-            # aclose() hang briefly: replace the task with a never-
-            # resolving one shielded from the cancellation, so the
-            # caller-cancel path actually exercises.
             await stream.aclose()
             closer_returned_normally = True
 
-        # Keep the producer alive by never releasing the gate;
-        # `task.cancel()` will trip it via CancelledError inside its
-        # `await gate.wait()`. We cancel the closer before that path
-        # resolves to trigger caller-cancellation.
         closer_task = asyncio.create_task(closer())
-        await closer_started.wait()
-        # Give closer a chance to enter aclose() and begin awaiting
-        # the producer task.
-        await asyncio.sleep(0)
-        closer_task.cancel()
+        # Pump the loop until the producer has been cancelled and has
+        # entered its cancellation-teardown suspension on
+        # `teardown_gate`. At that point `closer` is guaranteed to be
+        # suspended inside `aclose`'s linked-future await.
+        for _ in range(10):
+            await asyncio.sleep(0)
+            assert stream._producer_task is not None
+            if (
+                stream._producer_task is not None
+                and not stream._producer_task.done()
+                and not closer_task.done()
+            ):
+                break
 
+        assert stream._producer_task is not None
+        assert not stream._producer_task.done(), (
+            "producer task should be parked in its cancellation teardown"
+        )
+        assert not closer_task.done(), "closer must still be inside aclose"
+
+        closer_task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await closer_task
         assert not closer_returned_normally
+
+        # Release the producer so it can finish cancellation, then
+        # await it to avoid leaking a pending task out of the test.
+        teardown_gate.set()
+        with contextlib.suppress(BaseException):
+            await stream._producer_task
 
     @pytest.mark.asyncio
     async def test_aclose_before_producer_starts_resolves_projections(self) -> None:

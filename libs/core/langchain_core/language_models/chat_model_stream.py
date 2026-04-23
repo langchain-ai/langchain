@@ -1174,23 +1174,29 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         if we_cancelled and not task.done():
             task.cancel()
 
-        # Producer's own errors are already routed through `stream.fail()`
-        # and `on_llm_error` by `_produce`; swallow so `aclose()` stays
-        # side-effect-only. `CancelledError` is a `BaseException` (not
-        # `Exception`), so it falls through to the inner handler below.
-        with contextlib.suppress(Exception):
+        # Wait for the task via a linked `Future`, not by awaiting the
+        # task directly. Awaiting the task would raise `CancelledError`
+        # in two indistinguishable cases: (1) the task we just cancelled
+        # completed, (2) our caller cancelled us. `asyncio.Task.cancelling()`
+        # disambiguates on 3.11+ but doesn't exist on 3.10.
+        #
+        # The `done_future` resolves with `None` whenever the task
+        # finishes (any reason). It is not a `Task` itself, so its
+        # `await` only raises when our caller is cancelled — giving us
+        # a portable, unambiguous signal to propagate.
+        if not task.done():
+            loop = asyncio.get_running_loop()
+            done_future: asyncio.Future[None] = loop.create_future()
+
+            def _link(_: asyncio.Task[None]) -> None:
+                if not done_future.done():
+                    done_future.set_result(None)
+
+            task.add_done_callback(_link)
             try:
-                await task
-            except asyncio.CancelledError:
-                # Distinguish our-cancel from caller-cancel:
-                # - caller-cancel: `cancelling()` > 0 (3.11+), or the
-                #   task isn't done yet. Propagate.
-                # - our-cancel: task finished with cancellation from
-                #   `task.cancel()` above. Swallow.
-                current = asyncio.current_task()
-                caller_cancelling = getattr(current, "cancelling", lambda: 0)() > 0
-                if caller_cancelling or not (we_cancelled and task.done()):
-                    raise
+                await done_future
+            finally:
+                task.remove_done_callback(_link)
 
         # If the task was cancelled before `_produce` ran (e.g.
         # `astream_v2()` immediately followed by `aclose()`), the stream

@@ -154,10 +154,17 @@ class TestV1ParityBasic:
         assert v2.id is not None
 
     def test_empty_response(self) -> None:
+        """A truly empty stream is an error, matching `stream()` parity.
+
+        `stream_v2` distinguishes "producer emitted events but no terminal
+        `message-finish`" (which is synthesized, for native-event providers
+        that omit it) from "producer emitted nothing at all" (which fails
+        with `ValueError`, same as `stream()`).
+        """
         model = FakeListChatModel(responses=[""])
         stream = model.stream_v2("test")
-        msg = stream.output
-        assert msg.content == ""
+        with pytest.raises(ValueError, match="No generation chunks"):
+            _ = stream.output
 
     def test_multi_character_response(self) -> None:
         text = "The quick brown fox"
