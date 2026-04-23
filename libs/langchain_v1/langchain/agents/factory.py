@@ -933,15 +933,6 @@ def create_agent(
     # Tools that require client-side execution (must be in ToolNode)
     available_tools = middleware_tools + regular_tools
 
-    # Resolve the agent state schema now so we can tell `ToolNode` which state
-    # keys to hydrate from channels when it receives `Send("tools", [tool_call])`
-    # (list-form dispatch that carries no inlined state).
-    state_schemas: set[type] = {m.state_schema for m in middleware}
-    base_state = state_schema if state_schema is not None else AgentState
-    state_schemas.add(base_state)
-    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
-    agent_state_keys = tuple(resolved_state_schema.__annotations__)
-
     # Create ToolNode if we have client-side tools OR if middleware defines wrap_tool_call
     # (which may handle dynamically registered tools)
     tool_node = (
@@ -949,7 +940,6 @@ def create_agent(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
-            state_keys=agent_state_keys,
         )
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
@@ -1032,6 +1022,13 @@ def create_agent(
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
+
+    state_schemas: set[type] = {m.state_schema for m in middleware}
+    # Use provided state_schema if available, otherwise use base AgentState
+    base_state = state_schema if state_schema is not None else AgentState
+    state_schemas.add(base_state)
+
+    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
     # create graph, add nodes
     graph: StateGraph[
