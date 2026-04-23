@@ -6,7 +6,7 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import anthropic
 import httpx
@@ -28,6 +28,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -2595,3 +2596,94 @@ def test_compaction_streaming() -> None:
     third_response = llm.invoke(messages)
     content_blocks = third_response.content_blocks
     assert [block["type"] for block in content_blocks] == ["text"]
+
+
+class _Person(BaseModel):
+    """A person with a name and age."""
+
+    name: str = Field(description="The person's name")
+    age: int = Field(description="The person's age in years")
+
+
+def _stable_blocks(blocks: Any) -> list[dict[str, Any]]:
+    """Drop fields that vary between API calls so blocks can be compared.
+
+    Tool-call ids, wire indices, and provider extras are not path- or call-
+    stable; strip them so the comparison targets the semantic content.
+    """
+    volatile = {"id", "index", "extras"}
+    return [{k: v for k, v in b.items() if k not in volatile} for b in blocks]
+
+
+@pytest.mark.default_cassette("test_streaming_tool_call_v1_v2_parity.yaml.gz")
+@pytest.mark.vcr
+def test_streaming_tool_call_v1_v2_parity() -> None:
+    """`AIMessage` parity between `stream()` reduction and `stream_v2().output`.
+
+    Runs the same forced-tool-call prompt through both the legacy chunk
+    stream (reduced with `AIMessageChunk.__add__`) and the `stream_v2`
+    bridge path on a `v1`-output `ChatAnthropic`, then compares the
+    resulting messages on path-independent invariants:
+
+    - tool call name and args (ids vary between calls and are ignored)
+    - exactly one tool call, no invalid tool calls
+    - `content_blocks` (the v1 projection, stripped of volatile fields)
+    - a valid tool-use `finish_reason`
+
+    The v2 path is additionally validated against the full protocol
+    lifecycle via `assert_valid_event_stream`.
+    """
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        output_version="v1",  # type: ignore[call-arg]
+    )
+    with_tool = llm.bind_tools(
+        [_Person],
+        tool_choice={"type": "tool", "name": "_Person"},
+    )
+    prompt = "Extract: Erick is 27 years old."
+
+    v1_full: AIMessageChunk | None = None
+    for chunk in with_tool.stream(prompt):
+        assert isinstance(chunk, AIMessageChunk)
+        v1_full = chunk if v1_full is None else v1_full + chunk
+    assert isinstance(v1_full, AIMessageChunk)
+
+    stream = with_tool.stream_v2(prompt)
+    events = list(stream)
+    assert_valid_event_stream(events)
+    v2_message = stream.output
+    assert isinstance(v2_message, AIMessage)
+
+    assert len(v1_full.tool_calls) == len(v2_message.tool_calls) == 1
+    assert not v1_full.invalid_tool_calls
+    assert not v2_message.invalid_tool_calls
+
+    v1_tc = v1_full.tool_calls[0]
+    v2_tc = v2_message.tool_calls[0]
+    assert v1_tc["name"] == v2_tc["name"] == "_Person"
+    assert v1_tc["args"] == v2_tc["args"] == {"name": "Erick", "age": 27}
+
+    v1_blocks = _stable_blocks(v1_full.content_blocks)
+    v2_blocks = _stable_blocks(v2_message.content_blocks)
+    assert v1_blocks == v2_blocks
+    assert v1_blocks == [
+        {
+            "type": "tool_call",
+            "name": "_Person",
+            "args": {"name": "Erick", "age": 27},
+        }
+    ]
+
+    # Anthropic's legacy path surfaces the terminal reason as `stop_reason`,
+    # while the v2 bridge normalizes to `finish_reason` under
+    # `response_metadata`. Accept either on the v1 side; assert the
+    # normalized v2 value directly.
+    v1_finish = v1_full.response_metadata.get(
+        "finish_reason"
+    ) or v1_full.response_metadata.get("stop_reason")
+    v2_finish = v2_message.response_metadata.get("finish_reason")
+    assert v1_finish is not None
+    assert v2_finish is not None
+    assert any(k in v1_finish for k in ("tool_use", "tool_calls", "stop"))
+    assert v2_finish in {"tool_calls", "tool_use"}

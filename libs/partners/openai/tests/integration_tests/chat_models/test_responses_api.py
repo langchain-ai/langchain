@@ -25,6 +25,7 @@ from langchain_core.messages import (
 )
 from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
@@ -1739,3 +1740,72 @@ def test_client_executed_tool_search() -> None:
     assert isinstance(messages[4], ToolMessage)
 
     assert messages[5].text
+
+
+@pytest.mark.default_cassette("test_reasoning_text_v1_v2_parity.yaml.gz")
+@pytest.mark.vcr
+def test_reasoning_text_v1_v2_parity() -> None:
+    """`stream()` and `stream_v2()` must agree on reasoning + text output.
+
+    Exercises the non-tool-call branch of the parity claim: a reasoning
+    model (`o4-mini` via the Responses API) produces one or more
+    `reasoning` blocks followed by a `text` block. Both paths replay the
+    same recorded HTTP response (cassette with `allow_playback_repeats`),
+    so any remaining divergence is a library issue.
+    """
+    llm = ChatOpenAI(
+        model="o4-mini",
+        reasoning={"effort": "low", "summary": "auto"},
+        output_version="v1",
+    )
+    prompt = {"role": "user", "content": "What is the capital of France?"}
+
+    v1: AIMessageChunk | None = None
+    for chunk in llm.stream([prompt]):
+        assert isinstance(chunk, AIMessageChunk)
+        v1 = chunk if v1 is None else v1 + chunk
+    assert isinstance(v1, AIMessageChunk)
+
+    stream = llm.stream_v2([prompt])
+    events = list(stream)
+    assert_valid_event_stream(events)
+    v2 = stream.output
+    assert isinstance(v2, AIMessage)
+
+    # No tool calls on either path.
+    assert v1.tool_calls == v2.tool_calls == []
+    assert v1.invalid_tool_calls == v2.invalid_tool_calls == []
+    assert v1.additional_kwargs == v2.additional_kwargs
+
+    # Content structure must match: same block sequence, same accumulated
+    # text and reasoning payloads, same block identifiers. `content_blocks`
+    # is the v1-shaped projection and is canonical for both paths.
+    assert v1.content_blocks == v2.content_blocks
+    assert v1.content == v2.content
+    # Sanity-check that we actually exercised the reasoning + text path.
+    block_types = [b["type"] for b in v1.content_blocks]
+    assert "reasoning" in block_types
+    assert "text" in block_types
+
+    # Usage: core counts must match; provider detail subdicts are
+    # dropped by `_to_protocol_usage` because `langchain_protocol.UsageInfo`
+    # doesn't list them. Tracked as a protocol-repo change.
+    detail_keys = {"input_token_details", "output_token_details"}
+    v1_usage = {
+        k: v for k, v in (v1.usage_metadata or {}).items() if k not in detail_keys
+    }
+    v2_usage = {
+        k: v for k, v in (v2.usage_metadata or {}).items() if k not in detail_keys
+    }
+    assert v1_usage == v2_usage
+
+    # Response metadata must match on all non-`finish_reason` keys.
+    # The Responses API doesn't put `finish_reason` in per-chunk
+    # metadata, so the v1 reduction ends up without one. The v2 bridge
+    # always synthesizes a terminal reason (defaulting to `"stop"`) for
+    # the `message-finish` event. Assert v2 has it set; don't require v1
+    # to match.
+    v1_rm = {k: v for k, v in v1.response_metadata.items() if k != "finish_reason"}
+    v2_rm = {k: v for k, v in v2.response_metadata.items() if k != "finish_reason"}
+    assert v1_rm == v2_rm
+    assert v2.response_metadata.get("finish_reason") == "stop"
