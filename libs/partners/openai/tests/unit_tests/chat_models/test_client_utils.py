@@ -8,6 +8,7 @@ env vars, and user-supplied clients.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import socket
@@ -573,3 +574,239 @@ def test_warn_if_proxy_env_shadowed_skipped_when_openai_proxy_set(
         opts, openai_proxy="http://proxy.example:3128"
     )
     assert not [r for r in caplog.records if r.levelno == logging.WARNING]
+
+
+def test_proxy_env_bypass_default_shape_triggers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Default-shape + env proxy => bypass socket-option transport."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    assert _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_proxy_env_bypass_no_env_does_not_trigger(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No proxy env/system proxy => no bypass, even with everything else default."""
+    for name in _client_utils._PROXY_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(_client_utils.urllib.request, "getproxies", dict)
+    assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_proxy_env_bypass_blocked_by_explicit_socket_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit `http_socket_options` => user opted in, no bypass."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=[(SOL_SOCKET, SO_KEEPALIVE, 1)],
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+    # Empty tuple is also an explicit choice (kill-switch), no bypass.
+    assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=(),
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_proxy_env_bypass_blocked_by_kill_switch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` => kill-switch owns the disable path."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    monkeypatch.setenv("LANGCHAIN_OPENAI_TCP_KEEPALIVE", "0")
+    assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_proxy_env_bypass_blocked_by_user_http_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Any user-supplied http(_async)_client => user opted in, no bypass."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    user_client = httpx.Client()
+    try:
+        assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+            http_socket_options=None,
+            http_client=user_client,
+            http_async_client=None,
+            openai_proxy=None,
+        )
+    finally:
+        user_client.close()
+
+    async_client = httpx.AsyncClient()
+    try:
+        assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+            http_socket_options=None,
+            http_client=None,
+            http_async_client=async_client,
+            openai_proxy=None,
+        )
+    finally:
+        asyncio.run(async_client.aclose())
+
+
+def test_proxy_env_bypass_blocked_by_openai_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`openai_proxy` handles proxying explicitly => no bypass."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    assert not _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy="http://openai.proxy:3128",
+    )
+
+
+def test_proxy_env_bypass_detects_lowercase_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Lowercase `https_proxy` also triggers the bypass."""
+    for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("https_proxy", "http://proxy.example:3128")
+    assert _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_proxy_env_bypass_detects_system_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """macOS/Windows system proxy config triggers the bypass too."""
+    for name in _client_utils._PROXY_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(
+        _client_utils.urllib.request,
+        "getproxies",
+        lambda: {"http": "http://system.proxy:3128"},
+    )
+    assert _client_utils._should_bypass_socket_options_for_proxy_env(
+        http_socket_options=None,
+        http_client=None,
+        http_async_client=None,
+        openai_proxy=None,
+    )
+
+
+def test_log_proxy_env_bypass_once_emits_info_once(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """One INFO per process when the bypass kicks in."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    monkeypatch.setattr(_client_utils, "_proxy_env_bypass_info_emitted", False)
+    caplog.set_level(logging.INFO, logger="langchain_openai.chat_models._client_utils")
+    _client_utils._log_proxy_env_bypass_once()
+    _client_utils._log_proxy_env_bypass_once()
+    infos = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.INFO and "HTTPS_PROXY" in r.getMessage()
+    ]
+    assert len(infos) == 1
+
+
+def test_client_build_skips_transport_on_proxy_env_default_shape(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """End-to-end: default-shape ChatOpenAI + HTTPS_PROXY => no custom transport.
+
+    Locks that the bypass wiring in `base.py` actually prevents the default
+    builder from installing `httpx.HTTPTransport(socket_options=...)`. The
+    async client's `_transport` (or underlying mount) should be httpx's
+    default, not ours.
+    """
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    # Neutralise module-level latches so repeated runs still exercise logging.
+    monkeypatch.setattr(_client_utils, "_proxy_env_bypass_info_emitted", False)
+    monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
+    # Clear cached builder results so env changes take effect.
+    _client_utils._cached_sync_httpx_client.cache_clear()
+    _client_utils._cached_async_httpx_client.cache_clear()
+
+    recorded: list[tuple[Any, ...]] = []
+
+    original_build = _client_utils._build_async_httpx_client
+
+    def spy(
+        base_url: str | None,
+        timeout: Any,
+        socket_options: tuple = (),
+    ) -> Any:
+        recorded.append(socket_options)
+        return original_build(base_url, timeout, socket_options)
+
+    monkeypatch.setattr(_client_utils, "_build_async_httpx_client", spy)
+    # `_get_default_async_httpx_client` reaches the cached builder directly,
+    # which ignores our module-level patch; bypass the cache to route through
+    # the spy.
+    monkeypatch.setattr(
+        _client_utils,
+        "_cached_async_httpx_client",
+        spy,
+    )
+
+    ChatOpenAI(model="gpt-5.1")
+
+    assert recorded, "async builder should have been called"
+    assert all(opts == () for opts in recorded), (
+        f"expected bypass (no socket options), got {recorded!r}"
+    )
+
+
+def test_client_build_applies_socket_options_when_user_opts_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit `http_socket_options` => transport applied, bypass skipped."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    monkeypatch.setattr(_client_utils, "_proxy_env_bypass_info_emitted", False)
+    monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
+    _client_utils._cached_sync_httpx_client.cache_clear()
+    _client_utils._cached_async_httpx_client.cache_clear()
+
+    recorded: list[tuple[Any, ...]] = []
+    original_build = _client_utils._build_async_httpx_client
+
+    def spy(
+        base_url: str | None,
+        timeout: Any,
+        socket_options: tuple = (),
+    ) -> Any:
+        recorded.append(socket_options)
+        return original_build(base_url, timeout, socket_options)
+
+    monkeypatch.setattr(_client_utils, "_build_async_httpx_client", spy)
+    monkeypatch.setattr(_client_utils, "_cached_async_httpx_client", spy)
+
+    explicit = [(SOL_SOCKET, SO_KEEPALIVE, 1)]
+    ChatOpenAI(model="gpt-5.1", http_socket_options=explicit)
+
+    assert recorded, "async builder should have been called"
+    assert all(tuple(opts) == tuple(explicit) for opts in recorded), (
+        f"expected user-supplied opts, got {recorded!r}"
+    )

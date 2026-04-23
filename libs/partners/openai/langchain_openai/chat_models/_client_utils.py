@@ -211,6 +211,82 @@ _PROXY_ENV_VARS = (
     "all_proxy",
 )
 _proxy_env_warning_emitted = False
+_proxy_env_bypass_info_emitted = False
+
+
+def _proxy_env_detected() -> bool:
+    """True when httpx would pick up a proxy from env or system config.
+
+    Mirrors the surface httpx reads (`urllib.request.getproxies()` plus the
+    uppercase env var names) so a positive result means env-proxy
+    auto-detection is live on pre-PR code paths.
+    """
+    if any(os.environ.get(name) for name in _PROXY_ENV_VARS):
+        return True
+    try:
+        return bool(urllib.request.getproxies())
+    except Exception:
+        return False
+
+
+def _should_bypass_socket_options_for_proxy_env(
+    *,
+    http_socket_options: Sequence[SocketOption] | None,
+    http_client: Any,
+    http_async_client: Any,
+    openai_proxy: str | None,
+) -> bool:
+    """True when default shape + env proxy detected → skip transport injection.
+
+    Preserves pre-PR behavior for apps relying on httpx's env-proxy
+    auto-detection. Only triggers when the user has made no explicit choice
+    that would signal they want the custom transport:
+
+    - `http_socket_options` left at `None` (default, not `()` or a sequence)
+    - `LANGCHAIN_OPENAI_TCP_KEEPALIVE` is not `0` (kill-switch is its own path)
+    - No `http_client` or `http_async_client` supplied
+    - No `openai_proxy` supplied
+    - A proxy env var / system proxy is visible to httpx
+
+    If any of those are set, the user has opted in to the transport path
+    (directly or via `openai_proxy`) and normal behavior — including the
+    shadowed-proxy WARNING — applies. When the kill-switch is set,
+    `_default_socket_options` already returns `()`, so the bypass INFO
+    would be noise; route through the normal path instead.
+    """
+    if http_socket_options is not None:
+        return False
+    if os.environ.get("LANGCHAIN_OPENAI_TCP_KEEPALIVE", "1") == "0":
+        return False
+    if http_client is not None or http_async_client is not None:
+        return False
+    if openai_proxy:
+        return False
+    return _proxy_env_detected()
+
+
+def _log_proxy_env_bypass_once() -> None:
+    """Emit a one-time INFO when the proxy-env bypass triggers.
+
+    Visibility for operators running with a custom log pipeline: the bypass
+    is the *safe* outcome (env-proxy auto-detection preserved), but it means
+    socket-level keepalive / `TCP_USER_TIMEOUT` aren't applied on this
+    instance. INFO-level, since it's not a problem — just a diagnostic.
+    """
+    global _proxy_env_bypass_info_emitted
+    if _proxy_env_bypass_info_emitted:
+        return
+    _proxy_env_bypass_info_emitted = True
+    active = [name for name in _PROXY_ENV_VARS if os.environ.get(name)]
+    source = ", ".join(active) if active else "system proxy configuration"
+    logger.info(
+        "langchain-openai detected %s and no explicit `http_socket_options` / "
+        "`http_client` / `http_async_client` / `openai_proxy`; skipping the "
+        "custom `httpx` transport so httpx's env-proxy auto-detection applies. "
+        "Pass `http_socket_options=[...]` to opt back into kernel-level TCP "
+        "keepalive tuning on top of the env proxy.",
+        source,
+    )
 
 
 def _warn_if_proxy_env_shadowed(

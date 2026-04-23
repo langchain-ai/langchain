@@ -137,8 +137,10 @@ from langchain_openai.chat_models._client_utils import (
     _float_env,
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _log_proxy_env_bypass_once,
     _resolve_socket_options,
     _resolve_sync_and_async_api_keys,
+    _should_bypass_socket_options_for_proxy_env,
     _warn_if_proxy_env_shadowed,
 )
 from langchain_openai.chat_models._compat import (
@@ -833,21 +835,33 @@ class BaseChatOpenAI(BaseChatModel):
     gets `http_socket_options` applied to its default builder (and
     vice-versa for `http_async_client`). Supply both to take full control.
 
-    !!! note "Known limitation — env-proxy auto-detection"
+    !!! note "Interaction with env-proxy auto-detection"
 
-        When socket options are active, langchain-openai passes a custom
-        `httpx` transport, and `httpx` disables its native env-proxy
-        auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` /
-        `NO_PROXY` and macOS/Windows system proxy settings) whenever a
-        transport is supplied. If OpenAI traffic in your environment is
-        routed via those env/system proxies, set
-        `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` (or pass
-        `http_socket_options=()`) to restore httpx's native env-proxy
-        behavior. Alternatively, pass a fully-configured `http_async_client`
-        / `http_client` (with both your proxy config and your socket
-        options) to take full control. The `openai_proxy` constructor kwarg
-        is not affected by this limitation — socket options are applied
-        cleanly through the proxied transport on that path.
+        When a custom `httpx` transport is active, `httpx` disables its
+        native env-proxy auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` /
+        `ALL_PROXY` / `NO_PROXY` and macOS/Windows system proxy settings).
+
+        To keep the default shape safe, `ChatOpenAI` detects the
+        "proxy-env-shadow" pattern and **skips the custom transport
+        entirely** when **all** of the following hold:
+
+        - `http_socket_options` is left at its default (`None`)
+        - No `http_client` or `http_async_client` supplied
+        - No `openai_proxy` supplied
+        - A proxy env var or system proxy is visible to httpx
+
+        On that specific shape, the instance falls back to pre-PR behavior
+        and httpx's env-proxy auto-detection applies (a one-time `INFO` log
+        records the bypass for observability).
+
+        If you explicitly set `http_socket_options=[...]` while a proxy
+        env var is also set, no bypass — you opted into the transport, and
+        a one-time `WARNING` records the shadowing. Set
+        `http_socket_options=()` or `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` to
+        disable transport injection explicitly, or pass a fully-configured
+        `http_async_client` / `http_client` to take full control. The
+        `openai_proxy` constructor kwarg is unaffected — socket options
+        are applied cleanly through the proxied transport on that path.
     """
 
     stream_chunk_timeout: float | None = Field(
@@ -1178,10 +1192,23 @@ class BaseChatOpenAI(BaseChatModel):
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
             raise ValueError(msg)
-        resolved_socket_options = _resolve_socket_options(self.http_socket_options)
-        _warn_if_proxy_env_shadowed(
-            resolved_socket_options, openai_proxy=self.openai_proxy
-        )
+        if _should_bypass_socket_options_for_proxy_env(
+            http_socket_options=self.http_socket_options,
+            http_client=self.http_client,
+            http_async_client=self.http_async_client,
+            openai_proxy=self.openai_proxy,
+        ):
+            # Default-shape construction + proxy env var visible to httpx:
+            # skip the custom transport so httpx's env-proxy auto-detection
+            # still applies. Users who want kernel-level TCP tuning alongside
+            # an env proxy can opt in explicitly via `http_socket_options`.
+            resolved_socket_options: tuple[tuple[int, int, int], ...] = ()
+            _log_proxy_env_bypass_once()
+        else:
+            resolved_socket_options = _resolve_socket_options(self.http_socket_options)
+            _warn_if_proxy_env_shadowed(
+                resolved_socket_options, openai_proxy=self.openai_proxy
+            )
         if not self.client:
             if sync_api_key_value is None:
                 # No valid sync API key, leave client as None and raise informative
