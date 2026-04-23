@@ -1799,13 +1799,9 @@ def test_reasoning_text_v1_v2_parity() -> None:
     }
     assert v1_usage == v2_usage
 
-    # Response metadata must match on all non-`finish_reason` keys.
-    # The Responses API doesn't put `finish_reason` in per-chunk
-    # metadata, so the v1 reduction ends up without one. The v2 bridge
-    # always synthesizes a terminal reason (defaulting to `"stop"`) for
-    # the `message-finish` event. Assert v2 has it set; don't require v1
-    # to match.
-    v1_rm = {k: v for k, v in v1.response_metadata.items() if k != "finish_reason"}
-    v2_rm = {k: v for k, v in v2.response_metadata.items() if k != "finish_reason"}
-    assert v1_rm == v2_rm
-    assert v2.response_metadata.get("finish_reason") == "stop"
+    # Response metadata must match. The Responses API doesn't put
+    # `finish_reason` in per-chunk metadata, so neither the v1 reduction
+    # nor the v2 bridge ends up with one. (Protocol 0.0.10 dropped the
+    # v2 bridge's default `"stop"` synthesis; provider metadata now
+    # passes through unchanged.)
+    assert v1.response_metadata == v2.response_metadata
