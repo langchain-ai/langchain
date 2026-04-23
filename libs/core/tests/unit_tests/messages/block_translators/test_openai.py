@@ -317,6 +317,63 @@ def test_convert_to_v1_from_openai_input() -> None:
     assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
 
 
+def test_convert_to_v1_from_openai_input_file_mime_types() -> None:
+    """File blocks should preserve the MIME type from the data URI.
+
+    Previously the base64 file branch hard-coded `application/pdf`, which
+    silently mangled non-PDF uploads (e.g. CSV, plain text) that OpenAI
+    otherwise accepts.
+    """
+    message = HumanMessage(
+        content=[
+            {
+                "type": "file",
+                "file": {
+                    "filename": "greeting.csv",
+                    "file_data": "data:text/csv;base64,aGVsbG8=",
+                },
+            },
+            {
+                "type": "file",
+                "file": {
+                    "filename": "notes.txt",
+                    "file_data": "data:text/plain;base64,bm90ZXM=",
+                },
+            },
+            {
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
+                },
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {
+            "type": "file",
+            "base64": "aGVsbG8=",
+            "mime_type": "text/csv",
+            "extras": {"filename": "greeting.csv"},
+        },
+        {
+            "type": "file",
+            "base64": "bm90ZXM=",
+            "mime_type": "text/plain",
+            "extras": {"filename": "notes.txt"},
+        },
+        {
+            "type": "file",
+            "base64": "<base64 string>",
+            "mime_type": "application/pdf",
+            "extras": {"filename": "draconomicon.pdf"},
+        },
+    ]
+
+    assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
+
+
 def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 legacy message format
     message_v03 = AIMessage(

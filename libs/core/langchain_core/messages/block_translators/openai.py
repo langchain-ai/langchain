@@ -545,7 +545,7 @@ def _convert_openai_format_to_data_block(
         filename = block["file"].get("filename")
         return types.create_file_block(
             base64=parsed["data"],
-            mime_type="application/pdf",
+            mime_type=parsed["mime_type"],
             filename=filename,
             **all_extras,
         )
