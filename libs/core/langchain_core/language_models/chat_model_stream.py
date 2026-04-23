@@ -20,28 +20,28 @@ import asyncio
 import contextlib
 from typing import TYPE_CHECKING, Any, cast
 
-from langchain_protocol.protocol import (
-    ContentBlockDeltaData,
-    ContentBlockFinishData,
-    InvalidToolCall,
-    MessageFinishData,
-    MessageMetadata,
-    MessageStartData,
-    ReasoningContentBlock,
-    ServerToolCallChunk,
-    TextContentBlock,
-    ToolCall,
-    ToolCallChunk,
-    UsageInfo,
-)
-
 from langchain_core.language_models._compat_bridge import finalize_tool_call_chunk
 from langchain_core.messages import AIMessage
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator, Iterator
 
-    from langchain_protocol.protocol import FinalizedContentBlock, MessagesData
+    from langchain_protocol.protocol import (
+        ContentBlockDeltaData,
+        ContentBlockFinishData,
+        FinalizedContentBlock,
+        InvalidToolCall,
+        MessageFinishData,
+        MessageMetadata,
+        MessagesData,
+        MessageStartData,
+        ReasoningContentBlock,
+        ServerToolCallChunk,
+        TextContentBlock,
+        ToolCall,
+        ToolCallChunk,
+        UsageInfo,
+    )
     from typing_extensions import Self
 
 
@@ -481,6 +481,11 @@ class _ChatModelStreamBase:
     def done(self) -> bool:
         """Whether the stream has finished."""
         return self._done
+
+    @property
+    def has_events(self) -> bool:
+        """Whether any protocol events have been recorded."""
+        return bool(self._events)
 
     @property
     def output_message(self) -> AIMessage | None:
@@ -1013,13 +1018,6 @@ class ChatModelStream(_ChatModelStreamBase):
             while not self._done:
                 if not self._request_more():
                     break
-        # If the source exhausted without a message-finish event
-        # (e.g., empty response), finalize with what we have. Route
-        # through `dispatch` so the synthetic event lands in the
-        # replay buffer — otherwise raw-event iteration after `.output`
-        # resolved would omit the terminal event.
-        if not self._done:
-            self.dispatch(MessageFinishData(event="message-finish"))
 
 
 # ---------------------------------------------------------------------------

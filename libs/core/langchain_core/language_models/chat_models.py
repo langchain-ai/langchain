@@ -1034,6 +1034,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = callback_manager.on_chat_model_start(
             self._serialized,
@@ -1068,6 +1071,30 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             try:
                 next(event_iter_ref)
             except StopIteration:
+                if not stream.done:
+                    if stream.has_events:
+                        # Native event producers may omit the terminal
+                        # `message-finish`. Close the lifecycle here so
+                        # `on_llm_end` still observes the assembled
+                        # message. A truly empty stream remains an error
+                        # for parity with `stream()`.
+                        stream.dispatch(MessageFinishData(event="message-finish"))
+                    else:
+                        err = ValueError("No generation chunks were returned")
+                        stream.fail(err)
+                        run_manager.on_llm_error(
+                            err,
+                            response=LLMResult(generations=[]),
+                        )
+                        return False
+                if stream.done and stream.output_message is not None:
+                    run_manager.on_llm_end(
+                        LLMResult(
+                            generations=[
+                                [ChatGeneration(message=stream.output_message)],
+                            ],
+                        ),
+                    )
                 return False
             except BaseException as exc:
                 stream.fail(exc)
@@ -1148,6 +1175,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
@@ -1175,12 +1205,22 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     **kwargs,
                 ):
                     pass
-                # If the source exhausted without a `message-finish` event
-                # (empty response, provider bug, etc.), synthesize one so
-                # `await stream` doesn't hang on `_output_proj`. Mirrors
-                # `ChatModelStream._drain`'s sync safety net.
                 if not stream.done:
-                    stream.dispatch(MessageFinishData(event="message-finish"))
+                    if stream.has_events:
+                        # Native event producers may omit the terminal
+                        # `message-finish`. Close the lifecycle here so
+                        # `on_llm_end` sees the finalized message. A
+                        # truly empty stream remains an error for parity
+                        # with `astream()`.
+                        stream.dispatch(MessageFinishData(event="message-finish"))
+                    else:
+                        err = ValueError("No generation chunks were returned")
+                        stream.fail(err)
+                        await run_manager.on_llm_error(
+                            err,
+                            response=LLMResult(generations=[]),
+                        )
+                        return
                 if stream.done and stream.output_message is not None:
                     await run_manager.on_llm_end(
                         LLMResult(

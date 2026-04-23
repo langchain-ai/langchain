@@ -13,12 +13,21 @@ from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
-from langchain_core.outputs import ChatGeneration
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_protocol.protocol import MessagesData
 
+    from langchain_core.callbacks import (
+        AsyncCallbackManagerForLLMRun,
+        CallbackManagerForLLMRun,
+    )
+    from langchain_core.messages import BaseMessage
     from langchain_core.outputs import LLMResult
 
 
@@ -143,6 +152,46 @@ class _AsyncRecordingHandler(AsyncCallbackHandler):
         self.stream_events.append(event)
 
 
+class _EmptyStreamModel(BaseChatModel):
+    """Fake chat model whose stream producers yield no chunks."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "empty-stream-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        if False:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        if False:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+
+
 class TestCallbacks:
     """Verify stream_v2 fires on_llm_end / on_llm_error callbacks."""
 
@@ -200,6 +249,32 @@ class TestCallbacks:
         gen = response.generations[0][0]
         assert isinstance(gen, ChatGeneration)
         assert gen.message.content == [{"type": "text", "text": "hello", "index": 0}]
+
+    def test_empty_stream_reports_error_without_finish_only_lifecycle(self) -> None:
+        handler = _RecordingHandler()
+        stream = _EmptyStreamModel(callbacks=[handler]).stream_v2("test")
+
+        with pytest.raises(ValueError, match="No generation chunks were returned"):
+            list(stream)
+
+        assert handler.stream_events == []
+        assert "on_llm_error" in handler.events
+        assert "on_llm_end" not in handler.events
+
+    @pytest.mark.asyncio
+    async def test_empty_astream_reports_error(self) -> None:
+        handler = _AsyncRecordingHandler()
+        stream = await _EmptyStreamModel(callbacks=[handler]).astream_v2("test")
+        task = stream._producer_task
+        assert task is not None
+
+        with pytest.raises(ValueError, match="No generation chunks were returned"):
+            await stream
+        await task
+
+        assert handler.stream_events == []
+        assert "on_llm_error" in handler.events
+        assert "on_llm_end" not in handler.events
 
 
 class TestOnStreamEvent:
