@@ -2458,7 +2458,7 @@ wheels = [
 [[package]]
 name = "langgraph"
 version = "1.1.9"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=sr%2Ftool-call-no-state-inline#545d8c245cb4d06c0ebca88a27244c0e926b73cf" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=sr%2Ftool-call-no-state-inline#15f9ca026f62078524364b8f718926d9cec0bf4f" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2471,7 +2471,7 @@ dependencies = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.0.2"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=sr%2Ftool-call-no-state-inline#545d8c245cb4d06c0ebca88a27244c0e926b73cf" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=sr%2Ftool-call-no-state-inline#15f9ca026f62078524364b8f718926d9cec0bf4f" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -2480,7 +2480,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.0.10"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=sr%2Ftool-call-no-state-inline#545d8c245cb4d06c0ebca88a27244c0e926b73cf" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=sr%2Ftool-call-no-state-inline#15f9ca026f62078524364b8f718926d9cec0bf4f" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2489,7 +2489,7 @@ dependencies = [
 [[package]]
 name = "langgraph-sdk"
 version = "0.3.13"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fsdk-py&branch=sr%2Ftool-call-no-state-inline#545d8c245cb4d06c0ebca88a27244c0e926b73cf" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fsdk-py&branch=sr%2Ftool-call-no-state-inline#15f9ca026f62078524364b8f718926d9cec0bf4f" }
 dependencies = [
     { name = "httpx" },
     { name = "orjson" },
