@@ -3728,7 +3728,7 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
 
     @tool
-    def multi(x: int) -> list:  # type: ignore[type-arg]
+    def multi(x: int) -> list:
         """Return multiple outputs."""
         return [
             ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
