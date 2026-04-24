@@ -560,6 +560,7 @@ class ChildTool(BaseTool):
         if name in {"args_schema", "description", "name"}:
             self.__dict__.pop("tool_call_schema", None)
             self.__dict__.pop("args", None)
+            self.__dict__.pop("_openai_function_dict", None)
 
     @property
     def is_single_input(self) -> bool:
