@@ -30,7 +30,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langgraph.channels.delta import DeltaChannel
+from langgraph.channels._delta import DeltaChannel
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
