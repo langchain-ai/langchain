@@ -176,15 +176,38 @@ jobs:
         # Partner packages use [tool.uv.sources] in their pyproject.toml to resolve
         # langchain-core/langchain to local editable installs, so `uv sync` automatically
         # tests against the versions from the current branch (not published releases).
-
-        # TODO: external google/aws don't have local resolution since they live in
-        # separate repos, so they pull `core`/`langchain_v1` from PyPI. We should update
-        # their dev groups to use git source dependencies pointing to the current
-        # branch's latest commit SHA to fully test against local langchain changes.
+        #
+        # External google/aws packages live in separate repos and don't declare
+        # [tool.uv.sources], so `uv sync` pulls langchain-* from PyPI. Overlay
+        # local editable installs after sync so integration tests exercise the
+        # current branch's langchain code. Matches the pattern used by the
+        # `test-dependents` job below for deepagents.
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
           uv sync --group test --group test_integration
+
+          case "${{ matrix.working-directory }}" in
+            libs/partners/google-genai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/google-vertexai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/aws)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests \
+                -e $GITHUB_WORKSPACE/langchain/libs/partners/anthropic
+              ;;
+          esac
 
       - name: "🚀 Run Integration Tests"
         # WARNING: All secrets below are available to every matrix job regardless of
