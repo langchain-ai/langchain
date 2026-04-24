@@ -16,6 +16,7 @@ from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import beta
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -970,6 +971,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- stream_v2 / astream_v2 ---
 
+    @beta()
     def stream_v2(
         self,
         input: LanguageModelInput,
@@ -1130,6 +1132,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stream.bind_pump(pump_one)
         return stream
 
+    @beta()
     async def astream_v2(
         self,
         input: LanguageModelInput,
