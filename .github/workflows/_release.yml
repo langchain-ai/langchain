@@ -453,7 +453,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: false # temporarily skip
     strategy:
       matrix:
         partner:
@@ -559,7 +558,8 @@ jobs:
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
-    name: "🐍 Test dependent: ${{ matrix.package.path }} (Python ${{ matrix.python-version }})"
+    name: "🐍 Test dependent: ${{ matrix.package.path }} (Python ${{
+      matrix.python-version }})"
     needs:
       - build
       - release-notes
@@ -631,7 +631,7 @@ jobs:
       - pre-release-checks
       - test-dependents
       # - test-prior-published-packages-against-new-core
-    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+      # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
