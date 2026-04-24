@@ -297,7 +297,85 @@ def test_content_blocks() -> None:
         missing_tool_call,
     ]
 
-    # Chunks
+
+def test_content_blocks_no_duplicate_tool_calls_openai_responses_streaming() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/36985.
+
+    OpenAI Responses API streaming produces partial ``fc_`` prefixed tool_call
+    blocks in ``content`` (empty args) while ``tool_calls`` holds the final
+    ``call_`` prefixed blocks (full args). ``content_blocks`` should return
+    only the finalized blocks, not duplicates of both.
+    """
+    # Simulates what OpenAI Responses API streaming produces:
+    # - content: accumulates fc_ prefixed blocks (partial, empty args)
+    # - tool_calls: final call_ prefixed blocks (full args)
+    simulated_content: list[dict] = [
+        {"type": "text", "text": "Let me check the weather."},
+        # fc_ blocks accumulated during streaming (partial, no args)
+        {"type": "tool_call", "id": "fc_12345", "name": "get_weather", "args": {}},
+        {"type": "tool_call", "id": "fc_67890", "name": "get_time", "args": {}},
+    ]
+
+    # Final tool_calls with call_ prefix and full args
+    simulated_tool_calls = [
+        {"id": "call_abc123", "name": "get_weather", "args": {"city": "Tokyo"}},
+        {"id": "call_def456", "name": "get_time", "args": {"timezone": "JST"}},
+    ]
+
+    msg = AIMessage(content=simulated_content, tool_calls=simulated_tool_calls)
+
+    # Should have 3 blocks: 1 text + 2 finalized tool_calls (no duplicates)
+    assert len(msg.content_blocks) == 3
+    assert msg.content_blocks[0] == {
+        "type": "text", "text": "Let me check the weather."
+    }
+
+    # Tool call blocks should use the call_ IDs with full args, not the fc_ ones
+    tc_blocks = [b for b in msg.content_blocks if b.get("type") == "tool_call"]  # type: ignore[union-attr]
+    assert len(tc_blocks) == 2
+    assert tc_blocks[0] == {
+        "type": "tool_call",
+        "id": "call_abc123",
+        "name": "get_weather",
+        "args": {"city": "Tokyo"},
+    }
+    assert tc_blocks[1] == {
+        "type": "tool_call",
+        "id": "call_def456",
+        "name": "get_time",
+        "args": {"timezone": "JST"},
+    }
+
+    # Round-trip via content_blocks should preserve the finalized tool_calls
+    serialized = {"type": msg.type, "content_blocks": list(msg.content_blocks)}
+    reloaded = AIMessage(content_blocks=serialized["content_blocks"])
+    assert len(reloaded.tool_calls) == 2
+    assert reloaded.tool_calls[0]["id"] == "call_abc123"
+    assert reloaded.tool_calls[0]["args"] == {"city": "Tokyo"}
+    assert reloaded.tool_calls[1]["id"] == "call_def456"
+    assert reloaded.tool_calls[1]["args"] == {"timezone": "JST"}
+
+
+def test_content_blocks_no_duplicate_tool_calls_mixed_content() -> None:
+    """Ensure tool_calls from content with matching IDs are not duplicated."""
+    # When content already has the same tool_call ID as tool_calls,
+    # we should not add a duplicate
+    content_blocks_data = [
+        {"type": "text", "text": "hello"},
+        {"type": "tool_call", "id": "abc", "name": "foo", "args": {"x": 1}},
+    ]
+    msg = AIMessage(
+        content=content_blocks_data,
+        tool_calls=[{"id": "abc", "name": "foo", "args": {"x": 1}}],
+    )
+    # 2 blocks: text + tool_call (not 3 with duplicate)
+    assert len(msg.content_blocks) == 2
+    tc_blocks = [b for b in msg.content_blocks if b.get("type") == "tool_call"]  # type: ignore[union-attr]
+    assert len(tc_blocks) == 1
+    assert tc_blocks[0]["id"] == "abc"
+
+
+# Chunks
     message = AIMessageChunk(
         content="",
         tool_call_chunks=[

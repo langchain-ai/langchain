@@ -267,25 +267,54 @@ class AIMessage(BaseMessage):
         blocks = super().content_blocks
 
         if self.tool_calls:
-            # Add from tool_calls if missing from content
-            content_tool_call_ids = {
-                block.get("id")
-                for block in self.content
-                if isinstance(block, dict) and block.get("type") == "tool_call"
-            }
-            for tool_call in self.tool_calls:
-                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
-                    tool_call_block: types.ToolCall = {
-                        "type": "tool_call",
-                        "id": id_,
-                        "name": tool_call["name"],
-                        "args": tool_call["args"],
-                    }
-                    if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
-                    if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
-                    blocks.append(tool_call_block)
+            # Replace partial tool_call blocks from content with their finalized
+            # counterparts from self.tool_calls. This handles OpenAI Responses API
+            # streaming, where content accumulates partial "fc_" prefixed blocks
+            # (empty args) while tool_calls holds the final "call_" prefixed blocks
+            # (full args). Match by name and position rather than ID, since the
+            # prefixes differ.
+            tc_index = 0  # position tracker within self.tool_calls
+            new_blocks: list[types.ContentBlock] = []
+            for block in blocks:
+                if isinstance(block, dict) and block.get("type") == "tool_call":
+                    # This block came from content — check if we have a finalized
+                    # version in self.tool_calls at the same position
+                    if tc_index < len(self.tool_calls):
+                        tc = self.tool_calls[tc_index]
+                        if tc.get("name") == block.get("name"):
+                            # Replace with the authoritative tool_call
+                            tool_call_block: types.ToolCall = {
+                                "type": "tool_call",
+                                "id": tc["id"],
+                                "name": tc["name"],
+                                "args": tc["args"],
+                            }
+                            if "index" in tc:
+                                tool_call_block["index"] = tc["index"]  # type: ignore[typeddict-item]
+                            if "extras" in tc:
+                                tool_call_block["extras"] = tc["extras"]  # type: ignore[typeddict-item]
+                            new_blocks.append(tool_call_block)
+                            tc_index += 1
+                            continue
+                    # No matching finalized block — keep the original
+                    new_blocks.append(block)
+                else:
+                    new_blocks.append(block)
+            blocks = new_blocks
+
+            # Add any remaining tool_calls not represented in content
+            for tool_call in self.tool_calls[tc_index:]:
+                tool_call_block = {
+                    "type": "tool_call",
+                    "id": tool_call["id"],
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                }
+                if "index" in tool_call:
+                    tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
+                if "extras" in tool_call:
+                    tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
+                blocks.append(tool_call_block)
 
         # Best-effort reasoning extraction from additional_kwargs
         # Only add reasoning if not already present
