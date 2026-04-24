@@ -3403,6 +3403,8 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.2-pro-2025-12-11")
     assert _model_prefers_responses_api("gpt-5.4-pro")
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
+    assert _model_prefers_responses_api("gpt-5.5-pro")
+    assert _model_prefers_responses_api("gpt-5.5-pro-2026-04-23")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
     assert _model_prefers_responses_api("gpt-5.2-codex")

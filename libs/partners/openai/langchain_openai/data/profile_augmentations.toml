@@ -54,3 +54,29 @@ max_input_tokens = 272000
 
 [overrides."gpt-5.1-chat-latest"]
 max_input_tokens = 272000
+
+[overrides."gpt-5.5-pro"]
+name = "GPT-5.5 Pro"
+release_date = "2026-04-23"
+last_updated = "2026-04-23"
+open_weights = false
+max_input_tokens = 272000
+max_output_tokens = 128000
+text_inputs = true
+image_inputs = true
+audio_inputs = false
+video_inputs = false
+text_outputs = true
+image_outputs = false
+audio_outputs = false
+video_outputs = false
+reasoning_output = true
+tool_calling = true
+structured_output = false
+attachment = true
+temperature = false
+image_url_inputs = true
+pdf_inputs = true
+pdf_tool_message = true
+image_tool_message = true
+tool_choice = true
