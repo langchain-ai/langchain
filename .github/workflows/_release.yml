@@ -5,7 +5,20 @@
 # Handles version bumping, building, and publishing to PyPI with authentication.
 
 name: "🚀 Package Release"
-run-name: "Release ${{ inputs.working-directory-override || inputs.working-directory }} ${{ inputs.release-version }}"
+# Run title resolves dropdown values to the published package name (e.g.
+# `core` -> `langchain-core`, `openai` -> `langchain-openai`). Falls back to
+# the raw input for override and `workflow_call` cases, which already pass
+# a full path. Three dropdown values don't follow `langchain-{name}`:
+# `langchain` -> `langchain-classic`, `langchain_v1` -> `langchain`,
+# `standard-tests` -> `langchain-tests`.
+run-name: >-
+  Release ${{ inputs.working-directory-override ||
+  (startsWith(inputs.working-directory, 'libs/') && inputs.working-directory) ||
+  (inputs.working-directory == 'langchain' && 'langchain-classic') ||
+  (inputs.working-directory == 'langchain_v1' && 'langchain') ||
+  (inputs.working-directory == 'standard-tests' && 'langchain-tests') ||
+  format('langchain-{0}', inputs.working-directory) }} ${{
+  inputs.release-version }}
 on:
   workflow_call:
     inputs:
@@ -49,7 +62,8 @@ on:
       working-directory-override:
         required: false
         type: string
-        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+        description: "Manual override — takes precedence over dropdown (e.g.
+          libs/partners/partner-xyz)"
       release-version:
         required: true
         type: string
@@ -84,6 +98,7 @@ jobs:
   # Build the distribution package and extract version info
   # Runs in isolated environment with minimal permissions for security
   build:
+    name: 📦 Build distribution
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
@@ -139,6 +154,7 @@ jobs:
               f.write(f"pkg-name={pkg_name}\n")
               f.write(f"version={version}\n")
   release-notes:
+    name: 📝 Generate release notes
     # release-notes must run before publishing because its check-tags step
     # validates version/tag state — do not remove this dependency.
     needs:
@@ -237,6 +253,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
+    name: 🧪 Publish to TestPyPI
     # release-notes must run before publishing because its check-tags step
     # validates version/tag state — do not remove this dependency.
     needs:
@@ -274,6 +291,7 @@ jobs:
           attestations: false
 
   pre-release-checks:
+    name: ✅ Pre-release checks
     needs:
       - build
       - release-notes
@@ -424,6 +442,7 @@ jobs:
   # Test select published packages against new core
   # Done when code changes are made to langchain-core
   test-prior-published-packages-against-new-core:
+    name: 🔄 Test prior partners against new core
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
     needs:
@@ -437,12 +456,38 @@ jobs:
     if: false # temporarily skip
     strategy:
       matrix:
-        partner: [anthropic]
+        partner:
+          - anthropic
+          - chroma
+          - deepseek
+          - exa
+          - fireworks
+          - groq
+          - huggingface
+          - mistralai
+          - nomic
+          - ollama
+          - openai
+          - openrouter
+          - perplexity
+          - qdrant
+          - xai
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
       ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+      FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+      OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+      XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
       AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
@@ -514,7 +559,7 @@ jobs:
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
-    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
+    name: "🐍 Test dependent: ${{ matrix.package.path }} (Python ${{ matrix.python-version }})"
     needs:
       - build
       - release-notes
@@ -526,12 +571,13 @@ jobs:
     # Only run for core or langchain_v1 releases.
     # Job-level 'if' does not support env context; must use inputs directly.
     if: >-
-      startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/core')
-      || startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/langchain_v1')
+      startsWith(inputs.working-directory-override || inputs.working-directory,
+      'libs/core') || startsWith(inputs.working-directory-override ||
+      inputs.working-directory, 'libs/langchain_v1')
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.13"]
+        python-version: [ "3.11", "3.13" ]
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
@@ -576,6 +622,7 @@ jobs:
           make test
 
   publish:
+    name: 🚀 Publish to PyPI
     # Publishes the package to PyPI
     needs:
       - build
@@ -622,6 +669,7 @@ jobs:
           attestations: false
 
   mark-release:
+    name: 🏷️ Tag GitHub release
     # Marks the GitHub release with the new version tag
     needs:
       - build
