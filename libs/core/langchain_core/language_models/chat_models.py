@@ -12,6 +12,7 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
@@ -24,7 +25,14 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
+from langchain_core.language_models._compat_bridge import (
+    achunks_to_events,
+    amessage_to_events,
+    chunks_to_events,
+    message_to_events,
+)
 from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
     _normalize_messages,
     _update_message_content_to_blocks,
 )
@@ -32,6 +40,10 @@ from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
     LanguageModelInput,
+)
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
 )
 from langchain_core.language_models.model_profile import (
     ModelProfile,
@@ -68,7 +80,10 @@ from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPro
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
-from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers._streaming import (
+    _StreamingCallbackHandler,
+    _V2StreamingCallbackHandler,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -79,6 +94,8 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import builtins
     import uuid
+
+    from langchain_protocol.protocol import MessagesData
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -488,6 +505,30 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             "AIMessage", cast("ChatGeneration", llm_result.generations[0][0]).message
         )
 
+    def _streaming_disabled(self, **kwargs: Any) -> bool:
+        """Return whether streaming is hard-disabled for this call.
+
+        Shared opt-outs honored by both `_should_stream` and
+        `_should_stream_v2` — these override any affirmative trigger
+        (attached handler, `stream=True`, etc.):
+
+        - `self.disable_streaming is True`
+        - `self.disable_streaming == "tool_calling"` with `tools` passed
+        - `stream=<falsy>` in call kwargs
+        - `self.streaming is False` on the instance
+        """
+        if self.disable_streaming is True:
+            return True
+        # We assume tools are passed in via "tools" kwarg in all models.
+        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
+            return True
+        if "stream" in kwargs and not kwargs["stream"]:
+            return True
+        return (
+            "streaming" in self.model_fields_set
+            and getattr(self, "streaming", None) is False
+        )
+
     def _should_stream(
         self,
         *,
@@ -508,25 +549,162 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if async_api and async_not_implemented and sync_not_implemented:
             return False
 
-        # Check if streaming has been disabled on this instance.
-        if self.disable_streaming is True:
-            return False
-        # We assume tools are passed in via "tools" kwarg in all models.
-        if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
+        if self._streaming_disabled(**kwargs):
             return False
 
-        # Check if a runtime streaming flag has been passed in.
-        if "stream" in kwargs:
-            return bool(kwargs["stream"])
+        # Affirmative: explicit `stream=<truthy>` kwarg.
+        if kwargs.get("stream"):
+            return True
 
-        if "streaming" in self.model_fields_set:
-            streaming_value = getattr(self, "streaming", None)
-            if isinstance(streaming_value, bool):
-                return streaming_value
+        # Affirmative: instance-level `streaming=True` attribute.
+        if (
+            "streaming" in self.model_fields_set
+            and getattr(self, "streaming", None) is True
+        ):
+            return True
 
-        # Check if any streaming callback handlers have been passed in.
+        # Affirmative: a v1 streaming callback handler is attached.
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
+
+    def _should_stream_v2(
+        self,
+        *,
+        async_api: bool,
+        run_manager: CallbackManagerForLLMRun
+        | AsyncCallbackManagerForLLMRun
+        | None = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Determine whether an invoke should route through the v2 event path.
+
+        Runs alongside `_should_stream` inside `_generate_with_cache` /
+        `_agenerate_with_cache` — after the run manager is open — and
+        wins over the v1 streaming branch when a handler has declared
+        itself a `_V2StreamingCallbackHandler`. Parallel to
+        `_should_stream` rather than a delegation — v1 and v2 have
+        disjoint affirmative triggers.
+
+        Args:
+            async_api: Whether the caller is on the async path.
+            run_manager: The active LLM run manager.
+            **kwargs: Call kwargs; inspected for `disable_streaming`
+                semantics and an explicit `stream=False` override.
+
+        Returns:
+            `True` if any attached handler inherits
+            `_V2StreamingCallbackHandler` and the model can drive the v2
+            event generator (natively or via the `_stream` compat
+            bridge).
+        """
+        # Opt-in: only route through v2 when a v2 handler is attached.
+        handlers = run_manager.handlers if run_manager else []
+        if not any(isinstance(h, _V2StreamingCallbackHandler) for h in handlers):
+            return False
+
+        # Need a source of v2 events on the requested flavor. A native
+        # `_(a)stream_chat_model_events` hook bypasses the bridge;
+        # otherwise the bridge wraps `_stream` / `_astream`. Async can
+        # fall back to sync.
+        #
+        # `cls._stream is not BaseChatModel._stream` is an identity
+        # check for "subclass overrode `_stream`" — same pattern as
+        # `_should_stream`.
+        cls = type(self)
+        has_native_sync = getattr(cls, "_stream_chat_model_events", None) is not None
+        has_native_async = getattr(cls, "_astream_chat_model_events", None) is not None
+        overrides_sync = cls._stream is not BaseChatModel._stream
+        overrides_async = cls._astream is not BaseChatModel._astream
+        has_sync_source = has_native_sync or overrides_sync
+        has_async_source = has_native_async or overrides_async
+        has_source = (
+            (has_sync_source or has_async_source) if async_api else has_sync_source
+        )
+        if not has_source:
+            return False
+
+        return not self._streaming_disabled(**kwargs)
+
+    def _iter_v2_events(
+        self,
+        messages: list[BaseMessage],
+        *,
+        run_manager: CallbackManagerForLLMRun,
+        stream: ChatModelStream,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Drive the v2 event generator with per-event dispatch.
+
+        Shared between `stream_v2`'s pump and the invoke-time v2 branch
+        in `_generate_with_cache`. Picks the native
+        `_stream_chat_model_events` hook when the subclass provides one,
+        else bridges `_stream` chunks via `chunks_to_events`. Each event
+        is dispatched into `stream` and fired as `on_stream_event` on
+        the run manager. Run-lifecycle callbacks
+        (`on_chat_model_start` / `on_llm_end` / `on_llm_error`) and
+        rate-limiter acquisition are the caller's responsibility.
+
+        Args:
+            messages: Normalized input messages.
+            run_manager: Active LLM run manager; receives
+                `on_stream_event` per event.
+            stream: Accumulator owned by the caller; receives each
+                event via `stream.dispatch`.
+            stop: Optional stop sequences.
+            **kwargs: Forwarded to the event producer.
+
+        Yields:
+            Each protocol event produced by the model.
+        """
+        native = cast(
+            "Callable[..., Iterator[MessagesData]] | None",
+            getattr(self, "_stream_chat_model_events", None),
+        )
+        if native is not None:
+            event_iter: Iterator[MessagesData] = native(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+        else:
+            event_iter = chunks_to_events(
+                self._stream(messages, stop=stop, run_manager=run_manager, **kwargs),
+                message_id=stream.message_id,
+            )
+        for event in event_iter:
+            stream.dispatch(event)
+            run_manager.on_stream_event(event)
+            yield event
+
+    async def _aiter_v2_events(
+        self,
+        messages: list[BaseMessage],
+        *,
+        run_manager: AsyncCallbackManagerForLLMRun,
+        stream: AsyncChatModelStream,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async counterpart to `_iter_v2_events`.
+
+        See `_iter_v2_events` for the shared contract.
+        """
+        native = cast(
+            "Callable[..., AsyncIterator[MessagesData]] | None",
+            getattr(self, "_astream_chat_model_events", None),
+        )
+        if native is not None:
+            event_iter: AsyncIterator[MessagesData] = native(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+        else:
+            event_iter = achunks_to_events(
+                self._astream(messages, stop=stop, run_manager=run_manager, **kwargs),
+                message_id=stream.message_id,
+            )
+        async for event in event_iter:
+            stream.dispatch(event)
+            await run_manager.on_stream_event(event)
+            yield event
 
     @override
     def stream(
@@ -567,6 +745,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
+                langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                    params
+                ),
             )
             (run_manager,) = callback_manager.on_chat_model_start(
                 self._serialized,
@@ -695,6 +876,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
             self._serialized,
@@ -784,6 +968,334 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             LLMResult(generations=[[generation]]),
         )
 
+    # --- stream_v2 / astream_v2 ---
+
+    def stream_v2(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> ChatModelStream:
+        """Stream content-block lifecycle events for a single model call.
+
+        Returns a `ChatModelStream` with typed projections
+        (`.text`, `.reasoning`, `.tool_calls`, `.output`).
+
+        !!! warning
+
+            This API is experimental and may change.
+
+        !!! note "Always produces v1-shaped content"
+
+            `ChatModelStream.output.content` is always a list of v1
+            content blocks (text / reasoning / tool_call / image / …),
+            regardless of the model's `output_version` attribute. The
+            setting only affects the legacy `stream()` / `astream()` /
+            `invoke()` paths. If you're mixing `stream_v2` with those
+            paths in the same pipeline and need a consistent output
+            shape across them, set `output_version="v1"` on the model.
+
+        Args:
+            input: The model input.
+            config: Optional runnable config.
+            stop: Optional list of stop words.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            A `ChatModelStream` with typed projections.
+        """
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        input_messages = _normalize_messages(messages)
+
+        # Strip tracing-only kwargs before forwarding to `_stream` — matches
+        # `stream()` / `astream()`. Provider clients reject unknown kwargs, so
+        # `.with_structured_output().stream_v2(...)` and any other binding that
+        # carries `ls_structured_output_format` / `structured_output_format`
+        # would raise without this pop.
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
+
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        }
+        callback_manager = CallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            inheritable_metadata,
+            self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
+        )
+        stream = ChatModelStream()
+        run_manager: CallbackManagerForLLMRun | None = None
+        event_iter_ref: Iterator[MessagesData] | None = None
+        rate_limiter_acquired = self.rate_limiter is None
+        run_name = config.get("run_name")
+        run_id = config.pop("run_id", None)
+
+        def ensure_started() -> None:
+            nonlocal event_iter_ref, run_manager
+            if event_iter_ref is not None:
+                return
+
+            (run_manager,) = callback_manager.on_chat_model_start(
+                self._serialized,
+                [_format_for_tracing(messages)],
+                invocation_params=params,
+                options=options,
+                name=run_name,
+                run_id=run_id,
+                batch_size=1,
+            )
+            stream.set_message_id("-".join((LC_ID_PREFIX, str(run_manager.run_id))))
+            event_iter_ref = iter(
+                self._iter_v2_events(
+                    input_messages,
+                    run_manager=run_manager,
+                    stream=stream,
+                    stop=stop,
+                    **kwargs,
+                )
+            )
+
+        def pump_one() -> bool:
+            nonlocal rate_limiter_acquired
+            ensure_started()
+            if not rate_limiter_acquired:
+                assert self.rate_limiter is not None  # noqa: S101
+                self.rate_limiter.acquire(blocking=True)
+                rate_limiter_acquired = True
+            assert event_iter_ref is not None  # noqa: S101
+            assert run_manager is not None  # noqa: S101
+            try:
+                next(event_iter_ref)
+            except StopIteration:
+                if not stream.done:
+                    if stream.has_events:
+                        # Native event producers may omit the terminal
+                        # `message-finish`. Close the lifecycle here so
+                        # `on_llm_end` still observes the assembled
+                        # message. A truly empty stream remains an error
+                        # for parity with `stream()`.
+                        stream.dispatch(MessageFinishData(event="message-finish"))
+                    else:
+                        err = ValueError("No generation chunks were returned")
+                        stream.fail(err)
+                        run_manager.on_llm_error(
+                            err,
+                            response=LLMResult(generations=[]),
+                        )
+                        return False
+                if stream.done and stream.output_message is not None:
+                    run_manager.on_llm_end(
+                        LLMResult(
+                            generations=[
+                                [ChatGeneration(message=stream.output_message)],
+                            ],
+                        ),
+                    )
+                return False
+            except BaseException as exc:
+                stream.fail(exc)
+                run_manager.on_llm_error(
+                    exc,
+                    response=LLMResult(generations=[]),
+                )
+                return False
+            if stream.done and stream.output_message is not None:
+                run_manager.on_llm_end(
+                    LLMResult(
+                        generations=[
+                            [ChatGeneration(message=stream.output_message)],
+                        ],
+                    ),
+                )
+            return True
+
+        stream.set_start(ensure_started)
+        stream.bind_pump(pump_one)
+        return stream
+
+    async def astream_v2(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncChatModelStream:
+        """Async variant of `stream_v2`.
+
+        Returns an `AsyncChatModelStream` whose projections are
+        async-iterable and awaitable.
+
+        !!! warning
+
+            This API is experimental and may change.
+
+        !!! note "Always produces v1-shaped content"
+
+            The assembled message's content is always a list of v1
+            content blocks, regardless of the model's `output_version`
+            attribute — see `stream_v2` for the full rationale.
+
+        Args:
+            input: The model input.
+            config: Optional runnable config.
+            stop: Optional list of stop words.
+            **kwargs: Additional keyword arguments passed to the model.
+
+        Returns:
+            An `AsyncChatModelStream` with typed projections.
+        """
+        config = ensure_config(config)
+        messages = self._convert_input(input).to_messages()
+        input_messages = _normalize_messages(messages)
+
+        # Strip tracing-only kwargs before forwarding — see `stream_v2` for the
+        # full rationale.
+        ls_structured_output_format = kwargs.pop(
+            "ls_structured_output_format", None
+        ) or kwargs.pop("structured_output_format", None)
+        ls_structured_output_format_dict = _format_ls_structured_output(
+            ls_structured_output_format
+        )
+
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        }
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            self.callbacks,
+            self.verbose,
+            config.get("tags"),
+            self.tags,
+            inheritable_metadata,
+            self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
+        )
+        stream = AsyncChatModelStream()
+        run_manager: AsyncCallbackManagerForLLMRun | None = None
+        run_name = config.get("run_name")
+        run_id = config.pop("run_id", None)
+        start_lock = asyncio.Lock()
+
+        async def _produce() -> None:
+            assert run_manager is not None  # noqa: S101
+            try:
+                if self.rate_limiter:
+                    await self.rate_limiter.aacquire(blocking=True)
+
+                async for _event in self._aiter_v2_events(
+                    input_messages,
+                    run_manager=run_manager,
+                    stream=stream,
+                    stop=stop,
+                    **kwargs,
+                ):
+                    pass
+                if not stream.done:
+                    if stream.has_events:
+                        # Native event producers may omit the terminal
+                        # `message-finish`. Close the lifecycle here so
+                        # `on_llm_end` sees the finalized message. A
+                        # truly empty stream remains an error for parity
+                        # with `astream()`.
+                        stream.dispatch(MessageFinishData(event="message-finish"))
+                    else:
+                        err = ValueError("No generation chunks were returned")
+                        stream.fail(err)
+                        await run_manager.on_llm_error(
+                            err,
+                            response=LLMResult(generations=[]),
+                        )
+                        return
+                if stream.done and stream.output_message is not None:
+                    await run_manager.on_llm_end(
+                        LLMResult(
+                            generations=[
+                                [ChatGeneration(message=stream.output_message)],
+                            ],
+                        ),
+                    )
+            except asyncio.CancelledError as exc:
+                stream.fail(exc)
+                # Close the callback lifecycle so tracing observes a
+                # matching end event for the earlier `on_chat_model_start`.
+                # `on_llm_error` is `@shielded`, so the callback runs to
+                # completion in the background even though the `await`
+                # here re-raises our cancellation.
+                with contextlib.suppress(Exception):
+                    await run_manager.on_llm_error(
+                        exc,
+                        response=LLMResult(generations=[]),
+                    )
+                raise
+            except BaseException as exc:
+                stream.fail(exc)
+                await run_manager.on_llm_error(
+                    exc,
+                    response=LLMResult(generations=[]),
+                )
+
+        async def ensure_started() -> None:
+            nonlocal run_manager
+            if stream._producer_task is not None:  # noqa: SLF001
+                return
+
+            async with start_lock:
+                if stream._producer_task is not None:  # noqa: SLF001
+                    return
+
+                (run_manager,) = await callback_manager.on_chat_model_start(
+                    self._serialized,
+                    [_format_for_tracing(messages)],
+                    invocation_params=params,
+                    options=options,
+                    name=run_name,
+                    run_id=run_id,
+                    batch_size=1,
+                )
+                stream.set_message_id("-".join((LC_ID_PREFIX, str(run_manager.run_id))))
+                stream._producer_task = asyncio.get_running_loop().create_task(  # noqa: SLF001
+                    _produce()
+                )
+
+        async def _on_aclose_fail(exc: BaseException) -> None:
+            assert run_manager is not None  # noqa: S101
+            # Invoked by `stream.aclose()` only when the producer was
+            # cancelled before `_produce` ran — so `on_llm_error` from
+            # the CancelledError handler never fired. Shielded by the
+            # callback manager; runs to completion even if our caller
+            # is being cancelled.
+            await run_manager.on_llm_error(
+                exc,
+                response=LLMResult(generations=[]),
+            )
+
+        stream.set_start(ensure_started)
+        stream._on_aclose_fail = _on_aclose_fail  # noqa: SLF001
+        return stream
+
     # --- Custom methods ---
 
     def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
@@ -827,6 +1339,52 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                 converted_generations.append(gen)
         return converted_generations
+
+    def _replay_v2_events_for_cache_hit(
+        self,
+        generations: list[ChatGeneration],
+        *,
+        run_manager: CallbackManagerForLLMRun | None,
+        **kwargs: Any,
+    ) -> None:
+        """Replay cached messages as v2 events when a v2 handler is attached.
+
+        A warm cache must produce the same `on_stream_event` stream as a cold
+        call so LangGraph-style consumers do not observe behavior that depends
+        on cache state. Gated by `_should_stream_v2` so a `disable_streaming`
+        config that suppresses v2 on cold calls also suppresses it here.
+        """
+        if run_manager is None or not self._should_stream_v2(
+            async_api=False, run_manager=run_manager, **kwargs
+        ):
+            return
+        message_id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+        for gen in generations:
+            msg = getattr(gen, "message", None)
+            if not isinstance(msg, AIMessage):
+                continue
+            for event in message_to_events(msg, message_id=message_id):
+                run_manager.on_stream_event(event)
+
+    async def _areplay_v2_events_for_cache_hit(
+        self,
+        generations: list[ChatGeneration],
+        *,
+        run_manager: AsyncCallbackManagerForLLMRun | None,
+        **kwargs: Any,
+    ) -> None:
+        """Async counterpart to `_replay_v2_events_for_cache_hit`."""
+        if run_manager is None or not self._should_stream_v2(
+            async_api=True, run_manager=run_manager, **kwargs
+        ):
+            return
+        message_id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+        for gen in generations:
+            msg = getattr(gen, "message", None)
+            if not isinstance(msg, AIMessage):
+                continue
+            async for event in amessage_to_events(msg, message_id=message_id):
+                await run_manager.on_stream_event(event)
 
     def _get_invocation_params(
         self,
@@ -972,6 +1530,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         messages_to_trace = [
             _format_for_tracing(message_list) for message_list in messages
@@ -1095,6 +1656,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
 
         messages_to_trace = [
@@ -1224,6 +1788,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
+                    self._replay_v2_events_for_cache_hit(
+                        converted_generations,
+                        run_manager=run_manager,
+                        **kwargs,
+                    )
                     return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
@@ -1237,9 +1806,39 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.rate_limiter:
             self.rate_limiter.acquire(blocking=True)
 
+        # v2 streaming: preferred over v1 when any attached handler opts in via
+        # `_V2StreamingCallbackHandler`. Drives the protocol event generator
+        # (native or `_stream` compat bridge) through the shared helper so
+        # `on_stream_event` fires per event, then returns a normal `ChatResult`
+        # so caching / `on_llm_end` stay on the existing generate path.
+        if self._should_stream_v2(
+            async_api=False,
+            run_manager=run_manager,
+            **kwargs,
+        ):
+            stream_accum = ChatModelStream(
+                message_id=(
+                    f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+                )
+            )
+            assert run_manager is not None  # noqa: S101
+            for _event in self._iter_v2_events(
+                messages,
+                run_manager=run_manager,
+                stream=stream_accum,
+                stop=stop,
+                **kwargs,
+            ):
+                pass
+            if stream_accum.output_message is None:
+                msg = "v2 stream finished without producing a message"
+                raise RuntimeError(msg)
+            result = ChatResult(
+                generations=[ChatGeneration(message=stream_accum.output_message)]
+            )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
-        if self._should_stream(
+        elif self._should_stream(
             async_api=False,
             run_manager=run_manager,
             **kwargs,
@@ -1350,6 +1949,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
+                    await self._areplay_v2_events_for_cache_hit(
+                        converted_generations,
+                        run_manager=run_manager,
+                        **kwargs,
+                    )
                     return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
@@ -1363,9 +1967,35 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
+        # v2 streaming: see sync counterpart in `_generate_with_cache`.
+        if self._should_stream_v2(
+            async_api=True,
+            run_manager=run_manager,
+            **kwargs,
+        ):
+            stream_accum = AsyncChatModelStream(
+                message_id=(
+                    f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+                )
+            )
+            assert run_manager is not None  # noqa: S101
+            async for _event in self._aiter_v2_events(
+                messages,
+                run_manager=run_manager,
+                stream=stream_accum,
+                stop=stop,
+                **kwargs,
+            ):
+                pass
+            if stream_accum.output_message is None:
+                msg = "v2 stream finished without producing a message"
+                raise RuntimeError(msg)
+            result = ChatResult(
+                generations=[ChatGeneration(message=stream_accum.output_message)]
+            )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
-        if self._should_stream(
+        elif self._should_stream(
             async_api=True,
             run_manager=run_manager,
             **kwargs,
