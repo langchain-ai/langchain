@@ -281,11 +281,13 @@ class AIMessage(BaseMessage):
                         "name": tool_call["name"],
                         "args": tool_call["args"],
                     }
-                    if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
-                    if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
-                    blocks.append(tool_call_block)
+                    tool_call_dict = cast("dict[str, Any]", tool_call_block)
+                    tool_call_as_dict = cast("dict[str, Any]", tool_call)
+                    if "index" in tool_call_as_dict:
+                        tool_call_dict["index"] = tool_call_as_dict["index"]
+                    if "extras" in tool_call_as_dict:
+                        tool_call_dict["extras"] = tool_call_as_dict["extras"]
+                    blocks.append(cast("types.ToolCall", tool_call_dict))
 
         # Best-effort reasoning extraction from additional_kwargs
         # Only add reasoning if not already present
@@ -582,7 +584,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
                     if "extras" in block:
                         # mypy does not account for instance check for dict above
-                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
+                        content_item = cast("dict[str, Any]", self.content[idx])
+                        content_item["extras"] = block["extras"]
 
         return self
 
@@ -609,8 +612,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     try:
                         args = json.loads(args_str)
                         if isinstance(args, dict):
-                            self.content[idx]["type"] = "server_tool_call"  # type: ignore[index]
-                            self.content[idx]["args"] = args  # type: ignore[index]
+                            content_item = cast("dict[str, Any]", self.content[idx])
+                            content_item["type"] = "server_tool_call"
+                            content_item["args"] = args
                     except json.JSONDecodeError:
                         pass
         return self
