@@ -103,6 +103,10 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.language_models.chat_model_stream import (
+        AsyncChatModelStream,
+        ChatModelStream,
+    )
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
@@ -1168,6 +1172,46 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """
         yield await self.ainvoke(input, config, **kwargs)
+
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> ChatModelStream:
+        """Stream content-block lifecycle events (v2 protocol).
+
+        Implemented by `BaseChatModel` (and forwarded by `RunnableBinding`).
+        Generic `Runnable`s don't participate in the v2 event protocol —
+        use `.stream()` instead.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `stream_v2`. "
+            "`stream_v2` is only implemented by chat models; use `.stream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
+
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> AsyncChatModelStream:
+        """Async variant of `stream_v2`. See that method.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `astream_v2`. "
+            "`astream_v2` is only implemented by chat models; use `.astream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
 
     @overload
     def astream_log(
@@ -5888,6 +5932,43 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             **{**self.kwargs, **kwargs},
         ):
             yield item
+
+    @override
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> ChatModelStream:
+        """Forward `stream_v2` to the bound runnable with bound kwargs merged.
+
+        Chat-model-specific: the bound runnable must implement `stream_v2`
+        (see `BaseChatModel`). Without this override, `__getattr__` would
+        forward the call but drop `self.kwargs` — losing tools bound via
+        `bind_tools`, `stop` sequences, etc.
+        """
+        return self.bound.stream_v2(
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
+
+    @override
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> AsyncChatModelStream:
+        """Forward `astream_v2` to the bound runnable with bound kwargs merged.
+
+        Async variant of `stream_v2`. See that method for the full rationale.
+        """
+        return await self.bound.astream_v2(
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
 
     @override
     async def astream_events(

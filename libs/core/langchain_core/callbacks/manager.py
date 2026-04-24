@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
     from uuid import UUID
 
+    from langchain_protocol.protocol import MessagesData
     from tenacity import RetryCallState
 
     from langchain_core.agents import AgentAction, AgentFinish
@@ -747,6 +748,26 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
+    def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        """Run on each protocol event from `stream_v2`.
+
+        Args:
+            event: The protocol event.
+            **kwargs: Additional keyword arguments.
+        """
+        if not self.handlers:
+            return
+        handle_event(
+            self.handlers,
+            "on_stream_event",
+            "ignore_llm",
+            event,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
 
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
@@ -843,6 +864,26 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_error",
             "ignore_llm",
             error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        """Run on each protocol event from `astream_v2`.
+
+        Args:
+            event: The protocol event.
+            **kwargs: Additional keyword arguments.
+        """
+        if not self.handlers:
+            return
+        await ahandle_event(
+            self.handlers,
+            "on_stream_event",
+            "ignore_llm",
+            event,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
