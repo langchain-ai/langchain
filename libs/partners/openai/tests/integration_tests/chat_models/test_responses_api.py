@@ -261,6 +261,7 @@ def test_agent_loop(output_version: Literal["responses/v1", "v1"]) -> None:
     ("output_version", "use_v2_stream"),
     [
         ("responses/v1", False),
+        ("responses/v1", True),
         ("v1", False),
         ("v1", True),
     ],
@@ -334,18 +335,18 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    tool_call_message = await (await llm_with_tools.astream_v2([input_message]))
+    stream = await llm_with_tools.astream_v2([input_message])
+    tool_call_message = await stream
     assert isinstance(tool_call_message, AIMessage)
     tool_calls = tool_call_message.tool_calls
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
-    response = await (
-        await llm_with_tools.astream_v2(
-            [input_message, tool_call_message, tool_message]
-        )
+    stream = await llm_with_tools.astream_v2(
+        [input_message, tool_call_message, tool_message]
     )
+    response = await stream
     assert isinstance(response, AIMessage)
 
 
