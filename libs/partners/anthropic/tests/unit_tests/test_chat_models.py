@@ -808,6 +808,32 @@ def test__format_tool_use_block() -> None:
     assert result == (None, [expected])
 
 
+def test__format_compaction_block() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "compaction",
+                "content": "summary text",
+                "cache_control": {"type": "ephemeral"},
+                "index": 0,
+                "signature": "stream-only-metadata",
+            }
+        ]
+    )
+    result = _format_messages([message])
+    expected = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "compaction",
+                "content": "summary text",
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+    }
+    assert result == (None, [expected])
+
+
 def test__format_messages_with_str_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]

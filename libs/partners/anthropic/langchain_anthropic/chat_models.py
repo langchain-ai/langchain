@@ -584,6 +584,14 @@ def _format_messages(
                                 if k in ("type", "cache_control", "data")
                             },
                         )
+                    elif block["type"] == "compaction":
+                        content.append(
+                            {
+                                k: v
+                                for k, v in block.items()
+                                if k in ("type", "content", "cache_control")
+                            },
+                        )
                     elif (
                         block["type"] == "tool_result"
                         and isinstance(block.get("content"), list)
