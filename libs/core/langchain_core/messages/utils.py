@@ -2247,12 +2247,24 @@ def count_tokens_approximately(
     last_ai_total_tokens: int | None = None
     approx_at_last_ai: float | None = None
 
-    # Count tokens for tools if provided
+    # Count tokens for tools if provided. For BaseTool instances we stash the
+    # JSON-serialized length on the tool under `_openai_function_chars` (paired
+    # with the `_openai_function_dict` schema cache) so successive calls don't
+    # re-run json.dumps over a dict that hasn't changed. `BaseTool.__setattr__`
+    # pops both keys when schema-affecting fields mutate, so dynamic tool
+    # re-registration or in-place edits invalidate this correctly.
     if tools:
         tools_chars = 0
         for tool in tools:
-            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
-            tools_chars += len(json.dumps(tool_dict))
+            if isinstance(tool, dict):
+                tools_chars += len(json.dumps(tool))
+                continue
+            cached_chars = tool.__dict__.get("_openai_function_chars")
+            if cached_chars is None:
+                tool_dict = convert_to_openai_tool(tool)
+                cached_chars = len(json.dumps(tool_dict))
+                tool.__dict__["_openai_function_chars"] = cached_chars
+            tools_chars += cached_chars
         token_count += math.ceil(tools_chars / chars_per_token)
 
     for message in converted_messages:
