@@ -10,6 +10,7 @@ import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -21,6 +22,7 @@ from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
@@ -288,6 +290,95 @@ def test__convert_dict_to_message_with_missing_content() -> None:
         response_metadata={"model_provider": "mistralai"},
     )
     assert result == expected_output
+
+
+def test__convert_dict_to_message_with_citations() -> None:
+    cited_text = "the temperature is 20 degrees C"
+    expected_citation = {
+        "type": "reference",
+        "reference_ids": [0],
+        "text": cited_text,
+    }
+    citation_content = [
+        {"type": "text", "text": "According to the document, "},
+        expected_citation,
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": citation_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    assert result.content == (
+        "According to the document, the temperature is 20 degrees C on average."
+    )
+    assert result.response_metadata["model_provider"] == "mistralai"
+    assert result.response_metadata["citations"] == [expected_citation]
+
+
+def test_create_chat_result_with_citations() -> None:
+    chat = ChatMistralAI()
+    expected_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": "The answer is "},
+                        expected_citation,
+                        {"type": "text", "text": "."},
+                    ],
+                },
+                "finish_reason": "stop",
+            }
+        ]
+    }
+
+    result = chat._create_chat_result(response)
+    message = result.generations[0].message
+
+    assert message.content == "The answer is 42."
+    assert message.response_metadata["citations"] == [expected_citation]
+
+
+def test__convert_chunk_to_message_chunk_with_citations() -> None:
+    expected_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [
+                        dict(expected_citation),
+                    ],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    assert isinstance(result_2, AIMessageChunk)
+    assert result_2.response_metadata["citations"] == [expected_citation]
+
+    full = result_1 + result_2
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["citations"] == [expected_citation]
+    assert full.response_metadata["finish_reason"] == "stop"
 
 
 def test_custom_token_counting() -> None:

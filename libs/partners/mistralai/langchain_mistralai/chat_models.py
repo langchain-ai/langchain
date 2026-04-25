@@ -141,6 +141,49 @@ def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
     return base62_str.rjust(9, "0")
 
 
+def _extract_mistral_citations(content: Any) -> list[dict[str, Any]]:
+    """Extract Mistral reference blocks from content."""
+    if not isinstance(content, list):
+        return []
+    return [
+        {key: value for key, value in block.items() if key != "index"}
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "reference"
+    ]
+
+
+def _normalize_mistral_assistant_content(
+    raw_content: Any,
+) -> tuple[str | list[str | dict], list[dict[str, Any]]]:
+    """Normalize Mistral assistant content and extract citation blocks."""
+    if not isinstance(raw_content, list):
+        return raw_content or "", []
+
+    citations = _extract_mistral_citations(raw_content)
+    if not citations:
+        return cast("list[str | dict]", raw_content), []
+
+    text_parts: list[str] = []
+    should_flatten = True
+    for block in raw_content:
+        if isinstance(block, str):
+            text_parts.append(block)
+        elif isinstance(block, dict):
+            if block.get("type") == "reference" or (
+                block.get("type") == "text" and set(block) <= {"type", "text"}
+            ):
+                text = block.get("text")
+                text_parts.append(text if isinstance(text, str) else str(text or ""))
+            else:
+                should_flatten = False
+        else:
+            should_flatten = False
+
+    if should_flatten:
+        return "".join(text_parts), citations
+    return cast("list[str | dict]", raw_content), citations
+
+
 def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
@@ -148,8 +191,12 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    # Mistral returns None for tool invocations
-    content = _message.get("content", "") or ""
+    # Mistral returns None for tool invocations. It can also return typed content
+    # blocks for citations; keep the answer text backward compatible and surface
+    # citation metadata separately.
+    content, citations = _normalize_mistral_assistant_content(
+        _message.get("content", "")
+    )
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -166,12 +213,15 @@ def _convert_mistral_chat_message_to_message(
                 tool_calls.append(parsed)
             except Exception as e:
                 invalid_tool_calls.append(make_invalid_tool_call(raw_tool_call, str(e)))
+    response_metadata: dict[str, Any] = {"model_provider": "mistralai"}
+    if citations:
+        response_metadata["citations"] = citations
     return AIMessage(
         content=content,
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
-        response_metadata={"model_provider": "mistralai"},
+        response_metadata=response_metadata,
     )
 
 
@@ -255,6 +305,7 @@ def _convert_chunk_to_message_chunk(
     content = _delta.get("content") or ""
     if output_version == "v1" and isinstance(content, str):
         content = [{"type": "text", "text": content}]
+    citations = _extract_mistral_citations(content)
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict):
@@ -273,7 +324,9 @@ def _convert_chunk_to_message_chunk(
         return HumanMessageChunk(content=content), index, index_type
     if role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: dict = {}
-        response_metadata = {}
+        response_metadata: dict[str, Any] = {}
+        if citations:
+            response_metadata["citations"] = citations
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
