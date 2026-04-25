@@ -470,7 +470,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     def _tokenize(
         self, texts: list[str], chunk_size: int
-    ) -> tuple[Iterable[int], list[list[int] | str], list[int], list[int]]:
+    ) -> tuple[Iterable[int], list[list[int] | str], list[int]]:
         """Tokenize and batch input texts.
 
         Splits texts based on `embedding_ctx_length` and groups them into batches
@@ -487,11 +487,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     HuggingFace).
                 3. An iterable mapping each token array to the index of the original
                     text. Same length as the token list.
-                4. A list of token counts for each tokenized text.
         """
         tokens: list[list[int] | str] = []
         indices: list[int] = []
-        token_counts: list[int] = []
         model_name = self.tiktoken_model_name or self.model
 
         # If tiktoken flag set to False
@@ -523,7 +521,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     chunk_text: str = tokenizer.decode(token_chunk)
                     tokens.append(chunk_text)
                     indices.append(i)
-                    token_counts.append(len(token_chunk))
         else:
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
@@ -553,7 +550,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 for j in range(0, len(token), self.embedding_ctx_length):
                     tokens.append(token[j : j + self.embedding_ctx_length])
                     indices.append(i)
-                    token_counts.append(len(token[j : j + self.embedding_ctx_length]))
 
         if self.show_progress_bar:
             try:
@@ -564,7 +560,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 _iter = range(0, len(tokens), chunk_size)
         else:
             _iter = range(0, len(tokens), chunk_size)
-        return _iter, tokens, indices, token_counts
+        return _iter, tokens, indices
 
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
@@ -592,35 +588,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices, token_counts = self._tokenize(texts, _chunk_size)
+        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-
-        # Process in batches respecting the token limit
-        i = 0
-        while i < len(tokens):
-            # Determine how many chunks we can include in this batch
-            batch_token_count = 0
-            batch_end = i
-
-            for j in range(i, min(i + _chunk_size, len(tokens))):
-                chunk_tokens = token_counts[j]
-                # Check if adding this chunk would exceed the limit
-                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
-                    if batch_end == i:
-                        # Single chunk exceeds limit - handle it anyway
-                        batch_end = j + 1
-                    break
-                batch_token_count += chunk_tokens
-                batch_end = j + 1
-
-            # Make API call with this batch
-            batch_tokens = tokens[i:batch_end]
-            response = self.client.create(input=batch_tokens, **client_kwargs)
+        for i in _iter:
+            response = self.client.create(
+                input=tokens[i : i + _chunk_size], **client_kwargs
+            )
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
-
-            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -664,39 +640,18 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
-        _iter, tokens, indices, token_counts = await run_in_executor(
+        _iter, tokens, indices = await run_in_executor(
             None, self._tokenize, texts, _chunk_size
         )
         batched_embeddings: list[list[float]] = []
-
-        # Process in batches respecting the token limit
-        i = 0
-        while i < len(tokens):
-            # Determine how many chunks we can include in this batch
-            batch_token_count = 0
-            batch_end = i
-
-            for j in range(i, min(i + _chunk_size, len(tokens))):
-                chunk_tokens = token_counts[j]
-                # Check if adding this chunk would exceed the limit
-                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
-                    if batch_end == i:
-                        # Single chunk exceeds limit - handle it anyway
-                        batch_end = j + 1
-                    break
-                batch_token_count += chunk_tokens
-                batch_end = j + 1
-
-            # Make API call with this batch
-            batch_tokens = tokens[i:batch_end]
+        for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
-                input=batch_tokens, **client_kwargs
+                input=tokens[i : i + _chunk_size], **client_kwargs
             )
+
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
-
-            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
