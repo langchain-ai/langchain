@@ -199,6 +199,9 @@ class EvaluatorCallbackHandler(BaseTracer):
                 source_info=source_info_,
                 source_run_id=res.source_run_id or source_run_id,
                 feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
+                # Forward feedback_config so any user-supplied configuration on the
+                # EvaluationResult is preserved instead of being silently dropped.
+                feedback_config=res.feedback_config,
             )
         return results
 
