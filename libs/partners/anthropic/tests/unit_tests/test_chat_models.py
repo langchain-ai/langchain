@@ -7,7 +7,7 @@ import os
 import warnings
 from collections.abc import Callable
 from typing import Any, Literal, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import anthropic
 import pytest
@@ -36,6 +36,19 @@ from langchain_anthropic.chat_models import (
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
+
+
+def _anthropic_text_message(text: str = "bar") -> Message:
+    return Message(
+        id="foo",
+        content=[TextBlock(type="text", text=text)],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
 
 
 def test_initialization() -> None:
@@ -230,6 +243,140 @@ def test__format_output() -> None:
     llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert actual.generations[0].message == expected
+
+
+def test__format_output_with_response_headers() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    actual = llm._format_output(
+        _anthropic_text_message(), response_headers={"request-id": "req_123"}
+    )
+    message = actual.generations[0].message
+
+    assert message.response_metadata["model_provider"] == "anthropic"
+    assert message.response_metadata["headers"]["request-id"] == "req_123"
+
+
+def test_chat_anthropic_invoke_without_response_headers() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+
+    with patch.object(llm, "_client") as mock_client:
+        mock_client.messages.create.return_value = _anthropic_text_message()
+        result = llm._generate([HumanMessage(content="foo")])
+
+    message = result.generations[0].message
+    assert "headers" not in message.response_metadata
+    assert mock_client.messages.create.called
+    assert not mock_client.messages.with_raw_response.create.called
+
+
+def test_chat_anthropic_invoke_with_response_headers() -> None:
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME, anthropic_api_key="test", include_response_headers=True
+    )
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = _anthropic_text_message()
+    mock_raw_response.headers = {"request-id": "req_123"}
+
+    with patch.object(llm, "_client") as mock_client:
+        mock_client.messages.with_raw_response.create.return_value = mock_raw_response
+        result = llm._generate([HumanMessage(content="foo")])
+
+    message = result.generations[0].message
+    assert message.response_metadata["model_provider"] == "anthropic"
+    assert message.response_metadata["headers"]["request-id"] == "req_123"
+    assert mock_client.messages.with_raw_response.create.called
+
+
+async def test_chat_anthropic_ainvoke_with_response_headers() -> None:
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME, anthropic_api_key="test", include_response_headers=True
+    )
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = _anthropic_text_message()
+    mock_raw_response.headers = {"request-id": "req_456"}
+
+    with patch.object(llm, "_async_client") as mock_client:
+        mock_client.messages.with_raw_response.create = AsyncMock(
+            return_value=mock_raw_response
+        )
+        result = await llm._agenerate([HumanMessage(content="foo")])
+
+    message = result.generations[0].message
+    assert message.response_metadata["model_provider"] == "anthropic"
+    assert message.response_metadata["headers"]["request-id"] == "req_456"
+    assert mock_client.messages.with_raw_response.create.called
+
+
+def _message_start_event() -> MagicMock:
+    event = MagicMock()
+    event.type = "message_start"
+    event.message.model = MODEL_NAME
+    return event
+
+
+def _text_delta_event(text: str) -> MagicMock:
+    event = MagicMock()
+    event.type = "content_block_delta"
+    event.index = 0
+    event.delta.type = "text_delta"
+    event.delta.text = text
+    return event
+
+
+class _AsyncStream:
+    def __init__(self, events: list[MagicMock]) -> None:
+        self.events = events
+
+    def __aiter__(self) -> _AsyncStream:
+        return self
+
+    async def __anext__(self) -> MagicMock:
+        if not self.events:
+            raise StopAsyncIteration
+        return self.events.pop(0)
+
+
+def test_chat_anthropic_stream_with_response_headers_on_first_chunk_only() -> None:
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME, anthropic_api_key="test", include_response_headers=True
+    )
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = [
+        _message_start_event(),
+        _text_delta_event("bar"),
+    ]
+    mock_raw_response.headers = {"request-id": "req_stream"}
+
+    with patch.object(llm, "_client") as mock_client:
+        mock_client.messages.with_raw_response.create.return_value = mock_raw_response
+        chunks = list(llm._stream([HumanMessage(content="foo")]))
+
+    assert chunks[0].message.response_metadata["model_provider"] == "anthropic"
+    assert chunks[0].message.response_metadata["headers"]["request-id"] == "req_stream"
+    assert "headers" not in chunks[1].message.response_metadata
+
+
+async def test_chat_anthropic_astream_with_response_headers_on_first_chunk_only() -> (
+    None
+):
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME, anthropic_api_key="test", include_response_headers=True
+    )
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.return_value = _AsyncStream(
+        [_message_start_event(), _text_delta_event("bar")]
+    )
+    mock_raw_response.headers = {"request-id": "req_astream"}
+
+    with patch.object(llm, "_async_client") as mock_client:
+        mock_client.messages.with_raw_response.create = AsyncMock(
+            return_value=mock_raw_response
+        )
+        chunks = [chunk async for chunk in llm._astream([HumanMessage(content="foo")])]
+
+    assert chunks[0].message.response_metadata["model_provider"] == "anthropic"
+    assert chunks[0].message.response_metadata["headers"]["request-id"] == "req_astream"
+    assert "headers" not in chunks[1].message.response_metadata
 
 
 def test__format_output_cached() -> None:
