@@ -155,7 +155,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
-    context continuity by ensuring AI/Tool message pairs remain together.
+    context continuity.
     """
 
     def __init__(
@@ -470,7 +470,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 return 0
             cutoff_candidate = len(messages) - 1
 
-        # Advance past any ToolMessages to avoid splitting AI/Tool pairs
+        # Ensure we don't split tool message sequences
         return self._find_safe_cutoff_point(messages, cutoff_candidate)
 
     def _get_profile_limits(self) -> int | None:
@@ -535,13 +535,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         return messages_to_summarize, preserved_messages
 
     def _find_safe_cutoff(self, messages: list[AnyMessage], messages_to_keep: int) -> int:
-        """Find safe cutoff point that preserves AI/Tool message pairs.
+        """Find safe cutoff point that doesn't break message flow.
 
-        Returns the index where messages can be safely cut without separating
-        related AI and Tool messages. Returns `0` if no safe cutoff is found.
-
-        This is aggressive with summarization - if the target cutoff lands in the
-        middle of tool messages, we advance past all of them (summarizing more).
+        Returns the index where messages can be safely cut. Returns `0` if no
+        safe cutoff is found.
         """
         if len(messages) <= messages_to_keep:
             return 0
@@ -551,39 +548,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     @staticmethod
     def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
-        """Find a safe cutoff point that doesn't split AI/Tool message pairs.
+        """Find a safe cutoff point that doesn't split message sequences.
 
-        If the message at `cutoff_index` is a `ToolMessage`, search backward for the
-        `AIMessage` containing the corresponding `tool_calls` and adjust the cutoff to
-        include it. This ensures tool call requests and responses stay together.
-
-        Falls back to advancing forward past `ToolMessage` objects only if no matching
-        `AIMessage` is found (edge case).
+        If the cutoff lands on a ToolMessage, we advance past all consecutive
+        ToolMessages to avoid leaving orphaned tool responses.
         """
-        if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
+        if cutoff_index >= len(messages):
             return cutoff_index
 
-        # Collect tool_call_ids from consecutive ToolMessages at/after cutoff
-        tool_call_ids: set[str] = set()
-        idx = cutoff_index
-        while idx < len(messages) and isinstance(messages[idx], ToolMessage):
-            tool_msg = cast("ToolMessage", messages[idx])
-            if tool_msg.tool_call_id:
-                tool_call_ids.add(tool_msg.tool_call_id)
-            idx += 1
+        # Skip past any tool messages at the cutoff point
+        while cutoff_index < len(messages) and isinstance(messages[cutoff_index], ToolMessage):
+            cutoff_index += 1
 
-        # Search backward for AIMessage with matching tool_calls
-        for i in range(cutoff_index - 1, -1, -1):
-            msg = messages[i]
-            if isinstance(msg, AIMessage) and msg.tool_calls:
-                ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
-                if tool_call_ids & ai_tool_call_ids:
-                    # Found the AIMessage - move cutoff to include it
-                    return i
-
-        # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
-        # orphaned tool responses
-        return idx
+        return cutoff_index
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
