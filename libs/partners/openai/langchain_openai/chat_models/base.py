@@ -742,13 +742,13 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     reasoning: dict[str, Any] | None = None
-    """Reasoning parameters for reasoning models.
+    """Reasoning parameters for reasoning models. None disables reasoning.
 
     For use with the Responses API.
 
     ```python
     reasoning={
-        "effort": "medium",  # Can be "low", "medium", or "high"
+        "effort": None,  # Default None; can be "low", "medium", or "high"
         "summary": "auto",  # Can be "auto", "concise", or "detailed"
     }
     ```
