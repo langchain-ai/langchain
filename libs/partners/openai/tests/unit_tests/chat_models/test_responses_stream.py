@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -760,6 +761,68 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         dumped = _strip_none(item.model_dump())
         _ = dumped.pop("status", None)
         assert dumped == payload["input"][idx]
+
+
+def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
+    """`stream_v2` must emit `content-block-finish` events for reasoning blocks.
+
+    Regression test: the protocol bridge should surface the full lifecycle
+    (`content-block-start` / `content-block-delta` / `content-block-finish`)
+    for every reasoning block observed on the wire, not just text blocks.
+    """
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        events = list(llm.stream_v2("test"))
+
+    assert_valid_event_stream(events)
+
+    reasoning_starts = [
+        e
+        for e in events
+        if e["event"] == "content-block-start"
+        and e["content_block"]["type"] == "reasoning"
+    ]
+    reasoning_finishes = [
+        e
+        for e in events
+        if e["event"] == "content-block-finish"
+        and e["content_block"]["type"] == "reasoning"
+    ]
+
+    # The mock stream carries four reasoning summary parts (two per reasoning
+    # item, across two reasoning items), which surface as four reasoning
+    # content blocks in `output_version="v1"`.
+    assert len(reasoning_starts) == 4, (
+        f"expected 4 reasoning start events, got {len(reasoning_starts)}"
+    )
+    all_finish_types = [
+        e["content_block"]["type"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
+    assert len(reasoning_finishes) == 4, (
+        f"expected 4 reasoning finish events, got {len(reasoning_finishes)}: "
+        f"all finish events = {all_finish_types}"
+    )
+
+    # Finish events must carry the accumulated reasoning text.
+    reasoning_texts = [
+        cast("dict[str, Any]", f["content_block"])["reasoning"]
+        for f in reasoning_finishes
+    ]
+    assert reasoning_texts == [
+        "reasoning block one",
+        "another reasoning block",
+        "more reasoning",
+        "still more reasoning",
+    ]
 
 
 def test_responses_stream_with_image_generation_multiple_calls() -> None:

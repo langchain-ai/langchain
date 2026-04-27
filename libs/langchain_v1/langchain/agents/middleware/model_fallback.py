@@ -29,7 +29,7 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     Example:
         ```python
-        from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+        from langchain.agents.middleware import ModelFallbackMiddleware
         from langchain.agents import create_agent
 
         fallback = ModelFallbackMiddleware(

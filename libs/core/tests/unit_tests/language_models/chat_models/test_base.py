@@ -12,6 +12,8 @@ from pydantic import model_validator
 from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -42,6 +44,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -460,6 +463,26 @@ async def test_streaming_attribute_overrides_streaming_callback() -> None:
     model = StreamingModel(streaming=False)
     assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+
+
+class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Minimal v2 handler marker for routing tests; records nothing."""
+
+
+async def test_streaming_attribute_overrides_v2_callback() -> None:
+    """`self.streaming=False` must opt out of the v2 event path too.
+
+    `_should_stream_v2` shares the `_streaming_disabled` opt-outs with
+    `_should_stream`, so an instance-level `streaming=False` takes
+    precedence over an attached `_V2StreamingCallbackHandler`.
+    """
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [_FakeV2Handler()]})
     ).content == "invoke"
 
 
@@ -1469,6 +1492,32 @@ class FakeChatModelWithInvocationParams(SimpleChatModel):
         return "test response"
 
 
+class FakeStreamingChatModelWithInvocationParams(FakeChatModelWithInvocationParams):
+    """Streaming counterpart for tracer metadata tests."""
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+    @override
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+
 def test_invocation_params_passed_to_tracer_metadata() -> None:
     """Test that invocation params are passed to tracer metadata."""
     llm = FakeChatModelWithInvocationParams()
@@ -1510,3 +1559,44 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
         "runtime": run.extra["runtime"],
     }
     assert run.metadata == run.extra["metadata"]
+
+
+def test_stream_v2_invocation_params_passed_to_tracer_metadata() -> None:
+    """`stream_v2()` must preserve filtered invocation params for tracing."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        _ = llm.stream_v2(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+        ).output
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7
+
+
+async def test_astream_v2_invocation_params_passed_to_tracer_metadata() -> None:
+    """`astream_v2()` must preserve filtered invocation params for tracing."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        stream = await llm.astream_v2(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+        )
+        _ = await stream
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7
