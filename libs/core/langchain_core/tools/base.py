@@ -1276,6 +1276,8 @@ def _format_output(
         return content
     if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
+    if isinstance(content, list) and not content:
+        content = ""
     if not _is_message_content_type(content):
         content = _stringify(content)
     return ToolMessage(

@@ -3716,12 +3716,13 @@ def test_format_output_list_with_non_mixin_element() -> None:
 
 
 def test_format_output_empty_list() -> None:
-    """An empty list falls through to stringify-and-wrap."""
+    """An empty list should be converted to empty string to avoid provider errors."""
     result = _format_output(
         [], artifact=None, tool_call_id="0", name="t", status="success"
     )
     assert isinstance(result, ToolMessage)
     assert result.tool_call_id == "0"
+    assert result.content == ""
 
 
 def test_tool_invoke_returns_list_of_mixin() -> None:
