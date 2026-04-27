@@ -1,5 +1,6 @@
 """Tests for the compat bridge (chunk-to-event conversion)."""
 
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -9,6 +10,7 @@ from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
     _to_protocol_usage,
+    achunks_to_events,
     amessage_to_events,
     chunks_to_events,
     message_to_events,
@@ -143,14 +145,14 @@ def test_chunks_to_events_empty_iterator() -> None:
     assert list(chunks_to_events(iter([]))) == []
 
 
-def test_chunks_to_events_block_transitions_close_previous_block() -> None:
+def test_chunks_to_events_block_transitions_keep_stable_indices() -> None:
     """String-keyed blocks that transition mid-stream each get their own lifecycle.
 
     Regression test for OpenAI `responses/v1` style streams where
     `content_blocks` uses string identifiers (e.g. `"lc_rs_305f30"`) to
     distinguish blocks. Each distinct block must get its own
     `content-block-start` / `content-block-finish` pair, with sequential
-    `uint` wire indices, and blocks must not interleave.
+    `uint` wire indices, and deltas keep that stable wire index.
     """
     chunks = [
         ChatGenerationChunk(
@@ -213,8 +215,8 @@ def test_chunks_to_events_block_transitions_close_previous_block() -> None:
     assert [s["index"] for s in starts] == [0, 1, 2]
     assert [f["index"] for f in finishes] == [0, 1, 2]
 
-    # Finish events must be interleaved with starts (no-interleave rule):
-    # block 0 finishes before block 1 starts, etc.
+    # Blocks are finalized at message end so providers can interleave
+    # deltas for parallel content blocks without closing them early.
     events_any: list[Any] = events
     lifecycle = [
         (e["event"], e["index"])
@@ -223,10 +225,10 @@ def test_chunks_to_events_block_transitions_close_previous_block() -> None:
     ]
     assert lifecycle == [
         ("content-block-start", 0),
-        ("content-block-finish", 0),
         ("content-block-start", 1),
-        ("content-block-finish", 1),
         ("content-block-start", 2),
+        ("content-block-finish", 0),
+        ("content-block-finish", 1),
         ("content-block-finish", 2),
     ]
 
@@ -295,6 +297,124 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     assert "finish_reason" not in (
         cast("MessageFinishData", events[-1]).get("metadata") or {}
     )
+
+
+def test_chunks_to_events_interleaved_parallel_tool_calls() -> None:
+    """Parallel tool-call chunks can interleave without losing block lifecycles."""
+    events = list(
+        chunks_to_events(
+            iter(_interleaved_parallel_tool_call_chunks()), message_id="msg-1"
+        )
+    )
+
+    _assert_interleaved_parallel_tool_call_events(events)
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_interleaved_parallel_tool_calls() -> None:
+    """Async bridge preserves lifecycles for interleaved parallel tool calls."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_interleaved_parallel_tool_call_chunks()),
+            message_id="msg-1",
+        )
+    ]
+
+    _assert_interleaved_parallel_tool_call_events(events)
+
+
+def _interleaved_parallel_tool_call_chunks() -> list[ChatGenerationChunk]:
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": "tc1",
+                        "name": "task",
+                        "args": '{"subagent_type": "haiku"',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": "tc2",
+                        "name": "task",
+                        "args": '{"subagent_type": "limerick"',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": None,
+                        "args": ', "description": "Write a haiku"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": None,
+                        "name": None,
+                        "args": ', "description": "Write a limerick"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+    ]
+
+
+async def _aiter_chunks(
+    chunks: list[ChatGenerationChunk],
+) -> AsyncIterator[ChatGenerationChunk]:
+    for chunk in chunks:
+        yield chunk
+
+
+def _assert_interleaved_parallel_tool_call_events(events: list[Any]) -> None:
+    assert_valid_event_stream(events)
+
+    starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
+    finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
+    assert [s["index"] for s in starts] == [0, 1]
+    assert [f["index"] for f in finishes] == [0, 1]
+
+    finalized = [cast("ToolCall", event["content_block"]) for event in finishes]
+    assert finalized[0]["id"] == "tc1"
+    assert finalized[0]["args"] == {
+        "subagent_type": "haiku",
+        "description": "Write a haiku",
+    }
+    assert finalized[1]["id"] == "tc2"
+    assert finalized[1]["args"] == {
+        "subagent_type": "limerick",
+        "description": "Write a limerick",
+    }
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
