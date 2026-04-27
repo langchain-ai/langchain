@@ -266,7 +266,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nfor ",
                 "\nwhile ",
                 "\nwhen ",
-                "\ncase ",
                 "\nelse ",
                 # Split by the normal type of lines
                 "\n\n",
@@ -463,7 +462,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nfor ",
                 "\nloop ",
                 "\nmatch ",
-                "\nconst ",
                 # Split by the normal type of lines
                 "\n\n",
                 "\n",
@@ -718,7 +716,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\ndata ",
                 "\nnewtype ",
                 "\ntype ",
-                "\n:: ",
                 # Split along module declarations
                 "\nmodule ",
                 # Split along import statements
@@ -733,7 +730,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along guards in function definitions
                 "\n| ",
                 # Split along record field declarations
-                "\ndata ",
                 "\n= {",
                 "\n, ",
                 # Split by the normal type of lines
