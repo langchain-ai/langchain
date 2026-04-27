@@ -1,11 +1,16 @@
 """Tests for Anthropic prompt caching middleware."""
 
+import sys
 import warnings
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain.agents.middleware.types import (
+    ExtendedModelResponse,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -572,3 +577,154 @@ class TestToolCaching:
             "type": "ephemeral",
             "ttl": "1h",
         }
+
+
+class FakeChatAnthropicBedrock(ChatAnthropic):
+    """Simulates ChatAnthropicBedrock from langchain-aws.
+
+    In the real package, ChatAnthropicBedrock inherits from ChatAnthropic, which
+    causes it to pass the isinstance(model, ChatAnthropic) check in
+    _should_apply_caching even though Bedrock does not support cache_control.
+    """
+
+
+def _make_bedrock_request(model: Any) -> ModelRequest:
+    return ModelRequest(
+        model=model,
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+
+class TestChatAnthropicBedrockCompatibility:
+    """Tests that AnthropicPromptCachingMiddleware correctly skips caching for
+    ChatAnthropicBedrock, which inherits from ChatAnthropic but uses AWS Bedrock
+    which does not support the cache_control field."""
+
+    def _run(
+        self,
+        request: ModelRequest,
+        middleware: AnthropicPromptCachingMiddleware,
+    ) -> tuple[ModelResponse | AIMessage | ExtendedModelResponse, ModelRequest | None]:
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        result = middleware.wrap_model_call(request, handler)
+        return result, captured
+
+    async def _arun(
+        self,
+        request: ModelRequest,
+        middleware: AnthropicPromptCachingMiddleware,
+    ) -> tuple[ModelResponse | AIMessage | ExtendedModelResponse, ModelRequest | None]:
+        captured: ModelRequest | None = None
+
+        async def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        result = await middleware.awrap_model_call(request, handler)
+        return result, captured
+
+    def _fake_aws_modules(self) -> dict[str, Any]:
+        fake_aws = MagicMock()
+        fake_aws.ChatAnthropicBedrock = FakeChatAnthropicBedrock
+        return {"langchain_aws": fake_aws}
+
+    def test_raises_for_bedrock_when_raise_behavior(self) -> None:
+        request = _make_bedrock_request(MagicMock(spec=FakeChatAnthropicBedrock))
+        middleware = AnthropicPromptCachingMiddleware(
+            unsupported_model_behavior="raise"
+        )
+
+        with (
+            patch.dict(sys.modules, self._fake_aws_modules()),
+            pytest.raises(ValueError, match="does not support ChatAnthropicBedrock"),
+        ):
+            self._run(request, middleware)
+
+    def test_warns_for_bedrock_when_warn_behavior(self) -> None:
+        request = _make_bedrock_request(MagicMock(spec=FakeChatAnthropicBedrock))
+        middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
+
+        with (
+            patch.dict(sys.modules, self._fake_aws_modules()),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            result, captured = self._run(request, middleware)
+
+        assert isinstance(result, ModelResponse)
+        assert len(w) == 1
+        assert "does not support ChatAnthropicBedrock" in str(w[-1].message)
+        assert captured is not None
+        assert captured.model_settings == {}
+
+    def test_silently_skips_caching_for_bedrock_when_ignore_behavior(self) -> None:
+        request = _make_bedrock_request(MagicMock(spec=FakeChatAnthropicBedrock))
+        middleware = AnthropicPromptCachingMiddleware(
+            unsupported_model_behavior="ignore"
+        )
+
+        with patch.dict(sys.modules, self._fake_aws_modules()):
+            result, captured = self._run(request, middleware)
+
+        assert isinstance(result, ModelResponse)
+        assert captured is not None
+        assert captured.model_settings == {}
+
+    def test_falls_through_to_normal_check_when_langchain_aws_not_installed(
+        self,
+    ) -> None:
+        """When langchain-aws is not installed the Bedrock check is skipped and the
+        normal ChatAnthropic isinstance check applies to the unsupported model."""
+        request = _make_bedrock_request(FakeToolCallingModel())
+        middleware = AnthropicPromptCachingMiddleware(
+            unsupported_model_behavior="raise"
+        )
+
+        with (
+            patch.dict(sys.modules, {"langchain_aws": None}),
+            pytest.raises(
+                ValueError,
+                match="only supports Anthropic models",
+            ),
+        ):
+            self._run(request, middleware)
+
+    async def test_async_raises_for_bedrock_when_raise_behavior(self) -> None:
+        request = _make_bedrock_request(MagicMock(spec=FakeChatAnthropicBedrock))
+        middleware = AnthropicPromptCachingMiddleware(
+            unsupported_model_behavior="raise"
+        )
+
+        with (
+            patch.dict(sys.modules, self._fake_aws_modules()),
+            pytest.raises(ValueError, match="does not support ChatAnthropicBedrock"),
+        ):
+            await self._arun(request, middleware)
+
+    async def test_async_silently_skips_caching_for_bedrock_when_ignore_behavior(
+        self,
+    ) -> None:
+        request = _make_bedrock_request(MagicMock(spec=FakeChatAnthropicBedrock))
+        middleware = AnthropicPromptCachingMiddleware(
+            unsupported_model_behavior="ignore"
+        )
+
+        with patch.dict(sys.modules, self._fake_aws_modules()):
+            result, captured = await self._arun(request, middleware)
+
+        assert isinstance(result, ModelResponse)
+        assert captured is not None
+        assert captured.model_settings == {}

@@ -98,6 +98,25 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         Raises:
             ValueError: If model is unsupported and behavior is set to `'raise'`.
         """
+        try:
+            from langchain_aws import (  # type: ignore[import-not-found]
+                ChatAnthropicBedrock,
+            )
+
+            if isinstance(request.model, ChatAnthropicBedrock):
+                msg = (
+                    "AnthropicPromptCachingMiddleware does not support "
+                    "ChatAnthropicBedrock: automatic caching is not available "
+                    "on Bedrock."
+                )
+                if self.unsupported_model_behavior == "raise":
+                    raise ValueError(msg)
+                if self.unsupported_model_behavior == "warn":
+                    warn(msg, stacklevel=3)
+                return False
+        except ImportError:
+            pass
+
         if not isinstance(request.model, ChatAnthropic):
             msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports "
