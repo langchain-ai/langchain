@@ -96,13 +96,15 @@ class ComparEdgeLoader(BaseLoader):
 
         description = product.get("description") or product.get("shortDescription")
         if description:
-            content_parts.append(f"\n{description}")
+            content_parts.append(f"
+{description}")
 
         pricing: dict = product.get("pricing") or {}
         plans: list = pricing.get("plans") or []
 
         if self.include_pricing and plans:
-            content_parts.append("\n## Pricing")
+            content_parts.append("
+## Pricing")
             for plan in plans:
                 name = plan.get("name", "Unknown")
                 price = plan.get("price")
@@ -115,7 +117,8 @@ class ComparEdgeLoader(BaseLoader):
         if self.include_features:
             features = product.get("features") or product.get("normalizedFeatures") or []
             if features:
-                content_parts.append("\n## Features")
+                content_parts.append("
+## Features")
                 for feat in features[:20]:
                     if isinstance(feat, str):
                         content_parts.append(f"- {feat}")
@@ -145,6 +148,7 @@ class ComparEdgeLoader(BaseLoader):
                 metadata["starting_price"] = min(paid)
 
         return Document(
-            page_content="\n".join(content_parts),
+            page_content="
+".join(content_parts),
             metadata=metadata,
         )
