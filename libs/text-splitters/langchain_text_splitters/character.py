@@ -440,7 +440,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along control flow statements
                 "\nif ",
                 "\nunless ",
-                "\nwhile ",
                 "\ncase ",
                 "\ncond ",
                 "\nwith ",
@@ -593,7 +592,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             return [
                 "\ninterface ",
                 "\nenum ",
-                "\nimplements ",
                 "\ndelegate ",
                 "\nevent ",
                 # Split along class definitions
