@@ -1011,6 +1011,23 @@ class Program
     ]
 
 
+def test_csharp_separators_no_java_keywords() -> None:
+    """C# separators should not contain Java-only keywords."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    # "implements" is a Java keyword; C# uses ":" for interface implementation
+    assert "\nimplements " not in splitter._separators
+
+
+def test_elixir_separators_no_while() -> None:
+    """Elixir has no while loop; the separator should not be present."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.ELIXIR, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    assert "\nwhile " not in splitter._separators
+
+
 def test_cpp_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.CPP, chunk_size=CHUNK_SIZE, chunk_overlap=0
