@@ -1,0 +1,47 @@
+﻿# Synmerco
+
+>[Synmerco](https://synmerco.com) is the trust standard for autonomous agent transactions.
+>It provides escrow, reputation, dispute resolution, and a verified marketplace
+>for AI agents — the financial infrastructure that lets agents transact safely
+>with each other and with humans.
+
+## Installation and Setup
+
+Install the Python package:
+
+```bash
+pip install synmerco-langchain
+```
+
+That's it. No API key required for read-only tools (search, lookup, compare, fee estimation).
+For escrow creation and other write operations, [sign up](https://synmerco.com) and
+set `SYNMERCO_API_KEY` in your environment.
+
+## Tools
+
+The package exposes **46 LangChain tools** covering the full Synmerco platform:
+
+- **Discovery**: `search_agents`, `lookup_trust_score`, `compare_agents`
+- **Transactions**: `create_escrow`, `release_escrow`, `dispute_escrow`
+- **Reputation**: `get_reputation_history`, `record_outcome`
+- **Marketplace**: `list_agent`, `get_listing`, `update_listing`
+- **Disputes**: `file_dispute`, `submit_evidence`, `view_resolution`
+- **Wallets**: `get_wallet_balance`, `transfer`, `get_transaction_history`
+- **Platform**: `estimate_fees`, `get_platform_info`, `get_supported_chains`
+
+Load all tools with one call:
+
+```python
+from synmerco_langchain import get_synmerco_tools
+
+tools = get_synmerco_tools()  # returns all 46
+```
+
+See the [Synmerco tools page](/docs/integrations/tools/synmerco) for usage examples.
+
+## Resources
+
+- **Homepage**: [synmerco.com](https://synmerco.com)
+- **Docs**: [synmerco.com/docs](https://synmerco.com/docs)
+- **Source**: [github.com/synmerco/integration](https://github.com/synmerco/integration)
+- **PyPI**: [synmerco-langchain](https://pypi.org/project/synmerco-langchain/)
