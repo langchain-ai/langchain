@@ -905,7 +905,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "last_updated": "2026-04-23",
         "open_weights": False,
         "max_input_tokens": 1050000,
-        "max_output_tokens": 130000,
+        "max_output_tokens": 128000,
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
