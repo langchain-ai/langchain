@@ -55,6 +55,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.config import set_config_context
 from langchain_core.runnables.utils import coro_with_context
 from langchain_core.utils.function_calling import (
+    _format_tool_to_openai_function,
     _parse_google_docstring,
     _py_38_safe_origin,
 )
@@ -562,6 +563,16 @@ class ChildTool(BaseTool):
             self.__dict__.pop("args", None)
             self.__dict__.pop("_openai_function_dict", None)
             self.__dict__.pop("_openai_function_chars", None)
+
+    @functools.cached_property
+    def _openai_function_dict(self) -> dict[str, Any]:
+        """OpenAI function description for this tool, cached per instance."""
+        return _format_tool_to_openai_function(self)
+
+    @functools.cached_property
+    def _openai_function_chars(self) -> int:
+        """JSON character count of the full OpenAI tool dict, cached per instance."""
+        return len(json.dumps({"type": "function", "function": self._openai_function_dict}))
 
     @property
     def is_single_input(self) -> bool:

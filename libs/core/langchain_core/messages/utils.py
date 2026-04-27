@@ -2247,24 +2247,19 @@ def count_tokens_approximately(
     last_ai_total_tokens: int | None = None
     approx_at_last_ai: float | None = None
 
-    # Count tokens for tools if provided. For BaseTool instances we stash the
-    # JSON-serialized length on the tool under `_openai_function_chars` (paired
-    # with the `_openai_function_dict` schema cache) so successive calls don't
-    # re-run json.dumps over a dict that hasn't changed. `BaseTool.__setattr__`
-    # pops both keys when schema-affecting fields mutate, so dynamic tool
-    # re-registration or in-place edits invalidate this correctly.
+    # Count tokens for tools if provided. For ChildTool instances the char count
+    # is served from _openai_function_chars (a cached_property invalidated by
+    # ChildTool.__setattr__ on schema-affecting field mutations). For plain dicts
+    # or other tool-like objects we fall back to a fresh json.dumps.
     if tools:
         tools_chars = 0
         for tool in tools:
             if isinstance(tool, dict):
                 tools_chars += len(json.dumps(tool))
-                continue
-            cached_chars = tool.__dict__.get("_openai_function_chars")
-            if cached_chars is None:
-                tool_dict = convert_to_openai_tool(tool)
-                cached_chars = len(json.dumps(tool_dict))
-                tool.__dict__["_openai_function_chars"] = cached_chars
-            tools_chars += cached_chars
+            elif hasattr(tool, "_openai_function_chars"):
+                tools_chars += tool._openai_function_chars
+            else:
+                tools_chars += len(json.dumps(convert_to_openai_tool(tool)))
         token_count += math.ceil(tools_chars / chars_per_token)
 
     for message in converted_messages:

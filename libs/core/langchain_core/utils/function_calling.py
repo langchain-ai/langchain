@@ -337,25 +337,17 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    # The result is cached on the tool instance under `_openai_function_dict`.
-    # `BaseTool.__setattr__` pops this key when `args_schema` / `description` /
-    # `name` are mutated (alongside the existing `tool_call_schema` and `args`
-    # caches), so the invalidation path is already wired up.
-    cached = tool.__dict__.get("_openai_function_dict")
-    if cached is not None:
-        return cached
-
     is_simple_oai_tool = (
         isinstance(tool, langchain_core.tools.simple.Tool) and not tool.args_schema
     )
     schema = tool.tool_call_schema
     if schema and not is_simple_oai_tool:
         if isinstance(schema, dict):
-            result = _convert_json_schema_to_openai_function(
+            return _convert_json_schema_to_openai_function(
                 schema, name=tool.name, description=tool.description
             )
         elif issubclass(schema, (BaseModel, BaseModelV1)):
-            result = _convert_pydantic_to_openai_function(
+            return _convert_pydantic_to_openai_function(
                 schema, name=tool.name, description=tool.description
             )
         else:
@@ -364,26 +356,22 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "Tool call schema must be a JSON schema dict or a Pydantic model."
             )
             raise ValueError(error_msg)
-    else:
-        result = {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": {
-                # This is a hack to get around the fact that some tools
-                # do not expose an args_schema, and expect an argument
-                # which is a string.
-                # And Open AI does not support an array type for the
-                # parameters.
-                "properties": {
-                    "__arg1": {"title": "__arg1", "type": "string"},
-                },
-                "required": ["__arg1"],
-                "type": "object",
+    return {
+        "name": tool.name,
+        "description": tool.description,
+        "parameters": {
+            # This is a hack to get around the fact that some tools
+            # do not expose an args_schema, and expect an argument
+            # which is a string.
+            # And Open AI does not support an array type for the
+            # parameters.
+            "properties": {
+                "__arg1": {"title": "__arg1", "type": "string"},
             },
-        }
-
-    tool.__dict__["_openai_function_dict"] = result
-    return result
+            "required": ["__arg1"],
+            "type": "object",
+        },
+    }
 
 
 def convert_to_openai_function(
@@ -457,7 +445,10 @@ def convert_to_openai_function(
             "dict", _convert_typed_dict_to_openai_function(cast("type", function))
         )
     elif isinstance(function, langchain_core.tools.base.BaseTool):
-        oai_function = cast("dict", _format_tool_to_openai_function(function))
+        # _openai_function_dict is a cached_property on ChildTool that calls
+        # _format_tool_to_openai_function; going through it here ensures the
+        # result is cached on the tool for the lifetime of the instance.
+        oai_function = cast("dict", function._openai_function_dict)  # type: ignore[attr-defined]
     elif callable(function):
         oai_function = cast(
             "dict", _convert_python_function_to_openai_function(function)
