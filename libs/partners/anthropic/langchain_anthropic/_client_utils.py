@@ -22,7 +22,7 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
+        if not hasattr(self, "_state") or self.is_closed:
             return
 
         try:
@@ -35,7 +35,7 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
+        if not hasattr(self, "_state") or self.is_closed:
             return
 
         try:
