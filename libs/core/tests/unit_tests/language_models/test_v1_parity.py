@@ -101,7 +101,14 @@ class _FakeStreamError(RuntimeError):
 
 
 def _collect_v1_message(model: BaseChatModel, input_text: str) -> AIMessage:
-    """Run model.stream() and merge chunks into a single AIMessage."""
+    """Run model.stream() (in v1 output mode) and merge chunks into an AIMessage.
+
+    `ChatModelStream.output` is always v1-shaped (content is a list of
+    protocol blocks when blocks arrived). The legacy stream path only
+    emits v1-shaped content when `output_version="v1"` is set on the
+    model, so force it here for a like-for-like parity comparison.
+    """
+    model.output_version = "v1"
     chunks: list[AIMessageChunk] = [
         chunk for chunk in model.stream(input_text) if isinstance(chunk, AIMessageChunk)
     ]
@@ -147,23 +154,39 @@ class TestV1ParityBasic:
         assert v2.id is not None
 
     def test_empty_response(self) -> None:
+        """A truly empty stream is an error, matching `stream()` parity.
+
+        `stream_v2` distinguishes "producer emitted events but no terminal
+        `message-finish`" (which is synthesized, for native-event providers
+        that omit it) from "producer emitted nothing at all" (which fails
+        with `ValueError`, same as `stream()`).
+        """
         model = FakeListChatModel(responses=[""])
         stream = model.stream_v2("test")
-        msg = stream.output
-        assert msg.content == ""
+        with pytest.raises(ValueError, match="No generation chunks"):
+            _ = stream.output
 
     def test_multi_character_response(self) -> None:
         text = "The quick brown fox"
         model = FakeListChatModel(responses=[text])
         v2 = _collect_v2_message(model, "test")
-        assert v2.content == text
+        assert isinstance(v2.content, list)
+        assert len(v2.content) == 1
+        text_block = v2.content[0]
+        assert isinstance(text_block, dict)
+        assert text_block["type"] == "text"
+        assert text_block["text"] == text
 
     def test_text_deltas_reconstruct_content(self) -> None:
         model = FakeListChatModel(responses=["Hello!"])
         stream = model.stream_v2("test")
 
         deltas = list(stream.text)
-        assert "".join(deltas) == stream.output.content
+        content = stream.output.content
+        assert isinstance(content, list)
+        first_block = content[0]
+        assert isinstance(first_block, dict)
+        assert "".join(deltas) == first_block["text"]
 
 
 class TestV1ParityToolCalls:
@@ -257,9 +280,10 @@ class TestV1ParityUsage:
         # Drain so usage is available
         for _ in stream.text:
             pass
-        assert stream.usage is not None
-        assert stream.usage["input_tokens"] == 10
-        assert stream.usage["output_tokens"] == 5
+        usage = stream.output.usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
 
 
 class TestV1ParityResponseMetadata:

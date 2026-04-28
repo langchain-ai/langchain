@@ -123,15 +123,25 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
+    ValidationError,
+    field_validator,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
 from langchain_openai.chat_models._client_utils import (
+    _astream_with_chunk_timeout,
+    _build_proxied_async_httpx_client,
+    _build_proxied_sync_httpx_client,
+    _float_env,
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _log_proxy_env_bypass_once,
+    _resolve_socket_options,
     _resolve_sync_and_async_api_keys,
+    _should_bypass_socket_options_for_proxy_env,
+    _warn_if_proxy_env_shadowed,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -552,6 +562,7 @@ _RESPONSES_API_ONLY_PREFIXES = (
     "gpt-5-pro",
     "gpt-5.2-pro",
     "gpt-5.4-pro",
+    "gpt-5.5-pro",
 )
 
 
@@ -731,13 +742,13 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     reasoning: dict[str, Any] | None = None
-    """Reasoning parameters for reasoning models.
+    """Reasoning parameters for reasoning models. None disables reasoning.
 
     For use with the Responses API.
 
     ```python
     reasoning={
-        "effort": "medium",  # Can be "low", "medium", or "high"
+        "effort": None,  # Default None; can be "low", "medium", or "high"
         "summary": "auto",  # Can be "auto", "concise", or "detailed"
     }
     ```
@@ -787,6 +798,113 @@ class BaseChatOpenAI(BaseChatModel):
 
     Only used for async invocations. Must specify `http_client` as well if you'd
     like a custom client for sync invocations.
+    """
+
+    http_socket_options: Sequence[tuple[int, int, int]] | None = Field(
+        default=None, exclude=True
+    )
+    """TCP socket options applied to the httpx transports built by this instance.
+
+    Defaults to a conservative TCP-keepalive + `TCP_USER_TIMEOUT` profile that
+    targets a ~2-minute bound on silent connection hangs (silent mid-stream peer
+    loss, gVisor/NAT idle timeouts, silent TCP black holes) on platforms that
+    support the full option set. On platforms that only support a subset
+    (macOS without `TCP_USER_TIMEOUT`, Windows with only `SO_KEEPALIVE`,
+    minimal kernels), unsupported options are silently dropped and the bound
+    degrades to whatever the remaining options + OS defaults provide — still
+    better than indefinite hang.
+
+    Accepted values:
+
+    - `None` (default): use env-driven defaults. Matches the "unset" convention
+        used by `http_client` elsewhere on this class.
+    - `()` (empty): disable socket-option injection entirely. Inherits the OS
+        defaults and restores httpx's native env-proxy auto-detection.
+    - A non-empty sequence of `(level, option, value)` tuples: explicit
+        override; passed verbatim to the transport (not filtered). Unsupported
+        options raise `OSError` at connect time rather than being silently
+        dropped — the user chose them explicitly.
+
+    Environment variables (only consulted when this field is `None`):
+    `LANGCHAIN_OPENAI_TCP_KEEPALIVE` (set to `0` to disable entirely — the
+    kill-switch), `LANGCHAIN_OPENAI_TCP_KEEPIDLE`,
+    `LANGCHAIN_OPENAI_TCP_KEEPINTVL`, `LANGCHAIN_OPENAI_TCP_KEEPCNT`,
+    `LANGCHAIN_OPENAI_TCP_USER_TIMEOUT_MS`.
+
+    Applied per side: if `http_client` is supplied, the sync path uses
+    that user-owned client's socket options as-is; the async path still
+    gets `http_socket_options` applied to its default builder (and
+    vice-versa for `http_async_client`). Supply both to take full control.
+
+    !!! note "Interaction with env-proxy auto-detection"
+
+        When a custom `httpx` transport is active, `httpx` disables its
+        native env-proxy auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` /
+        `ALL_PROXY` / `NO_PROXY` and macOS/Windows system proxy settings).
+
+        To keep the default shape safe, `ChatOpenAI` detects the
+        "proxy-env-shadow" pattern and **skips the custom transport
+        entirely** when **all** of the following hold:
+
+        - `http_socket_options` is left at its default (`None`)
+        - No `http_client` or `http_async_client` supplied
+        - No `openai_proxy` supplied
+        - A proxy env var or system proxy is visible to httpx
+
+        On that specific shape, the instance falls back to pre-PR behavior
+        and httpx's env-proxy auto-detection applies (a one-time `INFO` log
+        records the bypass for observability).
+
+        If you explicitly set `http_socket_options=[...]` while a proxy
+        env var is also set, no bypass — you opted into the transport, and
+        a one-time `WARNING` records the shadowing. Set
+        `http_socket_options=()` or `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` to
+        disable transport injection explicitly, or pass a fully-configured
+        `http_async_client` / `http_client` to take full control. The
+        `openai_proxy` constructor kwarg is unaffected — socket options
+        are applied cleanly through the proxied transport on that path.
+    """
+
+    stream_chunk_timeout: float | None = Field(
+        default_factory=lambda: _float_env(
+            "LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0
+        ),
+        exclude=True,
+    )
+    """Per-chunk wall-clock timeout (seconds) on async streaming responses.
+
+    Applies to async invocations only (`astream`, `ainvoke` with streaming,
+    etc.). Sync streaming (`stream`) is not affected.
+
+    Fires between content chunks yielded by the openai SDK's streaming iterator
+    (i.e., each call to `__anext__` on the response). Crucially, this is
+    **not** the same as httpx's `timeout.read`:
+
+    - httpx's read timeout is inter-byte and gets reset every time *any* bytes
+        arrive on the socket — including OpenAI's SSE keepalive comments
+        (`: keepalive`) that trickle down during long model generations. A
+        stream that's silent on *content* but still producing keepalives looks
+        alive forever to httpx.
+    - `stream_chunk_timeout` measures the gap between *parsed chunks*. The
+        openai SDK's SSE parser consumes keepalive comments internally and does
+        not emit them as chunks, so keepalives do *not* reset this timer. It
+        fires on genuine content silence.
+
+    When it fires, a `StreamChunkTimeoutError`
+    (subclass of `asyncio.TimeoutError`) is raised with a self-describing
+    message naming this knob, the env-var override, the model, and the
+    number of chunks received before the stall. A WARNING log with
+    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>,
+    "model_name": <value>, "chunks_received": <value>}` also fires so
+    aggregate logging can distinguish app-layer timeouts from
+    transport-layer failures.
+
+    Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var. Negative values
+    (from either the env var or the constructor kwarg — e.g., hydrated
+    from YAML/JSON configs) fall back to the default with a `WARNING` log
+    rather than silently disabling the wrapper, so a misconfigured value
+    still boots safely and the fallback is visible.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
@@ -952,6 +1070,27 @@ class BaseChatOpenAI(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @field_validator("stream_chunk_timeout", mode="after")
+    @classmethod
+    def _validate_stream_chunk_timeout(cls, value: float | None) -> float | None:
+        """Reject negative constructor values; fall back to the env-driven default.
+
+        Matches the env-var path in `_float_env`: a negative value is a typo,
+        not an opt-out (`None`/`0` are the documented off switches). Configs
+        hydrated from YAML/JSON would otherwise silently disable the wrapper
+        and reintroduce the indefinite-stream hang the feature prevents.
+        """
+        if value is not None and value < 0:
+            fallback = _float_env("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0)
+            logger.warning(
+                "Invalid `stream_chunk_timeout=%r` (negative); "
+                "falling back to %s. Pass `None` or `0` to disable.",
+                value,
+                fallback,
+            )
+            return fallback
+        return value
+
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
@@ -1054,6 +1193,23 @@ class BaseChatOpenAI(BaseChatModel):
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
             raise ValueError(msg)
+        if _should_bypass_socket_options_for_proxy_env(
+            http_socket_options=self.http_socket_options,
+            http_client=self.http_client,
+            http_async_client=self.http_async_client,
+            openai_proxy=self.openai_proxy,
+        ):
+            # Default-shape construction + proxy env var visible to httpx:
+            # skip the custom transport so httpx's env-proxy auto-detection
+            # still applies. Users who want kernel-level TCP tuning alongside
+            # an env proxy can opt in explicitly via `http_socket_options`.
+            resolved_socket_options: tuple[tuple[int, int, int], ...] = ()
+            _log_proxy_env_bypass_once()
+        else:
+            resolved_socket_options = _resolve_socket_options(self.http_socket_options)
+            _warn_if_proxy_env_shadowed(
+                resolved_socket_options, openai_proxy=self.openai_proxy
+            )
         if not self.client:
             if sync_api_key_value is None:
                 # No valid sync API key, leave client as None and raise informative
@@ -1062,21 +1218,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.root_client = None
             else:
                 if self.openai_proxy and not self.http_client:
-                    try:
-                        import httpx
-                    except ImportError as e:
-                        msg = (
-                            "Could not import httpx python package. "
-                            "Please install it with `pip install httpx`."
-                        )
-                        raise ImportError(msg) from e
-                    self.http_client = httpx.Client(
-                        proxy=self.openai_proxy, verify=global_ssl_context
+                    self.http_client = _build_proxied_sync_httpx_client(
+                        proxy=self.openai_proxy,
+                        verify=global_ssl_context,
+                        socket_options=resolved_socket_options,
                     )
                 sync_specific = {
                     "http_client": self.http_client
                     or _get_default_httpx_client(
-                        self.openai_api_base, self.request_timeout
+                        self.openai_api_base,
+                        self.request_timeout,
+                        resolved_socket_options,
                     ),
                     "api_key": sync_api_key_value,
                 }
@@ -1084,21 +1236,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.client = self.root_client.chat.completions
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
-                    )
-                    raise ImportError(msg) from e
-                self.http_async_client = httpx.AsyncClient(
-                    proxy=self.openai_proxy, verify=global_ssl_context
+                self.http_async_client = _build_proxied_async_httpx_client(
+                    proxy=self.openai_proxy,
+                    verify=global_ssl_context,
+                    socket_options=resolved_socket_options,
                 )
             async_specific = {
                 "http_client": self.http_async_client
                 or _get_default_async_httpx_client(
-                    self.openai_api_base, self.request_timeout
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
                 ),
                 "api_key": async_api_key_value,
             }
@@ -1332,7 +1480,11 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
-                async for chunk in response:
+                async for chunk in _astream_with_chunk_timeout(
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
+                ):
                     metadata = headers if is_first_chunk else {}
                     (
                         current_index,
@@ -1683,7 +1835,11 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
-                async for chunk in response:
+                async for chunk in _astream_with_chunk_timeout(
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
+                ):
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
                     generation_chunk = self._convert_chunk_to_generation_chunk(
@@ -4594,7 +4750,28 @@ def _coerce_chunk_response(resp: Any) -> Any:
     if isinstance(resp, dict):
         from openai.types.responses import Response
 
-        return Response.model_validate(resp)
+        # Known mismatch: API emits `prompt_cache_retention="in_memory"` while
+        # older `openai` packages declare only `"in-memory"` in the Literal
+        # (openai-python#2883). Pre-normalize so validation succeeds on
+        # currently-released SDK versions.
+        if resp.get("prompt_cache_retention") == "in_memory":
+            resp = {**resp, "prompt_cache_retention": "in-memory"}
+
+        try:
+            return Response.model_validate(resp)
+        except ValidationError as e:
+            # API sometimes drifts ahead of the installed SDK's Literal
+            # declarations. Fall back to a non-validating construct so streams
+            # still complete, and surface the drift so operators can upgrade.
+            logger.warning(
+                "OpenAI Responses payload failed SDK validation "
+                "(response id=%s); falling back to non-validating construct. "
+                "This usually means the OpenAI API has drifted ahead of the "
+                "installed `openai` package. Details: %s",
+                resp.get("id"),
+                e,
+            )
+            return Response.model_construct(**resp)
     return resp
 
 

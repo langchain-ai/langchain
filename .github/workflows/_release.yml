@@ -5,7 +5,20 @@
 # Handles version bumping, building, and publishing to PyPI with authentication.
 
 name: "🚀 Package Release"
-run-name: "Release ${{ inputs.working-directory-override || inputs.working-directory }} ${{ inputs.release-version }}"
+# Run title resolves dropdown values to the published package name (e.g.
+# `core` -> `langchain-core`, `openai` -> `langchain-openai`). Falls back to
+# the raw input for override and `workflow_call` cases, which already pass
+# a full path. Three dropdown values don't follow `langchain-{name}`:
+# `langchain` -> `langchain-classic`, `langchain_v1` -> `langchain`,
+# `standard-tests` -> `langchain-tests`.
+run-name: >-
+  Release ${{ inputs.working-directory-override ||
+  (startsWith(inputs.working-directory, 'libs/') && inputs.working-directory) ||
+  (inputs.working-directory == 'langchain' && 'langchain-classic') ||
+  (inputs.working-directory == 'langchain_v1' && 'langchain') ||
+  (inputs.working-directory == 'standard-tests' && 'langchain-tests') ||
+  format('langchain-{0}', inputs.working-directory) }} ${{
+  inputs.release-version }}
 on:
   workflow_call:
     inputs:
@@ -19,33 +32,38 @@ on:
         required: true
         type: choice
         description: "From which folder this pipeline executes"
-        default: "libs/langchain_v1"
+        default: "langchain_v1"
+        # Short names only — `EFFECTIVE_WORKING_DIR` below re-adds the `libs/`
+        # or `libs/partners/` prefix. When adding a new option, also update the
+        # non-partner allowlist in `EFFECTIVE_WORKING_DIR` if it isn't a partner
+        # package (partners are the default branch).
         options:
-          - libs/core
-          - libs/langchain
-          - libs/langchain_v1
-          - libs/text-splitters
-          - libs/standard-tests
-          - libs/model-profiles
-          - libs/partners/anthropic
-          - libs/partners/chroma
-          - libs/partners/deepseek
-          - libs/partners/exa
-          - libs/partners/fireworks
-          - libs/partners/groq
-          - libs/partners/huggingface
-          - libs/partners/mistralai
-          - libs/partners/nomic
-          - libs/partners/ollama
-          - libs/partners/openai
-          - libs/partners/openrouter
-          - libs/partners/perplexity
-          - libs/partners/qdrant
-          - libs/partners/xai
+          - core
+          - langchain
+          - langchain_v1
+          - text-splitters
+          - standard-tests
+          - model-profiles
+          - anthropic
+          - chroma
+          - deepseek
+          - exa
+          - fireworks
+          - groq
+          - huggingface
+          - mistralai
+          - nomic
+          - ollama
+          - openai
+          - openrouter
+          - perplexity
+          - qdrant
+          - xai
       working-directory-override:
         required: false
         type: string
-        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+        description: "Manual override — takes precedence over dropdown (e.g.
+          libs/partners/partner-xyz)"
       release-version:
         required: true
         type: string
@@ -61,7 +79,17 @@ env:
   PYTHON_VERSION: "3.11"
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
-  EFFECTIVE_WORKING_DIR: ${{ inputs.working-directory-override || inputs.working-directory }}
+  # Resolves to a full path. Accepts either:
+  #   - `working-directory-override` as a full path (e.g. `libs/partners/partner-xyz`)
+  #   - `working-directory` as a full path (from `workflow_call` callers)
+  #   - `working-directory` as a short dropdown name (from `workflow_dispatch`)
+  EFFECTIVE_WORKING_DIR: >-
+    ${{
+      inputs.working-directory-override
+      || (startsWith(inputs.working-directory, 'libs/') && inputs.working-directory)
+      || (contains(fromJSON('["core","langchain","langchain_v1","text-splitters","standard-tests","model-profiles"]'), inputs.working-directory) && format('libs/{0}', inputs.working-directory))
+      || format('libs/partners/{0}', inputs.working-directory)
+    }}
 
 permissions:
   contents: read # Job-level overrides grant write only where needed (mark-release)
@@ -70,6 +98,7 @@ jobs:
   # Build the distribution package and extract version info
   # Runs in isolated environment with minimal permissions for security
   build:
+    name: 📦 Build distribution
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
@@ -125,6 +154,7 @@ jobs:
               f.write(f"pkg-name={pkg_name}\n")
               f.write(f"version={version}\n")
   release-notes:
+    name: 📝 Generate release notes
     # release-notes must run before publishing because its check-tags step
     # validates version/tag state — do not remove this dependency.
     needs:
@@ -223,6 +253,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
+    name: 🧪 Publish to TestPyPI
     # release-notes must run before publishing because its check-tags step
     # validates version/tag state — do not remove this dependency.
     needs:
@@ -260,6 +291,7 @@ jobs:
           attestations: false
 
   pre-release-checks:
+    name: ✅ Pre-release checks
     needs:
       - build
       - release-notes
@@ -410,6 +442,7 @@ jobs:
   # Test select published packages against new core
   # Done when code changes are made to langchain-core
   test-prior-published-packages-against-new-core:
+    name: 🔄 Test prior partners against new core
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
     needs:
@@ -420,10 +453,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: false # temporarily skip
     strategy:
       matrix:
-        partner: [anthropic]
+        partner: [ anthropic ]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -500,7 +532,8 @@ jobs:
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
-    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
+    name: "🐍 Test dependent: ${{ matrix.package.path }} (Python ${{
+      matrix.python-version }})"
     needs:
       - build
       - release-notes
@@ -512,12 +545,13 @@ jobs:
     # Only run for core or langchain_v1 releases.
     # Job-level 'if' does not support env context; must use inputs directly.
     if: >-
-      startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/core')
-      || startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/langchain_v1')
+      startsWith(inputs.working-directory-override || inputs.working-directory,
+      'libs/core') || startsWith(inputs.working-directory-override ||
+      inputs.working-directory, 'libs/langchain_v1')
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.13"]
+        python-version: [ "3.11", "3.13" ]
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
@@ -562,6 +596,7 @@ jobs:
           make test
 
   publish:
+    name: 🚀 Publish to PyPI
     # Publishes the package to PyPI
     needs:
       - build
@@ -570,7 +605,7 @@ jobs:
       - pre-release-checks
       - test-dependents
       # - test-prior-published-packages-against-new-core
-    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+      # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
@@ -608,6 +643,7 @@ jobs:
           attestations: false
 
   mark-release:
+    name: 🏷️ Tag GitHub release
     # Marks the GitHub release with the new version tag
     needs:
       - build

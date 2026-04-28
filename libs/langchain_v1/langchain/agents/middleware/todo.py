@@ -174,7 +174,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
 
     Example:
         ```python
-        from langchain.agents.middleware.todo import TodoListMiddleware
+        from langchain.agents.middleware import TodoListMiddleware
         from langchain.agents import create_agent
 
         agent = create_agent("openai:gpt-4o", middleware=[TodoListMiddleware()])

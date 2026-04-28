@@ -1,6 +1,6 @@
 """Compat bridge: convert `AIMessageChunk` streams to protocol events.
 
-The bridge trusts :meth:`AIMessageChunk.content_blocks` as the single
+The bridge trusts `AIMessageChunk.content_blocks` as the single
 protocol view of any chunk.  That property runs the three-tier lookup
 (`output_version == "v1"` short-circuit, registered translator, or
 best-effort parsing) and returns a `list[ContentBlock]` for every
@@ -24,11 +24,11 @@ Lifecycle::
 
 Public API:
 
-- :func:`chunks_to_events` / :func:`achunks_to_events` — for live streams
-  where chunks arrive over time.
-- :func:`message_to_events` / :func:`amessage_to_events` — for replaying a
-  finalized :class:`AIMessage` (cache hit, checkpoint restore, graph-node
-  return value) as a synthetic event lifecycle.
+- `chunks_to_events` / `achunks_to_events` — for live streams where
+  chunks arrive over time.
+- `message_to_events` / `amessage_to_events` — for replaying a finalized
+  `AIMessage` (cache hit, checkpoint restore, graph-node return value)
+  as a synthetic event lifecycle.
 """
 
 from __future__ import annotations
@@ -42,18 +42,17 @@ from langchain_protocol.protocol import (
     ContentBlockFinishData,
     ContentBlockStartData,
     FinalizedContentBlock,
-    FinishReason,
-    InvalidToolCallBlock,
+    InvalidToolCall,
     MessageFinishData,
     MessageMetadata,
     MessagesData,
     MessageStartData,
-    ReasoningBlock,
-    ServerToolCallBlock,
-    ServerToolCallChunkBlock,
-    TextBlock,
-    ToolCallBlock,
-    ToolCallChunkBlock,
+    ReasoningContentBlock,
+    ServerToolCall,
+    ServerToolCallChunk,
+    TextContentBlock,
+    ToolCall,
+    ToolCallChunk,
     UsageInfo,
 )
 
@@ -70,12 +69,11 @@ CompatBlock = dict[str, Any]
 
 The bridge works with plain dicts internally because two separate but
 structurally similar `ContentBlock` Unions exist — one in
-:mod:`langchain_core.messages.content` (returned by
-`msg.content_blocks`), one in :mod:`langchain_protocol.protocol` (the
-wire/event shape).  They are not mypy-compatible despite being
-near-isomorphic.  Passing through `dict[str, Any]` launders between
-them.  See :func:`_to_protocol_block` for the single seam where the
-laundering cast lives.
+`langchain_core.messages.content` (returned by `msg.content_blocks`),
+one in `langchain_protocol.protocol` (the wire/event shape).  They are
+not mypy-compatible despite being near-isomorphic.  Passing through
+`dict[str, Any]` launders between them.  See `_to_protocol_block` for
+the single seam where the laundering cast lives.
 """
 
 
@@ -88,8 +86,8 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
     """Narrow an internal working dict to a protocol `ContentBlock`.
 
     Single seam between the two `ContentBlock` type systems:
-    :mod:`langchain_core.messages.content` (what `msg.content_blocks`
-    returns) and :mod:`langchain_protocol.protocol` (what event payloads
+    `langchain_core.messages.content` (what `msg.content_blocks`
+    returns) and `langchain_protocol.protocol` (what event payloads
     require).  The two Unions overlap structurally but are nominally
     distinct to mypy, so we launder through `dict[str, Any]`.  When the
     Unions are unified, this helper and its finalized counterpart can be
@@ -99,7 +97,7 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 
 
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
-    """Counterpart of :func:`_to_protocol_block` for finalized blocks."""
+    """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
 
 
@@ -118,7 +116,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     fallback.  Callers are responsible for allocating wire-level `uint`
     indices; this helper only surfaces the source-side identity.
 
-    For finalized :class:`AIMessage`, also surfaces `invalid_tool_calls`
+    For finalized `AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
 
@@ -191,18 +189,18 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextBlock(type="text", text="")
+        return TextContentBlock(type="text", text="")
     if btype == "reasoning":
-        return ReasoningBlock(type="reasoning", reasoning="")
+        return ReasoningContentBlock(type="reasoning", reasoning="")
     if btype == "tool_call_chunk":
-        skel = ToolCallChunkBlock(type="tool_call_chunk", args="")
-        if block.get("id") is not None:
-            skel["id"] = block["id"]
-        if block.get("name") is not None:
-            skel["name"] = block["name"]
-        return skel
+        return ToolCallChunk(
+            type="tool_call_chunk",
+            id=block.get("id"),
+            name=block.get("name"),
+            args="",
+        )
     if btype == "server_tool_call_chunk":
-        s_skel = ServerToolCallChunkBlock(
+        s_skel = ServerToolCallChunk(
             type="server_tool_call_chunk",
             args="",
         )
@@ -217,8 +215,6 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     # start event still validates against the CDDL shape of the block type.
     if btype in ("tool_call", "server_tool_call"):
         stripped["args"] = {}
-    elif btype == "server_tool_call_result":
-        stripped["output"] = None
     elif btype == "non_standard":
         stripped["value"] = {}
     return _to_protocol_block(stripped)
@@ -256,6 +252,16 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     dtype = delta.get("type")
     if btype == "text" and dtype == "text":
         state["text"] = state.get("text", "") + delta.get("text", "")
+        # Providers may send non-text fields (like `id`, or annotations)
+        # on later deltas. Merging (not replacing) keeps earlier keys
+        # intact while picking up these late-arriving fields.
+        for key, value in delta.items():
+            if key in ("type", "text") or value is None:
+                continue
+            if key == "extras" and isinstance(value, dict):
+                state["extras"] = {**(state.get("extras") or {}), **value}
+            else:
+                state[key] = value
     elif btype == "reasoning" and dtype == "reasoning":
         state["reasoning"] = state.get("reasoning", "") + delta.get("reasoning", "")
         # Providers may ship non-text fields on later deltas. Claude's
@@ -270,7 +276,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
             else:
                 state[key] = value
     elif btype in ("tool_call_chunk", "server_tool_call_chunk") and dtype == btype:
-        state["args"] = state.get("args", "") + (delta.get("args") or "")
+        state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
         if delta.get("id") is not None:
             state["id"] = delta["id"]
         if delta.get("name") is not None:
@@ -280,6 +286,71 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         state.clear()
         state.update(delta)
     return state
+
+
+def finalize_tool_call_chunk(
+    *,
+    raw_args: str | None,
+    id_: str | None,
+    name: str | None,
+    extras: dict[str, Any],
+    finalized_type: str,
+) -> FinalizedContentBlock:
+    """Parse accumulated tool-chunk args into a finalized block.
+
+    Shared between the compat bridge's `_finalize_block` and the
+    `ChatModelStream` end-of-stream sweep. Parses `raw_args` as JSON:
+    on success builds the requested finalized type (`tool_call` or
+    `server_tool_call`) with provider-specific fields (`extras`)
+    preserved; on failure falls back to `invalid_tool_call` carrying
+    the raw string so downstream consumers can still introspect the
+    malformed payload.
+
+    Args:
+        raw_args: Accumulated partial-JSON string; `None` or empty
+            treated as `{}`.
+        id_: Tool-call id collected across chunks.
+        name: Tool name collected across chunks.
+        extras: Provider-specific fields to carry onto the finalized
+            block. Callers are responsible for having already dropped
+            keys they don't want propagated (notably `type`, `id`,
+            `name`, `args`, and `index` on client-side `tool_call`).
+        finalized_type: `"tool_call"` or `"server_tool_call"`.
+
+    Returns:
+        A `ToolCall`, `ServerToolCall`, or `InvalidToolCall` — the
+        latter when `raw_args` is non-empty but not valid JSON.
+    """
+    raw = raw_args or "{}"
+    try:
+        parsed = json.loads(raw) if raw else {}
+    except (json.JSONDecodeError, TypeError):
+        invalid = InvalidToolCall(
+            type="invalid_tool_call",
+            id=id_,
+            name=name,
+            args=raw,
+            error="Failed to parse tool call arguments as JSON",
+        )
+        invalid.update(extras)  # type: ignore[typeddict-item]
+        return invalid
+    if finalized_type == "tool_call":
+        finalized_tc = ToolCall(
+            type="tool_call",
+            id=id_ or "",
+            name=name or "",
+            args=parsed,
+        )
+        finalized_tc.update(extras)  # type: ignore[typeddict-item]
+        return finalized_tc
+    finalized_stc = ServerToolCall(
+        type="server_tool_call",
+        id=id_ or "",
+        name=name or "",
+        args=parsed,
+    )
+    finalized_stc.update(extras)  # type: ignore[typeddict-item]
+    return finalized_stc
 
 
 def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
@@ -294,32 +365,28 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     """
     btype = block.get("type")
     if btype in ("tool_call_chunk", "server_tool_call_chunk"):
-        raw = block.get("args") or "{}"
-        try:
-            parsed = json.loads(raw) if raw else {}
-        except (json.JSONDecodeError, TypeError):
-            invalid = InvalidToolCallBlock(
-                type="invalid_tool_call",
-                args=raw,
-                error="Failed to parse tool call arguments as JSON",
-            )
-            if block.get("id") is not None:
-                invalid["id"] = block["id"]
-            if block.get("name") is not None:
-                invalid["name"] = block["name"]
-            return invalid
-        if btype == "tool_call_chunk":
-            return ToolCallBlock(
-                type="tool_call",
-                id=block.get("id", ""),
-                name=block.get("name", ""),
-                args=parsed,
-            )
-        return ServerToolCallBlock(
-            type="server_tool_call",
-            id=block.get("id", ""),
-            name=block.get("name", ""),
-            args=parsed,
+        # Carry provider-specific fields from the accumulated chunk onto
+        # the finalized block. Drop the chunk-only keys we rewrite
+        # explicitly. `index` is stripped on client-side
+        # `tool_call` / `invalid_tool_call` finalizations to match v1
+        # (`AIMessage.init_tool_calls` rebuilds tool_call blocks without
+        # `index`), preventing `merge_lists` from re-merging further
+        # chunks into an already-parsed args dict. `server_tool_call`
+        # retains `index` because v1's `init_server_tool_calls`
+        # finalizes in-place and preserves it.
+        client_tool_call = btype == "tool_call_chunk"
+        extras_drop = {"type", "id", "name", "args"}
+        if client_tool_call:
+            extras_drop = extras_drop | {"index"}
+        extras = {
+            k: v for k, v in block.items() if k not in extras_drop and v is not None
+        }
+        return finalize_tool_call_chunk(
+            raw_args=block.get("args"),
+            id_=block.get("id"),
+            name=block.get("name"),
+            extras=extras,
+            finalized_type="tool_call" if client_tool_call else "server_tool_call",
         )
     return _to_finalized_block(block)
 
@@ -337,17 +404,6 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     if "model_name" in response_metadata:
         metadata["model"] = response_metadata["model_name"]
     return metadata
-
-
-def _normalize_finish_reason(value: Any) -> FinishReason:
-    """Map provider-specific stop reasons to protocol finish reasons."""
-    if value == "length":
-        return "length"
-    if value == "content_filter":
-        return "content_filter"
-    if value in ("tool_use", "tool_calls"):
-        return "tool_use"
-    return "stop"
 
 
 def _accumulate_usage(
@@ -401,48 +457,32 @@ def _build_message_start(
 
 def _build_message_finish(
     *,
-    finish_reason: FinishReason,
-    has_valid_tool_call: bool,
     usage: dict[str, Any] | None,
     response_metadata: dict[str, Any] | None,
 ) -> MessageFinishData:
-    # Infer tool_use only from finalized (parsed) tool_calls.  An
-    # invalid_tool_call means parsing failed — the model didn't
-    # successfully request a tool, so leave finish_reason alone.
-    if finish_reason == "stop" and has_valid_tool_call:
-        finish_reason = "tool_use"
-    finish_data = MessageFinishData(event="message-finish", reason=finish_reason)
+    # Protocol 0.0.9 removed the top-level `reason` field from
+    # `MessageFinishData`; the provider's raw `finish_reason` /
+    # `stop_reason` now rides inside `metadata` alongside other
+    # response metadata. Pass it through unchanged.
+    finish_data = MessageFinishData(event="message-finish")
     usage_info = _to_protocol_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
-        metadata = {
-            k: v
-            for k, v in response_metadata.items()
-            if k not in ("finish_reason", "stop_reason")
-        }
-        if metadata:
-            finish_data["metadata"] = metadata
+        finish_data["metadata"] = dict(response_metadata)
     return finish_data
 
 
 def _finalize_and_build_finish(
     wire_idx: int,
     block: CompatBlock,
-) -> tuple[MessagesData, bool]:
-    """Finalize a block and wrap it in a `content-block-finish` event.
-
-    Returns the event plus a flag indicating whether the finalized block
-    was a valid `tool_call` (used for finish-reason inference).
-    """
-    finalized = _finalize_block(block)
-    has_valid_tool_call = finalized.get("type") == "tool_call"
-    event = ContentBlockFinishData(
+) -> MessagesData:
+    """Finalize a block and wrap it in a `content-block-finish` event."""
+    return ContentBlockFinishData(
         event="content-block-finish",
         index=wire_idx,
-        content_block=finalized,
+        content_block=_finalize_block(block),
     )
-    return event, has_valid_tool_call
 
 
 # ---------------------------------------------------------------------------
@@ -476,18 +516,29 @@ def chunks_to_events(
     open_block: CompatBlock | None = None
     open_wire_idx: int = 0
     next_wire_idx = 0
-    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     for chunk in chunks:
         msg = chunk.message
         if not isinstance(msg, AIMessageChunk):
             continue
 
-        if msg.response_metadata:
-            response_metadata.update(msg.response_metadata)
+        # The v1 `stream()` wrapper merges `generation_info` into
+        # `response_metadata` before yielding (`chat_models.py` via
+        # `_gen_info_and_msg_metadata`). We bypass that wrapper by reading
+        # `_stream` directly, so reproduce the merge here with the same
+        # priority: `generation_info` first, then `message.response_metadata`
+        # overlays. This is how provider fields like `model_name`,
+        # `system_fingerprint`, and `finish_reason` reach the bridge when
+        # a provider emits them via `generation_info` instead of the
+        # message's `response_metadata`.
+        merged_rm: dict[str, Any] = {
+            **(chunk.generation_info or {}),
+            **(msg.response_metadata or {}),
+        }
+        if merged_rm:
+            response_metadata.update(merged_rm)
 
         if not started:
             started = True
@@ -496,9 +547,7 @@ def chunks_to_events(
         for key, block in _iter_protocol_blocks(msg):
             if key != open_key:
                 if open_block is not None:
-                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-                    has_valid_tool_call = has_valid_tool_call or tc
-                    yield event
+                    yield _finalize_and_build_finish(open_wire_idx, open_block)
                 open_key = key
                 open_wire_idx = next_wire_idx
                 next_wire_idx += 1
@@ -520,22 +569,13 @@ def chunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
-
     if not started:
         return
 
     if open_block is not None:
-        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-        has_valid_tool_call = has_valid_tool_call or tc
-        yield event
+        yield _finalize_and_build_finish(open_wire_idx, open_block)
 
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -546,24 +586,29 @@ async def achunks_to_events(
     *,
     message_id: str | None = None,
 ) -> AsyncIterator[MessagesData]:
-    """Async variant of :func:`chunks_to_events`."""
+    """Async variant of `chunks_to_events`."""
     started = False
     open_key: Any = None
     open_block: CompatBlock | None = None
     open_wire_idx: int = 0
     next_wire_idx = 0
-    has_valid_tool_call = False
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
-    finish_reason: FinishReason = "stop"
 
     async for chunk in chunks:
         msg = chunk.message
         if not isinstance(msg, AIMessageChunk):
             continue
 
-        if msg.response_metadata:
-            response_metadata.update(msg.response_metadata)
+        # See sync twin for rationale: merge `generation_info` into the
+        # accumulated `response_metadata` with the same priority as the
+        # v1 `stream()` wrapper.
+        merged_rm: dict[str, Any] = {
+            **(chunk.generation_info or {}),
+            **(msg.response_metadata or {}),
+        }
+        if merged_rm:
+            response_metadata.update(merged_rm)
 
         if not started:
             started = True
@@ -572,9 +617,7 @@ async def achunks_to_events(
         for key, block in _iter_protocol_blocks(msg):
             if key != open_key:
                 if open_block is not None:
-                    event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-                    has_valid_tool_call = has_valid_tool_call or tc
-                    yield event
+                    yield _finalize_and_build_finish(open_wire_idx, open_block)
                 open_key = key
                 open_wire_idx = next_wire_idx
                 next_wire_idx += 1
@@ -596,22 +639,13 @@ async def achunks_to_events(
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
 
-        rm = msg.response_metadata or {}
-        raw_reason = rm.get("finish_reason") or rm.get("stop_reason")
-        if raw_reason:
-            finish_reason = _normalize_finish_reason(raw_reason)
-
     if not started:
         return
 
     if open_block is not None:
-        event, tc = _finalize_and_build_finish(open_wire_idx, open_block)
-        has_valid_tool_call = has_valid_tool_call or tc
-        yield event
+        yield _finalize_and_build_finish(open_wire_idx, open_block)
 
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=usage,
         response_metadata=response_metadata,
     )
@@ -644,7 +678,6 @@ def message_to_events(
     response_metadata = msg.response_metadata or {}
     yield _build_message_start(msg, message_id)
 
-    has_valid_tool_call = False
     for wire_idx, (_key, block) in enumerate(_iter_protocol_blocks(msg)):
         yield ContentBlockStartData(
             event="content-block-start",
@@ -657,24 +690,13 @@ def message_to_events(
                 index=wire_idx,
                 content_block=_to_protocol_block(block),
             )
-        finalized = _finalize_block(block)
-        if finalized.get("type") == "tool_call":
-            has_valid_tool_call = True
         yield ContentBlockFinishData(
             event="content-block-finish",
             index=wire_idx,
-            content_block=finalized,
+            content_block=_finalize_block(block),
         )
 
-    raw_reason = response_metadata.get("finish_reason") or response_metadata.get(
-        "stop_reason"
-    )
-    finish_reason: FinishReason = (
-        _normalize_finish_reason(raw_reason) if raw_reason else "stop"
-    )
     yield _build_message_finish(
-        finish_reason=finish_reason,
-        has_valid_tool_call=has_valid_tool_call,
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
     )
@@ -685,7 +707,7 @@ async def amessage_to_events(
     *,
     message_id: str | None = None,
 ) -> AsyncIterator[MessagesData]:
-    """Async variant of :func:`message_to_events`."""
+    """Async variant of `message_to_events`."""
     for event in message_to_events(msg, message_id=message_id):
         yield event
 
@@ -695,5 +717,6 @@ __all__ = [
     "achunks_to_events",
     "amessage_to_events",
     "chunks_to_events",
+    "finalize_tool_call_chunk",
     "message_to_events",
 ]

@@ -13,7 +13,6 @@ from langchain_core.language_models.chat_model_stream import (
     ChatModelStream,
     SyncProjection,
     SyncTextProjection,
-    dispatch_event,
 )
 
 if TYPE_CHECKING:
@@ -235,11 +234,10 @@ class TestAsyncProjection:
             stream._text_proj,
             stream._reasoning_proj,
             stream._tool_calls_proj,
-            stream._usage_proj,
             stream._output_proj,
             stream._events_proj,
         ):
-            assert cast("AsyncProjection", proj)._arequest_more is pump
+            assert proj._arequest_more is pump
 
     @pytest.mark.asyncio
     async def test_concurrent_text_and_output_share_pump(self) -> None:
@@ -268,7 +266,7 @@ class TestAsyncProjection:
                 "index": 0,
                 "content_block": {"type": "text", "text": "hello world"},
             },
-            {"event": "message-finish", "reason": "stop"},
+            {"event": "message-finish"},
         ]
         cursor = iter(events)
         pump_lock = asyncio.Lock()
@@ -290,7 +288,7 @@ class TestAsyncProjection:
 
         text, message = await asyncio.gather(drain_text(), stream.output)
         assert text == "hello world"
-        assert message.content == "hello world"
+        assert message.content == [{"type": "text", "text": "hello world", "index": 0}]
 
 
 # ---------------------------------------------------------------------------
@@ -299,7 +297,7 @@ class TestAsyncProjection:
 
 
 class TestChatModelStream:
-    """Test sync ChatModelStream with dispatch_event."""
+    """Test sync ChatModelStream via `stream.dispatch`."""
 
     def test_text_projection_cached(self) -> None:
         stream = ChatModelStream()
@@ -332,7 +330,7 @@ class TestChatModelStream:
                 "index": 0,
                 "content_block": {"type": "text", "text": "Hi there"},
             },
-            {"event": "message-finish", "reason": "stop"},
+            {"event": "message-finish"},
         ]
         idx = 0
 
@@ -340,7 +338,7 @@ class TestChatModelStream:
             nonlocal idx
             if idx >= len(events):
                 return False
-            dispatch_event(events[idx], stream)
+            stream.dispatch(events[idx])
             idx += 1
             return True
 
@@ -350,8 +348,8 @@ class TestChatModelStream:
 
     def test_tool_call_chunk_streaming(self) -> None:
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -362,11 +360,10 @@ class TestChatModelStream:
                     "args": '{"q":',
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event(
-            {
+        stream.dispatch(
+            {  # type: ignore[arg-type,misc]
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {
@@ -374,10 +371,9 @@ class TestChatModelStream:
                     "args": '"test"}',
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -387,10 +383,9 @@ class TestChatModelStream:
                     "name": "search",
                     "args": {"q": "test"},
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "tool_use"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         # Check chunk deltas were pushed
         chunks = list(stream.tool_calls)
@@ -406,9 +401,9 @@ class TestChatModelStream:
 
     def test_multi_tool_parallel(self) -> None:
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        stream.dispatch({"event": "message-start", "role": "ai"})
         # Tool 1 starts
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -419,11 +414,10 @@ class TestChatModelStream:
                     "args": '{"a":',
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
         # Tool 2 starts
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 1,
@@ -434,11 +428,10 @@ class TestChatModelStream:
                     "args": '{"b":',
                     "index": 1,
                 },
-            },
-            stream,
+            }
         )
         # Tool 1 finishes
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -448,11 +441,10 @@ class TestChatModelStream:
                     "name": "foo",
                     "args": {"a": 1},
                 },
-            },
-            stream,
+            }
         )
         # Tool 2 finishes
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 1,
@@ -462,10 +454,9 @@ class TestChatModelStream:
                     "name": "bar",
                     "args": {"b": 2},
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "tool_use"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         finalized = stream.tool_calls.get()
         assert len(finalized) == 2
@@ -474,41 +465,37 @@ class TestChatModelStream:
 
     def test_output_assembles_aimessage(self) -> None:
         stream = ChatModelStream(message_id="msg-1")
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "message-start",
                 "role": "ai",
                 "metadata": {"provider": "anthropic", "model": "claude-4"},
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {"type": "text", "text": "Hello"},
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
                 "content_block": {"type": "text", "text": "Hello"},
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "message-finish",
-                "reason": "stop",
+                "metadata": {"finish_reason": "stop"},
                 "usage": {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
-            },
-            stream,
+            }
         )
 
         msg = stream.output
-        assert msg.content == "Hello"
+        assert msg.content == [{"type": "text", "text": "Hello", "index": 0}]
         assert msg.id == "msg-1"
         assert msg.response_metadata["finish_reason"] == "stop"
         assert msg.response_metadata["model_provider"] == "anthropic"
@@ -517,13 +504,12 @@ class TestChatModelStream:
 
     def test_error_propagates_to_projections(self) -> None:
         stream = ChatModelStream()
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {"type": "text", "text": "partial"},
-            },
-            stream,
+            }
         )
         stream.fail(RuntimeError("connection lost"))
 
@@ -535,16 +521,15 @@ class TestChatModelStream:
 
     def test_raw_event_iteration(self) -> None:
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {"type": "text", "text": "hi"},
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         events = list(stream)
         assert len(events) == 3
@@ -553,16 +538,16 @@ class TestChatModelStream:
 
     def test_raw_event_multi_cursor(self) -> None:
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch({"event": "message-finish"})
 
         assert list(stream) == list(stream)  # Replay
 
     def test_invalid_tool_call_preserved_on_finish(self) -> None:
         """An `invalid_tool_call` finish lands on `invalid_tool_calls`."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -573,10 +558,9 @@ class TestChatModelStream:
                     "args": '{"q": ',  # malformed
                     "error": "Failed to parse tool call arguments as JSON",
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert msg.tool_calls == []
@@ -590,9 +574,9 @@ class TestChatModelStream:
     def test_invalid_tool_call_survives_sweep(self) -> None:
         """Regression: finish deletes stale chunk, sweep cannot revive it."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
+        stream.dispatch({"event": "message-start", "role": "ai"})
         # Stream a tool_call_chunk with malformed JSON args
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -603,11 +587,10 @@ class TestChatModelStream:
                     "args": '{"q": ',
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
         # Finish event declares the call invalid
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -618,10 +601,9 @@ class TestChatModelStream:
                     "args": '{"q": ',
                     "error": "Failed to parse tool call arguments as JSON",
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         # The sweep must NOT have revived the chunk as an empty-args tool_call.
@@ -631,24 +613,22 @@ class TestChatModelStream:
     def test_output_content_uses_protocol_tool_call_shape(self) -> None:
         """`.output.content` must emit `type: tool_call`, not legacy tool_use."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {"type": "text", "text": "Let me search."},
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
                 "content_block": {"type": "text", "text": "Let me search."},
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 1,
@@ -658,10 +638,9 @@ class TestChatModelStream:
                     "name": "search",
                     "args": {"q": "weather"},
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "tool_use"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -678,8 +657,8 @@ class TestChatModelStream:
     def test_server_tool_call_finish_lands_in_output_content(self) -> None:
         """Server-executed tool call finish events flow into .output.content."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -689,10 +668,9 @@ class TestChatModelStream:
                     "name": "web_search",
                     "args": {"q": "weather"},
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             cast(
                 "ContentBlockFinishData",
                 {
@@ -705,10 +683,9 @@ class TestChatModelStream:
                         "output": "62F, clear",
                     },
                 },
-            ),
-            stream,
+            )
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -721,8 +698,8 @@ class TestChatModelStream:
     def test_server_tool_call_chunk_sweep(self) -> None:
         """Unfinished server_tool_call_chunks get swept to server_tool_call."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -732,10 +709,9 @@ class TestChatModelStream:
                     "name": "web_search",
                     "args": '{"q":',
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -743,10 +719,9 @@ class TestChatModelStream:
                     "type": "server_tool_call_chunk",
                     "args": ' "weather"}',
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -758,8 +733,8 @@ class TestChatModelStream:
     def test_image_block_pass_through(self) -> None:
         """An image block finished via the event stream reaches .output.content."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -768,10 +743,9 @@ class TestChatModelStream:
                     "url": "https://example.com/cat.png",
                     "mime_type": "image/png",
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -779,6 +753,7 @@ class TestChatModelStream:
             "type": "image",
             "url": "https://example.com/cat.png",
             "mime_type": "image/png",
+            "index": 0,
         }
 
     def test_sweep_of_unfinished_malformed_chunk_produces_invalid_tool_call(
@@ -786,8 +761,8 @@ class TestChatModelStream:
     ) -> None:
         """Unfinished chunk with malformed JSON sweeps to invalid_tool_call."""
         stream = ChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -798,10 +773,9 @@ class TestChatModelStream:
                     "args": '{"q": ',  # malformed, never completed
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         msg = stream.output
         assert msg.tool_calls == []
@@ -826,16 +800,15 @@ class TestAsyncChatModelStream:
 
         async def produce() -> None:
             await asyncio.sleep(0)
-            dispatch_event({"event": "message-start", "role": "ai"}, stream)
-            dispatch_event(
+            stream.dispatch({"event": "message-start", "role": "ai"})
+            stream.dispatch(
                 {
                     "event": "content-block-delta",
                     "index": 0,
                     "content_block": {"type": "text", "text": "Hi"},
-                },
-                stream,
+                }
             )
-            dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         msg = await stream
@@ -847,27 +820,25 @@ class TestAsyncChatModelStream:
 
         async def produce() -> None:
             await asyncio.sleep(0)
-            dispatch_event({"event": "message-start", "role": "ai"}, stream)
+            stream.dispatch({"event": "message-start", "role": "ai"})
             await asyncio.sleep(0)
-            dispatch_event(
+            stream.dispatch(
                 {
                     "event": "content-block-delta",
                     "index": 0,
                     "content_block": {"type": "text", "text": "a"},
-                },
-                stream,
+                }
             )
             await asyncio.sleep(0)
-            dispatch_event(
+            stream.dispatch(
                 {
                     "event": "content-block-delta",
                     "index": 0,
                     "content_block": {"type": "text", "text": "b"},
-                },
-                stream,
+                }
             )
             await asyncio.sleep(0)
-            dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         deltas = [d async for d in stream.text]
@@ -876,8 +847,8 @@ class TestAsyncChatModelStream:
     @pytest.mark.asyncio
     async def test_await_tool_calls(self) -> None:
         stream = AsyncChatModelStream()
-        dispatch_event({"event": "message-start", "role": "ai"}, stream)
-        dispatch_event(
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
             {
                 "event": "content-block-delta",
                 "index": 0,
@@ -888,10 +859,9 @@ class TestAsyncChatModelStream:
                     "args": '{"q":"hi"}',
                     "index": 0,
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event(
+        stream.dispatch(
             {
                 "event": "content-block-finish",
                 "index": 0,
@@ -901,10 +871,9 @@ class TestAsyncChatModelStream:
                     "name": "search",
                     "args": {"q": "hi"},
                 },
-            },
-            stream,
+            }
         )
-        dispatch_event({"event": "message-finish", "reason": "tool_use"}, stream)
+        stream.dispatch({"event": "message-finish"})
 
         result = await stream.tool_calls
         assert len(result) == 1
@@ -916,9 +885,9 @@ class TestAsyncChatModelStream:
 
         async def produce() -> None:
             await asyncio.sleep(0)
-            dispatch_event({"event": "message-start", "role": "ai"}, stream)
+            stream.dispatch({"event": "message-start", "role": "ai"})
             await asyncio.sleep(0)
-            dispatch_event({"event": "message-finish", "reason": "stop"}, stream)
+            stream.dispatch({"event": "message-finish"})
 
         asyncio.get_running_loop().create_task(produce())
         events = [e async for e in stream]

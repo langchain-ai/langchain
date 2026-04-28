@@ -14,29 +14,33 @@ on:
         type: choice
         description: "Library to test (select from dropdown)"
         default: "all"
+        # Short names only — the `compute-matrix` job re-adds the `libs/` or
+        # `libs/partners/` prefix. When adding a new option, also update the
+        # `case` statement in `compute-matrix` if it isn't a partner package
+        # (partners are the default branch).
         options:
           - "all"
-          - "libs/core"
-          - "libs/langchain"
-          - "libs/langchain_v1"
-          - "libs/text-splitters"
-          - "libs/standard-tests"
-          - "libs/model-profiles"
-          - "libs/partners/anthropic"
-          - "libs/partners/chroma"
-          - "libs/partners/deepseek"
-          - "libs/partners/exa"
-          - "libs/partners/fireworks"
-          - "libs/partners/groq"
-          - "libs/partners/huggingface"
-          - "libs/partners/mistralai"
-          - "libs/partners/nomic"
-          - "libs/partners/ollama"
-          - "libs/partners/openai"
-          - "libs/partners/openrouter"
-          - "libs/partners/perplexity"
-          - "libs/partners/qdrant"
-          - "libs/partners/xai"
+          - "core"
+          - "langchain"
+          - "langchain_v1"
+          - "text-splitters"
+          - "standard-tests"
+          - "model-profiles"
+          - "anthropic"
+          - "chroma"
+          - "deepseek"
+          - "exa"
+          - "fireworks"
+          - "groq"
+          - "huggingface"
+          - "mistralai"
+          - "nomic"
+          - "ollama"
+          - "openai"
+          - "openrouter"
+          - "perplexity"
+          - "qdrant"
+          - "xai"
       working-directory-override:
         type: string
         description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
@@ -101,7 +105,15 @@ jobs:
           if [ -n "$WORKING_DIRECTORY_OVERRIDE" ]; then
             working_directory="[\"$WORKING_DIRECTORY_OVERRIDE\"]"
           elif [ "$WORKING_DIRECTORY_CHOICE" != "all" ]; then
-            working_directory="[\"$WORKING_DIRECTORY_CHOICE\"]"
+            # Map short dropdown name back to full path
+            case "$WORKING_DIRECTORY_CHOICE" in
+              core|langchain|langchain_v1|text-splitters|standard-tests|model-profiles)
+                working_directory="[\"libs/$WORKING_DIRECTORY_CHOICE\"]"
+                ;;
+              *)
+                working_directory="[\"libs/partners/$WORKING_DIRECTORY_CHOICE\"]"
+                ;;
+            esac
           fi
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo "$matrix"
@@ -164,15 +176,38 @@ jobs:
         # Partner packages use [tool.uv.sources] in their pyproject.toml to resolve
         # langchain-core/langchain to local editable installs, so `uv sync` automatically
         # tests against the versions from the current branch (not published releases).
-
-        # TODO: external google/aws don't have local resolution since they live in
-        # separate repos, so they pull `core`/`langchain_v1` from PyPI. We should update
-        # their dev groups to use git source dependencies pointing to the current
-        # branch's latest commit SHA to fully test against local langchain changes.
+        #
+        # External google/aws packages live in separate repos and don't declare
+        # [tool.uv.sources], so `uv sync` pulls langchain-* from PyPI. Overlay
+        # local editable installs after sync so integration tests exercise the
+        # current branch's langchain code. Matches the pattern used by the
+        # `test-dependents` job below for deepagents.
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
           uv sync --group test --group test_integration
+
+          case "${{ matrix.working-directory }}" in
+            libs/partners/google-genai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/google-vertexai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/aws)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests \
+                -e $GITHUB_WORKSPACE/langchain/libs/partners/anthropic
+              ;;
+          esac
 
       - name: "🚀 Run Integration Tests"
         # WARNING: All secrets below are available to every matrix job regardless of

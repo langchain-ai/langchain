@@ -13,12 +13,21 @@ from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
-from langchain_core.outputs import ChatGeneration
+from langchain_core.messages import AIMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_protocol.protocol import MessagesData
 
+    from langchain_core.callbacks import (
+        AsyncCallbackManagerForLLMRun,
+        CallbackManagerForLLMRun,
+    )
+    from langchain_core.messages import BaseMessage
     from langchain_core.outputs import LLMResult
 
 
@@ -39,7 +48,8 @@ class TestStreamV2Sync:
         stream = model.stream_v2("test")
 
         msg = stream.output
-        assert msg.content == "Hello!"
+        assert isinstance(msg.content, list)
+        assert msg.content == [{"type": "text", "text": "Hello!", "index": 0}]
         assert msg.id is not None
 
     def test_stream_usage_none_for_fake(self) -> None:
@@ -48,7 +58,7 @@ class TestStreamV2Sync:
         # Drain
         for _ in stream.text:
             pass
-        assert stream.usage is None
+        assert stream.output.usage_metadata is None
 
     def test_stream_raw_events(self) -> None:
         model = FakeListChatModel(responses=["ab"])
@@ -87,7 +97,7 @@ class TestAstreamV2:
         stream = await model.astream_v2("test")
 
         msg = await stream
-        assert msg.content == "Hey"
+        assert msg.content == [{"type": "text", "text": "Hey", "index": 0}]
 
 
 class _RecordingHandler(BaseCallbackHandler):
@@ -142,8 +152,60 @@ class _AsyncRecordingHandler(AsyncCallbackHandler):
         self.stream_events.append(event)
 
 
+class _EmptyStreamModel(BaseChatModel):
+    """Fake chat model whose stream producers yield no chunks."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "empty-stream-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        if False:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        if False:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+
+
 class TestCallbacks:
     """Verify stream_v2 fires on_llm_end / on_llm_error callbacks."""
+
+    def test_stream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+        handler = _RecordingHandler()
+        model = FakeListChatModel(responses=["done"], callbacks=[handler])
+
+        stream = model.stream_v2("test")
+
+        assert handler.events == []
+
+        _ = stream.output
+
+        assert handler.events[0] == "on_chat_model_start"
 
     def test_on_llm_end_fires_after_drain(self) -> None:
         handler = _RecordingHandler()
@@ -169,6 +231,19 @@ class TestCallbacks:
         assert "on_chat_model_start" in handler.events
         assert "on_llm_end" in handler.events
 
+    @pytest.mark.asyncio
+    async def test_astream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+        handler = _AsyncRecordingHandler()
+        model = FakeListChatModel(responses=["done"], callbacks=[handler])
+
+        stream = await model.astream_v2("test")
+
+        assert handler.events == []
+
+        _ = await stream
+
+        assert handler.events[0] == "on_chat_model_start"
+
     def test_on_llm_end_receives_assembled_message(self) -> None:
         """The LLMResult passed to on_llm_end must carry the final message.
 
@@ -184,7 +259,7 @@ class TestCallbacks:
         assert response.generations
         gen = response.generations[0][0]
         assert isinstance(gen, ChatGeneration)
-        assert gen.message.content == "hello"
+        assert gen.message.content == [{"type": "text", "text": "hello", "index": 0}]
 
     @pytest.mark.asyncio
     async def test_on_llm_end_receives_assembled_message_async(self) -> None:
@@ -198,7 +273,33 @@ class TestCallbacks:
         assert response.generations
         gen = response.generations[0][0]
         assert isinstance(gen, ChatGeneration)
-        assert gen.message.content == "hello"
+        assert gen.message.content == [{"type": "text", "text": "hello", "index": 0}]
+
+    def test_empty_stream_reports_error_without_finish_only_lifecycle(self) -> None:
+        handler = _RecordingHandler()
+        stream = _EmptyStreamModel(callbacks=[handler]).stream_v2("test")
+
+        with pytest.raises(ValueError, match="No generation chunks were returned"):
+            list(stream)
+
+        assert handler.stream_events == []
+        assert "on_llm_error" in handler.events
+        assert "on_llm_end" not in handler.events
+
+    @pytest.mark.asyncio
+    async def test_empty_astream_reports_error(self) -> None:
+        handler = _AsyncRecordingHandler()
+        stream = await _EmptyStreamModel(callbacks=[handler]).astream_v2("test")
+
+        with pytest.raises(ValueError, match="No generation chunks were returned"):
+            await stream
+        task = stream._producer_task
+        assert task is not None
+        await task
+
+        assert handler.stream_events == []
+        assert "on_llm_error" in handler.events
+        assert "on_llm_end" not in handler.events
 
 
 class TestOnStreamEvent:
@@ -257,6 +358,8 @@ class TestCancellation:
         """
         model = FakeListChatModel(responses=["abcdefghij"], sleep=0.05)
         stream = await model.astream_v2("test")
+        aiter_ = stream.text.__aiter__()
+        await aiter_.__anext__()
         task = stream._producer_task
         assert task is not None
 
@@ -311,7 +414,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-42")
 
-        stream = bound.stream_v2("test")  # type: ignore[attr-defined]
+        stream = bound.stream_v2("test")
         for _ in stream.text:
             pass
 
@@ -323,7 +426,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="from-bind")
 
-        stream = bound.stream_v2("test", my_marker="from-call")  # type: ignore[attr-defined]
+        stream = bound.stream_v2("test", my_marker="from-call")
         for _ in stream.text:
             pass
 
@@ -335,7 +438,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        stream = await bound.astream_v2("test")  # type: ignore[attr-defined]
+        stream = await bound.astream_v2("test")
         _ = await stream
 
         assert len(model.received_kwargs) == 1
