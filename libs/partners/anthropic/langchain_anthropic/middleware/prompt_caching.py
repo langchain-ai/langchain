@@ -14,10 +14,7 @@ from warnings import warn
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool
 
-from langchain_anthropic.chat_models import (
-    ChatAnthropic,
-    _is_direct_anthropic_llm_type,
-)
+from langchain_anthropic.chat_models import ChatAnthropic
 
 try:
     from langchain.agents.middleware.types import (
@@ -131,15 +128,14 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         overrides: dict[str, Any] = {}
         cache_control = self._cache_control
 
-        # Automatic caching (top-level `cache_control`) is only supported on the
-        # direct Anthropic API. Bedrock and Vertex variants reject the field, so
-        # rely on explicit breakpoints (system message + tools) for those.
-        # https://platform.claude.com/docs/en/build-with-claude/prompt-caching#edge-cases
-        if _supports_automatic_caching(request.model):
-            overrides["model_settings"] = {
-                **request.model_settings,
-                "cache_control": cache_control,
-            }
+        # Always set top-level `cache_control` on model settings. The Anthropic
+        # chat model translates the kwarg to the correct wire format for the
+        # active transport: direct API receives it as-is, while Bedrock has it
+        # expanded into a block-level breakpoint by `_get_request_payload`.
+        overrides["model_settings"] = {
+            **request.model_settings,
+            "cache_control": cache_control,
+        }
 
         system_message = _tag_system_message(request.system_message, cache_control)
         if system_message is not request.system_message:
@@ -188,25 +184,6 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             return await handler(request)
 
         return await handler(self._apply_caching(request))
-
-
-def _supports_automatic_caching(model: Any) -> bool:
-    """Check whether the model supports Anthropic's automatic caching feature.
-
-    Automatic caching (a top-level `cache_control` field on the request) is only
-    available on the direct Anthropic API. Any `ChatAnthropic` subclass that
-    reaches Claude through a different transport (e.g. Bedrock) overrides
-    `_llm_type` and is treated as unsupported by default. Treating non-direct
-    transports as unsupported by default avoids silently breaking future
-    subclasses.
-
-    Args:
-        model: The chat model attached to the request.
-
-    Returns:
-        `True` if the model is reached via the direct Anthropic API.
-    """
-    return _is_direct_anthropic_llm_type(getattr(model, "_llm_type", None))
 
 
 def _tag_system_message(
