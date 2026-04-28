@@ -1688,10 +1688,19 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
-        if stop is not None:
-            kwargs["stop"] = stop
-
         payload = {**self._default_params, **kwargs}
+
+        # Merge stop tokens from model_kwargs and runtime stop parameter
+        if stop is not None:
+            existing_stop = payload.get("stop")
+            if existing_stop is None:
+                payload["stop"] = stop
+            else:
+                if isinstance(existing_stop, str):
+                    existing_stop = [existing_stop]
+                if isinstance(stop, str):
+                    stop = [stop]
+                payload["stop"] = list(dict.fromkeys(existing_stop + stop))
 
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
