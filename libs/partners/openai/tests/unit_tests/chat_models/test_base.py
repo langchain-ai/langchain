@@ -69,6 +69,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_to_openai_response_format,
@@ -3776,3 +3777,112 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: reasoning_content round-trip for OpenAI-compatible providers
+# (e.g. DeepSeek thinking mode)
+#
+# DeepSeek returns `reasoning_content` alongside `content` in assistant
+# messages and requires it to be passed back verbatim on subsequent turns.
+# langchain-openai must preserve it through the full receive → send cycle.
+# Fixes: https://github.com/langchain-ai/langchain/issues/34166
+# ---------------------------------------------------------------------------
+
+DEEPSEEK_REASONING_STREAM_DATA = '{"id":"r1","choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning_content":"Let me"},"finish_reason":null}],"created":1,"model":"deepseek-chat","object":"chat.completion.chunk","usage":null}\n{"id":"r1","choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning_content":" think"},"finish_reason":null}],"created":1,"model":"deepseek-chat","object":"chat.completion.chunk","usage":null}\n{"id":"r1","choices":[{"index":0,"delta":{"role":"assistant","content":"42","reasoning_content":null},"finish_reason":null}],"created":1,"model":"deepseek-chat","object":"chat.completion.chunk","usage":null}\n{"id":"r1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"created":1,"model":"deepseek-chat","object":"chat.completion.chunk","usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}\n[DONE]'  # noqa: E501
+
+
+@pytest.fixture
+def mock_deepseek_reasoning_completion() -> list[dict]:
+    result_list = []
+    for line in DEEPSEEK_REASONING_STREAM_DATA.split("\n"):
+        if line != "[DONE]":
+            result_list.append(json.loads(line))
+    return result_list
+
+
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    """reasoning_content must be captured into AIMessage.additional_kwargs."""
+    message = {
+        "role": "assistant",
+        "content": "42",
+        "reasoning_content": "Let me think...",
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert result.content == "42"
+    assert result.additional_kwargs.get("reasoning_content") == "Let me think..."
+
+
+def test__convert_message_to_dict_ai_with_reasoning_content() -> None:
+    """reasoning_content stored in additional_kwargs must be re-emitted on send."""
+    ai_msg = AIMessage(
+        content="42",
+        additional_kwargs={"reasoning_content": "Let me think..."},
+    )
+    result = _convert_message_to_dict(ai_msg)
+    assert result["role"] == "assistant"
+    assert result["content"] == "42"
+    assert result.get("reasoning_content") == "Let me think..."
+
+
+def test__convert_dict_to_message_ai_roundtrip_with_reasoning_content() -> None:
+    """Full roundtrip: receive → AIMessage → send must preserve reasoning_content."""
+    incoming = {
+        "role": "assistant",
+        "content": "42",
+        "reasoning_content": "Let me think...",
+    }
+    ai_msg = _convert_dict_to_message(incoming)
+    outgoing = _convert_message_to_dict(ai_msg)
+    assert outgoing.get("reasoning_content") == "Let me think..."
+    assert outgoing["content"] == "42"
+
+
+def test__convert_delta_to_message_chunk_with_reasoning_content() -> None:
+    """reasoning_content in a streaming delta must appear in AIMessageChunk."""
+    delta = {"role": "assistant", "content": "", "reasoning_content": "Let me think"}
+    chunk = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.additional_kwargs.get("reasoning_content") == "Let me think"
+
+
+def test__convert_delta_reasoning_content_accumulates() -> None:
+    """Multiple reasoning_content chunks must concatenate on AIMessageChunk merge."""
+    delta1 = {"role": "assistant", "content": "", "reasoning_content": "Let me"}
+    delta2 = {"role": "assistant", "content": "", "reasoning_content": " think"}
+    delta3 = {"role": "assistant", "content": "42", "reasoning_content": None}
+
+    chunk1 = _convert_delta_to_message_chunk(delta1, AIMessageChunk)
+    chunk2 = _convert_delta_to_message_chunk(delta2, AIMessageChunk)
+    chunk3 = _convert_delta_to_message_chunk(delta3, AIMessageChunk)
+
+    merged = chunk1 + chunk2 + chunk3
+    assert merged.content == "42"
+    assert merged.additional_kwargs.get("reasoning_content") == "Let me think"
+
+
+def test_deepseek_reasoning_stream(
+    mock_deepseek_reasoning_completion: list,
+) -> None:
+    """Stream with reasoning_content: chunks captured, final message has it."""
+    llm = ChatOpenAI(model="deepseek-chat", api_key="fake")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_deepseek_reasoning_completion)
+
+    mock_client.create = mock_create
+
+    chunks: list[AIMessageChunk] = []
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("What is 6x7?"):
+            assert isinstance(chunk, AIMessageChunk)
+            chunks.append(chunk)
+
+    final = chunks[0]
+    for c in chunks[1:]:
+        final = final + c
+
+    assert final.content == "42"
+    assert final.additional_kwargs.get("reasoning_content") == "Let me think"
