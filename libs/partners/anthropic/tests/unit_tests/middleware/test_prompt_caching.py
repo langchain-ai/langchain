@@ -572,3 +572,95 @@ class TestToolCaching:
             "type": "ephemeral",
             "ttl": "1h",
         }
+
+
+class TestBedrockCompatibility:
+    """Bedrock and Vertex variants reject automatic caching (top-level
+    `cache_control`). The middleware should still apply explicit breakpoints to
+    system messages and tools, but skip the model-settings override.
+    """
+
+    def _bedrock_model(self) -> Any:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        mock_model._llm_type = "anthropic-bedrock-chat"
+        return mock_model
+
+    def _make_request(self, model: Any, **kwargs: Any) -> ModelRequest:
+        defaults: dict[str, Any] = {
+            "model": model,
+            "messages": [HumanMessage("Hello")],
+            "system_message": None,
+            "tool_choice": None,
+            "tools": [],
+            "response_format": None,
+            "state": {"messages": [HumanMessage("Hello")]},
+            "runtime": cast(Runtime, object()),
+            "model_settings": {},
+        }
+        defaults.update(kwargs)
+        return ModelRequest(**defaults)
+
+    def _capture(self, request: ModelRequest) -> ModelRequest:
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        return captured
+
+    def test_skips_automatic_caching_for_bedrock(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        captured = self._capture(request)
+        assert "cache_control" not in captured.model_settings
+
+    def test_still_tags_system_message_for_bedrock(self) -> None:
+        request = self._make_request(
+            self._bedrock_model(),
+            system_message=SystemMessage("Base prompt"),
+        )
+        captured = self._capture(request)
+        assert "cache_control" not in captured.model_settings
+        assert captured.system_message is not None
+        content = captured.system_message.content
+        assert isinstance(content, list)
+        assert content[-1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}  # type: ignore[index]
+
+    def test_still_tags_tools_for_bedrock(self) -> None:
+        @tool
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        request = self._make_request(self._bedrock_model(), tools=[my_tool])
+        captured = self._capture(request)
+        assert "cache_control" not in captured.model_settings
+        assert captured.tools is not None
+        last = captured.tools[-1]
+        assert isinstance(last, BaseTool)
+        assert last.extras is not None
+        assert last.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    def test_skips_automatic_caching_for_vertex(self) -> None:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        mock_model._llm_type = "anthropic-vertex-chat"
+        captured = self._capture(self._make_request(mock_model))
+        assert "cache_control" not in captured.model_settings
+
+    async def test_skips_automatic_caching_for_bedrock_async(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        async def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        await middleware.awrap_model_call(request, handler)
+        assert captured is not None
+        assert "cache_control" not in captured.model_settings
