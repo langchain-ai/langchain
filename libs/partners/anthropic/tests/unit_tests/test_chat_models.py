@@ -1723,6 +1723,214 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
+class _BedrockLikeAnthropic(ChatAnthropic):
+    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests.
+
+    Vertex is not modeled here: `langchain-google-vertexai`'s
+    `ChatAnthropicVertex` does not subclass `ChatAnthropic` and ships its own
+    `_get_request_payload`, so it never reaches the gate under test.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-bedrock-chat"
+
+
+def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
+    """Non-direct subclasses must place `cache_control` inside the last block.
+
+    Transports like Bedrock reject the top-level `cache_control` field, so
+    the kwarg has to be expanded into a nested breakpoint to remain effective.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+
+    assert "cache_control" not in payload
+    last_message = payload["messages"][-1]
+    assert last_message["content"] == [
+        {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+def test_cache_control_kwarg_bedrock_with_list_content() -> None:
+    """`cache_control` lands on the last block when content is already a list."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage([{"type": "text", "text": "foo"}])]
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "1h"}
+    )
+
+    assert "cache_control" not in payload
+    last_block = payload["messages"][-1]["content"][-1]
+    assert last_block["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+
+
+def test_cache_control_kwarg_bedrock_skips_code_execution_blocks() -> None:
+    """`cache_control` must skip `code_execution`-related blocks.
+
+    Anthropic rejects breakpoints applied to those blocks, so the injector
+    walks backwards until it finds an eligible block.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "earlier text"},
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "get_weather",
+                "input": {"location": "NYC"},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            },
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    last_content = payload["messages"][-1]["content"]
+    assert last_content[0]["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in last_content[1]
+
+
+def test_cache_control_kwarg_bedrock_walks_back_to_earlier_message() -> None:
+    """When the last message has no eligible blocks, walk back to a prior one.
+
+    Pins the contract that `reversed(formatted_messages)` is intentional: a
+    refactor that only inspects the last message would silently regress.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("earlier"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    first_message_content = payload["messages"][0]["content"]
+    assert first_message_content == [
+        {"type": "text", "text": "earlier", "cache_control": {"type": "ephemeral"}}
+    ]
+    last_message_content = payload["messages"][-1]["content"]
+    assert all("cache_control" not in block for block in last_message_content)
+
+
+def test_cache_control_kwarg_bedrock_no_eligible_block_warns() -> None:
+    """When every candidate is `code_execution`-related, warn and drop the kwarg.
+
+    Pins the silent-drop contract: payload remains valid for Anthropic, but
+    the caller is told their cache request was skipped.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    with pytest.warns(UserWarning, match="cache_control.*dropped"):
+        payload = llm._get_request_payload(
+            [ai_message],
+            cache_control={"type": "ephemeral"},
+        )
+
+    assert "cache_control" not in payload
+    only_block = payload["messages"][-1]["content"][0]
+    assert "cache_control" not in only_block
+
+
+def test_cache_control_absent_kwarg_bedrock_is_noop() -> None:
+    """Without a `cache_control` kwarg, the Bedrock branch must not mutate."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+
+    assert "cache_control" not in payload
+    for message in payload["messages"]:
+        content = message["content"]
+        if isinstance(content, list):
+            for block in content:
+                assert "cache_control" not in block
+
+
+def test_cache_control_kwarg_unknown_subclass_injects_into_blocks() -> None:
+    """Any subclass that overrides `_llm_type` is treated as non-direct.
+
+    The gate is allowlist-shaped on `"anthropic-chat"`, so a future subclass
+    routing through a new transport is safe by default rather than silently
+    sending an unsupported top-level field.
+    """
+
+    class _FutureTransportAnthropic(ChatAnthropic):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-some-future-transport"
+
+    llm = _FutureTransportAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload(
+        [HumanMessage("hello")],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert "cache_control" not in payload
+    assert payload["messages"][-1]["content"] == [
+        {"type": "text", "text": "hello", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("llm_type", "expected"),
+    [
+        ("anthropic-chat", True),
+        ("anthropic-bedrock-chat", False),
+        ("anthropic-chat-vertexai", False),
+        ("", False),
+        ("ANTHROPIC-CHAT", False),
+        (None, False),
+        (object(), False),
+    ],
+)
+def test_is_direct_anthropic_llm_type(llm_type: object, expected: bool) -> None:  # noqa: FBT001
+    """Predicate is exact-match and tolerates non-string inputs."""
+    from langchain_anthropic.chat_models import _is_direct_anthropic_llm_type
+
+    assert _is_direct_anthropic_llm_type(llm_type) is expected
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
