@@ -94,6 +94,7 @@ test_integration = [
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
+override-dependencies = ["langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -101,6 +102,7 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "nh/subgraph-transformer", subdirectory = "libs/langgraph" }
 
 [tool.ruff]
 line-length = 100

@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langgraph.config import emit_tool_output_delta
 from langgraph.stream import EventLog, StreamTransformer
 
 from langchain.agents import create_agent
+from langchain.tools import ToolRuntime
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
-    from langgraph.prebuilt import ToolCallStream
+    from langgraph.prebuilt._tool_call_stream import ToolCallStream
     from langgraph.stream._types import ProtocolEvent
 
 
@@ -25,18 +25,18 @@ def echo(text: str) -> str:
 
 
 @tool
-def streamer(text: str) -> str:
+def streamer(text: str, runtime: ToolRuntime) -> str:
     """Stream two chunks, then return the full text."""
     for chunk in ("one", "two"):
-        emit_tool_output_delta(chunk)
+        runtime.emit_output_delta(chunk)
     return text
 
 
 @tool
-async def astreamer(text: str) -> str:
+async def astreamer(text: str, runtime: ToolRuntime) -> str:
     """Async: stream two chunks, then return the full text."""
-    emit_tool_output_delta(text)
-    emit_tool_output_delta(text + "!")
+    runtime.emit_output_delta(text)
+    runtime.emit_output_delta(text + "!")
     return text
 
 
