@@ -688,6 +688,78 @@ def _format_messages(
     return system, formatted_messages
 
 
+def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
+    """Collect `tool_use` IDs that were called by `code_execution`.
+
+    These blocks cannot have `cache_control` applied per Anthropic API
+    requirements.
+    """
+    code_execution_tool_ids: set[str] = set()
+
+    for message in formatted_messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content", [])
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") != "tool_use":
+                continue
+            caller = block.get("caller")
+            if isinstance(caller, dict):
+                caller_type = caller.get("type", "")
+                if caller_type.startswith("code_execution"):
+                    tool_id = block.get("id")
+                    if tool_id:
+                        code_execution_tool_ids.add(tool_id)
+
+    return code_execution_tool_ids
+
+
+def _is_code_execution_related_block(
+    block: dict,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Return whether a content block is related to `code_execution`.
+
+    Returns `True` for blocks that should NOT have `cache_control` applied.
+    """
+    if not isinstance(block, dict):
+        return False
+
+    block_type = block.get("type")
+
+    if block_type == "tool_use":
+        caller = block.get("caller")
+        if isinstance(caller, dict):
+            caller_type = caller.get("type", "")
+            if caller_type.startswith("code_execution"):
+                return True
+
+    if block_type == "tool_result":
+        tool_use_id = block.get("tool_use_id")
+        if tool_use_id and tool_use_id in code_execution_tool_ids:
+            return True
+
+    return False
+
+
+def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
+    """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
+
+    Only the direct API accepts the top-level `cache_control` request param.
+    Subclasses that route through other transports (Bedrock, future backends)
+    override `_llm_type` and must expand `cache_control` kwargs into
+    block-level breakpoints instead.
+
+    Accepts `object` so misbehaving subclasses returning non-string
+    `_llm_type` values fall through the gate consistently rather than raising.
+    """
+    return llm_type == "anthropic-chat"
+
+
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
 
@@ -1092,6 +1164,53 @@ class ChatAnthropic(BaseChatModel):
                 )
 
         system, formatted_messages = _format_messages(messages)
+
+        # Only the direct Anthropic API accepts top-level `cache_control`.
+        # Subclasses that route through other transports (e.g. Bedrock) expand
+        # `cache_control` kwargs into block-level breakpoints, the only form
+        # those transports accept.
+        if not _is_direct_anthropic_llm_type(self._llm_type):
+            cache_control = kwargs.pop("cache_control", None)
+            if cache_control and formatted_messages:
+                code_execution_tool_ids = _collect_code_execution_tool_ids(
+                    formatted_messages
+                )
+                cache_applied = False
+                for formatted_message in reversed(formatted_messages):
+                    if cache_applied:
+                        break
+                    content = formatted_message.get("content")
+                    if isinstance(content, list) and content:
+                        for block in reversed(content):
+                            if isinstance(block, dict):
+                                if _is_code_execution_related_block(
+                                    block, code_execution_tool_ids
+                                ):
+                                    continue
+                                block["cache_control"] = cache_control
+                                cache_applied = True
+                                break
+                    elif isinstance(content, str):
+                        formatted_message["content"] = [
+                            {
+                                "type": "text",
+                                "text": content,
+                                "cache_control": cache_control,
+                            }
+                        ]
+                        cache_applied = True
+                if not cache_applied:
+                    # Anthropic rejects breakpoints on `code_execution` blocks,
+                    # so when nothing else is eligible the kwarg is dropped.
+                    # Warn so callers know caching was requested-but-skipped.
+                    warnings.warn(
+                        "`cache_control` kwarg was dropped: no eligible "
+                        "content block found (all candidates are "
+                        "`code_execution`-related, which Anthropic forbids "
+                        "breakpoints on).",
+                        UserWarning,
+                        stacklevel=2,
+                    )
 
         payload = {
             "model": self.model,

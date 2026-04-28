@@ -70,6 +70,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -155,6 +156,7 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -270,6 +272,7 @@ async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() ->
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Test with system prompt: 2 messages + 1 system = 3 total (meets minimum)
     fake_request = ModelRequest(
@@ -307,6 +310,7 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Single message should trigger caching with default settings
     fake_request = ModelRequest(

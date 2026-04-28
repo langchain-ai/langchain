@@ -14,7 +14,10 @@ from warnings import warn
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool
 
-from langchain_anthropic.chat_models import ChatAnthropic
+from langchain_anthropic.chat_models import (
+    ChatAnthropic,
+    _is_direct_anthropic_llm_type,
+)
 
 try:
     from langchain.agents.middleware.types import (
@@ -42,11 +45,11 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     Applies cache control breakpoints to:
 
     - **System message**: Tags the last content block of the system message
-      with `cache_control` so static system prompt content is cached.
+        with `cache_control` so static system prompt content is cached.
     - **Tools**: Tags all tool definitions with `cache_control` so tool
-      schemas are cached across turns.
+        schemas are cached across turns.
     - **Last cacheable block**: Tags last cacheable block of message sequence using
-      Anthropic's automatic caching feature.
+        Anthropic's automatic caching feature.
 
     Learn more about Anthropic prompt caching
     [here](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).
@@ -191,9 +194,10 @@ def _supports_automatic_caching(model: Any) -> bool:
     """Check whether the model supports Anthropic's automatic caching feature.
 
     Automatic caching (a top-level `cache_control` field on the request) is only
-    available on the direct Anthropic API. Subclasses backed by Bedrock or Vertex
-    reach Claude through different transports that reject the field. Detection
-    keys off `_llm_type` to avoid importing optional partner packages.
+    available on the direct Anthropic API. Any `ChatAnthropic` subclass that
+    reaches Claude through a different transport (e.g. Bedrock) overrides
+    `_llm_type` and is treated as unsupported by default — keeping this
+    allowlist-shaped avoids silently breaking future subclasses.
 
     Args:
         model: The chat model attached to the request.
@@ -201,10 +205,7 @@ def _supports_automatic_caching(model: Any) -> bool:
     Returns:
         `True` if the model is reached via the direct Anthropic API.
     """
-    llm_type = getattr(model, "_llm_type", "") or ""
-    if not isinstance(llm_type, str):
-        llm_type = str(llm_type)
-    return "bedrock" not in llm_type and "vertex" not in llm_type
+    return _is_direct_anthropic_llm_type(getattr(model, "_llm_type", None))
 
 
 def _tag_system_message(
