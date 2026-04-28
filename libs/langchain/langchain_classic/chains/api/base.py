@@ -247,16 +247,13 @@ try:
             """Check that allowed domains are valid."""
             # This check must be a pre=True check, so that a default of None
             # won't be set to limit_to_domains if it's not provided.
-            if "limit_to_domains" not in values:
+            if "limit_to_domains" not in values or values.get("limit_to_domains") is None:
                 msg = (
                     "You must specify a list of domains to limit access using "
                     "`limit_to_domains`"
                 )
                 raise ValueError(msg)
-            if (
-                not values["limit_to_domains"]
-                and values["limit_to_domains"] is not None
-            ):
+            if not values["limit_to_domains"]:
                 msg = (
                     "Please provide a list of domains to limit access using "
                     "`limit_to_domains`."

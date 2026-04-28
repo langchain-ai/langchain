@@ -27,7 +27,7 @@ def _empty_state() -> ShellToolState:
 
 def test_executes_command_and_persists_state(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
-    middleware = ShellToolMiddleware(workspace_root=workspace)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -49,7 +49,7 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
 
 
 def test_restart_resets_session_environment(tmp_path: Path) -> None:
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -109,7 +109,7 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
 
 def test_redaction_policy_applies(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace",
+        workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy(),
         redaction_rules=(RedactionRule(pii_type="email", strategy="redact"),),
     )
     runtime = Runtime()
@@ -133,7 +133,7 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
 def test_startup_and_shutdown_commands(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(
-        workspace_root=workspace,
+        workspace_root=workspace, execution_policy=HostExecutionPolicy(),
         startup_commands=("touch startup.txt",),
         shutdown_commands=("touch shutdown.txt",),
     )
@@ -198,19 +198,19 @@ def test_shell_tool_input_validation() -> None:
 def test_normalize_shell_command_empty() -> None:
     """Test that empty shell command raises an error."""
     with pytest.raises(ValueError, match="at least one argument"):
-        ShellToolMiddleware(shell_command=[])
+        ShellToolMiddleware(execution_policy=HostExecutionPolicy(), shell_command=[])
 
 
 def test_normalize_env_non_string_keys() -> None:
     """Test that non-string environment keys raise an error."""
     with pytest.raises(TypeError, match="must be strings"):
-        ShellToolMiddleware(env={123: "value"})  # type: ignore[dict-item]
+        ShellToolMiddleware(execution_policy=HostExecutionPolicy(), env={123: "value"})  # type: ignore[dict-item]
 
 
 def test_normalize_env_coercion(tmp_path: Path) -> None:
     """Test that environment values are coerced to strings."""
     middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace", env={"NUM": 42, "BOOL": True}
+        workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy(), env={"NUM": 42, "BOOL": True}
     )
     runtime = Runtime()
     state = _empty_state()
@@ -230,7 +230,7 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
 
 def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
     """Test that shell tool raises an error when command is not a string."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -254,7 +254,7 @@ def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
 
 def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
     """Test that tool messages are properly formatted with tool_call_id."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -278,7 +278,7 @@ def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
 
 def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
     """Test that non-zero exit codes are marked as errors."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -374,7 +374,7 @@ def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
 
 def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
     """Test that empty command output is replaced with '<no output>'."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -396,7 +396,7 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
 
 def test_stderr_output_labeling(tmp_path: Path) -> None:
     """Test that stderr output is properly labeled."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     runtime = Runtime()
     state = _empty_state()
     try:
@@ -430,14 +430,14 @@ def test_normalize_commands_string_tuple_list(
 ) -> None:
     """Test various command normalization formats."""
     middleware = ShellToolMiddleware(
-        workspace_root=tmp_path / "workspace", startup_commands=startup_commands
+        workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy(), startup_commands=startup_commands
     )
     assert middleware._startup_commands == expected
 
 
 async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
     """Test that async methods properly delegate to sync methods."""
-    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=HostExecutionPolicy())
     try:
         state = _empty_state()
 
@@ -463,7 +463,7 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
     5. The shell session is reused (not recreated)
     """
     workspace = tmp_path / "workspace"
-    middleware = ShellToolMiddleware(workspace_root=workspace)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())
 
     # Simulate first execution (before interrupt)
     runtime = Runtime()
@@ -510,7 +510,7 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
 def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     """Test that _get_or_create_resources creates resources when they don't exist."""
     workspace = tmp_path / "workspace"
-    middleware = ShellToolMiddleware(workspace_root=workspace)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())
 
     state = _empty_state()
 
@@ -531,7 +531,7 @@ def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
 def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
     """Test that _get_or_create_resources reuses existing resources."""
     workspace = tmp_path / "workspace"
-    middleware = ShellToolMiddleware(workspace_root=workspace)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())
 
     state = _empty_state()
 

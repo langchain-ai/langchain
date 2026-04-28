@@ -562,7 +562,11 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         if execution_policy is not None:
             self._execution_policy = execution_policy
         else:
-            self._execution_policy = HostExecutionPolicy()
+            msg = (
+                "ShellToolMiddleware requires an explicit execution_policy. "
+                "Use HostExecutionPolicy() only if you fully trust the agent environment."
+            )
+            raise ValueError(msg)
         rules = redaction_rules or ()
         self._redaction_rules: tuple[ResolvedRedactionRule, ...] = tuple(
             rule.resolve() for rule in rules

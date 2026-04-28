@@ -310,6 +310,7 @@ class Reviver:
         *,
         ignore_unserializable_fields: bool = False,
         init_validator: InitValidator | None = default_init_validator,
+        secrets_from_env_allowlist: Iterable[str] | None = None,
     ) -> None:
         """Initialize the reviver.
 
@@ -336,6 +337,13 @@ class Reviver:
                 its `secret` fields, so enabling this on untrusted data can leak
                 sensitive values. Keep this `False` (the default) unless the
                 serialized data is fully trusted.
+            secrets_from_env_allowlist: Optional allowlist of environment variable
+                names that may be loaded when `secrets_from_env` is `True`.
+
+                If provided, only secrets whose names are in this allowlist will
+                be read from the environment. This limits the blast radius of
+                crafted payloads. Use this instead of unrestricted
+                `secrets_from_env=True`.
             additional_import_mappings: A dictionary of additional namespace mappings.
 
                 You can use this to override default mappings or add new mappings.
@@ -354,6 +362,9 @@ class Reviver:
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
+        self.secrets_from_env_allowlist = (
+            set(secrets_from_env_allowlist) if secrets_from_env_allowlist else None
+        )
         # By default, only support langchain, but user can pass in additional namespaces
         self.valid_namespaces = (
             [*DEFAULT_NAMESPACES, *valid_namespaces]
@@ -415,6 +426,11 @@ class Reviver:
             if key in self.secrets_map:
                 return self.secrets_map[key]
             if self.secrets_from_env and key in os.environ and os.environ[key]:
+                if (
+                    self.secrets_from_env_allowlist is not None
+                    and key not in self.secrets_from_env_allowlist
+                ):
+                    return None
                 return os.environ[key]
             return None
 
@@ -519,6 +535,7 @@ def loads(
     additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
     init_validator: InitValidator | None = default_init_validator,
+    secrets_from_env_allowlist: Iterable[str] | None = None,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
 
@@ -562,6 +579,8 @@ def loads(
             `secret` fields, so enabling this on untrusted data can leak
             sensitive values. Keep this `False` (the default) unless the
             serialized data is fully trusted.
+        secrets_from_env_allowlist: Optional allowlist of environment variable
+            names that may be loaded when `secrets_from_env` is `True`.
         additional_import_mappings: A dictionary of additional namespace mappings.
 
             You can use this to override default mappings or add new mappings.
@@ -595,6 +614,7 @@ def loads(
         additional_import_mappings=additional_import_mappings,
         ignore_unserializable_fields=ignore_unserializable_fields,
         init_validator=init_validator,
+        secrets_from_env_allowlist=secrets_from_env_allowlist,
     )
 
 
@@ -609,6 +629,7 @@ def load(
     additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
     init_validator: InitValidator | None = default_init_validator,
+    secrets_from_env_allowlist: Iterable[str] | None = None,
 ) -> Any:
     """Revive a LangChain class from a JSON object.
 
@@ -654,6 +675,8 @@ def load(
             `secret` fields, so enabling this on untrusted data can leak
             sensitive values. Keep this `False` (the default) unless the
             serialized data is fully trusted.
+        secrets_from_env_allowlist: Optional allowlist of environment variable
+            names that may be loaded when `secrets_from_env` is `True`.
         additional_import_mappings: A dictionary of additional namespace mappings.
 
             You can use this to override default mappings or add new mappings.
@@ -707,6 +730,7 @@ def load(
         additional_import_mappings,
         ignore_unserializable_fields=ignore_unserializable_fields,
         init_validator=init_validator,
+        secrets_from_env_allowlist=secrets_from_env_allowlist,
     )
 
     def _load(obj: Any) -> Any:

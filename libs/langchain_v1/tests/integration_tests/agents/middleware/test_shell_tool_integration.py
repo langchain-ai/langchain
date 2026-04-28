@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.shell_tool import ShellToolMiddleware
+from langchain.agents.middleware.shell_tool import HostExecutionPolicy, ShellToolMiddleware
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -37,7 +37,7 @@ def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
     workspace = tmp_path / "workspace"
     agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model(provider),
-        middleware=[ShellToolMiddleware(workspace_root=workspace)],
+        middleware=[ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())],
     )
 
     result = agent.invoke(
@@ -59,7 +59,7 @@ def test_shell_session_persistence(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
-        middleware=[ShellToolMiddleware(workspace_root=workspace)],
+        middleware=[ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())],
     )
 
     result = agent.invoke(
@@ -86,7 +86,7 @@ def test_shell_tool_error_handling(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
-        middleware=[ShellToolMiddleware(workspace_root=workspace)],
+        middleware=[ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())],
     )
 
     result = agent.invoke(
@@ -124,7 +124,7 @@ def test_shell_tool_with_custom_tools(tmp_path: Path) -> None:
     agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
         model=_get_model("anthropic"),
         tools=[custom_greeting],
-        middleware=[ShellToolMiddleware(workspace_root=workspace)],
+        middleware=[ShellToolMiddleware(workspace_root=workspace, execution_policy=HostExecutionPolicy())],
     )
 
     result = agent.invoke(
