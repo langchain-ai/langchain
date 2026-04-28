@@ -3964,6 +3964,18 @@ def _oai_structured_outputs_parser(
         raise OpenAIRefusalError(refusal)
     if ai_msg.tool_calls:
         return None
+
+    if isinstance(ai_msg.content, str) and ai_msg.content.strip():
+        try:
+            data = json.loads(ai_msg.content)
+            if isinstance(data, dict):
+                return schema(**data)
+        except (JSONDecodeError, ValidationError):
+            pass
+
+    if not ai_msg.content:
+        return None
+
     msg = (
         "Structured Output response does not have a 'parsed' field nor a 'refusal' "
         f"field. Received message:\n\n{ai_msg}"

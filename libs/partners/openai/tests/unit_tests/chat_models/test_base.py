@@ -3454,6 +3454,41 @@ def test_openai_structured_output_refusal_handling_responses_api() -> None:
         pytest.fail(f"This is a wrong behavior. Error details: {e}")
 
 
+def test_oai_structured_outputs_parser_json_content_fallback() -> None:
+    """When parsed is None but content has valid JSON, parse it as the schema."""
+
+    class MathResult(BaseModel):
+        answer: int
+
+    ai_msg = AIMessage(
+        content='{"answer": 42}',
+        additional_kwargs={"parsed": None, "refusal": None},
+    )
+    result = _oai_structured_outputs_parser(ai_msg, MathResult)
+    assert isinstance(result, MathResult)
+    assert result.answer == 42
+
+
+def test_oai_structured_outputs_parser_empty_content_returns_none() -> None:
+    """When parsed is None and content is empty, return None instead of raising."""
+    ai_msg = AIMessage(
+        content="",
+        additional_kwargs={"parsed": None, "refusal": None},
+    )
+    result = _oai_structured_outputs_parser(ai_msg, BaseModel)
+    assert result is None
+
+
+def test_oai_structured_outputs_parser_non_json_content_raises() -> None:
+    """When parsed is None and content is non-JSON, raise ValueError."""
+    ai_msg = AIMessage(
+        content="This is not JSON at all",
+        additional_kwargs={"parsed": None, "refusal": None},
+    )
+    with pytest.raises(ValueError, match="does not have a 'parsed' field"):
+        _oai_structured_outputs_parser(ai_msg, BaseModel)
+
+
 # Test fixtures for context overflow error tests
 _CONTEXT_OVERFLOW_ERROR_BODY = {
     "error": {
