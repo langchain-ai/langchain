@@ -1724,7 +1724,12 @@ def test_cache_control_kwarg() -> None:
 
 
 class _BedrockLikeAnthropic(ChatAnthropic):
-    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests."""
+    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests.
+
+    Vertex is not modeled here: `langchain-google-vertexai`'s
+    `ChatAnthropicVertex` does not subclass `ChatAnthropic` and ships its own
+    `_get_request_payload`, so it never reaches the gate under test.
+    """
 
     @property
     def _llm_type(self) -> str:

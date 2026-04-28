@@ -754,10 +754,48 @@ def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     override `_llm_type` and must expand `cache_control` kwargs into
     block-level breakpoints instead.
 
-    Accepts `object` so misbehaving subclasses returning non-string
-    `_llm_type` values fall through the gate consistently rather than raising.
+    Non-string `_llm_type` values return `False` rather than raising, so a
+    misbehaving subclass falls through to the safer non-direct branch.
     """
     return llm_type == "anthropic-chat"
+
+
+def _apply_cache_control_to_last_eligible_block(
+    formatted_messages: list[dict],
+    cache_control: Any,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Place `cache_control` on the last block eligible for a breakpoint.
+
+    Walks messages newest-to-oldest and, within each, blocks newest-to-oldest,
+    skipping `code_execution`-related blocks (Anthropic rejects breakpoints
+    there). String message content is promoted to a single text block so the
+    breakpoint can be attached.
+
+    Returns:
+        `True` if a breakpoint was applied, `False` if every candidate was
+            `code_execution`-related (caller should warn and drop the kwarg).
+    """
+    for formatted_message in reversed(formatted_messages):
+        content = formatted_message.get("content")
+        if isinstance(content, list) and content:
+            for block in reversed(content):
+                if not isinstance(block, dict):
+                    continue
+                if _is_code_execution_related_block(block, code_execution_tool_ids):
+                    continue
+                block["cache_control"] = cache_control
+                return True
+        elif isinstance(content, str):
+            formatted_message["content"] = [
+                {
+                    "type": "text",
+                    "text": content,
+                    "cache_control": cache_control,
+                }
+            ]
+            return True
+    return False
 
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
@@ -1169,40 +1207,19 @@ class ChatAnthropic(BaseChatModel):
         # Subclasses that route through other transports (e.g. Bedrock) expand
         # `cache_control` kwargs into block-level breakpoints, the only form
         # those transports accept.
-        if not _is_direct_anthropic_llm_type(self._llm_type):
+        if not _is_direct_anthropic_llm_type(getattr(self, "_llm_type", None)):
             cache_control = kwargs.pop("cache_control", None)
+            # Empty `formatted_messages` has nothing to attach a breakpoint to;
+            # skip silently. The warning below is reserved for the surprising
+            # case where messages exist but every candidate block is ineligible.
             if cache_control and formatted_messages:
                 code_execution_tool_ids = _collect_code_execution_tool_ids(
                     formatted_messages
                 )
-                cache_applied = False
-                for formatted_message in reversed(formatted_messages):
-                    if cache_applied:
-                        break
-                    content = formatted_message.get("content")
-                    if isinstance(content, list) and content:
-                        for block in reversed(content):
-                            if isinstance(block, dict):
-                                if _is_code_execution_related_block(
-                                    block, code_execution_tool_ids
-                                ):
-                                    continue
-                                block["cache_control"] = cache_control
-                                cache_applied = True
-                                break
-                    elif isinstance(content, str):
-                        formatted_message["content"] = [
-                            {
-                                "type": "text",
-                                "text": content,
-                                "cache_control": cache_control,
-                            }
-                        ]
-                        cache_applied = True
-                if not cache_applied:
-                    # Anthropic rejects breakpoints on `code_execution` blocks,
-                    # so when nothing else is eligible the kwarg is dropped.
-                    # Warn so callers know caching was requested-but-skipped.
+                applied = _apply_cache_control_to_last_eligible_block(
+                    formatted_messages, cache_control, code_execution_tool_ids
+                )
+                if not applied:
                     warnings.warn(
                         "`cache_control` kwarg was dropped: no eligible "
                         "content block found (all candidates are "

@@ -196,8 +196,9 @@ def _supports_automatic_caching(model: Any) -> bool:
     Automatic caching (a top-level `cache_control` field on the request) is only
     available on the direct Anthropic API. Any `ChatAnthropic` subclass that
     reaches Claude through a different transport (e.g. Bedrock) overrides
-    `_llm_type` and is treated as unsupported by default — keeping this
-    allowlist-shaped avoids silently breaking future subclasses.
+    `_llm_type` and is treated as unsupported by default. Treating non-direct
+    transports as unsupported by default avoids silently breaking future
+    subclasses.
 
     Args:
         model: The chat model attached to the request.
