@@ -71,10 +71,16 @@ def test_warn_deprecated(kwargs: dict[str, Any], expected_message: str) -> None:
         assert str(warning) == expected_message
 
 
-def test_undefined_deprecation_schedule() -> None:
-    """This test is expected to fail until we defined a deprecation schedule."""
-    with pytest.raises(NotImplementedError):
-        warn_deprecated("1.0.0", pending=False)
+def test_warn_deprecated_without_removal() -> None:
+    """`removal` is optional; warning omits the removal phrase when not provided."""
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")
+        warn_deprecated("1.0.0", name="SomeFunction", pending=False)
+
+        assert len(warning_list) == 1
+        message = str(warning_list[0].message)
+        assert message == "`SomeFunction` was deprecated in LangChain 1.0.0"
+        assert "will be removed" not in message
 
 
 @deprecated(since="2.0.0", removal="3.0.0", pending=False)
