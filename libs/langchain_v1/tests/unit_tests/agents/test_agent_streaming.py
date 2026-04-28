@@ -10,12 +10,13 @@ from langchain_core.tools import tool
 from langgraph.stream import EventLog, StreamTransformer
 
 from langchain.agents import create_agent
-from langchain.tools import ToolRuntime
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from langgraph.prebuilt._tool_call_stream import ToolCallStream
     from langgraph.stream._types import ProtocolEvent
+
+    from langchain.tools import ToolRuntime
 
 
 @tool
