@@ -1398,10 +1398,10 @@ class AsyncChatModelStream(_ChatModelStreamBase):
 
     # -- Internal API (extend base to drive async projections) -------------
 
-    def _record_event(self, event: MessagesData) -> None:
+    def _record_event(self, event: Mapping[str, Any]) -> None:
         """Record event and push to async event replay projection."""
         super()._record_event(event)
-        self._events_proj.push(event)
+        self._events_proj.push(cast("MessagesData", event))
 
     def _finish(self, data: MessageFinishData) -> None:
         """Finish base projections and async-only projections."""
