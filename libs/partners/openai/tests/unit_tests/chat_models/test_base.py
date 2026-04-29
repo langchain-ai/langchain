@@ -1672,6 +1672,105 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     assert result.generations[0].message.id == "resp_123"
 
 
+def test__construct_lc_result_from_responses_api_reasoning_empty_summary() -> None:
+    """Test reasoning item with empty summary but content with reasoning_text.
+
+    Some providers (e.g. Azure) return reasoning items where summary=[] but
+    reasoning text is in content[].reasoning_text. The conversion should promote
+    these to summary entries so consumers see human-readable reasoning.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36862
+    """
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_123",
+                summary=[],
+                content=[
+                    {"type": "reasoning_text", "text": "internal chain-of-thought"}
+                ],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="visible reply", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    reasoning = next(
+        b
+        for b in result.generations[0].message.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    )
+    # summary should be populated from content reasoning_text items
+    assert reasoning["summary"] == [
+        {"type": "summary_text", "text": "internal chain-of-thought"}
+    ]
+
+
+def test__construct_lc_result_from_responses_api_reasoning_existing_summary() -> None:
+    """Test that existing summary is NOT overwritten when already populated."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_123",
+                summary=[Summary(type="summary_text", text="existing summary")],
+                content=[
+                    {"type": "reasoning_text", "text": "internal reasoning"}
+                ],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="reply", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    reasoning = next(
+        b
+        for b in result.generations[0].message.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    )
+    # existing summary should be preserved, not overwritten
+    assert reasoning["summary"] == [
+        {"type": "summary_text", "text": "existing summary"}
+    ]
+
+
 def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     """Test a response with a refusal."""
     response = Response(

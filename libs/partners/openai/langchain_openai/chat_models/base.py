@@ -4693,7 +4693,23 @@ def _construct_lc_result_from_responses_api(
             "tool_search_call",
             "tool_search_output",
         ):
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            block = output.model_dump(exclude_none=True, mode="json")
+            # Azure/some providers return reasoning items with summary=[]
+            # but reasoning text in content[].reasoning_text. Promote these
+            # to summary entries so consumers see human-readable reasoning.
+            if (
+                output.type == "reasoning"
+                and not block.get("summary")
+                and block.get("content")
+            ):
+                summary_entries = [
+                    {"type": "summary_text", "text": item["text"]}
+                    for item in block["content"]
+                    if isinstance(item, dict) and item.get("type") == "reasoning_text"
+                ]
+                if summary_entries:
+                    block["summary"] = summary_entries
+            content_blocks.append(block)
 
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
