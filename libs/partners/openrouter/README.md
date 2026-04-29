@@ -3,7 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/langchain-openrouter?label=%20)](https://pypi.org/project/langchain-openrouter/#history)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-openrouter)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-openrouter)](https://pypistats.org/packages/langchain-openrouter)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain_oss.svg?style=social&label=Follow%20%40langchain_oss)](https://x.com/langchain_oss)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain_oss.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain_oss)
 
 ## Quick Install
 
