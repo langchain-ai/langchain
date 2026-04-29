@@ -2456,6 +2456,40 @@ end
     ]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+package MyModule;
+use strict;
+use warnings;
+
+sub hello_world {
+    my $message = 'Hello, World!';
+    print $message;
+}
+
+hello_world();
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "package",
+        "MyModule;",
+        "use strict;",
+        "use warnings;",
+        "sub hello_world",
+        "{",
+        "my $message",
+        "= 'Hello,",
+        "World!';",
+        "print",
+        "$message;",
+        "}",
+        "hello_world();",
+    ]
+
+
 def test_haskell_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0
