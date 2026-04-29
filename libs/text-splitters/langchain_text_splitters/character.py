@@ -788,6 +788,29 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "",
             ]
 
+        if language == Language.PERL:
+            return [
+                # Split along subroutine definitions
+                "\nsub ",
+                # Split along variable declarations
+                "\nmy ",
+                "\nour ",
+                # Split along control structures
+                "\nif ",
+                "\nforeach ",
+                "\nwhile ",
+                # Split along module declarations
+                "\nuse ",
+                "\npackage ",
+                # Split along end marker
+                "\n__END__",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
+
         if language in Language._value2member_map_:
             msg = f"Language {language} is not implemented yet!"
             raise ValueError(msg)
