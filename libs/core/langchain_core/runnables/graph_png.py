@@ -149,9 +149,21 @@ class PngDrawer:
 
         # Save the graph as PNG
         try:
-            return cast("bytes | None", viz.draw(output_path, format="png", prog="dot"))
+            result = viz.draw(output_path, format="png", prog="dot")
+        except Exception as e:
+            msg = f"Failed to draw graph as PNG: {e}"
+            raise ValueError(msg) from e
         finally:
             viz.close()
+
+        if result is None and output_path is None:
+            msg = (
+                "Graph rendering returned no output. This may be caused by "
+                "invalid node types or labels that pygraphviz cannot render."
+            )
+            raise ValueError(msg)
+
+        return cast("bytes | None", result)
 
     def add_nodes(self, viz: Any, graph: Graph) -> None:
         """Add nodes to the graph.
