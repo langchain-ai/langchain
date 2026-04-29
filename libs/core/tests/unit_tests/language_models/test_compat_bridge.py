@@ -28,6 +28,11 @@ if TYPE_CHECKING:
     )
 
 
+def _event_metadata(event: Any) -> dict[str, Any]:
+    """Return event metadata for protocol versions that type it as extensible."""
+    return cast("dict[str, Any]", cast("dict[str, Any]", event).get("metadata") or {})
+
+
 # ---------------------------------------------------------------------------
 # Pure helpers
 # ---------------------------------------------------------------------------
@@ -134,7 +139,7 @@ def test_chunks_to_events_text_only() -> None:
     # No provider finish_reason in fixtures — metadata carries no
     # `finish_reason` key (the bridge passes response_metadata through
     # unchanged).
-    assert "finish_reason" not in (finish.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(finish)
 
 
 def test_chunks_to_events_empty_iterator() -> None:
@@ -291,9 +296,7 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     # not synthesize one. It deliberately does not infer `"tool_use"`
     # from the presence of a valid tool_call either; terminal reasons
     # are provider-specific (see `_build_message_finish`).
-    assert "finish_reason" not in (
-        cast("MessageFinishData", events[-1]).get("metadata") or {}
-    )
+    assert "finish_reason" not in _event_metadata(events[-1])
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
@@ -323,9 +326,7 @@ def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
     ]
     assert len(finish_events) == 1
     assert finish_events[0]["content"]["type"] == "invalid_tool_call"
-    assert "finish_reason" not in (
-        cast("MessageFinishData", events[-1]).get("metadata") or {}
-    )
+    assert "finish_reason" not in _event_metadata(events[-1])
 
 
 def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() -> None:
@@ -453,7 +454,7 @@ def test_message_to_events_text_only() -> None:
     assert delta_event["delta"] == {"type": "text-delta", "text": "Hello world"}
 
     final = cast("MessageFinishData", events[-1])
-    assert "finish_reason" not in (final.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(final)
 
 
 def test_message_to_events_empty_content_yields_start_finish_only() -> None:
@@ -512,7 +513,7 @@ def test_message_to_events_tool_call_skips_delta() -> None:
     # bridge does not synthesize one and does not second-guess based on
     # the presence of a tool_call.
     final = cast("MessageFinishData", events[-1])
-    assert "finish_reason" not in (final.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(final)
 
 
 def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
@@ -557,7 +558,7 @@ def test_message_to_events_preserves_finish_reason_and_metadata() -> None:
     # Passthrough: response_metadata lands on `metadata` unchanged,
     # including the raw provider `finish_reason`.
     final = cast("MessageFinishData", events[-1])
-    assert final["metadata"] == {
+    assert _event_metadata(final) == {
         "finish_reason": "length",
         "model_name": "test-model",
         "stop_sequence": "</end>",

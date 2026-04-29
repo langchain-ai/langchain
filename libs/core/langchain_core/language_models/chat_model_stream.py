@@ -575,7 +575,7 @@ class _ChatModelStreamBase:
 
     # -- Event ingestion (public) ------------------------------------------
 
-    def dispatch(self, event: MessagesData) -> None:
+    def dispatch(self, event: Mapping[str, Any]) -> None:
         """Route a protocol event to the appropriate internal handler.
 
         Public entry point for feeding events into the stream. Called by
@@ -598,9 +598,9 @@ class _ChatModelStreamBase:
 
     # -- Internal push API (called by dispatch) ----------------------------
 
-    def _record_event(self, event: MessagesData) -> None:
+    def _record_event(self, event: Mapping[str, Any]) -> None:
         """Append a raw event to the replay buffer."""
-        self._events.append(event)
+        self._events.append(cast("MessagesData", event))
 
     def _push_message_start(self, data: MessageStartData) -> None:
         """Process a `message-start` event."""
