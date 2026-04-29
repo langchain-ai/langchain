@@ -3187,16 +3187,16 @@ def test_anthropic_stream_v2_lifecycle() -> None:
     assert_valid_event_stream(stream_events)
 
     finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
-    types = [f["content_block"]["type"] for f in finishes]
+    types = [f["content"]["type"] for f in finishes]
     assert types == ["reasoning", "text", "tool_call"]
 
     wire_indices = [f["index"] for f in finishes]
     assert wire_indices == [0, 1, 2]
 
     # Content accumulation reaches content-block-finish intact.
-    reasoning_block = cast("dict[str, Any]", finishes[0]["content_block"])
-    text_block = cast("dict[str, Any]", finishes[1]["content_block"])
-    tool_block = cast("dict[str, Any]", finishes[2]["content_block"])
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content"])
+    text_block = cast("dict[str, Any]", finishes[1]["content"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content"])
     assert reasoning_block["reasoning"] == "Let me think."
     assert text_block["text"] == "The answer is 42."
     assert tool_block["args"] == {"q": "weather"}

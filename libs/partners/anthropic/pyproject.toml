@@ -69,6 +69,7 @@ typing = [
 
 
 [tool.uv.sources]
+langchain-protocol = { git = "https://github.com/langchain-ai/agent-protocol", branch = "cb/chat-model-delta", subdirectory = "streaming/py" }
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }

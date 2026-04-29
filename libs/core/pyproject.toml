@@ -82,6 +82,7 @@ test_integration = []
 constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
+langchain-protocol = { git = "https://github.com/langchain-ai/agent-protocol", branch = "cb/chat-model-delta", subdirectory = "streaming/py" }
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
 

@@ -634,7 +634,7 @@ def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
     # At minimum, a text block with the accumulated answer.
     finishes = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) >= 1
-    text_finishes = [f for f in finishes if f["content_block"]["type"] == "text"]
+    text_finishes = [f for f in finishes if f["content"]["type"] == "text"]
     assert len(text_finishes) == 1
 
 

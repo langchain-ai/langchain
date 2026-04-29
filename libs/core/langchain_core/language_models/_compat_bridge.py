@@ -37,10 +37,14 @@ import json
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
+    BlockDelta,
+    BlockDeltaFields,
     ContentBlock,
+    ContentBlockDelta,
     ContentBlockDeltaData,
     ContentBlockFinishData,
     ContentBlockStartData,
+    DataDelta,
     FinalizedContentBlock,
     InvalidToolCall,
     MessageFinishData,
@@ -48,9 +52,11 @@ from langchain_protocol.protocol import (
     MessagesData,
     MessageStartData,
     ReasoningContentBlock,
+    ReasoningDelta,
     ServerToolCall,
     ServerToolCallChunk,
     TextContentBlock,
+    TextDelta,
     ToolCall,
     ToolCallChunk,
     UsageInfo,
@@ -99,6 +105,32 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
     """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
+
+
+def _to_block_delta_fields(block: CompatBlock) -> BlockDeltaFields:
+    """Narrow an internal working dict to protocol block-delta fields."""
+    return cast("BlockDeltaFields", block)
+
+
+def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
+    """Convert a content-block slice/snapshot to an explicit protocol delta."""
+    btype = block.get("type")
+    if btype == "text":
+        return TextDelta(type="text-delta", text=block.get("text", ""))
+    if btype == "reasoning":
+        return ReasoningDelta(
+            type="reasoning-delta",
+            reasoning=block.get("reasoning", ""),
+        )
+    if "data" in block:
+        delta = DataDelta(type="data-delta", data=block.get("data", ""))
+        if block.get("encoding") == "base64":
+            delta["encoding"] = "base64"
+        return delta
+    return BlockDelta(
+        type="block-delta",
+        fields=_to_block_delta_fields(block),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +268,8 @@ def _should_emit_delta(block: CompatBlock) -> bool:
         return bool(
             block.get("args") or block.get("id") or block.get("name"),
         )
+    if "data" in block:
+        return bool(block.get("data"))
     return False
 
 
@@ -281,6 +315,15 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
             state["id"] = delta["id"]
         if delta.get("name") is not None:
             state["name"] = delta["name"]
+    elif btype == dtype and "data" in delta:
+        state["data"] = (state.get("data", "") or "") + (delta.get("data") or "")
+        for key, value in delta.items():
+            if key in ("type", "data") or value is None:
+                continue
+            if key == "extras" and isinstance(value, dict):
+                state["extras"] = {**(state.get("extras") or {}), **value}
+            else:
+                state[key] = value
     else:
         # Self-contained or already-finalized types: replace wholesale.
         state.clear()
@@ -429,11 +472,11 @@ def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
     """Convert accumulated usage to the protocol's `UsageInfo` shape."""
     if usage is None:
         return None
-    result: UsageInfo = {}
+    result: dict[str, Any] = {}
     for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
         if key in usage:
             result[key] = usage[key]
-    return result or None
+    return cast("UsageInfo", result) if result else None
 
 
 # ---------------------------------------------------------------------------
@@ -445,10 +488,10 @@ def _build_message_start(
     msg: BaseMessage,
     message_id: str | None,
 ) -> MessageStartData:
-    start_data = MessageStartData(event="message-start", role="ai")
+    start_data = MessageStartData(event="message-start", role="ai", id="")
     resolved_id = message_id if message_id is not None else getattr(msg, "id", None)
     if resolved_id:
-        start_data["message_id"] = resolved_id
+        start_data["id"] = resolved_id
     start_metadata = _extract_start_metadata(msg.response_metadata or {})
     if start_metadata:
         start_data["metadata"] = start_metadata
@@ -464,13 +507,13 @@ def _build_message_finish(
     # `MessageFinishData`; the provider's raw `finish_reason` /
     # `stop_reason` now rides inside `metadata` alongside other
     # response metadata. Pass it through unchanged.
-    finish_data = MessageFinishData(event="message-finish")
+    finish_data: dict[str, Any] = {"event": "message-finish"}
     usage_info = _to_protocol_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
         finish_data["metadata"] = dict(response_metadata)
-    return finish_data
+    return cast("MessageFinishData", finish_data)
 
 
 def _finalize_and_build_finish(
@@ -481,7 +524,7 @@ def _finalize_and_build_finish(
     return ContentBlockFinishData(
         event="content-block-finish",
         index=wire_idx,
-        content_block=_finalize_block(block),
+        content=_finalize_block(block),
     )
 
 
@@ -555,15 +598,20 @@ def chunks_to_events(
                 yield ContentBlockStartData(
                     event="content-block-start",
                     index=open_wire_idx,
-                    content_block=_start_skeleton(block),
+                    content=_start_skeleton(block),
                 )
             else:
                 open_block = _accumulate(open_block, block)
             if _should_emit_delta(block):
+                is_block_delta = block.get("type") in (
+                    "tool_call_chunk",
+                    "server_tool_call_chunk",
+                )
+                delta_source = open_block if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=open_wire_idx,
-                    content_block=_to_protocol_block(block),
+                    delta=_to_content_delta(delta_source or block),
                 )
 
         if msg.usage_metadata:
@@ -625,15 +673,20 @@ async def achunks_to_events(
                 yield ContentBlockStartData(
                     event="content-block-start",
                     index=open_wire_idx,
-                    content_block=_start_skeleton(block),
+                    content=_start_skeleton(block),
                 )
             else:
                 open_block = _accumulate(open_block, block)
             if _should_emit_delta(block):
+                is_block_delta = block.get("type") in (
+                    "tool_call_chunk",
+                    "server_tool_call_chunk",
+                )
+                delta_source = open_block if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=open_wire_idx,
-                    content_block=_to_protocol_block(block),
+                    delta=_to_content_delta(delta_source or block),
                 )
 
         if msg.usage_metadata:
@@ -682,18 +735,18 @@ def message_to_events(
         yield ContentBlockStartData(
             event="content-block-start",
             index=wire_idx,
-            content_block=_start_skeleton(block),
+            content=_start_skeleton(block),
         )
         if _should_emit_delta(block):
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=wire_idx,
-                content_block=_to_protocol_block(block),
+                delta=_to_content_delta(block),
             )
         yield ContentBlockFinishData(
             event="content-block-finish",
             index=wire_idx,
-            content_block=_finalize_block(block),
+            content=_finalize_block(block),
         )
 
     yield _build_message_finish(
