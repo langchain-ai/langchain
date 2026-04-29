@@ -90,6 +90,12 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
     )
     """Perplexity API key. Reads from `PPLX_API_KEY` or `PERPLEXITY_API_KEY`."""
 
+    request_timeout: float | tuple[float, float] | None = Field(None, alias="timeout")
+    """Timeout for requests to the Perplexity embeddings API."""
+
+    max_retries: int = 6
+    """Maximum number of retries to make when calling the embeddings API."""
+
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     @property
@@ -109,10 +115,17 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
             raise ValueError(msg)
 
         api_key = self.pplx_api_key.get_secret_value()
+        client_params: dict[str, Any] = {
+            "api_key": api_key,
+            "max_retries": self.max_retries,
+        }
+        if self.request_timeout is not None:
+            client_params["timeout"] = self.request_timeout
+
         if self.client is None:
-            self.client = Perplexity(api_key=api_key)
+            self.client = Perplexity(**client_params)
         if self.async_client is None:
-            self.async_client = AsyncPerplexity(api_key=api_key)
+            self.async_client = AsyncPerplexity(**client_params)
         return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

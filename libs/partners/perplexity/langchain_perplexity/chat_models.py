@@ -297,11 +297,18 @@ class ChatPerplexity(BaseChatModel):
             self.pplx_api_key.get_secret_value() if self.pplx_api_key else None
         )
 
+        client_params: dict[str, Any] = {
+            "api_key": pplx_api_key,
+            "max_retries": self.max_retries,
+        }
+        if self.request_timeout is not None:
+            client_params["timeout"] = self.request_timeout
+
         if not self.client:
-            self.client = Perplexity(api_key=pplx_api_key)
+            self.client = Perplexity(**client_params)
 
         if not self.async_client:
-            self.async_client = AsyncPerplexity(api_key=pplx_api_key)
+            self.async_client = AsyncPerplexity(**client_params)
 
         return self
 
@@ -445,9 +452,10 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
-            if len(chunk["choices"]) == 0:
+            choices = chunk.get("choices") or []
+            if len(choices) == 0:
                 continue
-            choice = chunk["choices"][0]
+            choice = choices[0]
 
             additional_kwargs = {}
             if first_chunk:
@@ -532,9 +540,10 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
-            if len(chunk["choices"]) == 0:
+            choices = chunk.get("choices") or []
+            if len(choices) == 0:
                 continue
-            choice = chunk["choices"][0]
+            choice = choices[0]
 
             additional_kwargs = {}
             if first_chunk:
