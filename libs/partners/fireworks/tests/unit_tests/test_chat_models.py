@@ -14,7 +14,14 @@ from fireworks.client.error import (  # type: ignore[import-untyped]
     RateLimitError,
     ServiceUnavailableError,
 )
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
@@ -22,6 +29,8 @@ from langchain_fireworks.chat_models import (
     _completion_with_retry,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
+    _convert_message_to_dict,
+    _format_message_content,
     _usage_to_metadata,
 )
 
@@ -90,6 +99,141 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" not in message.additional_kwargs
+
+
+def test_format_message_content_passthrough_string() -> None:
+    """Plain string content is returned unchanged."""
+    assert _format_message_content("hello") == "hello"
+
+
+def test_format_message_content_translates_v1_image_block() -> None:
+    """Canonical v1 image block is translated to OpenAI image_url + data URI."""
+    blocks = [{"type": "image", "base64": "abc", "mime_type": "image/png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_v0_base64_image_block() -> None:
+    """v0 source_type='base64' image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "qqq",
+            "mime_type": "image/png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,qqq"}},
+    ]
+
+
+def test_format_message_content_passes_through_existing_image_url() -> None:
+    """Already-OpenAI image_url blocks pass through unchanged."""
+    blocks = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/y.png"}},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == blocks
+
+
+def test_format_message_content_drops_unsupported_block_types() -> None:
+    """``tool_use``, ``thinking``, ``reasoning_content`` blocks are stripped.
+
+    These types are not part of the OpenAI chat-completions wire format.
+    """
+    blocks = [
+        {"type": "text", "text": "visible"},
+        {"type": "tool_use", "name": "x", "input": {}},
+        {"type": "thinking", "thinking": "..."},
+        {"type": "reasoning_content", "reasoning_content": "..."},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [{"type": "text", "text": "visible"}]
+
+
+def test_convert_message_to_dict_translates_tool_message_image() -> None:
+    """ToolMessage with a canonical image block lands as OpenAI image_url on the wire.
+
+    Reproduces the failure mode where a tool that returns an image (e.g. a
+    file-reader) hands back ``content_blocks=[{"type": "image", ...}]`` and the
+    message round-trips into a Fireworks chat-completions request.
+    """
+    tool_message = ToolMessage(
+        content=[{"type": "image", "base64": "abc", "mime_type": "image/png"}],
+        tool_call_id="call_1",
+    )
+
+    result = _convert_message_to_dict(tool_message)
+
+    assert result == {
+        "role": "tool",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+        "tool_call_id": "call_1",
+    }
+
+
+def test_convert_message_to_dict_translates_human_mixed_content() -> None:
+    """HumanMessage with mixed text + image blocks translates correctly."""
+    human_message = HumanMessage(
+        content=[
+            {"type": "text", "text": "what is this?"},
+            {"type": "image", "base64": "xyz", "mime_type": "image/jpeg"},
+        ]
+    )
+
+    result = _convert_message_to_dict(human_message)
+
+    assert result == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "what is this?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,xyz"},
+            },
+        ],
+    }
+
+
+def test_convert_message_to_dict_chat_message_uses_translator() -> None:
+    """ChatMessage path also runs content through the formatter."""
+    chat_message = ChatMessage(
+        role="custom",
+        content=[{"type": "image", "base64": "zz", "mime_type": "image/gif"}],
+    )
+
+    result = _convert_message_to_dict(chat_message)
+
+    assert result == {
+        "role": "custom",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/gif;base64,zz"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_string_content_unchanged() -> None:
+    """String content on common message types passes through unmodified."""
+    assert _convert_message_to_dict(HumanMessage(content="hi"))["content"] == "hi"
+    assert _convert_message_to_dict(SystemMessage(content="sys"))["content"] == "sys"
+    assert (
+        _convert_message_to_dict(ToolMessage(content="r1", tool_call_id="t"))["content"]
+        == "r1"
+    )
 
 
 def _make_llm(max_retries: int | None = 2) -> ChatFireworks:

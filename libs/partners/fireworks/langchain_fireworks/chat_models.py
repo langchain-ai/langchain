@@ -57,6 +57,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import (
     ToolCallChunk,
@@ -166,6 +170,38 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Fireworks chat-completions wire format.
+
+    Mirrors ``langchain_openai.chat_models.base._format_message_content``:
+    drops blocks the chat-completions wire does not carry, and translates
+    canonical v0/v1 multimodal data blocks via
+    ``convert_to_openai_data_block(block, api="chat/completions")``. String and
+    non-list content are returned unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and "type" in block:
+            btype = block["type"]
+            if btype in (
+                "tool_use",
+                "thinking",
+                "reasoning_content",
+                "function_call",
+                "code_interpreter_call",
+            ):
+                continue
+            if is_data_content_block(block):
+                formatted.append(
+                    convert_to_openai_data_block(block, api="chat/completions")
+                )
+                continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -178,9 +214,15 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {
+            "role": message.role,
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
@@ -206,7 +248,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         else:
             pass
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict = {
+            "role": "system",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, FunctionMessage):
         message_dict = {
             "role": "function",
@@ -216,7 +261,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _format_message_content(message.content),
             "tool_call_id": message.tool_call_id,
         }
     else:
