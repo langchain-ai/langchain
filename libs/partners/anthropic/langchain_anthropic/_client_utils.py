@@ -22,10 +22,9 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if not hasattr(self, "_state") or self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             self.close()
         except Exception:  # noqa: S110
             pass
@@ -35,10 +34,9 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if not hasattr(self, "_state") or self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
         except Exception:  # noqa: S110
