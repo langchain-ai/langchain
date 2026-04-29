@@ -59,9 +59,7 @@ from langchain_classic.agents.xml.base import XMLAgent, create_xml_agent
 if TYPE_CHECKING:
     from langchain_community.agent_toolkits.json.base import create_json_agent
     from langchain_community.agent_toolkits.load_tools import (
-        get_all_tool_names,
         load_huggingface_tool,
-        load_tools,
     )
     from langchain_community.agent_toolkits.openapi.base import create_openapi_agent
     from langchain_community.agent_toolkits.powerbi.base import create_pbi_agent
@@ -70,6 +68,11 @@ if TYPE_CHECKING:
     )
     from langchain_community.agent_toolkits.spark_sql.base import create_spark_sql_agent
     from langchain_community.agent_toolkits.sql.base import create_sql_agent
+
+    from langchain_classic.agents.load_tools import (
+        get_all_tool_names,
+        load_tools,
+    )
 
 DEPRECATED_CODE = [
     "create_csv_agent",
@@ -88,9 +91,9 @@ DEPRECATED_LOOKUP = {
     "create_pbi_chat_agent": "langchain_community.agent_toolkits.powerbi.chat_base",
     "create_spark_sql_agent": "langchain_community.agent_toolkits.spark_sql.base",
     "create_sql_agent": "langchain_community.agent_toolkits.sql.base",
-    "load_tools": "langchain_community.agent_toolkits.load_tools",
+    "load_tools": "langchain_classic.agents.load_tools",
     "load_huggingface_tool": "langchain_community.agent_toolkits.load_tools",
-    "get_all_tool_names": "langchain_community.agent_toolkits.load_tools",
+    "get_all_tool_names": "langchain_classic.agents.load_tools",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
