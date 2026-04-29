@@ -3206,6 +3206,6 @@ def test_anthropic_stream_v2_lifecycle() -> None:
     # (protocol 0.0.9 moved the finish reason off the top-level event
     # and into `metadata`, where the bridge deposits the provider's raw
     # `stop_reason` alongside other response metadata).
-    message_finish = stream_events[-1]
+    message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
