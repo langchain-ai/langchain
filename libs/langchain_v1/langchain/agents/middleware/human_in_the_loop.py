@@ -276,7 +276,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 tool_call_id=tool_call["id"],
                 status="error",
             )
-            return tool_call, tool_message
+            return None, tool_message
         msg = (
             f"Unexpected human decision: {decision}. "
             f"Decision type '{decision.get('type')}' "
