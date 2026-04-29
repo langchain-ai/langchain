@@ -4243,3 +4243,53 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+use strict;
+use warnings;
+
+sub hello_world {
+    my $name = shift;
+    print "Hello, $name!\\n";
+}
+
+my $greeting = "World";
+hello_world($greeting);
+
+if ($greeting) {
+    foreach my $char (split //, $greeting) {
+        print "$char\\n";
+    }
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "use strict;",
+        "use warnings;",
+        "sub hello_world",
+        "{",
+        "my $name =",
+        "shift;",
+        "print",
+        '"Hello,',
+        '$name!\\n";',
+        "}",
+        "my $greeting =",
+        '"World";',
+        "hello_world($gr",
+        "eeting);",
+        "if ($greeting)",
+        "{",
+        "foreach my",
+        "$char (split",
+        "//, $greeting)",
+        "{",
+        "print",
+        '"$char\\n";',
+        "}\n}",
+    ]
