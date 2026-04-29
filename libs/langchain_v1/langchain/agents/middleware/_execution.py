@@ -6,7 +6,7 @@ import abc
 import json
 import os
 import shutil
-import subprocess
+import subprocess  # nosemgrep: gitlab.bandit.B404
 import sys
 import typing
 from collections.abc import Mapping, Sequence
@@ -32,7 +32,7 @@ def _launch_subprocess(
     preexec_fn: typing.Callable[[], None] | None,
     start_new_session: bool,
 ) -> subprocess.Popen[str]:
-    return subprocess.Popen(  # noqa: S603
+    return subprocess.Popen(  # nosemgrep: python.lang.compatibility.python36.python36-compatibility-Popen1,python.lang.compatibility.python36.python36-compatibility-Popen2
         list(command),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
