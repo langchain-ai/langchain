@@ -102,7 +102,7 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
-langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "nh/subgraph-transformer", subdirectory = "libs/langgraph" }
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "nh/langgraph-api-test-branch", subdirectory = "libs/langgraph" }
 
 [tool.ruff]
 line-length = 100

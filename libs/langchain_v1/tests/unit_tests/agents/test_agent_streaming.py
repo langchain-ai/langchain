@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langgraph.stream import EventLog, StreamTransformer
+from langgraph.stream import StreamChannel, StreamTransformer
 
 from langchain.agents import create_agent
 from langchain.tools import ToolRuntime  # noqa: TC001
@@ -125,7 +125,7 @@ class TestAgentStreamV2Sync:
 
             def __init__(self, scope: tuple[str, ...] = ()) -> None:
                 super().__init__(scope)
-                self._log: EventLog[int] = EventLog()
+                self._log: StreamChannel[int] = StreamChannel()
 
             def init(self) -> dict[str, Any]:
                 return {"marker": self._log}
