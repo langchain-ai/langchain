@@ -33,7 +33,7 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_q
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-qdrant%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
