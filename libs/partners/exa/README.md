@@ -5,7 +5,7 @@
 [![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-exa)](https://pypistats.org/packages/langchain-exa)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain_oss.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain_oss)
 
-Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs/tree/main/libs/providers/langchain-exa).
 
 ## Quick Install
 
