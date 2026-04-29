@@ -1,6 +1,7 @@
 """Perplexity AI integration for LangChain."""
 
 from langchain_perplexity.chat_models import ChatPerplexity
+from langchain_perplexity.embeddings import PerplexityEmbeddings
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
     ReasoningStructuredOutputParser,
@@ -17,6 +18,7 @@ from langchain_perplexity.types import (
 
 __all__ = [
     "ChatPerplexity",
+    "PerplexityEmbeddings",
     "PerplexitySearchRetriever",
     "PerplexitySearchResults",
     "UserLocation",
