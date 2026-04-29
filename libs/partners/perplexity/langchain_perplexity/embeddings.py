@@ -1,51 +1,58 @@
+"""Wrapper around Perplexity Embeddings API."""
+
 from __future__ import annotations
 
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
-from perplexity import AsyncPerplexity
+from langchain_core.utils import secret_from_env
+from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-
-from langchain_perplexity._utils import initialize_client
+from typing_extensions import Self
 
 
 class PerplexityEmbeddings(BaseModel, Embeddings):
-    """Perplexity embedding model.
+    """`Perplexity AI` embeddings.
 
-    To use, you should have the ``perplexity`` python package installed, and the
-    environment variable ``PPLX_API_KEY`` (or ``PERPLEXITY_API_KEY``) set with your
-    API key, or pass it as the ``pplx_api_key`` parameter.
+    Setup:
+        Install the `perplexityai` package and set the `PPLX_API_KEY`
+        (or `PERPLEXITY_API_KEY`) environment variable, or pass the key as
+        the `pplx_api_key`/`api_key` argument.
 
-    See the Perplexity Embeddings documentation:
-    - https://docs.perplexity.ai/docs/embeddings
-    - https://docs.perplexity.ai/api-reference/embeddings-post
+        ```bash
+        pip install -U langchain-perplexity
+        export PPLX_API_KEY=your_api_key
+        ```
 
-    Example:
-        Basic usage:
+        See the Perplexity Embeddings API reference:
+        https://docs.perplexity.ai/api-reference/embeddings-post
 
-        .. code-block:: python
+        Instantiate:
 
-            from langchain_perplexity import PerplexityEmbeddings
+        ```python
+        from langchain_perplexity import PerplexityEmbeddings
 
-            embeddings = PerplexityEmbeddings()
+        embeddings = PerplexityEmbeddings()
+        ```
 
-            query_vector = embeddings.embed_query("hello world")
-            doc_vectors = embeddings.embed_documents(["hello", "world"])
+        Embed a single query:
 
-        Selecting a specific model:
+        ```python
+        query_vector = embeddings.embed_query("hello world")
+        ```
 
-        .. code-block:: python
+        Embed documents:
 
-            from langchain_perplexity import PerplexityEmbeddings
+        ```python
+        doc_vectors = embeddings.embed_documents(["hello", "world"])
+        ```
 
-            embeddings = PerplexityEmbeddings(model="pplx-embed-v1-4b")
-            vectors = embeddings.embed_documents(
-                ["The quick brown fox", "jumps over the lazy dog"]
-            )
+        Select a specific model:
+
+        ```python
+        embeddings = PerplexityEmbeddings(model="pplx-embed-v1-4b")
+        ```
     """
-
-    model: str = "pplx-embed-v1-4b"
-    """Name of the Perplexity embedding model to use."""
 
     client: Any = Field(default=None, exclude=True)
     """Perplexity SDK client (set automatically)."""
@@ -53,24 +60,45 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
     async_client: Any = Field(default=None, exclude=True)
     """Async Perplexity SDK client (set automatically)."""
 
-    pplx_api_key: SecretStr = Field(default=SecretStr(""))
-    """Perplexity API key. Falls back to ``PPLX_API_KEY`` or ``PERPLEXITY_API_KEY``."""
+    model: str = "pplx-embed-v1-4b"
+    """Name of the Perplexity embedding model to use.
+
+    See the API reference for available identifiers, including contextualized
+    variants such as `pplx-embed-v1-0.6b` and `pplx-embed-context-v1-4b`.
+    """
+
+    pplx_api_key: SecretStr | None = Field(
+        default_factory=secret_from_env(
+            ["PPLX_API_KEY", "PERPLEXITY_API_KEY"], default=None
+        ),
+        alias="api_key",
+    )
+    """Perplexity API key. Reads from `PPLX_API_KEY` or `PERPLEXITY_API_KEY`."""
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_environment(cls, values: dict) -> Any:
-        """Validate the environment and initialize the Perplexity client."""
-        values = initialize_client(values)
-        if not values.get("async_client"):
-            api_key = (
-                values["pplx_api_key"].get_secret_value()
-                if values.get("pplx_api_key")
-                else None
+    @property
+    def lc_secrets(self) -> dict[str, str]:
+        """Map secret field names to their environment variable names."""
+        return {"pplx_api_key": "PPLX_API_KEY"}
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
+        """Initialize the Perplexity SDK clients."""
+        if not self.pplx_api_key:
+            msg = (
+                "Perplexity API key not provided. Pass `pplx_api_key` (or "
+                "`api_key`) to PerplexityEmbeddings, or set the `PPLX_API_KEY` "
+                "or `PERPLEXITY_API_KEY` environment variable."
             )
-            values["async_client"] = AsyncPerplexity(api_key=api_key)
-        return values
+            raise ValueError(msg)
+
+        api_key = self.pplx_api_key.get_secret_value()
+        if self.client is None:
+            self.client = Perplexity(api_key=api_key)
+        if self.async_client is None:
+            self.async_client = AsyncPerplexity(api_key=api_key)
+        return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a list of documents using the Perplexity embeddings API.
@@ -79,8 +107,11 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
 
         Returns:
-            A list of embeddings, one per input text.
+            A list of embeddings, one per input text. An empty list is returned
+            when `texts` is empty.
         """
+        if not texts:
+            return []
         response = self.client.embeddings.create(model=self.model, input=texts)
         return [r.embedding for r in response.data]
 
@@ -103,8 +134,11 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
             texts: The list of texts to embed.
 
         Returns:
-            A list of embeddings, one per input text.
+            A list of embeddings, one per input text. An empty list is returned
+            when `texts` is empty.
         """
+        if not texts:
+            return []
         response = await self.async_client.embeddings.create(
             model=self.model, input=texts
         )
