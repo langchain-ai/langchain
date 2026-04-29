@@ -1,5 +1,7 @@
 """Unit tests for `PerplexityEmbeddings`."""
 
+import base64
+import struct
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -8,12 +10,19 @@ from pydantic import SecretStr
 from langchain_perplexity import PerplexityEmbeddings
 
 
-def _make_response(vectors: list[list[float]]) -> MagicMock:
+def _encode_int8(values: list[int]) -> str:
+    """Encode signed int8 values as base64 (matches Perplexity's wire format)."""
+    raw = struct.pack(f"<{len(values)}b", *values)
+    return base64.b64encode(raw).decode("ascii")
+
+
+def _make_response(int8_vectors: list[list[int]]) -> MagicMock:
+    """Build a stand-in for `EmbeddingCreateResponse` with base64_int8 payloads."""
     response = MagicMock()
     response.data = []
-    for v in vectors:
+    for values in int8_vectors:
         item = MagicMock()
-        item.embedding = v
+        item.embedding = _encode_int8(values)
         response.data.append(item)
     return response
 
@@ -93,13 +102,13 @@ def test_missing_api_key_raises(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_embed_documents() -> None:
     mock_client = MagicMock()
     mock_client.embeddings.create.return_value = _make_response(
-        [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+        [[1, -2, 3], [4, 5, -6]]
     )
     embeddings = PerplexityEmbeddings(pplx_api_key="test", client=mock_client)
 
     result = embeddings.embed_documents(["hello", "world"])
 
-    assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+    assert result == [[1.0, -2.0, 3.0], [4.0, 5.0, -6.0]]
     mock_client.embeddings.create.assert_called_once_with(
         model="pplx-embed-v1-4b", input=["hello", "world"]
     )
@@ -124,12 +133,12 @@ def test_embed_documents_propagates_errors() -> None:
 
 def test_embed_query() -> None:
     mock_client = MagicMock()
-    mock_client.embeddings.create.return_value = _make_response([[0.7, 0.8, 0.9]])
+    mock_client.embeddings.create.return_value = _make_response([[7, 8, 9]])
     embeddings = PerplexityEmbeddings(pplx_api_key="test", client=mock_client)
 
     result = embeddings.embed_query("hello")
 
-    assert result == [0.7, 0.8, 0.9]
+    assert result == [7.0, 8.0, 9.0]
     mock_client.embeddings.create.assert_called_once_with(
         model="pplx-embed-v1-4b", input=["hello"]
     )
@@ -137,7 +146,7 @@ def test_embed_query() -> None:
 
 def test_embed_documents_uses_custom_model() -> None:
     mock_client = MagicMock()
-    mock_client.embeddings.create.return_value = _make_response([[0.0]])
+    mock_client.embeddings.create.return_value = _make_response([[0]])
     embeddings = PerplexityEmbeddings(
         pplx_api_key="test", model="custom-model", client=mock_client
     )
@@ -152,7 +161,7 @@ def test_embed_documents_uses_custom_model() -> None:
 async def test_aembed_documents() -> None:
     mock_async_client = MagicMock()
     mock_async_client.embeddings.create = AsyncMock(
-        return_value=_make_response([[0.1, 0.2], [0.3, 0.4]])
+        return_value=_make_response([[1, 2], [3, 4]])
     )
     embeddings = PerplexityEmbeddings(
         pplx_api_key="test", async_client=mock_async_client
@@ -160,7 +169,7 @@ async def test_aembed_documents() -> None:
 
     result = await embeddings.aembed_documents(["a", "b"])
 
-    assert result == [[0.1, 0.2], [0.3, 0.4]]
+    assert result == [[1.0, 2.0], [3.0, 4.0]]
     mock_async_client.embeddings.create.assert_awaited_once_with(
         model="pplx-embed-v1-4b", input=["a", "b"]
     )
@@ -180,7 +189,7 @@ async def test_aembed_documents_empty_short_circuits() -> None:
 async def test_aembed_query() -> None:
     mock_async_client = MagicMock()
     mock_async_client.embeddings.create = AsyncMock(
-        return_value=_make_response([[0.5, 0.6]])
+        return_value=_make_response([[5, 6]])
     )
     embeddings = PerplexityEmbeddings(
         pplx_api_key="test", async_client=mock_async_client
@@ -188,7 +197,7 @@ async def test_aembed_query() -> None:
 
     result = await embeddings.aembed_query("hi")
 
-    assert result == [0.5, 0.6]
+    assert result == [5.0, 6.0]
     mock_async_client.embeddings.create.assert_awaited_once_with(
         model="pplx-embed-v1-4b", input=["hi"]
     )

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import struct
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
@@ -9,6 +11,12 @@ from langchain_core.utils import secret_from_env
 from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+
+
+def _decode_int8_embedding(b64: str) -> list[float]:
+    """Decode a `base64_int8`-encoded Perplexity embedding into a list of floats."""
+    raw = base64.b64decode(b64)
+    return [float(v) for v in struct.unpack(f"<{len(raw)}b", raw)]
 
 
 class PerplexityEmbeddings(BaseModel, Embeddings):
@@ -50,8 +58,14 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         Select a specific model:
 
         ```python
-        embeddings = PerplexityEmbeddings(model="pplx-embed-v1-4b")
+        embeddings = PerplexityEmbeddings(model="pplx-embed-v1-0.6b")
         ```
+
+    !!! note
+        Perplexity returns base64-encoded signed int8 embeddings. This class
+        decodes them into `list[float]` values in the range [-128, 127]. The
+        magnitude is preserved from the API's quantized output; cosine
+        similarity is unaffected by the lack of unit-length normalization.
     """
 
     client: Any = Field(default=None, exclude=True)
@@ -63,8 +77,9 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
     model: str = "pplx-embed-v1-4b"
     """Name of the Perplexity embedding model to use.
 
-    See the API reference for available identifiers, including contextualized
-    variants such as `pplx-embed-v1-0.6b` and `pplx-embed-context-v1-4b`.
+    See the API reference for available identifiers, including
+    `pplx-embed-v1-0.6b` and `pplx-embed-v1-4b`. Contextualized variants are
+    served through a separate endpoint and are not exposed by this class.
     """
 
     pplx_api_key: SecretStr | None = Field(
@@ -113,7 +128,7 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         if not texts:
             return []
         response = self.client.embeddings.create(model=self.model, input=texts)
-        return [r.embedding for r in response.data]
+        return [_decode_int8_embedding(item.embedding) for item in response.data]
 
     def embed_query(self, text: str) -> list[float]:
         """Embed a single query string using the Perplexity embeddings API.
@@ -124,8 +139,7 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding vector for the input text.
         """
-        response = self.client.embeddings.create(model=self.model, input=[text])
-        return response.data[0].embedding
+        return self.embed_documents([text])[0]
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Asynchronously embed a list of documents.
@@ -142,7 +156,7 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         response = await self.async_client.embeddings.create(
             model=self.model, input=texts
         )
-        return [r.embedding for r in response.data]
+        return [_decode_int8_embedding(item.embedding) for item in response.data]
 
     async def aembed_query(self, text: str) -> list[float]:
         """Asynchronously embed a single query string.
@@ -153,7 +167,5 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding vector for the input text.
         """
-        response = await self.async_client.embeddings.create(
-            model=self.model, input=[text]
-        )
-        return response.data[0].embedding
+        result = await self.aembed_documents([text])
+        return result[0]
