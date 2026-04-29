@@ -1,4 +1,10 @@
-"""A tracer that runs evaluators over completed runs."""
+"""A tracer that runs evaluators over completed runs.
+
+Note:
+    ``EvaluationResult`` is imported from ``langsmith.evaluation.evaluator``.
+    Any ``feedback_config`` behavior is determined by LangSmith's
+    ``FeedbackConfig`` schema rather than by this wrapper module.
+"""
 
 from __future__ import annotations
 

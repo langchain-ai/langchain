@@ -1,4 +1,9 @@
-"""Configuration for run evaluators."""
+"""Configuration for run evaluators.
+
+``EvaluationResult`` objects are provided by LangSmith.
+For ``feedback_config`` inputs, validation and accepted keys are defined by
+LangSmith's ``FeedbackConfig`` schema.
+"""
 
 from collections.abc import Callable, Sequence
 from typing import Any
