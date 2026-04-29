@@ -17,6 +17,13 @@ pip install langchain-perplexity
 
 This package contains the LangChain integration with Perplexity.
 
+It exposes the following components:
+
+- `ChatPerplexity` — chat model backed by the Perplexity API.
+- `PerplexitySearchRetriever` — retriever for the Perplexity Search API.
+- `PerplexitySearchResults` — tool wrapper around the Perplexity Search API.
+- `PerplexityEmbeddings` — embedding model backed by the Perplexity Embeddings API.
+
 ## 📖 Documentation
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_perplexity/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/perplexity).

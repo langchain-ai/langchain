@@ -2,6 +2,7 @@ from langchain_perplexity import __all__
 
 EXPECTED_ALL = [
     "ChatPerplexity",
+    "PerplexityEmbeddings",
     "PerplexitySearchRetriever",
     "PerplexitySearchResults",
     "UserLocation",
