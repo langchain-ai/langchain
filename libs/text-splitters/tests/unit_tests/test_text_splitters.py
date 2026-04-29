@@ -2456,6 +2456,48 @@ end
     ]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+package Animals;
+
+use strict;
+
+my $name = "cat";
+our $count = 0;
+
+sub describe {
+    if ($name) {
+        print $name;
+    }
+}
+
+foreach my $item (1..5) {
+    $count++;
+}
+"""
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "package",
+        "Animals;",
+        "use strict;",
+        "my $name =",
+        '"cat";',
+        "our $count = 0;",
+        "sub describe {",
+        "if ($name)",
+        "{",
+        "print",
+        "$name;",
+        "}\n}",
+        "foreach my",
+        "$item (1..5) {",
+        "$count++;\n}",
+    ]
+
+
 def test_haskell_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.HASKELL, chunk_size=CHUNK_SIZE, chunk_overlap=0

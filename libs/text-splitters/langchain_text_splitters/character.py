@@ -701,6 +701,33 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.PERL:
+            return [
+                # Split along subroutine definitions
+                "\nsub ",
+                # Split along package declarations
+                "\npackage ",
+                # Split along module import statements
+                "\nuse ",
+                "\nrequire ",
+                # Split along variable declarations
+                "\nmy ",
+                "\nour ",
+                "\nlocal ",
+                # Split along control flow statements
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\nuntil ",
+                "\nfor ",
+                "\nforeach ",
+                "\ndo ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         if language == Language.HASKELL:
             return [
                 # Split along function definitions
