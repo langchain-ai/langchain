@@ -37,14 +37,10 @@ import json
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
-    BlockDelta,
-    BlockDeltaFields,
     ContentBlock,
-    ContentBlockDelta,
     ContentBlockDeltaData,
     ContentBlockFinishData,
     ContentBlockStartData,
-    DataDelta,
     FinalizedContentBlock,
     InvalidToolCall,
     MessageFinishData,
@@ -52,11 +48,9 @@ from langchain_protocol.protocol import (
     MessagesData,
     MessageStartData,
     ReasoningContentBlock,
-    ReasoningDelta,
     ServerToolCall,
     ServerToolCallChunk,
     TextContentBlock,
-    TextDelta,
     ToolCall,
     ToolCallChunk,
     UsageInfo,
@@ -66,6 +60,15 @@ from langchain_core.messages import AIMessageChunk, BaseMessage
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
+
+    from langchain_protocol.protocol import (
+        BlockDelta,
+        BlockDeltaFields,
+        ContentBlockDelta,
+        DataDelta,
+        ReasoningDelta,
+        TextDelta,
+    )
 
     from langchain_core.outputs import ChatGenerationChunk
 
@@ -116,20 +119,26 @@ def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
     """Convert a content-block slice/snapshot to an explicit protocol delta."""
     btype = block.get("type")
     if btype == "text":
-        return TextDelta(type="text-delta", text=block.get("text", ""))
+        return cast("TextDelta", {"type": "text-delta", "text": block.get("text", "")})
     if btype == "reasoning":
-        return ReasoningDelta(
-            type="reasoning-delta",
-            reasoning=block.get("reasoning", ""),
+        return cast(
+            "ReasoningDelta",
+            {
+                "type": "reasoning-delta",
+                "reasoning": block.get("reasoning", ""),
+            },
         )
     if "data" in block:
-        delta = DataDelta(type="data-delta", data=block.get("data", ""))
+        delta = cast("DataDelta", {"type": "data-delta", "data": block.get("data", "")})
         if block.get("encoding") == "base64":
             delta["encoding"] = "base64"
         return delta
-    return BlockDelta(
-        type="block-delta",
-        fields=_to_block_delta_fields(block),
+    return cast(
+        "BlockDelta",
+        {
+            "type": "block-delta",
+            "fields": _to_block_delta_fields(block),
+        },
     )
 
 
