@@ -1173,46 +1173,6 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
-    def stream_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
-    ) -> ChatModelStream:
-        """Stream content-block lifecycle events (v2 protocol).
-
-        Implemented by `BaseChatModel` (and forwarded by `RunnableBinding`).
-        Generic `Runnable`s don't participate in the v2 event protocol —
-        use `.stream()` instead.
-
-        Raises:
-            NotImplementedError: Always, on the base `Runnable` class.
-        """
-        msg = (
-            f"{type(self).__name__} does not implement `stream_v2`. "
-            "`stream_v2` is only implemented by chat models; use `.stream()` "
-            "for generic Runnables."
-        )
-        raise NotImplementedError(msg)
-
-    async def astream_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
-    ) -> AsyncChatModelStream:
-        """Async variant of `stream_v2`. See that method.
-
-        Raises:
-            NotImplementedError: Always, on the base `Runnable` class.
-        """
-        msg = (
-            f"{type(self).__name__} does not implement `astream_v2`. "
-            "`astream_v2` is only implemented by chat models; use `.astream()` "
-            "for generic Runnables."
-        )
-        raise NotImplementedError(msg)
-
     @overload
     def astream_log(
         self,
@@ -6052,75 +6012,73 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         ):
             yield item
 
-    def stream_v2(
+    @overload
+    def stream_events(
         self,
         input: Input,
         config: RunnableConfig | None = None,
-        **kwargs: Any | None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent]: ...
+
+    @overload
+    def stream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Any: ...
+
+    def stream_events(  # type: ignore[override]
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent] | Any:
+        """Forward `stream_events` to the bound runnable with bound kwargs merged.
+
+        For `version="v3"`, the bound runnable's typed stream object (e.g.
+        `ChatModelStream`) is returned. For `version="v1"` / `"v2"`, dispatches
+        to the base `Runnable.stream_events`.
+
+        Without this override, `__getattr__` would drop `self.kwargs` — losing
+        tools bound via `bind_tools`, `stop` sequences, etc.
+        """
+        if version == "v3":
+            return self.bound.stream_events(  # type: ignore[call-overload]
+                input,
+                self._merge_configs(config),
+                version=version,
+                **{**self.kwargs, **kwargs},
+            )
+        return super().stream_events(
+            input,
+            self._merge_configs(config),
+            version=version,
+            **{**self.kwargs, **kwargs},
+        )
+
+    async def _astream_events_v3(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> Any:
-        """Forward `stream_v2` to the bound runnable with bound kwargs merged.
+        """Return the v3 async stream object from the bound runnable.
 
-        Chat-model-specific: the bound runnable must implement `stream_v2`
-        (see `BaseChatModel`). Without this override, `__getattr__` would
-        forward the call but drop `self.kwargs` — losing tools bound via
-        `bind_tools`, `stop` sequences, etc.
+        Separate coroutine (not a generator) so callers can `await` it to
+        obtain the typed stream (e.g. `AsyncChatModelStream`) directly —
+        Python does not allow `return <value>` inside an async generator.
         """
-        return self.bound.stream_v2(  # type: ignore[attr-defined]
+        return await self.bound.astream_events(  # type: ignore[call-overload]
             input,
             self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
-        )
-
-    async def astream_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
-    ) -> Any:
-        """Forward `astream_v2` to the bound runnable with bound kwargs merged.
-
-        Async variant of `stream_v2`. See that method for the full rationale.
-        """
-        return await self.bound.astream_v2(  # type: ignore[attr-defined]
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
-        )
-
-    @override
-    def stream_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
-    ) -> ChatModelStream:
-        """Forward `stream_v2` to the bound runnable with bound kwargs merged.
-
-        Chat-model-specific: the bound runnable must implement `stream_v2`
-        (see `BaseChatModel`). Without this override, `__getattr__` would
-        forward the call but drop `self.kwargs` — losing tools bound via
-        `bind_tools`, `stop` sequences, etc.
-        """
-        return self.bound.stream_v2(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
-        )
-
-    @override
-    async def astream_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any | None,
-    ) -> AsyncChatModelStream:
-        """Forward `astream_v2` to the bound runnable with bound kwargs merged.
-
-        Async variant of `stream_v2`. See that method for the full rationale.
-        """
-        return await self.bound.astream_v2(
-            input,
-            self._merge_configs(config),
+            version="v3",
             **{**self.kwargs, **kwargs},
         )
 
@@ -6131,9 +6089,25 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> AsyncIterator[StreamEvent]:
-        async for item in self.bound.astream_events(
+        """Forward `astream_events` to the bound runnable with bound kwargs merged.
+
+        For `version="v1"` / `"v2"`, delegates to the bound runnable's
+        `astream_events`, yielding each event. For `version="v3"`, use
+        `_astream_events_v3` instead — a separate coroutine that returns the
+        typed stream object.
+
+        Without this override, `__getattr__` would drop `self.kwargs` — losing
+        tools bound via `bind_tools`, `stop` sequences, etc.
+        """
+        result = self.bound.astream_events(
             input, self._merge_configs(config), **{**self.kwargs, **kwargs}
-        ):
+        )
+        # `astream_events` may be a coroutine (e.g. on `BaseChatModel`) that
+        # returns an async iterator, or it may itself be an async generator.
+        # Await coroutines first, then iterate.
+        if inspect.iscoroutine(result):
+            result = await result
+        async for item in result:
             yield item
 
     @override
