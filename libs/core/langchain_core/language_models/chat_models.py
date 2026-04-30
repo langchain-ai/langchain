@@ -10,13 +10,14 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
 from langchain_core._api import beta
+from langchain_core._event_streaming import _AsyncEventsResult
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -100,6 +101,7 @@ if TYPE_CHECKING:
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
+    from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
 
 
@@ -510,7 +512,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Return whether streaming is hard-disabled for this call.
 
         Shared opt-outs honored by both `_should_stream` and
-        `_should_stream_v2` — these override any affirmative trigger
+        `_should_use_protocol_streaming` — these override any affirmative trigger
         (attached handler, `stream=True`, etc.):
 
         - `self.disable_streaming is True`
@@ -568,7 +570,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
-    def _should_stream_v2(
+    def _should_use_protocol_streaming(
         self,
         *,
         async_api: bool,
@@ -637,7 +639,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> Iterator[MessagesData]:
         """Drive the v2 event generator with per-event dispatch.
 
-        Shared between `stream_v2`'s pump and the invoke-time v2 branch
+        Shared between `stream_events(version="v3")`'s pump and the invoke-time v2 branch
         in `_generate_with_cache`. Picks the native
         `_stream_chat_model_events` hook when the subclass provides one,
         else bridges `_stream` chunks via `chunks_to_events`. Each event
@@ -969,10 +971,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             LLMResult(generations=[[generation]]),
         )
 
-    # --- stream_v2 / astream_v2 ---
+    # --- stream_events v3 ---
 
     @beta()
-    def stream_v2(
+    def _chat_model_stream_v3(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
@@ -980,41 +982,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> ChatModelStream:
-        """Stream content-block lifecycle events for a single model call.
-
-        Returns a `ChatModelStream` with typed projections
-        (`.text`, `.reasoning`, `.tool_calls`, `.output`).
-
-        !!! warning
-
-            This API is experimental and may change.
-
-        !!! note "Always produces v1-shaped content"
-
-            `ChatModelStream.output.content` is always a list of v1
-            content blocks (text / reasoning / tool_call / image / …),
-            regardless of the model's `output_version` attribute. The
-            setting only affects the legacy `stream()` / `astream()` /
-            `invoke()` paths. If you're mixing `stream_v2` with those
-            paths in the same pipeline and need a consistent output
-            shape across them, set `output_version="v1"` on the model.
-
-        Args:
-            input: The model input.
-            config: Optional runnable config.
-            stop: Optional list of stop words.
-            **kwargs: Additional keyword arguments passed to the model.
-
-        Returns:
-            A `ChatModelStream` with typed projections.
-        """
+        """Internal v3 sync streaming implementation. Public entry point: stream_events(version='v3')."""
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
         # Strip tracing-only kwargs before forwarding to `_stream` — matches
         # `stream()` / `astream()`. Provider clients reject unknown kwargs, so
-        # `.with_structured_output().stream_v2(...)` and any other binding that
+        # `.with_structured_output().stream_events(version="v3", ...)` and any other binding that
         # carries `ls_structured_output_format` / `structured_output_format`
         # would raise without this pop.
         ls_structured_output_format = kwargs.pop(
@@ -1133,7 +1108,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         return stream
 
     @beta()
-    async def astream_v2(
+    async def _achat_model_stream_v3(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
@@ -1141,35 +1116,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncChatModelStream:
-        """Async variant of `stream_v2`.
-
-        Returns an `AsyncChatModelStream` whose projections are
-        async-iterable and awaitable.
-
-        !!! warning
-
-            This API is experimental and may change.
-
-        !!! note "Always produces v1-shaped content"
-
-            The assembled message's content is always a list of v1
-            content blocks, regardless of the model's `output_version`
-            attribute — see `stream_v2` for the full rationale.
-
-        Args:
-            input: The model input.
-            config: Optional runnable config.
-            stop: Optional list of stop words.
-            **kwargs: Additional keyword arguments passed to the model.
-
-        Returns:
-            An `AsyncChatModelStream` with typed projections.
-        """
+        """Internal v3 async streaming implementation. Public entry point: astream_events(version='v3')."""
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
-        # Strip tracing-only kwargs before forwarding — see `stream_v2` for the
+        # Strip tracing-only kwargs before forwarding — see `stream_events(version="v3")` for the
         # full rationale.
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
@@ -1299,6 +1251,105 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stream._on_aclose_fail = _on_aclose_fail  # noqa: SLF001
         return stream
 
+    @overload  # type: ignore[override]
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent]: ...
+
+    @overload
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> ChatModelStream: ...
+
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent] | ChatModelStream:
+        """Stream events from this chat model.
+
+        For `version="v1"` / `"v2"`, yields `StreamEvent` dicts (see
+        `Runnable.stream_events`). For `version="v3"`, returns a
+        `ChatModelStream` exposing typed projections (`.text`, `.reasoning`,
+        `.tool_calls`, `.output`).
+
+        Args:
+            input: The model input.
+            config: Optional runnable config.
+            version: Streaming-event schema version. `"v3"` selects the
+                content-block-centric streaming protocol.
+            stop: Optional stop sequences. Only used for `version="v3"`;
+                ignored otherwise.
+            **kwargs: Additional keyword arguments. For `version="v3"`,
+                forwarded to the model.
+
+        Returns:
+            For `version="v3"`, a `ChatModelStream`. Otherwise an
+            `Iterator[StreamEvent]`.
+        """
+        if version == "v3":
+            return self._chat_model_stream_v3(input, config, stop=stop, **kwargs)
+        return super().stream_events(input, config, version=version, stop=stop, **kwargs)
+
+    @overload  # type: ignore[override]
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> _AsyncEventsResult: ...
+
+    @overload
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> _AsyncEventsResult: ...
+
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> _AsyncEventsResult:
+        """Async variant of `stream_events`. See `stream_events` for full docs."""
+        if version == "v3":
+            return _AsyncEventsResult(
+                awaitable=self._achat_model_stream_v3(
+                    input, config, stop=stop, **kwargs
+                )
+            )
+        # v1/v2: forward to Runnable.astream_events (async generator).
+        # Calling it returns the generator object directly without awaiting.
+        iterator = super().astream_events(
+            input, config, version=version, stop=stop, **kwargs
+        )
+        return _AsyncEventsResult(iterator=iterator)
+
     # --- Custom methods ---
 
     def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
@@ -1354,10 +1405,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         A warm cache must produce the same `on_stream_event` stream as a cold
         call so LangGraph-style consumers do not observe behavior that depends
-        on cache state. Gated by `_should_stream_v2` so a `disable_streaming`
+        on cache state. Gated by `_should_use_protocol_streaming` so a `disable_streaming`
         config that suppresses v2 on cold calls also suppresses it here.
         """
-        if run_manager is None or not self._should_stream_v2(
+        if run_manager is None or not self._should_use_protocol_streaming(
             async_api=False, run_manager=run_manager, **kwargs
         ):
             return
@@ -1377,7 +1428,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> None:
         """Async counterpart to `_replay_v2_events_for_cache_hit`."""
-        if run_manager is None or not self._should_stream_v2(
+        if run_manager is None or not self._should_use_protocol_streaming(
             async_api=True, run_manager=run_manager, **kwargs
         ):
             return
@@ -1814,7 +1865,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # (native or `_stream` compat bridge) through the shared helper so
         # `on_stream_event` fires per event, then returns a normal `ChatResult`
         # so caching / `on_llm_end` stay on the existing generate path.
-        if self._should_stream_v2(
+        if self._should_use_protocol_streaming(
             async_api=False,
             run_manager=run_manager,
             **kwargs,
@@ -1971,7 +2022,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             await self.rate_limiter.aacquire(blocking=True)
 
         # v2 streaming: see sync counterpart in `_generate_with_cache`.
-        if self._should_stream_v2(
+        if self._should_use_protocol_streaming(
             async_api=True,
             run_manager=run_manager,
             **kwargs,
