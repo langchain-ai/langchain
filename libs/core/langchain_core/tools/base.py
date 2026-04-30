@@ -227,6 +227,13 @@ def create_schema_from_function(
     """
     sig = inspect.signature(func)
 
+    # Resolve string annotations from `from __future__ import annotations`.
+    # inspect.signature returns raw strings in that case; get_type_hints evaluates them.
+    try:
+        type_hints = typing.get_type_hints(func, include_extras=True)
+    except Exception:
+        type_hints = {}
+
     in_class = bool(func.__qualname__ and "." in func.__qualname__)
     existing_params: list[str] = list(sig.parameters.keys())
 
@@ -238,7 +245,8 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
         for param_name, param in sig.parameters.items():
-            if not include_injected and _is_injected_arg_type(param.annotation):
+            resolved = type_hints.get(param_name, param.annotation)
+            if not include_injected and _is_injected_arg_type(resolved):
                 filter_args_.append(param_name)  # type: ignore[union-attr]
 
     description, arg_descriptions = _infer_arg_descriptions(
@@ -248,16 +256,24 @@ def create_schema_from_function(
     )
 
     # Detect v1/mixed annotation usage to raise early and avoid confusing errors.
-    v1_params = [
-        p
-        for p in sig.parameters.values()
-        if isinstance(p.annotation, type) and is_pydantic_v1_subclass(p.annotation)
-    ]
-    v2_params = [
-        p
-        for p in sig.parameters.values()
-        if isinstance(p.annotation, type) and is_pydantic_v2_subclass(p.annotation)
-    ]
+    # Wrap issubclass checks in try-except: some metaclasses raise TypeError.
+    def _is_v1(annotation: Any) -> bool:
+        try:
+            return isinstance(annotation, type) and is_pydantic_v1_subclass(annotation)
+        except TypeError:
+            return False
+
+    def _is_v2(annotation: Any) -> bool:
+        try:
+            return isinstance(annotation, type) and is_pydantic_v2_subclass(annotation)
+        except TypeError:
+            return False
+
+    resolved_annotations = {
+        name: type_hints.get(name, p.annotation) for name, p in sig.parameters.items()
+    }
+    v1_params = [a for a in resolved_annotations.values() if _is_v1(a)]
+    v2_params = [a for a in resolved_annotations.values() if _is_v2(a)]
     if v1_params and v2_params:
         msg = (
             f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
@@ -277,12 +293,12 @@ def create_schema_from_function(
             # Preserve **kwargs as a 'kwargs' dict field
             field_definitions["kwargs"] = (dict, FieldInfo(default={}))
             continue
-        annotation = (
-            param.annotation if param.annotation is not inspect.Parameter.empty else Any
-        )
+        annotation = resolved_annotations.get(param_name, param.annotation)
+        if annotation is inspect.Parameter.empty:
+            annotation = Any
         # Use Any for v1 model annotations — pydantic v2 cannot validate v1 types
         # directly. The function itself handles v1 type semantics at call time.
-        if isinstance(annotation, type) and is_pydantic_v1_subclass(annotation):
+        if _is_v1(annotation):
             annotation = Any
         field_description = arg_descriptions.get(param_name)
         if param.default is inspect.Parameter.empty:
