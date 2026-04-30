@@ -107,7 +107,7 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
                 f"still open (event {i}); blocks must not interleave"
             )
             open_idx = idx
-            start_events[idx] = event["content_block"]
+            start_events[idx] = event.get("content") or event["content_block"]
             delta_accum[idx] = {}
             expected_next_idx += 1
         elif ev == "content-block-delta":
@@ -116,15 +116,17 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
                 f"content-block-delta at idx={idx} but currently-open block is "
                 f"{open_idx} (event {i})"
             )
-            block = event["content_block"]
-            _accumulate_delta(delta_accum[idx], block)
+            delta = event.get("delta")
+            if delta is None and "content_block" in event:
+                delta = _legacy_block_to_delta(event["content_block"])
+            _accumulate_delta(delta_accum[idx], delta)
         elif ev == "content-block-finish":
             idx = event["index"]
             assert idx == open_idx, (
                 f"content-block-finish at idx={idx} but currently-open block is "
                 f"{open_idx} (event {i})"
             )
-            finish_events[idx] = event["content_block"]
+            finish_events[idx] = event.get("content") or event["content_block"]
             open_idx = None
         else:
             # Unknown event types are accepted; the CDDL allows extensions.
@@ -143,21 +145,40 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
         _assert_delta_matches_finish(idx, delta_accum[idx], finish_block)
 
 
-def _accumulate_delta(accum: dict[str, Any], block: dict[str, Any]) -> None:
-    """Fold a delta block into the running accumulator for its index."""
+def _legacy_block_to_delta(block: dict[str, Any]) -> dict[str, Any]:
+    """Convert the old content-block delta shape to an explicit delta."""
     btype = block.get("type")
-    if btype not in _DELTAABLE_TYPES:
-        return
     if btype == "text":
-        accum["text"] = accum.get("text", "") + block.get("text", "")
-    elif btype == "reasoning":
-        accum["reasoning"] = accum.get("reasoning", "") + block.get("reasoning", "")
-    else:  # tool_call_chunk / server_tool_call_chunk
-        accum["args"] = accum.get("args", "") + (block.get("args") or "")
-        if block.get("id") is not None:
-            accum["id"] = block["id"]
-        if block.get("name") is not None:
-            accum["name"] = block["name"]
+        return {"type": "text-delta", "text": block.get("text", "")}
+    if btype == "reasoning":
+        return {
+            "type": "reasoning-delta",
+            "reasoning": block.get("reasoning", ""),
+        }
+    if "data" in block:
+        return {"type": "data-delta", "data": block.get("data", "")}
+    return {"type": "block-delta", "fields": block}
+
+
+def _accumulate_delta(accum: dict[str, Any], delta: dict[str, Any] | None) -> None:
+    """Fold a delta block into the running accumulator for its index."""
+    if delta is None:
+        return
+    dtype = delta.get("type")
+    if dtype == "text-delta":
+        accum["text"] = accum.get("text", "") + delta.get("text", "")
+    elif dtype == "reasoning-delta":
+        accum["reasoning"] = accum.get("reasoning", "") + delta.get("reasoning", "")
+    elif dtype == "data-delta":
+        accum["data"] = accum.get("data", "") + delta.get("data", "")
+    elif dtype == "block-delta":
+        fields = delta.get("fields")
+        if not isinstance(fields, dict):
+            return
+        btype = fields.get("type")
+        if btype not in _DELTAABLE_TYPES:
+            return
+        accum.update({k: v for k, v in fields.items() if v is not None})
 
 
 def _assert_delta_matches_finish(
@@ -197,6 +218,8 @@ def _assert_delta_matches_finish(
         except json.JSONDecodeError:
             parsed = None
         assert finish_block.get("args") == parsed
+    elif "data" in accum:
+        assert finish_block.get("data") == accum["data"]
 
 
 __all__ = ["assert_valid_event_stream"]

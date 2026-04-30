@@ -786,14 +786,12 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
     reasoning_starts = [
         e
         for e in events
-        if e["event"] == "content-block-start"
-        and e["content_block"]["type"] == "reasoning"
+        if e["event"] == "content-block-start" and e["content"]["type"] == "reasoning"
     ]
     reasoning_finishes = [
         e
         for e in events
-        if e["event"] == "content-block-finish"
-        and e["content_block"]["type"] == "reasoning"
+        if e["event"] == "content-block-finish" and e["content"]["type"] == "reasoning"
     ]
 
     # The mock stream carries four reasoning summary parts (two per reasoning
@@ -803,9 +801,7 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
         f"expected 4 reasoning start events, got {len(reasoning_starts)}"
     )
     all_finish_types = [
-        e["content_block"]["type"]
-        for e in events
-        if e["event"] == "content-block-finish"
+        e["content"]["type"] for e in events if e["event"] == "content-block-finish"
     ]
     assert len(reasoning_finishes) == 4, (
         f"expected 4 reasoning finish events, got {len(reasoning_finishes)}: "
@@ -814,8 +810,7 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
 
     # Finish events must carry the accumulated reasoning text.
     reasoning_texts = [
-        cast("dict[str, Any]", f["content_block"])["reasoning"]
-        for f in reasoning_finishes
+        cast("dict[str, Any]", f["content"])["reasoning"] for f in reasoning_finishes
     ]
     assert reasoning_texts == [
         "reasoning block one",
