@@ -39,7 +39,7 @@ class ActionRequest(TypedDict):
     """The description of the action to be reviewed."""
 
 
-DecisionType = Literal["approve", "edit", "reject"]
+DecisionType = Literal["approve", "edit", "reject", "respond"]
 
 
 class ReviewConfig(TypedDict):
@@ -95,7 +95,22 @@ class RejectDecision(TypedDict):
     """The message sent to the model explaining why the action was rejected."""
 
 
-Decision = ApproveDecision | EditDecision | RejectDecision
+class RespondDecision(TypedDict):
+    """Response when a human answers on behalf of the tool, skipping execution.
+
+    Used for "ask user" style tools whose real implementation is the human's
+    response. The tool is not executed; instead, a synthetic `ToolMessage` with
+    `status="success"` and the provided `message` is returned to the model.
+    """
+
+    type: Literal["respond"]
+    """The type of response when a human responds on behalf of the tool."""
+
+    message: str
+    """Content of the synthetic `ToolMessage` returned to the model."""
+
+
+Decision = ApproveDecision | EditDecision | RejectDecision | RespondDecision
 
 
 class HITLResponse(TypedDict):
@@ -180,7 +195,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
                 If a tool doesn't have an entry, it's auto-approved by default.
 
-                * `True` indicates all decisions are allowed: approve, edit, and reject.
+                * `True` indicates all decisions are allowed: approve, edit, reject,
+                    and respond.
                 * `False` indicates that the tool is auto-approved.
                 * `InterruptOnConfig` indicates the specific decisions allowed for this
                     tool.
@@ -200,7 +216,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             if isinstance(tool_config, bool):
                 if tool_config is True:
                     resolved_configs[tool_name] = InterruptOnConfig(
-                        allowed_decisions=["approve", "edit", "reject"]
+                        allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
             elif tool_config.get("allowed_decisions"):
                 resolved_configs[tool_name] = tool_config
@@ -275,6 +291,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 name=tool_call["name"],
                 tool_call_id=tool_call["id"],
                 status="error",
+            )
+            return tool_call, tool_message
+        if decision["type"] == "respond" and "respond" in allowed_decisions:
+            # Skip tool execution; the human answers on behalf of the tool.
+            tool_message = ToolMessage(
+                content=decision["message"],
+                name=tool_call["name"],
+                tool_call_id=tool_call["id"],
+                status="success",
             )
             return tool_call, tool_message
         msg = (
