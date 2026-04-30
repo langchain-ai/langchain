@@ -3741,3 +3741,10 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+def test_get_filtered_args_removed() -> None:
+    """_get_filtered_args was dead code; ensure it's gone."""
+    import langchain_core.tools.base as base_module
+
+    assert not hasattr(base_module, "_get_filtered_args")

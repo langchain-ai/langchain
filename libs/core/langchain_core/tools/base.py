@@ -123,34 +123,6 @@ def _get_annotation_description(arg_type: type) -> str | None:
     return None
 
 
-def _get_filtered_args(
-    inferred_model: type[BaseModel],
-    func: Callable,
-    *,
-    filter_args: Sequence[str],
-    include_injected: bool = True,
-) -> dict:
-    """Get filtered arguments from a function's signature.
-
-    Args:
-        inferred_model: The Pydantic model inferred from the function.
-        func: The function to extract arguments from.
-        filter_args: Arguments to exclude from the result.
-        include_injected: Whether to include injected arguments.
-
-    Returns:
-        Dictionary of filtered arguments with their schema definitions.
-    """
-    schema = inferred_model.model_json_schema()["properties"]
-    valid_keys = signature(func).parameters
-    return {
-        k: schema[k]
-        for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args
-        and (i > 0 or param.name not in {"self", "cls"})
-        and (include_injected or not _is_injected_arg_type(param.annotation))
-    }
-
 
 def _parse_python_function_docstring(
     function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
