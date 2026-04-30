@@ -1,6 +1,7 @@
 .vs/
 .claude/
 .idea/
+.worktrees/
 #Emacs backup
 *~
 # Byte-compiled / optimized / DLL files
