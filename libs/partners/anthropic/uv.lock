@@ -510,7 +510,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.2.15"
+version = "1.2.16"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -734,7 +734,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.6"
+version = "1.1.7"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
