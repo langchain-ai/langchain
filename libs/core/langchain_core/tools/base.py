@@ -526,6 +526,19 @@ class ChildTool(BaseTool):
         arbitrary_types_allowed=True,
     )
 
+    _SCHEMA_INVALIDATING_FIELDS: frozenset[str] = frozenset(
+        {"args_schema", "name", "description"}
+    )
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in self._SCHEMA_INVALIDATING_FIELDS:
+            self.__dict__.pop("tool_call_schema", None)
+            self.__dict__.pop("args", None)
+            self.__dict__.pop("_inferred_input_schema", None)
+            # _approximate_schema_chars (added in PR 6) is also invalidated here
+            self.__dict__.pop("_approximate_schema_chars", None)
+        super().__setattr__(name, value)
+
     @property
     def is_single_input(self) -> bool:
         """Check if the tool accepts only a single input argument.
@@ -536,7 +549,7 @@ class ChildTool(BaseTool):
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
 
-    @property
+    @functools.cached_property
     def args(self) -> dict:
         """Get the tool's input arguments schema.
 
@@ -555,7 +568,7 @@ class ChildTool(BaseTool):
                 json_schema = input_schema.model_json_schema()
         return cast("dict", json_schema["properties"])
 
-    @property
+    @functools.cached_property
     def tool_call_schema(self) -> ArgsSchema:
         """Get the schema for tool calls, excluding injected arguments.
 
@@ -601,6 +614,11 @@ class ChildTool(BaseTool):
             if isinstance(self.args_schema, dict):
                 return super().get_input_schema(config)
             return self.args_schema
+        return self._inferred_input_schema
+
+    @functools.cached_property
+    def _inferred_input_schema(self) -> type[BaseModel]:
+        """Schema inferred from `_run` signature; computed once."""
         return create_schema_from_function(self.name, self._run)
 
     @override

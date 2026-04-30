@@ -3780,6 +3780,87 @@ def test_parse_input_annotation_walk_called_once() -> None:
         assert len(calls_for_my_input) <= 1
 
 
+def test_tool_call_schema_is_cached() -> None:
+    """tool_call_schema must return the same object on repeated access."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema1 = my_tool.tool_call_schema
+    schema2 = my_tool.tool_call_schema
+    assert schema1 is schema2
+
+
+def test_args_is_cached() -> None:
+    """args must return the same object on repeated access."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    args1 = my_tool.args
+    args2 = my_tool.args
+    assert args1 is args2
+
+
+def test_tool_call_schema_invalidated_on_name_change() -> None:
+    """Cache must be invalidated when `name` is mutated."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema_before = my_tool.tool_call_schema
+    my_tool.name = "new_name"
+    schema_after = my_tool.tool_call_schema
+    assert schema_before is not schema_after
+
+
+def test_tool_call_schema_invalidated_on_description_change() -> None:
+    """Cache must be invalidated when `description` is mutated."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema_before = my_tool.tool_call_schema
+    my_tool.description = "new description"
+    schema_after = my_tool.tool_call_schema
+    assert schema_before is not schema_after
+
+
+def test_get_input_schema_cached() -> None:
+    """get_input_schema must not call create_schema_from_function more than once."""
+    from unittest.mock import patch
+
+    from langchain_core.tools import tool
+    from langchain_core.tools import base as base_module
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    with patch.object(
+        base_module,
+        "create_schema_from_function",
+        wraps=base_module.create_schema_from_function,
+    ) as mock_create:
+        my_tool.get_input_schema()
+        my_tool.get_input_schema()
+        my_tool.get_input_schema()
+        assert mock_create.call_count <= 1
+
+
 def test_filter_injected_args_no_annotation_walk_on_run() -> None:
     """_filter_injected_args must not call get_all_basemodel_annotations on each run."""
     from unittest.mock import patch
