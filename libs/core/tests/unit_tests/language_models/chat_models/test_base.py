@@ -473,7 +473,7 @@ class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
 async def test_streaming_attribute_overrides_v2_callback() -> None:
     """`self.streaming=False` must opt out of the v2 event path too.
 
-    `_should_stream_v2` shares the `_streaming_disabled` opt-outs with
+    `_should_use_protocol_streaming` shares the `_streaming_disabled` opt-outs with
     `_should_stream`, so an instance-level `streaming=False` takes
     precedence over an attached `_V2StreamingCallbackHandler`.
     """

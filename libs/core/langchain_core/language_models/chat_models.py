@@ -511,7 +511,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Return whether streaming is hard-disabled for this call.
 
         Shared opt-outs honored by both `_should_stream` and
-        `_should_stream_v2` — these override any affirmative trigger
+        `_should_use_protocol_streaming` — these override any affirmative trigger
         (attached handler, `stream=True`, etc.):
 
         - `self.disable_streaming is True`
@@ -569,7 +569,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)
 
-    def _should_stream_v2(
+    def _should_use_protocol_streaming(
         self,
         *,
         async_api: bool,
@@ -1407,10 +1407,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         A warm cache must produce the same `on_stream_event` stream as a cold
         call so LangGraph-style consumers do not observe behavior that depends
-        on cache state. Gated by `_should_stream_v2` so a `disable_streaming`
+        on cache state. Gated by `_should_use_protocol_streaming` so a `disable_streaming`
         config that suppresses v2 on cold calls also suppresses it here.
         """
-        if run_manager is None or not self._should_stream_v2(
+        if run_manager is None or not self._should_use_protocol_streaming(
             async_api=False, run_manager=run_manager, **kwargs
         ):
             return
@@ -1430,7 +1430,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> None:
         """Async counterpart to `_replay_v2_events_for_cache_hit`."""
-        if run_manager is None or not self._should_stream_v2(
+        if run_manager is None or not self._should_use_protocol_streaming(
             async_api=True, run_manager=run_manager, **kwargs
         ):
             return
@@ -1867,7 +1867,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # (native or `_stream` compat bridge) through the shared helper so
         # `on_stream_event` fires per event, then returns a normal `ChatResult`
         # so caching / `on_llm_end` stay on the existing generate path.
-        if self._should_stream_v2(
+        if self._should_use_protocol_streaming(
             async_api=False,
             run_manager=run_manager,
             **kwargs,
@@ -2024,7 +2024,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             await self.rate_limiter.aacquire(blocking=True)
 
         # v2 streaming: see sync counterpart in `_generate_with_cache`.
-        if self._should_stream_v2(
+        if self._should_use_protocol_streaming(
             async_api=True,
             run_manager=run_manager,
             **kwargs,
