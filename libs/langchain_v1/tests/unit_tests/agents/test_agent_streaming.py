@@ -60,7 +60,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         # Drain so the run closes cleanly.
         list(run.tool_calls)
@@ -70,7 +70,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = list(run.tool_calls)
         assert len(collected) == 1
@@ -84,7 +84,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("streamer", text="x"))
         agent = create_agent(model, [streamer])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         tool_calls: list[ToolCallStream] = []
         for tc in run.tool_calls:
@@ -97,7 +97,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel()  # no tool calls scripted
         agent = create_agent(model, [])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         assert list(run.tool_calls) == []
         assert run.output is not None
 
@@ -106,7 +106,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
         # The native `messages` projection is bound as an instance attribute
         # by `BaseRunStream.__init__` whenever `MessagesTransformer` is
         # registered. Content population is covered by langgraph tests —
@@ -137,10 +137,9 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = agent.stream_events(
+        run = agent.stream_v2(
             {"messages": [HumanMessage("hi")]},
             transformers=[_Marker],
-            version="v3",
         )
         # Both the agent default and the user transformer are registered.
         assert "tool_calls" in run._mux.extensions  # type: ignore[attr-defined]
@@ -157,7 +156,7 @@ class TestAgentStreamV2Sync:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("boom"))
         agent = create_agent(model, [boom])
 
-        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = agent.stream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = []
 
@@ -180,7 +179,7 @@ class TestAgentStreamV2Async:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("echo", text="x"))
         agent = create_agent(model, [echo])
 
-        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = await agent.astream_v2({"messages": [HumanMessage("hi")]})
         async for tc in run.tool_calls:
             async for _ in tc.output_deltas:
                 pass
@@ -190,7 +189,7 @@ class TestAgentStreamV2Async:
         model = FakeToolCallingModel(tool_calls=_single_tool_call_script("astreamer", text="hi"))
         agent = create_agent(model, [astreamer])
 
-        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        run = await agent.astream_v2({"messages": [HumanMessage("hi")]})
 
         collected: list[ToolCallStream] = []
         async for tc in run.tool_calls:
