@@ -318,7 +318,7 @@ def create_schema_from_function(
         **field_definitions,
     )
     model.__doc__ = textwrap.dedent(description or func.__doc__ or "")
-    return cast(type[BaseModel], model)
+    return cast("type[BaseModel]", model)
 
 
 class ToolException(Exception):  # noqa: N818
