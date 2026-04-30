@@ -3861,6 +3861,60 @@ def test_get_input_schema_cached() -> None:
         assert mock_create.call_count <= 1
 
 
+def test_approximate_schema_chars_is_cached() -> None:
+    """_approximate_schema_chars must return the same int on repeated access."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    count1 = my_tool._approximate_schema_chars
+    count2 = my_tool._approximate_schema_chars
+    assert count1 == count2
+    assert isinstance(count1, int)
+    assert count1 > 0
+
+
+def test_approximate_schema_chars_invalidated_on_name_change() -> None:
+    """_approximate_schema_chars cache must be cleared when name changes."""
+    from langchain_core.tools import tool
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    count_before = my_tool._approximate_schema_chars
+    my_tool.name = "longer_tool_name_than_before"
+    count_after = my_tool._approximate_schema_chars
+    assert count_before != count_after
+
+
+def test_token_count_does_not_trigger_schema_rebuild() -> None:
+    """count_tokens_approximately must not call convert_to_openai_tool for BaseTool."""
+    from unittest.mock import patch
+
+    from langchain_core.messages import HumanMessage
+    from langchain_core.messages.utils import count_tokens_approximately
+    from langchain_core.tools import tool
+    from langchain_core.utils import function_calling as fc_module
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    _ = my_tool._approximate_schema_chars  # warm up
+
+    with patch.object(
+        fc_module, "convert_to_openai_tool", wraps=fc_module.convert_to_openai_tool
+    ) as mock_convert:
+        count_tokens_approximately([HumanMessage(content="hello")], tools=[my_tool])
+        assert mock_convert.call_count == 0
+
+
 def test_filter_injected_args_no_annotation_walk_on_run() -> None:
     """_filter_injected_args must not call get_all_basemodel_annotations on each run."""
     from unittest.mock import patch

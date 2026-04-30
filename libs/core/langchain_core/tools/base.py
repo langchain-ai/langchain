@@ -621,6 +621,20 @@ class ChildTool(BaseTool):
         """Schema inferred from `_run` signature; computed once."""
         return create_schema_from_function(self.name, self._run)
 
+    @functools.cached_property
+    def _approximate_schema_chars(self) -> int:
+        """Cached char count of the neutral tool payload for token estimation."""
+        schema = self.tool_call_schema
+        schema_dict = (
+            schema if isinstance(schema, dict) else schema.model_json_schema()
+        )
+        payload = {
+            "name": self.name,
+            "description": self.description,
+            "schema": schema_dict,
+        }
+        return len(json.dumps(payload, default=str))
+
     @override
     def invoke(
         self,
