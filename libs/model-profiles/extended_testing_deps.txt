@@ -1,2 +1,0 @@
--e ../partners/openai
--e ../partners/anthropic
