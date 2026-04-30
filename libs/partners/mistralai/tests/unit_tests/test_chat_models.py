@@ -21,6 +21,8 @@ from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _convert_content_block_to_mistral,
+    _convert_lc_image_block_to_mistral,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
@@ -105,6 +107,102 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
     ],
 )
 def test_convert_message_to_mistral_chat_message(
+    message: BaseMessage, expected: dict
+) -> None:
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("block", "expected"),
+    [
+        (
+            {"type": "image", "url": "https://example.com/img.png"},
+            {"type": "image_url", "image_url": "https://example.com/img.png"},
+        ),
+        (
+            {
+                "type": "image",
+                "base64": "abc123",
+                "mime_type": "image/jpeg",
+            },
+            {
+                "type": "image_url",
+                "image_url": "data:image/jpeg;base64,abc123",
+            },
+        ),
+    ],
+)
+def test_convert_lc_image_block_to_mistral(block: dict, expected: dict) -> None:
+    assert _convert_lc_image_block_to_mistral(block) == expected
+
+
+def test_convert_lc_image_block_to_mistral_missing_mime_type() -> None:
+    with pytest.raises(ValueError, match="mime_type"):
+        _convert_lc_image_block_to_mistral({"type": "image", "base64": "abc123"})
+
+
+def test_convert_lc_image_block_to_mistral_unsupported() -> None:
+    with pytest.raises(ValueError, match="'url' or 'base64'"):
+        _convert_lc_image_block_to_mistral({"type": "image"})
+
+
+@pytest.mark.parametrize(
+    ("block", "expected"),
+    [
+        ({"type": "text", "text": "hello"}, {"type": "text", "text": "hello"}),
+        ("plain string", "plain string"),
+    ],
+)
+def test_convert_content_block_to_mistral_passthrough(
+    block: str | dict, expected: str | dict
+) -> None:
+    assert _convert_content_block_to_mistral(block) == expected
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What is in this image?"},
+                    {"type": "image", "url": "https://example.com/img.png"},
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What is in this image?"},
+                    {"type": "image_url", "image_url": "https://example.com/img.png"},
+                ],
+            },
+        ),
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image",
+                        "base64": "abc123",
+                        "mime_type": "image/png",
+                    },
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image_url",
+                        "image_url": "data:image/png;base64,abc123",
+                    },
+                ],
+            },
+        ),
+    ],
+)
+def test_convert_human_message_with_images(
     message: BaseMessage, expected: dict
 ) -> None:
     result = _convert_message_to_mistral_chat_message(message)

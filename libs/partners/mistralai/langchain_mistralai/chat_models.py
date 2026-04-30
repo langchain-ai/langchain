@@ -369,13 +369,39 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
+def _convert_lc_image_block_to_mistral(block: dict) -> dict:
+    """Convert a LangChain image content block to Mistral's `image_url` format."""
+    if "url" in block:
+        return {"type": "image_url", "image_url": block["url"]}
+    if "base64" in block:
+        if "mime_type" not in block:
+            msg = "mime_type is required for base64 image data."
+            raise ValueError(msg)
+        return {
+            "type": "image_url",
+            "image_url": f"data:{block['mime_type']};base64,{block['base64']}",
+        }
+    msg = "ImageContentBlock must have either 'url' or 'base64' key."
+    raise ValueError(msg)
+
+
+def _convert_content_block_to_mistral(block: str | dict) -> str | dict:
+    """Convert a single LangChain content block to Mistral's format."""
+    if isinstance(block, dict) and block.get("type") == "image":
+        return _convert_lc_image_block_to_mistral(block)
+    return block
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        content = message.content
+        if isinstance(content, list):
+            content = [_convert_content_block_to_mistral(block) for block in content]
+        return {"role": "user", "content": content}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls: list = []
