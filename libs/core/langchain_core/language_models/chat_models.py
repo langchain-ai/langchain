@@ -1291,8 +1291,23 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         For `version="v1"` / `"v2"`, yields `StreamEvent` dicts (see
         `Runnable.stream_events`). For `version="v3"`, returns a
-        `ChatModelStream` exposing typed projections (`.text`, `.reasoning`,
-        `.tool_calls`, `.output`).
+        `ChatModelStream` exposing typed projections (`.text`,
+        `.reasoning`, `.tool_calls`, `.output`).
+
+        !!! warning
+
+            The `version="v3"` API is experimental and may change.
+
+        !!! note "v3 always produces v1-shaped content"
+
+            `ChatModelStream.output.content` is always a list of v1
+            content blocks (text / reasoning / tool_call / image / …),
+            regardless of the model's `output_version` attribute. The
+            setting only affects the legacy `stream()` / `astream()` /
+            `invoke()` paths. If you're mixing
+            `stream_events(version="v3")` with those paths in the same
+            pipeline and need a consistent output shape across them,
+            set `output_version="v1"` on the model.
 
         Args:
             input: The model input.
@@ -1305,8 +1320,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 forwarded to the model.
 
         Returns:
-            For `version="v3"`, a `ChatModelStream`. Otherwise an
-            `Iterator[StreamEvent]`.
+            For `version="v3"`, a `ChatModelStream` with typed
+            projections. Otherwise an `Iterator[StreamEvent]`.
         """
         if version == "v3":
             return self._chat_model_stream_v3(input, config, stop=stop, **kwargs)
