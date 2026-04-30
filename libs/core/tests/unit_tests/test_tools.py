@@ -3750,6 +3750,36 @@ def test_get_filtered_args_removed() -> None:
     assert not hasattr(base_module, "_get_filtered_args")
 
 
+def test_parse_input_annotation_walk_called_once() -> None:
+    """_parse_input must call get_all_basemodel_annotations at most once per invocation."""
+    from typing import Annotated
+    from unittest.mock import patch
+
+    from langchain_core.tools import tool
+    from langchain_core.tools.base import InjectedToolCallId, get_all_basemodel_annotations
+    from pydantic import BaseModel
+
+    class MyInput(BaseModel):
+        x: int
+        tool_call_id: Annotated[str, InjectedToolCallId()]
+
+    @tool(args_schema=MyInput)
+    def my_tool(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> str:
+        """A test tool."""
+        return str(x)
+
+    with patch(
+        "langchain_core.tools.base.get_all_basemodel_annotations",
+        wraps=get_all_basemodel_annotations,
+    ) as mock_annots:
+        # Call _parse_input directly to isolate it from _filter_injected_args
+        my_tool._parse_input({"x": 1, "tool_call_id": "abc"}, "abc")
+        calls_for_my_input = [
+            c for c in mock_annots.call_args_list if c.args and c.args[0] is MyInput
+        ]
+        assert len(calls_for_my_input) <= 1
+
+
 def test_get_all_basemodel_annotations_is_memoized() -> None:
     """Repeated calls with the same class must return the cached result (same object)."""
     from langchain_core.tools.base import get_all_basemodel_annotations

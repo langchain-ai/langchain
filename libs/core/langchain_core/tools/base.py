@@ -666,36 +666,22 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            _injected_call_id_msg = (
+                "When tool includes an InjectedToolCallId "
+                "argument, tool must always be invoked with a full "
+                "model ToolCall of the form: {'args': {...}, "
+                "'name': '...', 'type': 'tool_call', "
+                "'tool_call_id': '...'}"
+            )
+            for k, v in get_all_basemodel_annotations(input_args).items():
+                if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
+                    if tool_call_id is None:
+                        raise ValueError(_injected_call_id_msg)
+                    tool_input[k] = tool_call_id
             if issubclass(input_args, BaseModel):
-                # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
-                # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
