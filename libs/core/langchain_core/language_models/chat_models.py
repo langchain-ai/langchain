@@ -638,7 +638,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> Iterator[MessagesData]:
         """Drive the v2 event generator with per-event dispatch.
 
-        Shared between `stream_v2`'s pump and the invoke-time v2 branch
+        Shared between `stream_events(version="v3")`'s pump and the invoke-time v2 branch
         in `_generate_with_cache`. Picks the native
         `_stream_chat_model_events` hook when the subclass provides one,
         else bridges `_stream` chunks via `chunks_to_events`. Each event
@@ -988,7 +988,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Strip tracing-only kwargs before forwarding to `_stream` — matches
         # `stream()` / `astream()`. Provider clients reject unknown kwargs, so
-        # `.with_structured_output().stream_v2(...)` and any other binding that
+        # `.with_structured_output().stream_events(version="v3", ...)` and any other binding that
         # carries `ls_structured_output_format` / `structured_output_format`
         # would raise without this pop.
         ls_structured_output_format = kwargs.pop(
@@ -1120,7 +1120,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
-        # Strip tracing-only kwargs before forwarding — see `stream_v2` for the
+        # Strip tracing-only kwargs before forwarding — see `stream_events(version="v3")` for the
         # full rationale.
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None

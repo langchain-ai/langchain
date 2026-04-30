@@ -749,7 +749,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         )
 
     def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
-        """Run on each protocol event from `stream_v2`.
+        """Run on each protocol event from `stream_events(version="v3")`.
 
         Args:
             event: The protocol event.
@@ -871,7 +871,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
     async def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
-        """Run on each protocol event from `astream_v2`.
+        """Run on each protocol event from `astream_events(version="v3")`.
 
         Args:
             event: The protocol event.

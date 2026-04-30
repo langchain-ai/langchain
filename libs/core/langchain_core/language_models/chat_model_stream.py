@@ -1,8 +1,8 @@
 """Per-message streaming objects for content-block protocol events.
 
 `ChatModelStream` is the synchronous variant returned by
-`BaseChatModel.stream_v2()`.  `AsyncChatModelStream` is the
-asynchronous variant returned by `BaseChatModel.astream_v2()`.
+`BaseChatModel.stream_events(version="v3")`.  `AsyncChatModelStream` is the
+asynchronous variant returned by `BaseChatModel.astream_events(version="v3")`.
 
 Both expose typed projection properties (`.text`, `.reasoning`,
 `.tool_calls`, `.usage`, `.output`) that accumulate protocol
@@ -546,9 +546,9 @@ class _ChatModelStreamBase:
     def set_message_id(self, message_id: str) -> None:
         """Assign the stable message identifier once the run starts.
 
-        Called by the stream driver (`stream_v2` / `astream_v2`) after
-        `on_chat_model_start` produces a run id. Not intended for
-        end-user code.
+        Called by the stream driver (`stream_events(version="v3")` /
+        `astream_events(version="v3")`) after `on_chat_model_start` produces a run
+        id. Not intended for end-user code.
         """
         self._message_id = message_id
 
@@ -568,8 +568,8 @@ class _ChatModelStreamBase:
 
         Unlike `ChatModelStream.output` (which blocks until the stream
         finishes), this never pumps, blocks, or raises. Intended for the
-        stream driver (`stream_v2` / `astream_v2`) to check whether the
-        stream produced a message before firing `on_llm_end` callbacks.
+        stream driver (`stream_events(version="v3")` / `astream_events(version="v3")`)
+        to check whether the stream produced a message before firing `on_llm_end` callbacks.
         """
         return self._output_message
 
@@ -579,8 +579,8 @@ class _ChatModelStreamBase:
         """Route a protocol event to the appropriate internal handler.
 
         Public entry point for feeding events into the stream. Called by
-        the stream driver (`stream_v2` / `astream_v2`'s pump) and by
-        any observer or test that needs to inject protocol events.
+        the stream driver (`stream_events(version="v3")` / `astream_events(version="v3")`'s
+        pump) and by any observer or test that needs to inject protocol events.
         """
         self._record_event(event)
         event_type = event.get("event")
@@ -937,8 +937,8 @@ class _ChatModelStreamBase:
     def fail(self, error: BaseException) -> None:
         """Mark the stream as errored and propagate to all projections.
 
-        Public API — called by the stream driver (`stream_v2` /
-        `astream_v2`) when the underlying producer raises, by
+        Public API — called by the stream driver (`stream_events(version="v3")` /
+        `astream_events(version="v3")`) when the underlying producer raises, by
         `dispatch` when an `error` protocol event arrives, and by
         cancellation paths.
         """
@@ -979,7 +979,7 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
-        # Pin `output_version` last: `stream_v2` always assembles content as v1
+        # Pin `output_version` last: `stream_events(version="v3")` always assembles content as v1
         # protocol blocks, regardless of the provider's configured output format.
         # A provider-supplied `output_version` in finish metadata (e.g.
         # `"responses/v1"` from `ChatOpenAI(use_responses_api=True, ...)`) would
@@ -1026,7 +1026,7 @@ class _ChatModelStreamBase:
 class ChatModelStream(_ChatModelStreamBase):
     """Synchronous per-message streaming object for a single LLM response.
 
-    Returned by `BaseChatModel.stream_v2()`.  Content-block protocol
+    Returned by `BaseChatModel.stream_events(version="v3")`.  Content-block protocol
     events are fed into this object and accumulated into typed projections.
 
     Projections (always return the same cached object):
@@ -1081,7 +1081,7 @@ class ChatModelStream(_ChatModelStreamBase):
         """Bind a pump for standalone streaming.
 
         Delegates to `set_request_more`.  Used by
-        `BaseChatModel.stream_v2()`.
+        `BaseChatModel.stream_events(version="v3")`.
         """
         self.set_request_more(pump_one)
 
@@ -1182,7 +1182,7 @@ class ChatModelStream(_ChatModelStreamBase):
 class AsyncChatModelStream(_ChatModelStreamBase):
     """Asynchronous per-message streaming object for a single LLM response.
 
-    Returned by `BaseChatModel.astream_v2()`.  Content-block events
+    Returned by `BaseChatModel.astream_events(version="v3")`.  Content-block events
     are fed into this object by a background producer task.
 
     Projections:
@@ -1228,7 +1228,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         # Teardown callback invoked by `aclose()` only when the producer
         # task was cancelled before its body ran (so the normal
         # `_produce` CancelledError handler — which fires
-        # `on_llm_error` — never executed). Set by `astream_v2`.
+        # `on_llm_error` — never executed). Set by `astream_events(version="v3")`.
         self._on_aclose_fail: Callable[[BaseException], Awaitable[None]] | None = None
 
     # -- Pump/pull wiring (async) ------------------------------------------
@@ -1369,7 +1369,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
                 task.remove_done_callback(_link)
 
         # If the task was cancelled before `_produce` ran (e.g.
-        # `astream_v2()` immediately followed by `aclose()`), the stream
+        # `astream_events(version="v3")` immediately followed by `aclose()`), the stream
         # never reached `_produce`'s CancelledError handler — its
         # projections are still pending and no end-of-lifecycle callback
         # has fired. Resolve both here so callers of `await stream.output`
