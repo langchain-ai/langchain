@@ -402,14 +402,10 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
 
     assert isinstance(structured_tool, StructuredTool)
 
-    expected = AnotherBaseModel(bar="baz")
-    for arg in [
-        SomeBaseModel(foo="baz"),
-        SomeBaseModel(foo="baz").dict(),
-    ]:
-        args = {"some_base_model": arg}
-        result = structured_tool.run(args)
-        assert result == expected
+    # Dict-to-v1-model coercion is no longer supported internally;
+    # callers must pass v1 model instances directly.
+    result = structured_tool.run({"some_base_model": SomeBaseModel(foo="baz")})
+    assert result == AnotherBaseModel(bar="baz")
 
 
 def test_structured_tool_types_parsed_pydantic_mixed() -> None:
@@ -3913,6 +3909,56 @@ def test_token_count_does_not_trigger_schema_rebuild() -> None:
     ) as mock_convert:
         count_tokens_approximately([HumanMessage(content="hello")], tools=[my_tool])
         assert mock_convert.call_count == 0
+
+
+def test_create_schema_from_function_basic() -> None:
+    """Schema must capture all non-filtered parameters with correct types."""
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_func(x: int, y: str = "hello") -> None:
+        """My function.
+
+        Args:
+            x: An integer.
+            y: A string.
+        """
+
+    schema = create_schema_from_function("my_func", my_func, parse_docstring=True)
+    fields = schema.model_fields
+    assert "x" in fields
+    assert "y" in fields
+    assert fields["y"].default == "hello"
+
+
+def test_create_schema_from_function_no_deprecation_warning() -> None:
+    """Must not emit PydanticDeprecationWarning."""
+    import warnings
+
+    from pydantic import PydanticDeprecationWarning
+
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_func(x: int) -> None:
+        """A func."""
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", PydanticDeprecationWarning)
+        create_schema_from_function("my_func", my_func)
+
+
+def test_create_schema_from_function_filters_run_manager() -> None:
+    """run_manager and callbacks must be excluded from the schema."""
+    from langchain_core.callbacks import CallbackManagerForToolRun
+    from langchain_core.tools.base import create_schema_from_function
+
+    def my_func(
+        x: int, run_manager: CallbackManagerForToolRun | None = None
+    ) -> None:
+        """A func."""
+
+    schema = create_schema_from_function("my_func", my_func)
+    assert "run_manager" not in schema.model_fields
+    assert "x" in schema.model_fields
 
 
 def test_filter_injected_args_no_annotation_walk_on_run() -> None:

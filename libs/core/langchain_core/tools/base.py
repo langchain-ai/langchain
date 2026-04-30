@@ -6,8 +6,8 @@ import functools
 import inspect
 import json
 import logging
+import textwrap
 import typing
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable  # noqa: TC003
 from inspect import signature
@@ -28,15 +28,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
-    validate_arguments,
+    create_model,
 )
 from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
-from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -199,64 +197,6 @@ def _infer_arg_descriptions(
     return description, arg_descriptions
 
 
-def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
-    """Check if a type annotation is a Pydantic model.
-
-    Args:
-        annotation: The type annotation to check.
-        pydantic_version: The Pydantic version to check against (`'v1'` or `'v2'`).
-
-    Returns:
-        `True` if the annotation is a Pydantic model, `False` otherwise.
-    """
-    base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
-    try:
-        return issubclass(annotation, base_model_class)
-    except TypeError:
-        return False
-
-
-def _function_annotations_are_pydantic_v1(
-    signature: inspect.Signature, func: Callable
-) -> bool:
-    """Check if all Pydantic annotations in a function are from v1.
-
-    Args:
-        signature: The function signature to check.
-        func: The function being checked.
-
-    Returns:
-        True if all Pydantic annotations are from v1, `False` otherwise.
-
-    Raises:
-        NotImplementedError: If the function contains mixed v1 and v2 annotations.
-    """
-    any_v1_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
-        for parameter in signature.parameters.values()
-    )
-    any_v2_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
-        for parameter in signature.parameters.values()
-    )
-    if any_v1_annotations and any_v2_annotations:
-        msg = (
-            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
-            "Only one version of Pydantic annotations per function is supported."
-        )
-        raise NotImplementedError(msg)
-    return any_v1_annotations and not any_v2_annotations
-
-
-class _SchemaConfig:
-    """Configuration for Pydantic models generated from function signatures."""
-
-    extra: str = "forbid"
-    """Whether to allow extra fields in the model."""
-
-    arbitrary_types_allowed: bool = True
-    """Whether to allow arbitrary types in the model."""
-
 
 def create_schema_from_function(
     model_name: str,
@@ -289,74 +229,86 @@ def create_schema_from_function(
     """
     sig = inspect.signature(func)
 
-    if _function_annotations_are_pydantic_v1(sig, func):
-        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
-    else:
-        # https://docs.pydantic.dev/latest/usage/validation_decorator/
-        with warnings.catch_warnings():
-            # We are using deprecated functionality here.
-            # This code should be re-written to simply construct a Pydantic model
-            # using inspect.signature and create_model.
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
-
-    # Let's ignore `self` and `cls` arguments for class and instance methods
-    # If qualified name has a ".", then it likely belongs in a class namespace
     in_class = bool(func.__qualname__ and "." in func.__qualname__)
-
-    has_args = False
-    has_kwargs = False
-
-    for param in sig.parameters.values():
-        if param.kind == param.VAR_POSITIONAL:
-            has_args = True
-        elif param.kind == param.VAR_KEYWORD:
-            has_kwargs = True
-
-    inferred_model = validated.model
+    existing_params: list[str] = list(sig.parameters.keys())
 
     if filter_args:
-        filter_args_ = filter_args
+        filter_args_: Sequence[str] = filter_args
     else:
-        # Handle classmethods and instance methods
-        existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in {"self", "cls"} and in_class:
             filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
-
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
-            ):
-                filter_args_.append(existing_param)
+        for param_name, param in sig.parameters.items():
+            if not include_injected and _is_injected_arg_type(param.annotation):
+                filter_args_.append(param_name)  # type: ignore[union-attr]
 
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
-    # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = []
-    for field in get_fields(inferred_model):
-        if not has_args and field == "args":
-            continue
-        if not has_kwargs and field == "kwargs":
-            continue
 
-        if field == "v__duplicate_kwargs":  # Internal pydantic field
+    # Detect v1/mixed annotation usage to raise early and avoid confusing errors.
+    v1_params = [
+        p
+        for p in sig.parameters.values()
+        if isinstance(p.annotation, type)
+        and is_pydantic_v1_subclass(p.annotation)
+    ]
+    v2_params = [
+        p
+        for p in sig.parameters.values()
+        if isinstance(p.annotation, type)
+        and is_pydantic_v2_subclass(p.annotation)
+    ]
+    if v1_params and v2_params:
+        msg = (
+            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
+            "Only one version of Pydantic annotations per function is supported."
+        )
+        raise NotImplementedError(msg)
+
+    field_definitions: dict[str, Any] = {}
+    for param_name, param in sig.parameters.items():
+        if param_name in filter_args_:
             continue
+        if param.kind == param.VAR_POSITIONAL:
+            # Preserve *args as an 'args' list field (maintains is_single_input behavior)
+            field_definitions["args"] = (list, FieldInfo(default=[]))
+            continue
+        if param.kind == param.VAR_KEYWORD:
+            # Preserve **kwargs as a 'kwargs' dict field
+            field_definitions["kwargs"] = (dict, FieldInfo(default={}))
+            continue
+        annotation = (
+            param.annotation
+            if param.annotation is not inspect.Parameter.empty
+            else Any
+        )
+        # Use Any for v1 model annotations — pydantic v2 cannot validate v1 types
+        # directly. The function itself handles v1 type semantics at call time.
+        if isinstance(annotation, type) and is_pydantic_v1_subclass(annotation):
+            annotation = Any
+        field_description = arg_descriptions.get(param_name)
+        if param.default is inspect.Parameter.empty:
+            field_definitions[param_name] = (
+                annotation,
+                FieldInfo(description=field_description),
+            )
+        else:
+            field_definitions[param_name] = (
+                annotation,
+                FieldInfo(default=param.default, description=field_description),
+            )
 
-        if field not in filter_args_:
-            valid_properties.append(field)
-
-    return _create_subset_model(
+    model = create_model(
         model_name,
-        inferred_model,
-        list(valid_properties),
-        descriptions=arg_descriptions,
-        fn_description=description,
+        __config__=ConfigDict(arbitrary_types_allowed=True),
+        **field_definitions,
     )
+    model.__doc__ = textwrap.dedent(description or func.__doc__ or "")
+    return model
 
 
 class ToolException(Exception):  # noqa: N818
