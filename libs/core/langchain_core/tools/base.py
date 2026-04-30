@@ -247,7 +247,7 @@ def create_schema_from_function(
         for param_name, param in sig.parameters.items():
             resolved = type_hints.get(param_name, param.annotation)
             if not include_injected and _is_injected_arg_type(resolved):
-                filter_args_.append(param_name)  # type: ignore[union-attr]
+                filter_args_.append(param_name)
 
     description, arg_descriptions = _infer_arg_descriptions(
         func,
@@ -318,7 +318,7 @@ def create_schema_from_function(
         **field_definitions,
     )
     model.__doc__ = textwrap.dedent(description or func.__doc__ or "")
-    return model
+    return cast(type[BaseModel], model)
 
 
 class ToolException(Exception):  # noqa: N818
