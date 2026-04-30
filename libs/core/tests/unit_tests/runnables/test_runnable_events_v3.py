@@ -1,4 +1,5 @@
 """Tests for the v3 dispatch path on Runnable.astream_events / stream_events."""
+
 from __future__ import annotations
 
 import pytest

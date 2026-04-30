@@ -1,10 +1,10 @@
-"""Tests for `stream_events(version="v3")` / `astream_events(version="v3")` and `ChatModelStream`."""
+"""Tests for `stream_events(version="v3")` (sync + async) and `ChatModelStream`."""
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_protocol.protocol import (
@@ -30,7 +30,7 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Awaitable, Iterator
 
     from langchain_core.callbacks import CallbackManagerForLLMRun
     from langchain_core.messages import BaseMessage
@@ -323,7 +323,9 @@ class TestStreamV2:
         assert stream.output.usage_metadata is None
         assert stream.done
 
-    def test_stream_events_v3_malformed_tool_args_produce_invalid_tool_call(self) -> None:
+    def test_stream_events_v3_malformed_tool_args_produce_invalid_tool_call(
+        self,
+    ) -> None:
         """End-to-end: malformed tool-call JSON becomes invalid_tool_calls."""
         model = _MalformedToolCallModel()
         stream = model.stream_events("test", version="v3")
@@ -336,7 +338,9 @@ class TestStreamV2:
         assert itc["args"] == '{"q": '
         assert itc["id"] == "call_1"
 
-    def test_stream_events_v3_translates_anthropic_server_tool_use_to_protocol(self) -> None:
+    def test_stream_events_v3_translates_anthropic_server_tool_use_to_protocol(
+        self,
+    ) -> None:
         """Phase E end-to-end: server_tool_use becomes server_tool_call in output."""
         model = _AnthropicStyleServerToolModel()
         stream = model.stream_events("weather?", version="v3")
@@ -698,8 +702,8 @@ class TestStructuredOutputKwargStripping:
     def test_stream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = bound.stream_events("test", version="v3")
-        _ = stream.output  # drain
+        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
+        _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
         assert "structured_output_format" not in recorded
@@ -707,7 +711,7 @@ class TestStructuredOutputKwargStripping:
     def test_stream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = bound.stream_events("test", version="v3")
+        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
         _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
@@ -717,7 +721,10 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = await bound.astream_events("test", version="v3")
+        stream = await cast(
+            "Awaitable[AsyncChatModelStream]",
+            bound.astream_events("test", version="v3"),
+        )
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -731,7 +738,10 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = await bound.astream_events("test", version="v3")
+        stream = await cast(
+            "Awaitable[AsyncChatModelStream]",
+            bound.astream_events("test", version="v3"),
+        )
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -964,10 +974,12 @@ class TestAsyncStreamAclose:
         handler = RecordingHandler()
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_events("test", config={"callbacks": [handler]}, version="v3")
-        # No yield to the event loop between `astream_events(version="v3")` returning and
-        # `aclose()` — the producer task has been created but its body
-        # has not executed.
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
+        # No yield to the event loop between `astream_events(version="v3")`
+        # returning and `aclose()` — the producer task has been created
+        # but its body has not executed.
         await stream.aclose()
 
         # `await stream.output` must resolve (with CancelledError)
@@ -1004,7 +1016,9 @@ class TestAsyncStreamAclose:
         handler = RecordingHandler()
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_events("test", config={"callbacks": [handler]}, version="v3")
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
 
         aiter_ = stream.text.__aiter__()
         await aiter_.__anext__()
@@ -1044,7 +1058,9 @@ class TestAsyncStreamAclose:
 
         handler = SlowEndHandler()
         model = FakeListChatModel(responses=["ok"])
-        stream = await model.astream_events("test", config={"callbacks": [handler]}, version="v3")
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
 
         # Wait until the stream has assembled the message and the
         # slow on_llm_end handler has started running.
@@ -1164,9 +1180,9 @@ class TestCacheHitV2Replay:
 class _ProviderMetadataStreamModel(BaseChatModel):
     """Fake model that advertises `output_version="responses/v1"` in metadata.
 
-    Verifies `stream_events(version="v3")` pins the assembled message's `output_version` to
-    `"v1"` — the shape it actually produces — regardless of what the
-    provider's chunk metadata claims.
+    Verifies that `stream_events(version="v3")` pins the assembled
+    message's `output_version` to `"v1"` — the shape it actually
+    produces — regardless of what the provider's chunk metadata claims.
     """
 
     @property

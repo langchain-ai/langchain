@@ -1,4 +1,4 @@
-"""V1 parity tests: `stream_events(version="v3")` output must match `model.stream()` output.
+"""V1 parity tests: `stream_events(version="v3")` must match `model.stream()` output.
 
 These are the acceptance criteria for the v3 streaming API — if any test fails,
 v3 has a regression vs v1.

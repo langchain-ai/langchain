@@ -1,9 +1,9 @@
-"""Tests for `BaseChatModel.stream_events(version="v3")` / `astream_events(version="v3")`."""
+"""Tests for `BaseChatModel.stream_events(version="v3")` and its async equivalent."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from pydantic import Field
@@ -19,7 +19,7 @@ from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Awaitable, Iterator
 
     from langchain_protocol.protocol import MessagesData
 
@@ -193,7 +193,7 @@ class _EmptyStreamModel(BaseChatModel):
 
 
 class TestCallbacks:
-    """Verify `stream_events(version="v3")` fires `on_llm_end` / `on_llm_error` callbacks."""
+    """Verify v3 streaming fires `on_llm_end` / `on_llm_error` callbacks."""
 
     def test_stream_events_v3_defers_on_chat_model_start_until_consumed(self) -> None:
         handler = _RecordingHandler()
@@ -232,7 +232,9 @@ class TestCallbacks:
         assert "on_llm_end" in handler.events
 
     @pytest.mark.asyncio
-    async def test_astream_events_v3_defers_on_chat_model_start_until_consumed(self) -> None:
+    async def test_astream_events_v3_defers_on_chat_model_start_until_consumed(
+        self,
+    ) -> None:
         handler = _AsyncRecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
 
@@ -277,7 +279,9 @@ class TestCallbacks:
 
     def test_empty_stream_reports_error_without_finish_only_lifecycle(self) -> None:
         handler = _RecordingHandler()
-        stream = _EmptyStreamModel(callbacks=[handler]).stream_events("test", version="v3")
+        stream = _EmptyStreamModel(callbacks=[handler]).stream_events(
+            "test", version="v3"
+        )
 
         with pytest.raises(ValueError, match="No generation chunks were returned"):
             list(stream)
@@ -289,7 +293,9 @@ class TestCallbacks:
     @pytest.mark.asyncio
     async def test_empty_astream_reports_error(self) -> None:
         handler = _AsyncRecordingHandler()
-        stream = await _EmptyStreamModel(callbacks=[handler]).astream_events("test", version="v3")
+        stream = await _EmptyStreamModel(callbacks=[handler]).astream_events(
+            "test", version="v3"
+        )
 
         with pytest.raises(ValueError, match="No generation chunks were returned"):
             await stream
@@ -303,7 +309,7 @@ class TestCallbacks:
 
 
 class TestOnStreamEvent:
-    """`on_stream_event` must fire once per protocol event from `stream_events(version="v3")`."""
+    """`on_stream_event` fires once per protocol event from v3 streaming."""
 
     def test_on_stream_event_fires_for_every_event_sync(self) -> None:
         handler = _RecordingHandler()
@@ -346,7 +352,7 @@ class TestOnStreamEvent:
 
 
 class TestCancellation:
-    """Cancellation of `astream_events(version="v3")` must propagate, not be swallowed."""
+    """Cancellation of `astream_events(version="v3")` must propagate."""
 
     @pytest.mark.asyncio
     async def test_astream_events_v3_cancellation_propagates(self) -> None:
@@ -401,7 +407,7 @@ class _KwargRecordingModel(FakeListChatModel):
 
 
 class TestRunnableBindingForwarding:
-    """`RunnableBinding.stream_events(version="v3")` must merge bound kwargs into the call.
+    """`RunnableBinding.stream_events(version="v3")` merges bound kwargs.
 
     Without the explicit override on `RunnableBinding`, `__getattr__`
     forwards the call but drops `self.kwargs` — so tools bound via
@@ -414,7 +420,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-42")
 
-        stream = bound.stream_events("test", version="v3")
+        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
         for _ in stream.text:
             pass
 
@@ -426,7 +432,10 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="from-bind")
 
-        stream = bound.stream_events("test", my_marker="from-call", version="v3")
+        stream = cast(
+            "ChatModelStream",
+            bound.stream_events("test", my_marker="from-call", version="v3"),
+        )
         for _ in stream.text:
             pass
 
@@ -438,7 +447,10 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        stream = await bound.astream_events("test", version="v3")
+        stream = await cast(
+            "Awaitable[AsyncChatModelStream]",
+            bound.astream_events("test", version="v3"),
+        )
         _ = await stream
 
         assert len(model.received_kwargs) == 1

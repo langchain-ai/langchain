@@ -6,7 +6,7 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import anthropic
 import httpx
@@ -28,6 +28,14 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+    from langchain_core.language_models.chat_model_stream import (
+        AsyncChatModelStream,
+        ChatModelStream,
+    )
 from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -927,7 +935,10 @@ def test_agent_loop_streaming(
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
     if use_v2_stream:
-        tool_call_message = llm_with_tools.stream_v2([input_message]).output
+        tool_call_message = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events([input_message], version="v3"),
+        ).output
     else:
         tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
@@ -938,8 +949,12 @@ def test_agent_loop_streaming(
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
     if use_v2_stream:
-        response = llm_with_tools.stream_v2(
-            [input_message, tool_call_message, tool_message]
+        response = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events(
+                [input_message, tool_call_message, tool_message],
+                version="v3",
+            ),
         ).output
     else:
         response = llm_with_tools.invoke(
@@ -954,8 +969,8 @@ def test_agent_loop_streaming(
 
 @pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
 @pytest.mark.vcr
-async def test_agent_loop_streaming_astream_v2_v1() -> None:
-    """Async multi-turn through `astream_v2`.
+async def test_agent_loop_streaming_astream_events_v3_v1() -> None:
+    """Async multi-turn through `astream_events(version="v3")`.
 
     Mirrors `test_agent_loop_streaming` for `output_version="v1"` but
     exercises `AsyncChatModelStream` end-to-end.
@@ -973,7 +988,12 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    tool_call_message = await (await llm_with_tools.astream_v2([input_message]))
+    tool_call_message = await (
+        await cast(
+            "Awaitable[AsyncChatModelStream]",
+            llm_with_tools.astream_events([input_message], version="v3"),
+        )
+    )
     assert isinstance(tool_call_message, AIMessage)
     tool_calls = tool_call_message.tool_calls
     assert len(tool_calls) == 1
@@ -981,8 +1001,12 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
     response = await (
-        await llm_with_tools.astream_v2(
-            [input_message, tool_call_message, tool_message]
+        await cast(
+            "Awaitable[AsyncChatModelStream]",
+            llm_with_tools.astream_events(
+                [input_message, tool_call_message, tool_message],
+                version="v3",
+            ),
         )
     )
     assert isinstance(response, AIMessage)
@@ -1030,7 +1054,7 @@ def test_citations(output_version: Literal["v0", "v1"], *, use_v2_stream: bool) 
     # Test streaming
     full: BaseMessage
     if use_v2_stream:
-        full = llm.stream_v2(messages).output
+        full = llm.stream_events(messages, version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm.stream(messages):
@@ -1124,7 +1148,7 @@ def test_thinking_v1(*, use_v2_stream: bool) -> None:
     # Test streaming
     full: BaseMessage
     if use_v2_stream:
-        full = llm.stream_v2([input_message]).output
+        full = llm.stream_events([input_message], version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm.stream([input_message]):
@@ -2618,10 +2642,10 @@ def _stable_blocks(blocks: Any) -> list[dict[str, Any]]:
 @pytest.mark.default_cassette("test_streaming_tool_call_v1_v2_parity.yaml.gz")
 @pytest.mark.vcr
 def test_streaming_tool_call_v1_v2_parity() -> None:
-    """`AIMessage` parity between `stream()` reduction and `stream_v2().output`.
+    """`AIMessage` parity between `stream()` and `stream_events(version="v3")` output.
 
     Runs the same forced-tool-call prompt through both the legacy chunk
-    stream (reduced with `AIMessageChunk.__add__`) and the `stream_v2`
+    stream (reduced with `AIMessageChunk.__add__`) and the `stream_events(version="v3")`
     bridge path on a `v1`-output `ChatAnthropic`, then compares the
     resulting messages on path-independent invariants:
 
@@ -2649,7 +2673,7 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
         v1_full = chunk if v1_full is None else v1_full + chunk
     assert isinstance(v1_full, AIMessageChunk)
 
-    stream = with_tool.stream_v2(prompt)
+    stream = cast("ChatModelStream", with_tool.stream_events(prompt, version="v3"))
     events = list(stream)
     assert_valid_event_stream(events)
     v2_message = stream.output

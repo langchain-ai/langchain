@@ -639,8 +639,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> Iterator[MessagesData]:
         """Drive the v2 event generator with per-event dispatch.
 
-        Shared between `stream_events(version="v3")`'s pump and the invoke-time v2 branch
-        in `_generate_with_cache`. Picks the native
+        Shared between the `stream_events(version="v3")` pump and the
+        invoke-time v2 branch in `_generate_with_cache`. Picks the native
         `_stream_chat_model_events` hook when the subclass provides one,
         else bridges `_stream` chunks via `chunks_to_events`. Each event
         is dispatched into `stream` and fired as `on_stream_event` on
@@ -982,16 +982,19 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> ChatModelStream:
-        """Internal v3 sync streaming implementation. Public entry point: stream_events(version='v3')."""
+        """Internal v3 sync streaming implementation.
+
+        Public entry point: `stream_events(version='v3')`.
+        """
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
         # Strip tracing-only kwargs before forwarding to `_stream` — matches
-        # `stream()` / `astream()`. Provider clients reject unknown kwargs, so
-        # `.with_structured_output().stream_events(version="v3", ...)` and any other binding that
-        # carries `ls_structured_output_format` / `structured_output_format`
-        # would raise without this pop.
+        # `stream()` / `astream()`. Provider clients reject unknown kwargs,
+        # so `.with_structured_output().stream_events(version="v3", ...)`
+        # and any other binding that carries `ls_structured_output_format`
+        # / `structured_output_format` would raise without this pop.
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
         ) or kwargs.pop("structured_output_format", None)
@@ -1116,13 +1119,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncChatModelStream:
-        """Internal v3 async streaming implementation. Public entry point: astream_events(version='v3')."""
+        """Internal v3 async streaming implementation.
+
+        Public entry point: `astream_events(version='v3')`.
+        """
         config = ensure_config(config)
         messages = self._convert_input(input).to_messages()
         input_messages = _normalize_messages(messages)
 
-        # Strip tracing-only kwargs before forwarding — see `stream_events(version="v3")` for the
-        # full rationale.
+        # Strip tracing-only kwargs before forwarding — see the sync v3
+        # implementation for the full rationale.
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
         ) or kwargs.pop("structured_output_format", None)
@@ -1304,7 +1310,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """
         if version == "v3":
             return self._chat_model_stream_v3(input, config, stop=stop, **kwargs)
-        return super().stream_events(input, config, version=version, stop=stop, **kwargs)
+        return super().stream_events(
+            input, config, version=version, stop=stop, **kwargs
+        )
 
     @overload  # type: ignore[override]
     def astream_events(
@@ -1403,10 +1411,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     ) -> None:
         """Replay cached messages as v2 events when a v2 handler is attached.
 
-        A warm cache must produce the same `on_stream_event` stream as a cold
-        call so LangGraph-style consumers do not observe behavior that depends
-        on cache state. Gated by `_should_use_protocol_streaming` so a `disable_streaming`
-        config that suppresses v2 on cold calls also suppresses it here.
+        A warm cache must produce the same `on_stream_event` stream as a
+        cold call so LangGraph-style consumers do not observe behavior
+        that depends on cache state. Gated by
+        `_should_use_protocol_streaming` so a `disable_streaming` config
+        that suppresses v2 on cold calls also suppresses it here.
         """
         if run_manager is None or not self._should_use_protocol_streaming(
             async_api=False, run_manager=run_manager, **kwargs

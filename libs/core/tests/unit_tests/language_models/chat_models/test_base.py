@@ -1562,7 +1562,7 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
 
 
 def test_stream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
-    """`stream_events(version="v3")` must preserve filtered invocation params for tracing."""
+    """`stream_events(version="v3")` preserves filtered invocation params."""
     llm = FakeStreamingChatModelWithInvocationParams()
     collector = LangChainTracerRunCollector()
 
@@ -1583,7 +1583,7 @@ def test_stream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
 
 
 async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
-    """`astream_events(version="v3")` must preserve filtered invocation params for tracing."""
+    """`astream_events(version="v3")` preserves filtered invocation params."""
     llm = FakeStreamingChatModelWithInvocationParams()
     collector = LangChainTracerRunCollector()
 

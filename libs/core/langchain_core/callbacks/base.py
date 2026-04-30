@@ -134,7 +134,10 @@ class LLMManagerMixin:
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on each protocol event produced by `stream_events(version="v3")` / `astream_events(version="v3")`.
+        """Run on each protocol event from `stream_events(version="v3")`.
+
+        Also fires for the async equivalent
+        (`astream_events(version="v3")`).
 
         Fires once per `MessagesData` event — `message-start`, per-block
         `content-block-start` / `content-block-delta` /

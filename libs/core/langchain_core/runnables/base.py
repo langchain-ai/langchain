@@ -104,10 +104,6 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
-    from langchain_core.language_models.chat_model_stream import (
-        AsyncChatModelStream,
-        ChatModelStream,
-    )
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
@@ -1516,7 +1512,8 @@ class Runnable(ABC, Generic[Input, Output]):
         if version == "v3":
             msg = (
                 "astream_events(version='v3') is only supported on Runnable subclasses "
-                "that implement the v3 streaming protocol (BaseChatModel, CompiledGraph). "
+                "that implement the v3 streaming protocol "
+                "(BaseChatModel, CompiledGraph). "
                 f"Got: {type(self).__name__}"
             )
             raise NotImplementedError(msg)
@@ -1625,20 +1622,23 @@ class Runnable(ABC, Generic[Input, Output]):
                 versions.
 
         """
+        # Base impl always raises; consume args so they don't trip ARG002.
+        del input, config, include_names, include_types, include_tags
+        del exclude_names, exclude_types, exclude_tags, kwargs
         if version == "v3":
             msg = (
                 "stream_events(version='v3') is only supported on Runnable subclasses "
-                "that implement the v3 streaming protocol (BaseChatModel, CompiledGraph). "
+                "that implement the v3 streaming protocol "
+                "(BaseChatModel, CompiledGraph). "
                 f"Got: {type(self).__name__}"
             )
             raise NotImplementedError(msg)
-        else:
-            msg = (
-                f"stream_events(version={version!r}) is not supported. "
-                "Use astream_events() for v1/v2, or stream_events(version='v3') "
-                "on a supported subclass."
-            )
-            raise NotImplementedError(msg)
+        msg = (
+            f"stream_events(version={version!r}) is not supported. "
+            "Use astream_events() for v1/v2, or stream_events(version='v3') "
+            "on a supported subclass."
+        )
+        raise NotImplementedError(msg)
 
     def transform(
         self,
@@ -6106,7 +6106,9 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             # explicitly as `version="v3"` and a duplicate keyword would error.
             kwargs_without_version = {k: v for k, v in kwargs.items() if k != "version"}
             return _AsyncEventsResult(
-                awaitable=self._astream_events_v3(input, config, **kwargs_without_version)
+                awaitable=self._astream_events_v3(
+                    input, config, **kwargs_without_version
+                )
             )
         # v1/v2: bound.astream_events is itself a hybrid result object on chat
         # models, but a plain async generator on generic Runnables. We need an

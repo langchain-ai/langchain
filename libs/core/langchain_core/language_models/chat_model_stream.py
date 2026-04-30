@@ -568,8 +568,9 @@ class _ChatModelStreamBase:
 
         Unlike `ChatModelStream.output` (which blocks until the stream
         finishes), this never pumps, blocks, or raises. Intended for the
-        stream driver (`stream_events(version="v3")` / `astream_events(version="v3")`)
-        to check whether the stream produced a message before firing `on_llm_end` callbacks.
+        stream driver (`stream_events(version="v3")` and its async
+        equivalent) to check whether the stream produced a message before
+        firing `on_llm_end` callbacks.
         """
         return self._output_message
 
@@ -579,8 +580,9 @@ class _ChatModelStreamBase:
         """Route a protocol event to the appropriate internal handler.
 
         Public entry point for feeding events into the stream. Called by
-        the stream driver (`stream_events(version="v3")` / `astream_events(version="v3")`'s
-        pump) and by any observer or test that needs to inject protocol events.
+        the stream driver (the `stream_events(version="v3")` pump and its
+        async equivalent) and by any observer or test that needs to
+        inject protocol events.
         """
         self._record_event(event)
         event_type = event.get("event")
@@ -979,8 +981,9 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
-        # Pin `output_version` last: `stream_events(version="v3")` always assembles content as v1
-        # protocol blocks, regardless of the provider's configured output format.
+        # Pin `output_version` last: `stream_events(version="v3")` always
+        # assembles content as v1 protocol blocks, regardless of the
+        # provider's configured output format.
         # A provider-supplied `output_version` in finish metadata (e.g.
         # `"responses/v1"` from `ChatOpenAI(use_responses_api=True, ...)`) would
         # otherwise cause `AIMessage.content_blocks` to re-run the wrong
