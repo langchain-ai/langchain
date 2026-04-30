@@ -438,9 +438,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        # RunnableBinding.astream_events is an async generator for v1/v2;
-        # use _astream_events_v3 to obtain the AsyncChatModelStream directly.
-        stream = await bound._astream_events_v3("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
 
         assert len(model.received_kwargs) == 1

@@ -6083,22 +6083,35 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         )
 
     @override
-    async def astream_events(
+    async def astream_events(  # type: ignore[override]
         self,
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> AsyncIterator[StreamEvent]:
+    ) -> AsyncIterator[StreamEvent] | Any:
         """Forward `astream_events` to the bound runnable with bound kwargs merged.
 
-        For `version="v1"` / `"v2"`, delegates to the bound runnable's
-        `astream_events`, yielding each event. For `version="v3"`, use
-        `_astream_events_v3` instead — a separate coroutine that returns the
-        typed stream object.
+        For `version="v3"`, returns the bound runnable's typed stream object
+        (e.g. `AsyncChatModelStream`). For `version="v1"` / `"v2"`, returns an
+        async generator yielding `StreamEvent` items.
 
         Without this override, `__getattr__` would drop `self.kwargs` — losing
         tools bound via `bind_tools`, `stop` sequences, etc.
         """
+        version = kwargs.get("version", "v2")
+        if version == "v3":
+            # Strip `version` so `_astream_events_v3` can pass it explicitly.
+            kwargs_without_version = {k: v for k, v in kwargs.items() if k != "version"}
+            return await self._astream_events_v3(input, config, **kwargs_without_version)
+        return self._astream_events_v1_v2(input, config, **kwargs)
+
+    async def _astream_events_v1_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]:
+        """Async generator for v1/v2 forwarding."""
         result = self.bound.astream_events(
             input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         )
@@ -6107,8 +6120,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         # Await coroutines first, then iterate.
         if inspect.iscoroutine(result):
             result = await result
-        async for item in result:
-            yield item
+        async for ev in result:
+            yield ev
 
     @override
     def transform(

@@ -717,9 +717,7 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        # RunnableBinding.astream_events is an async generator for v1/v2;
-        # use _astream_events_v3 to obtain the AsyncChatModelStream directly.
-        stream = await bound._astream_events_v3("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -733,9 +731,7 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        # RunnableBinding.astream_events is an async generator for v1/v2;
-        # use _astream_events_v3 to obtain the AsyncChatModelStream directly.
-        stream = await bound._astream_events_v3("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"
