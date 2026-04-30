@@ -173,10 +173,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_message_content(content: Any) -> Any:
     """Format message content for the Fireworks chat-completions wire format.
 
-    Mirrors ``langchain_openai.chat_models.base._format_message_content``:
+    Mirrors `langchain_openai.chat_models.base._format_message_content`:
     drops blocks the chat-completions wire does not carry, and translates
     canonical v0/v1 multimodal data blocks via
-    ``convert_to_openai_data_block(block, api="chat/completions")``. String and
+    `convert_to_openai_data_block(block, api="chat/completions")`. String and
     non-list content are returned unchanged.
     """
     if not isinstance(content, list):
