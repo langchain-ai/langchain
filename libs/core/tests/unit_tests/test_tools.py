@@ -3960,7 +3960,7 @@ def test_filter_injected_args_no_annotation_walk_on_run() -> None:
 
 
 def test_get_all_basemodel_annotations_is_memoized() -> None:
-    """Repeated calls must return the cached result (same object)."""
+    """Repeated calls with the same class return the cached result (same object)."""
 
     class Foo(BaseModel):
         x: int
@@ -3973,7 +3973,6 @@ def test_get_all_basemodel_annotations_is_memoized() -> None:
 
 def test_tool_schema_is_cached() -> None:
     """tool_schema must return the same object on repeated access."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3987,7 +3986,6 @@ def test_tool_schema_is_cached() -> None:
 
 def test_tool_schema_invalidated_on_mutation() -> None:
     """tool_schema must be recomputed after name or description changes."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -4003,8 +4001,6 @@ def test_tool_schema_invalidated_on_mutation() -> None:
 
 def test_tool_schema_has_validator() -> None:
     """tool_schema.validator must validate inputs correctly."""
-    from pydantic import BaseModel
-    from langchain_core.tools import tool
 
     class MyInput(BaseModel):
         x: int
@@ -4022,8 +4018,6 @@ def test_tool_schema_has_validator() -> None:
 
 def test_tool_schema_approximate_chars() -> None:
     """`approximate_chars` must be a positive integer matching the payload size."""
-    import json
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -4039,4 +4033,4 @@ def test_tool_schema_approximate_chars() -> None:
 
 def test_tool_schema_exported() -> None:
     """ToolSchema must be importable from langchain_core.tools."""
-    from langchain_core.tools import ToolSchema  # noqa: F401
+    from langchain_core.tools import ToolSchema  # noqa: F401, PLC0415

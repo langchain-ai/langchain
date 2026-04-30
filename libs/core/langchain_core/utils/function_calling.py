@@ -254,7 +254,7 @@ def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescript
     """
     from pydantic import TypeAdapter  # noqa: PLC0415
 
-    adapter = TypeAdapter(typed_dict)
+    adapter: TypeAdapter = TypeAdapter(typed_dict)
     schema = adapter.json_schema()
 
     docstring = inspect.getdoc(typed_dict)

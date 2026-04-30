@@ -542,7 +542,7 @@ class ChildTool(BaseTool):
         elif hasattr(pydantic_schema, "model_json_schema"):
             json_schema = pydantic_schema.model_json_schema()
         else:
-            json_schema = pydantic_schema.schema()  # pydantic v1
+            json_schema = pydantic_schema.schema()  # type: ignore[deprecated]  # pydantic v1
         args = cast("dict", json_schema.get("properties", {}))
         payload = {
             "name": self.name,
@@ -568,7 +568,7 @@ class ChildTool(BaseTool):
         Returns:
             The schema used for tool calls from language models.
         """
-        return self.tool_schema.pydantic_schema
+        return self.tool_schema.pydantic_schema  # type: ignore[no-any-return]
 
     @property
     def args(self) -> dict:

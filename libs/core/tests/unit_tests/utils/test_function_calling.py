@@ -1,5 +1,5 @@
 import typing
-from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Callable
 from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
@@ -11,6 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
+from typing_extensions import NotRequired
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -804,7 +805,7 @@ def test_tool_outputs() -> None:
 def test__convert_typed_dict_to_openai_function(
     typed_dict: TypeAlias, annotated: TypeAlias
 ) -> None:
-    """TypedDict conversion produces correct name, description, fields, and required list."""
+    """TypedDict conversion produces correct name, description, fields, and required."""
 
     class SubTool(typed_dict):  # type: ignore[misc]
         """Subtool docstring."""
@@ -861,13 +862,12 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_not_required(typed_dict: TypeAlias) -> None:
     """NotRequired fields must not appear in the required list."""
-    from typing_extensions import NotRequired
 
     class Tool(typed_dict):  # type: ignore[misc]
         """A tool with optional and required fields."""
 
         required_field: str
-        optional_field: NotRequired[int]
+        optional_field: NotRequired[int]  # type: ignore[valid-type]
 
     actual = _convert_typed_dict_to_openai_function(Tool)
     required = actual["parameters"].get("required", [])
