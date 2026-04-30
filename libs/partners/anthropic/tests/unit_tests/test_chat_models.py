@@ -3053,15 +3053,15 @@ def test_no_task_budget_no_beta() -> None:
         assert "task-budgets-2026-03-13" not in betas
 
 
-def test_anthropic_stream_v2_lifecycle() -> None:
+def test_anthropic_stream_events_v3_lifecycle() -> None:
     """Validate lifecycle events across a thinking + text + tool_use stream.
 
     Anthropic emits raw `content_block_start` / `content_block_delta` /
     `content_block_stop` events with integer `index` fields, interleaved
     with `message_start` and `message_delta`. This test threads a
     realistic event sequence through `_stream` via a mocked raw client
-    and asserts that `stream_v2` produces a spec-conformant event
-    stream: paired start/finish per block, no interleaving, sequential
+    and asserts that `stream_events(version="v3")` produces a spec-conformant
+    event stream: paired start/finish per block, no interleaving, sequential
     `uint` wire indices.
     """
     from unittest.mock import patch
@@ -3182,7 +3182,7 @@ def test_anthropic_stream_v2_lifecycle() -> None:
         return events
 
     with patch.object(llm, "_create", mock_create):
-        stream_events = list(llm.stream_v2("Test query"))
+        stream_events = list(llm.stream_events("Test query", version="v3"))
 
     assert_valid_event_stream(stream_events)
 

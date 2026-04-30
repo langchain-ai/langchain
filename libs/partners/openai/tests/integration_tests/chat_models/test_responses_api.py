@@ -113,9 +113,10 @@ def test_web_search(
     # Test streaming
     full: BaseMessage
     if use_v2_stream:
-        full = llm.stream_v2(
+        full = llm.stream_events(
             "What was a positive news story from today?",
             tools=[{"type": "web_search_preview"}],
+            version="v3",
         ).output
     else:
         aggregated: BaseMessageChunk | None = None
@@ -284,7 +285,7 @@ def test_agent_loop_streaming(
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
     if use_v2_stream:
-        tool_call_message = llm_with_tools.stream_v2([input_message]).output
+        tool_call_message = llm_with_tools.stream_events([input_message], version="v3").output
     else:
         tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
@@ -294,8 +295,9 @@ def test_agent_loop_streaming(
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
     if use_v2_stream:
-        response = llm_with_tools.stream_v2(
-            [input_message, tool_call_message, tool_message]
+        response = llm_with_tools.stream_events(
+            [input_message, tool_call_message, tool_message],
+            version="v3",
         ).output
     else:
         response = llm_with_tools.invoke(
@@ -310,8 +312,8 @@ def test_agent_loop_streaming(
 
 @pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
 @pytest.mark.vcr
-async def test_agent_loop_streaming_astream_v2_v1() -> None:
-    """Async multi-turn through `astream_v2`.
+async def test_agent_loop_streaming_astream_events_v3_v1() -> None:
+    """Async multi-turn through `astream_events(version="v3")`.
 
     Mirrors `test_agent_loop_streaming` for `output_version="v1"` but
     exercises `AsyncChatModelStream` end-to-end: aggregation in the
@@ -335,7 +337,7 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    stream = await llm_with_tools.astream_v2([input_message])
+    stream = await llm_with_tools.astream_events([input_message], version="v3")
     tool_call_message = await stream
     assert isinstance(tool_call_message, AIMessage)
     tool_calls = tool_call_message.tool_calls
@@ -343,8 +345,9 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     tool_call = tool_calls[0]
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
-    stream = await llm_with_tools.astream_v2(
-        [input_message, tool_call_message, tool_message]
+    stream = await llm_with_tools.astream_events(
+        [input_message, tool_call_message, tool_message],
+        version="v3",
     )
     response = await stream
     assert isinstance(response, AIMessage)
@@ -647,7 +650,7 @@ def test_stream_reasoning_summary(
     }
     response_1: BaseMessage
     if use_v2_stream:
-        response_1 = llm.stream_v2([message_1]).output
+        response_1 = llm.stream_events([message_1], version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm.stream([message_1]):
@@ -769,7 +772,7 @@ def test_code_interpreter(
 
     full: BaseMessage
     if use_v2_stream:
-        full = llm_with_tools.stream_v2([input_message]).output
+        full = llm_with_tools.stream_events([input_message], version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm_with_tools.stream([input_message]):
@@ -933,7 +936,7 @@ def test_mcp_builtin_zdr_v1(use_v2_stream: bool) -> None:
     }
     full: BaseMessage
     if use_v2_stream:
-        full = llm_with_tools.stream_v2([input_message]).output
+        full = llm_with_tools.stream_events([input_message], version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm_with_tools.stream([input_message]):
@@ -1365,7 +1368,7 @@ def test_compaction_streaming(
 
     def _run(messages: list) -> AIMessage:
         if use_v2_stream:
-            return llm.stream_v2(messages).output
+            return llm.stream_events(messages, version="v3").output
         result = llm.invoke(messages)
         assert isinstance(result, AIMessage)
         return result
@@ -1746,7 +1749,7 @@ def test_client_executed_tool_search() -> None:
 @pytest.mark.default_cassette("test_reasoning_text_v1_v2_parity.yaml.gz")
 @pytest.mark.vcr
 def test_reasoning_text_v1_v2_parity() -> None:
-    """`stream()` and `stream_v2()` must agree on reasoning + text output.
+    """`stream()` and `stream_events(version="v3")` must agree on reasoning + text output.
 
     Exercises the non-tool-call branch of the parity claim: a reasoning
     model (`o4-mini` via the Responses API) produces one or more
@@ -1767,7 +1770,7 @@ def test_reasoning_text_v1_v2_parity() -> None:
         v1 = chunk if v1 is None else v1 + chunk
     assert isinstance(v1, AIMessageChunk)
 
-    stream = llm.stream_v2([prompt])
+    stream = llm.stream_events([prompt], version="v3")
     events = list(stream)
     assert_valid_event_stream(events)
     v2 = stream.output

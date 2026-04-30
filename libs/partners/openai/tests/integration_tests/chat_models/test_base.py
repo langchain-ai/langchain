@@ -1289,7 +1289,7 @@ class _Person(BaseModel):
 
 @pytest.mark.vcr
 def test_streaming_tool_call_v1_v2_parity() -> None:
-    """`stream()` and `stream_v2()` must agree on their final `AIMessage`.
+    """`stream()` and `stream_events(version="v3")` must agree on their final `AIMessage`.
 
     Both paths are invoked against the same HTTP response (the cassette's
     single recorded interaction, replayed for both calls via
@@ -1310,7 +1310,7 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
         v1 = chunk if v1 is None else v1 + chunk
     assert isinstance(v1, AIMessageChunk)
 
-    stream = with_tool.stream_v2(prompt)
+    stream = with_tool.stream_events(prompt, version="v3")
     events = list(stream)
     assert_valid_event_stream(events)
     v2 = stream.output

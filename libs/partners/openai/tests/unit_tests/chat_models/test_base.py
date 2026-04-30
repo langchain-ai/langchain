@@ -616,8 +616,8 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
-def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
-    """`stream_v2` on chat completions emits a spec-conformant lifecycle."""
+def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_events(version="v3")` on chat completions emits a spec-conformant lifecycle."""
     from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
     llm = ChatOpenAI(model="gpt-4o")
@@ -628,7 +628,7 @@ def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     with patch.object(llm, "client", mock_client):
-        events = list(llm.stream_v2("你的名字叫什么？只回答名字"))
+        events = list(llm.stream_events("你的名字叫什么？只回答名字", version="v3"))
 
     assert_valid_event_stream(events)
     # At minimum, a text block with the accumulated answer.

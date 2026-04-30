@@ -763,8 +763,8 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         assert dumped == payload["input"][idx]
 
 
-def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
-    """`stream_v2` must emit `content-block-finish` events for reasoning blocks.
+def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
+    """`stream_events(version="v3")` must emit `content-block-finish` events for reasoning blocks.
 
     Regression test: the protocol bridge should surface the full lifecycle
     (`content-block-start` / `content-block-delta` / `content-block-finish`)
@@ -779,7 +779,7 @@ def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
     mock_client.responses.create = mock_create
 
     with patch.object(llm, "root_client", mock_client):
-        events = list(llm.stream_v2("test"))
+        events = list(llm.stream_events("test", version="v3"))
 
     assert_valid_event_stream(events)
 

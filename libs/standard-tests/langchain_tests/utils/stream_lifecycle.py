@@ -1,6 +1,6 @@
 """Validator for LangChain content-block protocol event streams.
 
-Checks that an event stream emitted by a chat model (via `stream_v2`,
+Checks that an event stream emitted by a chat model (via `stream_events(version="v3")`,
 or by the compat bridge's `chunks_to_events` / `message_to_events`)
 conforms to the protocol lifecycle rules:
 
@@ -37,7 +37,7 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
 
     Args:
         events: Iterable of protocol event dicts (as yielded by
-            `stream_v2` or `chunks_to_events`).
+            `stream_events(version="v3")` or `chunks_to_events`).
 
     Raises:
         AssertionError: On the first lifecycle violation found. The
