@@ -3748,3 +3748,17 @@ def test_get_filtered_args_removed() -> None:
     import langchain_core.tools.base as base_module
 
     assert not hasattr(base_module, "_get_filtered_args")
+
+
+def test_get_all_basemodel_annotations_is_memoized() -> None:
+    """Repeated calls with the same class must return the cached result (same object)."""
+    from langchain_core.tools.base import get_all_basemodel_annotations
+    from pydantic import BaseModel
+
+    class Foo(BaseModel):
+        x: int
+        y: str
+
+    result1 = get_all_basemodel_annotations(Foo)
+    result2 = get_all_basemodel_annotations(Foo)
+    assert result1 is result2, "Expected identical object from cache"

@@ -1447,10 +1447,14 @@ def _is_injected_arg_type(
     )
 
 
+@functools.lru_cache(maxsize=512)
 def get_all_basemodel_annotations(
-    cls: TypeBaseModel | Any, *, default_to_bound: bool = True
+    cls: TypeBaseModel | Any, default_to_bound: bool = True
 ) -> dict[str, type | TypeVar]:
     """Get all annotations from a Pydantic `BaseModel` and its parents.
+
+    The result is cached per `(cls, default_to_bound)` — callers must not mutate
+    the returned dict.
 
     Args:
         cls: The Pydantic `BaseModel` class.
@@ -1475,9 +1479,7 @@ def get_all_basemodel_annotations(
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = get_all_basemodel_annotations(
-            get_origin(cls), default_to_bound=False
-        )
+        annotations = dict(get_all_basemodel_annotations(get_origin(cls), False))
         orig_bases = (cls,)
 
     # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
@@ -1488,9 +1490,7 @@ def get_all_basemodel_annotations(
         for parent in orig_bases:
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
-                annotations.update(
-                    get_all_basemodel_annotations(parent, default_to_bound=False)
-                )
+                annotations.update(get_all_basemodel_annotations(parent, False))
                 continue
 
             parent_origin = get_origin(parent)
