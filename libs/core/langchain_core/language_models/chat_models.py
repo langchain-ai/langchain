@@ -1303,7 +1303,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """
         if version == "v3":
             return self._chat_model_stream_v3(input, config, stop=stop, **kwargs)
-        return super().stream_events(input, config, version=version, **kwargs)
+        return super().stream_events(input, config, version=version, stop=stop, **kwargs)
 
     @overload
     async def astream_events(
@@ -1350,7 +1350,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Async variant of `stream_events`. See `stream_events` for full docs."""
         if version == "v3":
             return await self._achat_model_stream_v3(input, config, stop=stop, **kwargs)
-        return self._astream_events_v1_v2(input, config, version=version, **kwargs)
+        return self._astream_events_v1_v2(input, config, version=version, stop=stop, **kwargs)
 
     # --- Custom methods ---
 
