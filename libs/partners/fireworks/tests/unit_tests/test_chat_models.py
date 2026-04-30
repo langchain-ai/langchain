@@ -146,16 +146,21 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     assert formatted == blocks
 
 
-def test_format_message_content_drops_unsupported_block_types() -> None:
-    """``tool_use``, ``thinking``, ``reasoning_content`` blocks are stripped.
-
-    These types are not part of the OpenAI chat-completions wire format.
-    """
+@pytest.mark.parametrize(
+    "btype",
+    [
+        "tool_use",
+        "thinking",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    ],
+)
+def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
+    """Block types not part of the OpenAI chat completions wire format are stripped."""
     blocks = [
         {"type": "text", "text": "visible"},
-        {"type": "tool_use", "name": "x", "input": {}},
-        {"type": "thinking", "thinking": "..."},
-        {"type": "reasoning_content", "reasoning_content": "..."},
+        {"type": btype, "foo": "bar"},
     ]
 
     formatted = _format_message_content(blocks)
@@ -163,12 +168,133 @@ def test_format_message_content_drops_unsupported_block_types() -> None:
     assert formatted == [{"type": "text", "text": "visible"}]
 
 
+def test_format_message_content_preserves_order_around_dropped_blocks() -> None:
+    """Surviving blocks keep their order when interleaved drops are removed."""
+    blocks = [
+        {"type": "text", "text": "before"},
+        {"type": "thinking", "thinking": "..."},
+        {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        {"type": "tool_use", "name": "t", "input": {}},
+        {"type": "text", "text": "after"},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "text", "text": "before"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        {"type": "text", "text": "after"},
+    ]
+
+
+def test_format_message_content_translates_v1_url_image_block() -> None:
+    """v1 image block with a top-level URL maps to an OpenAI image_url block."""
+    blocks = [{"type": "image", "url": "https://example.com/img.png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+    ]
+
+
+def test_format_message_content_translates_v0_url_image_block() -> None:
+    """v0 source_type=url image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/v0.png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/v0.png"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_base64_image() -> None:
+    """Legacy Anthropic-shape image with base64 source maps to a data URI."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": "abc",
+            },
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_url_image() -> None:
+    """Legacy Anthropic-shape image with url source maps to image_url."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {"type": "url", "url": "https://example.com/anthropic.png"},
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/anthropic.png"},
+        },
+    ]
+
+
+def test_format_message_content_translates_v1_audio_block() -> None:
+    """v1 audio block is translated to OpenAI input_audio shape."""
+    blocks = [{"type": "audio", "base64": "aGVsbG8=", "mime_type": "audio/wav"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "input_audio", "input_audio": {"data": "aGVsbG8=", "format": "wav"}},
+    ]
+
+
+def test_format_message_content_translates_v1_file_block_base64() -> None:
+    """v1 file block with base64 + filename maps to OpenAI file_data shape."""
+    blocks = [
+        {
+            "type": "file",
+            "base64": "JVBERi0=",
+            "mime_type": "application/pdf",
+            "filename": "x.pdf",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0=",
+                "filename": "x.pdf",
+            },
+        },
+    ]
+
+
 def test_convert_message_to_dict_translates_tool_message_image() -> None:
     """ToolMessage with a canonical image block lands as OpenAI image_url on the wire.
 
     Reproduces the failure mode where a tool that returns an image (e.g. a
-    file-reader) hands back ``content_blocks=[{"type": "image", ...}]`` and the
-    message round-trips into a Fireworks chat-completions request.
+    file-reader) hands back `content_blocks=[{"type": "image", ...}]` and the
+    message round-trips into a Fireworks chat completions request.
     """
     tool_message = ToolMessage(
         content=[{"type": "image", "base64": "abc", "mime_type": "image/png"}],
@@ -234,6 +360,57 @@ def test_convert_message_to_dict_string_content_unchanged() -> None:
         _convert_message_to_dict(ToolMessage(content="r1", tool_call_id="t"))["content"]
         == "r1"
     )
+
+
+def test_convert_message_to_dict_translates_system_list_content() -> None:
+    """SystemMessage with list content is routed through the formatter."""
+    system_message = SystemMessage(
+        content=[
+            {"type": "text", "text": "rules"},
+            {"type": "thinking", "thinking": "drop me"},
+        ]
+    )
+
+    result = _convert_message_to_dict(system_message)
+
+    assert result == {
+        "role": "system",
+        "content": [{"type": "text", "text": "rules"}],
+    }
+
+
+def test_convert_message_to_dict_translates_ai_message_image_content() -> None:
+    """AIMessage with a canonical image block is translated, not forwarded raw."""
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "see attached"},
+            {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        ]
+    )
+
+    result = _convert_message_to_dict(ai_message)
+
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {"type": "text", "text": "see attached"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_propagates_translator_value_error() -> None:
+    """Translator errors surface to callers instead of shipping bad payloads.
+
+    Chat completions does not support file URLs; the translator raises rather
+    than letting an unsupported block through.
+    """
+    bad_message = HumanMessage(
+        content=[{"type": "file", "url": "https://example.com/doc.pdf"}]
+    )
+
+    with pytest.raises(ValueError, match="file URLs"):
+        _convert_message_to_dict(bad_message)
 
 
 def _make_llm(max_retries: int | None = 2) -> ChatFireworks:

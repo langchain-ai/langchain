@@ -171,13 +171,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
 
 def _format_message_content(content: Any) -> Any:
-    """Format message content for the Fireworks chat-completions wire format.
+    """Format message content for the Fireworks chat completions wire format.
 
-    Mirrors `langchain_openai.chat_models.base._format_message_content`:
-    drops blocks the chat-completions wire does not carry, and translates
-    canonical v0/v1 multimodal data blocks via
-    `convert_to_openai_data_block(block, api="chat/completions")`. String and
-    non-list content are returned unchanged.
+    Adapted from `langchain_openai.chat_models.base._format_message_content`,
+    scoped to the chat completions API: drops content block types the wire
+    format does not carry, translates canonical v0/v1 multimodal data blocks
+    via `convert_to_openai_data_block(block, api="chat/completions")`, and
+    converts legacy Anthropic-shape image blocks (`{"type": "image",
+    "source": {...}}`) to OpenAI `image_url` blocks. String and non-list
+    content are returned unchanged.
+
+    Args:
+        content: The message content. Strings and non-list values are
+            returned as-is; lists are walked block by block.
+
+    Returns:
+        The formatted content, ready to be placed on the chat completions
+        wire. List inputs return a new list with translations applied; other
+        inputs are returned unchanged.
     """
     if not isinstance(content, list):
         return content
@@ -197,6 +208,27 @@ def _format_message_content(content: Any) -> Any:
                 formatted.append(
                     convert_to_openai_data_block(block, api="chat/completions")
                 )
+                continue
+            if (
+                btype == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if (
+                    source.get("type") == "base64"
+                    and (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                    continue
+                if source.get("type") == "url" and (url := source.get("url")):
+                    formatted.append({"type": "image_url", "image_url": {"url": url}})
+                    continue
                 continue
         formatted.append(block)
     return formatted
@@ -227,7 +259,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _format_message_content(message.content),
+        }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
