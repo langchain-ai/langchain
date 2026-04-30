@@ -29,6 +29,7 @@ from pydantic import (
     ConfigDict,
     Field,
     SkipValidation,
+    TypeAdapter,
     ValidationError,
     create_model,
 )
@@ -68,6 +69,8 @@ from langchain_core.utils.pydantic import (
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Sequence
+
+    from langchain_core.tools.schema import ToolSchema
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 TOOL_MESSAGE_BLOCK_TYPES = (
@@ -495,11 +498,90 @@ class ChildTool(BaseTool):
     def __setattr__(self, name: str, value: object) -> None:
         """Clear schema caches when schema-influencing fields are mutated."""
         if name in self._SCHEMA_INVALIDATING_FIELDS:
-            self.__dict__.pop("tool_call_schema", None)
-            self.__dict__.pop("args", None)
+            # tool_schema is the single root cache; _inferred_input_schema is
+            # kept separate since it's also used outside the tool_schema path.
+            self.__dict__.pop("tool_schema", None)
             self.__dict__.pop("_inferred_input_schema", None)
-            self.__dict__.pop("_approximate_schema_chars", None)
         super().__setattr__(name, value)
+
+    @functools.cached_property
+    def tool_schema(self) -> ToolSchema:
+        """Unified schema object — the single root cache for this tool's schema.
+
+        Owns input validation (`TypeAdapter`), the JSON schema for LLM APIs,
+        the args properties dict, and the approximate char count for token
+        estimation. All other schema properties on `BaseTool` delegate here;
+        only this property needs to be invalidated on mutation.
+
+        Returns:
+            A `ToolSchema` instance for this tool.
+        """
+        from langchain_core.tools.schema import ToolSchema  # noqa: PLC0415
+
+        # Compute pydantic_schema — the ArgsSchema (model class or dict) for
+        # backward compatibility with callers that inspect the type.
+        if isinstance(self.args_schema, dict):
+            pydantic_schema: ArgsSchema = (
+                {**self.args_schema, "description": self.description}
+                if self.description
+                else self.args_schema
+            )
+        else:
+            full_schema = self.get_input_schema()
+            fields = [
+                n
+                for n, t in get_all_basemodel_annotations(full_schema).items()
+                if not _is_injected_arg_type(t)
+            ]
+            pydantic_schema = _create_subset_model(
+                self.name, full_schema, fields, fn_description=self.description
+            )
+
+        if isinstance(pydantic_schema, dict):
+            json_schema: dict = pydantic_schema
+        elif hasattr(pydantic_schema, "model_json_schema"):
+            json_schema = pydantic_schema.model_json_schema()
+        else:
+            json_schema = pydantic_schema.schema()  # pydantic v1
+        args = cast("dict", json_schema.get("properties", {}))
+        payload = {
+            "name": self.name,
+            "description": self.description,
+            "schema": json_schema,
+        }
+        approximate_chars = len(json.dumps(payload, default=str))
+
+        return ToolSchema(
+            name=self.name,
+            description=self.description or "",
+            validator=TypeAdapter(self.get_input_schema()),
+            json_schema=json_schema,
+            pydantic_schema=pydantic_schema,
+            args=args,
+            approximate_chars=approximate_chars,
+        )
+
+    @property
+    def tool_call_schema(self) -> ArgsSchema:
+        """The schema for tool calls, excluding injected arguments.
+
+        Returns:
+            The schema used for tool calls from language models.
+        """
+        return self.tool_schema.pydantic_schema
+
+    @property
+    def args(self) -> dict:
+        """The tool's input argument properties.
+
+        Returns:
+            `dict` containing the tool's argument properties.
+        """
+        return self.tool_schema.args
+
+    @property
+    def _approximate_schema_chars(self) -> int:
+        return self.tool_schema.approximate_chars
 
     @property
     def is_single_input(self) -> bool:
@@ -510,50 +592,6 @@ class ChildTool(BaseTool):
         """
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
-
-    @functools.cached_property
-    def args(self) -> dict:
-        """Get the tool's input arguments schema.
-
-        Returns:
-            `dict` containing the tool's argument properties.
-        """
-        if isinstance(self.args_schema, dict):
-            json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
-        else:
-            input_schema = self.tool_call_schema
-            if isinstance(input_schema, dict):
-                json_schema = input_schema
-            else:
-                json_schema = input_schema.model_json_schema()
-        return cast("dict", json_schema["properties"])
-
-    @functools.cached_property
-    def tool_call_schema(self) -> ArgsSchema:
-        """Get the schema for tool calls, excluding injected arguments.
-
-        Returns:
-            The schema that should be used for tool calls from language models.
-        """
-        if isinstance(self.args_schema, dict):
-            if self.description:
-                return {
-                    **self.args_schema,
-                    "description": self.description,
-                }
-
-            return self.args_schema
-
-        full_schema = self.get_input_schema()
-        fields = []
-        for name, type_ in get_all_basemodel_annotations(full_schema).items():
-            if not _is_injected_arg_type(type_):
-                fields.append(name)
-        return _create_subset_model(
-            self.name, full_schema, fields, fn_description=self.description
-        )
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
@@ -582,18 +620,6 @@ class ChildTool(BaseTool):
     def _inferred_input_schema(self) -> type[BaseModel]:
         """Schema inferred from `_run` signature; computed once."""
         return create_schema_from_function(self.name, self._run)
-
-    @functools.cached_property
-    def _approximate_schema_chars(self) -> int:
-        """Cached char count of the neutral tool payload for token estimation."""
-        schema = self.tool_call_schema
-        schema_dict = schema if isinstance(schema, dict) else schema.model_json_schema()
-        payload = {
-            "name": self.name,
-            "description": self.description,
-            "schema": schema_dict,
-        }
-        return len(json.dumps(payload, default=str))
 
     @override
     def invoke(
