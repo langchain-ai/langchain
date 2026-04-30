@@ -2184,7 +2184,7 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
 
 
 _TOOL_FORMAT_OFFSETS: dict[str, int] = {
-    "openai": 32,    # {"type":"function","function":{...}} envelope
+    "openai": 32,  # {"type":"function","function":{...}} envelope
     "anthropic": 0,  # flat name/description/input_schema ≈ neutral form
 }
 
@@ -2260,7 +2260,7 @@ def count_tokens_approximately(
 
     # Count tokens for tools if provided
     if tools:
-        from langchain_core.tools import BaseTool as _BaseTool
+        from langchain_core.tools import BaseTool as _BaseTool  # noqa: PLC0415
 
         offset = _TOOL_FORMAT_OFFSETS.get(tool_format, 0)
         tools_chars = 0
@@ -2268,7 +2268,7 @@ def count_tokens_approximately(
             if isinstance(tool_item, dict):
                 tools_chars += len(json.dumps(tool_item, default=str))
             elif isinstance(tool_item, _BaseTool):
-                tools_chars += tool_item._approximate_schema_chars + offset
+                tools_chars += tool_item._approximate_schema_chars + offset  # noqa: SLF001
             else:
                 tools_chars += len(
                     json.dumps(convert_to_openai_tool(tool_item), default=str)

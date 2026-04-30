@@ -121,7 +121,6 @@ def _get_annotation_description(arg_type: type) -> str | None:
     return None
 
 
-
 def _parse_python_function_docstring(
     function: Callable, annotations: dict, *, error_on_invalid_docstring: bool = False
 ) -> tuple[str, dict]:
@@ -197,7 +196,6 @@ def _infer_arg_descriptions(
     return description, arg_descriptions
 
 
-
 def create_schema_from_function(
     model_name: str,
     func: Callable,
@@ -253,14 +251,12 @@ def create_schema_from_function(
     v1_params = [
         p
         for p in sig.parameters.values()
-        if isinstance(p.annotation, type)
-        and is_pydantic_v1_subclass(p.annotation)
+        if isinstance(p.annotation, type) and is_pydantic_v1_subclass(p.annotation)
     ]
     v2_params = [
         p
         for p in sig.parameters.values()
-        if isinstance(p.annotation, type)
-        and is_pydantic_v2_subclass(p.annotation)
+        if isinstance(p.annotation, type) and is_pydantic_v2_subclass(p.annotation)
     ]
     if v1_params and v2_params:
         msg = (
@@ -274,7 +270,7 @@ def create_schema_from_function(
         if param_name in filter_args_:
             continue
         if param.kind == param.VAR_POSITIONAL:
-            # Preserve *args as an 'args' list field (maintains is_single_input behavior)
+            # Preserves is_single_input behavior for *args functions.
             field_definitions["args"] = (list, FieldInfo(default=[]))
             continue
         if param.kind == param.VAR_KEYWORD:
@@ -282,9 +278,7 @@ def create_schema_from_function(
             field_definitions["kwargs"] = (dict, FieldInfo(default={}))
             continue
         annotation = (
-            param.annotation
-            if param.annotation is not inspect.Parameter.empty
-            else Any
+            param.annotation if param.annotation is not inspect.Parameter.empty else Any
         )
         # Use Any for v1 model annotations — pydantic v2 cannot validate v1 types
         # directly. The function itself handles v1 type semantics at call time.
@@ -483,11 +477,11 @@ class ChildTool(BaseTool):
     )
 
     def __setattr__(self, name: str, value: object) -> None:
+        """Clear schema caches when schema-influencing fields are mutated."""
         if name in self._SCHEMA_INVALIDATING_FIELDS:
             self.__dict__.pop("tool_call_schema", None)
             self.__dict__.pop("args", None)
             self.__dict__.pop("_inferred_input_schema", None)
-            # _approximate_schema_chars (added in PR 6) is also invalidated here
             self.__dict__.pop("_approximate_schema_chars", None)
         super().__setattr__(name, value)
 
@@ -577,9 +571,7 @@ class ChildTool(BaseTool):
     def _approximate_schema_chars(self) -> int:
         """Cached char count of the neutral tool payload for token estimation."""
         schema = self.tool_call_schema
-        schema_dict = (
-            schema if isinstance(schema, dict) else schema.model_json_schema()
-        )
+        schema_dict = schema if isinstance(schema, dict) else schema.model_json_schema()
         payload = {
             "name": self.name,
             "description": self.description,
@@ -1403,7 +1395,8 @@ def _is_injected_arg_type(
 
 @functools.lru_cache(maxsize=512)
 def get_all_basemodel_annotations(
-    cls: TypeBaseModel | Any, default_to_bound: bool = True
+    cls: TypeBaseModel | Any,
+    default_to_bound: bool = True,  # noqa: FBT001, FBT002
 ) -> dict[str, type | TypeVar]:
     """Get all annotations from a Pydantic `BaseModel` and its parents.
 
@@ -1433,7 +1426,7 @@ def get_all_basemodel_annotations(
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = dict(get_all_basemodel_annotations(get_origin(cls), False))
+        annotations = dict(get_all_basemodel_annotations(get_origin(cls), False))  # noqa: FBT003
         orig_bases = (cls,)
 
     # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
@@ -1444,7 +1437,7 @@ def get_all_basemodel_annotations(
         for parent in orig_bases:
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
-                annotations.update(get_all_basemodel_annotations(parent, False))
+                annotations.update(get_all_basemodel_annotations(parent, False))  # noqa: FBT003
                 continue
 
             parent_origin = get_origin(parent)
