@@ -1353,7 +1353,7 @@ class Runnable(ABC, Generic[Input, Output]):
         exclude_types: Sequence[str] | None = None,
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent]:
+    ) -> AsyncIterator[StreamEvent] | AsyncIterator[Any]:
         """Generate a stream of events.
 
         Use to create an iterator over `StreamEvent` that provide real-time information
@@ -1634,7 +1634,7 @@ class Runnable(ABC, Generic[Input, Output]):
         exclude_types: Sequence[str] | None = None,
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> Iterator[StreamEvent]:
+    ) -> Iterator[StreamEvent] | Iterator[Any]:
         """Generate a stream of events synchronously.
 
         Synchronous counterpart to `astream_events`. For `version='v3'`, subclasses
@@ -1658,9 +1658,6 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_types: Exclude events from `Runnable` objects with matching types.
             exclude_tags: Exclude events from `Runnable` objects with matching tags.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
-
-        Yields:
-            A stream of events.
 
         Raises:
             NotImplementedError: Always. Subclasses override this method for supported
