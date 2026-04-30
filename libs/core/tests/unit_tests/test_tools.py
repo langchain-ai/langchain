@@ -6,6 +6,7 @@ import logging
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,13 +21,21 @@ from typing import (
     cast,
     get_type_hints,
 )
+from unittest.mock import patch
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticDeprecationWarning,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
 
+import langchain_core.tools.base as base_module
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -36,8 +45,9 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.messages import ToolCall, ToolMessage
+from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
+from langchain_core.messages.utils import count_tokens_approximately
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     RunnableConfig,
@@ -61,8 +71,10 @@ from langchain_core.tools.base import (
     _format_output,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
+from langchain_core.utils import function_calling as fc_module
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -3741,19 +3753,11 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
 
 def test_get_filtered_args_removed() -> None:
     """_get_filtered_args was dead code; ensure it's gone."""
-    import langchain_core.tools.base as base_module
-
     assert not hasattr(base_module, "_get_filtered_args")
 
 
 def test_parse_input_annotation_walk_called_once() -> None:
-    """_parse_input must call get_all_basemodel_annotations at most once per invocation."""
-    from typing import Annotated
-    from unittest.mock import patch
-
-    from langchain_core.tools import tool
-    from langchain_core.tools.base import InjectedToolCallId, get_all_basemodel_annotations
-    from pydantic import BaseModel
+    """_parse_input calls get_all_basemodel_annotations at most once per invocation."""
 
     class MyInput(BaseModel):
         x: int
@@ -3778,7 +3782,6 @@ def test_parse_input_annotation_walk_called_once() -> None:
 
 def test_tool_call_schema_is_cached() -> None:
     """tool_call_schema must return the same object on repeated access."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3791,8 +3794,7 @@ def test_tool_call_schema_is_cached() -> None:
 
 
 def test_args_is_cached() -> None:
-    """args must return the same object on repeated access."""
-    from langchain_core.tools import tool
+    """Args must return the same object on repeated access."""
 
     @tool
     def my_tool(x: int) -> int:
@@ -3806,7 +3808,6 @@ def test_args_is_cached() -> None:
 
 def test_tool_call_schema_invalidated_on_name_change() -> None:
     """Cache must be invalidated when `name` is mutated."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3821,7 +3822,6 @@ def test_tool_call_schema_invalidated_on_name_change() -> None:
 
 def test_tool_call_schema_invalidated_on_description_change() -> None:
     """Cache must be invalidated when `description` is mutated."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3836,10 +3836,6 @@ def test_tool_call_schema_invalidated_on_description_change() -> None:
 
 def test_get_input_schema_cached() -> None:
     """get_input_schema must not call create_schema_from_function more than once."""
-    from unittest.mock import patch
-
-    from langchain_core.tools import tool
-    from langchain_core.tools import base as base_module
 
     @tool
     def my_tool(x: int) -> int:
@@ -3859,7 +3855,6 @@ def test_get_input_schema_cached() -> None:
 
 def test_approximate_schema_chars_is_cached() -> None:
     """_approximate_schema_chars must return the same int on repeated access."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3875,7 +3870,6 @@ def test_approximate_schema_chars_is_cached() -> None:
 
 def test_approximate_schema_chars_invalidated_on_name_change() -> None:
     """_approximate_schema_chars cache must be cleared when name changes."""
-    from langchain_core.tools import tool
 
     @tool
     def my_tool(x: int) -> int:
@@ -3890,12 +3884,6 @@ def test_approximate_schema_chars_invalidated_on_name_change() -> None:
 
 def test_token_count_does_not_trigger_schema_rebuild() -> None:
     """count_tokens_approximately must not call convert_to_openai_tool for BaseTool."""
-    from unittest.mock import patch
-
-    from langchain_core.messages import HumanMessage
-    from langchain_core.messages.utils import count_tokens_approximately
-    from langchain_core.tools import tool
-    from langchain_core.utils import function_calling as fc_module
 
     @tool
     def my_tool(x: int) -> int:
@@ -3913,7 +3901,6 @@ def test_token_count_does_not_trigger_schema_rebuild() -> None:
 
 def test_create_schema_from_function_basic() -> None:
     """Schema must capture all non-filtered parameters with correct types."""
-    from langchain_core.tools.base import create_schema_from_function
 
     def my_func(x: int, y: str = "hello") -> None:
         """My function.
@@ -3932,11 +3919,6 @@ def test_create_schema_from_function_basic() -> None:
 
 def test_create_schema_from_function_no_deprecation_warning() -> None:
     """Must not emit PydanticDeprecationWarning."""
-    import warnings
-
-    from pydantic import PydanticDeprecationWarning
-
-    from langchain_core.tools.base import create_schema_from_function
 
     def my_func(x: int) -> None:
         """A func."""
@@ -3948,12 +3930,8 @@ def test_create_schema_from_function_no_deprecation_warning() -> None:
 
 def test_create_schema_from_function_filters_run_manager() -> None:
     """run_manager and callbacks must be excluded from the schema."""
-    from langchain_core.callbacks import CallbackManagerForToolRun
-    from langchain_core.tools.base import create_schema_from_function
 
-    def my_func(
-        x: int, run_manager: CallbackManagerForToolRun | None = None
-    ) -> None:
+    def my_func(x: int, run_manager: CallbackManagerForToolRun | None = None) -> None:
         """A func."""
 
     schema = create_schema_from_function("my_func", my_func)
@@ -3963,10 +3941,6 @@ def test_create_schema_from_function_filters_run_manager() -> None:
 
 def test_filter_injected_args_no_annotation_walk_on_run() -> None:
     """_filter_injected_args must not call get_all_basemodel_annotations on each run."""
-    from unittest.mock import patch
-
-    from langchain_core.tools import tool
-    from langchain_core.tools.base import get_all_basemodel_annotations
 
     @tool
     def simple_tool(x: int) -> int:
@@ -3986,9 +3960,7 @@ def test_filter_injected_args_no_annotation_walk_on_run() -> None:
 
 
 def test_get_all_basemodel_annotations_is_memoized() -> None:
-    """Repeated calls with the same class must return the cached result (same object)."""
-    from langchain_core.tools.base import get_all_basemodel_annotations
-    from pydantic import BaseModel
+    """Repeated calls must return the cached result (same object)."""
 
     class Foo(BaseModel):
         x: int
