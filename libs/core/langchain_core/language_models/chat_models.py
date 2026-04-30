@@ -1251,7 +1251,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stream._on_aclose_fail = _on_aclose_fail  # noqa: SLF001
         return stream
 
-    @overload
+    @overload  # type: ignore[override]
     def stream_events(
         self,
         input: LanguageModelInput,
@@ -1272,7 +1272,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> ChatModelStream: ...
 
-    def stream_events(  # type: ignore[override]
+    def stream_events(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
@@ -1306,7 +1306,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return self._chat_model_stream_v3(input, config, stop=stop, **kwargs)
         return super().stream_events(input, config, version=version, stop=stop, **kwargs)
 
-    @overload
+    @overload  # type: ignore[override]
     def astream_events(
         self,
         input: LanguageModelInput,
@@ -1327,7 +1327,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> _AsyncEventsResult: ...
 
-    def astream_events(  # type: ignore[override]
+    def astream_events(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,

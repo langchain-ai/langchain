@@ -6033,7 +6033,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         **kwargs: Any,
     ) -> Any: ...
 
-    def stream_events(  # type: ignore[override]
+    def stream_events(
         self,
         input: Input,
         config: RunnableConfig | None = None,
@@ -6051,7 +6051,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         tools bound via `bind_tools`, `stop` sequences, etc.
         """
         if version == "v3":
-            return self.bound.stream_events(  # type: ignore[call-overload]
+            return self.bound.stream_events(
                 input,
                 self._merge_configs(config),
                 version=version,
@@ -6076,7 +6076,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         obtain the typed stream (e.g. `AsyncChatModelStream`) directly —
         Python does not allow `return <value>` inside an async generator.
         """
-        return await self.bound.astream_events(  # type: ignore[call-overload]
+        return await self.bound.astream_events(  # type: ignore[misc]
             input,
             self._merge_configs(config),
             version="v3",
