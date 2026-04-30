@@ -215,6 +215,40 @@ async def test_tracer_tool_run() -> None:
 
 
 @freeze_time("2023-01-01")
+async def test_tracer_tool_run_preserves_structured_inputs() -> None:
+    """Structured `inputs` from `BaseTool.run` should not be flattened to `str`."""
+    uuid = uuid4()
+    structured_inputs = {"command": "echo 'hello\nworld'", "timeout": None}
+    compare_run = Run(
+        id=str(uuid),
+        name="tool",
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
+        events=[
+            {"name": "start", "time": datetime.now(timezone.utc)},
+            {"name": "end", "time": datetime.now(timezone.utc)},
+        ],
+        extra={},
+        serialized={"name": "tool"},
+        inputs=structured_inputs,
+        outputs={"output": "ok"},
+        error=None,
+        run_type="tool",
+        trace_id=uuid,
+        dotted_order=f"20230101T000000000000Z{uuid}",
+    )
+    tracer = FakeAsyncTracer()
+    await tracer.on_tool_start(
+        serialized={"name": "tool"},
+        input_str=str(structured_inputs),
+        run_id=uuid,
+        inputs=structured_inputs,
+    )
+    await tracer.on_tool_end("ok", run_id=uuid)
+    assert tracer.runs == [compare_run]
+
+
+@freeze_time("2023-01-01")
 async def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
     tracer = FakeAsyncTracer()
