@@ -666,18 +666,19 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
-            _injected_call_id_msg = (
-                "When tool includes an InjectedToolCallId "
-                "argument, tool must always be invoked with a full "
-                "model ToolCall of the form: {'args': {...}, "
-                "'name': '...', 'type': 'tool_call', "
-                "'tool_call_id': '...'}"
-            )
-            for k, v in get_all_basemodel_annotations(input_args).items():
-                if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                    if tool_call_id is None:
-                        raise ValueError(_injected_call_id_msg)
-                    tool_input[k] = tool_call_id
+            if self._injected_args_keys:
+                _injected_call_id_msg = (
+                    "When tool includes an InjectedToolCallId "
+                    "argument, tool must always be invoked with a full "
+                    "model ToolCall of the form: {'args': {...}, "
+                    "'name': '...', 'type': 'tool_call', "
+                    "'tool_call_id': '...'}"
+                )
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
+                        if tool_call_id is None:
+                            raise ValueError(_injected_call_id_msg)
+                        tool_input[k] = tool_call_id
             if issubclass(input_args, BaseModel):
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
@@ -764,34 +765,17 @@ class ChildTool(BaseTool):
         Injected arguments are those annotated with `InjectedToolArg` or its
         subclasses, or arguments in `FILTERED_ARGS` like `run_manager` and callbacks.
 
+        Subclasses that define injected arguments via `args_schema` annotations
+        must ensure those keys are included in `_injected_args_keys`. `StructuredTool`
+        does this automatically via its function signature.
+
         Args:
             tool_input: The tool input dictionary to filter.
 
         Returns:
             A filtered dictionary with injected arguments removed.
         """
-        # Start with filtered args from the constant
-        filtered_keys = set[str](FILTERED_ARGS)
-
-        # Add injected args from function signature (e.g., ToolRuntime parameters)
-        filtered_keys.update(self._injected_args_keys)
-
-        # If we have an args_schema, use it to identify injected args
-        # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
-        if self.args_schema is not None and not isinstance(self.args_schema, dict):
-            try:
-                annotations = get_all_basemodel_annotations(self.args_schema)
-                for field_name, field_type in annotations.items():
-                    if _is_injected_arg_type(field_type):
-                        filtered_keys.add(field_name)
-            except Exception:
-                # If we can't get annotations, just use FILTERED_ARGS
-                _logger.debug(
-                    "Failed to get args_schema annotations for filtering.",
-                    exc_info=True,
-                )
-
-        # Filter out the injected keys from tool_input
+        filtered_keys = set(FILTERED_ARGS) | self._injected_args_keys
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
 
     def _to_args_and_kwargs(

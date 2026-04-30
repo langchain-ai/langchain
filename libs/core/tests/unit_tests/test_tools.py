@@ -3780,6 +3780,30 @@ def test_parse_input_annotation_walk_called_once() -> None:
         assert len(calls_for_my_input) <= 1
 
 
+def test_filter_injected_args_no_annotation_walk_on_run() -> None:
+    """_filter_injected_args must not call get_all_basemodel_annotations on each run."""
+    from unittest.mock import patch
+
+    from langchain_core.tools import tool
+    from langchain_core.tools.base import get_all_basemodel_annotations
+
+    @tool
+    def simple_tool(x: int) -> int:
+        """Simple."""
+        return x
+
+    # warm up _injected_args_keys cached_property
+    _ = simple_tool._injected_args_keys
+
+    with patch(
+        "langchain_core.tools.base.get_all_basemodel_annotations",
+        wraps=get_all_basemodel_annotations,
+    ) as mock_annots:
+        simple_tool.invoke({"x": 1})
+        simple_tool.invoke({"x": 2})
+        assert mock_annots.call_count == 0
+
+
 def test_get_all_basemodel_annotations_is_memoized() -> None:
     """Repeated calls with the same class must return the cached result (same object)."""
     from langchain_core.tools.base import get_all_basemodel_annotations
