@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_protocol.protocol import (
@@ -30,7 +30,7 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Iterator
+    from collections.abc import Iterator
 
     from langchain_core.callbacks import CallbackManagerForLLMRun
     from langchain_core.messages import BaseMessage
@@ -702,7 +702,7 @@ class TestStructuredOutputKwargStripping:
     def test_stream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
+        stream = bound.stream_events("test", version="v3")
         _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
@@ -711,7 +711,7 @@ class TestStructuredOutputKwargStripping:
     def test_stream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
+        stream = bound.stream_events("test", version="v3")
         _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
@@ -721,10 +721,7 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = await cast(
-            "Awaitable[AsyncChatModelStream]",
-            bound.astream_events("test", version="v3"),
-        )
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -738,10 +735,7 @@ class TestStructuredOutputKwargStripping:
     async def test_astream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = await cast(
-            "Awaitable[AsyncChatModelStream]",
-            bound.astream_events("test", version="v3"),
-        )
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"

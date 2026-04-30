@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import Never, Self, override
 
 from langchain_core._api import beta
 from langchain_core._event_streaming import _AsyncEventsResult
@@ -80,7 +80,7 @@ from langchain_core.outputs import (
 from langchain_core.outputs.chat_generation import merge_chat_generation_chunks
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.rate_limiters import BaseRateLimiter
-from langchain_core.runnables import RunnableMap, RunnablePassthrough
+from langchain_core.runnables import RunnableBinding, RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import (
     _StreamingCallbackHandler,
@@ -1337,7 +1337,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         version: Literal["v1", "v2"] = "v2",
         **kwargs: Any,
-    ) -> _AsyncEventsResult: ...
+    ) -> _AsyncEventsResult[Never, StreamEvent]: ...
 
     @overload
     def astream_events(
@@ -1348,7 +1348,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         version: Literal["v3"],
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> _AsyncEventsResult: ...
+    ) -> _AsyncEventsResult[AsyncChatModelStream, Never]: ...
 
     def astream_events(
         self,
@@ -2290,6 +2290,18 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         starter_dict["_type"] = self._llm_type
         return starter_dict
 
+    @override
+    def bind(self, **kwargs: Any) -> _ChatModelBinding:
+        """Bind kwargs to this chat model, returning a typed `_ChatModelBinding`.
+
+        Overrides `Runnable.bind` so the result preserves chat-model-specific
+        `stream_events` / `astream_events` overloads. Without this override,
+        `model.bind(...).stream_events(version="v3")` would type as
+        `Iterator[Any]` and `await model.bind(...).astream_events(version="v3")`
+        as `Any`, forcing callers to `cast`.
+        """
+        return _ChatModelBinding(bound=self, kwargs=kwargs, config={})
+
     def bind_tools(
         self,
         tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
@@ -2491,6 +2503,92 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+
+class _ChatModelBinding(RunnableBinding[LanguageModelInput, AIMessage]):  # type: ignore[no-redef]
+    """`RunnableBinding` that preserves chat-model-typed v3 overloads.
+
+    Returned by `BaseChatModel.bind` so that callers of the bound runnable's
+    `stream_events(version="v3")` / `astream_events(version="v3")` get the
+    typed `ChatModelStream` / `AsyncChatModelStream` back without needing
+    `cast`. At runtime this is a plain `RunnableBinding`; the subclass
+    exists purely to give the type checker a more specific surface.
+
+    The chat-model narrowing is preserved across further `bind` /
+    `with_config` calls because `RunnableBinding.bind` constructs its
+    result via `self.__class__(...)`.
+    """
+
+    @classmethod
+    @override
+    def lc_id(cls) -> list[str]:
+        """Serialize as `RunnableBinding`.
+
+        At runtime this class is behaviorally identical to `RunnableBinding`;
+        keeping the serialized id stable means existing snapshots and the
+        load mapping continue to work without registering a new entry.
+        """
+        return [*cls.get_lc_namespace(), "RunnableBinding"]
+
+    @overload  # type: ignore[override]
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent]: ...
+
+    @overload
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> ChatModelStream: ...
+
+    def stream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent] | ChatModelStream:
+        return super().stream_events(input, config, version=version, **kwargs)
+
+    @overload  # type: ignore[override]
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> _AsyncEventsResult[Never, StreamEvent]: ...
+
+    @overload
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> _AsyncEventsResult[AsyncChatModelStream, Never]: ...
+
+    def astream_events(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> _AsyncEventsResult:
+        return super().astream_events(input, config, **kwargs)
 
 
 class SimpleChatModel(BaseChatModel):

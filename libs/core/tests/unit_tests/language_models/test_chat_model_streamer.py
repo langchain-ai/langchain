@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pydantic import Field
@@ -19,7 +19,7 @@ from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Iterator
+    from collections.abc import AsyncIterator, Iterator
 
     from langchain_protocol.protocol import MessagesData
 
@@ -420,7 +420,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-42")
 
-        stream = cast("ChatModelStream", bound.stream_events("test", version="v3"))
+        stream = bound.stream_events("test", version="v3")
         for _ in stream.text:
             pass
 
@@ -432,10 +432,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="from-bind")
 
-        stream = cast(
-            "ChatModelStream",
-            bound.stream_events("test", my_marker="from-call", version="v3"),
-        )
+        stream = bound.stream_events("test", my_marker="from-call", version="v3")
         for _ in stream.text:
             pass
 
@@ -447,10 +444,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        stream = await cast(
-            "Awaitable[AsyncChatModelStream]",
-            bound.astream_events("test", version="v3"),
-        )
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
 
         assert len(model.received_kwargs) == 1
