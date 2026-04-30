@@ -3,13 +3,17 @@
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import patch
 
 import pytest
 from pydantic import model_validator
 from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -17,8 +21,14 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.chat_models import _generate_response_from_error
+from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
+    _normalize_messages,
+)
+from langchain_core.language_models.chat_models import (
+    SimpleChatModel,
+    _generate_response_from_error,
+)
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
@@ -34,9 +44,11 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -321,6 +333,20 @@ class FakeTracer(BaseTracer):
         self.traced_run_ids.append(run.id)
 
 
+class LangChainTracerRunCollector:
+    def __init__(self) -> None:
+        self.tracer = LangChainTracer()
+        self.runs: list[Run] = []
+
+    @contextmanager
+    def tracing_callback(self) -> Iterator[LangChainTracer]:
+        def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+            self.runs.append(run)
+
+        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+            yield self.tracer
+
+
 def test_pass_run_id() -> None:
     llm = FakeListChatModel(responses=["a", "b", "c"])
     cb = FakeTracer()
@@ -437,6 +463,26 @@ async def test_streaming_attribute_overrides_streaming_callback() -> None:
     model = StreamingModel(streaming=False)
     assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+
+
+class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Minimal v2 handler marker for routing tests; records nothing."""
+
+
+async def test_streaming_attribute_overrides_v2_callback() -> None:
+    """`self.streaming=False` must opt out of the v2 event path too.
+
+    `_should_stream_v2` shares the `_streaming_disabled` opt-outs with
+    `_should_stream`, so an instance-level `streaming=False` takes
+    precedence over an attached `_V2StreamingCallbackHandler`.
+    """
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [_FakeV2Handler()]})
     ).content == "invoke"
 
 
@@ -1392,148 +1438,165 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["status_code"] == 400
 
 
-class FakeChatModelWithSecrets(BaseChatModel):
-    """Fake chat model with lc_secrets for testing metadata filtering."""
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
 
-    api_key: str = "secret-key"
-    model: str = "test-model"
-    thinking: dict[str, Any] | None = None
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+class FakeChatModelWithInvocationParams(SimpleChatModel):
+    """Fake chat model with invocation params for testing tracing."""
+
+    temperature: float = 0.7
 
     @property
-    def lc_secrets(self) -> dict[str, str]:
-        return {"api_key": "API_KEY"}
+    @override
+    def _llm_type(self) -> str:
+        return "fake-chat-model-with-invocation-params"
 
     @property
+    @override
     def _identifying_params(self) -> dict[str, Any]:
         return {
-            "model": self.model,
-            "thinking": self.thinking,
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
         }
 
-    @property
-    def _llm_type(self) -> str:
-        return "fake-chat-model-with-secrets"
-
-    def _generate(
+    @override
+    def _call(
         self,
-        messages: list[BaseMessage],  # noqa: ARG002
-        stop: list[str] | None = None,  # noqa: ARG002
-        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
-    ) -> ChatResult:
-        return ChatResult(
-            generations=[ChatGeneration(message=AIMessage(content="test response"))]
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return "test response"
+
+
+class FakeStreamingChatModelWithInvocationParams(FakeChatModelWithInvocationParams):
+    """Streaming counterpart for tracer metadata tests."""
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+    @override
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+
+def test_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
+
+    assert len(collector.runs) == 1
+    run = collector.runs[0]
+
+    key = "LANGSMITH_LANGGRAPH_API_VARIANT"
+
+    if key in run.extra["metadata"]:
+        del run.extra["metadata"][key]
+
+    assert run.extra == {
+        "batch_size": 1,
+        "invocation_params": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "functions": [{"name": "test_function"}],
+            "messages": [{"content": "test", "role": "system"}],
+            "response_format": {"type": "json_object"},
+            "stop": None,
+            "temperature": 0.7,
+            "tools": [{"name": "test_tool"}],
+        },
+        "metadata": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "ls_integration": "langchain_chat_model",
+            "ls_model_type": "chat",
+            "ls_provider": "fakechatmodelwithinvocationparams",
+            "ls_temperature": 0.7,
+            "revision_id": run.extra["metadata"]["revision_id"],
+            "stop": None,
+            "temperature": 0.7,
+        },
+        "options": {"stop": None},
+        "runtime": run.extra["runtime"],
+    }
+    assert run.metadata == run.extra["metadata"]
+
+
+def test_stream_v2_invocation_params_passed_to_tracer_metadata() -> None:
+    """`stream_v2()` must preserve filtered invocation params for tracing."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        _ = llm.stream_v2(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+        ).output
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7
+
+
+async def test_astream_v2_invocation_params_passed_to_tracer_metadata() -> None:
+    """`astream_v2()` must preserve filtered invocation params for tracing."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        stream = await llm.astream_v2(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
         )
+        _ = await stream
 
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
 
-def test_init_params_in_metadata() -> None:
-    """Test that init params are included in run metadata."""
-    llm = FakeChatModelWithSecrets(thinking={"type": "enabled", "budget_tokens": 10000})
-    with collect_runs() as cb:
-        llm.invoke("hi")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "model" in metadata
-    assert metadata["model"] == "test-model"
-    assert "thinking" in metadata
-    assert metadata["thinking"] == {"type": "enabled", "budget_tokens": 10000}
-
-
-def test_init_params_filter_none_values() -> None:
-    """Test that None values are filtered from init params in metadata."""
-    llm = FakeChatModelWithSecrets(thinking=None)
-    with collect_runs() as cb:
-        llm.invoke("hi")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "thinking" not in metadata
-
-
-def test_init_params_filter_secrets() -> None:
-    """Test that lc_secrets keys are filtered from init params in metadata."""
-    llm = FakeChatModelWithSecrets()
-    with collect_runs() as cb:
-        llm.invoke("hi")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "api_key" not in metadata
-
-
-def test_runtime_params_in_metadata() -> None:
-    """Test that runtime invocation params (kwargs) are included in metadata."""
-    llm = FakeChatModelWithSecrets()
-    with collect_runs() as cb:
-        llm.invoke("hi", effort="low")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "effort" in metadata
-    assert metadata["effort"] == "low"
-
-
-def test_runtime_secrets_filtered_from_metadata() -> None:
-    """Test that runtime secret params (kwargs) are filtered from metadata."""
-    llm = FakeChatModelWithSecrets()
-    with collect_runs() as cb:
-        llm.invoke("hi", api_key="runtime-secret")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "api_key" not in metadata
-
-
-def test_user_metadata_takes_precedence() -> None:
-    """Test that user-provided metadata takes precedence over invocation params."""
-    llm = FakeChatModelWithSecrets(model="init-model")
-    with collect_runs() as cb:
-        llm.invoke("hi", config={"metadata": {"model": "user-override"}})
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert metadata["model"] == "user-override"
-
-
-async def test_invocation_params_in_metadata_ainvoke() -> None:
-    """Test that invocation params are included in run metadata for ainvoke."""
-    llm = FakeChatModelWithSecrets(thinking={"type": "enabled"})
-    with collect_runs() as cb:
-        await llm.ainvoke("hi")
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "thinking" in metadata
-
-
-def test_invocation_params_in_metadata_stream() -> None:
-    """Test that invocation params are included in run metadata for stream."""
-    llm = FakeChatModelWithSecrets(thinking={"type": "enabled"})
-    with collect_runs() as cb:
-        list(llm.stream("hi"))
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "thinking" in metadata
-
-
-async def test_invocation_params_in_metadata_astream() -> None:
-    """Test that invocation params are included in run metadata for astream."""
-    llm = FakeChatModelWithSecrets(thinking={"type": "enabled"})
-    with collect_runs() as cb:
-        async for _ in llm.astream("hi"):
-            pass
-    assert len(cb.traced_runs) == 1
-    run = cb.traced_runs[0]
-    assert run.extra is not None
-    metadata = run.extra.get("metadata", {})
-    assert "thinking" in metadata
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7

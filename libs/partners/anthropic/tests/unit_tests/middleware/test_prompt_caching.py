@@ -70,6 +70,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -155,6 +156,7 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -270,6 +272,7 @@ async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() ->
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Test with system prompt: 2 messages + 1 system = 3 total (meets minimum)
     fake_request = ModelRequest(
@@ -307,6 +310,7 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Single message should trigger caching with default settings
     fake_request = ModelRequest(
@@ -571,4 +575,97 @@ class TestToolCaching:
         assert t.extras["cache_control"] == {
             "type": "ephemeral",
             "ttl": "1h",
+        }
+
+
+class TestBedrockCompatibility:
+    """The middleware applies caching uniformly across transports.
+
+    `model_settings["cache_control"]` is always set; the chat model layer
+    (`ChatAnthropic._get_request_payload`) translates the kwarg to the wire
+    format the active transport accepts — top-level for the direct API,
+    block-level for Bedrock.
+    """
+
+    def _bedrock_model(self) -> Any:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        mock_model._llm_type = "anthropic-bedrock-chat"
+        return mock_model
+
+    def _make_request(self, model: Any, **kwargs: Any) -> ModelRequest:
+        defaults: dict[str, Any] = {
+            "model": model,
+            "messages": [HumanMessage("Hello")],
+            "system_message": None,
+            "tool_choice": None,
+            "tools": [],
+            "response_format": None,
+            "state": {"messages": [HumanMessage("Hello")]},
+            "runtime": cast(Runtime, object()),
+            "model_settings": {},
+        }
+        defaults.update(kwargs)
+        return ModelRequest(**defaults)
+
+    def _capture(self, request: ModelRequest) -> ModelRequest:
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        return captured
+
+    def test_sets_model_settings_cache_control_for_bedrock(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        captured = self._capture(request)
+        assert captured.model_settings["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "5m",
+        }
+
+    def test_tags_system_message_for_bedrock(self) -> None:
+        request = self._make_request(
+            self._bedrock_model(),
+            system_message=SystemMessage("Base prompt"),
+        )
+        captured = self._capture(request)
+        assert captured.system_message is not None
+        content = captured.system_message.content
+        assert isinstance(content, list)
+        assert content[-1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}  # type: ignore[index]
+
+    def test_tags_tools_for_bedrock(self) -> None:
+        @tool
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        request = self._make_request(self._bedrock_model(), tools=[my_tool])
+        captured = self._capture(request)
+        assert captured.tools is not None
+        last = captured.tools[-1]
+        assert isinstance(last, BaseTool)
+        assert last.extras is not None
+        assert last.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    async def test_sets_model_settings_cache_control_for_bedrock_async(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        async def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        await middleware.awrap_model_call(request, handler)
+        assert captured is not None
+        assert captured.model_settings["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "5m",
         }

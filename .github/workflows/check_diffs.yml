@@ -46,9 +46,9 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: "🐍 Setup Python 3.11"
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
       - name: "📂 Get Changed Files"
@@ -66,6 +66,7 @@ jobs:
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+      vcr-tests: ${{ steps.set-matrix.outputs.vcr-tests }}
   # Run linting only on packages that have changed files
   lint:
     needs: [build]
@@ -123,6 +124,21 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  # Run VCR cassette-backed integration tests in playback-only mode (no API keys)
+  vcr-tests:
+    name: "VCR Cassette Tests"
+    needs: [build]
+    if: ${{ needs.build.outputs.vcr-tests != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.vcr-tests) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_vcr.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
   # Run extended test suites that require additional dependencies
   extended-tests:
     name: "Extended Tests"
@@ -139,7 +155,7 @@ jobs:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: "🐍 Set up Python ${{ matrix.job-configs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
@@ -169,6 +185,21 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
 
+  # Verify _release.yml dropdown options stay in sync with package directories
+  check-release-options:
+    name: "Validate Release Options"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: "🐍 Setup Python 3.11"
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+      - name: "📦 Install Dependencies"
+        run: python -m pip install pyyaml pytest
+      - name: "🔍 Check release dropdown matches packages"
+        run: python -m pytest .github/scripts/test_release_options.py -v
+
   # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
     name: "✅ CI Success"
@@ -178,8 +209,10 @@ jobs:
         lint,
         test,
         compile-integration-tests,
+        vcr-tests,
         extended-tests,
         test-pydantic,
+        check-release-options,
       ]
     if: |
       always()

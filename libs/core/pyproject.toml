@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.2.22"
+version = "1.3.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -32,6 +32,7 @@ dependencies = [
     "packaging>=23.2.0",
     "pydantic>=2.7.4,<3.0.0",
     "uuid-utils>=0.12.0,<1.0",
+    "langchain-protocol>=0.0.10",
 ]
 
 [project.urls]
@@ -40,7 +41,7 @@ Documentation = "https://reference.langchain.com/python/langchain_core/"
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -58,12 +59,12 @@ dev = [
     "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
-    "pytest>=8.0.0,<10.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
-    "syrupy>=4.0.2,<6.0.0",
+    "syrupy>=5.0.0,<6.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<2.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
     "grandalf>=0.8.0,<1.0.0",
     "responses>=0.25.0,<1.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
@@ -77,6 +78,9 @@ test = [
 ]
 test_integration = []
 
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
+
 [tool.uv.sources]
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
@@ -89,7 +93,6 @@ enable_error_code = "deprecated"
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
-
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -132,8 +135,10 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "PLR2004", "S", "SLF",]
+"tests/**" = [ "ARG", "D1", "PLR2004", "S", "SLF",]
 "scripts/**" = [ "INP", "S", "T201",]
+"langchain_core/_security/_policy.py" = [ "EM101", "EM102", "TRY003", "B008", "TRY300",]
+"langchain_core/_security/_transport.py" = [ "EM101", "EM102", "TRY003", "TRY203", "B008",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

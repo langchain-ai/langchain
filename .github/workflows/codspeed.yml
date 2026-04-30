@@ -32,9 +32,9 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: "🐍 Setup Python 3.11"
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.11"
       - name: "📂 Get Changed Files"
@@ -52,13 +52,13 @@ jobs:
     name: "⚡ CodSpeed Benchmarks"
     needs: [build]
     if: ${{ needs.build.outputs.codspeed != '[]' }}
-    runs-on: ubuntu-latest
+    runs-on: codspeed-macro
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: "📦 Install UV Package Manager"
         uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
@@ -73,37 +73,9 @@ jobs:
 
       - name: "⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}"
         uses: CodSpeedHQ/action@a50965600eafa04edcd6717761f55b77e52aafbd # v4
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
-          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
-          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
-          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
-          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
-          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
-          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             cd ${{ matrix.job-configs.working-directory }}
-            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
-              uv run --no-sync pytest ./tests/benchmarks --codspeed
-            else
-              uv run --no-sync pytest ./tests/unit_tests/ -m benchmark --codspeed
-            fi
+            uv run --no-sync pytest ./tests/benchmarks --codspeed
           mode: ${{ matrix.job-configs.codspeed-mode }}

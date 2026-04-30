@@ -20,10 +20,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "0.2.0"
+version = "0.2.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.21,<2.0.0",
+    "langchain-core>=1.3.2,<2.0.0",
     "openrouter>=0.7.11,<1.0.0",
 ]
 
@@ -33,17 +33,18 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_o
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-openrouter%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=9.0.0,<10.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "pytest-asyncio>=1.3.0,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-watcher>=0.6.3,<1.0.0",
     "pytest-timeout>=2.4.0,<3.0.0",
+    "pytest-xdist>=3.6.1,<4.0.0",
     "langchain-tests",
 ]
 test_integration = []
@@ -51,6 +52,9 @@ lint = ["ruff>=0.15.0,<0.16.0"]
 dev = ["langchain-core"]
 typing = ["mypy>=1.19.1,<2.0.0"]
 
+
+[tool.uv]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

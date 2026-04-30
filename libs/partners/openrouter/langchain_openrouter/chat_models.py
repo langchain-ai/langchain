@@ -202,7 +202,8 @@ class ChatOpenRouter(BaseChatModel):
     max_retries: int = 2
     """Maximum number of retries.
 
-    Controls the retry backoff window via the SDK's `max_elapsed_time`.
+    Each unit adds ~150 seconds to the backoff window via the SDK's
+    `max_elapsed_time` (e.g. `max_retries=2` allows up to ~300 s).
 
     Set to `0` to disable retries.
     """
@@ -340,21 +341,16 @@ class ChatOpenRouter(BaseChatModel):
         }
         if self.openrouter_api_base:
             client_kwargs["server_url"] = self.openrouter_api_base
+        extra_headers: dict[str, str] = {}
         if self.app_url:
-            client_kwargs["http_referer"] = self.app_url
+            extra_headers["HTTP-Referer"] = self.app_url
         if self.app_title:
-            client_kwargs["x_title"] = self.app_title
+            extra_headers["X-Title"] = self.app_title
         if self.app_categories:
-            # The SDK lacks a native constructor param for X-OpenRouter-Categories,
-            # so inject the header via custom httpx clients. The SDK sets its own
-            # headers (Authorization, HTTP-Referer, X-Title) per-request, and httpx
-            # merges client-default headers with per-request headers, so nothing is
-            # lost.
+            extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        if extra_headers:
             import httpx  # noqa: PLC0415
 
-            extra_headers = {
-                "X-OpenRouter-Categories": ",".join(self.app_categories),
-            }
             client_kwargs["client"] = httpx.Client(
                 headers=extra_headers, follow_redirects=True
             )
@@ -389,13 +385,14 @@ class ChatOpenRouter(BaseChatModel):
         if not self.client:
             try:
                 import openrouter  # noqa: PLC0415, F401
+
+                self.client = self._build_client()
             except ImportError as e:
                 msg = (
                     "Could not import the `openrouter` Python SDK. "
                     "Please install it with: pip install openrouter"
                 )
                 raise ImportError(msg) from e
-            self.client = self._build_client()
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
@@ -974,7 +971,7 @@ def _wrap_messages_for_sdk(
 ) -> list[dict[str, Any]] | list[Any]:
     """Wrap message dicts as SDK Pydantic models when file blocks are present.
 
-    The OpenRouter Python SDK (v0.6.0) does not include `file` in its
+    The OpenRouter Python SDK does not include `file` in its
     `ChatMessageContentItem` discriminated union, so Pydantic validation
     rejects file content blocks even though the OpenRouter **API** supports
     them. Using `model_construct` on the SDK's message classes bypasses
@@ -996,21 +993,30 @@ def _wrap_messages_for_sdk(
     try:
         from openrouter import components  # noqa: PLC0415
     except ImportError:
+        warnings.warn(
+            "Could not import openrouter.components; file content blocks "
+            "will be sent as raw dicts which may cause validation errors.",
+            stacklevel=2,
+        )
         return message_dicts
 
     role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.UserMessage,
-        "system": components.SystemMessage,
-        "assistant": components.AssistantMessage,
-        "tool": components.ToolResponseMessage,
-        "developer": components.DeveloperMessage,
+        "user": components.ChatUserMessage,
+        "system": components.ChatSystemMessage,
+        "assistant": components.ChatAssistantMessage,
+        "tool": components.ChatToolMessage,
+        "developer": components.ChatDeveloperMessage,
     }
 
     wrapped: list[Any] = []
     for msg in message_dicts:
         model_cls = role_to_model.get(msg.get("role", ""))
         if model_cls is None:
-            # Unknown role — pass dict through and hope for the best.
+            warnings.warn(
+                f"Unknown message role {msg.get('role')!r} encountered during "
+                f"SDK wrapping; passing raw dict to the API.",
+                stacklevel=2,
+            )
             wrapped.append(msg)
             continue
         wrapped.append(model_cls.model_construct(**msg))
@@ -1383,13 +1389,16 @@ def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     Returns:
         Usage metadata with input/output token details.
     """
+    _input = token_usage.get("prompt_tokens")
     input_tokens = int(
-        token_usage.get("prompt_tokens") or token_usage.get("input_tokens") or 0
+        _input if _input is not None else (token_usage.get("input_tokens") or 0)
     )
+    _output = token_usage.get("completion_tokens")
     output_tokens = int(
-        token_usage.get("completion_tokens") or token_usage.get("output_tokens") or 0
+        _output if _output is not None else (token_usage.get("output_tokens") or 0)
     )
-    total_tokens = int(token_usage.get("total_tokens") or input_tokens + output_tokens)
+    _total = token_usage.get("total_tokens")
+    total_tokens = int(_total if _total is not None else input_tokens + output_tokens)
 
     input_details_dict = (
         token_usage.get("prompt_tokens_details")

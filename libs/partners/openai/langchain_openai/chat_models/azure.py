@@ -677,8 +677,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }
@@ -705,6 +705,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
+        if (self.model_name is not None) and (
+            profile := _get_default_model_profile(self.model_name) or None
+        ):
+            return profile
         if self.deployment_name is not None:
             return _get_default_model_profile(self.deployment_name) or None
         return None

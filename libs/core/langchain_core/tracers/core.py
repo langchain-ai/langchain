@@ -51,6 +51,9 @@ class _TracerCore(ABC):
         _schema_format: Literal[
             "original", "streaming_events", "original+chat"
         ] = "original",
+        run_map: dict[str, Run] | None = None,
+        order_map: dict[UUID, tuple[UUID, str]] | None = None,
+        _external_run_ids: dict[str, int] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
@@ -70,6 +73,9 @@ class _TracerCore(ABC):
                     streaming events.
                 - `'original+chat'` is a format that is the same as `'original'` except
                     it does NOT raise an attribute error `on_chat_model_start`
+            run_map: Optional shared map of run ID to run.
+            order_map: Optional shared map of run ID to trace ordering data.
+            _external_run_ids: Optional shared set of externally injected run IDs.
             **kwargs: Additional keyword arguments that will be passed to the
                 superclass.
         """
@@ -77,11 +83,21 @@ class _TracerCore(ABC):
 
         self._schema_format = _schema_format  # For internal use only API will change.
 
-        self.run_map: dict[str, Run] = {}
+        self.run_map = run_map if run_map is not None else {}
         """Map of run ID to run. Cleared on run end."""
 
-        self.order_map: dict[UUID, tuple[UUID, str]] = {}
+        self.order_map = order_map if order_map is not None else {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
+
+        self._external_run_ids: dict[str, int] = (
+            _external_run_ids if _external_run_ids is not None else {}
+        )
+        """Refcount of active children per externally-injected run ID.
+
+        These runs are added to `run_map` so child runs can find their parent,
+        but they are not managed by the tracer's callback lifecycle.  When
+        the last child finishes the entry is evicted to avoid memory leaks.
+        """
 
     @abstractmethod
     def _persist_run(self, run: Run) -> Coroutine[Any, Any, None] | None:
@@ -113,6 +129,9 @@ class _TracerCore(ABC):
                 run.dotted_order += "." + current_dotted_order
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
                     self._add_child_run(parent_run, run)
+                    parent_key = str(run.parent_run_id)
+                    if parent_key in self._external_run_ids:
+                        self._external_run_ids[parent_key] += 1
             else:
                 if self.log_missing_parent:
                     logger.debug(

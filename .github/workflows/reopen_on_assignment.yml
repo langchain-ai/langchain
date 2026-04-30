@@ -1,0 +1,195 @@
+# Reopen PRs that were auto-closed by require_issue_link.yml when the
+# contributor was not assigned to the linked issue. When a maintainer
+# assigns the contributor to the issue, this workflow finds matching
+# closed PRs, verifies the issue link, and reopens them.
+#
+# Uses the default GITHUB_TOKEN (not a PAT or app token) so that the
+# reopen and label-removal events do NOT re-trigger other workflows.
+# GitHub suppresses events created by the default GITHUB_TOKEN within
+# workflow runs to prevent infinite loops.
+
+name: Reopen PR on Issue Assignment
+
+on:
+  issues:
+    types: [assigned]
+
+permissions:
+  contents: read
+
+jobs:
+  reopen-linked-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: write
+
+    steps:
+      - name: Find and reopen matching PRs
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issueNumber = context.payload.issue.number;
+            const assignee = context.payload.assignee.login;
+
+            console.log(
+              `Issue #${issueNumber} assigned to ${assignee} — searching for closed PRs to reopen`,
+            );
+
+            const q = [
+              `is:pr`,
+              `is:closed`,
+              `author:${assignee}`,
+              `label:missing-issue-link`,
+              `repo:${owner}/${repo}`,
+            ].join(' ');
+
+            let data;
+            try {
+              ({ data } = await github.rest.search.issuesAndPullRequests({
+                q,
+                per_page: 30,
+              }));
+            } catch (e) {
+              throw new Error(
+                `Failed to search for closed PRs to reopen after assigning ${assignee} ` +
+                `to #${issueNumber} (HTTP ${e.status ?? 'unknown'}): ${e.message}`,
+              );
+            }
+
+            if (data.total_count === 0) {
+              console.log('No matching closed PRs found');
+              return;
+            }
+
+            console.log(`Found ${data.total_count} candidate PR(s)`);
+
+            // Must stay in sync with the identical pattern in require_issue_link.yml
+            const pattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#(\d+)/gi;
+
+            for (const item of data.items) {
+              const prNumber = item.number;
+              const body = item.body || '';
+              const matches = [...body.matchAll(pattern)];
+              const referencedIssues = matches.map(m => parseInt(m[1], 10));
+
+              if (!referencedIssues.includes(issueNumber)) {
+                console.log(`PR #${prNumber} does not reference #${issueNumber} — skipping`);
+                continue;
+              }
+
+              // Skip if already bypassed
+              const labels = item.labels.map(l => l.name);
+              if (labels.includes('bypass-issue-check')) {
+                console.log(`PR #${prNumber} already has bypass-issue-check — skipping`);
+                continue;
+              }
+
+              // Reopen first, remove label second — a closed PR that still has
+              // missing-issue-link is recoverable; a closed PR with the label
+              // stripped is invisible to both workflows.
+              try {
+                await github.rest.pulls.update({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  state: 'open',
+                });
+                console.log(`Reopened PR #${prNumber}`);
+              } catch (e) {
+                if (e.status === 422) {
+                  // Head branch deleted — PR is unrecoverable. Notify the
+                  // contributor so they know to open a new PR.
+                  core.warning(`Cannot reopen PR #${prNumber}: head branch was likely deleted`);
+                  try {
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: prNumber,
+                      body:
+                        `You have been assigned to #${issueNumber}, but this PR could not be ` +
+                        `reopened because the head branch has been deleted. Please open a new ` +
+                        `PR referencing the issue.`,
+                    });
+                  } catch (commentErr) {
+                    core.warning(
+                      `Also failed to post comment on PR #${prNumber}: ${commentErr.message}`,
+                    );
+                  }
+                  continue;
+                }
+                // Transient errors (rate limit, 5xx) should fail the job so
+                // the label is NOT removed and the run can be retried.
+                throw e;
+              }
+
+              // Remove missing-issue-link label only after successful reopen
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  name: 'missing-issue-link',
+                });
+                console.log(`Removed missing-issue-link from PR #${prNumber}`);
+              } catch (e) {
+                if (e.status !== 404) throw e;
+              }
+
+              // Minimize stale enforcement comment (best-effort;
+              // sync w/ require_issue_link.yml minimize blocks)
+              try {
+                const marker = '<!-- require-issue-link -->';
+                const comments = await github.paginate(
+                  github.rest.issues.listComments,
+                  { owner, repo, issue_number: prNumber, per_page: 100 },
+                );
+                const stale = comments.find(c => c.body && c.body.includes(marker));
+                if (stale) {
+                  await github.graphql(`
+                    mutation($id: ID!) {
+                      minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                        minimizedComment { isMinimized }
+                      }
+                    }
+                  `, { id: stale.node_id });
+                  console.log(`Minimized stale enforcement comment ${stale.id} as outdated`);
+                }
+              } catch (e) {
+                core.warning(`Could not minimize stale comment on PR #${prNumber}: ${e.message}`);
+              }
+
+              // Re-run the failed require_issue_link check so it picks up the
+              // new assignment.  The re-run uses the original event payload but
+              // fetches live issue data, so the assignment check will pass.
+              //
+              // Limitation: we look up runs by the PR's current head SHA.  If the
+              // contributor pushed new commits while the PR was closed, head.sha
+              // won't match the SHA of the original failed run and the query will
+              // return 0 results.  This is acceptable because any push after reopen
+              // triggers a fresh require_issue_link run against the new SHA.
+              try {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner, repo, pull_number: prNumber,
+                });
+                const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                  owner, repo,
+                  workflow_id: 'require_issue_link.yml',
+                  head_sha: pr.head.sha,
+                  status: 'failure',
+                  per_page: 1,
+                });
+                if (runs.workflow_runs.length > 0) {
+                  await github.rest.actions.reRunWorkflowFailedJobs({
+                    owner, repo,
+                    run_id: runs.workflow_runs[0].id,
+                  });
+                  console.log(`Re-ran failed require_issue_link run ${runs.workflow_runs[0].id} for PR #${prNumber}`);
+                } else {
+                  console.log(`No failed require_issue_link runs found for PR #${prNumber} — skipping re-run`);
+                }
+              } catch (e) {
+                core.warning(`Could not re-run require_issue_link check for PR #${prNumber} (HTTP ${e.status ?? 'unknown'}): ${e.message}`);
+              }
+            }
