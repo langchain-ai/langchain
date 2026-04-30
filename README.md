@@ -82,3 +82,5 @@ LangChain helps developers build applications powered by LLMs through a standard
 - [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
 - [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+
+- [AgentClaw](https://github.com/Agnuxo1/AgentClaw) — Autonomous agent orchestration framework with P2P mesh networking and AI Tribunal review
