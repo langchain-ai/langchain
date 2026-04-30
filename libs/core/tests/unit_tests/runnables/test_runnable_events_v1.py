@@ -435,7 +435,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
         lambda _: {"answer": "goodbye"}
     ).with_config({"run_name": "my_lambda"})
     events = await _collect_events(
-        await as_lambdas.astream_events({"question": "hello"}, version="v1")
+        as_lambdas.astream_events({"question": "hello"}, version="v1")
     )
     _assert_events_equal_allow_superset_metadata(
         events,
@@ -486,7 +486,7 @@ async def test_astream_events_from_model() -> None:
         )
         .bind(stop="<stop_token>")
     )
-    events = await _collect_events(await model.astream_events("hello", version="v1"))
+    events = await _collect_events(model.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
         events,
         [
@@ -852,7 +852,7 @@ async def test_event_stream_with_simple_chain() -> None:
     )
 
     events = await _collect_events(
-        await chain.astream_events({"question": "hello"}, version="v1")
+        chain.astream_events({"question": "hello"}, version="v1")
     )
     _assert_events_equal_allow_superset_metadata(
         events,

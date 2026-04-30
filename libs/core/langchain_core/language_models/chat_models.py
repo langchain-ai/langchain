@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
 from langchain_core._api import beta
+from langchain_core._event_streaming import _AsyncEventsResult
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -1306,17 +1307,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         return super().stream_events(input, config, version=version, stop=stop, **kwargs)
 
     @overload
-    async def astream_events(
+    def astream_events(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
         *,
         version: Literal["v1", "v2"] = "v2",
         **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent]: ...
+    ) -> _AsyncEventsResult: ...
 
     @overload
-    async def astream_events(
+    def astream_events(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
@@ -1324,21 +1325,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         version: Literal["v3"],
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncChatModelStream: ...
+    ) -> _AsyncEventsResult: ...
 
-    async def _astream_events_v1_v2(
-        self,
-        input: LanguageModelInput,
-        config: RunnableConfig | None = None,
-        *,
-        version: Literal["v1", "v2"],
-        **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent]:
-        """Async generator forwarding v1/v2 events to `Runnable.astream_events`."""
-        async for ev in super().astream_events(input, config, version=version, **kwargs):
-            yield ev
-
-    async def astream_events(  # type: ignore[override]
+    def astream_events(  # type: ignore[override]
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
@@ -1346,11 +1335,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         version: Literal["v1", "v2", "v3"] = "v2",
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent] | AsyncChatModelStream:
+    ) -> _AsyncEventsResult:
         """Async variant of `stream_events`. See `stream_events` for full docs."""
         if version == "v3":
-            return await self._achat_model_stream_v3(input, config, stop=stop, **kwargs)
-        return self._astream_events_v1_v2(input, config, version=version, stop=stop, **kwargs)
+            return _AsyncEventsResult(
+                awaitable=self._achat_model_stream_v3(
+                    input, config, stop=stop, **kwargs
+                )
+            )
+        # v1/v2: forward to Runnable.astream_events (async generator).
+        # Calling it returns the generator object directly without awaiting.
+        iterator = super().astream_events(
+            input, config, version=version, stop=stop, **kwargs
+        )
+        return _AsyncEventsResult(iterator=iterator)
 
     # --- Custom methods ---
 

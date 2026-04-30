@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from langchain_core._api import beta_decorator
+from langchain_core._event_streaming import _AsyncEventsResult
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
@@ -6083,45 +6084,37 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         )
 
     @override
-    async def astream_events(  # type: ignore[override]
+    def astream_events(  # type: ignore[override]
         self,
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> AsyncIterator[StreamEvent] | Any:
+    ) -> _AsyncEventsResult:
         """Forward `astream_events` to the bound runnable with bound kwargs merged.
 
         For `version="v3"`, returns the bound runnable's typed stream object
-        (e.g. `AsyncChatModelStream`). For `version="v1"` / `"v2"`, returns an
-        async generator yielding `StreamEvent` items.
+        (e.g. `AsyncChatModelStream`) when awaited. For `version="v1"` /
+        `"v2"`, returns an async iterator over `StreamEvent` items.
 
         Without this override, `__getattr__` would drop `self.kwargs` — losing
         tools bound via `bind_tools`, `stop` sequences, etc.
         """
         version = kwargs.get("version", "v2")
+        merged_kwargs = {**self.kwargs, **kwargs}
         if version == "v3":
-            # Strip `version` so `_astream_events_v3` can pass it explicitly.
+            # Strip `version` from kwargs — `_astream_events_v3` passes it
+            # explicitly as `version="v3"` and a duplicate keyword would error.
             kwargs_without_version = {k: v for k, v in kwargs.items() if k != "version"}
-            return await self._astream_events_v3(input, config, **kwargs_without_version)
-        return self._astream_events_v1_v2(input, config, **kwargs)
-
-    async def _astream_events_v1_v2(
-        self,
-        input: Input,
-        config: RunnableConfig | None = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent]:
-        """Async generator for v1/v2 forwarding."""
-        result = self.bound.astream_events(
-            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
+            return _AsyncEventsResult(
+                awaitable=self._astream_events_v3(input, config, **kwargs_without_version)
+            )
+        # v1/v2: bound.astream_events is itself a hybrid result object on chat
+        # models, but a plain async generator on generic Runnables. We need an
+        # async iterator either way.
+        bound_result = self.bound.astream_events(
+            input, self._merge_configs(config), **merged_kwargs
         )
-        # `astream_events` may be a coroutine (e.g. on `BaseChatModel`) that
-        # returns an async iterator, or it may itself be an async generator.
-        # Await coroutines first, then iterate.
-        if inspect.iscoroutine(result):
-            result = await result
-        async for ev in result:
-            yield ev
+        return _AsyncEventsResult(iterator=aiter(bound_result))
 
     @override
     def transform(
