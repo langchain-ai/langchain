@@ -705,7 +705,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
-    transformers: Sequence[Callable[..., Any]] | None = None,
+    transformers: Sequence[Callable[[tuple[str, ...]], Any]] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
