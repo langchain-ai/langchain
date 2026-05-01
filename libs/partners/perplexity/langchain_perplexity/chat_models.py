@@ -297,11 +297,18 @@ class ChatPerplexity(BaseChatModel):
             self.pplx_api_key.get_secret_value() if self.pplx_api_key else None
         )
 
+        client_params: dict[str, Any] = {
+            "api_key": pplx_api_key,
+            "max_retries": self.max_retries,
+        }
+        if self.request_timeout is not None:
+            client_params["timeout"] = self.request_timeout
+
         if not self.client:
-            self.client = Perplexity(api_key=pplx_api_key)
+            self.client = Perplexity(**client_params)
 
         if not self.async_client:
-            self.async_client = AsyncPerplexity(api_key=pplx_api_key)
+            self.async_client = AsyncPerplexity(**client_params)
 
         return self
 
@@ -445,9 +452,30 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
-            if len(chunk["choices"]) == 0:
+            generation_info = {}
+            if (model_name := chunk.get("model")) and not added_model_name:
+                generation_info["model_name"] = model_name
+                added_model_name = True
+            if total_usage := chunk.get("usage"):
+                if num_search_queries := total_usage.get("num_search_queries"):
+                    if not added_search_queries:
+                        generation_info["num_search_queries"] = num_search_queries
+                        added_search_queries = True
+                if not added_search_context_size:
+                    if search_context_size := total_usage.get("search_context_size"):
+                        generation_info["search_context_size"] = search_context_size
+                        added_search_context_size = True
+
+            choices = chunk.get("choices") or []
+            if len(choices) == 0:
+                # Usage-only or otherwise empty chunk: still yield so the stream
+                # is never empty and downstream callers receive usage metadata.
+                message = AIMessageChunk(content="", usage_metadata=usage_metadata)
+                yield ChatGenerationChunk(
+                    message=message, generation_info=generation_info or None
+                )
                 continue
-            choice = chunk["choices"][0]
+            choice = choices[0]
 
             additional_kwargs = {}
             if first_chunk:
@@ -461,21 +489,6 @@ class ChatPerplexity(BaseChatModel):
 
                 if chunk.get("reasoning_steps"):
                     additional_kwargs["reasoning_steps"] = chunk["reasoning_steps"]
-
-            generation_info = {}
-            if (model_name := chunk.get("model")) and not added_model_name:
-                generation_info["model_name"] = model_name
-                added_model_name = True
-            # Add num_search_queries to generation_info if present
-            if total_usage := chunk.get("usage"):
-                if num_search_queries := total_usage.get("num_search_queries"):
-                    if not added_search_queries:
-                        generation_info["num_search_queries"] = num_search_queries
-                        added_search_queries = True
-                if not added_search_context_size:
-                    if search_context_size := total_usage.get("search_context_size"):
-                        generation_info["search_context_size"] = search_context_size
-                        added_search_context_size = True
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
@@ -532,9 +545,28 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
-            if len(chunk["choices"]) == 0:
+            generation_info = {}
+            if (model_name := chunk.get("model")) and not added_model_name:
+                generation_info["model_name"] = model_name
+                added_model_name = True
+            if total_usage := chunk.get("usage"):
+                if num_search_queries := total_usage.get("num_search_queries"):
+                    if not added_search_queries:
+                        generation_info["num_search_queries"] = num_search_queries
+                        added_search_queries = True
+                if search_context_size := total_usage.get("search_context_size"):
+                    generation_info["search_context_size"] = search_context_size
+
+            choices = chunk.get("choices") or []
+            if len(choices) == 0:
+                # Usage-only or otherwise empty chunk: still yield so the stream
+                # is never empty and downstream callers receive usage metadata.
+                message = AIMessageChunk(content="", usage_metadata=usage_metadata)
+                yield ChatGenerationChunk(
+                    message=message, generation_info=generation_info or None
+                )
                 continue
-            choice = chunk["choices"][0]
+            choice = choices[0]
 
             additional_kwargs = {}
             if first_chunk:
@@ -548,19 +580,6 @@ class ChatPerplexity(BaseChatModel):
 
                 if chunk.get("reasoning_steps"):
                     additional_kwargs["reasoning_steps"] = chunk["reasoning_steps"]
-
-            generation_info = {}
-            if (model_name := chunk.get("model")) and not added_model_name:
-                generation_info["model_name"] = model_name
-                added_model_name = True
-
-            if total_usage := chunk.get("usage"):
-                if num_search_queries := total_usage.get("num_search_queries"):
-                    if not added_search_queries:
-                        generation_info["num_search_queries"] = num_search_queries
-                        added_search_queries = True
-                if search_context_size := total_usage.get("search_context_size"):
-                    generation_info["search_context_size"] = search_context_size
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class

@@ -688,6 +688,116 @@ def _format_messages(
     return system, formatted_messages
 
 
+def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
+    """Collect `tool_use` IDs that were called by `code_execution`.
+
+    These blocks cannot have `cache_control` applied per Anthropic API
+    requirements.
+    """
+    code_execution_tool_ids: set[str] = set()
+
+    for message in formatted_messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content", [])
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") != "tool_use":
+                continue
+            caller = block.get("caller")
+            if isinstance(caller, dict):
+                caller_type = caller.get("type", "")
+                if caller_type.startswith("code_execution"):
+                    tool_id = block.get("id")
+                    if tool_id:
+                        code_execution_tool_ids.add(tool_id)
+
+    return code_execution_tool_ids
+
+
+def _is_code_execution_related_block(
+    block: dict,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Return whether a content block is related to `code_execution`.
+
+    Returns `True` for blocks that should NOT have `cache_control` applied.
+    """
+    if not isinstance(block, dict):
+        return False
+
+    block_type = block.get("type")
+
+    if block_type == "tool_use":
+        caller = block.get("caller")
+        if isinstance(caller, dict):
+            caller_type = caller.get("type", "")
+            if caller_type.startswith("code_execution"):
+                return True
+
+    if block_type == "tool_result":
+        tool_use_id = block.get("tool_use_id")
+        if tool_use_id and tool_use_id in code_execution_tool_ids:
+            return True
+
+    return False
+
+
+def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
+    """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
+
+    Only the direct API accepts the top-level `cache_control` request param.
+    Subclasses that route through other transports (Bedrock, future backends)
+    override `_llm_type` and must expand `cache_control` kwargs into
+    block-level breakpoints instead.
+
+    Non-string `_llm_type` values return `False` rather than raising, so a
+    misbehaving subclass falls through to the safer non-direct branch.
+    """
+    return llm_type == "anthropic-chat"
+
+
+def _apply_cache_control_to_last_eligible_block(
+    formatted_messages: list[dict],
+    cache_control: Any,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Place `cache_control` on the last block eligible for a breakpoint.
+
+    Walks messages newest-to-oldest and, within each, blocks newest-to-oldest,
+    skipping `code_execution`-related blocks (Anthropic rejects breakpoints
+    there). String message content is promoted to a single text block so the
+    breakpoint can be attached.
+
+    Returns:
+        `True` if a breakpoint was applied, `False` if every candidate was
+            `code_execution`-related (caller should warn and drop the kwarg).
+    """
+    for formatted_message in reversed(formatted_messages):
+        content = formatted_message.get("content")
+        if isinstance(content, list) and content:
+            for block in reversed(content):
+                if not isinstance(block, dict):
+                    continue
+                if _is_code_execution_related_block(block, code_execution_tool_ids):
+                    continue
+                block["cache_control"] = cache_control
+                return True
+        elif isinstance(content, str):
+            formatted_message["content"] = [
+                {
+                    "type": "text",
+                    "text": content,
+                    "cache_control": cache_control,
+                }
+            ]
+            return True
+    return False
+
+
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
 
@@ -831,19 +941,55 @@ class ChatAnthropic(BaseChatModel):
     """
 
     thinking: dict[str, Any] | None = Field(default=None)
-    """Parameters for Claude reasoning,
+    """Parameters for Claude reasoning.
 
-    e.g., `#!python {"type": "enabled", "budget_tokens": 10_000}`
+    Examples:
 
-    For Claude Opus 4.6, `budget_tokens` is deprecated in favor of
-    `#!python {"type": "adaptive"}`
+    - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+)
+
+    !!! note "Claude Opus 4.7"
+
+        `budget_tokens` is removed on Opus 4.7 — use `{"type": "adaptive"}`
+        with `output_config.effort` to control reasoning effort. Set `display`
+        to `"summarized"` to receive summarized reasoning in the response
+        (default is `"omitted"`).
     """
 
-    effort: Literal["max", "high", "medium", "low"] | None = None
-    """Control how many tokens Claude uses when responding.
+    output_config: dict[str, Any] | None = None
+    """Configuration options for the model's output.
 
-    This parameter will be merged into the `output_config` parameter when making
-    API calls.
+    Supports the following keys:
+
+    - `effort`: Controls how many tokens Claude uses when responding.
+      One of `"max"`, `"xhigh"`, `"high"`, `"medium"`, or `"low"`.
+    - `format`: Structured output format configuration (typically set via
+      `with_structured_output`).
+    - `task_budget`: Advisory token budget for an agentic loop (beta).
+      E.g., `#!python {"type": "tokens", "total": 128_000}`.
+
+    Example:
+
+    .. code-block:: python
+
+        ChatAnthropic(
+            model="claude-opus-4-7",
+            output_config={
+                "effort": "xhigh",
+                "task_budget": {"type": "tokens", "total": 128_000},
+            },
+        )
+
+    See Anthropic docs on
+    [extended output](https://platform.claude.com/docs/en/api/go/beta/messages/create).
+    """
+
+    effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
+    """Convenience shorthand for `output_config.effort`.
+
+    When set, this value takes precedence over any `effort` key inside
+    `output_config`.
 
     Example: `effort="medium"`
 
@@ -851,11 +997,6 @@ class ChatAnthropic(BaseChatModel):
 
         Setting `effort` to `'high'` produces exactly the same behavior as omitting the
         parameter altogether.
-
-    !!! note "Model Support"
-
-        This feature is generally available on Claude Opus 4.6 and Claude Opus 4.5.
-        The `max` effort level is only supported by Claude Opus 4.6.
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -927,6 +1068,7 @@ class ChatAnthropic(BaseChatModel):
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
             "thinking": self.thinking,
+            "output_config": self.output_config,
         }
 
     def _get_ls_params(
@@ -1061,6 +1203,32 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
+        # Only the direct Anthropic API accepts top-level `cache_control`.
+        # Subclasses that route through other transports (e.g. Bedrock) expand
+        # `cache_control` kwargs into block-level breakpoints, the only form
+        # those transports accept.
+        if not _is_direct_anthropic_llm_type(getattr(self, "_llm_type", None)):
+            cache_control = kwargs.pop("cache_control", None)
+            # Empty `formatted_messages` has nothing to attach a breakpoint to;
+            # skip silently. The warning below is reserved for the surprising
+            # case where messages exist but every candidate block is ineligible.
+            if cache_control and formatted_messages:
+                code_execution_tool_ids = _collect_code_execution_tool_ids(
+                    formatted_messages
+                )
+                applied = _apply_cache_control_to_last_eligible_block(
+                    formatted_messages, cache_control, code_execution_tool_ids
+                )
+                if not applied:
+                    warnings.warn(
+                        "`cache_control` kwarg was dropped: no eligible "
+                        "content block found (all candidates are "
+                        "`code_execution`-related, which Anthropic forbids "
+                        "breakpoints on).",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1082,9 +1250,13 @@ class ChatAnthropic(BaseChatModel):
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > payload output_config
-        output_config = payload.get("output_config", {})
-        output_config = output_config.copy() if isinstance(output_config, dict) else {}
+        # Priority: self.effort > kwargs output_config > self.output_config
+        output_config: dict[str, Any] = {}
+        if self.output_config:
+            output_config.update(self.output_config)
+        payload_oc = payload.get("output_config")
+        if isinstance(payload_oc, dict):
+            output_config.update(payload_oc)
 
         if self.effort:
             output_config["effort"] = self.effort
@@ -1170,6 +1342,16 @@ class ChatAnthropic(BaseChatModel):
             required_beta = "mcp-client-2025-11-20"
             if payload["betas"]:
                 # Append to existing betas if not already present
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for task_budget
+        resolved_oc = payload.get("output_config")
+        if isinstance(resolved_oc, dict) and resolved_oc.get("task_budget"):
+            required_beta = "task-budgets-2026-03-13"
+            if payload.get("betas"):
                 if required_beta not in payload["betas"]:
                     payload["betas"] = [*payload["betas"], required_beta]
             else:
@@ -1408,6 +1590,11 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "compaction"
+                if (
+                    "encrypted_content" in content_block
+                    and content_block["encrypted_content"] is None
+                ):
+                    content_block.pop("encrypted_content")
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Process final usage metadata and completion info
@@ -1455,6 +1642,8 @@ class ChatAnthropic(BaseChatModel):
                     block.pop("citations")
                 if "caller" in block and block["caller"] is None:
                     block.pop("caller")
+                if "encrypted_content" in block and block["encrypted_content"] is None:
+                    block.pop("encrypted_content")
                 if (
                     block.get("type") == "thinking"
                     and "text" in block

@@ -21,7 +21,7 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.21,<2.0.0",
+    "langchain-core>=1.3.2,<2.0.0",
     "numpy>=1.26.0; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
     "chromadb>=1.5.5,<2.0.0",
@@ -33,20 +33,21 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_c
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-chroma%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-benchmark",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-xdist>=3.6.1,<4.0.0",
     "freezegun>=1.2.2,<2.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=5.0.0,<6.0.0",
     "langchain-core",
     "langchain-tests",
 ]

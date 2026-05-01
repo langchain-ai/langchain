@@ -499,7 +499,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         # When invoking the created RunnableSequence, you can pass in the
         # value for your ConfigurableField's id which in this case will either be
         # `joke` or `poem`.
-        chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        chain = prompt | ChatOpenAI(model="gpt-5.4-mini")
 
         # The `with_config` method brings in the desired Prompt Runnable in your
         # Runnable Sequence.
@@ -525,7 +525,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 "poem": PromptTemplate.from_template("Write a short poem about {topic}")
             },
         )
-        chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        chain = prompt | ChatOpenAI(model="gpt-5.4-mini")
         chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
         ```
     """

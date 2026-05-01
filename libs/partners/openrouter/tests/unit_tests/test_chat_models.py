@@ -757,6 +757,11 @@ class TestMockedGenerate:
 class TestRequestPayload:
     """Tests verifying the exact dict sent to the SDK."""
 
+    @pytest.fixture(autouse=True)
+    def _clear_openrouter_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Clear env vars that would otherwise leak into tests via `from_env`."""
+        monkeypatch.delenv("OPENROUTER_SESSION_ID", raising=False)
+
     def test_message_format_in_payload(self) -> None:
         """Test that messages are formatted correctly in the SDK call."""
         model = _make_model(temperature=0)
@@ -825,6 +830,115 @@ class TestRequestPayload:
         assert call_kwargs["reasoning"] == {"effort": "high"}
         assert call_kwargs["provider"] == {"order": ["Anthropic"]}
         assert call_kwargs["route"] == "fallback"
+
+    def test_session_id_and_trace_in_payload(self) -> None:
+        """Test that session_id and trace are forwarded to the SDK."""
+        model = _make_model(
+            session_id="session-abc",
+            trace={"trace_id": "trace-1", "span_name": "summarize"},
+        )
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "session-abc"
+        assert call_kwargs["trace"] == {
+            "trace_id": "trace-1",
+            "span_name": "summarize",
+        }
+
+    def test_session_id_and_trace_omitted_when_unset(self) -> None:
+        """Test that session_id and trace are omitted when not configured."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "session_id" not in call_kwargs
+        assert "trace" not in call_kwargs
+
+    def test_session_id_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that session_id falls back to OPENROUTER_SESSION_ID env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session-xyz")
+        model = _make_model()
+        assert model.session_id == "env-session-xyz"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "env-session-xyz"
+
+    def test_session_id_constructor_overrides_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that an explicit session_id wins over the env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session")
+        model = _make_model(session_id="explicit-session")
+        assert model.session_id == "explicit-session"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "explicit-session"
+
+    def test_session_id_per_call_override(self) -> None:
+        """Test that a per-call session_id kwarg overrides the constructor value."""
+        model = _make_model(session_id="constructor-session")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", session_id="call-session")
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["session_id"] == "call-session"
+
+        # Per-call override must not mutate the constructor value, and the next
+        # call without the kwarg should fall back to the constructor's value.
+        assert model.session_id == "constructor-session"
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["session_id"] == "constructor-session"
+
+    def test_trace_per_call_override(self) -> None:
+        """Test that a per-call trace kwarg overrides the constructor value."""
+        constructor_trace = {"trace_id": "constructor-trace"}
+        call_trace = {"trace_id": "call-trace", "span_name": "summarize"}
+        model = _make_model(trace=constructor_trace)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", trace=call_trace)
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["trace"] == call_trace
+
+        assert model.trace == constructor_trace
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["trace"] == constructor_trace
+
+    def test_empty_session_id_treated_as_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that empty `session_id` (constructor or env) is not forwarded."""
+        # Explicit empty string on the constructor.
+        model = _make_model(session_id="")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        assert "session_id" not in model.client.chat.send.call_args[1]
+
+        # Empty string sourced from the env var.
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "")
+        env_model = _make_model()
+        env_model.client = MagicMock()
+        env_model.client.chat.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSE_DICT
+        )
+        env_model.invoke("Hi")
+        assert "session_id" not in env_model.client.chat.send.call_args[1]
 
 
 # ===========================================================================
@@ -1728,6 +1842,41 @@ class TestCreateChatResult:
         assert isinstance(usage["input_token_details"]["cache_read"], int)
         assert usage["output_token_details"]["reasoning"] == 10
         assert isinstance(usage["output_token_details"]["reasoning"], int)
+
+
+class TestCreateUsageMetadataZeroTotal:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+
+    def test_zero_total_tokens_preserved(self) -> None:
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 0,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["total_tokens"] == 0
+
+    def test_zero_input_tokens_preferred_key(self) -> None:
+        """prompt_tokens=0 must not fall through to input_tokens."""
+        token_usage = {
+            "prompt_tokens": 0,
+            "input_tokens": 50,
+            "completion_tokens": 5,
+            "total_tokens": 55,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["input_tokens"] == 0
+
+    def test_zero_output_tokens_preferred_key(self) -> None:
+        """completion_tokens=0 must not fall through to output_tokens."""
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 0,
+            "output_tokens": 50,
+            "total_tokens": 60,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["output_tokens"] == 0
 
 
 # ===========================================================================

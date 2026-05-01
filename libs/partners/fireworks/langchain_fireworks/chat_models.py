@@ -10,10 +10,20 @@ from operator import itemgetter
 from typing import (
     Any,
     Literal,
+    NoReturn,
     cast,
 )
 
+import httpx
 from fireworks.client import AsyncFireworks, Fireworks  # type: ignore[import-untyped]
+from fireworks.client.error import (  # type: ignore[import-untyped]
+    APITimeoutError,
+    BadGatewayError,
+    FireworksError,
+    InternalServerError,
+    RateLimitError,
+    ServiceUnavailableError,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -29,6 +39,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -46,6 +57,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import (
     ToolCallChunk,
@@ -155,6 +170,70 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Fireworks chat completions wire format.
+
+    Adapted from `langchain_openai.chat_models.base._format_message_content`,
+    scoped to the chat completions API: drops content block types the wire
+    format does not carry, translates canonical v0/v1 multimodal data blocks
+    via `convert_to_openai_data_block(block, api="chat/completions")`, and
+    converts legacy Anthropic-shape image blocks (`{"type": "image",
+    "source": {...}}`) to OpenAI `image_url` blocks. String and non-list
+    content are returned unchanged.
+
+    Args:
+        content: The message content. Strings and non-list values are
+            returned as-is; lists are walked block by block.
+
+    Returns:
+        The formatted content, ready to be placed on the chat completions
+        wire. List inputs return a new list with translations applied; other
+        inputs are returned unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and "type" in block:
+            btype = block["type"]
+            if btype in (
+                "tool_use",
+                "thinking",
+                "reasoning_content",
+                "function_call",
+                "code_interpreter_call",
+            ):
+                continue
+            if is_data_content_block(block):
+                formatted.append(
+                    convert_to_openai_data_block(block, api="chat/completions")
+                )
+                continue
+            if (
+                btype == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if (
+                    source.get("type") == "base64"
+                    and (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                    continue
+                if source.get("type") == "url" and (url := source.get("url")):
+                    formatted.append({"type": "image_url", "image_url": {"url": url}})
+                    continue
+                continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -167,14 +246,23 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {
+            "role": message.role,
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _format_message_content(message.content),
+        }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -195,7 +283,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         else:
             pass
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict = {
+            "role": "system",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, FunctionMessage):
         message_dict = {
             "role": "function",
@@ -205,7 +296,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _format_message_content(message.content),
             "tool_call_id": message.tool_call_id,
         }
     else:
@@ -216,10 +307,38 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+def _usage_to_metadata(usage: Mapping[str, Any]) -> dict[str, int]:
+    input_tokens = usage.get("prompt_tokens", 0)
+    output_tokens = usage.get("completion_tokens", 0)
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+    }
+
+
 def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    choice = chunk["choices"][0]
+    choices = chunk.get("choices") or []
+    response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
+    if service_tier := chunk.get("service_tier"):
+        response_metadata["service_tier"] = service_tier
+    if not choices:
+        # Final chunk emitted when `stream_options.include_usage=True`:
+        # `choices` is empty and the chunk carries only `usage`.
+        usage = chunk.get("usage")
+        if not usage:
+            logger.debug(
+                "Received stream chunk with no choices and no usage: %s", chunk
+            )
+        usage_metadata = _usage_to_metadata(usage) if usage else None
+        return AIMessageChunk(
+            content="",
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata=response_metadata,
+        )
+    choice = choices[0]
     _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
@@ -245,22 +364,14 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:
-        if usage := chunk.get("usage"):
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
-            usage_metadata = {
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
-            }
-        else:
-            usage_metadata = None
+        usage = chunk.get("usage")
+        usage_metadata = _usage_to_metadata(usage) if usage else None
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "fireworks"},
+            response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -271,6 +382,137 @@ def _convert_chunk_to_message_chunk(
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     return default_class(content=content)  # type: ignore[call-arg]
+
+
+class _RetryableHTTPStatusError(FireworksError):
+    """Internal marker for 5xx `httpx.HTTPStatusError` responses.
+
+    The Fireworks SDK maps a subset of status codes (500, 502, 503) to typed
+    exceptions but lets others (504, 507-511, Cloudflare-edge 520-599)
+    propagate as raw `httpx.HTTPStatusError`. Promoting those to this marker
+    inside `_call` keeps the retryable set expressible as a list of classes
+    for `create_base_retry_decorator`, preserving parity with `ChatMistralAI`.
+    """
+
+
+_RETRYABLE_ERRORS: tuple[type[BaseException], ...] = (
+    APITimeoutError,
+    BadGatewayError,
+    InternalServerError,
+    RateLimitError,
+    ServiceUnavailableError,
+    httpx.TimeoutException,
+    httpx.TransportError,
+    _RetryableHTTPStatusError,
+)
+
+
+def _promote_http_status_error(exc: httpx.HTTPStatusError) -> NoReturn:
+    """Re-raise 5xx `httpx.HTTPStatusError` as a retryable marker."""
+    if exc.response.status_code >= 500:
+        msg = f"Retryable {exc.response.status_code} from Fireworks: {exc}"
+        raise _RetryableHTTPStatusError(msg) from exc
+    raise exc
+
+
+def _raise_empty_stream() -> NoReturn:
+    """Raise a descriptive error when the SDK returns a zero-chunk stream."""
+    msg = "Received empty stream from Fireworks"
+    raise FireworksError(msg)
+
+
+def _create_retry_decorator(
+    llm: ChatFireworks,
+    run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
+) -> Callable[[Any], Any]:
+    """Return a tenacity retry decorator for Fireworks SDK calls.
+
+    Retries are implemented here because the pinned Fireworks SDK 0.x does
+    not honor its own `_max_retries` attribute on completion resources.
+    """
+    # `max_retries` counts retries *after* the initial attempt.
+    # `create_base_retry_decorator` forwards its `max_retries` to
+    # `stop_after_attempt`, which counts total attempts — so offset by 1.
+    # Note: this diverges from `ChatMistralAI`, which passes the raw value;
+    # the fireworks field docstring is the source of truth here.
+    # `None` and `0` both mean "single attempt, no retries".
+    attempts = (llm.max_retries + 1) if llm.max_retries else 1
+    return create_base_retry_decorator(
+        error_types=list(_RETRYABLE_ERRORS),
+        max_retries=attempts,
+        run_manager=run_manager,
+    )
+
+
+def _completion_with_retry(
+    llm: ChatFireworks,
+    run_manager: CallbackManagerForLLMRun | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Retry the sync completion call, including stream setup."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @retry_decorator
+    def _call() -> Any:
+        try:
+            result = llm.client.create(**kwargs)
+        except httpx.HTTPStatusError as e:
+            _promote_http_status_error(e)
+        if kwargs.get("stream"):
+            # The streaming generator is lazy — advance once so the HTTP
+            # connection and any transport error happen inside the retry
+            # boundary. `_prepend_chunk` then re-yields the consumed chunk
+            # ahead of the rest so callers still see every event.
+            try:
+                iterator = iter(result)
+                first = next(iterator)
+            except StopIteration:
+                _raise_empty_stream()
+            except httpx.HTTPStatusError as e:
+                _promote_http_status_error(e)
+            return _prepend_chunk(first, iterator)
+        return result
+
+    return _call()
+
+
+async def _acompletion_with_retry(
+    llm: ChatFireworks,
+    run_manager: AsyncCallbackManagerForLLMRun | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Retry the async completion call, including stream setup."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+
+    @retry_decorator
+    async def _call() -> Any:
+        if kwargs.get("stream"):
+            try:
+                result = llm.async_client.acreate(**kwargs)
+                agen = result.__aiter__()
+                first = await agen.__anext__()
+            except StopAsyncIteration:
+                _raise_empty_stream()
+            except httpx.HTTPStatusError as e:
+                _promote_http_status_error(e)
+            return _aprepend_chunk(first, agen)
+        try:
+            return await llm.async_client.acreate(**kwargs)
+        except httpx.HTTPStatusError as e:
+            _promote_http_status_error(e)
+
+    return await _call()
+
+
+def _prepend_chunk(first: Any, rest: Iterator[Any]) -> Iterator[Any]:
+    yield first
+    yield from rest
+
+
+async def _aprepend_chunk(first: Any, rest: AsyncIterator[Any]) -> AsyncIterator[Any]:
+    yield first
+    async for item in rest:
+        yield item
 
 
 # This is basically a copy and replace for ChatFireworks, except
@@ -375,6 +617,23 @@ class ChatFireworks(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output.
+
+    If `True`, a final empty-content chunk carrying `usage_metadata` is emitted
+    during the stream. Set to `False` if the upstream model/proxy rejects
+    `stream_options`, or pass `stream_options` explicitly via `model_kwargs` or
+    a runtime kwarg to override.
+
+    !!! version-added "Added in `langchain-fireworks` 1.2.0"
+
+    !!! warning "Behavior changed in `langchain-fireworks` 1.2.0"
+
+        Streaming now opts into `stream_options.include_usage` by default, and
+        the final empty-`choices` chunk is surfaced as an `AIMessageChunk` with
+        `usage_metadata` instead of being silently dropped.
+    """
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
 
@@ -382,7 +641,29 @@ class ChatFireworks(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     max_retries: int | None = None
-    """Maximum number of retries to make when generating."""
+    """Maximum number of retries after the initial attempt when generating.
+
+    Retries use exponential backoff and trigger on transient errors:
+    `RateLimitError`, `APITimeoutError`, 5xx responses (including those that
+    surface as `httpx.HTTPStatusError` rather than typed SDK errors), and
+    underlying transport errors (`httpx.TimeoutException`, `httpx.TransportError`).
+    A value of `None` or `0` disables retries.
+    """
+
+    service_tier: str | None = None
+    """Service tier for the request.
+
+    Forwarded as the `service_tier` field on the Fireworks chat completions
+    request when set. Pass `'priority'` to opt into Fireworks' priority tier;
+    leave as `None` to use the default tier.
+
+    To use Fireworks' fast mode instead, select a fast-routed `model`; fast mode
+    is not controlled by this field. See Fireworks'
+    [serverless product docs](https://docs.fireworks.ai/guides/serverless-products)
+    for the current list of fast routers and tiers.
+
+    !!! version-added "Added in `langchain-fireworks` 1.3.0"
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -419,9 +700,6 @@ class ChatFireworks(BaseChatModel):
             self.client = Fireworks(**client_params).chat.completions
         if not self.async_client:
             self.async_client = AsyncFireworks(**client_params).chat.completions
-        if self.max_retries:
-            self.client._max_retries = self.max_retries
-            self.async_client._max_retries = self.max_retries
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
@@ -441,6 +719,8 @@ class ChatFireworks(BaseChatModel):
             params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.service_tier is not None:
+            params["service_tier"] = self.service_tier
         return params
 
     def _get_ls_params(
@@ -490,22 +770,26 @@ class ChatFireworks(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage and "stream_options" not in params:
+            params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        for chunk in _completion_with_retry(
+            self, run_manager=run_manager, messages=message_dicts, **params
+        ):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
+            generation_info: dict[str, Any] = {}
+            logprobs = None
+            if choices := chunk.get("choices"):
+                choice = choices[0]
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    generation_info["model_name"] = self.model_name
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -536,7 +820,9 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        response = _completion_with_retry(
+            self, run_manager=run_manager, messages=message_dicts, **params
+        )
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -553,16 +839,20 @@ class ChatFireworks(BaseChatModel):
         if not isinstance(response, dict):
             response = response.model_dump()
         token_usage = response.get("usage", {})
+        service_tier = response.get("service_tier")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
-                message.response_metadata["model_provider"] = "fireworks"
-                message.response_metadata["model_name"] = self.model_name
+            if isinstance(message, AIMessage):
+                if token_usage:
+                    message.usage_metadata = {
+                        "input_tokens": token_usage.get("prompt_tokens", 0),
+                        "output_tokens": token_usage.get("completion_tokens", 0),
+                        "total_tokens": token_usage.get("total_tokens", 0),
+                    }
+                    message.response_metadata["model_provider"] = "fireworks"
+                    message.response_metadata["model_name"] = self.model_name
+                if service_tier:
+                    message.response_metadata["service_tier"] = service_tier
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -575,6 +865,8 @@ class ChatFireworks(BaseChatModel):
             "token_usage": token_usage,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        if service_tier:
+            llm_output["service_tier"] = service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -586,22 +878,26 @@ class ChatFireworks(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage and "stream_options" not in params:
+            params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in self.async_client.acreate(messages=message_dicts, **params):
+        async for chunk in await _acompletion_with_retry(
+            self, run_manager=run_manager, messages=message_dicts, **params
+        ):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
+            generation_info: dict[str, Any] = {}
+            logprobs = None
+            if choices := chunk.get("choices"):
+                choice = choices[0]
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    generation_info["model_name"] = self.model_name
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -635,7 +931,9 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await self.async_client.acreate(messages=message_dicts, **params)
+        response = await _acompletion_with_retry(
+            self, run_manager=run_manager, messages=message_dicts, **params
+        )
         return self._create_chat_result(response)
 
     @property

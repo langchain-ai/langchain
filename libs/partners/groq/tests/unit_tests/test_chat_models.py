@@ -460,6 +460,47 @@ def test_create_usage_metadata_missing_total_tokens() -> None:
     assert result["total_tokens"] == 150
 
 
+def test_create_usage_metadata_zero_total_tokens() -> None:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+    token_usage = {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 0,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["total_tokens"] == 0
+
+
+def test_create_usage_metadata_zero_input_tokens_preferred_key() -> None:
+    """Test that input_tokens=0 is not overridden by prompt_tokens fallback."""
+    token_usage = {
+        "input_tokens": 0,
+        "prompt_tokens": 50,
+        "completion_tokens": 5,
+        "total_tokens": 55,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["input_tokens"] == 0
+
+
+def test_create_usage_metadata_zero_output_tokens_preferred_key() -> None:
+    """Test that output_tokens=0 is not overridden by completion_tokens fallback."""
+    token_usage = {
+        "input_tokens": 10,
+        "output_tokens": 0,
+        "completion_tokens": 50,
+        "total_tokens": 60,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["output_tokens"] == 0
+
+
 def test_create_usage_metadata_empty_details() -> None:
     """Test that empty detail dicts don't create token detail objects."""
     token_usage = {

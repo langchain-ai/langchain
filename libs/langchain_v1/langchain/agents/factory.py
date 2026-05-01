@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import itertools
 from dataclasses import dataclass, field, fields
 from typing import (
@@ -21,7 +22,7 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
+from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
@@ -399,9 +400,15 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
+@functools.lru_cache(maxsize=100)
+def _get_schema_type_hints(schema: type) -> dict[str, Any]:
+    """Return cached type hints for a schema."""
+    return get_type_hints(schema, include_extras=True)
+
+
 def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
     """Resolve state, input, and output schemas for the given schemas."""
-    schema_hints = {schema: get_type_hints(schema, include_extras=True) for schema in schemas}
+    schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
         _resolve_schema(schema_hints, "InputSchema", "input"),
@@ -1640,7 +1647,12 @@ def create_agent(
 
     # Set recursion limit to 9_999
     # https://github.com/langchain-ai/langgraph/issues/7313
-    config: RunnableConfig = {"recursion_limit": 9_999}
+    config: RunnableConfig = {
+        "recursion_limit": 9_999,
+        "configurable": {
+            "ls_agent_type": "root",
+        },
+    }
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name
@@ -1728,19 +1740,12 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 4. If there are pending tool calls, jump to the tool node
+        # 4. If there are pending tool calls, jump to the tool node.
+        # The tool node hydrates ToolRuntime.state from channels via
+        # CONFIG_KEY_READ at execution time, so we no longer inline the
+        # full state into each Send (previously O(N^2) in TASKS writes).
         if pending_tool_calls:
-            return [
-                Send(
-                    "tools",
-                    ToolCallWithContext(
-                        __type="tool_call_with_context",
-                        tool_call=tool_call,
-                        state=state,
-                    ),
-                )
-                for tool_call in pending_tool_calls
-            ]
+            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 5. If there is a structured response, exit the loop
         if "structured_response" in state:
