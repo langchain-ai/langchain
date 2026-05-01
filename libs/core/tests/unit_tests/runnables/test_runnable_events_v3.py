@@ -20,5 +20,4 @@ def test_v3_on_plain_runnable_raises_not_implemented_sync() -> None:
 async def test_v3_on_plain_runnable_raises_not_implemented_async() -> None:
     runnable = RunnableLambda(_double)
     with pytest.raises(NotImplementedError, match="v3"):
-        async for _ in runnable.astream_events(2, version="v3"):
-            pass
+        await runnable.astream_events(2, version="v3")

@@ -19,7 +19,7 @@ from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Awaitable, Iterator
 
     from langchain_protocol.protocol import MessagesData
 
@@ -475,7 +475,9 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(version="v3")
 
-        stream = cast("AsyncChatModelStream", await bound.astream_events("test"))
+        stream = await cast(
+            "Awaitable[AsyncChatModelStream]", bound.astream_events("test")
+        )
         _ = await stream
 
         assert len(model.received_kwargs) == 1

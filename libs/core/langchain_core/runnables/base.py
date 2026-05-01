@@ -41,7 +41,6 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from langchain_core._api import beta_decorator
-from langchain_core._event_streaming import _AsyncEventsResult
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
@@ -1295,9 +1294,9 @@ class Runnable(ABC, Generic[Input, Output]):
         *,
         version: Literal["v3"],
         **kwargs: Any,
-    ) -> AsyncIterator[Any]: ...
+    ) -> Awaitable[Any]: ...
 
-    async def astream_events(
+    def astream_events(
         self,
         input: Any,
         config: RunnableConfig | None = None,
@@ -1310,7 +1309,7 @@ class Runnable(ABC, Generic[Input, Output]):
         exclude_types: Sequence[str] | None = None,
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent] | AsyncIterator[Any]:
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
         """Generate a stream of events.
 
         Use to create an iterator over `StreamEvent` that provide real-time information
@@ -1515,14 +1514,50 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """  # noqa: E501
         if version == "v3":
-            msg = (
-                "astream_events(version='v3') is only supported on Runnable subclasses "
-                "that implement the v3 streaming protocol "
-                "(BaseChatModel, CompiledGraph). "
-                f"Got: {type(self).__name__}"
-            )
-            raise NotImplementedError(msg)
-        elif version == "v2":
+            return self._astream_events_v3_unsupported()
+        return self._astream_events_v1_v2(
+            input,
+            config=config,
+            version=version,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+            **kwargs,
+        )
+
+    async def _astream_events_v3_unsupported(self) -> Any:
+        """Coroutine that raises when v3 isn't implemented on this Runnable.
+
+        Lets the public `astream_events(version="v3")` return an awaitable
+        whose error surfaces on `await`, matching the v3 contract on
+        subclasses that do implement the protocol.
+        """
+        msg = (
+            "astream_events(version='v3') is only supported on Runnable "
+            "subclasses that implement the v3 streaming protocol "
+            "(BaseChatModel, CompiledGraph). "
+            f"Got: {type(self).__name__}"
+        )
+        raise NotImplementedError(msg)
+
+    async def _astream_events_v1_v2(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]:
+        if version == "v2":
             event_stream = _astream_events_implementation_v2(
                 self,
                 input,
@@ -5524,19 +5559,27 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     @override
-    async def astream_events(
+    def astream_events(  # type: ignore[override]
         self,
         input: Input,
         config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
         **kwargs: Any | None,
-    ) -> AsyncIterator[StreamEvent]:
-        def _error_stream_event(message: str) -> StreamEvent:
-            raise NotImplementedError(message)
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
+        del input, config, kwargs
+        if version == "v3":
+            return self._astream_events_unsupported_v3()
+        return self._astream_events_unsupported_v1_v2()
 
-        for _ in range(1):
-            yield _error_stream_event(
-                "RunnableEach does not support astream_events yet."
-            )
+    async def _astream_events_unsupported_v3(self) -> Any:
+        msg = "RunnableEach does not support astream_events yet."
+        raise NotImplementedError(msg)
+
+    async def _astream_events_unsupported_v1_v2(self) -> AsyncIterator[StreamEvent]:
+        msg = "RunnableEach does not support astream_events yet."
+        raise NotImplementedError(msg)
+        yield  # makes this an async generator (never reached)
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
@@ -6085,33 +6128,55 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     ) -> Any:
         """Return the v3 async stream object from the bound runnable.
 
-        Separate coroutine (not a generator) so callers can `await` it to
-        obtain the typed stream (e.g. `AsyncChatModelStream`) directly —
-        Python does not allow `return <value>` inside an async generator.
+        Returns an awaitable (an `async def` coroutine, not an async
+        generator) so callers can `await` it to obtain the typed stream
+        (e.g. `AsyncChatModelStream`) directly — Python does not allow
+        `return <value>` inside an async generator.
 
         The caller is responsible for merging `self.kwargs` and stripping
         `version`; this method passes `version="v3"` explicitly and would
         raise on a duplicate keyword.
         """
-        return await self.bound.astream_events(  # type: ignore[misc]
+        return await self.bound.astream_events(
             input,
             self._merge_configs(config),
             version="v3",
             **kwargs,
         )
 
+    @overload
+    def astream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]: ...
+
+    @overload
+    def astream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Awaitable[Any]: ...
+
     @override
-    def astream_events(  # type: ignore[override]
+    def astream_events(
         self,
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> _AsyncEventsResult:
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
         """Forward `astream_events` to the bound runnable with bound kwargs merged.
 
-        For `version="v3"`, returns the bound runnable's typed stream object
-        (e.g. `AsyncChatModelStream`) when awaited. For `version="v1"` /
-        `"v2"`, returns an async iterator over `StreamEvent` items.
+        For `version="v3"`, returns an awaitable that resolves to the
+        bound runnable's typed stream object (e.g. `AsyncChatModelStream`).
+        For `version="v1"` / `"v2"`, returns an async iterator over
+        `StreamEvent` items.
 
         Without this override, `__getattr__` would drop `self.kwargs` — losing
         tools bound via `bind_tools`, `stop` sequences, etc.
@@ -6125,18 +6190,15 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             merged_without_version = {
                 k: v for k, v in merged_kwargs.items() if k != "version"
             }
-            return _AsyncEventsResult(
-                awaitable=self._astream_events_v3(
-                    input, config, **merged_without_version
-                )
-            )
-        # v1/v2: bound.astream_events is itself a hybrid result object on chat
-        # models, but a plain async generator on generic Runnables. We need an
-        # async iterator either way.
-        bound_result = self.bound.astream_events(
-            input, self._merge_configs(config), **merged_kwargs
+            return self._astream_events_v3(input, config, **merged_without_version)
+        # v1/v2: bound.astream_events is a real async generator — iterate it
+        # directly without an extra wrapper layer.
+        return cast(
+            "AsyncIterator[StreamEvent]",
+            self.bound.astream_events(
+                input, self._merge_configs(config), **merged_kwargs
+            ),
         )
-        return _AsyncEventsResult(iterator=aiter(bound_result))
 
     @override
     def transform(
