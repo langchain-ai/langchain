@@ -39,7 +39,7 @@ jobs:
 
       - name: "📋 Extract Repository List with yq"
         id: get-unsorted-repos
-        uses: mikefarah/yq@17f66dc6c6a177fafd8b71a6abea6d6340aa1e16 # master
+        uses: mikefarah/yq@cb9793555487aafb501e1a9d85c28b812aeadfab # master
         with:
           cmd: |
             # Extract repos from packages.yml that are in the langchain-ai org
