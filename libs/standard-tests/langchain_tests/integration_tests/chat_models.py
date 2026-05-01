@@ -912,25 +912,26 @@ class ChatModelIntegrationTests(ChatModelTests):
             f"got {last_chunk.chunk_position!r}"
         )
 
-    def test_stream_v2(self, model: BaseChatModel) -> None:
-        """Test that `model.stream_v2(simple_message)` works.
+    def test_stream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `model.stream_events("Hello", version="v3")` works.
 
         Exercises the content-block-centric streaming protocol. Passing this
-        test indicates the model participates in `stream_v2` either natively
-        (via `_stream_chat_model_events`) or through the compat bridge that
+        test indicates the model participates in `stream_events(version="v3")` either
+        natively (via `_stream_chat_model_events`) or through the compat bridge that
         converts `_stream` chunks into protocol events.
 
         ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`
-            — `stream_v2` falls back to the same `_stream` path via the compat
-            bridge when the model does not implement
+            — `stream_events(version="v3")` falls back to the same
+            `_stream` path via the compat bridge when the model does not
+            implement
             `_stream_chat_model_events`. If `test_stream` passes but this does
             not, inspect the raised lifecycle violation: it identifies the
             event index and the rule broken.
         """
-        stream = model.stream_v2("Hello")
+        stream = model.stream_events("Hello", version="v3")
         assert isinstance(stream, ChatModelStream)
 
         events = list(stream)
@@ -942,13 +943,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert message.content
         assert len(message.content_blocks) == 1
         assert message.content_blocks[0]["type"] == "text"
-        # `stream_v2` always assembles content as v1 protocol blocks.
+        # `stream_events(version="v3")` always assembles content as v1 protocol blocks.
         assert message.response_metadata.get("output_version") == "v1"
 
-    async def test_astream_v2(self, model: BaseChatModel) -> None:
-        """Test that `await model.astream_v2(simple_message)` works.
+    async def test_astream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `await model.astream_events("Hello", version="v3")` works.
 
-        Async counterpart to `test_stream_v2`. Exercises the
+        Async counterpart to `test_stream_events_v3`. Exercises the
         `AsyncChatModelStream` path end-to-end: the background producer task,
         replay-buffer-backed event iteration, and the awaitable `output`
         projection.
@@ -961,7 +962,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             lifecycle violation; it identifies the event index and the rule
             broken.
         """
-        stream = await model.astream_v2("Hello")
+        stream = await model.astream_events("Hello", version="v3")
         assert isinstance(stream, AsyncChatModelStream)
 
         events = [event async for event in stream]

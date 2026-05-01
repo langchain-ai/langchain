@@ -1,8 +1,8 @@
 """Per-message streaming objects for content-block protocol events.
 
 `ChatModelStream` is the synchronous variant returned by
-`BaseChatModel.stream_v2()`.  `AsyncChatModelStream` is the
-asynchronous variant returned by `BaseChatModel.astream_v2()`.
+`BaseChatModel.stream_events(version="v3")`.  `AsyncChatModelStream` is the
+asynchronous variant returned by `BaseChatModel.astream_events(version="v3")`.
 
 Both expose typed projection properties (`.text`, `.reasoning`,
 `.tool_calls`, `.usage`, `.output`) that accumulate protocol
@@ -24,7 +24,7 @@ from langchain_core.language_models._compat_bridge import finalize_tool_call_chu
 from langchain_core.messages import AIMessage
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Generator, Iterator
+    from collections.abc import Awaitable, Callable, Generator, Iterator, Mapping
 
     from langchain_protocol.protocol import (
         ContentBlockDeltaData,
@@ -63,6 +63,54 @@ def _merge_chunk_into_store(
         existing["name"] = block["name"]
     existing["args"] = existing.get("args", "") + (block.get("args") or "")
     store[idx] = existing
+
+
+def _merge_block_delta_into_store(
+    store: dict[int, dict[str, Any]],
+    idx: int,
+    fields: dict[str, Any],
+) -> None:
+    """Shallow-merge a block-delta snapshot into an indexed chunk store."""
+    existing = store.get(idx, {})
+    for key, value in fields.items():
+        if value is not None:
+            existing[key] = value
+    store[idx] = existing
+
+
+def _event_content_block(data: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Return start/finish content, tolerating the pre-delta field name."""
+    block = data.get("content") or data.get("content_block")
+    return block if isinstance(block, dict) else None
+
+
+def _legacy_block_to_delta(block: Mapping[str, Any]) -> dict[str, Any]:
+    """Convert the old content-block delta shape to an explicit delta."""
+    btype = block.get("type")
+    if btype == "text":
+        return {"type": "text-delta", "text": block.get("text", "")}
+    if btype == "reasoning":
+        return {
+            "type": "reasoning-delta",
+            "reasoning": block.get("reasoning", ""),
+        }
+    if "data" in block:
+        delta = {"type": "data-delta", "data": block.get("data", "")}
+        if block.get("encoding") == "base64":
+            delta["encoding"] = "base64"
+        return delta
+    return {"type": "legacy-block-delta", "fields": block}
+
+
+def _event_delta(data: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Return an explicit delta, converting legacy content-block deltas."""
+    delta = data.get("delta")
+    if isinstance(delta, dict):
+        return delta
+    block = data.get("content_block")
+    if isinstance(block, dict):
+        return _legacy_block_to_delta(block)
+    return None
 
 
 def _sweep_chunk_store(
@@ -498,9 +546,9 @@ class _ChatModelStreamBase:
     def set_message_id(self, message_id: str) -> None:
         """Assign the stable message identifier once the run starts.
 
-        Called by the stream driver (`stream_v2` / `astream_v2`) after
-        `on_chat_model_start` produces a run id. Not intended for
-        end-user code.
+        Called by the stream driver (`stream_events(version="v3")` /
+        `astream_events(version="v3")`) after `on_chat_model_start` produces a run
+        id. Not intended for end-user code.
         """
         self._message_id = message_id
 
@@ -520,19 +568,21 @@ class _ChatModelStreamBase:
 
         Unlike `ChatModelStream.output` (which blocks until the stream
         finishes), this never pumps, blocks, or raises. Intended for the
-        stream driver (`stream_v2` / `astream_v2`) to check whether the
-        stream produced a message before firing `on_llm_end` callbacks.
+        stream driver (`stream_events(version="v3")` and its async
+        equivalent) to check whether the stream produced a message before
+        firing `on_llm_end` callbacks.
         """
         return self._output_message
 
     # -- Event ingestion (public) ------------------------------------------
 
-    def dispatch(self, event: MessagesData) -> None:
+    def dispatch(self, event: Mapping[str, Any]) -> None:
         """Route a protocol event to the appropriate internal handler.
 
         Public entry point for feeding events into the stream. Called by
-        the stream driver (`stream_v2` / `astream_v2`'s pump) and by
-        any observer or test that needs to inject protocol events.
+        the stream driver (the `stream_events(version="v3")` pump and its
+        async equivalent) and by any observer or test that needs to
+        inject protocol events.
         """
         self._record_event(event)
         event_type = event.get("event")
@@ -550,25 +600,27 @@ class _ChatModelStreamBase:
 
     # -- Internal push API (called by dispatch) ----------------------------
 
-    def _record_event(self, event: MessagesData) -> None:
+    def _record_event(self, event: Mapping[str, Any]) -> None:
         """Append a raw event to the replay buffer."""
-        self._events.append(event)
+        self._events.append(cast("MessagesData", event))
 
     def _push_message_start(self, data: MessageStartData) -> None:
         """Process a `message-start` event."""
         self._start_metadata = data.get("metadata")
+        message_id = data.get("id")
+        if message_id:
+            self._message_id = message_id
 
     def _push_content_block_delta(self, data: ContentBlockDeltaData) -> None:
         """Process a `content-block-delta` event."""
-        block = data.get("content_block")
-        if block is None:
+        delta = _event_delta(data)
+        if delta is None:
             return
-        btype = block.get("type", "")
         event_idx = data.get("index")
+        dtype = delta.get("type", "")
 
-        if btype == "text":
-            text_block = cast("TextContentBlock", block)
-            delta_text = text_block.get("text", "")
+        if dtype == "text-delta":
+            delta_text = delta.get("text", "")
             if delta_text:
                 self._text_acc += delta_text
                 if event_idx is not None:
@@ -576,9 +628,8 @@ class _ChatModelStreamBase:
                         self._text_per_block.get(event_idx, "") + delta_text
                     )
                 self._text_proj.push(delta_text)
-        elif btype == "reasoning":
-            reasoning_block = cast("ReasoningContentBlock", block)
-            delta_r = reasoning_block.get("reasoning", "")
+        elif dtype == "reasoning-delta":
+            delta_r = delta.get("reasoning", "")
             if delta_r:
                 self._reasoning_acc += delta_r
                 if event_idx is not None:
@@ -586,35 +637,94 @@ class _ChatModelStreamBase:
                         self._reasoning_per_block.get(event_idx, "") + delta_r
                     )
                 self._reasoning_proj.push(delta_r)
-        elif btype == "tool_call_chunk":
+        elif dtype == "block-delta":
+            fields = delta.get("fields")
+            if not isinstance(fields, dict):
+                return
+            btype = fields.get("type", "")
+            if btype == "tool_call_chunk":
+                tcc = cast("ToolCallChunk", fields)
+                idx = data.get("index")
+                if idx is None:
+                    idx = tcc.get("index", len(self._tool_call_chunks))
+                _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(tcc))
+                chunk_block: ToolCallChunk = {
+                    "type": "tool_call_chunk",
+                    "id": tcc.get("id"),
+                    "name": tcc.get("name"),
+                    "args": tcc.get("args"),
+                }
+                if "index" in tcc:
+                    chunk_block["index"] = tcc["index"]
+                self._tool_calls_proj.push(chunk_block)
+            elif btype == "server_tool_call_chunk":
+                stcc = cast("ServerToolCallChunk", fields)
+                idx = data.get("index")
+                if idx is None:
+                    idx = len(self._server_tool_call_chunks)
+                _merge_block_delta_into_store(
+                    self._server_tool_call_chunks,
+                    idx,
+                    dict(stcc),
+                )
+        elif dtype == "legacy-block-delta":
+            fields = delta.get("fields")
+            if not isinstance(fields, dict):
+                return
+            btype = fields.get("type", "")
+            if btype == "tool_call_chunk":
+                tcc = cast("ToolCallChunk", fields)
+                idx = data.get("index")
+                if idx is None:
+                    idx = tcc.get("index", len(self._tool_call_chunks))
+                _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
+                legacy_chunk_block: ToolCallChunk = {
+                    "type": "tool_call_chunk",
+                    "id": tcc.get("id"),
+                    "name": tcc.get("name"),
+                    "args": tcc.get("args"),
+                }
+                if "index" in tcc:
+                    legacy_chunk_block["index"] = tcc["index"]
+                self._tool_calls_proj.push(legacy_chunk_block)
+            elif btype == "server_tool_call_chunk":
+                stcc = cast("ServerToolCallChunk", fields)
+                idx = data.get("index")
+                if idx is None:
+                    idx = len(self._server_tool_call_chunks)
+                _merge_chunk_into_store(
+                    self._server_tool_call_chunks,
+                    idx,
+                    dict(stcc),
+                )
+        elif dtype == "data-delta":
+            # Binary/modal payload deltas are reflected in the final
+            # content-block finish event; there is no dedicated projection.
+            return
+        else:
+            # Transitional legacy path for old `content_block` deltas that
+            # should not be reachable after `_event_delta` conversion, kept
+            # here for custom in-tree test fixtures or third-party emitters.
+            block = data.get("content_block")
+            if not isinstance(block, dict):
+                return
+            btype = block.get("type", "")
+            if btype != "tool_call_chunk":
+                return
             tcc = cast("ToolCallChunk", block)
-            # The protocol puts the block index on the event
-            # (`ContentBlockDeltaData`), not inside `content_block`.
-            # Fall back to `content_block.index` for providers that echo
-            # it there.
             idx = data.get("index")
             if idx is None:
                 idx = tcc.get("index", len(self._tool_call_chunks))
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
-            chunk_block: ToolCallChunk = {
+            fallback_chunk_block: ToolCallChunk = {
                 "type": "tool_call_chunk",
                 "id": tcc.get("id"),
                 "name": tcc.get("name"),
                 "args": tcc.get("args"),
             }
             if "index" in tcc:
-                chunk_block["index"] = tcc["index"]
-            self._tool_calls_proj.push(chunk_block)
-        elif btype == "server_tool_call_chunk":
-            stcc = cast("ServerToolCallChunk", block)
-            idx = data.get("index")
-            if idx is None:
-                idx = len(self._server_tool_call_chunks)
-            _merge_chunk_into_store(
-                self._server_tool_call_chunks,
-                idx,
-                dict(stcc),
-            )
+                fallback_chunk_block["index"] = tcc["index"]
+            self._tool_calls_proj.push(fallback_chunk_block)
 
     def _resolve_block_text(self, idx: int | None, full_text: str) -> str:
         """Return authoritative text for a single text block at `idx`.
@@ -681,7 +791,7 @@ class _ChatModelStreamBase:
 
     def _push_content_block_finish(self, data: ContentBlockFinishData) -> None:
         """Process a `content-block-finish` event."""
-        block = data.get("content_block")
+        block = _event_content_block(data)
         if block is None:
             return
         btype = block.get("type", "")
@@ -764,7 +874,7 @@ class _ChatModelStreamBase:
         ):
             if btype == "server_tool_call" and idx is not None:
                 self._server_tool_call_chunks.pop(idx, None)
-            finalized = block
+            finalized = cast("FinalizedContentBlock", block)
 
         if finalized is not None and idx is not None:
             # Backfill the wire index onto the finalized block when the
@@ -785,7 +895,7 @@ class _ChatModelStreamBase:
         """Process a `message-finish` event."""
         self._done = True
         self._usage_value = data.get("usage")
-        self._finish_metadata = data.get("metadata")
+        self._finish_metadata = cast("dict[str, Any] | None", data.get("metadata"))
 
         # Finalize any unswept chunks — both client- and server-side.
         _sweep_chunk_store(
@@ -829,8 +939,8 @@ class _ChatModelStreamBase:
     def fail(self, error: BaseException) -> None:
         """Mark the stream as errored and propagate to all projections.
 
-        Public API — called by the stream driver (`stream_v2` /
-        `astream_v2`) when the underlying producer raises, by
+        Public API — called by the stream driver (`stream_events(version="v3")` /
+        `astream_events(version="v3")`) when the underlying producer raises, by
         `dispatch` when an `error` protocol event arrives, and by
         cancellation paths.
         """
@@ -871,8 +981,9 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
-        # Pin `output_version` last: `stream_v2` always assembles content as v1
-        # protocol blocks, regardless of the provider's configured output format.
+        # Pin `output_version` last: `stream_events(version="v3")` always
+        # assembles content as v1 protocol blocks, regardless of the
+        # provider's configured output format.
         # A provider-supplied `output_version` in finish metadata (e.g.
         # `"responses/v1"` from `ChatOpenAI(use_responses_api=True, ...)`) would
         # otherwise cause `AIMessage.content_blocks` to re-run the wrong
@@ -918,7 +1029,7 @@ class _ChatModelStreamBase:
 class ChatModelStream(_ChatModelStreamBase):
     """Synchronous per-message streaming object for a single LLM response.
 
-    Returned by `BaseChatModel.stream_v2()`.  Content-block protocol
+    Returned by `BaseChatModel.stream_events(version="v3")`.  Content-block protocol
     events are fed into this object and accumulated into typed projections.
 
     Projections (always return the same cached object):
@@ -973,7 +1084,7 @@ class ChatModelStream(_ChatModelStreamBase):
         """Bind a pump for standalone streaming.
 
         Delegates to `set_request_more`.  Used by
-        `BaseChatModel.stream_v2()`.
+        `BaseChatModel.stream_events(version="v3")`.
         """
         self.set_request_more(pump_one)
 
@@ -1074,7 +1185,7 @@ class ChatModelStream(_ChatModelStreamBase):
 class AsyncChatModelStream(_ChatModelStreamBase):
     """Asynchronous per-message streaming object for a single LLM response.
 
-    Returned by `BaseChatModel.astream_v2()`.  Content-block events
+    Returned by `BaseChatModel.astream_events(version="v3")`.  Content-block events
     are fed into this object by a background producer task.
 
     Projections:
@@ -1120,7 +1231,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         # Teardown callback invoked by `aclose()` only when the producer
         # task was cancelled before its body ran (so the normal
         # `_produce` CancelledError handler — which fires
-        # `on_llm_error` — never executed). Set by `astream_v2`.
+        # `on_llm_error` — never executed). Set by `astream_events(version="v3")`.
         self._on_aclose_fail: Callable[[BaseException], Awaitable[None]] | None = None
 
     # -- Pump/pull wiring (async) ------------------------------------------
@@ -1261,7 +1372,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
                 task.remove_done_callback(_link)
 
         # If the task was cancelled before `_produce` ran (e.g.
-        # `astream_v2()` immediately followed by `aclose()`), the stream
+        # `astream_events(version="v3")` immediately followed by `aclose()`), the stream
         # never reached `_produce`'s CancelledError handler — its
         # projections are still pending and no end-of-lifecycle callback
         # has fired. Resolve both here so callers of `await stream.output`
@@ -1290,10 +1401,10 @@ class AsyncChatModelStream(_ChatModelStreamBase):
 
     # -- Internal API (extend base to drive async projections) -------------
 
-    def _record_event(self, event: MessagesData) -> None:
+    def _record_event(self, event: Mapping[str, Any]) -> None:
         """Record event and push to async event replay projection."""
         super()._record_event(event)
-        self._events_proj.push(event)
+        self._events_proj.push(cast("MessagesData", event))
 
     def _finish(self, data: MessageFinishData) -> None:
         """Finish base projections and async-only projections."""

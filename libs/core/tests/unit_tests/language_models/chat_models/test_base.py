@@ -473,7 +473,7 @@ class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
 async def test_streaming_attribute_overrides_v2_callback() -> None:
     """`self.streaming=False` must opt out of the v2 event path too.
 
-    `_should_stream_v2` shares the `_streaming_disabled` opt-outs with
+    `_should_use_protocol_streaming` shares the `_streaming_disabled` opt-outs with
     `_should_stream`, so an instance-level `streaming=False` takes
     precedence over an attached `_V2StreamingCallbackHandler`.
     """
@@ -1561,16 +1561,17 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
     assert run.metadata == run.extra["metadata"]
 
 
-def test_stream_v2_invocation_params_passed_to_tracer_metadata() -> None:
-    """`stream_v2()` must preserve filtered invocation params for tracing."""
+def test_stream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`stream_events(version="v3")` preserves filtered invocation params."""
     llm = FakeStreamingChatModelWithInvocationParams()
     collector = LangChainTracerRunCollector()
 
     with collector.tracing_callback() as tracer:
-        _ = llm.stream_v2(
+        _ = llm.stream_events(
             [HumanMessage(content="Hello")],
             config={"callbacks": [tracer]},
             stop=["done"],
+            version="v3",
         ).output
 
     assert len(collector.runs) == 1
@@ -1581,16 +1582,17 @@ def test_stream_v2_invocation_params_passed_to_tracer_metadata() -> None:
     assert metadata["temperature"] == 0.7
 
 
-async def test_astream_v2_invocation_params_passed_to_tracer_metadata() -> None:
-    """`astream_v2()` must preserve filtered invocation params for tracing."""
+async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`astream_events(version="v3")` preserves filtered invocation params."""
     llm = FakeStreamingChatModelWithInvocationParams()
     collector = LangChainTracerRunCollector()
 
     with collector.tracing_callback() as tracer:
-        stream = await llm.astream_v2(
+        stream = await llm.astream_events(
             [HumanMessage(content="Hello")],
             config={"callbacks": [tracer]},
             stop=["done"],
+            version="v3",
         )
         _ = await stream
 

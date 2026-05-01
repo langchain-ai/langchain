@@ -1,5 +1,6 @@
 """Tests for the compat bridge (chunk-to-event conversion)."""
 
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -9,6 +10,7 @@ from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
     _to_protocol_usage,
+    achunks_to_events,
     amessage_to_events,
     chunks_to_events,
     message_to_events,
@@ -22,11 +24,15 @@ if TYPE_CHECKING:
         InvalidToolCall,
         MessageFinishData,
         MessageStartData,
-        ReasoningContentBlock,
         ServerToolCall,
         TextContentBlock,
         ToolCall,
     )
+
+
+def _event_metadata(event: Any) -> dict[str, Any]:
+    """Return event metadata for protocol versions that type it as extensible."""
+    return cast("dict[str, Any]", cast("dict[str, Any]", event).get("metadata") or {})
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +141,7 @@ def test_chunks_to_events_text_only() -> None:
     # No provider finish_reason in fixtures — metadata carries no
     # `finish_reason` key (the bridge passes response_metadata through
     # unchanged).
-    assert "finish_reason" not in (finish.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(finish)
 
 
 def test_chunks_to_events_empty_iterator() -> None:
@@ -143,14 +149,14 @@ def test_chunks_to_events_empty_iterator() -> None:
     assert list(chunks_to_events(iter([]))) == []
 
 
-def test_chunks_to_events_block_transitions_close_previous_block() -> None:
+def test_chunks_to_events_block_transitions_keep_stable_indices() -> None:
     """String-keyed blocks that transition mid-stream each get their own lifecycle.
 
     Regression test for OpenAI `responses/v1` style streams where
     `content_blocks` uses string identifiers (e.g. `"lc_rs_305f30"`) to
     distinguish blocks. Each distinct block must get its own
     `content-block-start` / `content-block-finish` pair, with sequential
-    `uint` wire indices, and blocks must not interleave.
+    `uint` wire indices, and deltas keep that stable wire index.
     """
     chunks = [
         ChatGenerationChunk(
@@ -199,12 +205,12 @@ def test_chunks_to_events_block_transitions_close_previous_block() -> None:
 
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert [s["content_block"]["type"] for s in starts] == [
+    assert [s["content"]["type"] for s in starts] == [
         "reasoning",
         "reasoning",
         "text",
     ]
-    assert [f["content_block"]["type"] for f in finishes] == [
+    assert [f["content"]["type"] for f in finishes] == [
         "reasoning",
         "reasoning",
         "text",
@@ -213,8 +219,8 @@ def test_chunks_to_events_block_transitions_close_previous_block() -> None:
     assert [s["index"] for s in starts] == [0, 1, 2]
     assert [f["index"] for f in finishes] == [0, 1, 2]
 
-    # Finish events must be interleaved with starts (no-interleave rule):
-    # block 0 finishes before block 1 starts, etc.
+    # Blocks are finalized at message end so providers can interleave
+    # deltas for parallel content blocks without closing them early.
     events_any: list[Any] = events
     lifecycle = [
         (e["event"], e["index"])
@@ -223,17 +229,17 @@ def test_chunks_to_events_block_transitions_close_previous_block() -> None:
     ]
     assert lifecycle == [
         ("content-block-start", 0),
-        ("content-block-finish", 0),
         ("content-block-start", 1),
-        ("content-block-finish", 1),
         ("content-block-start", 2),
+        ("content-block-finish", 0),
+        ("content-block-finish", 1),
         ("content-block-finish", 2),
     ]
 
     # Each finish carries the accumulated content for its block.
-    assert finishes[0]["content_block"]["reasoning"] == "hmm then"
-    assert finishes[1]["content_block"]["reasoning"] == "different"
-    assert finishes[2]["content_block"]["text"] == "answer: 42"
+    assert finishes[0]["content"]["reasoning"] == "hmm then"
+    assert finishes[1]["content"]["reasoning"] == "different"
+    assert finishes[2]["content"]["text"] == "answer: 42"
 
 
 def test_chunks_to_events_tool_call_multichunk() -> None:
@@ -284,7 +290,7 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
         e for e in events if e["event"] == "content-block-finish"
     ]
     assert len(finish_events) == 1
-    finalized = cast("ToolCall", finish_events[0]["content_block"])
+    finalized = cast("ToolCall", finish_events[0]["content"])
     assert finalized["type"] == "tool_call"
     assert finalized["args"] == {"q": "test"}
 
@@ -292,9 +298,125 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     # not synthesize one. It deliberately does not infer `"tool_use"`
     # from the presence of a valid tool_call either; terminal reasons
     # are provider-specific (see `_build_message_finish`).
-    assert "finish_reason" not in (
-        cast("MessageFinishData", events[-1]).get("metadata") or {}
+    assert "finish_reason" not in _event_metadata(events[-1])
+
+
+def test_chunks_to_events_interleaved_parallel_tool_calls() -> None:
+    """Parallel tool-call chunks can interleave without losing block lifecycles."""
+    events = list(
+        chunks_to_events(
+            iter(_interleaved_parallel_tool_call_chunks()), message_id="msg-1"
+        )
     )
+
+    _assert_interleaved_parallel_tool_call_events(events)
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_interleaved_parallel_tool_calls() -> None:
+    """Async bridge preserves lifecycles for interleaved parallel tool calls."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_interleaved_parallel_tool_call_chunks()),
+            message_id="msg-1",
+        )
+    ]
+
+    _assert_interleaved_parallel_tool_call_events(events)
+
+
+def _interleaved_parallel_tool_call_chunks() -> list[ChatGenerationChunk]:
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": "tc1",
+                        "name": "task",
+                        "args": '{"subagent_type": "haiku"',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": "tc2",
+                        "name": "task",
+                        "args": '{"subagent_type": "limerick"',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": None,
+                        "args": ', "description": "Write a haiku"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-1",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": None,
+                        "name": None,
+                        "args": ', "description": "Write a limerick"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+    ]
+
+
+async def _aiter_chunks(
+    chunks: list[ChatGenerationChunk],
+) -> AsyncIterator[ChatGenerationChunk]:
+    for chunk in chunks:
+        yield chunk
+
+
+def _assert_interleaved_parallel_tool_call_events(events: list[Any]) -> None:
+    assert_valid_event_stream(events)
+
+    starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
+    finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
+    assert [s["index"] for s in starts] == [0, 1]
+    assert [f["index"] for f in finishes] == [0, 1]
+
+    finalized = [cast("ToolCall", event["content"]) for event in finishes]
+    assert finalized[0]["id"] == "tc1"
+    assert finalized[0]["args"] == {
+        "subagent_type": "haiku",
+        "description": "Write a haiku",
+    }
+    assert finalized[1]["id"] == "tc2"
+    assert finalized[1]["args"] == {
+        "subagent_type": "limerick",
+        "description": "Write a limerick",
+    }
 
 
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
@@ -323,10 +445,8 @@ def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
         e for e in events if e["event"] == "content-block-finish"
     ]
     assert len(finish_events) == 1
-    assert finish_events[0]["content_block"]["type"] == "invalid_tool_call"
-    assert "finish_reason" not in (
-        cast("MessageFinishData", events[-1]).get("metadata") or {}
-    )
+    assert finish_events[0]["content"]["type"] == "invalid_tool_call"
+    assert "finish_reason" not in _event_metadata(events[-1])
 
 
 def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() -> None:
@@ -350,7 +470,7 @@ def test_chunks_to_events_anthropic_server_tool_use_routes_through_translator() 
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks: list[Any] = [
-        e["content_block"] for e in events if e["event"] == "content-block-finish"
+        e["content"] for e in events if e["event"] == "content-block-finish"
     ]
     block_types = [b.get("type") for b in finish_blocks]
     assert "server_tool_call" in block_types
@@ -372,7 +492,7 @@ def test_chunks_to_events_unregistered_provider_falls_back() -> None:
     finish_events: list[Any] = [
         e for e in events if e["event"] == "content-block-finish"
     ]
-    assert [e["content_block"]["type"] for e in finish_events] == ["text"]
+    assert [e["content"]["type"] for e in finish_events] == ["text"]
 
 
 def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
@@ -402,7 +522,7 @@ def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks: list[Any] = [
-        e["content_block"] for e in events if e["event"] == "content-block-finish"
+        e["content"] for e in events if e["event"] == "content-block-finish"
     ]
     types = [b.get("type") for b in finish_blocks]
     assert "text" in types
@@ -423,7 +543,7 @@ def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
 
     events = list(chunks_to_events(iter(chunks)))
     finish_blocks: list[Any] = [
-        e["content_block"] for e in events if e["event"] == "content-block-finish"
+        e["content"] for e in events if e["event"] == "content-block-finish"
     ]
     types = [b.get("type") for b in finish_blocks]
     assert "reasoning" in types
@@ -448,14 +568,13 @@ def test_message_to_events_text_only() -> None:
         "message-finish",
     ]
     start = cast("MessageStartData", events[0])
-    assert start["message_id"] == "msg-1"
+    assert start["id"] == "msg-1"
 
     delta_event = cast("ContentBlockDeltaData", events[2])
-    delta = cast("TextContentBlock", delta_event["content_block"])
-    assert delta["text"] == "Hello world"
+    assert delta_event["delta"] == {"type": "text-delta", "text": "Hello world"}
 
     final = cast("MessageFinishData", events[-1])
-    assert "finish_reason" not in (final.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(final)
 
 
 def test_message_to_events_empty_content_yields_start_finish_only() -> None:
@@ -477,15 +596,16 @@ def test_message_to_events_reasoning_text_order() -> None:
 
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert [s["content_block"]["type"] for s in starts] == ["reasoning", "text"]
-    assert [f["content_block"]["type"] for f in finishes] == ["reasoning", "text"]
+    assert [s["content"]["type"] for s in starts] == ["reasoning", "text"]
+    assert [f["content"]["type"] for f in finishes] == ["reasoning", "text"]
 
     deltas: list[Any] = [e for e in events if e["event"] == "content-block-delta"]
     assert len(deltas) == 2
-    assert cast("ReasoningContentBlock", deltas[0]["content_block"])["reasoning"] == (
-        "think hard"
-    )
-    assert cast("TextContentBlock", deltas[1]["content_block"])["text"] == "the answer"
+    assert deltas[0]["delta"] == {
+        "type": "reasoning-delta",
+        "reasoning": "think hard",
+    }
+    assert deltas[1]["delta"] == {"type": "text-delta", "text": "the answer"}
 
 
 def test_message_to_events_tool_call_skips_delta() -> None:
@@ -505,7 +625,7 @@ def test_message_to_events_tool_call_skips_delta() -> None:
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) == 1
-    tc = cast("ToolCall", finishes[0]["content_block"])
+    tc = cast("ToolCall", finishes[0]["content"])
     assert tc["type"] == "tool_call"
     assert tc["args"] == {"q": "hi"}
 
@@ -513,7 +633,7 @@ def test_message_to_events_tool_call_skips_delta() -> None:
     # bridge does not synthesize one and does not second-guess based on
     # the presence of a tool_call.
     final = cast("MessageFinishData", events[-1])
-    assert "finish_reason" not in (final.get("metadata") or {})
+    assert "finish_reason" not in _event_metadata(final)
 
 
 def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
@@ -536,7 +656,7 @@ def test_message_to_events_invalid_tool_calls_surfaced_from_field() -> None:
     )
     events = list(message_to_events(msg))
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    types = [f["content_block"]["type"] for f in finishes]
+    types = [f["content"]["type"] for f in finishes]
     assert "invalid_tool_call" in types
 
 
@@ -558,7 +678,7 @@ def test_message_to_events_preserves_finish_reason_and_metadata() -> None:
     # Passthrough: response_metadata lands on `metadata` unchanged,
     # including the raw provider `finish_reason`.
     final = cast("MessageFinishData", events[-1])
-    assert final["metadata"] == {
+    assert _event_metadata(final) == {
         "finish_reason": "length",
         "model_name": "test-model",
         "stop_sequence": "</end>",
@@ -585,7 +705,7 @@ def test_message_to_events_message_id_override() -> None:
     msg = AIMessage(content="x", id="msg-orig")
     events = list(message_to_events(msg, message_id="msg-override"))
     start = cast("MessageStartData", events[0])
-    assert start["message_id"] == "msg-override"
+    assert start["id"] == "msg-override"
 
 
 def test_message_to_events_self_contained_start_strips_heavy_fields() -> None:
@@ -622,32 +742,32 @@ def test_message_to_events_self_contained_start_strips_heavy_fields() -> None:
     events = list(message_to_events(msg))
 
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
-    assert [s["content_block"]["type"] for s in starts] == [
+    assert [s["content"]["type"] for s in starts] == [
         "image",
         "audio",
         "non_standard",
     ]
 
-    image_start = starts[0]["content_block"]
+    image_start = starts[0]["content"]
     assert image_start["id"] == "img-1"
     assert image_start["mime_type"] == "image/png"
     assert "data" not in image_start
 
-    audio_start = starts[1]["content_block"]
+    audio_start = starts[1]["content"]
     assert audio_start["id"] == "aud-1"
     assert audio_start["mime_type"] == "audio/mp3"
     assert "data" not in audio_start
     assert "transcript" not in audio_start
 
-    ns_start = starts[2]["content_block"]
+    ns_start = starts[2]["content"]
     assert ns_start["type"] == "non_standard"
     assert ns_start["value"] == {}
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert finishes[0]["content_block"]["data"] == "A" * 1024
-    assert finishes[1]["content_block"]["data"] == "B" * 1024
-    assert finishes[1]["content_block"]["transcript"] == "hello"
-    assert finishes[2]["content_block"]["value"] == {"big": "C" * 1024}
+    assert finishes[0]["content"]["data"] == "A" * 1024
+    assert finishes[1]["content"]["data"] == "B" * 1024
+    assert finishes[1]["content"]["transcript"] == "hello"
+    assert finishes[2]["content"]["value"] == {"big": "C" * 1024}
 
 
 def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
@@ -668,14 +788,14 @@ def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
 
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
     assert len(starts) == 1
-    tc_start = starts[0]["content_block"]
+    tc_start = starts[0]["content"]
     assert tc_start["type"] == "tool_call"
     assert tc_start["id"] == "tc1"
     assert tc_start["name"] == "search"
     assert tc_start["args"] == {}
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    tc_finish = cast("ToolCall", finishes[0]["content_block"])
+    tc_finish = cast("ToolCall", finishes[0]["content"])
     assert tc_finish["args"] == {"q": "big payload " * 100}
 
 
@@ -756,10 +876,10 @@ def test_lifecycle_validator_openai_chat_completions_style() -> None:
     assert_valid_event_stream(events)
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    types = [f["content_block"]["type"] for f in finishes]
+    types = [f["content"]["type"] for f in finishes]
     assert types == ["text", "tool_call"]
-    assert finishes[0]["content_block"]["text"] == "Hello there"
-    assert finishes[1]["content_block"]["args"] == {"q": "pie"}
+    assert finishes[0]["content"]["text"] == "Hello there"
+    assert finishes[1]["content"]["args"] == {"q": "pie"}
 
 
 def test_lifecycle_validator_openai_responses_style() -> None:
@@ -783,7 +903,7 @@ def test_lifecycle_validator_openai_responses_style() -> None:
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
     # Four distinct blocks: reasoning, text, reasoning, text
-    assert [s["content_block"]["type"] for s in starts] == [
+    assert [s["content"]["type"] for s in starts] == [
         "reasoning",
         "text",
         "reasoning",
@@ -791,10 +911,10 @@ def test_lifecycle_validator_openai_responses_style() -> None:
     ]
     assert [s["index"] for s in starts] == [0, 1, 2, 3]
     assert [f["index"] for f in finishes] == [0, 1, 2, 3]
-    assert finishes[0]["content_block"]["reasoning"] == "hmm first"
-    assert finishes[1]["content_block"]["text"] == "Answer: 42"
-    assert finishes[2]["content_block"]["reasoning"] == "actually"
-    assert finishes[3]["content_block"]["text"] == "42!"
+    assert finishes[0]["content"]["reasoning"] == "hmm first"
+    assert finishes[1]["content"]["text"] == "Answer: 42"
+    assert finishes[2]["content"]["reasoning"] == "actually"
+    assert finishes[3]["content"]["text"] == "42!"
 
 
 def test_lifecycle_validator_anthropic_style_text_and_thinking() -> None:
@@ -815,9 +935,9 @@ def test_lifecycle_validator_anthropic_style_text_and_thinking() -> None:
     assert_valid_event_stream(events)
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert [f["content_block"]["type"] for f in finishes] == ["reasoning", "text"]
-    assert finishes[0]["content_block"]["reasoning"] == "Let me think more"
-    assert finishes[1]["content_block"]["text"] == "The answer is 42."
+    assert [f["content"]["type"] for f in finishes] == ["reasoning", "text"]
+    assert finishes[0]["content"]["reasoning"] == "Let me think more"
+    assert finishes[1]["content"]["text"] == "The answer is 42."
 
 
 def test_lifecycle_validator_anthropic_reasoning_preserves_signature() -> None:
@@ -853,7 +973,7 @@ def test_lifecycle_validator_anthropic_reasoning_preserves_signature() -> None:
     assert_valid_event_stream(events)
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    reasoning_finish = finishes[0]["content_block"]
+    reasoning_finish = finishes[0]["content"]
     assert reasoning_finish["type"] == "reasoning"
     assert reasoning_finish["reasoning"] == "Let me think more"
     assert reasoning_finish.get("extras", {}).get("signature") == "sig-abc123"
@@ -899,9 +1019,9 @@ def test_lifecycle_validator_anthropic_style_tool_use_after_text() -> None:
     assert_valid_event_stream(events)
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert [f["content_block"]["type"] for f in finishes] == ["text", "tool_call"]
-    assert finishes[1]["content_block"]["args"] == {"query": "42"}
-    assert finishes[1]["content_block"]["id"] == "toolu_1"
+    assert [f["content"]["type"] for f in finishes] == ["text", "tool_call"]
+    assert finishes[1]["content"]["args"] == {"query": "42"}
+    assert finishes[1]["content"]["id"] == "toolu_1"
 
 
 def test_lifecycle_validator_inline_image_block() -> None:
@@ -925,11 +1045,17 @@ def test_lifecycle_validator_inline_image_block() -> None:
     starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
     deltas: list[Any] = [e for e in events if e["event"] == "content-block-delta"]
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
-    assert [s["content_block"]["type"] for s in starts] == ["image"]
-    # Self-contained block: no delta, and start has heavy fields stripped.
-    assert deltas == []
-    assert "data" not in starts[0]["content_block"]
-    assert finishes[0]["content_block"]["data"] == "AAAA"
+    assert [s["content"]["type"] for s in starts] == ["image"]
+    # Data payload rides as an explicit data-delta; start has heavy fields stripped.
+    assert deltas == [
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "data-delta", "data": "AAAA"},
+        }
+    ]
+    assert "data" not in starts[0]["content"]
+    assert finishes[0]["content"]["data"] == "AAAA"
 
 
 def test_lifecycle_validator_invalid_tool_call_args() -> None:
@@ -956,7 +1082,7 @@ def test_lifecycle_validator_invalid_tool_call_args() -> None:
 
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) == 1
-    assert finishes[0]["content_block"]["type"] == "invalid_tool_call"
+    assert finishes[0]["content"]["type"] == "invalid_tool_call"
 
 
 def test_lifecycle_validator_empty_stream() -> None:

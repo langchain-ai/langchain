@@ -134,7 +134,10 @@ class LLMManagerMixin:
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on each protocol event produced by `stream_v2` / `astream_v2`.
+        """Run on each protocol event from `stream_events(version="v3")`.
+
+        Also fires for the async equivalent
+        (`astream_events(version="v3")`).
 
         Fires once per `MessagesData` event — `message-start`, per-block
         `content-block-start` / `content-block-delta` /
@@ -699,7 +702,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Run on each protocol event produced by `astream_v2`.
+        """Run on each protocol event produced by `astream_events(version="v3")`.
 
         See :meth:`LLMManagerMixin.on_stream_event` for the full contract.
         Fires once per `MessagesData` event at event granularity, uniformly

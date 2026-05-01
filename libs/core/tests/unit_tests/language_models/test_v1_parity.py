@@ -1,7 +1,7 @@
-"""V1 parity tests: stream_v2() output must match model.stream() output.
+"""V1 parity tests: `stream_events(version="v3")` must match `model.stream()` output.
 
-These are the acceptance criteria for streaming v2 — if any test fails,
-v2 has a regression vs v1.
+These are the acceptance criteria for the v3 streaming API — if any test fails,
+v3 has a regression vs v1.
 """
 
 from __future__ import annotations
@@ -128,8 +128,8 @@ def _collect_v1_message(model: BaseChatModel, input_text: str) -> AIMessage:
 
 
 def _collect_v2_message(model: BaseChatModel, input_text: str) -> AIMessage:
-    """Run model.stream_v2() and get .output."""
-    stream = model.stream_v2(input_text)
+    """Run `model.stream_events(version="v3")` and get `.output`."""
+    stream = model.stream_events(input_text, version="v3")
     return stream.output
 
 
@@ -156,13 +156,13 @@ class TestV1ParityBasic:
     def test_empty_response(self) -> None:
         """A truly empty stream is an error, matching `stream()` parity.
 
-        `stream_v2` distinguishes "producer emitted events but no terminal
-        `message-finish`" (which is synthesized, for native-event providers
+        `stream_events(version="v3")` distinguishes "producer emitted events but no
+        terminal `message-finish`" (which is synthesized, for native-event providers
         that omit it) from "producer emitted nothing at all" (which fails
         with `ValueError`, same as `stream()`).
         """
         model = FakeListChatModel(responses=[""])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         with pytest.raises(ValueError, match="No generation chunks"):
             _ = stream.output
 
@@ -179,7 +179,7 @@ class TestV1ParityBasic:
 
     def test_text_deltas_reconstruct_content(self) -> None:
         model = FakeListChatModel(responses=["Hello!"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         deltas = list(stream.text)
         content = stream.output.content
@@ -233,7 +233,7 @@ class TestV1ParityToolCalls:
 
     def test_tool_calls_via_projection(self) -> None:
         model = self._make_model()
-        stream = model.stream_v2("weather?")
+        stream = model.stream_events("weather?", version="v3")
         finalized = stream.tool_calls.get()
         assert len(finalized) == 1
         assert finalized[0]["name"] == "get_weather"
@@ -276,7 +276,7 @@ class TestV1ParityUsage:
         assert v1.usage_metadata["total_tokens"] == v2.usage_metadata["total_tokens"]
 
     def test_usage_projection_matches(self) -> None:
-        stream = self._make_model().stream_v2("hello")
+        stream = self._make_model().stream_events("hello", version="v3")
         # Drain so usage is available
         for _ in stream.text:
             pass
@@ -352,7 +352,7 @@ class TestV1ParityReasoning:
         assert types_in_order == ["reasoning", "text"]
 
     def test_reasoning_projection(self) -> None:
-        stream = self._make_model().stream_v2("think")
+        stream = self._make_model().stream_events("think", version="v3")
         full_reasoning = str(stream.reasoning)
         assert full_reasoning == "Let me think. Done."
 
@@ -366,7 +366,7 @@ class TestV1ParityError:
         ]
         model = _ScriptedChunkModel(scripted_chunks=chunks, raise_after=True)
 
-        stream = model.stream_v2("boom")
+        stream = model.stream_events("boom", version="v3")
         # Drain first; error may surface here or at .output access.
         try:
             list(stream.text)
@@ -382,7 +382,7 @@ class TestV1ParityError:
         ]
         model = _ScriptedChunkModel(scripted_chunks=chunks, raise_after=True)
 
-        stream = await model.astream_v2("boom")
+        stream = await model.astream_events("boom", version="v3")
         try:
             async for _ in stream.text:
                 pass
