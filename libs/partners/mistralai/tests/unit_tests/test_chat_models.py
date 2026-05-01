@@ -21,11 +21,10 @@ from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
-    _convert_content_block_to_mistral,
-    _convert_lc_image_block_to_mistral,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
+    _format_message_content,
     _is_valid_mistral_tool_call_id,
 )
 
@@ -114,50 +113,119 @@ def test_convert_message_to_mistral_chat_message(
 
 
 @pytest.mark.parametrize(
-    ("block", "expected"),
+    ("content", "expected"),
     [
-        (
-            {"type": "image", "url": "https://example.com/img.png"},
-            {"type": "image_url", "image_url": "https://example.com/img.png"},
-        ),
-        (
-            {
-                "type": "image",
-                "base64": "abc123",
-                "mime_type": "image/jpeg",
-            },
-            {
-                "type": "image_url",
-                "image_url": "data:image/jpeg;base64,abc123",
-            },
-        ),
+        ("hello", "hello"),
+        ("", ""),
+        (None, None),
+        ([], []),
     ],
 )
-def test_convert_lc_image_block_to_mistral(block: dict, expected: dict) -> None:
-    assert _convert_lc_image_block_to_mistral(block) == expected
-
-
-def test_convert_lc_image_block_to_mistral_missing_mime_type() -> None:
-    with pytest.raises(ValueError, match="mime_type"):
-        _convert_lc_image_block_to_mistral({"type": "image", "base64": "abc123"})
-
-
-def test_convert_lc_image_block_to_mistral_unsupported() -> None:
-    with pytest.raises(ValueError, match="'url' or 'base64'"):
-        _convert_lc_image_block_to_mistral({"type": "image"})
+def test_format_message_content_passthrough_non_list(
+    content: Any, expected: Any
+) -> None:
+    """Strings, None, and empty lists pass through `_format_message_content`."""
+    assert _format_message_content(content) == expected
 
 
 @pytest.mark.parametrize(
     ("block", "expected"),
     [
-        ({"type": "text", "text": "hello"}, {"type": "text", "text": "hello"}),
-        ("plain string", "plain string"),
+        (
+            {"type": "image", "url": "https://example.com/img.png"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/img.png"},
+            },
+        ),
+        (
+            {"type": "image", "base64": "abc123", "mime_type": "image/jpeg"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,abc123"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/v0.png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/v0.png"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "v0data",
+                "mime_type": "image/png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,v0data"},
+            },
+        ),
     ],
 )
-def test_convert_content_block_to_mistral_passthrough(
-    block: str | dict, expected: str | dict
+def test_format_message_content_translates_image_blocks(
+    block: dict, expected: dict
 ) -> None:
-    assert _convert_content_block_to_mistral(block) == expected
+    """v0 and v1 canonical image blocks translate to Mistral's `image_url` shape."""
+    assert _format_message_content([block]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "text", "text": "hello"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+        {"type": "image_url", "image_url": "https://example.com/img.png"},
+    ],
+)
+def test_format_message_content_passthrough_known_blocks(block: dict) -> None:
+    """Already-translated wire blocks and text blocks pass through unchanged."""
+    assert _format_message_content([block]) == [block]
+
+
+@pytest.mark.parametrize(
+    "block_type",
+    ["tool_use", "thinking", "reasoning_content", "document_url", "input_audio"],
+)
+def test_format_message_content_passes_unknown_blocks_through(block_type: str) -> None:
+    """Non-canonical blocks pass through; the Mistral API validates them."""
+    blocks = [
+        {"type": "text", "text": "kept"},
+        {"type": block_type, "data": "anything"},
+    ]
+    assert _format_message_content(blocks) == blocks
+
+
+def test_format_message_content_preserves_order_for_mixed_blocks() -> None:
+    """Multiple text + image blocks retain their order — vision prompts depend on it."""
+    blocks: list[Any] = [
+        {"type": "text", "text": "first"},
+        {"type": "image", "url": "https://example.com/a.png"},
+        {"type": "text", "text": "between"},
+        {"type": "image", "base64": "xyz", "mime_type": "image/png"},
+        "trailing string",
+    ]
+    expected = [
+        {"type": "text", "text": "first"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+        {"type": "text", "text": "between"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,xyz"}},
+        "trailing string",
+    ]
+    assert _format_message_content(blocks) == expected
+
+
+def test_format_message_content_image_missing_mime_type_raises() -> None:
+    """Base64 image without `mime_type` raises via the core translator."""
+    with pytest.raises(ValueError, match="mime_type"):
+        _format_message_content([{"type": "image", "base64": "abc"}])
 
 
 @pytest.mark.parametrize(
@@ -174,7 +242,10 @@ def test_convert_content_block_to_mistral_passthrough(
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "What is in this image?"},
-                    {"type": "image_url", "image_url": "https://example.com/img.png"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.com/img.png"},
+                    },
                 ],
             },
         ),
@@ -195,7 +266,7 @@ def test_convert_content_block_to_mistral_passthrough(
                     {"type": "text", "text": "Describe this image."},
                     {
                         "type": "image_url",
-                        "image_url": "data:image/png;base64,abc123",
+                        "image_url": {"url": "data:image/png;base64,abc123"},
                     },
                 ],
             },
@@ -207,6 +278,12 @@ def test_convert_human_message_with_images(
 ) -> None:
     result = _convert_message_to_mistral_chat_message(message)
     assert result == expected
+
+
+def test_convert_human_message_with_string_content_unchanged() -> None:
+    """Plain string `HumanMessage` content is not wrapped or modified."""
+    result = _convert_message_to_mistral_chat_message(HumanMessage(content="hi"))
+    assert result == {"role": "user", "content": "hi"}
 
 
 def _make_completion_response_from_token(token: str) -> dict:

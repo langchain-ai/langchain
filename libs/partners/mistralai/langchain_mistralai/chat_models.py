@@ -44,6 +44,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
@@ -369,27 +373,37 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
-def _convert_lc_image_block_to_mistral(block: dict) -> dict:
-    """Convert a LangChain image content block to Mistral's `image_url` format."""
-    if "url" in block:
-        return {"type": "image_url", "image_url": block["url"]}
-    if "base64" in block:
-        if "mime_type" not in block:
-            msg = "mime_type is required for base64 image data."
-            raise ValueError(msg)
-        return {
-            "type": "image_url",
-            "image_url": f"data:{block['mime_type']};base64,{block['base64']}",
-        }
-    msg = "ImageContentBlock must have either 'url' or 'base64' key."
-    raise ValueError(msg)
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Mistral chat completions wire format.
 
+    Walks list content and translates LangChain canonical v0/v1 multimodal
+    data blocks (e.g. `ImageContentBlock` with `url`, `base64`, or
+    `file_id`) into the OpenAI-compatible shape that Mistral accepts:
+    `{"type": "image_url", "image_url": {"url": "..."}}`. Strings and any
+    other dict blocks are returned unchanged so that already-translated wire
+    blocks (e.g. `text`, `image_url`) and Mistral-specific blocks
+    (`document_url`, `input_audio`) pass through; the API surfaces an error
+    for anything it doesn't understand.
 
-def _convert_content_block_to_mistral(block: str | dict) -> str | dict:
-    """Convert a single LangChain content block to Mistral's format."""
-    if isinstance(block, dict) and block.get("type") == "image":
-        return _convert_lc_image_block_to_mistral(block)
-    return block
+    Args:
+        content: The message content. Strings and non-list values pass
+            through unchanged; lists are walked block by block.
+
+    Returns:
+        The formatted content. List inputs return a new list with canonical
+        data-block translations applied; other inputs are returned as-is.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and is_data_content_block(block):
+            formatted.append(
+                convert_to_openai_data_block(block, api="chat/completions")
+            )
+            continue
+        formatted.append(block)
+    return formatted
 
 
 def _convert_message_to_mistral_chat_message(
@@ -398,10 +412,7 @@ def _convert_message_to_mistral_chat_message(
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, HumanMessage):
-        content = message.content
-        if isinstance(content, list):
-            content = [_convert_content_block_to_mistral(block) for block in content]
-        return {"role": "user", "content": content}
+        return {"role": "user", "content": _format_message_content(message.content)}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls: list = []
