@@ -26,6 +26,14 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      allow-prereleases:
+        required: false
+        type: boolean
+        default: false
+        description: "Pass `--prerelease=allow` to wheel-install steps so
+          transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
+          in by an alpha langgraph) resolve. Use only when the release itself
+          is a prerelease and at least one dep is also a prerelease."
   workflow_dispatch:
     inputs:
       working-directory:
@@ -74,6 +82,14 @@ on:
         type: boolean
         default: false
         description: "Release from a non-master branch (danger!) - Only use for hotfixes"
+      allow-prereleases:
+        required: false
+        type: boolean
+        default: false
+        description: "Pass `--prerelease=allow` to wheel-install steps so
+          transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
+          in by an alpha langgraph) resolve. Use only when the release itself
+          is a prerelease and at least one dep is also a prerelease."
 
 env:
   PYTHON_VERSION: "3.11"
@@ -333,10 +349,15 @@ jobs:
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
-        # Install directly from the locally-built wheel (no index resolution needed)
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
+        # Install directly from the locally-built wheel (no index resolution needed).
+        # `PRERELEASE_FLAG` is empty by default; opt-in via the `allow-prereleases`
+        # workflow input lets transitive prerelease deps resolve during alpha
+        # release cycles. Stable-release safety is still enforced by the
+        # `Check for prerelease versions` step below.
         run: |
           uv venv
-          VIRTUAL_ENV=.venv uv pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG dist/*.whl
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
@@ -356,8 +377,9 @@ jobs:
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG dist/*.whl
 
       - name: Check for prerelease versions
         # Block release if any dependencies allow prerelease versions
