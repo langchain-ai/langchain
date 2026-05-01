@@ -407,9 +407,10 @@ jobs:
         if: ${{ steps.min-version.outputs.min-versions != '' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS
           make tests PYTEST_EXTRA="-q -k 'not test_serdes'"
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
@@ -519,6 +520,8 @@ jobs:
 
       - name: Test against ${{ matrix.partner }}
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
+        env:
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           # Identify latest tag, excluding pre-releases
           LATEST_PACKAGE_TAG="$(
@@ -548,7 +551,7 @@ jobs:
 
           # Run tests
           uv sync --group test --group test_integration
-          uv pip install ../../core/dist/*.whl
+          uv pip install $PRERELEASE_FLAG ../../core/dist/*.whl
           make integration_tests
 
   # Test external packages that depend on langchain-core/langchain against the new release
@@ -603,6 +606,8 @@ jobs:
       - name: Install ${{ matrix.package.name }} with local packages
         # External dependents don't have [tool.uv.sources] pointing to this repo,
         # so we install the package normally then override with the built wheel.
+        env:
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           cd ${{ matrix.package.name }}/${{ matrix.package.path }}
 
@@ -610,7 +615,7 @@ jobs:
           uv sync --group test
 
           # Override with the built wheel from this release
-          uv pip install $GITHUB_WORKSPACE/dist/*.whl
+          uv pip install $PRERELEASE_FLAG $GITHUB_WORKSPACE/dist/*.whl
 
       - name: Run ${{ matrix.package.name }} tests
         run: |
