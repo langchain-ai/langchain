@@ -21,7 +21,7 @@
 
 <br>
 
-LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves.
+LangChain is a framework for building [agents and LLM-powered applications](https://medium.com/@speaktoharisudhan/llms-vs-ai-agents-what-is-the-actual-difference-cebd4cb789cd). It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves.
 
 > [!NOTE]
 > Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
