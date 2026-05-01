@@ -1103,7 +1103,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.6"
+version = "1.1.7"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },

@@ -912,7 +912,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             f"got {last_chunk.chunk_position!r}"
         )
 
-    def test_stream_v2(self, model: BaseChatModel) -> None:
+    def test_stream_events_v3(self, model: BaseChatModel) -> None:
         """Test that `model.stream_events("Hello", version="v3")` works.
 
         Exercises the content-block-centric streaming protocol. Passing this
@@ -946,10 +946,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         # `stream_events(version="v3")` always assembles content as v1 protocol blocks.
         assert message.response_metadata.get("output_version") == "v1"
 
-    async def test_astream_v2(self, model: BaseChatModel) -> None:
+    async def test_astream_events_v3(self, model: BaseChatModel) -> None:
         """Test that `await model.astream_events("Hello", version="v3")` works.
 
-        Async counterpart to `test_stream_v2`. Exercises the
+        Async counterpart to `test_stream_events_v3`. Exercises the
         `AsyncChatModelStream` path end-to-end: the background producer task,
         replay-buffer-backed event iteration, and the awaitable `output`
         projection.

@@ -1480,15 +1480,23 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: The config to use for the `Runnable`.
-            version: The version of the schema to use, either `'v2'` or `'v1'`.
+            version: The version of the schema to use. One of `'v1'`, `'v2'`,
+                or `'v3'`.
 
-                Users should use `'v2'`.
+                Most callers should use `'v2'` (the default), which yields
+                `StreamEvent` dicts and supports custom events.
 
-                `'v1'` is for backwards compatibility and will be deprecated
-                in `0.4.0`.
+                `'v3'` selects the typed, content-block-centric streaming
+                protocol and is only supported on `Runnable` subclasses that
+                implement it (currently `BaseChatModel` and
+                `langgraph.CompiledGraph`); on a generic `Runnable` it raises
+                `NotImplementedError`. The `'v3'` API is in beta and may
+                change. See the subclass override (e.g.
+                `BaseChatModel.astream_events`) for the v3 return shape.
 
-                No default will be assigned until the API is stabilized.
-                custom events will only be surfaced in `'v2'`.
+                `'v1'` is retained for backwards compatibility and will be
+                deprecated in `0.4.0`. Custom events are only surfaced in
+                `'v2'` / `'v3'`.
             include_names: Only include events from `Runnable` objects with matching names.
             include_types: Only include events from `Runnable` objects with matching types.
             include_tags: Only include events from `Runnable` objects with matching tags.
@@ -1496,9 +1504,6 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_types: Exclude events from `Runnable` objects with matching types.
             exclude_tags: Exclude events from `Runnable` objects with matching tags.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
-
-                These will be passed to `astream_log` as this implementation
-                of `astream_events` is built on top of `astream_log`.
 
         Yields:
             An async stream of `StreamEvent`.
@@ -6075,12 +6080,16 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         Separate coroutine (not a generator) so callers can `await` it to
         obtain the typed stream (e.g. `AsyncChatModelStream`) directly —
         Python does not allow `return <value>` inside an async generator.
+
+        The caller is responsible for merging `self.kwargs` and stripping
+        `version`; this method passes `version="v3"` explicitly and would
+        raise on a duplicate keyword.
         """
         return await self.bound.astream_events(  # type: ignore[misc]
             input,
             self._merge_configs(config),
             version="v3",
-            **{**self.kwargs, **kwargs},
+            **kwargs,
         )
 
     @override
@@ -6099,15 +6108,18 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         Without this override, `__getattr__` would drop `self.kwargs` — losing
         tools bound via `bind_tools`, `stop` sequences, etc.
         """
-        version = kwargs.get("version", "v2")
+        # Probe `version` from the merged view so `bind(version="v3")` routes
+        # correctly even when the caller doesn't repeat `version` at the call
+        # site.
         merged_kwargs = {**self.kwargs, **kwargs}
+        version = merged_kwargs.get("version", "v2")
         if version == "v3":
-            # Strip `version` from kwargs — `_astream_events_v3` passes it
-            # explicitly as `version="v3"` and a duplicate keyword would error.
-            kwargs_without_version = {k: v for k, v in kwargs.items() if k != "version"}
+            merged_without_version = {
+                k: v for k, v in merged_kwargs.items() if k != "version"
+            }
             return _AsyncEventsResult(
                 awaitable=self._astream_events_v3(
-                    input, config, **kwargs_without_version
+                    input, config, **merged_without_version
                 )
             )
         # v1/v2: bound.astream_events is itself a hybrid result object on chat

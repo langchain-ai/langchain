@@ -1294,9 +1294,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         `ChatModelStream` exposing typed projections (`.text`,
         `.reasoning`, `.tool_calls`, `.output`).
 
-        !!! warning
+        !!! warning "Beta"
 
-            The `version="v3"` API is experimental and may change.
+            `version="v3"` is in beta. The protocol shape, return type,
+            and surface area may change in future releases. Calling it
+            emits a `LangChainBetaWarning` at runtime.
 
         !!! note "v3 always produces v1-shaped content"
 
