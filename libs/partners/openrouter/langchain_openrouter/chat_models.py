@@ -1166,27 +1166,49 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
+def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
+    """Merge a run of consecutive same-`(type, index)` reasoning fragments."""
+    merged_entry: dict[str, Any] = {}
+    text_parts: list[str] = []
+    has_text = False
+    for frag in run:
+        for k, v in frag.items():
+            if k == "text":
+                has_text = True
+                if v:
+                    text_parts.append(v)
+            elif v is not None:
+                merged_entry[k] = v
+    if has_text:
+        merged_entry["text"] = "".join(text_parts)
+    return merged_entry
+
+
 def _merge_reasoning_details(
     details: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Merge fragmented ``reasoning_details`` from streaming chunk concatenation.
+    """Merge fragmented `reasoning_details` from streaming chunk concatenation.
 
-    During streaming, ``AIMessageChunk.__add__`` list-concatenates
-    ``reasoning_details`` in ``additional_kwargs``, fragmenting a single
-    entry into many.  When serialized back to the API via
-    ``_convert_message_to_dict``, these fragments cause
-    ``BadRequestResponseError`` on multi-turn conversations.
+    During streaming, `AIMessageChunk.__add__` list-concatenates
+    `reasoning_details` in `additional_kwargs`, fragmenting a single entry
+    into many. When serialized back to the API via
+    `_convert_message_to_dict`, these fragments cause
+    `BadRequestResponseError` on multi-turn conversations (the provider
+    rejects the malformed thinking block with `Invalid signature`).
 
-    This function merges consecutive entries that share the same ``type``
-    **and** ``index`` (both must be present).  Entries without ``index``
-    or with distinct ``index`` values are preserved as separate items,
-    since non-streaming responses can legitimately contain multiple entries.
+    Streaming deltas tag each fragment with the `index` of the entry it
+    belongs to in the original (non-streamed) array, so this function groups
+    consecutive entries by `(type, index)` and merges each group into one.
+    Entries without an `index` are preserved as-is, since non-streaming
+    responses can legitimately contain multiple entries.
 
-    Metadata fields (for example ``format`` and ``signature``) use last-wins
+    Within a merged group, `text` values are concatenated in order. Other
+    metadata fields (e.g. `format`, `signature`) use last-non-`None`-wins
     semantics, which preserves stable provider metadata without concatenating
-    repeated strings across fragments.
+    repeated strings — Anthropic-style reasoning streams emit a single
+    signature-bearing fragment at the end of the block.
 
-    A single-entry list passes through unchanged.
+    A list with zero or one items passes through unchanged.
     """
     if not isinstance(details, list) or len(details) <= 1:
         return details
@@ -1195,46 +1217,31 @@ def _merge_reasoning_details(
     i = 0
     while i < len(details):
         entry = details[i]
-        if not isinstance(entry, dict):
+        # Without an index we cannot distinguish streaming fragments from
+        # distinct non-streaming entries, so leave them alone. Same for any
+        # non-dict items that may have slipped in upstream.
+        if not isinstance(entry, dict) or entry.get("index") is None:
             merged.append(entry)
             i += 1
             continue
 
         entry_type = entry.get("type", "")
-        entry_index = entry.get("index")
-        text_key = (
-            "text" if "text" in entry else "content" if "content" in entry else None
-        )
-
-        # Only merge if entry has both a text field and an index.
-        # Without index we cannot distinguish fragments from distinct entries.
-        if text_key is None or entry_index is None:
-            merged.append(entry)
-            i += 1
-            continue
-
-        # Merge consecutive fragments (same type + same index)
-        texts = [entry.get(text_key, "")]
-        base = {k: v for k, v in entry.items() if k != text_key}
+        entry_index = entry["index"]
+        run = [entry]
         i += 1
         while i < len(details):
             nxt = details[i]
             if (
                 isinstance(nxt, dict)
-                and nxt.get("type") == entry_type
+                and nxt.get("type", "") == entry_type
                 and nxt.get("index") == entry_index
             ):
-                texts.append(nxt.get(text_key, "") or "")
-                # Preserve metadata from later fragments (e.g. signature)
-                base.update(
-                    {k: v for k, v in nxt.items() if k != text_key and v is not None}
-                )
+                run.append(nxt)
                 i += 1
             else:
                 break
 
-        base[text_key] = "".join(texts)
-        merged.append(base)
+        merged.append(entry if len(run) == 1 else _merge_reasoning_run(run))
 
     return merged
 
@@ -1290,7 +1297,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
             ):
                 message_dict["content"] = None
         # Preserve reasoning content for multi-turn conversations (e.g.
-        # tool-calling loops). OpenRouter stores reasoning in "reasoning".
+        # tool-calling loops). OpenRouter stores reasoning text in `reasoning`
+        # and structured fragment details in `reasoning_details`; the latter
+        # is merged before serialization to undo streaming fragmentation.
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:

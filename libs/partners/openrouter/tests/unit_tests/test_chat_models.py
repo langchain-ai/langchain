@@ -1194,7 +1194,15 @@ class TestMessageConversion:
         assert result["reasoning"] == "Let me think about this..."
 
     def test_ai_message_with_fragmented_reasoning_details_merged(self) -> None:
-        """Test that streamed reasoning details are merged before serialization."""
+        """Fragmented `reasoning_details` are merged before serialization.
+
+        Float `index` values mirror what `ChatOpenRouter.stream()` produces
+        (the OpenRouter SDK coerces `index` via Pydantic). With float
+        `index`, `langchain_core.utils._merge.merge_lists` does not auto-merge
+        list entries (its index-match path requires `int`), so fragments
+        accumulate as separate list items and require this helper to merge
+        them before the next API turn.
+        """
         details = [
             {
                 "type": "reasoning.text",
@@ -1229,9 +1237,10 @@ class TestMessageConversion:
                 "index": 0.0,
             }
         ]
+        assert "reasoning" not in result
 
     def test_ai_message_distinct_reasoning_details_preserved(self) -> None:
-        """Test that distinct entries (different index) are NOT merged."""
+        """Distinct entries (different `index`) are not merged."""
         details = [
             {"type": "reasoning.text", "text": "First thought", "index": 0},
             {"type": "reasoning.text", "text": "Second thought", "index": 1},
@@ -1241,12 +1250,10 @@ class TestMessageConversion:
             additional_kwargs={"reasoning_details": details},
         )
         result = _convert_message_to_dict(msg)
-        assert len(result["reasoning_details"]) == 2
-        assert result["reasoning_details"][0]["text"] == "First thought"
-        assert result["reasoning_details"][1]["text"] == "Second thought"
+        assert result["reasoning_details"] == details
 
     def test_ai_message_unindexed_reasoning_details_not_merged(self) -> None:
-        """Test that entries without index are never merged."""
+        """Entries without an `index` are passed through unchanged."""
         details = [
             {"type": "reasoning.text", "text": "First"},
             {"type": "reasoning.text", "text": "Second"},
@@ -1256,7 +1263,22 @@ class TestMessageConversion:
             additional_kwargs={"reasoning_details": details},
         )
         result = _convert_message_to_dict(msg)
-        assert len(result["reasoning_details"]) == 2
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_interleaved_index_fragments_preserved(self) -> None:
+        """Only consecutive same-`index` runs merge; interleaved runs stay split."""
+        details = [
+            {"type": "reasoning.text", "text": "A", "index": 0},
+            {"type": "reasoning.text", "text": "B", "index": 1},
+            {"type": "reasoning.text", "text": "C", "index": 0},
+            {"type": "reasoning.text", "text": "D", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
 
     def test_ai_message_fragment_metadata_preserved(self) -> None:
         """Test that metadata from later fragments is preserved after merge."""
