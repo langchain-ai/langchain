@@ -5765,11 +5765,11 @@ wheels = [
 
 [[package]]
 name = "types-pytz"
-version = "2026.1.1.20260304"
+version = "2026.1.1.20260408"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/56/2f12a15ea8c5615c8fb896c4fbbb527ab1c0f776ed5860c6fc9ec26ea2c7/types_pytz-2026.1.1.20260304.tar.gz", hash = "sha256:0c3542d8e9b0160b424233440c52b83d6f58cae4b85333d54e4f961cf013e117", size = 11198, upload-time = "2026-03-04T03:57:24.445Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/b7/33f5a4f29b1f285b99ff79a607751a7996194cbb98705e331dab7a2daa28/types_pytz-2026.1.1.20260408.tar.gz", hash = "sha256:89b6a34b9198ea2a4b98a9d15cbca987053f52a105fd44f7ce3789cae4349408", size = 10788, upload-time = "2026-04-08T04:28:14.54Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/b8/e77c355f179dc89d44e7ca6dbf7a46e650806df1d356a5462e5829fccea5/types_pytz-2026.1.1.20260304-py3-none-any.whl", hash = "sha256:175332c1cf7bd6b1cc56b877f70bf02def1a3f75e5adcc05385ce2c3c70e6500", size = 10126, upload-time = "2026-03-04T03:57:23.481Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/90/12c059e6bb330a22d9cc97daf027ac7fb7f50fbf518e4d88185b4d39120e/types_pytz-2026.1.1.20260408-py3-none-any.whl", hash = "sha256:c7e4dec76221fb7d0c97b91ad8561d689bebe39b6bcb7b728387e7ffd8cde788", size = 10124, upload-time = "2026-04-08T04:28:13.353Z" },
 ]
 
 [[package]]
