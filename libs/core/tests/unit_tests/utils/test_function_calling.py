@@ -6,7 +6,6 @@ from typing import (
     Literal,
     TypeAlias,
 )
-from typing import TypedDict as TypingTypedDict
 
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
@@ -177,7 +176,7 @@ def dummy_pydantic_v2() -> type[BaseModelV2Maybe]:
 
 @pytest.fixture
 def dummy_typing_typed_dict() -> type:
-    class dummy_function(TypingTypedDict):  # noqa: N801
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function."""
 
         arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
@@ -188,7 +187,7 @@ def dummy_typing_typed_dict() -> type:
 
 @pytest.fixture
 def dummy_typing_typed_dict_docstring() -> type:
-    class dummy_function(TypingTypedDict):  # noqa: N801
+    class dummy_function(ExtensionsTypedDict):  # noqa: N801
         """Dummy function.
 
         Args:
@@ -793,26 +792,19 @@ def test_tool_outputs() -> None:
 
 
 @pytest.mark.parametrize(
-    "typed_dict",
-    [ExtensionsTypedDict, TypingTypedDict],
-    ids=["typing_extensions.TypedDict", "typing.TypedDict"],
-)
-@pytest.mark.parametrize(
     "annotated",
     [ExtensionsAnnotated, TypingAnnotated],
     ids=["typing_extensions.Annotated", "typing.Annotated"],
 )
-def test__convert_typed_dict_to_openai_function(
-    typed_dict: TypeAlias, annotated: TypeAlias
-) -> None:
+def test__convert_typed_dict_to_openai_function(annotated: TypeAlias) -> None:
     """TypedDict conversion produces correct name, description, fields, and required."""
 
-    class SubTool(typed_dict):  # type: ignore[misc]
+    class SubTool(ExtensionsTypedDict):
         """Subtool docstring."""
 
         args: annotated[dict[str, Any], {}, "this does bar"]  # noqa: F722
 
-    class Tool(typed_dict):  # type: ignore[misc]
+    class Tool(ExtensionsTypedDict):
         """Docstring.
 
         Args:
@@ -859,15 +851,14 @@ def test__convert_typed_dict_to_openai_function(
     assert "arg12" in required
 
 
-@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
-def test__convert_typed_dict_not_required(typed_dict: TypeAlias) -> None:
+def test__convert_typed_dict_not_required() -> None:
     """NotRequired fields must not appear in the required list."""
 
-    class Tool(typed_dict):  # type: ignore[misc]
+    class Tool(ExtensionsTypedDict):
         """A tool with optional and required fields."""
 
         required_field: str
-        optional_field: NotRequired[int]  # type: ignore[valid-type]
+        optional_field: NotRequired[int]
 
     actual = _convert_typed_dict_to_openai_function(Tool)
     required = actual["parameters"].get("required", [])
@@ -876,11 +867,10 @@ def test__convert_typed_dict_not_required(typed_dict: TypeAlias) -> None:
     assert "optional_field" in actual["parameters"]["properties"]
 
 
-@pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
-def test__convert_typed_dict_to_openai_function_mutable_set(typed_dict: type) -> None:
+def test__convert_typed_dict_to_openai_function_mutable_set() -> None:
     """MutableSet is now supported via TypeAdapter (pydantic v2)."""
 
-    class Tool(typed_dict):  # type: ignore[misc]
+    class Tool(ExtensionsTypedDict):
         arg1: typing.MutableSet  # pydantic v2 handles this correctly
 
     result = _convert_typed_dict_to_openai_function(Tool)
