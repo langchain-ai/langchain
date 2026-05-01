@@ -449,3 +449,32 @@ class TestRunnableBindingForwarding:
 
         assert len(model.received_kwargs) == 1
         assert model.received_kwargs[0].get("my_marker") == "sentinel-async"
+
+    def test_bound_version_routes_to_v3_without_call_site_repeat(self) -> None:
+        # `bind(version="v3").stream_events(input)` must route to the v3
+        # branch (using the bound `version`) and must not forward `version`
+        # to the underlying model as an extra kwarg.
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(version="v3")
+
+        stream = bound.stream_events("test")
+        chunks = list(stream.text)
+
+        assert "".join(chunks) == "hi"
+        assert len(model.received_kwargs) == 1
+        assert "version" not in model.received_kwargs[0]
+
+    @pytest.mark.asyncio
+    async def test_bound_version_routes_to_v3_async_without_call_site_repeat(
+        self,
+    ) -> None:
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(version="v3")
+
+        stream = await bound.astream_events("test")
+        _ = await stream
+
+        assert len(model.received_kwargs) == 1
+        assert "version" not in model.received_kwargs[0]

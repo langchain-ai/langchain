@@ -6055,18 +6055,26 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         Without this override, `__getattr__` would drop `self.kwargs` — losing
         tools bound via `bind_tools`, `stop` sequences, etc.
         """
+        # Probe `version` from the merged view so `bind(version="v3")` routes
+        # correctly even when the caller doesn't repeat `version` at the call
+        # site, and strip it before forwarding so it isn't passed twice.
+        merged_kwargs = {**self.kwargs, **kwargs}
+        version = merged_kwargs.get("version", version)
+        merged_without_version = {
+            k: v for k, v in merged_kwargs.items() if k != "version"
+        }
         if version == "v3":
             return self.bound.stream_events(
                 input,
                 self._merge_configs(config),
-                version=version,
-                **{**self.kwargs, **kwargs},
+                version="v3",
+                **merged_without_version,
             )
         return super().stream_events(
             input,
             self._merge_configs(config),
             version=version,
-            **{**self.kwargs, **kwargs},
+            **merged_without_version,
         )
 
     async def _astream_events_v3(
