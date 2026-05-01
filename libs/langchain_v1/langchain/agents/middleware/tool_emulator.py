@@ -64,10 +64,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
     """
 
     def __init__(
-        self,
-        *,
-        tools: list[str | BaseTool] | None = None,
-        model: str | BaseChatModel | None = None,
+        self, *, tools: list[str | BaseTool] | None = None, model: str | BaseChatModel | None = None
     ) -> None:
         """Initialize the tool emulator.
 
@@ -90,7 +87,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
 
-        if not self.emulate_all and tools is not None:
+        if tools is not None:
             for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
