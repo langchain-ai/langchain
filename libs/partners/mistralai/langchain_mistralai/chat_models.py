@@ -44,6 +44,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
@@ -369,13 +373,46 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Mistral chat completions wire format.
+
+    Walks list content and translates LangChain canonical v0/v1 multimodal
+    data blocks (e.g. `ImageContentBlock` with `url`, `base64`, or
+    `file_id`) into the OpenAI-compatible shape that Mistral accepts:
+    `{"type": "image_url", "image_url": {"url": "..."}}`. Strings and any
+    other dict blocks are returned unchanged so that already-translated wire
+    blocks (e.g. `text`, `image_url`) and Mistral-specific blocks
+    (`document_url`, `input_audio`) pass through; the API surfaces an error
+    for anything it doesn't understand.
+
+    Args:
+        content: The message content. Strings and non-list values pass
+            through unchanged; lists are walked block by block.
+
+    Returns:
+        The formatted content. List inputs return a new list with canonical
+        data-block translations applied; other inputs are returned as-is.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and is_data_content_block(block):
+            formatted.append(
+                convert_to_openai_data_block(block, api="chat/completions")
+            )
+            continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        return {"role": "user", "content": _format_message_content(message.content)}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls: list = []
