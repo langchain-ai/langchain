@@ -134,7 +134,7 @@ jobs:
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Upload build
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -277,7 +277,7 @@ jobs:
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -634,7 +634,7 @@ jobs:
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
