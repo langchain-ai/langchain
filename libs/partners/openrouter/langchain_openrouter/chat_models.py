@@ -119,6 +119,8 @@ class ChatOpenRouter(BaseChatModel):
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
+        | `session_id` | `str | None` | Group related requests for observability. |
+        | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -291,6 +293,42 @@ class ChatOpenRouter(BaseChatModel):
 
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
+
+    session_id: str | None = Field(
+        default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
+    )
+    """Identifier used by OpenRouter to group related requests together.
+
+    Useful any time multiple requests should share an observability
+    grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
+    run). Equivalent to setting the `x-session-id` HTTP header on the
+    underlying request. OpenRouter rejects values longer than 128
+    characters.
+
+    Falls back to the `OPENROUTER_SESSION_ID` environment variable when
+    unset, so callers can group all requests from a process without
+    threading the value through application code. Empty strings are
+    treated as unset.
+
+    Example: `"conv-2026-04-30-abc"`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
+    trace: dict[str, Any] | None = None
+    """Trace metadata for observability tools (e.g. Langfuse, LangSmith).
+
+    Forwarded by OpenRouter to configured broadcast destinations. Common
+    keys include `trace_id`, `trace_name`, `span_name`, `generation_name`,
+    and `parent_span_id`; see the OpenRouter broadcast docs for the
+    current full set. Unknown keys are forwarded as custom metadata.
+
+    No environment-variable fallback — set per-call or on the constructor.
+
+    Example: `{"trace_id": "abc-123", "span_name": "summarize"}`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -703,6 +741,10 @@ class ChatOpenRouter(BaseChatModel):
             params["route"] = self.route
         if self.plugins is not None:
             params["plugins"] = self.plugins
+        if self.session_id:
+            params["session_id"] = self.session_id
+        if self.trace is not None:
+            params["trace"] = self.trace
         return params
 
     def _create_message_dicts(
