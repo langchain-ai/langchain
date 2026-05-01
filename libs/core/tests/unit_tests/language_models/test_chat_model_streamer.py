@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from pydantic import Field
@@ -458,7 +458,9 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(version="v3")
 
-        stream = bound.stream_events("test")
+        # `version` is in `self.kwargs`, not at the call site, so the
+        # static return type is the v1/v2 iterator overload — narrow it.
+        stream = cast("ChatModelStream", bound.stream_events("test"))
         chunks = list(stream.text)
 
         assert "".join(chunks) == "hi"
@@ -473,7 +475,7 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(version="v3")
 
-        stream = await bound.astream_events("test")
+        stream = cast("AsyncChatModelStream", await bound.astream_events("test"))
         _ = await stream
 
         assert len(model.received_kwargs) == 1
