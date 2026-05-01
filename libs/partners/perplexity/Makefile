@@ -19,7 +19,8 @@ test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n 4 \
+		--retries 3 --retry-delay 5 $(TEST_FILE)
 
 ######################
 # LINTING AND FORMATTING

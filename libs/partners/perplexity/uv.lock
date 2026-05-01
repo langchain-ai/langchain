@@ -496,7 +496,7 @@ typing = [
 
 [[package]]
 name = "langchain-perplexity"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -537,7 +537,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "perplexityai", specifier = ">=0.22.0" },
+    { name = "perplexityai", specifier = ">=0.32.0,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -581,7 +581,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.6"
+version = "1.1.7"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -973,7 +973,7 @@ wheels = [
 
 [[package]]
 name = "perplexityai"
-version = "0.22.2"
+version = "0.32.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -983,9 +983,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/47/f0/4ead48afbe4c9d7b57e9d03e253bed2986ac20d2257ed918cac276949018/perplexityai-0.22.2.tar.gz", hash = "sha256:9c3cad307c95aa5e8967358547e548d58793d350318d8d1d4aa33a933cbed844", size = 113014, upload-time = "2025-12-17T19:05:25.572Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/02/73f460c85a5ec533a97fd1ff34fa729a009b4a217a4a87d8da946b6e1c52/perplexityai-0.32.1.tar.gz", hash = "sha256:b03503498591d06c4d50b666f7f7469875d3586f664c29416aae9012ae7a64d1", size = 135741, upload-time = "2026-04-21T04:35:40.345Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/aa/fc3337fdb014b1584297fc212552e6365d22a6fb77850a56c9038cd47173/perplexityai-0.22.2-py3-none-any.whl", hash = "sha256:92d3dc7f4e110c879ac5009daf7263a04f413523f7d76fba871176516c253890", size = 96860, upload-time = "2025-12-17T19:05:24.292Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/11/5c164f114311bc2e2350202393e7c5bd25bb156b5230a1edf5a2b2f4ba04/perplexityai-0.32.1-py3-none-any.whl", hash = "sha256:e5017d245fd8966cf79657edc03a93078d867708542b491b38152618f91e369b", size = 130223, upload-time = "2026-04-21T04:35:38.786Z" },
 ]
 
 [[package]]

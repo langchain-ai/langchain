@@ -57,6 +57,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import (
     ToolCallChunk,
@@ -166,6 +170,70 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Fireworks chat completions wire format.
+
+    Adapted from `langchain_openai.chat_models.base._format_message_content`,
+    scoped to the chat completions API: drops content block types the wire
+    format does not carry, translates canonical v0/v1 multimodal data blocks
+    via `convert_to_openai_data_block(block, api="chat/completions")`, and
+    converts legacy Anthropic-shape image blocks (`{"type": "image",
+    "source": {...}}`) to OpenAI `image_url` blocks. String and non-list
+    content are returned unchanged.
+
+    Args:
+        content: The message content. Strings and non-list values are
+            returned as-is; lists are walked block by block.
+
+    Returns:
+        The formatted content, ready to be placed on the chat completions
+        wire. List inputs return a new list with translations applied; other
+        inputs are returned unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and "type" in block:
+            btype = block["type"]
+            if btype in (
+                "tool_use",
+                "thinking",
+                "reasoning_content",
+                "function_call",
+                "code_interpreter_call",
+            ):
+                continue
+            if is_data_content_block(block):
+                formatted.append(
+                    convert_to_openai_data_block(block, api="chat/completions")
+                )
+                continue
+            if (
+                btype == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if (
+                    source.get("type") == "base64"
+                    and (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                    continue
+                if source.get("type") == "url" and (url := source.get("url")):
+                    formatted.append({"type": "image_url", "image_url": {"url": url}})
+                    continue
+                continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -178,14 +246,23 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {
+            "role": message.role,
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _format_message_content(message.content),
+        }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -206,7 +283,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         else:
             pass
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict = {
+            "role": "system",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, FunctionMessage):
         message_dict = {
             "role": "function",
@@ -216,7 +296,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _format_message_content(message.content),
             "tool_call_id": message.tool_call_id,
         }
     else:
