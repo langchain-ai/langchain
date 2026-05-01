@@ -14,10 +14,9 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Never, Self, override
+from typing_extensions import Self, override
 
 from langchain_core._api import beta
-from langchain_core._event_streaming import _AsyncEventsResult
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -96,6 +95,7 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import builtins
     import uuid
+    from collections.abc import Awaitable
 
     from langchain_protocol.protocol import MessagesData
 
@@ -1331,7 +1331,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             input, config, version=version, stop=stop, **kwargs
         )
 
-    @overload  # type: ignore[override]
+    @overload
     def astream_events(
         self,
         input: LanguageModelInput,
@@ -1339,7 +1339,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         version: Literal["v1", "v2"] = "v2",
         **kwargs: Any,
-    ) -> _AsyncEventsResult[Never, StreamEvent]: ...
+    ) -> AsyncIterator[StreamEvent]: ...
 
     @overload
     def astream_events(
@@ -1350,7 +1350,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         version: Literal["v3"],
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> _AsyncEventsResult[AsyncChatModelStream, Never]: ...
+    ) -> Awaitable[AsyncChatModelStream]: ...
 
     def astream_events(
         self,
@@ -1360,20 +1360,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         version: Literal["v1", "v2", "v3"] = "v2",
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> _AsyncEventsResult:
+    ) -> AsyncIterator[StreamEvent] | Awaitable[AsyncChatModelStream]:
         """Async variant of `stream_events`. See `stream_events` for full docs."""
         if version == "v3":
-            return _AsyncEventsResult(
-                awaitable=self._achat_model_stream_v3(
-                    input, config, stop=stop, **kwargs
-                )
-            )
+            return self._achat_model_stream_v3(input, config, stop=stop, **kwargs)
         # v1/v2: forward to Runnable.astream_events (async generator).
-        # Calling it returns the generator object directly without awaiting.
-        iterator = super().astream_events(
+        return super().astream_events(
             input, config, version=version, stop=stop, **kwargs
         )
-        return _AsyncEventsResult(iterator=iterator)
 
     # --- Custom methods ---
 
@@ -2563,7 +2557,7 @@ class _ChatModelBinding(RunnableBinding[LanguageModelInput, AIMessage]):  # type
     ) -> Iterator[StreamEvent] | ChatModelStream:
         return super().stream_events(input, config, version=version, **kwargs)
 
-    @overload  # type: ignore[override]
+    @overload
     def astream_events(
         self,
         input: LanguageModelInput,
@@ -2571,7 +2565,7 @@ class _ChatModelBinding(RunnableBinding[LanguageModelInput, AIMessage]):  # type
         *,
         version: Literal["v1", "v2"] = "v2",
         **kwargs: Any,
-    ) -> _AsyncEventsResult[Never, StreamEvent]: ...
+    ) -> AsyncIterator[StreamEvent]: ...
 
     @overload
     def astream_events(
@@ -2582,15 +2576,18 @@ class _ChatModelBinding(RunnableBinding[LanguageModelInput, AIMessage]):  # type
         version: Literal["v3"],
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> _AsyncEventsResult[AsyncChatModelStream, Never]: ...
+    ) -> Awaitable[AsyncChatModelStream]: ...
 
     def astream_events(
         self,
         input: LanguageModelInput,
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> _AsyncEventsResult:
-        return super().astream_events(input, config, **kwargs)
+    ) -> AsyncIterator[StreamEvent] | Awaitable[AsyncChatModelStream]:
+        return cast(
+            "AsyncIterator[StreamEvent] | Awaitable[AsyncChatModelStream]",
+            super().astream_events(input, config, **kwargs),
+        )
 
 
 class SimpleChatModel(BaseChatModel):
