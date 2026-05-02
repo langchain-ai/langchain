@@ -533,3 +533,179 @@ async def test_cache_key_ignores_message_id_async() -> None:
 
     # Verify only one cache entry exists
     assert len(local_cache._cache) == 1
+
+
+def test_cache_key_normalizes_usage_metadata_total_cost_sync() -> None:
+    """Test that usage_metadata total_cost is normalized in cache keys (sync).
+
+    When an AIMessage from a cache hit (with total_cost: 0 injected) is included
+    in conversation history for a follow-up call, the cache key should still match
+    the original cached entry. This prevents cache misses due to the total_cost
+    field differing between original API responses and cached responses.
+
+    See GitHub issue for context on this bug.
+    """
+    local_cache = InMemoryCache()
+    model = FakeListChatModel(
+        cache=local_cache, responses=["response1", "response2", "response3"]
+    )
+
+    # Simulate a conversation where the first AI response has usage_metadata
+    # WITHOUT total_cost (as it would come from the original API)
+    ai_msg_original = AIMessage(
+        content="I am an AI response",
+        usage_metadata={
+            "input_tokens": 10,
+            "output_tokens": 20,
+            "total_tokens": 30,
+        },
+    )
+
+    # First call with original AI message in history (no total_cost)
+    messages_original = [
+        HumanMessage(content="Hello"),
+        ai_msg_original,
+        HumanMessage(content="Follow up question"),
+    ]
+    result_1 = model.invoke(messages_original)
+    assert result_1.content == "response1"
+
+    # Now simulate the same conversation but with an AI message that has
+    # total_cost: 0 (as it would be after coming from cache via
+    # _convert_cached_generations)
+    ai_msg_with_total_cost = AIMessage(
+        content="I am an AI response",
+        usage_metadata={
+            "input_tokens": 10,
+            "output_tokens": 20,
+            "total_tokens": 30,
+            "total_cost": 0,
+        },
+    )
+
+    # Second call with the modified AI message (has total_cost: 0)
+    messages_with_cost = [
+        HumanMessage(content="Hello"),
+        ai_msg_with_total_cost,
+        HumanMessage(content="Follow up question"),
+    ]
+    result_2 = model.invoke(messages_with_cost)
+
+    # Should get cached response, not "response2"
+    assert result_2.content == "response1"
+
+    # Verify only one cache entry exists (both prompts normalized to same key)
+    assert len(local_cache._cache) == 1
+
+
+async def test_cache_key_normalizes_usage_metadata_total_cost_async() -> None:
+    """Test that usage_metadata total_cost is normalized in cache keys (async).
+
+    When an AIMessage from a cache hit (with total_cost: 0 injected) is included
+    in conversation history for a follow-up call, the cache key should still match
+    the original cached entry. This prevents cache misses due to the total_cost
+    field differing between original API responses and cached responses.
+
+    See GitHub issue for context on this bug.
+    """
+    local_cache = InMemoryCache()
+    model = FakeListChatModel(
+        cache=local_cache, responses=["response1", "response2", "response3"]
+    )
+
+    # Simulate a conversation where the first AI response has usage_metadata
+    # WITHOUT total_cost (as it would come from the original API)
+    ai_msg_original = AIMessage(
+        content="I am an AI response",
+        usage_metadata={
+            "input_tokens": 10,
+            "output_tokens": 20,
+            "total_tokens": 30,
+        },
+    )
+
+    # First call with original AI message in history (no total_cost)
+    messages_original = [
+        HumanMessage(content="Hello"),
+        ai_msg_original,
+        HumanMessage(content="Follow up question"),
+    ]
+    result_1 = await model.ainvoke(messages_original)
+    assert result_1.content == "response1"
+
+    # Now simulate the same conversation but with an AI message that has
+    # total_cost: 0 (as it would be after coming from cache via
+    # _convert_cached_generations)
+    ai_msg_with_total_cost = AIMessage(
+        content="I am an AI response",
+        usage_metadata={
+            "input_tokens": 10,
+            "output_tokens": 20,
+            "total_tokens": 30,
+            "total_cost": 0,
+        },
+    )
+
+    # Second call with the modified AI message (has total_cost: 0)
+    messages_with_cost = [
+        HumanMessage(content="Hello"),
+        ai_msg_with_total_cost,
+        HumanMessage(content="Follow up question"),
+    ]
+    result_2 = await model.ainvoke(messages_with_cost)
+
+    # Should get cached response, not "response2"
+    assert result_2.content == "response1"
+
+    # Verify only one cache entry exists (both prompts normalized to same key)
+    assert len(local_cache._cache) == 1
+
+
+def test_cache_key_normalizes_both_id_and_usage_metadata_sync() -> None:
+    """Test that both id and usage_metadata are normalized together (sync).
+
+    This test verifies that the normalization logic handles multiple fields
+    correctly when both id and usage_metadata need to be normalized.
+    """
+    local_cache = InMemoryCache()
+    model = FakeListChatModel(cache=local_cache, responses=["response1", "response2"])
+
+    # First call: AI message with id but no total_cost
+    ai_msg_1 = AIMessage(
+        content="AI response",
+        id="msg-id-1",
+        usage_metadata={
+            "input_tokens": 5,
+            "output_tokens": 10,
+            "total_tokens": 15,
+        },
+    )
+    messages_1 = [
+        HumanMessage(content="Hello", id="human-id-1"),
+        ai_msg_1,
+        HumanMessage(content="Follow up"),
+    ]
+    result_1 = model.invoke(messages_1)
+    assert result_1.content == "response1"
+
+    # Second call: Same content but different id AND has total_cost: 0
+    ai_msg_2 = AIMessage(
+        content="AI response",
+        id="msg-id-2",
+        usage_metadata={
+            "input_tokens": 5,
+            "output_tokens": 10,
+            "total_tokens": 15,
+            "total_cost": 0,
+        },
+    )
+    messages_2 = [
+        HumanMessage(content="Hello", id="human-id-2"),
+        ai_msg_2,
+        HumanMessage(content="Follow up"),
+    ]
+    result_2 = model.invoke(messages_2)
+
+    # Should get cached response
+    assert result_2.content == "response1"
+    assert len(local_cache._cache) == 1
