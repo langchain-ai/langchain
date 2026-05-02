@@ -126,6 +126,7 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
         "reasoning_output": model_data.get("reasoning"),
         "tool_calling": model_data.get("tool_call"),
         "tool_choice": model_data.get("tool_choice"),
+        "tool_call_streaming": model_data.get("tool_call_streaming"),
         "structured_output": model_data.get("structured_output"),
         "attachment": model_data.get("attachment"),
         "temperature": model_data.get("temperature"),
