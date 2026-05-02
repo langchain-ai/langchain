@@ -766,6 +766,12 @@ def test__format_messages_with_tool_calls() -> None:
             "user",
         ]
 
+    # Check handling of empty HumanMessage (issue #35081)
+    empty_contents_human: list[str | list[str | dict]] = ["", []]
+    for empty_content in empty_contents_human:
+        _, anthropic_messages = _format_messages([HumanMessage(empty_content)])
+        assert anthropic_messages == [{"role": "user", "content": " "}]
+
 
 def test__format_tool_use_block() -> None:
     # Test we correctly format tool_use blocks when there is no corresponding tool_call.
