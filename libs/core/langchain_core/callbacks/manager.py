@@ -673,7 +673,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -681,7 +681,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 
@@ -792,7 +792,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -800,7 +800,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 
