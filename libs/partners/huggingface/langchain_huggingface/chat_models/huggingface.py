@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import contextlib
 import json
+import re
+import uuid
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
@@ -319,6 +321,80 @@ def _is_huggingface_endpoint(llm: Any) -> bool:
 
 def _is_huggingface_pipeline(llm: Any) -> bool:
     return isinstance(llm, HuggingFacePipeline)
+
+
+_TOOL_CALL_TAG_RE = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.DOTALL)
+
+
+def _try_parse_tool_call_object(data: dict) -> ToolCall | None:
+    """Try to interpret a dict as a tool call.
+
+    Accepts objects with ``name`` and ``arguments`` (or ``parameters``) keys.
+
+    Returns:
+        A ``ToolCall`` if *data* looks like a valid tool call, else ``None``.
+    """
+    if "name" not in data:
+        return None
+    args = data.get("arguments", data.get("parameters", {}))
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(args, dict):
+        return None
+    return ToolCall(
+        name=data["name"],
+        args=args,
+        id=data.get("id", str(uuid.uuid4())),
+    )
+
+
+def _parse_tool_calls_from_text(text: str) -> tuple[str, list[ToolCall]]:
+    """Extract tool calls from raw model output text.
+
+    Supports common formats emitted by open-source chat models:
+    - ``<tool_call>{...}</tool_call>`` tags (Hermes, Qwen, etc.)
+    - Raw JSON object(s) with ``name`` / ``arguments`` keys
+
+    Args:
+        text: Raw text output from the model.
+
+    Returns:
+        Tuple of (remaining content text, list of parsed ``ToolCall`` objects).
+    """
+    tool_calls: list[ToolCall] = []
+
+    tag_matches = _TOOL_CALL_TAG_RE.findall(text)
+    if tag_matches:
+        for match in tag_matches:
+            try:
+                parsed = json.loads(match)
+            except json.JSONDecodeError:
+                continue
+            tc = _try_parse_tool_call_object(parsed)
+            if tc is not None:
+                tool_calls.append(tc)
+        content = _TOOL_CALL_TAG_RE.sub("", text).strip()
+        return content, tool_calls
+
+    stripped = text.strip()
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return text, []
+
+    items = parsed if isinstance(parsed, list) else [parsed]
+    for item in items:
+        if isinstance(item, dict):
+            tc = _try_parse_tool_call_object(item)
+            if tc is not None:
+                tool_calls.append(tc)
+
+    if tool_calls:
+        return "", tool_calls
+    return text, []
 
 
 class ChatHuggingFace(BaseChatModel):
@@ -747,7 +823,9 @@ class ChatHuggingFace(BaseChatModel):
             }
             answer = self.llm.client.chat_completion(messages=message_dicts, **params)
             return self._create_chat_result(answer)
-        llm_input = self._to_chat_prompt(messages)
+        tools = kwargs.pop("tools", None)
+        kwargs.pop("tool_choice", None)
+        llm_input = self._to_chat_prompt(messages, tools=tools)
 
         if should_stream:
             stream_iter = self.llm._stream(
@@ -755,9 +833,13 @@ class ChatHuggingFace(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         llm_result = self.llm._generate(
-            prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
+            prompts=[llm_input],
+            stop=stop,
+            run_manager=run_manager,
+            skip_prompt=True,
+            **kwargs,
         )
-        return self._to_chat_result(llm_result)
+        return self._to_chat_result(llm_result, parse_tool_calls=bool(tools))
 
     async def _agenerate(
         self,
@@ -875,7 +957,9 @@ class ChatHuggingFace(BaseChatModel):
                     )
                 yield generation_chunk
         else:
-            llm_input = self._to_chat_prompt(messages)
+            tools = kwargs.pop("tools", None)
+            kwargs.pop("tool_choice", None)
+            llm_input = self._to_chat_prompt(messages, tools=tools)
             stream_iter = self.llm._stream(
                 llm_input, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -945,43 +1029,87 @@ class ChatHuggingFace(BaseChatModel):
     def _to_chat_prompt(
         self,
         messages: list[BaseMessage],
+        tools: list[dict] | None = None,
     ) -> str:
-        """Convert a list of messages into a prompt format expected by wrapped LLM."""
+        """Convert a list of messages into a prompt format expected by wrapped LLM.
+
+        Args:
+            messages: The list of LangChain messages.
+            tools: Optional list of tool schemas (OpenAI format) to include
+                in the prompt via the tokenizer's chat template.
+        """
         if not messages:
             msg = "At least one HumanMessage must be provided!"
             raise ValueError(msg)
 
-        if not isinstance(messages[-1], HumanMessage):
-            msg = "Last message must be a HumanMessage!"
+        if not isinstance(messages[-1], (HumanMessage, ToolMessage)):
+            msg = "Last message must be a HumanMessage or ToolMessage!"
             raise ValueError(msg)
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
+        template_kwargs: dict[str, Any] = {}
+        if tools:
+            template_kwargs["tools"] = tools
+
         return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
+            messages_dicts,
+            tokenize=False,
+            add_generation_prompt=True,
+            **template_kwargs,
         )
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:
-        """Convert LangChain message to ChatML format."""
-        if isinstance(message, SystemMessage):
-            role = "system"
-        elif isinstance(message, AIMessage):
-            role = "assistant"
-        elif isinstance(message, HumanMessage):
-            role = "user"
-        else:
-            msg = f"Unknown message type: {type(message)}"
-            raise ValueError(msg)
+        """Convert LangChain message to ChatML format.
 
-        return {"role": role, "content": message.content}
+        Supports SystemMessage, AIMessage (with optional tool_calls),
+        HumanMessage, and ToolMessage for multi-turn tool calling.
+        """
+        if isinstance(message, SystemMessage):
+            return {"role": "system", "content": message.content}
+        if isinstance(message, HumanMessage):
+            return {"role": "user", "content": message.content}
+        if isinstance(message, ToolMessage):
+            return {
+                "role": "tool",
+                "content": message.content,
+                "tool_call_id": message.tool_call_id,
+            }
+        if isinstance(message, AIMessage):
+            result: dict[str, Any] = {
+                "role": "assistant",
+                "content": message.content,
+            }
+            if message.tool_calls or message.invalid_tool_calls:
+                result["tool_calls"] = [
+                    _lc_tool_call_to_hf_tool_call(tc) for tc in message.tool_calls
+                ] + [
+                    _lc_invalid_tool_call_to_hf_tool_call(tc)
+                    for tc in message.invalid_tool_calls
+                ]
+                if result["content"] == "":
+                    result["content"] = None
+            return result
+
+        msg = f"Unknown message type: {type(message)}"
+        raise ValueError(msg)
 
     @staticmethod
-    def _to_chat_result(llm_result: LLMResult) -> ChatResult:
+    def _to_chat_result(
+        llm_result: LLMResult,
+        *,
+        parse_tool_calls: bool = False,
+    ) -> ChatResult:
         chat_generations = []
 
         for g in llm_result.generations[0]:
+            if parse_tool_calls:
+                content, tool_calls = _parse_tool_calls_from_text(g.text)
+                message = AIMessage(content=content, tool_calls=tool_calls)
+            else:
+                message = AIMessage(content=g.text)
             chat_generation = ChatGeneration(
-                message=AIMessage(content=g.text), generation_info=g.generation_info
+                message=message, generation_info=g.generation_info
             )
             chat_generations.append(chat_generation)
 

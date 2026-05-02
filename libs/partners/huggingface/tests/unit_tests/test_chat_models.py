@@ -8,13 +8,18 @@ from langchain_core.messages import (
     FunctionMessage,
     HumanMessage,
     SystemMessage,
+    ToolCall,
+    ToolMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatResult, Generation, LLMResult
 from langchain_core.tools import BaseTool
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
+)
+from langchain_huggingface.chat_models.huggingface import (
+    _parse_tool_calls_from_text,
 )
 from langchain_huggingface.llms import HuggingFaceEndpoint
 
@@ -72,7 +77,7 @@ def test_create_chat_result(chat_hugging_face: Any) -> None:
         ([], "At least one HumanMessage must be provided!"),
         (
             [HumanMessage(content="Hi"), AIMessage(content="Hello")],
-            "Last message must be a HumanMessage!",
+            "Last message must be a HumanMessage or ToolMessage!",
         ),
     ],
 )
@@ -389,3 +394,266 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Tool-calling support tests (pipeline path)
+# ---------------------------------------------------------------------------
+
+
+class TestToChatmlFormatToolMessages:
+    """Test _to_chatml_format with tool-related message types."""
+
+    def test_tool_message(self, chat_hugging_face: Any) -> None:
+        msg = ToolMessage(content="42", tool_call_id="call_abc123")
+        result = chat_hugging_face._to_chatml_format(msg)
+        assert result == {
+            "role": "tool",
+            "content": "42",
+            "tool_call_id": "call_abc123",
+        }
+
+    def test_ai_message_with_tool_calls(self, chat_hugging_face: Any) -> None:
+        msg = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(name="get_weather", args={"city": "Paris"}, id="call_1"),
+            ],
+        )
+        result = chat_hugging_face._to_chatml_format(msg)
+        assert result["role"] == "assistant"
+        assert result["content"] is None
+        assert len(result["tool_calls"]) == 1
+        assert result["tool_calls"][0]["function"]["name"] == "get_weather"
+
+    def test_ai_message_without_tool_calls(self, chat_hugging_face: Any) -> None:
+        msg = AIMessage(content="Hello!")
+        result = chat_hugging_face._to_chatml_format(msg)
+        assert result == {"role": "assistant", "content": "Hello!"}
+        assert "tool_calls" not in result
+
+
+class TestToChatPromptWithTools:
+    """Test _to_chat_prompt with tools parameter."""
+
+    def test_tools_passed_to_apply_chat_template(self, chat_hugging_face: Any) -> None:
+        messages = [HumanMessage(content="What's the weather?")]
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the weather",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        chat_hugging_face.tokenizer.apply_chat_template.return_value = "prompt"
+
+        chat_hugging_face._to_chat_prompt(messages, tools=tools)
+
+        chat_hugging_face.tokenizer.apply_chat_template.assert_called_once_with(
+            [{"role": "user", "content": "What's the weather?"}],
+            tokenize=False,
+            add_generation_prompt=True,
+            tools=tools,
+        )
+
+    def test_no_tools_omits_kwarg(self, chat_hugging_face: Any) -> None:
+        messages = [HumanMessage(content="Hi")]
+        chat_hugging_face.tokenizer.apply_chat_template.return_value = "prompt"
+
+        chat_hugging_face._to_chat_prompt(messages)
+
+        chat_hugging_face.tokenizer.apply_chat_template.assert_called_once_with(
+            [{"role": "user", "content": "Hi"}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+    def test_tool_message_as_last_message(self, chat_hugging_face: Any) -> None:
+        messages = [
+            HumanMessage(content="What's the weather?"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    ToolCall(name="get_weather", args={"city": "Paris"}, id="call_1"),
+                ],
+            ),
+            ToolMessage(content="22C", tool_call_id="call_1"),
+        ]
+        chat_hugging_face.tokenizer.apply_chat_template.return_value = "prompt"
+
+        result = chat_hugging_face._to_chat_prompt(messages)
+        assert result == "prompt"
+
+
+class TestParseToolCallsFromText:
+    """Test _parse_tool_calls_from_text with various model output formats."""
+
+    def test_tool_call_tags(self) -> None:
+        text = (
+            "<tool_call>\n"
+            '{"name": "get_weather", "arguments": {"city": "Paris"}}\n'
+            "</tool_call>"
+        )
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == ""
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["name"] == "get_weather"
+        assert tool_calls[0]["args"] == {"city": "Paris"}
+
+    def test_multiple_tool_call_tags(self) -> None:
+        text = (
+            '<tool_call>{"name": "get_weather", "arguments": '
+            '{"city": "Paris"}}</tool_call>\n'
+            '<tool_call>{"name": "get_population", "arguments": '
+            '{"city": "London"}}</tool_call>'
+        )
+        _content, tool_calls = _parse_tool_calls_from_text(text)
+        assert len(tool_calls) == 2
+        assert tool_calls[0]["name"] == "get_weather"
+        assert tool_calls[1]["name"] == "get_population"
+
+    def test_raw_json_object(self) -> None:
+        text = '{"name": "get_weather", "arguments": {"city": "NYC"}}'
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == ""
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["name"] == "get_weather"
+        assert tool_calls[0]["args"] == {"city": "NYC"}
+
+    def test_json_array(self) -> None:
+        text = (
+            '[{"name": "get_weather", "arguments": {"city": "LA"}}, '
+            '{"name": "get_population", "arguments": {"city": "LA"}}]'
+        )
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == ""
+        assert len(tool_calls) == 2
+
+    def test_plain_text_no_tool_calls(self) -> None:
+        text = "The weather in Paris is sunny and 22 degrees."
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == text
+        assert tool_calls == []
+
+    def test_arguments_as_string(self) -> None:
+        text = '{"name": "get_weather", "arguments": "{\\"city\\": \\"Paris\\"}"}'
+        _content, tool_calls = _parse_tool_calls_from_text(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["args"] == {"city": "Paris"}
+
+    def test_parameters_key(self) -> None:
+        text = '{"name": "get_weather", "parameters": {"city": "Paris"}}'
+        _content, tool_calls = _parse_tool_calls_from_text(text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0]["args"] == {"city": "Paris"}
+
+    def test_invalid_json_in_tags(self) -> None:
+        text = "<tool_call>not valid json</tool_call>"
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == ""
+        assert tool_calls == []
+
+    def test_tool_call_with_content(self) -> None:
+        text = (
+            "I'll look that up for you.\n"
+            '<tool_call>{"name": "search", "arguments": {"q": "test"}}</tool_call>'
+        )
+        content, tool_calls = _parse_tool_calls_from_text(text)
+        assert content == "I'll look that up for you."
+        assert len(tool_calls) == 1
+
+
+class TestToChatResultWithToolCalls:
+    """Test _to_chat_result with parse_tool_calls flag."""
+
+    def test_parse_tool_calls_from_llm_result(self) -> None:
+        llm_result = LLMResult(
+            generations=[
+                [
+                    Generation(
+                        text='{"name": "get_weather", "arguments": {"city": "Paris"}}'
+                    )
+                ]
+            ]
+        )
+        result = ChatHuggingFace._to_chat_result(llm_result, parse_tool_calls=True)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.content == ""
+        assert len(msg.tool_calls) == 1
+        assert msg.tool_calls[0]["name"] == "get_weather"
+
+    def test_no_parse_returns_plain_text(self) -> None:
+        llm_result = LLMResult(
+            generations=[
+                [
+                    Generation(
+                        text='{"name": "get_weather", "arguments": {"city": "Paris"}}'
+                    )
+                ]
+            ]
+        )
+        result = ChatHuggingFace._to_chat_result(llm_result, parse_tool_calls=False)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "get_weather" in msg.content
+        assert msg.tool_calls == []
+
+
+class TestGeneratePipelineWithTools:
+    """Test that _generate passes tools through the pipeline path."""
+
+    @patch(
+        "langchain_huggingface.chat_models.huggingface"
+        ".ChatHuggingFace._resolve_model_id"
+    )
+    def test_generate_with_tools_calls_to_chat_prompt(self, mock_resolve: Any) -> None:
+        from langchain_huggingface.llms.huggingface_pipeline import (
+            HuggingFacePipeline,
+        )
+
+        mock_pipeline_llm = Mock(spec=HuggingFacePipeline)
+        mock_pipeline_llm.model_id = "test/model"
+        mock_pipeline_llm._generate.return_value = LLMResult(
+            generations=[
+                [
+                    Generation(
+                        text='{"name": "get_weather", "arguments": {"city": "Paris"}}'
+                    )
+                ]
+            ]
+        )
+
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.apply_chat_template.return_value = "formatted prompt"
+
+        chat = ChatHuggingFace(llm=mock_pipeline_llm, tokenizer=mock_tokenizer)
+
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+
+        messages: list[BaseMessage] = [HumanMessage(content="What's the weather?")]
+        result = chat._generate(messages, tools=tools)
+
+        mock_tokenizer.apply_chat_template.assert_called_once_with(
+            [{"role": "user", "content": "What's the weather?"}],
+            tokenize=False,
+            add_generation_prompt=True,
+            tools=tools,
+        )
+
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert len(msg.tool_calls) == 1
+        assert msg.tool_calls[0]["name"] == "get_weather"
