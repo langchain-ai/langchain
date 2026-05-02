@@ -51,6 +51,7 @@ updates:
       - "/libs/partners/fireworks/"
       - "/libs/partners/groq/"
       - "/libs/partners/huggingface/"
+      - "/libs/partners/minimax/"
       - "/libs/partners/mistralai/"
       - "/libs/partners/nomic/"
       - "/libs/partners/ollama/"

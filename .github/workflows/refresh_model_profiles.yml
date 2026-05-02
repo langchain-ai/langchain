@@ -27,6 +27,7 @@ jobs:
           {"provider":"fireworks-ai", "data_dir":"libs/partners/fireworks/langchain_fireworks/data"},
           {"provider":"groq",         "data_dir":"libs/partners/groq/langchain_groq/data"},
           {"provider":"huggingface",  "data_dir":"libs/partners/huggingface/langchain_huggingface/data"},
+          {"provider":"minimax",      "data_dir":"libs/partners/minimax/langchain_minimax/data"},
           {"provider":"mistral",      "data_dir":"libs/partners/mistralai/langchain_mistralai/data"},
           {"provider":"openai",       "data_dir":"libs/partners/openai/langchain_openai/data"},
           {"provider":"openrouter",   "data_dir":"libs/partners/openrouter/langchain_openrouter/data"},

@@ -110,6 +110,7 @@ body:
         - label: langchain-fireworks
         - label: langchain-groq
         - label: langchain-huggingface
+        - label: langchain-minimax
         - label: langchain-mistralai
         - label: langchain-nomic
         - label: langchain-ollama
