@@ -619,14 +619,35 @@ class Runnable(ABC, Generic[Input, Output]):
             if isinstance(node.data, BasePromptTemplate)
         ]
 
+    @overload
+    def __or__(
+        self, other: Mapping[str, Any]
+    ) -> RunnableSerializable[Input, dict[str, Any]]: ...
+
+    @overload
     def __or__(
         self,
-        other: Runnable[Any, Other]
-        | Callable[[Iterator[Any]], Iterator[Other]]
-        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
-        | Callable[[Any], Other]
-        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[Input, Other]:
+        other: Callable[[Output], Runnable[Output, Other]]
+        | Callable[[Output], Awaitable[Runnable[Output, Other]]],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other]
+        | Mapping[str, Runnable[Output, Any] | Callable[[Output], Any] | Any],
+    ) -> RunnableSerializable[Input, Any]:
         """Runnable "or" operator.
 
         Compose this `Runnable` with another object to create a
@@ -640,14 +661,29 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
+    @overload
     def __ror__(
         self,
-        other: Runnable[Other, Any]
-        | Callable[[Iterator[Other]], Iterator[Any]]
-        | Callable[[AsyncIterator[Other]], AsyncIterator[Any]]
-        | Callable[[Other], Any]
-        | Mapping[str, Runnable[Other, Any] | Callable[[Other], Any] | Any],
-    ) -> RunnableSerializable[Other, Output]:
+        other: Mapping[str, Any],
+    ) -> RunnableSerializable[Any, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Other], Input],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Other], Input]
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Input] | Any],
+    ) -> RunnableSerializable[Any, Output]:
         """Runnable "reverse-or" operator.
 
         Compose this `Runnable` with another object to create a
@@ -771,7 +807,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Import locally to prevent circular import
         from langchain_core.runnables.passthrough import RunnablePick  # noqa: PLC0415
 
-        return self | RunnablePick(keys)
+        return self | RunnablePick(keys)  # type: ignore[operator, no-any-return]
 
     def assign(
         self,
@@ -818,7 +854,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Import locally to prevent circular import
         from langchain_core.runnables.passthrough import RunnableAssign  # noqa: PLC0415
 
-        return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
+        return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))  # type: ignore[operator, no-any-return]
 
     """ --- Public API --- """
 
@@ -1965,7 +2001,7 @@ class Runnable(ABC, Generic[Input, Output]):
             exponential_jitter_params=exponential_jitter_params,
         )
 
-    def map(self) -> Runnable[list[Input], list[Output]]:
+    def map(self) -> Runnable[Sequence[Input], list[Output]]:
         """Return a new `Runnable` that maps a list of inputs to a list of outputs.
 
         Calls `invoke` with each input.
@@ -3117,15 +3153,36 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, s in enumerate(self.steps)
         )
 
+    @overload
+    def __or__(
+        self, other: Mapping[str, Any]
+    ) -> RunnableSerializable[Input, dict[str, Any]]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Callable[[Output], Runnable[Output, Other]]
+        | Callable[[Output], Awaitable[Runnable[Output, Other]]],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other],
+    ) -> RunnableSerializable[Input, Other]: ...
+
     @override
     def __or__(
         self,
-        other: Runnable[Any, Other]
-        | Callable[[Iterator[Any]], Iterator[Other]]
-        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
-        | Callable[[Any], Other]
-        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[Input, Other]:
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other]
+        | Mapping[str, Runnable[Output, Any] | Callable[[Output], Any] | Any],
+    ) -> RunnableSerializable[Input, Any]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 self.first,
@@ -3144,14 +3201,31 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name=self.name,
         )
 
+    @overload
+    def __ror__(
+        self,
+        other: Mapping[str, Any],
+    ) -> RunnableSerializable[Any, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Other], Input],
+    ) -> RunnableSerializable[Other, Output]: ...
+
     @override
     def __ror__(
         self,
-        other: Runnable[Other, Any]
-        | Callable[[Iterator[Other]], Iterator[Any]]
-        | Callable[[AsyncIterator[Other]], AsyncIterator[Any]]
-        | Callable[[Other], Any]
-        | Mapping[str, Runnable[Other, Any] | Callable[[Other], Any] | Any],
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Output], Runnable[Output, Other]]
+        | Callable[[Output], Awaitable[Runnable[Output, Other]]]
+        | Callable[[Other], Input]
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Input] | Any],
     ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
@@ -5313,7 +5387,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield chunk
 
 
-class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
+class RunnableEachBase(RunnableSerializable[Sequence[Input], list[Output]]):
     """RunnableEachBase class.
 
     `Runnable` that calls another `Runnable` for each element of the input sequence.
@@ -5404,7 +5478,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
 
     def _invoke(
         self,
-        inputs: list[Input],
+        inputs: Sequence[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -5412,17 +5486,20 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
-        return self.bound.batch(inputs, configs, **kwargs)
+        return self.bound.batch(list(inputs), configs, **kwargs)
 
     @override
     def invoke(
-        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: Sequence[Input],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> list[Output]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
-        inputs: list[Input],
+        inputs: Sequence[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -5430,13 +5507,18 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
-        return await self.bound.abatch(inputs, configs, **kwargs)
+        return await self.bound.abatch(list(inputs), configs, **kwargs)
 
     @override
     async def ainvoke(
-        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: Sequence[Input],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> list[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+        return await self._acall_with_config(
+            self._ainvoke, input, config=config, **kwargs
+        )
 
     @override
     async def astream_events(
@@ -6254,7 +6336,25 @@ RunnableLike = (
 )
 
 
-def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
+@overload
+def coerce_to_runnable(
+    thing: Runnable[Input, Output]
+    | Callable[[Input], Output]
+    | Callable[[Input], Awaitable[Output]]
+    | Callable[[Iterator[Input]], Iterator[Output]]
+    | Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
+    | _RunnableCallableSync[Input, Output]
+    | _RunnableCallableAsync[Input, Output]
+    | _RunnableCallableIterator[Input, Output]
+    | _RunnableCallableAsyncIterator[Input, Output],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def coerce_to_runnable(thing: Mapping[str, Any]) -> RunnableParallel[Input]: ...
+
+
+def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Any]:
     """Coerce a `Runnable`-like object into a `Runnable`.
 
     Args:
@@ -6273,7 +6373,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     if callable(thing):
         return RunnableLambda(cast("Callable[[Input], Output]", thing))
     if isinstance(thing, dict):
-        return cast("Runnable[Input, Output]", RunnableParallel(thing))
+        return RunnableParallel(thing)
     msg = (
         f"Expected a Runnable, callable or dict."
         f"Instead got an unsupported type: {type(thing)}"
