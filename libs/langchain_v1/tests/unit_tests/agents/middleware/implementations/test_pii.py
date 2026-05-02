@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.runtime import Runtime
 
 from langchain.agents import AgentState
@@ -19,6 +20,7 @@ from langchain.agents.middleware.pii import (
     detect_mac_address,
     detect_url,
 )
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 # ============================================================================
@@ -696,3 +698,154 @@ class TestMultipleMiddleware:
         content = result["messages"][0].content
         assert "test@example.com" not in content
         assert "10.0.0.1" not in content
+
+
+# ============================================================================
+# Streaming Guard Tests (issue #35011)
+# ============================================================================
+
+
+class TestStreamingGuard:
+    """Test that PII middleware guards output during streaming.
+
+    When ``apply_to_output=True``, the middleware sets ``guards_output=True``
+    and implements ``wrap_model_call`` / ``awrap_model_call`` so that PII is
+    caught inside the model node before tokens can leak to the stream.
+    """
+
+    def test_guards_output_set_when_apply_to_output(self) -> None:
+        """guards_output should be True when apply_to_output is True."""
+        m = PIIMiddleware("email", strategy="redact", apply_to_output=True)
+        assert m.guards_output is True
+
+    def test_guards_output_not_set_when_apply_to_input_only(self) -> None:
+        """guards_output should be False when only apply_to_input is True."""
+        m = PIIMiddleware("email", strategy="redact", apply_to_input=True, apply_to_output=False)
+        assert m.guards_output is False
+
+    def test_wrap_model_call_sanitizes_response(self) -> None:
+        """wrap_model_call should sanitize PII in model response messages."""
+        m = PIIMiddleware("email", strategy="redact", apply_to_input=False, apply_to_output=True)
+
+        response = ModelResponse(
+            result=[AIMessage(content="Contact john@example.com for help", id="msg1")],
+            structured_response=None,
+        )
+
+        def handler(req: ModelRequest) -> ModelResponse:  # type: ignore[type-arg]
+            return response
+
+        # ModelRequest needs a model; use a minimal one
+        model = FakeToolCallingModel()
+        request = ModelRequest(model=model, messages=[])
+
+        result = m.wrap_model_call(request, handler)
+
+        assert len(result.result) == 1
+        assert "john@example.com" not in result.result[0].content
+        assert "[REDACTED_EMAIL]" in result.result[0].content
+
+    def test_wrap_model_call_passes_through_clean_response(self) -> None:
+        """wrap_model_call should pass through responses without PII unchanged."""
+        m = PIIMiddleware("email", strategy="redact", apply_to_input=False, apply_to_output=True)
+
+        original_msg = AIMessage(content="Hello, how can I help?", id="msg2")
+        response = ModelResponse(result=[original_msg], structured_response=None)
+
+        def handler(req: ModelRequest) -> ModelResponse:  # type: ignore[type-arg]
+            return response
+
+        model = FakeToolCallingModel()
+        request = ModelRequest(model=model, messages=[])
+
+        result = m.wrap_model_call(request, handler)
+
+        assert result is response  # same object, not modified
+
+    def test_wrap_model_call_block_strategy_raises(self) -> None:
+        """wrap_model_call with block strategy should raise PIIDetectionError."""
+        m = PIIMiddleware("email", strategy="block", apply_to_input=False, apply_to_output=True)
+
+        response = ModelResponse(
+            result=[AIMessage(content="Your email is test@example.com", id="msg3")],
+            structured_response=None,
+        )
+
+        def handler(req: ModelRequest) -> ModelResponse:  # type: ignore[type-arg]
+            return response
+
+        model = FakeToolCallingModel()
+        request = ModelRequest(model=model, messages=[])
+
+        with pytest.raises(PIIDetectionError):
+            m.wrap_model_call(request, handler)
+
+    def test_model_node_tagged_nostream_when_output_guard(self) -> None:
+        """Model node should have TAG_NOSTREAM tag when output-guard middleware is present."""
+        model = FakeToolCallingModel()
+        agent = create_agent(
+            model=model,
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    strategy="redact",
+                    apply_to_input=False,
+                    apply_to_output=True,
+                )
+            ],
+        )
+
+        # The compiled graph's nodes should have the TAG_NOSTREAM tag on the model node
+        model_node_spec = agent.builder.nodes["model"]
+        runnable = model_node_spec.runnable
+        assert hasattr(runnable, "tags")
+        assert runnable.tags is not None
+        assert TAG_NOSTREAM in runnable.tags
+
+    def test_model_node_not_tagged_when_no_output_guard(self) -> None:
+        """Model node should NOT have TAG_NOSTREAM when no output-guard middleware."""
+        model = FakeToolCallingModel()
+        agent = create_agent(
+            model=model,
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    strategy="redact",
+                    apply_to_input=True,
+                    apply_to_output=False,
+                )
+            ],
+        )
+
+        model_node_spec = agent.builder.nodes["model"]
+        runnable = model_node_spec.runnable
+        tags = getattr(runnable, "tags", None)
+        # Tags should be None or not contain TAG_NOSTREAM
+        if tags is not None:
+            assert TAG_NOSTREAM not in tags
+
+    def test_output_guard_with_invoke_still_works(self) -> None:
+        """Middleware with wrap_model_call should still work correctly with invoke."""
+        model = FakeToolCallingModel()
+
+        agent = create_agent(
+            model=model,
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    strategy="redact",
+                    apply_to_input=False,
+                    apply_to_output=True,
+                )
+            ],
+        )
+
+        result = agent.invoke(
+            {"messages": [HumanMessage("Write a greeting with test@example.com")]}
+        )
+
+        messages = result["messages"]
+        # The output should have been sanitized by wrap_model_call
+        ai_messages = [m for m in messages if isinstance(m, AIMessage)]
+        for m in ai_messages:
+            assert "test@example.com" not in str(m.content)
