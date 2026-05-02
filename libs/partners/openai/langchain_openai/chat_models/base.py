@@ -1176,10 +1176,11 @@ class BaseChatOpenAI(BaseChatModel):
         client_params: dict = {
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
-            "timeout": self.request_timeout,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
+        if self.request_timeout is not None:
+            client_params["timeout"] = self.request_timeout
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
