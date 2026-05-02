@@ -120,6 +120,16 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         if (
                             "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
+                            # Prevent text blocks from merging with non-text
+                            # blocks that happen to share the same index (e.g.,
+                            # streaming text at index 0 vs tool_call_chunk at
+                            # index 0 from the API). This is a text-vs-
+                            # everything-else partition; non-text blocks at the
+                            # same index may still merge with each other.
+                            and (
+                                (e_left.get("type") == "text")
+                                == (e.get("type") == "text")
+                            )
                             and (  # IDs not inconsistent
                                 e_left.get("id") in (None, "")
                                 or e.get("id") in (None, "")

@@ -433,6 +433,27 @@ def test_generation_chunk_addition_type_error() -> None:
             [{"no_index": "b"}],
             [{"no_index": "a"}, {"no_index": "b"}],
         ),
+        # Text and non-text blocks with same index should NOT merge
+        (
+            [{"index": 0, "type": "text", "text": "hello"}],
+            [{"index": 0, "type": "tool_call_chunk", "name": "foo", "args": "{}"}],
+            [
+                {"index": 0, "type": "text", "text": "hello"},
+                {"index": 0, "type": "tool_call_chunk", "name": "foo", "args": "{}"},
+            ],
+        ),
+        # Two text blocks with same index should still merge
+        (
+            [{"index": 0, "type": "text", "text": "hel"}],
+            [{"index": 0, "type": "text", "text": "lo"}],
+            [{"index": 0, "type": "text", "text": "hello"}],
+        ),
+        # Two non-text blocks with same index should still merge
+        (
+            [{"index": 0, "type": "tool_call_chunk", "args": '{"a'}],
+            [{"index": 0, "type": "tool_call_chunk", "args": '": 1}'}],
+            [{"index": 0, "type": "tool_call_chunk", "args": '{"a": 1}'}],
+        ),
     ],
 )
 def test_merge_lists(
