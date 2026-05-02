@@ -26,6 +26,7 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
+    get_type_hints,
     overload,
 )
 from xml.sax.saxutils import escape, quoteattr
@@ -1093,6 +1094,7 @@ def trim_messages(
     start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
     text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
+    token_counter_is_per_message: bool = False,
 ) -> list[BaseMessage]:
     r"""Trim messages to be below a token count.
 
@@ -1183,6 +1185,11 @@ def trim_messages(
             splitter assumes that separators are kept, so that split contents can be
             directly concatenated to recreate the original text. Defaults to splitting
             on newlines.
+        token_counter_is_per_message: If `True`, `token_counter` is treated as a
+            per-message callable `(msg: BaseMessage) -> int`. Auto-detection only works
+            for annotated callables whose first positional parameter is typed as
+            `BaseMessage` or a subclass. Use this flag for lambdas or unannotated
+            callables, which cannot be reliably auto-detected.
 
     Returns:
         List of trimmed `BaseMessage`.
@@ -1417,12 +1424,30 @@ def trim_messages(
     if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
         list_token_counter = actual_token_counter.get_num_tokens_from_messages
     elif callable(actual_token_counter):
-        if (
-            next(
-                iter(inspect.signature(actual_token_counter).parameters.values())
-            ).annotation
-            is BaseMessage
-        ):
+        try:
+            hints = get_type_hints(actual_token_counter)
+        except (NameError, AttributeError, TypeError):
+            # Fall back to raw annotations if type-hint resolution fails.
+            hints = {}
+        params = list(inspect.signature(actual_token_counter).parameters.values())
+        _positional_kinds = {
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.POSITIONAL_ONLY,
+        }
+        first_positional = next(
+            (p for p in params if p.kind in _positional_kinds), None
+        )
+        first_annotation = (
+            hints.get(first_positional.name, first_positional.annotation)
+            if first_positional is not None
+            else inspect.Parameter.empty
+        )
+        is_per_message = token_counter_is_per_message or (
+            first_annotation is not inspect.Parameter.empty
+            and isinstance(first_annotation, type)
+            and issubclass(first_annotation, BaseMessage)
+        )
+        if is_per_message:
 
             def list_token_counter(messages: Sequence[BaseMessage]) -> int:
                 return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
