@@ -252,10 +252,13 @@ class Serializable(BaseModel, ABC):
                         )
                         raise ValueError(msg)
 
-            # Get a reference to self bound to each class in the MRO
-            this = cast("Serializable", self if cls is None else super(cls, self))
+            # Get a reference bound to each class in the MRO without using dynamic super()
+            if cls is None:
+                lc_source = cast("Serializable", self)
+            else:
+                lc_source = cast("Serializable", cls)
 
-            secrets.update(this.lc_secrets)
+            secrets.update(lc_source.lc_secrets)
             # Now also add the aliases for the secrets
             # This ensures known secret aliases are hidden.
             # Note: this does NOT hide any other extra kwargs
@@ -266,7 +269,7 @@ class Serializable(BaseModel, ABC):
                     alias := model_fields[key].alias
                 ) is not None:
                     secrets[alias] = value
-            lc_kwargs.update(this.lc_attributes)
+            lc_kwargs.update(lc_source.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
         # as these secrets may be passed as an environment variable instead
