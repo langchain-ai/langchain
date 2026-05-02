@@ -233,18 +233,44 @@ def draw_mermaid(
         add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
 
-    # Add empty subgraphs (subgraphs with no internal edges)
+    # Build a tree of empty subgraphs to render them properly nested without duplicates
     if with_styles:
-        for prefix, subgraph_node in subgraph_nodes.items():
-            if ":" not in prefix and prefix not in seen_subgraphs:
-                mermaid_graph += f"\tsubgraph {prefix}\n"
+        empty_prefixes = [p for p in subgraph_nodes if p not in seen_subgraphs]
+        if empty_prefixes:
+            # Build tree: dict mapping prefix -> list of immediate children prefixes
+            tree = {"": []}
+            for prefix in empty_prefixes:
+                parts = prefix.split(":")
+                for i in range(1, len(parts) + 1):
+                    p_prefix = ":".join(parts[:i-1])
+                    c_prefix = ":".join(parts[:i])
+                    if p_prefix not in tree:
+                        tree[p_prefix] = []
+                    if c_prefix not in tree:
+                        tree[c_prefix] = []
+                    if c_prefix not in tree[p_prefix]:
+                        tree[p_prefix].append(c_prefix)
 
-                # Add nodes that belong to this subgraph
-                for key, node in subgraph_node.items():
-                    mermaid_graph += render_node(key, node)
+            def render_tree(current_prefix: str, current_indent: str) -> None:
+                nonlocal mermaid_graph
+                # Render nodes for current prefix using correct indentation
+                if current_prefix in subgraph_nodes:
+                    for key, node in subgraph_nodes[current_prefix].items():
+                        # render_node internally uses \t as indent, we strip and prefix current_indent
+                        mermaid_graph += current_indent + render_node(key, node).lstrip()
+                
+                # Render children
+                for child in tree.get(current_prefix, []):
+                    part = child.split(":")[-1]
+                    # Do not use _to_safe_id for the subgraph label, use raw part per existing convention
+                    mermaid_graph += f"{current_indent}subgraph {part}\n"
+                    render_tree(child, current_indent + "\t")
+                    mermaid_graph += f"{current_indent}end\n"
 
-                mermaid_graph += "\tend\n"
-                seen_subgraphs.add(prefix)
+            for top_level in tree[""]:
+                mermaid_graph += f"\tsubgraph {top_level}\n"
+                render_tree(top_level, "\t\t")
+                mermaid_graph += "\tend\n" 
 
     # Add custom styles for nodes
     if with_styles:
