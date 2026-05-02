@@ -1219,6 +1219,56 @@ def test_usage_metadata_trigger() -> None:
     assert not middleware._should_summarize(messages, 0)
 
 
+def test_usage_metadata_trigger_ls_provider() -> None:
+    """ls_provider in response_metadata takes precedence over model_provider."""
+
+    class BedrockMockModel(MockChatModel):
+        def _get_ls_params(self, **kwargs: Any) -> dict[str, Any]:
+            return {"ls_provider": "amazon_bedrock"}
+
+    model = BedrockMockModel()
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=("tokens", 10_000),
+        keep=("messages", 4),
+    )
+    # ls_provider matches even though model_provider doesn't
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={
+                "model_provider": "bedrock_converse",
+                "ls_provider": "amazon_bedrock",
+            },
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    assert middleware._should_summarize(messages, 0)
+
+    # ls_provider doesn't match — should not trigger
+    messages_mismatch: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={
+                "model_provider": "amazon_bedrock",
+                "ls_provider": "not-amazon_bedrock",
+            },
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    assert not middleware._should_summarize(messages_mismatch, 0)
+
+
 class ConfigCapturingModel(BaseChatModel):
     """Mock model that captures the config passed to invoke/ainvoke."""
 
