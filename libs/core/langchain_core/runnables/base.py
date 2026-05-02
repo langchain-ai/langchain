@@ -5933,6 +5933,41 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         ):
             yield item
 
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> Any:
+        """Forward `stream_v2` to the bound runnable with bound kwargs merged.
+
+        Chat-model-specific: the bound runnable must implement `stream_v2`
+        (see `BaseChatModel`). Without this override, `__getattr__` would
+        forward the call but drop `self.kwargs` — losing tools bound via
+        `bind_tools`, `stop` sequences, etc.
+        """
+        return self.bound.stream_v2(  # type: ignore[attr-defined]
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
+
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> Any:
+        """Forward `astream_v2` to the bound runnable with bound kwargs merged.
+
+        Async variant of `stream_v2`. See that method for the full rationale.
+        """
+        return await self.bound.astream_v2(  # type: ignore[attr-defined]
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
+
     @override
     def stream_v2(
         self,
