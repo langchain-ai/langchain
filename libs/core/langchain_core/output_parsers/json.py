@@ -20,6 +20,7 @@ from langchain_core.utils.json import (
     parse_and_check_json_markdown,
     parse_json_markdown,
     parse_partial_json,
+    strip_reasoning_tags,
 )
 
 # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
@@ -82,11 +83,27 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError:
+                # Some reasoning models (e.g. DeepSeek-R1) include
+                # <think>...</think> tags. Try stripping them.
+                cleaned = strip_reasoning_tags(text)
+                if cleaned is not None:
+                    try:
+                        return parse_json_markdown(cleaned)
+                    except JSONDecodeError:
+                        pass
                 return None
         else:
             try:
                 return parse_json_markdown(text)
             except JSONDecodeError as e:
+                # Some reasoning models (e.g. DeepSeek-R1) include
+                # <think>...</think> tags. Try stripping them.
+                cleaned = strip_reasoning_tags(text)
+                if cleaned is not None:
+                    try:
+                        return parse_json_markdown(cleaned)
+                    except JSONDecodeError:
+                        pass
                 msg = f"Invalid json output: {text}"
                 raise OutputParserException(msg, llm_output=text) from e
 

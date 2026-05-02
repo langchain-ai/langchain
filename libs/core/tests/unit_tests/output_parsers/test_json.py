@@ -9,6 +9,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
+from langchain_core.outputs import Generation
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import (
     parse_and_check_json_markdown,
@@ -628,3 +629,66 @@ def test_unicode_handling() -> None:
     assert "科学文章的标题" in format_instructions, (
         "Unicode characters should not be escaped"
     )
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            '<think>\nsome reasoning\n</think>\n{"foo": "bar"}',
+            {"foo": "bar"},
+        ),
+        (
+            '<thinking>\nreasoning\n</thinking>\n{"foo": "bar"}',
+            {"foo": "bar"},
+        ),
+        (
+            '<reasoning>\nreasoning\n</reasoning>\n{"foo": "bar"}',
+            {"foo": "bar"},
+        ),
+        (
+            '<tool_call>\n{"foo": "bar"}\n</tool_call>',
+            {"foo": "bar"},
+        ),
+        (
+            '<think>\n</think>\n<tool_call>\n{"foo": "bar"}\n</tool_call>',
+            {"foo": "bar"},
+        ),
+    ],
+    ids=["think", "thinking", "reasoning", "tool_call", "think+tool_call"],
+)
+def test_json_output_parser_with_reasoning_tags(text: str, expected: dict) -> None:
+    """Test JsonOutputParser strips reasoning tags from text output."""
+    parser = SimpleJsonOutputParser()
+    result = parser.invoke(text)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            '<think>\nsome reasoning\n</think>\n{"foo": "bar"}',
+            {"foo": "bar"},
+        ),
+        (
+            '<think>\n</think>\n<tool_call>\n{"foo": "bar"}\n</tool_call>',
+            {"foo": "bar"},
+        ),
+    ],
+    ids=["think_partial", "think+tool_call_partial"],
+)
+def test_json_output_parser_with_reasoning_tags_partial(
+    text: str, expected: dict
+) -> None:
+    """Test JsonOutputParser strips reasoning tags in partial mode."""
+    parser = SimpleJsonOutputParser()
+    result = parser.parse_result([Generation(text=text)], partial=True)
+    assert result == expected
+
+
+def test_json_output_parser_invalid_json_with_reasoning_tags() -> None:
+    """Test JsonOutputParser still raises for invalid JSON inside reasoning tags."""
+    parser = SimpleJsonOutputParser()
+    with pytest.raises(OutputParserException):
+        parser.invoke("<think>\nreasoning\n</think>\nnot json at all")

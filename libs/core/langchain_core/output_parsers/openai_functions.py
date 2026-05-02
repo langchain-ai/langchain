@@ -17,6 +17,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.utils.json import strip_reasoning_tags
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -124,6 +125,15 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                 try:
                     return json.loads(function_call["arguments"], strict=self.strict)
                 except (json.JSONDecodeError, TypeError) as exc:
+                    # Some reasoning models (e.g. DeepSeek-R1) include
+                    # <think>...</think> tags. Try stripping them.
+                    if isinstance(function_call["arguments"], str):
+                        cleaned = strip_reasoning_tags(function_call["arguments"])
+                        if cleaned is not None:
+                            try:
+                                return json.loads(cleaned, strict=self.strict)
+                            except (json.JSONDecodeError, TypeError):
+                                pass
                     msg = f"Could not parse function call data: {exc}"
                     raise OutputParserException(msg) from exc
             else:
@@ -135,6 +145,20 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         ),
                     }
                 except (json.JSONDecodeError, TypeError) as exc:
+                    # Some reasoning models (e.g. DeepSeek-R1) include
+                    # <think>...</think> tags. Try stripping them.
+                    if isinstance(function_call["arguments"], str):
+                        cleaned = strip_reasoning_tags(function_call["arguments"])
+                        if cleaned is not None:
+                            try:
+                                return {
+                                    **function_call,
+                                    "arguments": json.loads(
+                                        cleaned, strict=self.strict
+                                    ),
+                                }
+                            except (json.JSONDecodeError, TypeError):
+                                pass
                     msg = f"Could not parse function call data: {exc}"
                     raise OutputParserException(msg) from exc
         except KeyError:
