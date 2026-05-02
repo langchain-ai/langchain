@@ -10,6 +10,7 @@ from typing import Any, Literal, cast
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
+from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -184,6 +185,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     async_client: Any = Field(default=None, exclude=True)
 
+    rate_limiter: BaseRateLimiter | None = Field(default=None, exclude=True)
+
     model: str = "text-embedding-ada-002"
 
     dimensions: int | None = None
@@ -338,7 +341,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, protected_namespaces=()
+        extra="forbid",
+        populate_by_name=True,
+        protected_namespaces=(),
+        arbitrary_types_allowed=True,
     )
 
     @model_validator(mode="before")
@@ -615,6 +621,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
+            if self.rate_limiter:
+                self.rate_limiter.acquire(blocking=True)
             response = self.client.create(input=batch_tokens, **client_kwargs)
             if not isinstance(response, dict):
                 response = response.model_dump()
@@ -630,6 +638,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
+                if self.rate_limiter:
+                    self.rate_limiter.acquire(blocking=True)
                 average_embedded = self.client.create(input="", **client_kwargs)
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
@@ -689,6 +699,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
             # Make API call with this batch
             batch_tokens = tokens[i:batch_end]
+            if self.rate_limiter:
+                await self.rate_limiter.aacquire(blocking=True)
             response = await self.async_client.create(
                 input=batch_tokens, **client_kwargs
             )
@@ -706,6 +718,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         async def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
+                if self.rate_limiter:
+                    await self.rate_limiter.aacquire(blocking=True)
                 average_embedded = await self.async_client.create(
                     input="", **client_kwargs
                 )
@@ -737,6 +751,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
+                if self.rate_limiter:
+                    self.rate_limiter.acquire(blocking=True)
                 response = self.client.create(
                     input=texts[i : i + chunk_size_], **client_kwargs
                 )
@@ -772,6 +788,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
+                if self.rate_limiter:
+                    await self.rate_limiter.aacquire(blocking=True)
                 response = await self.async_client.create(
                     input=texts[i : i + chunk_size_], **client_kwargs
                 )
