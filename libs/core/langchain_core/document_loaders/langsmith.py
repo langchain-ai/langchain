@@ -3,7 +3,7 @@
 import datetime
 import json
 import uuid
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any
 
 from langsmith import Client as LangSmithClient
@@ -94,7 +94,11 @@ class LangSmithLoader(BaseLoader):
             ValueError: If both `client` and `client_kwargs` are provided.
         """  # noqa: E501
         if client and client_kwargs:
-            raise ValueError
+            msg = (
+                "Received both `client` and `client_kwargs`. "
+                "Pass `client_kwargs` only when `client` is not provided."
+            )
+            raise ValueError(msg)
         self._client = client or LangSmithClient(**client_kwargs)
         self.content_key = list(content_key.split(".")) if content_key else []
         self.format_content = format_content or _stringify
@@ -123,15 +127,51 @@ class LangSmithLoader(BaseLoader):
             metadata=self.metadata,
             filter=self.filter,
         ):
-            content: Any = example.inputs
-            for key in self.content_key:
-                content = content[key]
+            content = _get_content_from_inputs(example.inputs, self.content_key)
             content_str = self.format_content(content)
             metadata = pydantic_to_dict(example)
             # Stringify datetime and UUID types.
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
                 metadata[k] = str(metadata[k]) if metadata[k] else metadata[k]
             yield Document(content_str, metadata=metadata)
+
+
+def _get_content_from_inputs(inputs: Any, content_key: Sequence[str]) -> Any:
+    """Resolve nested example input content for `LangSmithLoader`.
+
+    Args:
+        inputs: Example input payload returned by LangSmith.
+        content_key: Ordered key path used to extract the document content.
+
+    Returns:
+        The extracted content value.
+
+    Raises:
+        KeyError: If the requested `content_key` path cannot be resolved.
+    """
+    content = inputs
+    full_path = ".".join(content_key)
+    traversed_keys: list[str] = []
+
+    for key in content_key:
+        if not isinstance(content, Mapping):
+            current_path = ".".join(traversed_keys) or "<root>"
+            msg = (
+                f"Could not resolve content_key {full_path!r}: expected a mapping at "
+                f"{current_path!r}, but found {type(content).__name__}."
+            )
+            raise KeyError(msg)
+        if key not in content:
+            current_path = ".".join(traversed_keys) or "<root>"
+            msg = (
+                f"Could not resolve content_key {full_path!r}: missing key {key!r} "
+                f"under {current_path!r}."
+            )
+            raise KeyError(msg)
+        content = content[key]
+        traversed_keys.append(key)
+
+    return content
 
 
 def _stringify(x: str | dict[str, Any]) -> str:
