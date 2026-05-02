@@ -126,6 +126,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
+        disable_streaming: bool = True,
     ) -> None:
         """Initialize the tool selector.
 
@@ -144,11 +145,16 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             always_include: Tool names to always include regardless of selection.
 
                 These do not count against the `max_tools` limit.
+            disable_streaming: Whether to disable streaming for the tool selection.
+
+                Defaults to True. If True, the internal tool selection call will
+                not emit events to the parent callback manager.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.max_tools = max_tools
         self.always_include = always_include or []
+        self.disable_streaming = disable_streaming
 
         if isinstance(model, (BaseChatModel, type(None))):
             self.model: BaseChatModel | None = model
@@ -298,12 +304,22 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        response = structured_model.invoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
+        if self.disable_streaming:
+            # Explicitly disable callbacks to prevent parent stream leakage
+            response = structured_model.invoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ],
+                config={"callbacks": []},
+            )
+        else:
+            response = structured_model.invoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ]
+            )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
@@ -341,12 +357,22 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        response = await structured_model.ainvoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
+        if self.disable_streaming:
+            # Explicitly disable callbacks to prevent parent stream leakage
+            response = await structured_model.ainvoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ],
+                config={"callbacks": []},
+            )
+        else:
+            response = await structured_model.ainvoke(
+                [
+                    {"role": "system", "content": selection_request.system_message},
+                    selection_request.last_user_message,
+                ]
+            )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
