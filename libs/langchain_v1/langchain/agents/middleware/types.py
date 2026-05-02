@@ -834,6 +834,18 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT, Response
         ...
 
 
+class _AsyncCallableReturningModelResponse(Protocol[StateT_contra, ContextT, ResponseT]):  # type: ignore[misc]
+    """Async callable for model call interception with handler callback."""
+
+    async def __call__(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Intercept model execution via handler callback."""
+        ...
+
+
 class _CallableReturningToolResponse(Protocol):
     """Callable for tool call interception with handler callback.
 
@@ -845,6 +857,18 @@ class _CallableReturningToolResponse(Protocol):
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Intercept tool execution via handler callback."""
+        ...
+
+
+class _AsyncCallableReturningToolResponse(Protocol):
+    """Async callable for tool call interception with handler callback."""
+
+    async def __call__(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
     ) -> ToolMessage | Command[Any]:
         """Intercept tool execution via handler callback."""
         ...
@@ -1741,26 +1765,40 @@ def wrap_model_call(
 
 @overload
 def wrap_model_call(
+    func: _AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def wrap_model_call(
     func: None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
+    [
+        _CallableReturningModelResponse[StateT, ContextT, ResponseT]
+        | _AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT]
+    ],
     AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def wrap_model_call(
-    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT] | None = None,
+    func: _CallableReturningModelResponse[StateT, ContextT, ResponseT]
+    | _AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT]
+    | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
-        [_CallableReturningModelResponse[StateT, ContextT, ResponseT]],
+        [
+            _CallableReturningModelResponse[StateT, ContextT, ResponseT]
+            | _AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT]
+        ],
         AgentMiddleware[StateT, ContextT],
     ]
     | AgentMiddleware[StateT, ContextT]
@@ -1841,21 +1879,25 @@ def wrap_model_call(
     """
 
     def decorator(
-        func: _CallableReturningModelResponse[StateT, ContextT, ResponseT],
+        func: _CallableReturningModelResponse[StateT, ContextT, ResponseT]
+        | _AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
+            async_func = cast(
+                "_AsyncCallableReturningModelResponse[StateT, ContextT, ResponseT]", func
+            )
 
             async def async_wrapped(
                 _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest[ContextT],
                 handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
             ) -> ModelResponse[ResponseT] | AIMessage:
-                return await func(request, handler)  # type: ignore[misc, arg-type]
+                return await async_func(request, handler)
 
             middleware_name = name or cast(
-                "str", getattr(func, "__name__", "WrapModelCallMiddleware")
+                "str", getattr(async_func, "__name__", "WrapModelCallMiddleware")
             )
 
             return type(
@@ -1868,14 +1910,18 @@ def wrap_model_call(
                 },
             )()
 
+        sync_func = cast("_CallableReturningModelResponse[StateT, ContextT, ResponseT]", func)
+
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
         ) -> ModelResponse[ResponseT] | AIMessage:
-            return func(request, handler)
+            return sync_func(request, handler)
 
-        middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
+        middleware_name = name or cast(
+            "str", getattr(sync_func, "__name__", "WrapModelCallMiddleware")
+        )
 
         return type(
             middleware_name,
@@ -1900,24 +1946,30 @@ def wrap_tool_call(
 
 @overload
 def wrap_tool_call(
+    func: _AsyncCallableReturningToolResponse,
+) -> AgentMiddleware: ...
+
+
+@overload
+def wrap_tool_call(
     func: None = None,
     *,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableReturningToolResponse],
+    [_CallableReturningToolResponse | _AsyncCallableReturningToolResponse],
     AgentMiddleware,
 ]: ...
 
 
 def wrap_tool_call(
-    func: _CallableReturningToolResponse | None = None,
+    func: _CallableReturningToolResponse | _AsyncCallableReturningToolResponse | None = None,
     *,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
-        [_CallableReturningToolResponse],
+        [_CallableReturningToolResponse | _AsyncCallableReturningToolResponse],
         AgentMiddleware,
     ]
     | AgentMiddleware
@@ -2001,21 +2053,22 @@ def wrap_tool_call(
     """
 
     def decorator(
-        func: _CallableReturningToolResponse,
+        func: _CallableReturningToolResponse | _AsyncCallableReturningToolResponse,
     ) -> AgentMiddleware:
         is_async = iscoroutinefunction(func)
 
         if is_async:
+            async_func = cast("_AsyncCallableReturningToolResponse", func)
 
             async def async_wrapped(
                 _self: AgentMiddleware,
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
             ) -> ToolMessage | Command[Any]:
-                return await func(request, handler)  # type: ignore[arg-type,misc]
+                return await async_func(request, handler)
 
             middleware_name = name or cast(
-                "str", getattr(func, "__name__", "WrapToolCallMiddleware")
+                "str", getattr(async_func, "__name__", "WrapToolCallMiddleware")
             )
 
             return type(
@@ -2028,14 +2081,18 @@ def wrap_tool_call(
                 },
             )()
 
+        sync_func = cast("_CallableReturningToolResponse", func)
+
         def wrapped(
             _self: AgentMiddleware,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
         ) -> ToolMessage | Command[Any]:
-            return func(request, handler)
+            return sync_func(request, handler)
 
-        middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
+        middleware_name = name or cast(
+            "str", getattr(sync_func, "__name__", "WrapToolCallMiddleware")
+        )
 
         return type(
             middleware_name,
