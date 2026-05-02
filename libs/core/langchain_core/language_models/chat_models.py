@@ -147,6 +147,9 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
         List of messages formatted for tracing.
 
     """
+    # Fast path: if no messages have list content, no formatting is needed.
+    if not any(isinstance(m.content, list) for m in messages):
+        return messages
     messages_to_trace = []
     for message in messages:
         message_to_trace = message
@@ -263,6 +266,30 @@ def _format_ls_structured_output(ls_structured_output_format: dict | None) -> di
         ls_structured_output_format_dict = {}
 
     return ls_structured_output_format_dict
+
+
+_generate_accepts_run_manager: dict[type, bool] = {}
+_agenerate_accepts_run_manager: dict[type, bool] = {}
+
+
+def _check_generates_accept_run_manager(self: BaseChatModel) -> bool:
+    cls = type(self)
+    try:
+        return _generate_accepts_run_manager[cls]
+    except KeyError:
+        result = bool(inspect.signature(self._generate).parameters.get("run_manager"))
+        _generate_accepts_run_manager[cls] = result
+        return result
+
+
+def _check_agenerates_accept_run_manager(self: BaseChatModel) -> bool:
+    cls = type(self)
+    try:
+        return _agenerate_accepts_run_manager[cls]
+    except KeyError:
+        result = bool(inspect.signature(self._agenerate).parameters.get("run_manager"))
+        _agenerate_accepts_run_manager[cls] = result
+        return result
 
 
 class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
@@ -1895,7 +1922,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._generate).parameters.get("run_manager"):
+        elif _check_generates_accept_run_manager(self):
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -2052,7 +2079,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+        elif _check_agenerates_accept_run_manager(self):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )

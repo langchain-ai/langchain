@@ -1032,18 +1032,36 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_tags = inheritable_tags or []
         self.metadata = metadata or {}
         self.inheritable_metadata = inheritable_metadata or {}
+        self._cow = False
+
+    def _cow_copy(self) -> None:
+        """Materialize copy-on-write shared state before mutation."""
+        if self._cow:
+            self.handlers = self.handlers.copy()
+            self.inheritable_handlers = self.inheritable_handlers.copy()
+            self.tags = self.tags.copy()
+            self.inheritable_tags = self.inheritable_tags.copy()
+            self.metadata = self.metadata.copy()
+            self.inheritable_metadata = self.inheritable_metadata.copy()
+            self._cow = False
 
     def copy(self) -> Self:
-        """Return a copy of the callback manager."""
-        return self.__class__(
-            handlers=self.handlers.copy(),
-            inheritable_handlers=self.inheritable_handlers.copy(),
-            parent_run_id=self.parent_run_id,
-            tags=self.tags.copy(),
-            inheritable_tags=self.inheritable_tags.copy(),
-            metadata=self.metadata.copy(),
-            inheritable_metadata=self.inheritable_metadata.copy(),
-        )
+        """Return a copy of the callback manager.
+
+        Uses copy-on-write: the copy shares underlying lists/dicts until
+        either the original or the copy is mutated.
+        """
+        self._cow = True
+        clone = self.__class__.__new__(self.__class__)
+        clone.handlers = self.handlers
+        clone.inheritable_handlers = self.inheritable_handlers
+        clone.parent_run_id = self.parent_run_id
+        clone.tags = self.tags
+        clone.inheritable_tags = self.inheritable_tags
+        clone.metadata = self.metadata
+        clone.inheritable_metadata = self.inheritable_metadata
+        clone._cow = True  # noqa: SLF001
+        return clone
 
     def merge(self, other: BaseCallbackManager) -> Self:
         """Merge the callback manager with another callback manager.
@@ -1116,6 +1134,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             handler: The handler to add.
             inherit: Whether to inherit the handler.
         """
+        self._cow_copy()
         if handler not in self.handlers:
             self.handlers.append(handler)
         if inherit and handler not in self.inheritable_handlers:
@@ -1127,6 +1146,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         Args:
             handler: The handler to remove.
         """
+        self._cow_copy()
         if handler in self.handlers:
             self.handlers.remove(handler)
         if handler in self.inheritable_handlers:
@@ -1143,6 +1163,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             handlers: The handlers to set.
             inherit: Whether to inherit the handlers.
         """
+        self._cow = False
         self.handlers = []
         self.inheritable_handlers = []
         for handler in handlers:
@@ -1172,12 +1193,21 @@ class BaseCallbackManager(CallbackManagerMixin):
             tags: The tags to add.
             inherit: Whether to inherit the tags.
         """
-        for tag in tags:
-            if tag in self.tags:
-                self.remove_tags([tag])
-        self.tags.extend(tags)
+        self._cow_copy()
+        if not self.tags:
+            self.tags.extend(tags)
+            if inherit:
+                self.inheritable_tags.extend(tags)
+            return
+        # Deduplicate: tag order is not meaningful across the codebase
+        # (merge_configs sorts, tracers deduplicate via sets).
+        existing = set(self.tags)
+        new_tags = [t for t in tags if t not in existing]
+        self.tags.extend(new_tags)
         if inherit:
-            self.inheritable_tags.extend(tags)
+            existing_inh = set(self.inheritable_tags)
+            new_inh = [t for t in tags if t not in existing_inh]
+            self.inheritable_tags.extend(new_inh)
 
     def remove_tags(self, tags: list[str]) -> None:
         """Remove tags from the callback manager.
@@ -1185,6 +1215,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         Args:
             tags: The tags to remove.
         """
+        self._cow_copy()
         for tag in tags:
             if tag in self.tags:
                 self.tags.remove(tag)
@@ -1202,6 +1233,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             metadata: The metadata to add.
             inherit: Whether to inherit the metadata.
         """
+        self._cow_copy()
         self.metadata.update(metadata)
         if inherit:
             self.inheritable_metadata.update(metadata)
@@ -1212,6 +1244,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         Args:
             keys: The keys to remove.
         """
+        self._cow_copy()
         for key in keys:
             self.metadata.pop(key, None)
             self.inheritable_metadata.pop(key, None)

@@ -549,6 +549,19 @@ class ChildTool(BaseTool):
             )
             raise TypeError(msg)
         super().__init__(**kwargs)
+        # Cache per-invocation introspection results
+        try:
+            self._has_run_manager_param: bool = bool(
+                signature(self._run).parameters.get("run_manager")
+            )
+        except (ValueError, TypeError):
+            self._has_run_manager_param = False
+        try:
+            self._runnable_config_param: str | None = _get_runnable_config_param(
+                self._run
+            )
+        except (ValueError, TypeError):
+            self._runnable_config_param = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -794,9 +807,7 @@ class ChildTool(BaseTool):
         Returns:
             The result of the tool execution.
         """
-        if kwargs.get("run_manager") and signature(self._run).parameters.get(
-            "run_manager"
-        ):
+        if kwargs.get("run_manager") and self._has_run_manager_param:
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
@@ -960,10 +971,10 @@ class ChildTool(BaseTool):
                 tool_args, tool_kwargs = self._to_args_and_kwargs(
                     tool_input, tool_call_id
                 )
-                if signature(self._run).parameters.get("run_manager"):
+                if self._has_run_manager_param:
                     tool_kwargs |= {"run_manager": run_manager}
-                if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
+                if self._runnable_config_param:
+                    tool_kwargs |= {self._runnable_config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 msg = (
