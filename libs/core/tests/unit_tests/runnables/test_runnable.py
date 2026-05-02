@@ -26,7 +26,9 @@ from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForChainRun,
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForChainRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
@@ -40,7 +42,12 @@ from langchain_core.language_models import (
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
-from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
@@ -5299,6 +5306,143 @@ async def test_runnable_lambda_context_config_async() -> None:
     assert len(tracer.runs[1].child_runs) == 3
     assert [r.inputs["input"] for r in tracer.runs[1].child_runs] == ["a", "aa", "aaa"]
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
+
+
+def test_chain_with_config_parameter() -> None:
+    """Test that @chain works with functions accepting RunnableConfig."""
+
+    @chain
+    def to_plain_text(data: ChatPromptValue, config: RunnableConfig) -> str:
+        if config["configurable"].get("upper_case", False):
+            return data.to_string().upper()
+        return data.to_string()
+
+    prompt = ChatPromptValue(messages=[AIMessage("test message")])
+
+    # Test upper case
+    result = to_plain_text.invoke(
+        prompt, config=RunnableConfig(configurable={"upper_case": True})
+    )
+    assert result == "AI: TEST MESSAGE"
+
+    # Test normal case
+    result = to_plain_text.invoke(
+        prompt, config=RunnableConfig(configurable={"upper_case": False})
+    )
+    assert result == "AI: test message"
+
+
+async def test_chain_async_with_config_parameter() -> None:
+    """Test that @chain works with async functions accepting RunnableConfig."""
+
+    @chain
+    async def async_transform(data: str, config: RunnableConfig) -> str:
+        prefix = config["configurable"].get("prefix", "")
+        return f"{prefix}{data}"
+
+    result = await async_transform.ainvoke(
+        "hello", config=RunnableConfig(configurable={"prefix": "async_"})
+    )
+    assert result == "async_hello"  # type: ignore[comparison-overlap]
+
+    # Test default when no prefix configured
+    result = await async_transform.ainvoke("hello")
+    assert result == "hello"  # type: ignore[comparison-overlap]
+
+
+def test_chain_returning_runnable() -> None:
+    """Test that @chain correctly invokes returned Runnables."""
+
+    @chain
+    def dynamic_chain(multiplier: int) -> Runnable[int, int]:
+        return RunnableLambda(lambda x: x * multiplier)
+
+    # The chain returns a Runnable that multiplies by the input
+    # When invoked with 3, it creates a Runnable that multiplies by 3
+    # That Runnable is then invoked with the original input (3), giving 3*3=9
+    result = dynamic_chain.invoke(3)
+    assert result == 9  # type: ignore[comparison-overlap]
+
+
+def test_chain_propagates_errors() -> None:
+    """Test that exceptions in chained functions propagate correctly."""
+
+    @chain
+    def failing_chain(_data: str) -> str:
+        msg = "Intentional test error"
+        raise ValueError(msg)
+
+    with pytest.raises(ValueError, match="Intentional test error"):
+        failing_chain.invoke("test")
+
+
+def test_chain_with_run_manager() -> None:
+    """Test that @chain works with functions accepting run_manager parameter."""
+    received_run_managers: list[CallbackManagerForChainRun] = []
+
+    @chain
+    def traced_func(data: str, run_manager: CallbackManagerForChainRun) -> str:
+        received_run_managers.append(run_manager)
+        return data.upper()
+
+    tracer = FakeTracer()
+    result = traced_func.invoke("hello", {"callbacks": [tracer]})
+
+    assert result == "HELLO"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], CallbackManagerForChainRun)
+    # Verify tracing worked
+    assert len(tracer.runs) >= 1
+
+
+async def test_chain_async_with_run_manager() -> None:
+    """Test that @chain works with async functions accepting run_manager."""
+    received_run_managers: list[AsyncCallbackManagerForChainRun] = []
+
+    @chain
+    async def async_traced_func(
+        data: str, run_manager: AsyncCallbackManagerForChainRun
+    ) -> str:
+        received_run_managers.append(run_manager)
+        return data.lower()
+
+    tracer = FakeTracer()
+    result = await async_traced_func.ainvoke("HELLO", {"callbacks": [tracer]})
+
+    assert result == "hello"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], AsyncCallbackManagerForChainRun)
+    # Verify tracing worked
+    assert len(tracer.runs) >= 1
+
+
+def test_chain_with_run_manager_and_config() -> None:
+    """Test @chain with both run_manager and config parameters."""
+    received_run_managers: list[CallbackManagerForChainRun] = []
+    received_configs: list[RunnableConfig] = []
+
+    @chain
+    def full_traced_func(
+        data: str,
+        run_manager: CallbackManagerForChainRun,
+        config: RunnableConfig,
+    ) -> str:
+        received_run_managers.append(run_manager)
+        received_configs.append(config)
+        prefix = config["configurable"].get("prefix", "")
+        return f"{prefix}{data.upper()}"
+
+    tracer = FakeTracer()
+    result = full_traced_func.invoke(
+        "hello",
+        {"callbacks": [tracer], "configurable": {"prefix": "result: "}},
+    )
+
+    assert result == "result: HELLO"
+    assert len(received_run_managers) == 1
+    assert isinstance(received_run_managers[0], CallbackManagerForChainRun)
+    assert len(received_configs) == 1
+    assert received_configs[0]["configurable"]["prefix"] == "result: "
 
 
 async def test_runnable_gen_transform() -> None:
