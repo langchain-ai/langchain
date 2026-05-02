@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
-from langgraph.typing import ContextT
 from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     PrivateStateAttr,
     ResponseT,
     hook_config,
