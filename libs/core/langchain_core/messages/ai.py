@@ -673,12 +673,26 @@ def add_ai_message_chunks(
         tool_call_chunks = []
 
     # Token usage
-    if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata: UsageMetadata | None = left.usage_metadata
-        for other in others:
-            usage_metadata = add_usage(usage_metadata, other.usage_metadata)
-    else:
+    # Detect whether usage_metadata values represent cumulative streaming
+    # counts (e.g. OpenAI with stream_usage=True sends running totals in
+    # every chunk) vs. independent invocations that should be summed.
+    # See: https://github.com/langchain-ai/langchain/issues/31351
+    usages = [m.usage_metadata for m in (left, *others) if m.usage_metadata is not None]
+
+    if not usages:
         usage_metadata = None
+    else:
+        inputs = [u.get("input_tokens", 0) for u in usages]
+        totals = [u.get("total_tokens", 0) for u in usages]
+
+        # Detect cumulative pattern:
+        # constant input_tokens and monotonic increasing totals
+        if len(set(inputs)) == 1 and totals == sorted(totals) and len(set(totals)) > 1:
+            usage_metadata = usages[-1].copy()
+        else:
+            usage_metadata = usages[0].copy()
+            for u in usages[1:]:
+                usage_metadata = add_usage(usage_metadata, u)
 
     # Ranks are defined by the order of preference. Higher is better:
     # 2. Provider-assigned IDs (non lc_* and non lc_run-*)
