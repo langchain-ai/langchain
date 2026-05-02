@@ -63,7 +63,7 @@ class _StreamingParser:
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
+                    "Please install it to use the defusedxml parser. "
                     "You can install it with `pip install defusedxml` "
                 )
                 raise ImportError(msg)
@@ -224,8 +224,8 @@ class XMLOutputParser(BaseTransformOutputParser):
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml`"
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
