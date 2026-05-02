@@ -358,7 +358,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 class _InputAgentState(TypedDict):  # noqa: PYI049
     """Input state schema for the agent."""
 
-    messages: Required[Annotated[list[AnyMessage | dict[str, Any]], add_messages]]
+    messages: Required[Annotated[list[AnyMessage], add_messages]]
 
 
 class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
