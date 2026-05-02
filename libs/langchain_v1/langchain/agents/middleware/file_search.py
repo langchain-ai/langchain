@@ -161,9 +161,14 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             matching: list[tuple[str, str]] = []
             for match in base_full.glob(pattern):
                 if match.is_file():
+                    resolved = match.resolve()
+                    try:
+                        resolved.relative_to(self.root_path)
+                    except ValueError:
+                        continue
                     # Convert to virtual path
-                    virtual_path = "/" + str(match.relative_to(self.root_path))
-                    stat = match.stat()
+                    virtual_path = "/" + str(resolved.relative_to(self.root_path))
+                    stat = match.stat(follow_symlinks=False)
                     modified_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
                     matching.append((virtual_path, modified_at))
 
@@ -329,6 +334,12 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             if not file_path.is_file():
                 continue
 
+            resolved = file_path.resolve()
+            try:
+                resolved.relative_to(self.root_path)
+            except ValueError:
+                continue
+
             # Check include filter
             if include and not _match_include_pattern(file_path.name, include):
                 continue
@@ -345,7 +356,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             # Search content
             for line_num, line in enumerate(content.splitlines(), 1):
                 if regex.search(line):
-                    virtual_path = "/" + str(file_path.relative_to(self.root_path))
+                    virtual_path = "/" + str(resolved.relative_to(self.root_path))
                     if virtual_path not in results:
                         results[virtual_path] = []
                     results[virtual_path].append((line_num, line))
