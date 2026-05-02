@@ -1128,10 +1128,12 @@ class ChatAnthropic(BaseChatModel):
             "max_retries": self.max_retries,
             "default_headers": default_headers,
         }
-        # value <= 0 indicates the param should be ignored. None is a meaningful value
-        # for Anthropic client and treated differently than not specifying the param at
-        # all.
-        if self.default_request_timeout is None or self.default_request_timeout > 0:
+        # When None, omit timeout so the SDK's built-in default applies.
+        # Values <= 0 are also omitted.
+        if (
+            self.default_request_timeout is not None
+            and self.default_request_timeout > 0
+        ):
             client_params["timeout"] = self.default_request_timeout
 
         return client_params
