@@ -2025,6 +2025,31 @@ def _first_max_tokens(
     return messages[:idx]
 
 
+def _drop_orphaned_tool_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Remove ToolMessages whose corresponding AIMessage was trimmed away.
+
+    A ToolMessage is considered orphaned if no preceding AIMessage in the list
+    contains a tool_call whose ``id`` matches the ToolMessage's
+    ``tool_call_id``.  Orphaned ToolMessages typically appear at the start of
+    trimmed message histories and would cause LLM API errors.
+    """
+    # Collect all tool_call ids from AIMessages, scanning left-to-right so
+    # that only tool_calls *preceding* a given ToolMessage are considered.
+    seen_tool_call_ids: set[str] = set()
+    result: list[BaseMessage] = []
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                if tc.get("id"):
+                    seen_tool_call_ids.add(tc["id"])
+        if isinstance(msg, ToolMessage):
+            if msg.tool_call_id not in seen_tool_call_ids:
+                # Orphaned – skip it
+                continue
+        result.append(msg)
+    return result
+
+
 def _last_max_tokens(
     messages: Sequence[BaseMessage],
     *,
@@ -2074,6 +2099,13 @@ def _last_max_tokens(
 
     # Re-reverse the messages and add back the system message if needed
     result = reversed_result[::-1]
+
+    # Remove orphaned ToolMessages whose corresponding AIMessage (with
+    # matching tool_call id) was trimmed away.  This keeps the history valid
+    # for LLM APIs that require every ToolMessage to follow an AIMessage
+    # containing the originating tool_call.
+    result = _drop_orphaned_tool_messages(result)
+
     if system_message:
         result = [system_message, *result]
 
