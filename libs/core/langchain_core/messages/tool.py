@@ -183,7 +183,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ToolMessageChunk):
             if self.tool_call_id != other.tool_call_id:
-                msg = "Cannot concatenate ToolMessageChunks with different names."
+                msg = "Cannot concatenate ToolMessageChunks with different tool_call_ids."
                 raise ValueError(msg)
 
             return self.__class__(
@@ -371,13 +371,13 @@ def default_tool_parser(
                 id=raw_tool_call.get("id"),
             )
             tool_calls.append(parsed)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             invalid_tool_calls.append(
                 invalid_tool_call(
                     name=function_name,
                     args=raw_tool_call["function"]["arguments"],
                     id=raw_tool_call.get("id"),
-                    error=None,
+                    error=str(e),
                 )
             )
     return tool_calls, invalid_tool_calls
