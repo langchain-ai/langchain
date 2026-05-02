@@ -3776,3 +3776,80 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def _make_length_completion() -> openai.types.chat.ChatCompletion:
+    """Create a ChatCompletion with finish_reason='length' for testing."""
+    from openai.types.chat import ChatCompletion, ChatCompletionMessage
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.completion_usage import CompletionUsage
+
+    return ChatCompletion(
+        id="chatcmpl-length-test",
+        object="chat.completion",
+        created=1689989000,
+        model="gpt-4o",
+        choices=[
+            Choice(
+                index=0,
+                message=ChatCompletionMessage(
+                    role="assistant",
+                    content="partial response that was truncated",
+                ),
+                finish_reason="length",
+            )
+        ],
+        usage=CompletionUsage(
+            prompt_tokens=100,
+            completion_tokens=16384,
+            total_tokens=16484,
+        ),
+    )
+
+
+def test_length_finish_reason_does_not_raise() -> None:
+    """LengthFinishReasonError should be caught so invoke returns a result."""
+    completion = _make_length_completion()
+    llm = ChatOpenAI(model="gpt-4o")
+
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.side_effect = openai.LengthFinishReasonError(
+        completion=completion
+    )
+
+    with patch.object(
+        llm.root_client.chat.completions, "with_raw_response"
+    ) as mock_client:
+        mock_client.parse.return_value = mock_raw_response
+        result = llm.invoke(
+            [HumanMessage(content="test")],
+            response_format={"type": "json_object"},
+        )
+
+    assert result.content == "partial response that was truncated"
+    assert result.response_metadata["finish_reason"] == "length"
+
+
+async def test_length_finish_reason_does_not_raise_async() -> None:
+    """LengthFinishReasonError should be caught so ainvoke returns a result."""
+    completion = _make_length_completion()
+    llm = ChatOpenAI(model="gpt-4o")
+
+    mock_raw_response = MagicMock()
+    mock_raw_response.parse.side_effect = openai.LengthFinishReasonError(
+        completion=completion
+    )
+
+    mock_parse = AsyncMock(return_value=mock_raw_response)
+
+    with patch.object(
+        llm.root_async_client.chat.completions, "with_raw_response"
+    ) as mock_client:
+        mock_client.parse = mock_parse
+        result = await llm.ainvoke(
+            [HumanMessage(content="test")],
+            response_format={"type": "json_object"},
+        )
+
+    assert result.content == "partial response that was truncated"
+    assert result.response_metadata["finish_reason"] == "length"

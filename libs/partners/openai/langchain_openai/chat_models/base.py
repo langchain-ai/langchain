@@ -1594,6 +1594,8 @@ class BaseChatOpenAI(BaseChatModel):
                         )
                     is_first_chunk = False
                     yield generation_chunk
+        except openai.LengthFinishReasonError as e:
+            response = e.completion
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except openai.APIError as e:
@@ -1649,6 +1651,8 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
+        except openai.LengthFinishReasonError as e:
+            response = e.completion
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except openai.APIError as e:
@@ -1859,6 +1863,8 @@ class BaseChatOpenAI(BaseChatModel):
                         )
                     is_first_chunk = False
                     yield generation_chunk
+        except openai.LengthFinishReasonError as e:
+            response = e.completion
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except openai.APIError as e:
@@ -1919,6 +1925,8 @@ class BaseChatOpenAI(BaseChatModel):
                     **payload
                 )
                 response = raw_response.parse()
+        except openai.LengthFinishReasonError as e:
+            response = e.completion
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except openai.APIError as e:
