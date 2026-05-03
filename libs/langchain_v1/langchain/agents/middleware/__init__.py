@@ -1,5 +1,6 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from langchain.agents.middleware.builtin_tools import BuiltinToolsMiddleware
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
@@ -46,6 +47,7 @@ from langchain.agents.middleware.types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "BuiltinToolsMiddleware",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
