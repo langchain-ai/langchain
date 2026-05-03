@@ -6,8 +6,8 @@ import functools
 import inspect
 import json
 import logging
+import textwrap
 import typing
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable  # noqa: TC003
 from inspect import signature
@@ -28,15 +28,14 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    PydanticDeprecationWarning,
     SkipValidation,
+    TypeAdapter,
     ValidationError,
-    validate_arguments,
+    create_model,
 )
 from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
-from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -70,6 +69,8 @@ from langchain_core.utils.pydantic import (
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Sequence
+
+    from langchain_core.tools.schema import ToolSchema
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 TOOL_MESSAGE_BLOCK_TYPES = (
@@ -121,35 +122,6 @@ def _get_annotation_description(arg_type: type) -> str | None:
             if isinstance(annotation, FieldInfo) and annotation.description:
                 return annotation.description
     return None
-
-
-def _get_filtered_args(
-    inferred_model: type[BaseModel],
-    func: Callable,
-    *,
-    filter_args: Sequence[str],
-    include_injected: bool = True,
-) -> dict:
-    """Get filtered arguments from a function's signature.
-
-    Args:
-        inferred_model: The Pydantic model inferred from the function.
-        func: The function to extract arguments from.
-        filter_args: Arguments to exclude from the result.
-        include_injected: Whether to include injected arguments.
-
-    Returns:
-        Dictionary of filtered arguments with their schema definitions.
-    """
-    schema = inferred_model.model_json_schema()["properties"]
-    valid_keys = signature(func).parameters
-    return {
-        k: schema[k]
-        for i, (k, param) in enumerate(valid_keys.items())
-        if k not in filter_args
-        and (i > 0 or param.name not in {"self", "cls"})
-        and (include_injected or not _is_injected_arg_type(param.annotation))
-    }
 
 
 def _parse_python_function_docstring(
@@ -227,65 +199,6 @@ def _infer_arg_descriptions(
     return description, arg_descriptions
 
 
-def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
-    """Check if a type annotation is a Pydantic model.
-
-    Args:
-        annotation: The type annotation to check.
-        pydantic_version: The Pydantic version to check against (`'v1'` or `'v2'`).
-
-    Returns:
-        `True` if the annotation is a Pydantic model, `False` otherwise.
-    """
-    base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
-    try:
-        return issubclass(annotation, base_model_class)
-    except TypeError:
-        return False
-
-
-def _function_annotations_are_pydantic_v1(
-    signature: inspect.Signature, func: Callable
-) -> bool:
-    """Check if all Pydantic annotations in a function are from v1.
-
-    Args:
-        signature: The function signature to check.
-        func: The function being checked.
-
-    Returns:
-        True if all Pydantic annotations are from v1, `False` otherwise.
-
-    Raises:
-        NotImplementedError: If the function contains mixed v1 and v2 annotations.
-    """
-    any_v1_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
-        for parameter in signature.parameters.values()
-    )
-    any_v2_annotations = any(
-        _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
-        for parameter in signature.parameters.values()
-    )
-    if any_v1_annotations and any_v2_annotations:
-        msg = (
-            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
-            "Only one version of Pydantic annotations per function is supported."
-        )
-        raise NotImplementedError(msg)
-    return any_v1_annotations and not any_v2_annotations
-
-
-class _SchemaConfig:
-    """Configuration for Pydantic models generated from function signatures."""
-
-    extra: str = "forbid"
-    """Whether to allow extra fields in the model."""
-
-    arbitrary_types_allowed: bool = True
-    """Whether to allow arbitrary types in the model."""
-
-
 def create_schema_from_function(
     model_name: str,
     func: Callable,
@@ -317,74 +230,98 @@ def create_schema_from_function(
     """
     sig = inspect.signature(func)
 
-    if _function_annotations_are_pydantic_v1(sig, func):
-        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
-    else:
-        # https://docs.pydantic.dev/latest/usage/validation_decorator/
-        with warnings.catch_warnings():
-            # We are using deprecated functionality here.
-            # This code should be re-written to simply construct a Pydantic model
-            # using inspect.signature and create_model.
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+    # Resolve string annotations from `from __future__ import annotations`.
+    # inspect.signature returns raw strings in that case; get_type_hints evaluates them.
+    try:
+        type_hints = typing.get_type_hints(func, include_extras=True)
+    except Exception:
+        type_hints = {}
 
-    # Let's ignore `self` and `cls` arguments for class and instance methods
-    # If qualified name has a ".", then it likely belongs in a class namespace
     in_class = bool(func.__qualname__ and "." in func.__qualname__)
-
-    has_args = False
-    has_kwargs = False
-
-    for param in sig.parameters.values():
-        if param.kind == param.VAR_POSITIONAL:
-            has_args = True
-        elif param.kind == param.VAR_KEYWORD:
-            has_kwargs = True
-
-    inferred_model = validated.model
+    existing_params: list[str] = list(sig.parameters.keys())
 
     if filter_args:
-        filter_args_ = filter_args
+        filter_args_: Sequence[str] = filter_args
     else:
-        # Handle classmethods and instance methods
-        existing_params: list[str] = list(sig.parameters.keys())
         if existing_params and existing_params[0] in {"self", "cls"} and in_class:
             filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
         else:
             filter_args_ = list(FILTERED_ARGS)
-
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
-            ):
-                filter_args_.append(existing_param)
+        for param_name, param in sig.parameters.items():
+            resolved = type_hints.get(param_name, param.annotation)
+            if not include_injected and _is_injected_arg_type(resolved):
+                filter_args_.append(param_name)
 
     description, arg_descriptions = _infer_arg_descriptions(
         func,
         parse_docstring=parse_docstring,
         error_on_invalid_docstring=error_on_invalid_docstring,
     )
-    # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = []
-    for field in get_fields(inferred_model):
-        if not has_args and field == "args":
-            continue
-        if not has_kwargs and field == "kwargs":
-            continue
 
-        if field == "v__duplicate_kwargs":  # Internal pydantic field
+    # Detect v1/mixed annotation usage to raise early and avoid confusing errors.
+    # Wrap issubclass checks in try-except: some metaclasses raise TypeError.
+    def _is_v1(annotation: Any) -> bool:
+        try:
+            return isinstance(annotation, type) and is_pydantic_v1_subclass(annotation)
+        except TypeError:
+            return False
+
+    def _is_v2(annotation: Any) -> bool:
+        try:
+            return isinstance(annotation, type) and is_pydantic_v2_subclass(annotation)
+        except TypeError:
+            return False
+
+    resolved_annotations = {
+        name: type_hints.get(name, p.annotation) for name, p in sig.parameters.items()
+    }
+    v1_params = [a for a in resolved_annotations.values() if _is_v1(a)]
+    v2_params = [a for a in resolved_annotations.values() if _is_v2(a)]
+    if v1_params and v2_params:
+        msg = (
+            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
+            "Only one version of Pydantic annotations per function is supported."
+        )
+        raise NotImplementedError(msg)
+
+    field_definitions: dict[str, Any] = {}
+    for param_name, param in sig.parameters.items():
+        if param_name in filter_args_:
             continue
+        if param.kind == param.VAR_POSITIONAL:
+            # Preserves is_single_input behavior for *args functions.
+            field_definitions["args"] = (list, FieldInfo(default=[]))
+            continue
+        if param.kind == param.VAR_KEYWORD:
+            # Preserve **kwargs as a 'kwargs' dict field
+            field_definitions["kwargs"] = (dict, FieldInfo(default={}))
+            continue
+        annotation = resolved_annotations.get(param_name, param.annotation)
+        if annotation is inspect.Parameter.empty:
+            annotation = Any
+        # Use Any for v1 model annotations — pydantic v2 cannot validate v1 types
+        # directly. The function itself handles v1 type semantics at call time.
+        if _is_v1(annotation):
+            annotation = Any
+        field_description = arg_descriptions.get(param_name)
+        if param.default is inspect.Parameter.empty:
+            field_definitions[param_name] = (
+                annotation,
+                FieldInfo(description=field_description),
+            )
+        else:
+            field_definitions[param_name] = (
+                annotation,
+                FieldInfo(default=param.default, description=field_description),
+            )
 
-        if field not in filter_args_:
-            valid_properties.append(field)
-
-    return _create_subset_model(
+    model = create_model(
         model_name,
-        inferred_model,
-        list(valid_properties),
-        descriptions=arg_descriptions,
-        fn_description=description,
+        __config__=ConfigDict(arbitrary_types_allowed=True),
+        **field_definitions,
     )
+    model.__doc__ = textwrap.dedent(description or func.__doc__ or "")
+    return cast("type[BaseModel]", model)
 
 
 class ToolException(Exception):  # noqa: N818
@@ -554,6 +491,98 @@ class ChildTool(BaseTool):
         arbitrary_types_allowed=True,
     )
 
+    _SCHEMA_INVALIDATING_FIELDS: frozenset[str] = frozenset(
+        {"args_schema", "name", "description"}
+    )
+
+    def __setattr__(self, name: str, value: object) -> None:
+        """Clear schema caches when schema-influencing fields are mutated."""
+        if name in self._SCHEMA_INVALIDATING_FIELDS:
+            # tool_schema is the single root cache; _inferred_input_schema is
+            # kept separate since it's also used outside the tool_schema path.
+            self.__dict__.pop("tool_schema", None)
+            self.__dict__.pop("_inferred_input_schema", None)
+        super().__setattr__(name, value)
+
+    @functools.cached_property
+    def tool_schema(self) -> ToolSchema:
+        """Unified schema object — the single root cache for this tool's schema.
+
+        Owns input validation (`TypeAdapter`), the JSON schema for LLM APIs,
+        the args properties dict, and the approximate char count for token
+        estimation. All other schema properties on `BaseTool` delegate here;
+        only this property needs to be invalidated on mutation.
+
+        Returns:
+            A `ToolSchema` instance for this tool.
+        """
+        from langchain_core.tools.schema import ToolSchema  # noqa: PLC0415
+
+        # Compute pydantic_schema — the ArgsSchema (model class or dict) for
+        # backward compatibility with callers that inspect the type.
+        if isinstance(self.args_schema, dict):
+            pydantic_schema: ArgsSchema = (
+                {**self.args_schema, "description": self.description}
+                if self.description
+                else self.args_schema
+            )
+        else:
+            full_schema = self.get_input_schema()
+            fields = [
+                n
+                for n, t in get_all_basemodel_annotations(full_schema).items()
+                if not _is_injected_arg_type(t)
+            ]
+            pydantic_schema = _create_subset_model(
+                self.name, full_schema, fields, fn_description=self.description
+            )
+
+        if isinstance(pydantic_schema, dict):
+            json_schema: dict = pydantic_schema
+        elif hasattr(pydantic_schema, "model_json_schema"):
+            json_schema = pydantic_schema.model_json_schema()
+        else:
+            json_schema = pydantic_schema.schema()  # type: ignore[deprecated]  # pydantic v1
+        args = cast("dict", json_schema.get("properties", {}))
+        payload = {
+            "name": self.name,
+            "description": self.description,
+            "schema": json_schema,
+        }
+        approximate_chars = len(json.dumps(payload, default=str))
+
+        return ToolSchema(
+            name=self.name,
+            description=self.description or "",
+            validator=TypeAdapter(self.get_input_schema()),
+            json_schema=json_schema,
+            pydantic_schema=pydantic_schema,
+            args=args,
+            approximate_chars=approximate_chars,
+        )
+
+    @property
+    def tool_call_schema(self) -> ArgsSchema:
+        """The schema for tool calls, excluding injected arguments.
+
+        Returns:
+            The schema used for tool calls from language models.
+        """
+        return self.tool_schema.pydantic_schema  # type: ignore[no-any-return]
+
+    @property
+    def args(self) -> dict:
+        """The tool's input argument properties.
+
+        Returns:
+            `dict` containing the tool's argument properties.
+        """
+        return self.tool_schema.args
+
+    @property
+    def _approximate_schema_chars(self) -> int:
+        return self.tool_schema.approximate_chars
+
     @property
     def is_single_input(self) -> bool:
         """Check if the tool accepts only a single input argument.
@@ -563,50 +592,6 @@ class ChildTool(BaseTool):
         """
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
-
-    @property
-    def args(self) -> dict:
-        """Get the tool's input arguments schema.
-
-        Returns:
-            `dict` containing the tool's argument properties.
-        """
-        if isinstance(self.args_schema, dict):
-            json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
-        else:
-            input_schema = self.tool_call_schema
-            if isinstance(input_schema, dict):
-                json_schema = input_schema
-            else:
-                json_schema = input_schema.model_json_schema()
-        return cast("dict", json_schema["properties"])
-
-    @property
-    def tool_call_schema(self) -> ArgsSchema:
-        """Get the schema for tool calls, excluding injected arguments.
-
-        Returns:
-            The schema that should be used for tool calls from language models.
-        """
-        if isinstance(self.args_schema, dict):
-            if self.description:
-                return {
-                    **self.args_schema,
-                    "description": self.description,
-                }
-
-            return self.args_schema
-
-        full_schema = self.get_input_schema()
-        fields = []
-        for name, type_ in get_all_basemodel_annotations(full_schema).items():
-            if not _is_injected_arg_type(type_):
-                fields.append(name)
-        return _create_subset_model(
-            self.name, full_schema, fields, fn_description=self.description
-        )
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
@@ -629,6 +614,11 @@ class ChildTool(BaseTool):
             if isinstance(self.args_schema, dict):
                 return super().get_input_schema(config)
             return self.args_schema
+        return self._inferred_input_schema
+
+    @functools.cached_property
+    def _inferred_input_schema(self) -> type[BaseModel]:
+        """Schema inferred from `_run` signature; computed once."""
         return create_schema_from_function(self.name, self._run)
 
     @override
@@ -694,36 +684,23 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
-            if issubclass(input_args, BaseModel):
-                # Check args_schema for InjectedToolCallId
+            if self._injected_args_keys:
+                _injected_call_id_msg = (
+                    "When tool includes an InjectedToolCallId "
+                    "argument, tool must always be invoked with a full "
+                    "model ToolCall of the form: {'args': {...}, "
+                    "'name': '...', 'type': 'tool_call', "
+                    "'tool_call_id': '...'}"
+                )
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
+                            raise ValueError(_injected_call_id_msg)
                         tool_input[k] = tool_call_id
+            if issubclass(input_args, BaseModel):
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
-                # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
                 result_dict = result.dict()
             else:
@@ -806,34 +783,17 @@ class ChildTool(BaseTool):
         Injected arguments are those annotated with `InjectedToolArg` or its
         subclasses, or arguments in `FILTERED_ARGS` like `run_manager` and callbacks.
 
+        Subclasses that define injected arguments via `args_schema` annotations
+        must ensure those keys are included in `_injected_args_keys`. `StructuredTool`
+        does this automatically via its function signature.
+
         Args:
             tool_input: The tool input dictionary to filter.
 
         Returns:
             A filtered dictionary with injected arguments removed.
         """
-        # Start with filtered args from the constant
-        filtered_keys = set[str](FILTERED_ARGS)
-
-        # Add injected args from function signature (e.g., ToolRuntime parameters)
-        filtered_keys.update(self._injected_args_keys)
-
-        # If we have an args_schema, use it to identify injected args
-        # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
-        if self.args_schema is not None and not isinstance(self.args_schema, dict):
-            try:
-                annotations = get_all_basemodel_annotations(self.args_schema)
-                for field_name, field_type in annotations.items():
-                    if _is_injected_arg_type(field_type):
-                        filtered_keys.add(field_name)
-            except Exception:
-                # If we can't get annotations, just use FILTERED_ARGS
-                _logger.debug(
-                    "Failed to get args_schema annotations for filtering.",
-                    exc_info=True,
-                )
-
-        # Filter out the injected keys from tool_input
+        filtered_keys = set(FILTERED_ARGS) | self._injected_args_keys
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
 
     def _to_args_and_kwargs(
@@ -1475,10 +1435,15 @@ def _is_injected_arg_type(
     )
 
 
+@functools.lru_cache(maxsize=512)
 def get_all_basemodel_annotations(
-    cls: TypeBaseModel | Any, *, default_to_bound: bool = True
+    cls: TypeBaseModel | Any,
+    default_to_bound: bool = True,  # noqa: FBT001, FBT002
 ) -> dict[str, type | TypeVar]:
     """Get all annotations from a Pydantic `BaseModel` and its parents.
+
+    The result is cached per `(cls, default_to_bound)` — callers must not mutate
+    the returned dict.
 
     Args:
         cls: The Pydantic `BaseModel` class.
@@ -1503,9 +1468,7 @@ def get_all_basemodel_annotations(
         orig_bases: tuple = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:
-        annotations = get_all_basemodel_annotations(
-            get_origin(cls), default_to_bound=False
-        )
+        annotations = dict(get_all_basemodel_annotations(get_origin(cls), False))  # noqa: FBT003
         orig_bases = (cls,)
 
     # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
@@ -1516,9 +1479,7 @@ def get_all_basemodel_annotations(
         for parent in orig_bases:
             # if class = FooBar inherits from Baz, parent = Baz
             if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
-                annotations.update(
-                    get_all_basemodel_annotations(parent, default_to_bound=False)
-                )
+                annotations.update(get_all_basemodel_annotations(parent, False))  # noqa: FBT003
                 continue
 
             parent_origin = get_origin(parent)

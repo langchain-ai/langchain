@@ -2183,6 +2183,12 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
     ]
 
 
+_TOOL_FORMAT_OFFSETS: dict[str, int] = {
+    "openai": 32,  # {"type":"function","function":{...}} envelope
+    "anthropic": 0,  # flat name/description/input_schema ≈ neutral form
+}
+
+
 def count_tokens_approximately(
     messages: Iterable[MessageLikeRepresentation],
     *,
@@ -2192,6 +2198,7 @@ def count_tokens_approximately(
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
     tools: list[BaseTool | dict[str, Any]] | None = None,
+    tool_format: str = "openai",
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2223,7 +2230,11 @@ def count_tokens_approximately(
             `AI_total_tokens / approx_tokens_up_to_that_AI_message`
         tools: List of tools to include in the token count. Each tool can be either
             a `BaseTool` instance or a dict representing a tool schema. `BaseTool`
-            instances are converted to OpenAI tool format before counting.
+            instances use a cached neutral payload size plus a per-format offset.
+        tool_format: Wire format used when estimating tool token costs for `BaseTool`
+            instances. Supported values: `"openai"` (default, adds ~32 chars of
+            envelope overhead) and `"anthropic"` (no overhead). Ignored for dict
+            tools, which are measured as-is.
 
     Returns:
         Approximate number of tokens in the messages (and tools, if provided).
@@ -2249,10 +2260,19 @@ def count_tokens_approximately(
 
     # Count tokens for tools if provided
     if tools:
+        from langchain_core.tools import BaseTool as _BaseTool  # noqa: PLC0415
+
+        offset = _TOOL_FORMAT_OFFSETS.get(tool_format, 0)
         tools_chars = 0
-        for tool in tools:
-            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
-            tools_chars += len(json.dumps(tool_dict))
+        for tool_item in tools:
+            if isinstance(tool_item, dict):
+                tools_chars += len(json.dumps(tool_item, default=str))
+            elif isinstance(tool_item, _BaseTool):
+                tools_chars += tool_item._approximate_schema_chars + offset  # noqa: SLF001
+            else:
+                tools_chars += len(
+                    json.dumps(convert_to_openai_tool(tool_item), default=str)
+                )
         token_count += math.ceil(tools_chars / chars_per_token)
 
     for message in converted_messages:

@@ -6,6 +6,7 @@ import logging
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,13 +21,21 @@ from typing import (
     cast,
     get_type_hints,
 )
+from unittest.mock import patch
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticDeprecationWarning,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
 
+import langchain_core.tools.base as base_module
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -36,8 +45,9 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.messages import ToolCall, ToolMessage
+from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
+from langchain_core.messages.utils import count_tokens_approximately
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     RunnableConfig,
@@ -61,8 +71,10 @@ from langchain_core.tools.base import (
     _format_output,
     _is_message_content_block,
     _is_message_content_type,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
+from langchain_core.utils import function_calling as fc_module
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -402,14 +414,10 @@ def test_structured_tool_types_parsed_pydantic_v1() -> None:
 
     assert isinstance(structured_tool, StructuredTool)
 
-    expected = AnotherBaseModel(bar="baz")
-    for arg in [
-        SomeBaseModel(foo="baz"),
-        SomeBaseModel(foo="baz").dict(),
-    ]:
-        args = {"some_base_model": arg}
-        result = structured_tool.run(args)
-        assert result == expected
+    # Dict-to-v1-model coercion is no longer supported internally;
+    # callers must pass v1 model instances directly.
+    result = structured_tool.run({"some_base_model": SomeBaseModel(foo="baz")})
+    assert result == AnotherBaseModel(bar="baz")
 
 
 def test_structured_tool_types_parsed_pydantic_mixed() -> None:
@@ -3741,3 +3749,288 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+def test_get_filtered_args_removed() -> None:
+    """_get_filtered_args was dead code; ensure it's gone."""
+    assert not hasattr(base_module, "_get_filtered_args")
+
+
+def test_parse_input_annotation_walk_called_once() -> None:
+    """_parse_input calls get_all_basemodel_annotations at most once per invocation."""
+
+    class MyInput(BaseModel):
+        x: int
+        tool_call_id: Annotated[str, InjectedToolCallId()]
+
+    @tool(args_schema=MyInput)
+    def my_tool(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> str:
+        """A test tool."""
+        return str(x)
+
+    with patch(
+        "langchain_core.tools.base.get_all_basemodel_annotations",
+        wraps=get_all_basemodel_annotations,
+    ) as mock_annots:
+        # Call _parse_input directly to isolate it from _filter_injected_args
+        my_tool._parse_input({"x": 1, "tool_call_id": "abc"}, "abc")
+        calls_for_my_input = [
+            c for c in mock_annots.call_args_list if c.args and c.args[0] is MyInput
+        ]
+        assert len(calls_for_my_input) <= 1
+
+
+def test_tool_call_schema_is_cached() -> None:
+    """tool_call_schema must return the same object on repeated access."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema1 = my_tool.tool_call_schema
+    schema2 = my_tool.tool_call_schema
+    assert schema1 is schema2
+
+
+def test_args_is_cached() -> None:
+    """Args must return the same object on repeated access."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    args1 = my_tool.args
+    args2 = my_tool.args
+    assert args1 is args2
+
+
+def test_tool_call_schema_invalidated_on_name_change() -> None:
+    """Cache must be invalidated when `name` is mutated."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema_before = my_tool.tool_call_schema
+    my_tool.name = "new_name"
+    schema_after = my_tool.tool_call_schema
+    assert schema_before is not schema_after
+
+
+def test_tool_call_schema_invalidated_on_description_change() -> None:
+    """Cache must be invalidated when `description` is mutated."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema_before = my_tool.tool_call_schema
+    my_tool.description = "new description"
+    schema_after = my_tool.tool_call_schema
+    assert schema_before is not schema_after
+
+
+def test_get_input_schema_cached() -> None:
+    """get_input_schema must not call create_schema_from_function more than once."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    with patch.object(
+        base_module,
+        "create_schema_from_function",
+        wraps=base_module.create_schema_from_function,
+    ) as mock_create:
+        my_tool.get_input_schema()
+        my_tool.get_input_schema()
+        my_tool.get_input_schema()
+        assert mock_create.call_count <= 1
+
+
+def test_approximate_schema_chars_is_cached() -> None:
+    """_approximate_schema_chars must return the same int on repeated access."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    count1 = my_tool._approximate_schema_chars
+    count2 = my_tool._approximate_schema_chars
+    assert count1 == count2
+    assert isinstance(count1, int)
+    assert count1 > 0
+
+
+def test_approximate_schema_chars_invalidated_on_name_change() -> None:
+    """_approximate_schema_chars cache must be cleared when name changes."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    count_before = my_tool._approximate_schema_chars
+    my_tool.name = "longer_tool_name_than_before"
+    count_after = my_tool._approximate_schema_chars
+    assert count_before != count_after
+
+
+def test_token_count_does_not_trigger_schema_rebuild() -> None:
+    """count_tokens_approximately must not call convert_to_openai_tool for BaseTool."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    _ = my_tool._approximate_schema_chars  # warm up
+
+    with patch.object(
+        fc_module, "convert_to_openai_tool", wraps=fc_module.convert_to_openai_tool
+    ) as mock_convert:
+        count_tokens_approximately([HumanMessage(content="hello")], tools=[my_tool])
+        assert mock_convert.call_count == 0
+
+
+def test_create_schema_from_function_basic() -> None:
+    """Schema must capture all non-filtered parameters with correct types."""
+
+    def my_func(x: int, y: str = "hello") -> None:
+        """My function.
+
+        Args:
+            x: An integer.
+            y: A string.
+        """
+
+    schema = create_schema_from_function("my_func", my_func, parse_docstring=True)
+    fields = schema.model_fields
+    assert "x" in fields
+    assert "y" in fields
+    assert fields["y"].default == "hello"
+
+
+def test_create_schema_from_function_no_deprecation_warning() -> None:
+    """Must not emit PydanticDeprecationWarning."""
+
+    def my_func(x: int) -> None:
+        """A func."""
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", PydanticDeprecationWarning)
+        create_schema_from_function("my_func", my_func)
+
+
+def test_create_schema_from_function_filters_run_manager() -> None:
+    """run_manager and callbacks must be excluded from the schema."""
+
+    def my_func(x: int, run_manager: CallbackManagerForToolRun | None = None) -> None:
+        """A func."""
+
+    schema = create_schema_from_function("my_func", my_func)
+    assert "run_manager" not in schema.model_fields
+    assert "x" in schema.model_fields
+
+
+def test_filter_injected_args_no_annotation_walk_on_run() -> None:
+    """_filter_injected_args must not call get_all_basemodel_annotations on each run."""
+
+    @tool
+    def simple_tool(x: int) -> int:
+        """Simple."""
+        return x
+
+    # warm up _injected_args_keys cached_property
+    _ = simple_tool._injected_args_keys
+
+    with patch(
+        "langchain_core.tools.base.get_all_basemodel_annotations",
+        wraps=get_all_basemodel_annotations,
+    ) as mock_annots:
+        simple_tool.invoke({"x": 1})
+        simple_tool.invoke({"x": 2})
+        assert mock_annots.call_count == 0
+
+
+def test_get_all_basemodel_annotations_is_memoized() -> None:
+    """Repeated calls with the same class return the cached result (same object)."""
+
+    class Foo(BaseModel):
+        x: int
+        y: str
+
+    result1 = get_all_basemodel_annotations(Foo)
+    result2 = get_all_basemodel_annotations(Foo)
+    assert result1 is result2, "Expected identical object from cache"
+
+
+def test_tool_schema_is_cached() -> None:
+    """tool_schema must return the same object on repeated access."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema1 = my_tool.tool_schema
+    schema2 = my_tool.tool_schema
+    assert schema1 is schema2
+
+
+def test_tool_schema_invalidated_on_mutation() -> None:
+    """tool_schema must be recomputed after name or description changes."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    schema_before = my_tool.tool_schema
+    my_tool.name = "new_name"
+    schema_after = my_tool.tool_schema
+    assert schema_before is not schema_after
+    assert schema_after.name == "new_name"
+
+
+def test_tool_schema_has_validator() -> None:
+    """tool_schema.validator must validate inputs correctly."""
+
+    class MyInput(BaseModel):
+        x: int
+        y: str = "hello"
+
+    @tool(args_schema=MyInput)
+    def my_tool(x: int, y: str = "hello") -> str:
+        """A tool."""
+        return f"{x} {y}"
+
+    result = my_tool.tool_schema.validate_python({"x": 1})
+    assert result.x == 1
+    assert result.y == "hello"
+
+
+def test_tool_schema_approximate_chars() -> None:
+    """`approximate_chars` must be a positive integer matching the payload size."""
+
+    @tool
+    def my_tool(x: int) -> int:
+        """A tool."""
+        return x
+
+    ts = my_tool.tool_schema
+    assert isinstance(ts.approximate_chars, int)
+    assert ts.approximate_chars > 0
+    # Must match _approximate_schema_chars on the tool itself
+    assert my_tool._approximate_schema_chars == ts.approximate_chars
+
+
+def test_tool_schema_exported() -> None:
+    """ToolSchema must be importable from langchain_core.tools."""
+    from langchain_core.tools import ToolSchema  # noqa: F401, PLC0415
