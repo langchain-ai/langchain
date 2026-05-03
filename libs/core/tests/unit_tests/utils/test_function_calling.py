@@ -1245,6 +1245,15 @@ def test_convert_to_openai_function_json_schema_missing_title_includes_schema() 
         convert_to_openai_function(schema_without_title)
 
 
+def test_convert_to_openai_tool_apply_patch_passthrough() -> None:
+    """Test apply_patch is passed through as an OpenAI built-in tool."""
+    tool = {"type": "apply_patch"}
+
+    result = convert_to_openai_tool(tool)
+
+    assert result == tool
+
+
 def test_convert_to_openai_tool_computer_passthrough() -> None:
     """Test that the 'computer' tool type is passed through unchanged."""
     computer_tool = {

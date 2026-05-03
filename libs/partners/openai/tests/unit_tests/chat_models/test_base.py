@@ -71,6 +71,7 @@ from langchain_openai.chat_models.base import (
     _construct_responses_api_input,
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_responses_chunk_to_generation_chunk,
     _convert_to_openai_response_format,
     _create_usage_metadata,
     _create_usage_metadata_responses,
@@ -1924,6 +1925,185 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
     assert cast(AIMessage, result.generations[0].message).usage_metadata is None
 
 
+def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
+    """Test a response with apply_patch output."""
+    apply_patch_call = MagicMock()
+    apply_patch_call.type = "apply_patch_call"
+    apply_patch_call.model_dump.return_value = {
+        "type": "apply_patch_call",
+        "call_id": "call_123",
+        "operation": {
+            "type": "create_file",
+            "path": "hello.txt",
+            "diff": "+hello\\n",
+        },
+        "status": "completed",
+    }
+
+    response = MagicMock()
+    response.error = None
+    response.id = "resp_123"
+    response.output = [apply_patch_call]
+    response.usage = None
+    response.service_tier = None
+    response.text = None
+    response.model_dump.return_value = {
+        "id": "resp_123",
+        "created_at": 1234567890,
+        "model": "gpt-4o",
+        "object": "response",
+        "status": "completed",
+    }
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = cast(AIMessage, result.generations[0].message)
+    assert message.content == [
+        {
+            "type": "apply_patch_call",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\\n",
+            },
+            "status": "completed",
+        }
+    ]
+    assert message.tool_calls == []
+    assert message.invalid_tool_calls == []
+
+
+def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> None:
+    """Test a response with apply_patch_call_output output."""
+    apply_patch_call_output = MagicMock()
+    apply_patch_call_output.type = "apply_patch_call_output"
+    apply_patch_call_output.model_dump.return_value = {
+        "type": "apply_patch_call_output",
+        "call_id": "call_123",
+        "status": "completed",
+        "output": "Created hello.txt",
+    }
+
+    response = MagicMock()
+    response.error = None
+    response.id = "resp_123"
+    response.output = [apply_patch_call_output]
+    response.usage = None
+    response.service_tier = None
+    response.text = None
+    response.model_dump.return_value = {
+        "id": "resp_123",
+        "created_at": 1234567890,
+        "model": "gpt-4o",
+        "object": "response",
+        "status": "completed",
+    }
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = result.generations[0].message
+    assert message.content == [
+        {
+            "type": "apply_patch_call_output",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        }
+    ]
+
+
+def test__construct_responses_api_input_apply_patch_round_trip() -> None:
+    """Test apply_patch content blocks are preserved when sent back as input."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "apply_patch_call",
+                    "call_id": "call_123",
+                    "operation": {
+                        "type": "create_file",
+                        "path": "hello.txt",
+                        "diff": "+hello\\n",
+                    },
+                    "status": "completed",
+                }
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {
+                    "type": "apply_patch_call_output",
+                    "call_id": "call_123",
+                    "status": "completed",
+                    "output": "Created hello.txt",
+                }
+            ]
+        ),
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert result == [
+        {
+            "type": "apply_patch_call",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
+
+
+def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> None:
+    """Test streamed apply_patch output item is preserved in message chunks."""
+    chunk = MagicMock()
+    chunk.type = "response.output_item.done"
+    chunk.output_index = 0
+    chunk.item.type = "apply_patch_call"
+    chunk.item.model_dump.return_value = {
+        "type": "apply_patch_call",
+        "call_id": "call_123",
+        "operation": {
+            "type": "create_file",
+            "path": "hello.txt",
+            "diff": "+hello\\n",
+        },
+        "status": "completed",
+    }
+
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=-1,
+        current_output_index=-1,
+        current_sub_index=-1,
+    )
+
+    assert generation_chunk is not None
+    assert generation_chunk.message.content == [
+        {
+            "type": "apply_patch_call",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\\n",
+            },
+            "status": "completed",
+            "index": 0,
+        }
+    ]
+
+
 def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     """Test a response with web search output."""
     from openai.types.responses.response_function_web_search import (
@@ -3666,6 +3846,18 @@ def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> No
             ],
         }
     ]
+
+
+def test_apply_patch_passthrough() -> None:
+    """Test that apply_patch dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([{"type": "apply_patch"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "apply_patch"} in payload["tools"]
+    assert "input" in payload
 
 
 def test_tool_search_passthrough() -> None:

@@ -192,6 +192,7 @@ WellKnownTools = (
     "mcp",
     "image_generation",
     "tool_search",
+    "apply_patch",
 )
 
 
@@ -4478,6 +4479,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_approval_request",
                             "tool_search_call",
                             "tool_search_output",
+                            "apply_patch_call",
+                            "apply_patch_call_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4523,7 +4526,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response", "tool_search_output")
+                non_message_item_types = (
+                    "mcp_approval_response",
+                    "tool_search_output",
+                    "apply_patch_call_output",
+                )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4692,6 +4699,8 @@ def _construct_lc_result_from_responses_api(
             "image_generation_call",
             "tool_search_call",
             "tool_search_output",
+            "apply_patch_call",
+            "apply_patch_call_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4946,6 +4955,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "image_generation_call",
         "tool_search_call",
         "tool_search_output",
+        "apply_patch_call",
+        "apply_patch_call_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
