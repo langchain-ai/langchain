@@ -29,11 +29,13 @@ class AnswerWithSources(BaseModel):
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This function is deprecated. Refer to this guide on retrieval and question "
-        "answering with structured responses: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent`, a retrieval tool, and "
+        "`response_format` for structured responses. See "
+        "https://docs.langchain.com/oss/python/langchain/rag and "
+        "https://docs.langchain.com/oss/python/langchain/structured-output"
     ),
 )
 def create_qa_with_structure_chain(
@@ -112,11 +114,13 @@ def create_qa_with_structure_chain(
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This function is deprecated. Refer to this guide on retrieval and question "
-        "answering with sources: "
-        "https://python.langchain.com/docs/how_to/qa_sources/#structure-sources-in-model-response"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent`, a retrieval tool, and "
+        "`response_format` for structured responses. See "
+        "https://docs.langchain.com/oss/python/langchain/rag and "
+        "https://docs.langchain.com/oss/python/langchain/structured-output"
     ),
 )
 def create_qa_with_sources_chain(

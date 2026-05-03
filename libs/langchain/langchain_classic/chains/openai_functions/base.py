@@ -38,7 +38,7 @@ __all__ = [
 ]
 
 
-@deprecated(since="0.1.1", removal="1.0", alternative="create_openai_fn_runnable")
+@deprecated(since="0.1.1", removal="2.0.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
     functions: Sequence[dict[str, Any] | type[BaseModel] | Callable],
     llm: BaseLanguageModel,
@@ -143,7 +143,7 @@ def create_openai_fn_chain(
 
 @deprecated(
     since="0.1.1",
-    removal="1.0",
+    removal="2.0.0",
     alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(

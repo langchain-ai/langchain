@@ -188,9 +188,8 @@ class HTMLHeaderTextSplitter:
     @deprecated(
         since="1.1.2",
         removal="2.0.0",
-        message=(
-            "Please fetch the HTML content from the URL yourself and pass it "
-            "to split_text."
+        addendum=(
+            "Fetch the HTML content from the URL yourself and pass it to `split_text`."
         ),
     )
     def split_text_from_url(

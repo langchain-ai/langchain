@@ -18,9 +18,11 @@ from langchain_classic.memory.prompt import SUMMARY_PROMPT
 
 @deprecated(
     since="0.2.12",
-    removal="1.0",
-    message=(
-        "Refer here for how to incorporate summaries of conversation history: "
+    removal="2.0.0",
+    addendum=(
+        "For agents, summarize conversation history with `create_agent` and "
+        "summarization middleware. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
         "https://docs.langchain.com/oss/python/langgraph/add-memory#summarize-messages"
     ),
 )
@@ -82,10 +84,13 @@ class SummarizerMixin(BaseModel):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):

@@ -103,11 +103,11 @@ def create_stuff_documents_chain(
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
-        "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):

@@ -19,7 +19,7 @@ from langchain_classic.agents.types import AGENT_TO_CLASS
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 def initialize_agent(
     tools: Sequence[BaseTool],

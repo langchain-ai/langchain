@@ -18,11 +18,12 @@ from langchain_classic.chains.qa_generation.prompt import PROMPT_SELECTOR
 
 @deprecated(
     since="0.2.7",
-    alternative=(
-        "example in API reference with more detail: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
-    removal="1.0",
 )
 class QAGenerationChain(Chain):
     """Base class for question-answer generation chains.

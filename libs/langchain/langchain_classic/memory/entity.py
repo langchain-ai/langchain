@@ -29,10 +29,13 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class BaseEntityStore(BaseModel, ABC):
@@ -61,10 +64,13 @@ class BaseEntityStore(BaseModel, ABC):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class InMemoryEntityStore(BaseEntityStore):
@@ -95,10 +101,13 @@ class InMemoryEntityStore(BaseEntityStore):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class UpstashRedisEntityStore(BaseEntityStore):
@@ -210,10 +219,13 @@ class UpstashRedisEntityStore(BaseEntityStore):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class RedisEntityStore(BaseEntityStore):
@@ -334,10 +346,13 @@ class RedisEntityStore(BaseEntityStore):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class SQLiteEntityStore(BaseEntityStore):
@@ -456,10 +471,13 @@ class SQLiteEntityStore(BaseEntityStore):
 
 @deprecated(
     since="0.3.1",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For agents that need to remember prior interactions, use "
+        "`create_agent` with checkpointing or the `Store` API. See "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory and "
+        "https://docs.langchain.com/oss/python/langchain/long-term-memory"
     ),
 )
 class ConversationEntityMemory(BaseChatMemory):

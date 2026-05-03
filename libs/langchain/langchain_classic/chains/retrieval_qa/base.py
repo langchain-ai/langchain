@@ -30,11 +30,11 @@ from langchain_classic.chains.question_answering.stuff_prompt import PROMPT_SELE
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Use the `create_retrieval_chain` constructor "
-        "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class BaseRetrievalQA(Chain):
@@ -208,11 +208,11 @@ class BaseRetrievalQA(Chain):
 
 @deprecated(
     since="0.1.17",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Use the `create_retrieval_chain` constructor "
-        "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class RetrievalQA(BaseRetrievalQA):
@@ -297,11 +297,11 @@ class RetrievalQA(BaseRetrievalQA):
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Use the `create_retrieval_chain` constructor "
-        "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class VectorDBQA(BaseRetrievalQA):

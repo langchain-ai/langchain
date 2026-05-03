@@ -35,7 +35,7 @@ def _load_agent_from_tools(
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
 
 
-@deprecated("0.1.0", removal="1.0")
+@deprecated("0.1.0", removal="2.0.0")
 def load_agent_from_config(
     config: dict,
     llm: BaseLanguageModel | None = None,
@@ -98,7 +98,7 @@ def load_agent_from_config(
     return agent_cls(**combined_config)
 
 
-@deprecated("0.1.0", removal="1.0")
+@deprecated("0.1.0", removal="2.0.0")
 def load_agent(
     path: str | Path,
     **kwargs: Any,

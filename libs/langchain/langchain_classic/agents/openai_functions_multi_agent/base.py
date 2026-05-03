@@ -103,7 +103,7 @@ def _parse_ai_message(message: BaseMessage) -> list[AgentAction] | AgentFinish:
 _NOT_SET = object()
 
 
-@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
+@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="2.0.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """Agent driven by OpenAIs function powered API.
 
