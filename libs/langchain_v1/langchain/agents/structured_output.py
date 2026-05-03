@@ -76,7 +76,7 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 def _parse_with_schema(
     schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
-) -> Any:
+) -> SchemaT | dict[str, Any]:
     """Parse data using for any supported schema type.
 
     Args:
@@ -94,7 +94,7 @@ def _parse_with_schema(
     if schema_kind == "json_schema":
         return data
     try:
-        adapter: TypeAdapter[SchemaT] = TypeAdapter(schema)
+        adapter = TypeAdapter[SchemaT](schema)
         return adapter.validate_python(data)
     except Exception as e:
         schema_name = getattr(schema, "__name__", str(schema))
@@ -344,7 +344,7 @@ class OutputToolBinding(Generic[SchemaT]):
             ),
         )
 
-    def parse(self, tool_args: dict[str, Any]) -> SchemaT:
+    def parse(self, tool_args: dict[str, Any]) -> SchemaT | dict[str, Any]:
         """Parse tool arguments according to the schema.
 
         Args:
@@ -391,7 +391,7 @@ class ProviderStrategyBinding(Generic[SchemaT]):
             schema_kind=schema_spec.schema_kind,
         )
 
-    def parse(self, response: AIMessage) -> SchemaT:
+    def parse(self, response: AIMessage) -> SchemaT | dict[str, Any]:
         """Parse `AIMessage` content according to the schema.
 
         Args:
