@@ -1,6 +1,7 @@
 """Human in the loop middleware."""
 
-from typing import Any, Literal, Protocol
+from collections.abc import Callable
+from typing import Any, Literal, Protocol, TypeAlias
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.runtime import Runtime
@@ -113,6 +114,30 @@ class RespondDecision(TypedDict):
 Decision = ApproveDecision | EditDecision | RejectDecision | RespondDecision
 
 
+RejectionResponseFactory: TypeAlias = Callable[[ToolCall, RejectDecision], ToolMessage]
+"""Factory that builds the synthetic `ToolMessage` returned for a `reject` decision.
+
+!!! warning "Alpha"
+
+    This signature is alpha and subject to change or removal without notice.
+
+Receives the original `ToolCall` and the human's `RejectDecision`; returns the
+`ToolMessage` paired with the call. See `InterruptOnConfig.rejection_response`
+for usage guidance and contract requirements.
+"""
+
+RejectionResponse: TypeAlias = ToolMessage | RejectionResponseFactory
+"""Override for the `ToolMessage` produced by a `reject` decision.
+
+!!! warning "Alpha"
+
+    This signature is alpha and subject to change or removal without notice.
+
+Either a pre-built `ToolMessage` template or a `RejectionResponseFactory`
+callable. See `InterruptOnConfig.rejection_response` for full usage guidance.
+"""
+
+
 class HITLResponse(TypedDict):
     """Response payload for a HITLRequest."""
 
@@ -178,6 +203,128 @@ class InterruptOnConfig(TypedDict):
     args_schema: NotRequired[dict[str, Any]]
     """JSON schema for the args associated with the action, if edits are allowed."""
 
+    rejection_response: NotRequired[RejectionResponse]
+    """Override the synthetic `ToolMessage` produced when a human rejects this action.
+
+    !!! warning "Alpha"
+
+        This field is alpha and subject to change or removal without notice.
+
+    Two forms, with deliberately asymmetric strictness:
+
+    - A pre-built `ToolMessage` template — the middleware returns a copy with
+        `tool_call_id` and `name` overwritten from the rejected call, so any
+        values you set for those two fields on the template are treated as
+        placeholders. Use this form when you want a generic message reused
+        across many tools without threading per-call ids through.
+    - A `RejectionResponseFactory` (a `(ToolCall, RejectDecision) -> ToolMessage`
+        callable). The factory has access to the call, so it is responsible
+        for setting `tool_call_id` and `name` correctly; mismatches raise
+        `ValueError` and a non-`ToolMessage` return raises `TypeError`.
+
+    Only meaningful when `'reject'` is in `allowed_decisions`; setting it
+    otherwise raises at middleware construction.
+
+    By default the middleware emits a `status="error"` `ToolMessage`. Override
+    when you need custom copy, additional metadata for downstream consumers,
+    or a different `status` — for example, models that interpret `error` as a
+    transient failure and immediately re-emit the same tool call can be
+    calmed down with `status="success"` and retry-discouraging content.
+
+    Example:
+        ```python
+        # Suppress retries on providers that re-emit on `status="error"`.
+        config = InterruptOnConfig(
+            allowed_decisions=["approve", "reject"],
+            rejection_response=lambda tool_call, decision: ToolMessage(
+                content=(
+                    f"`{tool_call['name']}` declined: "
+                    f"{decision.get('message', 'no reason provided')}. "
+                    "Do not retry."
+                ),
+                name=tool_call["name"],
+                tool_call_id=tool_call["id"],
+                status="success",
+                additional_kwargs={"hitl_decision": "reject"},
+            ),
+        )
+        ```
+    """
+
+
+def _default_rejection_message(tool_call: ToolCall, decision: RejectDecision) -> ToolMessage:
+    """Build the default `ToolMessage` returned when a tool call is rejected."""
+    # An explicitly empty `decision["message"]` falls back to the canned text;
+    # treating it as "no message" matches caller intent.
+    content = decision.get("message") or (
+        f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}"
+    )
+    return ToolMessage(
+        content=content,
+        name=tool_call["name"],
+        tool_call_id=tool_call["id"],
+        status="error",
+    )
+
+
+def _resolve_rejection_response(
+    override: RejectionResponse | None,
+    tool_call: ToolCall,
+    decision: RejectDecision,
+) -> ToolMessage:
+    """Resolve a `rejection_response` override into a concrete `ToolMessage`.
+
+    Three branches:
+
+    - `None` — fall back to the default rejection message.
+    - A `ToolMessage` template — return a copy with `tool_call_id` and `name`
+        overwritten from the rejected call so providers can pair the result to
+        the originating call without callers threading those fields through.
+        The caller's template is not mutated.
+    - A factory callable — invoke it and validate the result. The return must
+        be a `ToolMessage` whose `tool_call_id` and `name` match the rejected
+        call, so the `AIMessage` / `ToolMessage` pair stays well-formed for
+        providers (Anthropic in particular rejects mismatched `tool_use_id` /
+        `tool_result.tool_use_id`).
+
+    Validation is intentionally asymmetric: the template branch *stamps* the
+    identity fields (template is meant to be generic and reusable), while the
+    factory branch *validates* them (the factory has the call in hand and is
+    expected to set them correctly).
+    """
+    if override is None:
+        return _default_rejection_message(tool_call, decision)
+    if isinstance(override, ToolMessage):
+        return override.model_copy(
+            update={"tool_call_id": tool_call["id"], "name": tool_call["name"]}
+        )
+    message = override(tool_call, decision)
+    # User-supplied callable: verify the runtime contract even though the
+    # static type narrows to `ToolMessage`.
+    if not isinstance(message, ToolMessage):
+        msg = (  # type: ignore[unreachable]
+            f"`rejection_response` callable for tool '{tool_call['name']}' returned "
+            f"{type(message).__name__!r}; expected a `ToolMessage`."
+        )
+        raise TypeError(msg)
+    if message.tool_call_id != tool_call["id"]:
+        msg = (
+            f"`rejection_response` callable for tool '{tool_call['name']}' returned a "
+            f"`ToolMessage` with `tool_call_id={message.tool_call_id!r}`, but the "
+            f"rejected call's id is {tool_call['id']!r}. The ids must match so "
+            "providers can pair the tool result with the originating tool call."
+        )
+        raise ValueError(msg)
+    if message.name != tool_call["name"]:
+        msg = (
+            f"`rejection_response` callable for tool '{tool_call['name']}' returned a "
+            f"`ToolMessage` with `name={message.name!r}`, but the rejected call's "
+            f"name is {tool_call['name']!r}. Names must match so the tool result "
+            "is correctly attributed to the originating tool call."
+        )
+        raise ValueError(msg)
+    return message
+
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
@@ -209,6 +356,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
+
+        Raises:
+            ValueError: If an `InterruptOnConfig` sets `rejection_response` without
+                including `'reject'` in `allowed_decisions` (the override would
+                never be used).
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -219,6 +371,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                         allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
             elif tool_config.get("allowed_decisions"):
+                if (
+                    tool_config.get("rejection_response") is not None
+                    and "reject" not in tool_config["allowed_decisions"]
+                ):
+                    msg = (
+                        f"Tool '{tool_name}' has a `rejection_response` configured but "
+                        "'reject' is not in `allowed_decisions`; the override would "
+                        "never be used. Add 'reject' to `allowed_decisions` or remove "
+                        "`rejection_response`."
+                    )
+                    raise ValueError(msg)
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
@@ -282,15 +445,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 None,
             )
         if decision["type"] == "reject" and "reject" in allowed_decisions:
-            # Create a tool message with the human's text response
-            content = decision.get("message") or (
-                f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}"
-            )
-            tool_message = ToolMessage(
-                content=content,
-                name=tool_call["name"],
-                tool_call_id=tool_call["id"],
-                status="error",
+            tool_message = _resolve_rejection_response(
+                config.get("rejection_response"), tool_call, decision
             )
             return tool_call, tool_message
         if decision["type"] == "respond" and "respond" in allowed_decisions:

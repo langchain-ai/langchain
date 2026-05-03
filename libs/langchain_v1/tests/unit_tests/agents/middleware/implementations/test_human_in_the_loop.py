@@ -10,6 +10,7 @@ from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
+    RejectionResponseFactory,
 )
 from langchain.agents.middleware.types import AgentState
 
@@ -148,6 +149,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert result["messages"][1].content == "Custom response message"
         assert result["messages"][1].name == "test_tool"
         assert result["messages"][1].tool_call_id == "1"
+        assert result["messages"][1].status == "error"
 
 
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
@@ -327,6 +329,7 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "User rejected this tool call"
         assert tool_message.name == "get_temperature"
+        assert tool_message.status == "error"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
@@ -883,3 +886,588 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+        assert tool_message.status == "error"
+
+
+def test_human_in_the_loop_middleware_reject_default_status_and_content() -> None:
+    """The default rejection message uses `status="error"` and the canned content.
+
+    Pinned so that any future flip of the default is intentional and visible
+    rather than a silent wire-format change.
+    """
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.status == "error"
+    assert tool_message.content == "User rejected the tool call for `test_tool` with id 1"
+    assert tool_message.tool_call_id == "1"
+    assert tool_message.name == "test_tool"
+
+
+def test_human_in_the_loop_middleware_reject_uses_human_message() -> None:
+    """A user-supplied `message` on the reject decision becomes the ToolMessage content."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject", "message": "no thanks"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "no thanks"
+    assert tool_message.status == "error"
+
+
+def test_human_in_the_loop_middleware_rejection_response_callable() -> None:
+    """`rejection_response` callable receives the tool call and decision."""
+    captured: dict[str, Any] = {}
+
+    def factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        captured["tool_call"] = tool_call
+        captured["decision"] = decision
+        return ToolMessage(
+            content=f"declined: {decision.get('message', '?')}",
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success",
+            additional_kwargs={"hitl_decision": "reject"},
+        )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": factory,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject", "message": "stop"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "declined: stop"
+    assert tool_message.additional_kwargs == {"hitl_decision": "reject"}
+    assert captured["tool_call"]["id"] == "tc-1"
+    assert captured["decision"] == {"type": "reject", "message": "stop"}
+
+
+def test_human_in_the_loop_middleware_rejection_response_static_toolmessage() -> None:
+    """A static `ToolMessage` override is used verbatim with id/name stamped from the call."""
+    template = ToolMessage(
+        content="Rejected by policy.",
+        name="placeholder",
+        tool_call_id="placeholder",
+        status="error",
+    )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": template,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    # Content/status preserved from the template; identity fields stamped from the call.
+    assert tool_message.content == "Rejected by policy."
+    assert tool_message.status == "error"
+    assert tool_message.name == "test_tool"
+    assert tool_message.tool_call_id == "tc-1"
+    # Template instance must not be mutated — callers may share one across tools.
+    assert template.name == "placeholder"
+    assert template.tool_call_id == "placeholder"
+
+
+def test_human_in_the_loop_middleware_rejection_response_callable_id_mismatch() -> None:
+    """A callable returning a `ToolMessage` with the wrong `tool_call_id` raises.
+
+    Providers (notably Anthropic) reject AI/Tool message pairs whose ids do not
+    line up, so the middleware fails fast rather than letting the malformed
+    pair reach the model.
+    """
+
+    def bad_factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="declined",
+            name=tool_call["name"],
+            tool_call_id="not-the-right-id",
+            status="success",
+        )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": bad_factory,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "reject"}]},
+        ),
+        pytest.raises(
+            ValueError,
+            match=re.escape(
+                "`rejection_response` callable for tool 'test_tool' returned a "
+                "`ToolMessage` with `tool_call_id='not-the-right-id'`, but the "
+                "rejected call's id is 'tc-1'."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
+
+
+def test_human_in_the_loop_middleware_reject_empty_message_falls_back_to_default() -> None:
+    """An empty `decision["message"]` falls back to the default canned content."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {"input": "x"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject", "message": ""}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "User rejected the tool call for `test_tool` with id 1"
+    assert tool_message.status == "error"
+
+
+def test_human_in_the_loop_middleware_per_tool_rejection_response() -> None:
+    """Each rejected tool call resolves its own `rejection_response` from the per-tool config.
+
+    Guards against a regression in `_process_decision` that misroutes the
+    override (e.g. by reading `rejection_response` from the wrong entry in
+    `interrupt_on` or by sharing it across calls).
+    """
+
+    def factory_a(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="A declined",
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success",
+        )
+
+    template_b = ToolMessage(
+        content="B declined by policy.",
+        name="placeholder",
+        tool_call_id="placeholder",
+        status="error",
+    )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_a": {"allowed_decisions": ["reject"], "rejection_response": factory_a},
+            "tool_b": {"allowed_decisions": ["reject"], "rejection_response": template_b},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Two calls",
+        tool_calls=[
+            {"name": "tool_a", "args": {}, "id": "id_a"},
+            {"name": "tool_b", "args": {}, "id": "id_b"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject"}, {"type": "reject"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    # AI message + 2 synthetic ToolMessages, one per rejected call.
+    assert len(result["messages"]) == 3
+
+    msg_a = result["messages"][1]
+    assert isinstance(msg_a, ToolMessage)
+    assert msg_a.content == "A declined"
+    assert msg_a.tool_call_id == "id_a"
+    assert msg_a.name == "tool_a"
+    assert msg_a.status == "success"
+
+    msg_b = result["messages"][2]
+    assert isinstance(msg_b, ToolMessage)
+    assert msg_b.content == "B declined by policy."
+    assert msg_b.tool_call_id == "id_b"
+    assert msg_b.name == "tool_b"
+    assert msg_b.status == "error"
+
+
+def test_human_in_the_loop_middleware_mixed_approve_and_reject_callable() -> None:
+    """An approve+reject pair routes the rejection through its `rejection_response` callable."""
+
+    def factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="declined",
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success",
+            additional_kwargs={"hitl_decision": "reject"},
+        )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "approve_tool": {"allowed_decisions": ["approve"]},
+            "reject_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": factory,
+            },
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Two calls",
+        tool_calls=[
+            {"name": "approve_tool", "args": {}, "id": "id_ok"},
+            {"name": "reject_tool", "args": {}, "id": "id_no"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "approve"}, {"type": "reject"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    # AI message + 1 synthetic ToolMessage for the reject decision.
+    assert len(result["messages"]) == 2
+
+    updated_ai = result["messages"][0]
+    assert len(updated_ai.tool_calls) == 2
+    assert updated_ai.tool_calls[0]["name"] == "approve_tool"
+    assert updated_ai.tool_calls[1]["name"] == "reject_tool"
+
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "declined"
+    assert tool_message.tool_call_id == "id_no"
+    assert tool_message.additional_kwargs == {"hitl_decision": "reject"}
+
+
+def test_rejection_response_factory_alias_is_callable_signature() -> None:
+    """`RejectionResponseFactory` is a public alias users can annotate factories against."""
+
+    def my_factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="ok",
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success",
+        )
+
+    factory: RejectionResponseFactory = my_factory
+    msg = factory(ToolCall(name="t", args={}, id="x"), {"type": "reject"})
+    assert isinstance(msg, ToolMessage)
+    assert msg.tool_call_id == "x"
+
+
+def test_human_in_the_loop_middleware_rejection_response_template_status_preserved() -> None:
+    """A template's non-default `status` survives the `model_copy` stamp.
+
+    The documented use case for overriding is `status="success"` to suppress
+    retry loops on providers that re-emit on `status="error"`. Pin that the
+    copy only overwrites identity fields, not `status` or content.
+    """
+    template = ToolMessage(
+        content="Declined; do not retry.",
+        name="placeholder",
+        tool_call_id="placeholder",
+        status="success",
+        additional_kwargs={"hitl_decision": "reject"},
+    )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": template,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    tool_message = result["messages"][1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.status == "success"
+    assert tool_message.content == "Declined; do not retry."
+    assert tool_message.additional_kwargs == {"hitl_decision": "reject"}
+    assert tool_message.tool_call_id == "tc-1"
+    assert tool_message.name == "test_tool"
+
+
+def test_human_in_the_loop_middleware_heterogeneous_batch_routes_per_tool() -> None:
+    """A mixed approve/edit/respond/reject batch routes each decision to its tool's config.
+
+    Higher-leverage than a homogeneous reject batch: regressions in
+    `_process_decision` (e.g. reading `rejection_response` from the wrong
+    `interrupt_on` entry) only surface when decision *types* differ across
+    calls, not just tools.
+    """
+
+    def reject_factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="declined by factory",
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success",
+        )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_tool": {"allowed_decisions": ["edit"]},
+            "respond_tool": {"allowed_decisions": ["respond"]},
+            "reject_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": reject_factory,
+            },
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Three calls",
+        tool_calls=[
+            {"name": "edit_tool", "args": {"x": 1}, "id": "id_edit"},
+            {"name": "respond_tool", "args": {}, "id": "id_resp"},
+            {"name": "reject_tool", "args": {}, "id": "id_rej"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": {"name": "edit_tool", "args": {"x": 2}},
+                },
+                {"type": "respond", "message": "synthetic answer"},
+                {"type": "reject"},
+            ]
+        },
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    # AI message + 2 synthetic ToolMessages (respond + reject; edit produces no message).
+    assert len(result["messages"]) == 3
+
+    updated_ai = result["messages"][0]
+    assert isinstance(updated_ai, AIMessage)
+    assert len(updated_ai.tool_calls) == 3
+    edited_call = updated_ai.tool_calls[0]
+    assert edited_call["args"] == {"x": 2}
+    assert edited_call["id"] == "id_edit"
+
+    respond_msg = result["messages"][1]
+    assert isinstance(respond_msg, ToolMessage)
+    assert respond_msg.tool_call_id == "id_resp"
+    assert respond_msg.content == "synthetic answer"
+    assert respond_msg.status == "success"
+
+    reject_msg = result["messages"][2]
+    assert isinstance(reject_msg, ToolMessage)
+    assert reject_msg.tool_call_id == "id_rej"
+    assert reject_msg.content == "declined by factory"
+    assert reject_msg.status == "success"
+
+
+def test_human_in_the_loop_middleware_rejection_response_callable_returns_non_toolmessage() -> None:
+    """A factory returning something other than a `ToolMessage` raises `TypeError`."""
+
+    def bad_factory(tool_call: ToolCall, decision: dict[str, Any]) -> Any:
+        return "not a tool message"
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": bad_factory,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "reject"}]},
+        ),
+        pytest.raises(
+            TypeError,
+            match=re.escape(
+                "`rejection_response` callable for tool 'test_tool' returned 'str'; "
+                "expected a `ToolMessage`."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
+
+
+def test_human_in_the_loop_middleware_rejection_response_callable_name_mismatch() -> None:
+    """A factory returning a `ToolMessage` with the wrong `name` raises `ValueError`."""
+
+    def bad_factory(tool_call: ToolCall, decision: dict[str, Any]) -> ToolMessage:
+        return ToolMessage(
+            content="declined",
+            name="wrong_name",
+            tool_call_id=tool_call["id"],
+            status="success",
+        )
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["reject"],
+                "rejection_response": bad_factory,
+            }
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help",
+        tool_calls=[{"name": "test_tool", "args": {}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "reject"}]},
+        ),
+        pytest.raises(
+            ValueError,
+            match=re.escape(
+                "`rejection_response` callable for tool 'test_tool' returned a "
+                "`ToolMessage` with `name='wrong_name'`, but the rejected call's "
+                "name is 'test_tool'."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
+
+
+def test_human_in_the_loop_middleware_rejection_response_without_reject_raises() -> None:
+    """Setting `rejection_response` without `'reject'` in `allowed_decisions` raises.
+
+    Catches misconfiguration eagerly at construction rather than silently
+    ignoring the override at runtime.
+    """
+    template = ToolMessage(
+        content="should not be reachable",
+        name="placeholder",
+        tool_call_id="placeholder",
+        status="error",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Tool 'test_tool' has a `rejection_response` configured but 'reject' is "
+            "not in `allowed_decisions`"
+        ),
+    ):
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "test_tool": {
+                    "allowed_decisions": ["approve"],
+                    "rejection_response": template,
+                }
+            }
+        )
