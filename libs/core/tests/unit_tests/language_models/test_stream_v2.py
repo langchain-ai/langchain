@@ -133,7 +133,7 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hello"),
+                delta={"type": "text-delta", "text": "Hello"},
             )
         )
         assert stream._text_acc == "Hello"
@@ -144,9 +144,7 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(
-                    type="reasoning", reasoning="think"
-                ),
+                delta={"type": "reasoning-delta", "reasoning": "think"},
             )
         )
         assert stream._reasoning_acc == "think"
@@ -157,7 +155,7 @@ class TestChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -188,12 +186,12 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hi"),
+                delta={"type": "text-delta", "text": "Hi"},
             ),
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text=" there"),
+                delta={"type": "text-delta", "text": " there"},
             ),
         ]
         finish = MessageFinishData(event="message-finish")
@@ -228,14 +226,14 @@ class TestAsyncChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hello"),
+                delta={"type": "text-delta", "text": "Hello"},
             )
         )
         stream._push_content_block_delta(
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text=" world"),
+                delta={"type": "text-delta", "text": " world"},
             )
         )
         stream._finish(MessageFinishData(event="message-finish"))
@@ -253,7 +251,7 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextContentBlock(type="text", text="a"),
+                    delta={"type": "text-delta", "text": "a"},
                 )
             )
             await asyncio.sleep(0)
@@ -261,7 +259,7 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextContentBlock(type="text", text="b"),
+                    delta={"type": "text-delta", "text": "b"},
                 )
             )
             await asyncio.sleep(0)
@@ -279,7 +277,7 @@ class TestAsyncChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -391,14 +389,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="A"),
+                delta={"type": "text-delta", "text": "A"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="A"),
+                content=TextContentBlock(type="text", text="A"),
             )
         )
         # Block 1: "B"
@@ -406,14 +404,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=TextContentBlock(type="text", text="B"),
+                delta={"type": "text-delta", "text": "B"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=TextContentBlock(type="text", text="B"),
+                content=TextContentBlock(type="text", text="B"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -437,14 +435,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="one"),
+                delta={"type": "reasoning-delta", "reasoning": "one"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="one"),
+                content=ReasoningContentBlock(type="reasoning", reasoning="one"),
             )
         )
         # Block 1: "two"
@@ -452,14 +450,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="two"),
+                delta={"type": "reasoning-delta", "reasoning": "two"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="two"),
+                content=ReasoningContentBlock(type="reasoning", reasoning="two"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -484,14 +482,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="hel"),
+                delta={"type": "text-delta", "text": "hel"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="hello"),
+                content=TextContentBlock(type="text", text="hello"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -522,7 +520,7 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="aaa"),
+                delta={"type": "text-delta", "text": "aaa"},
             )
         )
         # Block 1 streams deltas before block 0 finishes.
@@ -530,7 +528,7 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=TextContentBlock(type="text", text="bb"),
+                delta={"type": "text-delta", "text": "bb"},
             )
         )
         # Block 0 finishes with authoritative text different from deltas.
@@ -538,14 +536,14 @@ class TestPerBlockAccumulation:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="XXX"),
+                content=TextContentBlock(type="text", text="XXX"),
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=TextContentBlock(type="text", text="bb"),
+                content=TextContentBlock(type="text", text="bb"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -568,16 +566,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="thi"),
+                delta={"type": "reasoning-delta", "reasoning": "thi"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ReasoningContentBlock(
-                    type="reasoning", reasoning="thinking"
-                ),
+                content=ReasoningContentBlock(type="reasoning", reasoning="thinking"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -598,14 +594,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="before"),
+                delta={"type": "text-delta", "text": "before"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="before"),
+                content=TextContentBlock(type="text", text="before"),
             )
         )
         # Block 1: tool_call
@@ -613,7 +609,7 @@ class TestPerBlockAccumulation:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -626,14 +622,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=2,
-                content_block=TextContentBlock(type="text", text="after"),
+                delta={"type": "text-delta", "text": "after"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=2,
-                content_block=TextContentBlock(type="text", text="after"),
+                content=TextContentBlock(type="text", text="after"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
