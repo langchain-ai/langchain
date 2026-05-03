@@ -167,6 +167,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        depends_on: tuple[type[AgentMiddleware] | AgentMiddleware, ...] = (),
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -223,6 +224,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            depends_on: Optional tuple of middleware classes or instances that must be
+                executed before this middleware.
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -275,6 +278,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        self.depends_on = depends_on
 
         requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
         if self.keep[0] == "fraction":
