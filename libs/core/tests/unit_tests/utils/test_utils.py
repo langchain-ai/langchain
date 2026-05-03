@@ -129,27 +129,6 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
-    ],
-)
-def test_merge_dicts(
-    left: dict, right: dict, expected: dict | AbstractContextManager
-) -> None:
-    err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
-
-    left_copy = deepcopy(left)
-    right_copy = deepcopy(right)
-    with err:
-        actual = merge_dicts(left, right)
-        assert actual == expected
-        # no mutation
-        assert left == left_copy
-        assert right == right_copy
-
-
-@pytest.mark.parametrize(
-    ("left", "right", "expected"),
-    [
-        # 'type' special key handling
         ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
         (
             {"type": "foo"},
@@ -158,8 +137,7 @@ def test_merge_dicts(
         ),
     ],
 )
-@pytest.mark.xfail(reason="Refactors to make in 0.3")
-def test_merge_dicts_0_3(
+def test_merge_dicts(
     left: dict, right: dict, expected: dict | AbstractContextManager
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
