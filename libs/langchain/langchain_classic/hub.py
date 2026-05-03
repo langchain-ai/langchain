@@ -6,6 +6,7 @@ import json
 from collections.abc import Sequence
 from typing import Any, Literal
 
+from langchain_core._api import deprecated
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
@@ -52,6 +53,12 @@ def _get_client(
             raise ImportError(msg) from e
 
 
+@deprecated(
+    since="1.0.5",
+    alternative="langsmith.Client.push_prompt",
+    removal="2.0.0",
+    package="langchain-classic",
+)
 def push(
     repo_full_name: str,
     object: Any,  # noqa: A002
@@ -108,6 +115,12 @@ def push(
     )
 
 
+@deprecated(
+    since="1.0.5",
+    alternative="langsmith.Client.pull_prompt",
+    removal="2.0.0",
+    package="langchain-classic",
+)
 def pull(
     owner_repo_commit: str,
     *,
