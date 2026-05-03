@@ -497,12 +497,12 @@ def chunks_to_events(
 ) -> Iterator[MessagesData]:
     """Convert a stream of `ChatGenerationChunk` to protocol events.
 
-    Blocks stream one at a time: when a chunk carries a different block
-    identifier than the currently-open one, the open block is finished
-    before the new block starts, matching the protocol's no-interleave
-    rule.  Source-side identifiers (from the block's `index` field, which
-    may be int or string) are translated to sequential `uint` wire
-    indices.
+    Blocks are tracked independently by source-side identifier. Providers
+    such as Anthropic can interleave parallel tool-call chunks by index, so
+    each first-seen block gets a `content-block-start`, deltas keep their
+    stable wire index, and all open blocks are finalized at message end.
+    Source-side identifiers (from the block's `index` field, which may be
+    int or string) are translated to sequential `uint` wire indices.
 
     Args:
         chunks: Iterator of `ChatGenerationChunk` from `_stream()`.
@@ -512,9 +512,7 @@ def chunks_to_events(
         `MessagesData` lifecycle events.
     """
     started = False
-    open_key: Any = None
-    open_block: CompatBlock | None = None
-    open_wire_idx: int = 0
+    blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
@@ -545,24 +543,22 @@ def chunks_to_events(
             yield _build_message_start(msg, message_id)
 
         for key, block in _iter_protocol_blocks(msg):
-            if key != open_key:
-                if open_block is not None:
-                    yield _finalize_and_build_finish(open_wire_idx, open_block)
-                open_key = key
-                open_wire_idx = next_wire_idx
+            if key not in blocks:
+                wire_idx = next_wire_idx
                 next_wire_idx += 1
-                open_block = dict(block)
+                blocks[key] = (wire_idx, dict(block))
                 yield ContentBlockStartData(
                     event="content-block-start",
-                    index=open_wire_idx,
+                    index=wire_idx,
                     content_block=_start_skeleton(block),
                 )
             else:
-                open_block = _accumulate(open_block, block)
+                wire_idx, existing = blocks[key]
+                blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
-                    index=open_wire_idx,
+                    index=wire_idx,
                     content_block=_to_protocol_block(block),
                 )
 
@@ -572,8 +568,8 @@ def chunks_to_events(
     if not started:
         return
 
-    if open_block is not None:
-        yield _finalize_and_build_finish(open_wire_idx, open_block)
+    for wire_idx, block in blocks.values():
+        yield _finalize_and_build_finish(wire_idx, block)
 
     yield _build_message_finish(
         usage=usage,
@@ -588,9 +584,7 @@ async def achunks_to_events(
 ) -> AsyncIterator[MessagesData]:
     """Async variant of `chunks_to_events`."""
     started = False
-    open_key: Any = None
-    open_block: CompatBlock | None = None
-    open_wire_idx: int = 0
+    blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
@@ -615,24 +609,22 @@ async def achunks_to_events(
             yield _build_message_start(msg, message_id)
 
         for key, block in _iter_protocol_blocks(msg):
-            if key != open_key:
-                if open_block is not None:
-                    yield _finalize_and_build_finish(open_wire_idx, open_block)
-                open_key = key
-                open_wire_idx = next_wire_idx
+            if key not in blocks:
+                wire_idx = next_wire_idx
                 next_wire_idx += 1
-                open_block = dict(block)
+                blocks[key] = (wire_idx, dict(block))
                 yield ContentBlockStartData(
                     event="content-block-start",
-                    index=open_wire_idx,
+                    index=wire_idx,
                     content_block=_start_skeleton(block),
                 )
             else:
-                open_block = _accumulate(open_block, block)
+                wire_idx, existing = blocks[key]
+                blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
-                    index=open_wire_idx,
+                    index=wire_idx,
                     content_block=_to_protocol_block(block),
                 )
 
@@ -642,8 +634,8 @@ async def achunks_to_events(
     if not started:
         return
 
-    if open_block is not None:
-        yield _finalize_and_build_finish(open_wire_idx, open_block)
+    for wire_idx, block in blocks.values():
+        yield _finalize_and_build_finish(wire_idx, block)
 
     yield _build_message_finish(
         usage=usage,

@@ -5,9 +5,10 @@ or by the compat bridge's `chunks_to_events` / `message_to_events`)
 conforms to the protocol lifecycle rules:
 
 - `message-start` opens and `message-finish` closes the stream.
-- Content blocks do not interleave: each block runs
+- Content blocks may interleave: each block index runs
   `content-block-start` → optional `content-block-delta`s →
-  `content-block-finish` before the next block begins.
+  `content-block-finish`, while other block indices may start or receive
+  deltas before that block finishes.
 - Wire indices on content-block events are sequential `uint` values
   starting at 0.
 - For deltaable block types (`text`, `reasoning`, `tool_call_chunk`,
@@ -71,7 +72,7 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
             "`message-finish` must be the final event"
         )
 
-    open_idx: int | None = None
+    open_indices: set[int] = set()
     expected_next_idx = 0
     start_events: dict[int, dict[str, Any]] = {}
     finish_events: dict[int, dict[str, Any]] = {}
@@ -83,8 +84,9 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
             assert i == 0, f"duplicate `message-start` at event {i}"
             continue
         if ev == "message-finish":
-            assert open_idx is None, (
-                f"`message-finish` while block {open_idx} still open (event {i})"
+            assert not open_indices, (
+                f"`message-finish` while blocks {sorted(open_indices)} "
+                f"still open (event {i})"
             )
             continue
         if ev == "error":
@@ -102,36 +104,39 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
             assert idx == expected_next_idx, (
                 f"expected next wire index {expected_next_idx}, got {idx} at event {i}"
             )
-            assert open_idx is None, (
-                f"content-block-start at idx={idx} while block {open_idx} "
-                f"still open (event {i}); blocks must not interleave"
+            assert idx not in start_events, (
+                f"duplicate content-block-start for idx={idx} at event {i}"
             )
-            open_idx = idx
+            open_indices.add(idx)
             start_events[idx] = event["content_block"]
             delta_accum[idx] = {}
             expected_next_idx += 1
         elif ev == "content-block-delta":
             idx = event["index"]
-            assert idx == open_idx, (
-                f"content-block-delta at idx={idx} but currently-open block is "
-                f"{open_idx} (event {i})"
+            assert idx in open_indices, (
+                f"content-block-delta at idx={idx} but that block is not open "
+                f"(event {i})"
             )
             block = event["content_block"]
             _accumulate_delta(delta_accum[idx], block)
         elif ev == "content-block-finish":
             idx = event["index"]
-            assert idx == open_idx, (
-                f"content-block-finish at idx={idx} but currently-open block is "
-                f"{open_idx} (event {i})"
+            assert idx in open_indices, (
+                f"content-block-finish at idx={idx} but that block is not open "
+                f"(event {i})"
+            )
+            assert idx not in finish_events, (
+                f"duplicate content-block-finish for idx={idx} at event {i}"
             )
             finish_events[idx] = event["content_block"]
-            open_idx = None
+            open_indices.remove(idx)
         else:
             # Unknown event types are accepted; the CDDL allows extensions.
             continue
 
-    assert open_idx is None, (
-        f"block {open_idx} still open at end of stream — no content-block-finish"
+    assert not open_indices, (
+        f"blocks {sorted(open_indices)} still open at end of stream — "
+        "no content-block-finish"
     )
     missing = set(start_events) - set(finish_events)
     assert not missing, (
