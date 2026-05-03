@@ -209,13 +209,13 @@ def init_chat_model(
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
         claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=0)
-        gemini_2-5_flash = init_chat_model(
+        gemini_2_5_flash = init_chat_model(
             "google_vertexai:gemini-2.5-flash", temperature=0
         )
 
         o3_mini.invoke("what's your name")
         claude_sonnet.invoke("what's your name")
-        gemini_2-5_flash.invoke("what's your name")
+        gemini_2_5_flash.invoke("what's your name")
         ```
 
     ??? example "Partially configurable model with no default"
