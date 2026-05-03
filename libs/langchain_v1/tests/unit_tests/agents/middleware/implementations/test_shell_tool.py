@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import gc
+import os
+import signal
 import tempfile
 import time
 from pathlib import Path
 from typing import cast
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.messages import ToolMessage
@@ -14,6 +17,7 @@ from langgraph.runtime import Runtime
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
+    ShellSession,
     ShellToolMiddleware,
     ShellToolState,
     _SessionResources,
@@ -546,3 +550,43 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_kill_process_avoids_group_kill_for_shared_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Avoid `killpg` when child shares the caller process group."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 1234
+    session._process = process  # type: ignore[assignment]
+
+    killpg_mock = Mock()
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", lambda _pid: 1000)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000)
+
+    session._kill_process()
+
+    killpg_mock.assert_not_called()
+    process.kill.assert_called_once_with()
+
+
+def test_kill_process_uses_group_kill_for_dedicated_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep process-group kill behavior when child runs in a separate group."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 5678
+    session._process = process  # type: ignore[assignment]
+
+    killpg_mock = Mock()
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", lambda _pid: 2000)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000)
+
+    session._kill_process()
+
+    killpg_mock.assert_called_once_with(2000, signal.SIGKILL)
+    process.kill.assert_not_called()
