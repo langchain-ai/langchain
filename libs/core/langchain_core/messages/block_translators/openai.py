@@ -93,6 +93,15 @@ def convert_to_openai_data_block(
         if block.get("source_type") == "base64" or "base64" in block:
             # Handle v0 format (Base64CB): {"source_type": "base64", "data": "...", ...}
             # Handle v1 format (IDCB): {"base64": "...", ...}
+            if (
+                api == "chat/completions"
+                and block.get("mime_type") != "application/pdf"
+            ):
+                error_msg = (
+                    "OpenAI Chat Completions only supports application/pdf for "
+                    "file data blocks. Use Responses API for other file MIME types."
+                )
+                raise ValueError(error_msg)
             base64_data = block["data"] if "source_type" in block else block["base64"]
             file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
@@ -545,7 +554,7 @@ def _convert_openai_format_to_data_block(
         filename = block["file"].get("filename")
         return types.create_file_block(
             base64=parsed["data"],
-            mime_type="application/pdf",
+            mime_type=parsed["mime_type"],
             filename=filename,
             **all_extras,
         )
