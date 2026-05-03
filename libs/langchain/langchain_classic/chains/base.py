@@ -365,7 +365,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             run_manager.get_sync() if run_manager else None,
         )
 
-    @deprecated("0.1.0", alternative="invoke", removal="1.0")
+    @deprecated("0.1.0", alternative="invoke", removal="2.0.0")
     def __call__(
         self,
         inputs: dict[str, Any] | Any,
@@ -417,7 +417,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             include_run_info=include_run_info,
         )
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
+    @deprecated("0.1.0", alternative="ainvoke", removal="2.0.0")
     async def acall(
         self,
         inputs: dict[str, Any] | Any,
@@ -576,7 +576,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             raise ValueError(msg)
         return self.output_keys[0]
 
-    @deprecated("0.1.0", alternative="invoke", removal="1.0")
+    @deprecated("0.1.0", alternative="invoke", removal="2.0.0")
     def run(
         self,
         *args: Any,
@@ -650,7 +650,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         )
         raise ValueError(msg)
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
+    @deprecated("0.1.0", alternative="ainvoke", removal="2.0.0")
     async def arun(
         self,
         *args: Any,
@@ -796,7 +796,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             msg = f"{save_path} must be json or yaml"
             raise ValueError(msg)
 
-    @deprecated("0.1.0", alternative="batch", removal="1.0")
+    @deprecated("0.1.0", alternative="batch", removal="2.0.0")
     def apply(
         self,
         input_list: list[builtins.dict[str, Any]],

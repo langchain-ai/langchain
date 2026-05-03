@@ -58,12 +58,13 @@ try:
 
     @deprecated(
         since="0.2.13",
-        message=(
-            "This class is deprecated and will be removed in langchain 1.0. "
-            "See API reference for replacement: "
-            "https://api.python.langchain.com/en/latest/chains/langchain.chains.api.base.APIChain.html"
+        removal="2.0.0",
+        alternative="langchain.agents.create_agent",
+        addendum=(
+            "Build new agents with `create_agent` and bind a tool that issues "
+            "the HTTP request. See "
+            "https://docs.langchain.com/oss/python/langchain/agents"
         ),
-        removal="1.0",
     )
     class APIChain(Chain):
         """Chain that makes API calls and summarizes the responses to answer a question.

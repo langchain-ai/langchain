@@ -610,7 +610,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -699,7 +699,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.

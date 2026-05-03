@@ -219,14 +219,16 @@ def init_chat_model(
 
     **Two main use cases:**
 
-    1. **Fixed model** – specify the model upfront and get a ready-to-use chat model.
-    2. **Configurable model** – choose to specify parameters (including model name) at
-        runtime via `config`. Makes it easy to switch between models/providers without
-        changing your code
+    1. **Fixed model** – specify the model upfront and get a
+        ready-to-use chat model.
+    2. **Configurable model** – choose to specify parameters
+        (including model name) at runtime via `config`. Makes it easy to
+        switch between models/providers without changing your code
 
     !!! note "Installation requirements"
 
-        Requires the integration package for the chosen model provider to be installed.
+        Requires the integration package for the chosen model provider to
+        be installed.
 
         See the `model_provider` parameter below for specific package names
         (e.g., `pip install langchain-openai`).
@@ -235,31 +237,49 @@ def init_chat_model(
         for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: The model name, optionally prefixed with provider (e.g., `'openai:gpt-4o'`).
+        model: Name of the model to use, with provider prefix — e.g.,
+            `'openai:gpt-5.5'`.
 
-            Prefer exact model IDs from provider docs over aliases for reliable behavior
-            (e.g., dated versions like `'...-20250514'` instead of `'...-latest'`).
+            A bare model name (e.g., `'claude-opus-4-7'`) is also accepted; we
+            will attempt to infer the provider from the prefix using the mapping
+            below. Inference is best-effort and not guaranteed, so prefer
+            the prefixed form when possible.
 
-            Will attempt to infer `model_provider` from model if not specified.
+            Prefer pinned model IDs over moving aliases (e.g.,
+            `'claude-haiku-4-5-20251001'` rather than `'claude-haiku-4-5'`)
+            so behavior does not drift if the alias is repointed upstream.
 
-            The following providers will be inferred based on these model prefixes:
+            Inferred providers by prefix (case-insensitive):
 
-            - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                         -> `anthropic`
-            - `amazon...`                         -> `bedrock`
-            - `gemini...`                         -> `google_vertexai`
-            - `command...`                        -> `cohere`
-            - `accounts/fireworks...`             -> `fireworks`
-            - `mistral...`                        -> `mistralai`
-            - `deepseek...`                       -> `deepseek`
-            - `grok...`                           -> `xai`
-            - `sonar...`                          -> `perplexity`
-            - `solar...`                          -> `upstage`
-        model_provider: The model provider if not specified as part of the model arg
-            (see above).
+            - `gpt-...` | `o1...` | `o3...`               -> `openai`
+            - `claude...`                                 -> `anthropic`
+            - `amazon....` | `anthropic....` | `meta....` -> `bedrock`
+            - `gemini...`                                 -> `google_vertexai` (default changes in next major; pass `model_provider` to lock in)
+            - `command...`                                -> `cohere`
+            - `accounts/fireworks...`                     -> `fireworks`
+            - `mistral...` | `mixtral...`                 -> `mistralai`
+            - `deepseek...`                               -> `deepseek`
+            - `grok...`                                   -> `xai`
+            - `sonar...`                                  -> `perplexity`
+            - `solar...`                                  -> `upstage`
+            - `chatgpt...` | `text-davinci...`            -> `openai` (legacy)
+        model_provider: Provider of the model, passed separately instead of
+            as a prefix on `model`.
 
-            Supported `model_provider` values and the corresponding integration package
-            are:
+            Equivalent to the prefix form — e.g.,
+            `model='claude-sonnet-4-5', model_provider='anthropic'` behaves
+            the same as `model='anthropic:claude-sonnet-4-5'`.
+
+            Prefer the prefix form on `model` for most usage. Reach for this
+            kwarg when:
+
+            - The provider is dynamic (read from config or an env var) and
+                you'd otherwise concatenate strings.
+            - You want `model` and `model_provider` to be independently
+                swappable at runtime via `configurable_fields` (e.g., to route
+                the same model name to a different host).
+
+            Supported values and the integration package each requires:
 
             - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `anthropic`               -> [`langchain-anthropic`](https://docs.langchain.com/oss/python/integrations/providers/anthropic)
@@ -338,9 +358,9 @@ def init_chat_model(
 
     Returns:
         A `BaseChatModel` corresponding to the `model_name` and `model_provider`
-            specified if configurability is inferred to be `False`. If configurable, a
-            chat model emulator that initializes the underlying model at runtime once a
-            config is passed in.
+            specified if configurability is inferred to be `False`.
+            If configurable, a chat model emulator that initializes the
+            underlying model at runtime once a config is passed in.
 
     Raises:
         ValueError: If `model_provider` cannot be inferred or isn't supported.
@@ -349,35 +369,28 @@ def init_chat_model(
     ???+ example "Initialize a non-configurable model"
 
         ```python
-        # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
+        # pip install langchain langchain-openai
 
         from langchain.chat_models import init_chat_model
 
-        o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=0)
-        gemini_2-5_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
-
-        o3_mini.invoke("what's your name")
-        claude_sonnet.invoke("what's your name")
-        gemini_2-5_flash.invoke("what's your name")
+        gpt_5 = init_chat_model("openai:gpt-5.5", temperature=0)
+        gpt_5.invoke("what's your name")
         ```
 
     ??? example "Partially configurable model with no default"
 
         ```python
-        # pip install langchain langchain-openai langchain-anthropic
+        # pip install langchain langchain-openai
 
         from langchain.chat_models import init_chat_model
 
         # (We don't need to specify configurable=True if a model isn't specified.)
         configurable_model = init_chat_model(temperature=0)
 
-        configurable_model.invoke("what's your name", config={"configurable": {"model": "gpt-4o"}})
-        # Use GPT-4o to generate the response
-
+        # Use GPT-5.5 to generate the response
         configurable_model.invoke(
             "what's your name",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "gpt-5.5"}},
         )
         ```
 
@@ -389,31 +402,33 @@ def init_chat_model(
         from langchain.chat_models import init_chat_model
 
         configurable_model_with_default = init_chat_model(
-            "openai:gpt-4o",
+            "openai:gpt-5.5",
             configurable_fields="any",  # This allows us to configure other params like temperature, max_tokens, etc at runtime.
             config_prefix="foo",
             temperature=0,
         )
 
         configurable_model_with_default.invoke("what's your name")
-        # GPT-4o response with temperature 0 (as set in default)
+        # GPT-5.5 response with temperature 0 (as set in default)
 
+        # Invoke overriding model and temperature at runtime via config.
+        # Note the use of the "foo_" prefix on the config keys, which matches
+        # the config_prefix we set when initializing the model.
         configurable_model_with_default.invoke(
             "what's your name",
             config={
                 "configurable": {
-                    "foo_model": "anthropic:claude-sonnet-4-5-20250929",
+                    "foo_model": "anthropic:claude-opus-4-7",
                     "foo_temperature": 0.6,
                 }
             },
         )
-        # Override default to use Sonnet 4.5 with temperature 0.6 to generate response
         ```
 
     ??? example "Bind tools to a configurable model"
 
-        You can call any chat model declarative methods on a configurable model in the
-        same way that you would with a normal model:
+        You can call any chat model declarative methods on a configurable model
+        in the same way that you would with a normal model:
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic
@@ -435,7 +450,7 @@ def init_chat_model(
 
 
         configurable_model = init_chat_model(
-            "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
+            "gpt-5.5", configurable_fields=("model", "model_provider"), temperature=0
         )
 
         configurable_model_with_tools = configurable_model.bind_tools(
@@ -447,13 +462,13 @@ def init_chat_model(
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
-        # Use GPT-4o
+        # Use GPT-5.5
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "claude-opus-4-7"}},
         )
-        # Use Sonnet 4.5
+        # Use Opus 4.7
         ```
 
     """  # noqa: E501
@@ -539,8 +554,17 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
     if model_lower.startswith("accounts/fireworks"):
         return "fireworks"
 
-    # Google models
+    # Google models — prefix is ambiguous (Vertex AI vs the GenAI/AI Studio API).
     if model_lower.startswith("gemini"):
+        warnings.warn(
+            f"Inferred `model_provider='google_vertexai'` from {model_name!r}. "
+            "This default will change to 'google_genai' in the next major release."
+            "To keep current behavior, pass `model_provider='google_vertexai'` "
+            f"(or use the prefix form, e.g. 'google_vertexai:{model_name}'); "
+            "for AI Studio / Gemini API, use 'google_genai' instead.",
+            DeprecationWarning,
+            stacklevel=5,
+        )
         return "google_vertexai"
 
     # AWS Bedrock models

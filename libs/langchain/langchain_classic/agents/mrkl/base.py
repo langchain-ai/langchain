@@ -40,7 +40,7 @@ class ChainConfig(NamedTuple):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain.
@@ -179,7 +179,7 @@ class ZeroShotAgent(Agent):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class MRKLChain(AgentExecutor):
     """Chain that implements the MRKL system."""
