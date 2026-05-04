@@ -269,20 +269,37 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # DeepSeek thinking models require reasoning_content to be echoed back in
+        # every subsequent request. The parent's _convert_message_to_dict drops
+        # additional_kwargs, so we re-inject it here from the original AIMessages.
+        original_messages = self._convert_input(input_).to_messages()
+        reasoning_contents = [
+            msg.additional_kwargs.get("reasoning_content")
+            for msg in original_messages
+            if isinstance(msg, AIMessage)
+        ]
+
+        ai_idx = 0
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+            elif message["role"] == "assistant":
+                if isinstance(message["content"], list):
+                    # DeepSeek API expects assistant content to be a string, not a list.
+                    # Extract text blocks and join them, or use empty string if none exist.
+                    text_parts = [
+                        block.get("text", "")
+                        for block in message["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    message["content"] = "".join(text_parts) if text_parts else ""
+                if (
+                    ai_idx < len(reasoning_contents)
+                    and reasoning_contents[ai_idx] is not None
+                ):
+                    message["reasoning_content"] = reasoning_contents[ai_idx]
+                ai_idx += 1
 
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
