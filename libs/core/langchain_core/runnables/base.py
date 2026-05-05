@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import Literal, get_args, override
 
 from langchain_core._api import beta_decorator
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
@@ -1251,6 +1252,11 @@ class Runnable(ABC, Generic[Input, Output]):
             A ``RunLogPatch`` or ``RunLog`` object.
 
         """
+        warn_deprecated(
+            since="0.3.85",
+            message="astream_log is deprecated. Use astream instead.",
+            pending=True,
+        )
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -1521,6 +1527,14 @@ class Runnable(ABC, Generic[Input, Output]):
                 **kwargs,
             )
         elif version == "v1":
+            warn_deprecated(
+                since="0.3.85",
+                message=(
+                    "astream_events version='v1' is deprecated. "
+                    "Use version='v2' or astream instead."
+                ),
+                pending=True,
+            )
             # First implementation, built on top of astream_log API
             # This implementation will be deprecated as of 0.2.0
             event_stream = _astream_events_implementation_v1(

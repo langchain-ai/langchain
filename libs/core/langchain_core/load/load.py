@@ -79,6 +79,7 @@ from collections.abc import Callable, Iterable
 from typing import Any, Literal, Optional, cast
 
 from langchain_core._api import beta
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load._validation import _is_escaped_dict, _unescape_value
 from langchain_core.load.mapping import (
     _JS_SERIALIZABLE_MAPPING,
@@ -118,13 +119,31 @@ ALL_SERIALIZABLE_MAPPINGS = {
     **_JS_SERIALIZABLE_MAPPING,
 }
 
+# Modern message classes admitted by `allowed_objects='messages'`. Legacy types
+# (BaseMessage / BaseMessageChunk, ChatMessage / ChatMessageChunk, FunctionMessage /
+# FunctionMessageChunk) are intentionally excluded — `BaseMessage` is abstract and
+# the chat/function variants are superseded by `ToolMessage` and tool calling.
+_MESSAGES_ALLOWED_CLASS_NAMES = frozenset(
+    {
+        "AIMessage",
+        "AIMessageChunk",
+        "HumanMessage",
+        "HumanMessageChunk",
+        "SystemMessage",
+        "SystemMessageChunk",
+        "ToolMessage",
+        "ToolMessageChunk",
+        "RemoveMessage",
+    }
+)
+
 # Cache for the default allowed class paths computed from mappings
-# Maps mode ("all" or "core") to the cached set of paths
+# Maps mode ("all", "core", or "messages") to the cached set of paths
 _default_class_paths_cache: dict[str, set[tuple[str, ...]]] = {}
 
 
 def _get_default_allowed_class_paths(
-    allowed_object_mode: Literal["all", "core"],
+    allowed_object_mode: Literal["all", "core", "messages"],
 ) -> set[tuple[str, ...]]:
     """Get the default allowed class paths from the serialization mappings.
 
@@ -132,7 +151,7 @@ def _get_default_allowed_class_paths(
     by default. Both the legacy paths (keys) and current paths (values) are included.
 
     Args:
-        allowed_object_mode: either `'all'` or `'core'`.
+        allowed_object_mode: either `'all'`, `'core'`, or `'messages'`.
 
     Returns:
         Set of class path tuples that are allowed by default.
@@ -143,6 +162,11 @@ def _get_default_allowed_class_paths(
     allowed_paths: set[tuple[str, ...]] = set()
     for key, value in ALL_SERIALIZABLE_MAPPINGS.items():
         if allowed_object_mode == "core" and value[0] != "langchain_core":
+            continue
+        if allowed_object_mode == "messages" and (
+            value[0] != "langchain_core"
+            or value[-1] not in _MESSAGES_ALLOWED_CLASS_NAMES
+        ):
             continue
         allowed_paths.add(key)
         allowed_paths.add(value)
@@ -278,7 +302,9 @@ class Reviver:
 
     def __init__(
         self,
-        allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+        allowed_objects: Iterable[AllowedObject]
+        | Literal["all", "core", "messages"]
+        | None = None,
         secrets_map: Optional[dict[str, str]] = None,
         valid_namespaces: Optional[list[str]] = None,
         secrets_from_env: bool = True,  # noqa: FBT001,FBT002
@@ -333,6 +359,19 @@ class Reviver:
 
                 Defaults to `default_init_validator` which blocks jinja2 templates.
         """
+        if allowed_objects is None:
+            warn_deprecated(
+                since="0.3.85",
+                message=(
+                    "The default value of `allowed_objects` will change in a "
+                    "future version. Pass an explicit value (e.g., "
+                    "allowed_objects='messages' or allowed_objects='core') to "
+                    "suppress this warning."
+                ),
+                pending=True,
+            )
+            allowed_objects = "core"
+
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
         # By default, only support langchain, but user can pass in additional namespaces
@@ -353,10 +392,10 @@ class Reviver:
         # Compute allowed class paths:
         # - "all" -> use default paths from mappings (+ additional_import_mappings)
         # - Explicit list -> compute from those classes
-        if allowed_objects in ("all", "core"):
+        if allowed_objects in ("all", "core", "messages"):
             self.allowed_class_paths: set[tuple[str, ...]] | None = (
                 _get_default_allowed_class_paths(
-                    cast("Literal['all', 'core']", allowed_objects)
+                    cast("Literal['all', 'core', 'messages']", allowed_objects)
                 ).copy()
             )
             # Add paths from additional_import_mappings to the defaults
@@ -487,7 +526,9 @@ class Reviver:
 def loads(
     text: str,
     *,
-    allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+    allowed_objects: Iterable[AllowedObject]
+    | Literal["all", "core", "messages"]
+    | None = None,
     secrets_map: Optional[dict[str, str]] = None,
     valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
@@ -546,6 +587,19 @@ def loads(
     Raises:
         ValueError: If an object's class path is not in the `allowed_objects` allowlist.
     """
+    if allowed_objects is None:
+        warn_deprecated(
+            since="0.3.85",
+            message=(
+                "The default value of `allowed_objects` will change in a future "
+                "version. Pass an explicit list of allowed classes (or "
+                "'messages' for untrusted input that contains only chat "
+                "messages) to suppress this warning."
+            ),
+            pending=True,
+        )
+        allowed_objects = "core"
+
     # Parse JSON and delegate to load() for proper escape handling
     raw_obj = json.loads(text)
     return load(
@@ -564,7 +618,9 @@ def loads(
 def load(
     obj: Any,
     *,
-    allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+    allowed_objects: Iterable[AllowedObject]
+    | Literal["all", "core", "messages"]
+    | None = None,
     secrets_map: Optional[dict[str, str]] = None,
     valid_namespaces: Optional[list[str]] = None,
     secrets_from_env: bool = True,
@@ -647,6 +703,19 @@ def load(
         )
         ```
     """
+    if allowed_objects is None:
+        warn_deprecated(
+            since="0.3.85",
+            message=(
+                "The default value of `allowed_objects` will change in a future "
+                "version. Pass an explicit list of allowed classes (or "
+                "'messages' for untrusted input that contains only chat "
+                "messages) to suppress this warning."
+            ),
+            pending=True,
+        )
+        allowed_objects = "core"
+
     reviver = Reviver(
         allowed_objects,
         secrets_map,
