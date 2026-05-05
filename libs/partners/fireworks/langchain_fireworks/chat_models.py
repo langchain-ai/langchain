@@ -708,11 +708,7 @@ class ChatFireworks(BaseChatModel):
             raise ValueError(msg)
 
         client_params = {
-            "api_key": (
-                self.fireworks_api_key.get_secret_value()
-                if self.fireworks_api_key
-                else None
-            ),
+            "api_key": self.fireworks_api_key.get_secret_value(),
             "base_url": self.fireworks_api_base,
             "timeout": self.request_timeout,
         }

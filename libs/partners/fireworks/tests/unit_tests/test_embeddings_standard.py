@@ -2,6 +2,7 @@
 
 from langchain_core.embeddings import Embeddings
 from langchain_tests.unit_tests.embeddings import EmbeddingsUnitTests
+from pydantic import SecretStr
 
 from langchain_fireworks import FireworksEmbeddings
 
@@ -12,8 +13,8 @@ class TestFireworksStandard(EmbeddingsUnitTests):
         return FireworksEmbeddings
 
     @property
-    def embeddings_params(self) -> dict:
-        return {"api_key": "test_api_key"}
+    def embedding_model_params(self) -> dict:
+        return {"api_key": SecretStr("test_api_key")}
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
