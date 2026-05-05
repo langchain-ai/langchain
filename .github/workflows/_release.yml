@@ -49,7 +49,7 @@ jobs:
       version: ${{ steps.check-version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -72,7 +72,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -98,7 +98,7 @@ jobs:
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           repository: langchain-ai/langchain
           path: langchain
@@ -199,9 +199,9 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -228,7 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -249,7 +249,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -400,7 +400,7 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
       AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
@@ -418,7 +418,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
@@ -479,14 +479,14 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -519,20 +519,20 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
       - name: Create Tag
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
