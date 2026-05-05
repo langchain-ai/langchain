@@ -6,6 +6,7 @@ import json
 from collections.abc import Sequence
 from typing import Any, Literal, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
@@ -89,6 +90,11 @@ def push(
     )
 
 
+@deprecated(
+    since="0.3.29",
+    message="langchain.hub.pull is deprecated. Use the LangSmith SDK instead.",
+    pending=True,
+)
 def pull(
     owner_repo_commit: str,
     *,
@@ -97,6 +103,25 @@ def pull(
     api_key: Optional[str] = None,
 ) -> Any:
     """Pull an object from the hub and returns it as a LangChain object.
+
+    .. danger::
+
+        Hub manifests are untrusted input. Treat every prompt pulled from the
+        hub as untrusted, regardless of the owner — public prompts authored by
+        other users are obviously external content, but prompts from your own
+        account or your organization's account are also unsafe if that account,
+        a teammate's account, or the upstream prompt has been compromised.
+
+        ``pull()`` deserializes the manifest via ``load()``, so the
+        ``langchain_core.load.load`` threat model applies — a manifest can
+        intentionally configure a model with a custom base URL, headers, model
+        name, or other constructor arguments. These are supported features, but
+        they also mean the prompt contents are executable configuration rather
+        than plain text: a compromised prompt can redirect API traffic, inject
+        headers, or trigger arbitrary code paths in the classes it instantiates.
+
+        Prefer the LangSmith SDK directly. If you must use ``pull()``, pin the
+        commit hash and audit the manifest before deserializing.
 
     :param owner_repo_commit: The full name of the prompt to pull from in the format of
         `owner/prompt_name:commit_hash` or `owner/prompt_name`
@@ -127,4 +152,4 @@ def pull(
 
     # Then it's < 0.1.15 langchainhub
     resp: str = client.pull(owner_repo_commit)
-    return loads(resp)
+    return loads(resp, allowed_objects="core")
