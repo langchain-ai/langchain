@@ -34,7 +34,14 @@ def _load_document_from_bytes(serialized: bytes) -> Document:
 
 def _load_from_bytes(serialized: bytes) -> Serializable:
     """Return a `Serializable` from a bytes representation."""
-    return loads(serialized.decode("utf-8"), allowed_objects="core")
+    # The default allowlist (`'core'`) is unsafe with untrusted input - a
+    # tampered byte payload can reconstruct any core class with
+    # attacker-controlled kwargs (custom `base_url`, headers, model name,
+    # etc.). The byte store backing this loader must be treated as a trust
+    # boundary - see the danger note on `create_lc_store`. If the store can
+    # be written to by anyone you do not already trust, use
+    # `create_kv_docstore` instead.
+    return loads(serialized.decode("utf-8"))
 
 
 def _identity(x: str) -> str:
