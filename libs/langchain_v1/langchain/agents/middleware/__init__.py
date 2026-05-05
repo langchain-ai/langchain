@@ -12,6 +12,12 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.secret import (
+    BUILTIN_SECRET_TYPES,
+    SecretMatch,
+    SecretMiddleware,
+    find_secrets,
+)
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -44,6 +50,7 @@ from langchain.agents.middleware.types import (
 )
 
 __all__ = [
+    "BUILTIN_SECRET_TYPES",
     "AgentMiddleware",
     "AgentState",
     "ClearToolUsesEdit",
@@ -67,6 +74,8 @@ __all__ = [
     "PIIMiddleware",
     "RedactionRule",
     "Runtime",
+    "SecretMatch",
+    "SecretMiddleware",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
@@ -78,6 +87,7 @@ __all__ = [
     "before_agent",
     "before_model",
     "dynamic_prompt",
+    "find_secrets",
     "hook_config",
     "wrap_model_call",
     "wrap_tool_call",
