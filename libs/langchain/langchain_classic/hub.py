@@ -6,6 +6,7 @@ import json
 from collections.abc import Sequence
 from typing import Any, Literal
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
 from langchain_core.prompts import BasePromptTemplate
@@ -108,6 +109,13 @@ def push(
     )
 
 
+@deprecated(
+    since="1.4.0",
+    removal="2.0.0",
+    message=(
+        "langchain_classic.hub.pull is deprecated. Use the LangSmith SDK instead."
+    ),
+)
 def pull(
     owner_repo_commit: str,
     *,
@@ -117,11 +125,37 @@ def pull(
 ) -> Any:
     """Pull an object from the hub and returns it as a LangChain object.
 
+    !!! danger "Hub manifests are untrusted input"
+
+        Treat every prompt pulled from the hub as untrusted, regardless of
+        the owner. Public prompts authored by other users are obviously
+        external content, but prompts from your own account — or your
+        organization's account — are also unsafe if that account, a
+        teammate's account, or the upstream prompt has been compromised.
+        A single malicious commit to a prompt your code pulls is enough to
+        execute attacker-controlled configuration on every machine that runs
+        `pull()`.
+
+        `pull()` deserializes the manifest via `load()`, so the
+        `langchain_core.load.load` threat model applies — a manifest can
+        intentionally configure a model with a custom base URL, headers,
+        model name, or other constructor arguments. These are supported
+        features, but they also mean the prompt contents are executable
+        configuration rather than plain text: a compromised prompt can
+        redirect API traffic, inject headers, or trigger arbitrary code paths
+        in the classes it instantiates.
+
+        Prefer the LangSmith SDK directly. If you must use `pull()`, pin the
+        commit hash, audit the manifest before deserializing, and never run
+        it against an account whose access controls you cannot vouch for.
+
     Args:
         owner_repo_commit: The full name of the prompt to pull from in the format of
             `owner/prompt_name:commit_hash` or `owner/prompt_name`
             or just `prompt_name` if it's your own prompt.
-        include_model: Whether to include the model configuration in the pulled prompt.
+        include_model: Whether to include the model configuration in the pulled
+            prompt. When `True`, the model declared by the prompt is also
+            deserialized.
         api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
             if you have an API key set, or a localhost instance if not.
         api_key: The API key to use to authenticate with the LangChain Hub API.
@@ -151,4 +185,4 @@ def pull(
 
     # Then it's < 0.1.15 langchainhub
     resp: str = client.pull(owner_repo_commit)
-    return loads(resp)
+    return loads(resp, allowed_objects="core")
