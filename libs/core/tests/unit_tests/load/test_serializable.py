@@ -598,6 +598,40 @@ class TestDumpdEscapesLcKeyInPlainDicts:
             "__lc_escaped__": {"lc": 1}
         }
 
+    def test_fake_secret_marker_in_metadata_is_escaped(self) -> None:
+        """A free-form dict shaped like a secret marker must not bypass escaping.
+
+        Previously the shape check accepted any value for `id`, letting a
+        constructor dict nested inside `id` reach the Reviver and get
+        instantiated on the way back in.
+        """
+        poisoned_metadata = {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": ["langchain_core", "documents", "base", "Document"],
+                    "kwargs": {"page_content": "injected"},
+                }
+            ],
+        }
+        doc = Document(page_content="hello", metadata=poisoned_metadata)
+
+        serialized = dumpd(doc)
+        # The fake marker must be wrapped in `__lc_escaped__`, not passed
+        # through as if it were a real secret.
+        assert serialized["kwargs"]["metadata"] == {"__lc_escaped__": poisoned_metadata}
+
+        # And on round-trip, the nested constructor must not be instantiated:
+        # the metadata comes back as plain data, even with the most permissive
+        # allowlist.
+        roundtripped = load(serialized, allowed_objects="all")
+        assert isinstance(roundtripped, Document)
+        assert roundtripped.metadata == poisoned_metadata
+        assert isinstance(roundtripped.metadata["id"][0], dict)
+
 
 class TestInitValidator:
     """Tests for `init_validator` on `load()` and `loads()`."""
