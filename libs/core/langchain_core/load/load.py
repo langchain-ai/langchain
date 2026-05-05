@@ -11,48 +11,58 @@ is a list of strings representing the module path and class name. For example:
 When deserializing, the class path from the JSON `'id'` field is checked against an
 allowlist. If the class is not in the allowlist, deserialization raises a `ValueError`.
 
-## Security model
+## Threat model
 
-!!! warning "Exercise caution with untrusted input"
+A serialized LangChain payload crosses a trust boundary because the manifest
+may contain serialized objects and configuration that affect runtime behavior.
+For example, a payload can configure a chat model with a custom `base_url`,
+custom headers, a different model name, or other constructor arguments. These
+are supported features, but they also mean the payload contents should be
+treated as executable configuration rather than plain text.
 
-    These functions deserialize by instantiating Python objects, which means
-    constructors (`__init__`) and validators may run and can trigger side effects.
-    With the default settings, deserialization is restricted to a core allowlist
-    of `langchain_core` types (for example: messages, documents, and prompts)
-    defined in `langchain_core.load.mapping`.
+Concretely, deserialization instantiates Python objects, so any constructor
+(`__init__`) or validator on an allowed class can run during `load()`. A
+crafted payload that is allowed to reach an unintended class — or an intended
+class with attacker-controlled kwargs — could cause network calls, file
+operations, or environment-variable access while the object is being built.
 
-    If you broaden `allowed_objects` (for example, by using `'all'` or adding
-    additional classes), treat the serialized payload as a manifest and only
-    deserialize data that comes from a trusted source. A crafted payload that
-    is allowed to instantiate unintended classes could cause network calls,
-    file operations, or environment variable access during `__init__`.
+!!! warning "Do not use with untrusted input"
+
+    If the source is untrusted, avoid calling `load()` / `loads()` on it. If
+    you must, restrict `allowed_objects` to types that do not execute logic
+    during init — `allowed_objects='messages'` (or an explicit list of
+    message classes) is the safe choice. Keep `secrets_from_env=False`.
 
 The `allowed_objects` parameter controls which classes can be deserialized:
 
-- **`'core'` (default)**: Allow classes defined in the serialization mappings for
-    langchain_core.
-- **`'all'`**: Allow classes defined in the serialization mappings. This
-    includes core LangChain types (messages, prompts, documents, etc.) and trusted
-    partner integrations. See `langchain_core.load.mapping` for the full list.
-- **Explicit list of classes**: Only those specific classes are allowed.
-
-For simple data types like messages and documents, the default allowlist is safe to use.
-These classes do not perform side effects during initialization.
+- **Explicit list of classes** (recommended for untrusted input): only those
+    specific classes are allowed.
+- **`'messages'`**: chat-message classes only (e.g. `AIMessage`,
+    `HumanMessage`). Safe for untrusted input.
+- **`'core'` (current default)** — *unsafe with untrusted manifests.*
+    Classes defined in the serialization mappings under `langchain_core`
+    (messages, documents, prompts, etc.).
+- **`'all'`** — *unsafe with untrusted manifests.* Every class in the
+    serialization mappings, including partner chat models and LLMs and their
+    constructor kwargs (endpoint URLs, headers, model names, etc.).
 
 !!! note "Side effects in allowed classes"
 
-    Deserialization calls `__init__` on allowed classes. If those classes perform side
-    effects during initialization (network calls, file operations, etc.), those side
-    effects will occur. The allowlist prevents instantiation of classes outside the
-    allowlist, but does not sandbox the allowed classes themselves.
+    Deserialization calls `__init__` on allowed classes. If those classes perform
+    side effects during initialization (network calls, file operations, etc.),
+    those side effects will occur. The allowlist prevents instantiation of
+    classes outside the allowlist, but does not sandbox the allowed classes
+    themselves or constrain their constructor kwargs.
 
 Import paths are also validated against trusted namespaces before any module is
 imported.
 
 ### Best practices
 
-- Use the most restrictive `allowed_objects` possible. Prefer an explicit list
-    of classes over `'core'` or `'all'`.
+- Use the most restrictive `allowed_objects` possible. For untrusted input,
+    pass an explicit list of classes or `'messages'`. `'core'` and `'all'`
+    are unsafe with untrusted manifests — only use them when the source
+    serves the entire payload, including its configuration.
 - Keep `secrets_from_env` set to `False` (the default). If you must use it,
     ensure the serialized data comes from a fully trusted source, as a crafted
     payload can read arbitrary environment variables.
@@ -101,6 +111,7 @@ from collections.abc import Callable, Iterable
 from typing import Any, Literal, cast
 
 from langchain_core._api import beta
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load._validation import _is_escaped_dict, _unescape_value
 from langchain_core.load.mapping import (
     _JS_SERIALIZABLE_MAPPING,
@@ -141,13 +152,31 @@ ALL_SERIALIZABLE_MAPPINGS = {
     **_JS_SERIALIZABLE_MAPPING,
 }
 
+# Modern message classes admitted by `allowed_objects='messages'`. Legacy types
+# (BaseMessage / BaseMessageChunk, ChatMessage / ChatMessageChunk, FunctionMessage /
+# FunctionMessageChunk) are intentionally excluded — `BaseMessage` is abstract and
+# the chat/function variants are superseded by `ToolMessage` and tool calling.
+_MESSAGES_ALLOWED_CLASS_NAMES = frozenset(
+    {
+        "AIMessage",
+        "AIMessageChunk",
+        "HumanMessage",
+        "HumanMessageChunk",
+        "SystemMessage",
+        "SystemMessageChunk",
+        "ToolMessage",
+        "ToolMessageChunk",
+        "RemoveMessage",
+    }
+)
+
 # Cache for the default allowed class paths computed from mappings
-# Maps mode ("all" or "core") to the cached set of paths
+# Maps mode ("all", "core", or "messages") to the cached set of paths
 _default_class_paths_cache: dict[str, set[tuple[str, ...]]] = {}
 
 
 def _get_default_allowed_class_paths(
-    allowed_object_mode: Literal["all", "core"],
+    allowed_object_mode: Literal["all", "core", "messages"],
 ) -> set[tuple[str, ...]]:
     """Get the default allowed class paths from the serialization mappings.
 
@@ -155,7 +184,7 @@ def _get_default_allowed_class_paths(
     by default. Both the legacy paths (keys) and current paths (values) are included.
 
     Args:
-        allowed_object_mode: either `'all'` or `'core'`.
+        allowed_object_mode: either `'all'`, `'core'`, or `'messages'`.
 
     Returns:
         Set of class path tuples that are allowed by default.
@@ -166,6 +195,11 @@ def _get_default_allowed_class_paths(
     allowed_paths: set[tuple[str, ...]] = set()
     for key, value in ALL_SERIALIZABLE_MAPPINGS.items():
         if allowed_object_mode == "core" and value[0] != "langchain_core":
+            continue
+        if allowed_object_mode == "messages" and (
+            value[0] != "langchain_core"
+            or value[-1] not in _MESSAGES_ALLOWED_CLASS_NAMES
+        ):
             continue
         allowed_paths.add(key)
         allowed_paths.add(value)
@@ -301,7 +335,9 @@ class Reviver:
 
     def __init__(
         self,
-        allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+        allowed_objects: Iterable[AllowedObject]
+        | Literal["all", "core", "messages"]
+        | None = None,
         secrets_map: dict[str, str] | None = None,
         valid_namespaces: list[str] | None = None,
         secrets_from_env: bool = False,  # noqa: FBT001,FBT002
@@ -313,16 +349,24 @@ class Reviver:
     ) -> None:
         """Initialize the reviver.
 
+        See the module docstring for the threat model around `load()`/`loads()`:
+        a serialized payload may carry constructor configuration that affects
+        runtime behavior (custom `base_url`, headers, model name, etc.). Do not
+        use `'core'` or `'all'` with untrusted manifests.
+
         Args:
             allowed_objects: Allowlist of classes that can be deserialized.
-                - `'core'` (default): Allow classes defined in the serialization
-                    mappings for `langchain_core`.
-                - `'all'`: Allow classes defined in the serialization mappings.
-
-                    This includes core LangChain types (messages, prompts, documents,
-                    etc.) and trusted partner integrations. See
+                - Explicit list of classes (recommended for untrusted input):
+                    only those specific classes are allowed.
+                - `'messages'`: chat-message classes only (e.g. `AIMessage`,
+                    `HumanMessage`). Safe for untrusted input.
+                - `'core'` (current default): unsafe with untrusted manifests.
+                    Classes defined in the serialization mappings under
+                    `langchain_core`.
+                - `'all'`: unsafe with untrusted manifests. Every class in the
+                    serialization mappings, including partner chat models and
+                    LLMs and their constructor kwargs. See
                     `langchain_core.load.mapping` for the full list.
-                - Explicit list of classes: Only those specific classes are allowed.
             secrets_map: A map of secrets to load.
 
                 Only include the specific secrets the serialized object
@@ -352,6 +396,19 @@ class Reviver:
 
                 Defaults to `default_init_validator` which blocks jinja2 templates.
         """
+        if allowed_objects is None:
+            warn_deprecated(
+                since="1.4.0",
+                message=(
+                    "The default value of `allowed_objects` will change in a future "
+                    "version. Pass an explicit value (e.g., "
+                    "allowed_objects='messages' or allowed_objects='core') to suppress "
+                    "this warning."
+                ),
+                pending=True,
+            )
+            allowed_objects = "core"
+
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
         # By default, only support langchain, but user can pass in additional namespaces
@@ -372,10 +429,10 @@ class Reviver:
         # Compute allowed class paths:
         # - "all" -> use default paths from mappings (+ additional_import_mappings)
         # - Explicit list -> compute from those classes
-        if allowed_objects in ("all", "core"):
+        if allowed_objects in ("all", "core", "messages"):
             self.allowed_class_paths: set[tuple[str, ...]] | None = (
                 _get_default_allowed_class_paths(
-                    cast("Literal['all', 'core']", allowed_objects)
+                    cast("Literal['all', 'core', 'messages']", allowed_objects)
                 ).copy()
             )
             # Add paths from additional_import_mappings to the defaults
@@ -512,7 +569,9 @@ class Reviver:
 def loads(
     text: str,
     *,
-    allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+    allowed_objects: Iterable[AllowedObject]
+    | Literal["all", "core", "messages"]
+    | None = None,
     secrets_map: dict[str, str] | None = None,
     valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = False,
@@ -524,30 +583,33 @@ def loads(
 
     Equivalent to `load(json.loads(text))`.
 
-    Only classes in the allowlist can be instantiated. The default allowlist includes
-    core LangChain types (messages, prompts, documents, etc.). See
+    Only classes in the allowlist can be instantiated. The default allowlist
+    includes core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
     !!! warning "Do not use with untrusted input"
 
-        This function instantiates Python objects and can trigger side effects
-        during deserialization. **Never call `loads()` on data from an untrusted
-        or unauthenticated source.** See the module-level security model
-        documentation for details and best practices.
+        A serialized payload may carry constructor kwargs that affect runtime
+        behavior (custom `base_url`, headers, model name, etc.), so it should be
+        treated as executable configuration rather than plain text. If the
+        source is untrusted, avoid calling `loads()` on it; if you must, pass
+        `allowed_objects='messages'` or an explicit list of message classes.
+        See the module-level threat model for details.
 
     Args:
         text: The string to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
-            - `'core'` (default): Allow classes defined in the serialization mappings
-                for `langchain_core`.
-            - `'all'`: Allow classes defined in the serialization mappings.
-
-                This includes core LangChain types (messages, prompts, documents, etc.)
-                and trusted partner integrations. See `langchain_core.load.mapping` for
-                the full list.
-
-            - Explicit list of classes: Only those specific classes are allowed.
+            - Explicit list of classes (recommended for untrusted input): only
+                those specific classes are allowed.
+            - `'messages'`: chat-message classes only. Safe for untrusted input.
+            - `'core'` (current default): unsafe with untrusted manifests.
+                Classes defined in the serialization mappings under
+                `langchain_core`.
+            - `'all'`: unsafe with untrusted manifests. Every class in the
+                serialization mappings, including partner chat models and LLMs
+                and their constructor kwargs. See `langchain_core.load.mapping`
+                for the full list.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
 
@@ -584,6 +646,19 @@ def loads(
     Raises:
         ValueError: If an object's class path is not in the `allowed_objects` allowlist.
     """
+    if allowed_objects is None:
+        warn_deprecated(
+            since="1.4.0",
+            message=(
+                "The default value of `allowed_objects` will change in a future "
+                "version. Pass an explicit list of allowed classes (or "
+                "'messages' for untrusted input that contains only chat "
+                "messages) to suppress this warning."
+            ),
+            pending=True,
+        )
+        allowed_objects = "core"
+
     # Parse JSON and delegate to load() for proper escape handling
     raw_obj = json.loads(text)
     return load(
@@ -602,7 +677,9 @@ def loads(
 def load(
     obj: Any,
     *,
-    allowed_objects: Iterable[AllowedObject] | Literal["all", "core"] = "core",
+    allowed_objects: Iterable[AllowedObject]
+    | Literal["all", "core", "messages"]
+    | None = None,
     secrets_map: dict[str, str] | None = None,
     valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = False,
@@ -615,30 +692,33 @@ def load(
     Use this if you already have a parsed JSON object, eg. from `json.load` or
     `orjson.loads`.
 
-    Only classes in the allowlist can be instantiated. The default allowlist includes
-    core LangChain types (messages, prompts, documents, etc.). See
+    Only classes in the allowlist can be instantiated. The default allowlist
+    includes core LangChain types (messages, prompts, documents, etc.). See
     `langchain_core.load.mapping` for the full list.
 
     !!! warning "Do not use with untrusted input"
 
-        This function instantiates Python objects and can trigger side effects
-        during deserialization. **Never call `load()` on data from an untrusted
-        or unauthenticated source.** See the module-level security model
-        documentation for details and best practices.
+        A serialized payload may carry constructor kwargs that affect runtime
+        behavior (custom `base_url`, headers, model name, etc.), so it should be
+        treated as executable configuration rather than plain text. If the
+        source is untrusted, avoid calling `load()` on it; if you must, pass
+        `allowed_objects='messages'` or an explicit list of message classes.
+        See the module-level threat model for details.
 
     Args:
         obj: The object to load.
         allowed_objects: Allowlist of classes that can be deserialized.
 
-            - `'core'` (default): Allow classes defined in the serialization mappings
-                for `langchain_core`.
-            - `'all'`: Allow classes defined in the serialization mappings.
-
-                This includes core LangChain types (messages, prompts, documents, etc.)
-                and trusted partner integrations. See `langchain_core.load.mapping` for
-                the full list.
-
-            - Explicit list of classes: Only those specific classes are allowed.
+            - Explicit list of classes (recommended for untrusted input): only
+                those specific classes are allowed.
+            - `'messages'`: chat-message classes only. Safe for untrusted input.
+            - `'core'` (current default): unsafe with untrusted manifests.
+                Classes defined in the serialization mappings under
+                `langchain_core`.
+            - `'all'`: unsafe with untrusted manifests. Every class in the
+                serialization mappings, including partner chat models and LLMs
+                and their constructor kwargs. See `langchain_core.load.mapping`
+                for the full list.
             - `[]`: Disallow all deserialization (will raise on any object).
         secrets_map: A map of secrets to load.
 
@@ -699,6 +779,19 @@ def load(
         )
         ```
     """
+    if allowed_objects is None:
+        warn_deprecated(
+            since="1.4.0",
+            message=(
+                "The default value of `allowed_objects` will change in a future "
+                "version. Pass an explicit list of allowed classes (or "
+                "'messages' for untrusted input that contains only chat "
+                "messages) to suppress this warning."
+            ),
+            pending=True,
+        )
+        allowed_objects = "core"
+
     reviver = Reviver(
         allowed_objects,
         secrets_map,

@@ -13,6 +13,7 @@ from typing import (
 from pydantic import BaseModel
 from typing_extensions import override
 
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -320,6 +321,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 `RunnableBindingBase` init.
 
         """
+        warn_deprecated(
+            since="1.4.0",
+            message=(
+                "RunnableWithMessageHistory is deprecated. "
+                "Use LangGraph's built-in persistence instead."
+            ),
+            removal="2.0.0",
+        )
         history_chain: Runnable[Any, Any] = RunnableLambda(
             self._enter_history, self._aenter_history
         ).with_config(run_name="load_history")
@@ -539,7 +548,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = load(run.inputs, allowed_objects="messages")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -548,7 +557,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = load(run.outputs, allowed_objects="messages")
         output_messages = self._get_output_messages(output_val)
         hist.add_messages(input_messages + output_messages)
 
@@ -556,7 +565,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = load(run.inputs, allowed_objects="messages")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -565,7 +574,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = load(run.outputs, allowed_objects="messages")
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
 
