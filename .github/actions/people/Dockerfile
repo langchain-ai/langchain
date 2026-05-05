@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.11
 
 RUN pip install httpx PyGithub "pydantic==2.0.2" pydantic-settings "pyyaml>=5.3.1,<6.0.0"
 
