@@ -31,6 +31,7 @@ from langchain_fireworks.chat_models import (
     _convert_dict_to_message,
     _convert_message_to_dict,
     _format_message_content,
+    _sanitize_chat_completions_content,
     _usage_to_metadata,
 )
 
@@ -104,6 +105,32 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
 def test_format_message_content_passthrough_string() -> None:
     """Plain string content is returned unchanged."""
     assert _format_message_content("hello") == "hello"
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Fireworks's chat completions schema rejects unknown keys on tool message
+    content blocks (`Extra inputs are not permitted, ... [0].id`).
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="def456",
+    )
+    assert _convert_message_to_dict(message) == {
+        "role": "tool",
+        "content": [{"type": "text", "text": "foo"}],
+        "tool_call_id": "def456",
+    }
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
+    blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
+    assert _sanitize_chat_completions_content(blocks) == blocks
 
 
 def test_format_message_content_translates_v1_image_block() -> None:

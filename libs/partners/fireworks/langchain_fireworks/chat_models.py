@@ -170,6 +170,25 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from text content blocks.
+
+    Fireworks's chat completions endpoint rejects unknown fields on tool
+    message content blocks (e.g. the `id` that LangChain auto-generates on
+    `TextContentBlock`). For list content, keep only `type` and `text` on
+    text blocks; pass other blocks and non-list content through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
+            sanitized.append({"type": "text", "text": block["text"]})
+        else:
+            sanitized.append(block)
+    return sanitized
+
+
 def _format_message_content(content: Any) -> Any:
     """Format message content for the Fireworks chat completions wire format.
 
@@ -296,7 +315,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": _format_message_content(message.content),
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
             "tool_call_id": message.tool_call_id,
         }
     else:
