@@ -135,7 +135,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-sonnet-4-5-20250514")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-4-6")
 
         chain_with_history = RunnableWithMessageHistory(
             chain,
@@ -188,7 +188,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-sonnet-4-5-20250514")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-4-6")
 
         with_message_history = RunnableWithMessageHistory(
             chain,
