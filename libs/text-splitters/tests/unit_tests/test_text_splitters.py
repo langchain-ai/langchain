@@ -3503,6 +3503,35 @@ def test_visualbasic6_code_splitter() -> None:
     ]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    code = """
+use strict;
+use warnings;
+
+my $x = 10;
+
+sub add {
+    my ($a, $b) = @_;
+    return $a + $b;
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "use strict;",
+        "use warnings;",
+        "my $x = 10;",
+        "sub add {",
+        "my ($a, $b) =",
+        "@_;",
+        "return $a +",
+        "$b;",
+        "}",
+    ]
+
+
 def custom_iframe_extractor(iframe_tag: Tag) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"
