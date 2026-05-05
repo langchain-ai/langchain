@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
 from typing_extensions import override
@@ -19,6 +19,7 @@ from langchain.agents.middleware.types import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable
 
+    from langchain_core.messages import ToolCall
     from langgraph.types import Command
 
     from langchain.agents.middleware.types import ToolCallRequest
@@ -396,7 +397,7 @@ class SecretMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
 
         # Strategy is "redact" — rewrite args and let handler run on the result.
         new_args = _redact(args, self._detectors)
-        new_call = {**call, "args": new_args}
+        new_call = cast("ToolCall", {**call, "args": new_args})
         return request.override(tool_call=new_call), None
 
 
