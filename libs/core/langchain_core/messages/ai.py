@@ -275,17 +275,19 @@ class AIMessage(BaseMessage):
             }
             for tool_call in self.tool_calls:
                 if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
-                    tool_call_block: types.ToolCall = {
+                    tool_call_block: dict[str, Any] = {
                         "type": "tool_call",
                         "id": id_,
                         "name": tool_call["name"],
                         "args": tool_call["args"],
                     }
                     if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
+                        tool_call_block["index"] = cast("int", tool_call["index"])
                     if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
-                    blocks.append(tool_call_block)
+                        tool_call_block["extras"] = cast(
+                            "dict[str, Any]", tool_call["extras"]
+                        )
+                    blocks.append(cast("types.ContentBlock", tool_call_block))
 
         # Best-effort reasoning extraction from additional_kwargs
         # Only add reasoning if not already present
