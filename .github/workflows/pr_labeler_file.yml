@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Label Pull Request
-      uses: actions/labeler@v6
+      uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b # v6
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         configuration-path: .github/pr-file-labeler.yml
