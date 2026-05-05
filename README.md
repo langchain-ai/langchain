@@ -41,7 +41,9 @@ model = init_chat_model("openai:gpt-5.4")
 result = model.invoke("Hello, world!")
 ```
 
-If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows. For an equivalent JS/TS library, check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
+
+For an equivalent JS/TS library, check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
 > [!TIP]
 > For developing, debugging, and deploying AI agents and LLM applications, see [LangSmith](https://docs.langchain.com/langsmith/home).
