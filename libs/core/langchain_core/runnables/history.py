@@ -322,7 +322,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
         """
         warn_deprecated(
-            since="1.4.0",
+            since="1.3.3",
             message=(
                 "RunnableWithMessageHistory is deprecated. "
                 "Use LangGraph's built-in persistence instead."

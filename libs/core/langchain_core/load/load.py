@@ -398,7 +398,7 @@ class Reviver:
         """
         if allowed_objects is None:
             warn_deprecated(
-                since="1.4.0",
+                since="1.3.3",
                 message=(
                     "The default value of `allowed_objects` will change in a future "
                     "version. Pass an explicit value (e.g., "
@@ -648,7 +648,7 @@ def loads(
     """
     if allowed_objects is None:
         warn_deprecated(
-            since="1.4.0",
+            since="1.3.3",
             message=(
                 "The default value of `allowed_objects` will change in a future "
                 "version. Pass an explicit list of allowed classes (or "
@@ -781,7 +781,7 @@ def load(
     """
     if allowed_objects is None:
         warn_deprecated(
-            since="1.4.0",
+            since="1.3.3",
             message=(
                 "The default value of `allowed_objects` will change in a future "
                 "version. Pass an explicit list of allowed classes (or "

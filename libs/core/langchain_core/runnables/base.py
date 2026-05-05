@@ -1291,7 +1291,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """
         warn_deprecated(
-            since="1.4.0",
+            since="1.3.3",
             message=("astream_log is deprecated. Use astream instead."),
             removal="2.0.0",
         )
@@ -1545,7 +1545,7 @@ class Runnable(ABC, Generic[Input, Output]):
             )
         elif version == "v1":
             warn_deprecated(
-                since="1.4.0",
+                since="1.3.3",
                 message=(
                     "astream_events version='v1' is deprecated. "
                     "Use version='v2' or astream instead."
