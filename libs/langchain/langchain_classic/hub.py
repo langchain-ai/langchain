@@ -110,7 +110,7 @@ def push(
 
 
 @deprecated(
-    since="1.4.0",
+    since="1.0.6",
     removal="2.0.0",
     message=(
         "langchain_classic.hub.pull is deprecated. Use the LangSmith SDK instead."
