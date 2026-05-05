@@ -786,6 +786,31 @@ class TestResponseFormatAsProviderStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
 
+    def test_provider_strategy_without_tools(self) -> None:
+        """Test that ProviderStrategy works with response_format but NO tools.
+
+        This is a regression test for the bug where create_agent(..., response_format=MySchema)
+        without any tools would bind an empty tools list `tools=[]`, which OpenAI-compatible
+        providers (like vLLM ≥ 0.20.0) strictly reject.
+
+        The fix ensures that when there are no tools, bind() is called instead of bind_tools([])
+        to omit the tools field entirely.
+        """
+        model = FakeToolCallingModel(structured_response=EXPECTED_WEATHER_PYDANTIC)
+
+        # Create agent with response_format but NO tools (no tools parameter)
+        agent = create_agent(
+            model,
+            response_format=ProviderStrategy(WeatherBaseModel),
+        )
+
+        # Should work without raising an error about empty tools list
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # Verify the structured response was parsed correctly
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert len(response["messages"]) == 2  # human + ai response only
+
 
 class TestDynamicModelWithResponseFormat:
     """Test response_format with middleware that modifies the model."""

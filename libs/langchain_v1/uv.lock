@@ -2136,7 +2136,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.2"
+version = "1.4.3"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
