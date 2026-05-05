@@ -1231,10 +1231,15 @@ def create_agent(
         if isinstance(effective_response_format, ProviderStrategy):
             # (Backward compatibility) Use OpenAI format structured output
             kwargs = effective_response_format.to_model_kwargs()
+            if final_tools:
+                return (
+                    request.model.bind_tools(
+                        final_tools, strict=True, **kwargs, **request.model_settings
+                    ),
+                    effective_response_format,
+                )
             return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
-                ),
+                request.model.bind(**kwargs, **request.model_settings),
                 effective_response_format,
             )
 

@@ -871,6 +871,43 @@ class TestDynamicModelWithResponseFormat:
         assert ai_message.tool_calls == []
         assert ai_message.content == json.dumps(WEATHER_DATA)
 
+    def test_provider_strategy_without_tools_does_not_bind_empty_tool_list(self) -> None:
+        class CustomModel(GenericFakeChatModel):
+            tool_bindings: list[Any] = Field(default_factory=list)
+            bind_kwargs: list[dict[str, Any]] = Field(default_factory=list)
+
+            def bind_tools(
+                self,
+                tools: Sequence[
+                    dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+                ],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                self.tool_bindings.append(list(tools))
+                self.bind_kwargs.append(kwargs)
+                return self
+
+            def bind(self, **kwargs: Any) -> Runnable[LanguageModelInput, AIMessage]:
+                self.bind_kwargs.append(kwargs)
+                return self
+
+        model = CustomModel(messages=iter([json.dumps(WEATHER_DATA)]))
+
+        with patch(
+            "langchain.agents.factory._supports_provider_strategy",
+            return_value=True,
+        ):
+            agent = create_agent(
+                model=model,
+                response_format=WeatherBaseModel,
+            )
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert model.tool_bindings == []
+        assert len(model.bind_kwargs) == 1
+        assert "response_format" in model.bind_kwargs[0]
+
 
 def test_union_of_types() -> None:
     """Test response_format as ProviderStrategy with Union (if supported)."""
