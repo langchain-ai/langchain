@@ -4529,7 +4529,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         new_blocks.append(
                             _convert_chat_completions_blocks_to_responses(block)
                         )
-                    elif block["type"] in ("input_text", "input_image", "input_file"):
+                    elif block["type"] in ("input_text", "input_image", "input_file", "input_video"):
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
                         input_.append(block)
