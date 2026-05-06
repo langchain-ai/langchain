@@ -423,11 +423,26 @@ class ProviderStrategyBinding(Generic[SchemaT]):
     def _extract_text_content_from_message(message: AIMessage) -> str:
         """Extract text content from an `AIMessage`.
 
+        Handles three content shapes:
+
+        - ``str``: returned as-is.
+        - ``list`` of text parts that together form a single JSON document
+          (e.g. streamed/split payload): joined and returned.
+        - ``list`` of text parts where one or more individual parts are
+          themselves complete JSON documents (e.g. a "phased" response from
+          the OpenAI Responses API containing both ``commentary`` and
+          ``final_answer`` text blocks): the last individually-valid JSON
+          block is returned. Concatenating such phased responses would
+          produce invalid JSON like ``{...}{...}`` and fail downstream
+          ``json.loads``. Returning the last valid block matches the
+          intended answer (``final_answer`` is emitted after
+          ``commentary``) while remaining provider-agnostic.
+
         Args:
             message: The AI message to extract text from
 
         Returns:
-            The extracted text content
+            The extracted text content ready to be passed to ``json.loads``.
         """
         content = message.content
         if isinstance(content, str):
@@ -441,6 +456,22 @@ class ProviderStrategyBinding(Generic[SchemaT]):
                     parts.append(c["content"])
             else:
                 parts.append(str(c))
+
+        # If any individual part is itself a complete JSON document, prefer
+        # the last such part. This correctly handles phased responses where
+        # multiple sibling text blocks each contain a standalone JSON
+        # payload, without disturbing the existing behaviour for payloads
+        # that are split across parts (joined below).
+        for part in reversed(parts):
+            stripped = part.strip()
+            if not stripped:
+                continue
+            try:
+                json.loads(stripped)
+            except ValueError:
+                continue
+            return part
+
         return "".join(parts)
 
 

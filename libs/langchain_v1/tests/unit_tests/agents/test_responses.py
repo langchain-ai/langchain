@@ -266,6 +266,42 @@ class TestProviderStrategyBinding:
         assert result.age == 30
         assert result.email == "default@example.com"  # default value
 
+    def test_parse_phased_multi_text_blocks(self) -> None:
+        """Regression test for issue #36290.
+
+        When an ``AIMessage`` content list contains multiple text parts that
+        are each a complete JSON document (the "phased" response shape emitted
+        by the OpenAI Responses API with ``commentary`` and ``final_answer``
+        phases), parsing must not naively concatenate the parts — that would
+        yield invalid JSON like ``{...}{...}`` and fail.
+
+        The extractor should return the last individually-valid JSON block,
+        which matches the intended answer (``final_answer`` is emitted after
+        ``commentary``).
+        """
+        schema_spec = _SchemaSpec(schema=_TestModel)
+        tool_binding = ProviderStrategyBinding.from_schema_spec(schema_spec)
+
+        message = AIMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": '{"name": "commentary-name", "age": 10}',
+                    "phase": "commentary",
+                },
+                {
+                    "type": "text",
+                    "text": '{"name": "final-name", "age": 42}',
+                    "phase": "final_answer",
+                },
+            ]
+        )
+        result = tool_binding.parse(message)
+
+        assert isinstance(result, _TestModel)
+        assert result.name == "final-name"
+        assert result.age == 42
+
 
 class TestEdgeCases:
     """Test edge cases and error conditions."""
