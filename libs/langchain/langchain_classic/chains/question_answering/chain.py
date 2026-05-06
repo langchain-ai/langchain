@@ -80,6 +80,22 @@ def _load_stuff_chain(
     callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
+    """Load stuff documents chain.
+
+    Args:
+        llm: Language Model to use in the chain.
+        prompt: BasePromptTemplate to use for the chain. The prompt should have a
+            variable matching `document_variable_name` (default: "context") where
+            the concatenated documents will be inserted.
+        document_variable_name: Variable name in prompt where documents are put.
+        verbose: Whether chains should be run in verbose mode.
+        callback_manager: Callback manager to use for the chain.
+        callbacks: Callbacks to use for the chain.
+        **kwargs: Additional keyword arguments to pass to StuffDocumentsChain.
+
+    Returns:
+        A StuffDocumentsChain instance.
+    """
     _prompt = prompt or stuff_prompt.PROMPT_SELECTOR.get_prompt(llm)
     llm_chain = LLMChain(
         llm=llm,
@@ -88,7 +104,6 @@ def _load_stuff_chain(
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
-    # TODO: document prompt
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
@@ -115,6 +130,33 @@ def _load_map_reduce_chain(
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
+    """Load map reduce documents chain.
+
+    Args:
+        llm: Language Model to use in the chain.
+        question_prompt: BasePromptTemplate to use for the map step. The prompt
+            should have a variable matching `map_reduce_document_variable_name`
+            (default: "context") where the document content will be inserted.
+        combine_prompt: BasePromptTemplate to use for the reduce step. The prompt
+            should have a variable matching `combine_document_variable_name`
+            (default: "summaries") where the combined documents will be inserted.
+        combine_document_variable_name: Variable name in the combine prompt where
+            documents are put.
+        map_reduce_document_variable_name: Variable name in the question prompt
+            where the document is put.
+        collapse_prompt: BasePromptTemplate to use for the collapse step if the
+            documents exceed the token limit.
+        reduce_llm: Language Model to use for the reduce step. Defaults to `llm`.
+        collapse_llm: Language Model to use for the collapse step. Defaults to `llm`.
+        verbose: Whether chains should be run in verbose mode.
+        callback_manager: Callback manager to use for the chain.
+        callbacks: Callbacks to use for the chain.
+        token_max: Maximum number of tokens to combine in a single reduce step.
+        **kwargs: Additional keyword arguments to pass to MapReduceDocumentsChain.
+
+    Returns:
+        A MapReduceDocumentsChain instance.
+    """
     _question_prompt = (
         question_prompt or map_reduce_prompt.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
@@ -136,7 +178,6 @@ def _load_map_reduce_chain(
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
-    # TODO: document prompt
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
