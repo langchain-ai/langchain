@@ -3776,3 +3776,25 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+def test_construct_responses_api_input_with_input_video():
+    """Test that input_video type is properly handled in responses API input."""
+    from langchain_openai.chat_models.base import _construct_responses_api_input
+    from langchain_core.messages import HumanMessage
+
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "input_text", "text": "Describe this video"},
+                {"type": "input_video", "video_url": "https://example.com/video.mp4"},
+            ]
+        )
+    ]
+
+    result = _construct_responses_api_input(messages)
+    
+    assert len(result) == 2
+    assert result[0]["type"] == "input_text"
+    assert result[0]["text"] == "Describe this video"
+    assert result[1]["type"] == "input_video"
+    assert result[1]["video_url"] == "https://example.com/video.mp4"
