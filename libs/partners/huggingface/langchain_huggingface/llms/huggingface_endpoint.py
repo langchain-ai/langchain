@@ -417,7 +417,7 @@ class HuggingFaceEndpoint(LLM):
         invocation_params = self._invocation_params(stop, **kwargs)
 
         for response in self.client.text_generation(
-            prompt, **invocation_params, stream=True
+            prompt, model=self.model, **invocation_params, stream=True
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: str | None = None
@@ -453,7 +453,7 @@ class HuggingFaceEndpoint(LLM):
     ) -> AsyncIterator[GenerationChunk]:
         invocation_params = self._invocation_params(stop, **kwargs)
         async for response in await self.async_client.text_generation(
-            prompt, **invocation_params, stream=True
+            prompt, model=self.model, **invocation_params, stream=True
         ):
             # identify stop sequence in generated text, if any
             stop_seq_found: str | None = None
