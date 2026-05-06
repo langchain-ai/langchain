@@ -407,8 +407,13 @@ def _get_schema_type_hints(schema: type) -> dict[str, Any]:
     return get_type_hints(schema, include_extras=True)
 
 
-def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
-    """Resolve state, input, and output schemas for the given schemas."""
+def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
+    """Resolve state, input, and output schemas for the given schemas.
+
+    Schemas are merged in list order; later entries override earlier ones when the
+    same field is declared by multiple schemas.  Duplicates are harmless — a type
+    that appears more than once is processed at its last position.
+    """
     schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
@@ -1030,10 +1035,13 @@ def create_agent(
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas: set[type] = {m.state_schema for m in middleware}
-    # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
-    state_schemas.add(base_state)
+    # Build an ordered list: middleware schemas first (in registration order),
+    # base_state last so it wins any field conflict.  This lets the caller's
+    # explicit state_schema override middleware annotations — e.g. passing
+    # a DeltaChannel-annotated schema wins over BinaryOperatorAggregate from
+    # AgentState without requiring a post-compilation patch.
+    state_schemas: list[type] = [*(m.state_schema for m in middleware), base_state]
 
     resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
