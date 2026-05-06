@@ -1741,10 +1741,13 @@ class BaseChatOpenAI(BaseChatModel):
             msg = f"Response missing 'choices' key: {response_dict.keys()}"
             raise KeyError(msg) from e
 
+        if choices is None and hasattr(response, "model_extra"):
+            # vLLM and other OpenAI-compatible APIs add extra fields not in
+            # OpenAI's Pydantic schema. model_dump() may lose 'choices' as a
+            # result. Fall back to model_extra to recover it.
+            choices = (response.model_extra or {}).get("choices")
+
         if choices is None:
-            # Some OpenAI-compatible APIs (e.g., vLLM) may return null choices
-            # when the response format differs or an error occurs without
-            # populating the error field. Provide a more helpful error message.
             msg = (
                 "Received response with null value for 'choices'. "
                 "This can happen when using OpenAI-compatible APIs (e.g., vLLM) "
