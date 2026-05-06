@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.3.0a1"
+version = "1.3.0a2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.0a2,<2.0.0",
@@ -94,6 +94,7 @@ test_integration = [
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
+prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
