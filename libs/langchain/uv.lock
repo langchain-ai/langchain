@@ -2738,7 +2738,6 @@ test-integration = [
     { name = "cassio", marker = "python_full_version < '3.14'" },
     { name = "langchain-core" },
     { name = "langchain-text-splitters" },
-    { name = "langchainhub" },
     { name = "python-dotenv" },
     { name = "vcrpy" },
     { name = "wrapt" },
@@ -2831,7 +2830,6 @@ test-integration = [
     { name = "cassio", marker = "python_full_version < '3.14'", specifier = ">=0.1.0,<1.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
-    { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
     { name = "wrapt", specifier = ">=1.15.0,<3.0.0" },
@@ -3269,19 +3267,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1e/50/721db990f9eff5ebd07ca7c06dfa4745406980c90554a2f508bd2a178f91/langchain_xai-1.2.2.tar.gz", hash = "sha256:5d88d31ae078b211eb341d238cc6518818b8e8816efdfc4d98e5e14767629639", size = 175995, upload-time = "2026-01-26T04:26:12.978Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/3d/a0217c207482ec4f5b5813aaf07173421a3ff55bfec172905b90571b23a5/langchain_xai-1.2.2-py3-none-any.whl", hash = "sha256:f7bab093d2256efa2079a1d2df32cd3a6432118f3e6d0beca110111d0f2a8ec7", size = 11101, upload-time = "2026-01-26T04:26:11.948Z" },
-]
-
-[[package]]
-name = "langchainhub"
-version = "0.1.18"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "requests" },
-    { name = "types-requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/62/19/77c02f66dba977154174d863d414652e5b612041d4ef62460b8d01688c01/langchainhub-0.1.18.tar.gz", hash = "sha256:f2d0d8bf3abe4ca5e70511d8220bdc9ccea28d5267bcfd0e5ef9c53bd5bd3bad", size = 4050, upload-time = "2024-06-07T17:25:32.997Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/2f/e6c64fc13d181c422a25642c358a50918b0c973946f9bd5aa2d835fd1963/langchainhub-0.1.18-py3-none-any.whl", hash = "sha256:11501f15e7f34715ecc8892587daa35c6f2a3005e1f2926c9bcabd31fc2c100c", size = 4780, upload-time = "2024-06-07T17:25:31.56Z" },
 ]
 
 [[package]]
