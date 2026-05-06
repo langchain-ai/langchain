@@ -62,6 +62,39 @@ _SUPPORTED_CRITERIA = {
     Criteria.DETAIL: "Does the submission demonstrate attention to detail?",
 }
 
+_NEGATIVE_REASONING_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bdoes\s+not\s+(?:meet|satisfy|fulfill)\b",
+        r"\bnot\s+(?:meet|satisfy|fulfill)\b",
+        r"\bis\s+not\s+(?:correct|accurate|factual|helpful|relevant|concise)\b",
+        r"\b(?:fails|failed)\s+(?:the\s+)?(?:criterion|criteria|requirement|requirements)\b",
+        r"\bincomplete\b",
+        r"\bdoes\s+not\s+fulfill\s+the\s+objective\b",
+    )
+]
+_POSITIVE_REASONING_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\b(?:meets|satisfies|fulfills)\s+(?:the\s+)?(?:criterion|criteria|requirement|requirements|objective)\b",
+        r"\bis\s+(?:correct|accurate|factual|helpful|relevant|concise)\b",
+        r"\bfulfills\s+the\s+objective\b",
+    )
+]
+
+
+def _verdict_inconsistent_with_reasoning(verdict: str, reasoning: str) -> bool:
+    conclusion = reasoning.strip().rsplit("\n\n", maxsplit=1)[-1]
+    if verdict.upper() == "Y":
+        return any(
+            pattern.search(conclusion) for pattern in _NEGATIVE_REASONING_PATTERNS
+        )
+    if verdict.upper() == "N":
+        return any(
+            pattern.search(conclusion) for pattern in _POSITIVE_REASONING_PATTERNS
+        )
+    return False
+
 
 class CriteriaResultOutputParser(BaseOutputParser[dict]):
     """A parser for the output of the CriteriaEvalChain."""
@@ -98,15 +131,23 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
             splits = text.strip().rsplit("\n", maxsplit=1)
             verdict = splits[-1]
 
+        verdict_inconsistent_with_reasoning = False
         if verdict:
             score = (
                 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
             )
+            verdict_inconsistent_with_reasoning = (
+                score is not None
+                and _verdict_inconsistent_with_reasoning(verdict, text)
+            )
+            if verdict_inconsistent_with_reasoning:
+                score = None
 
         return {
             "reasoning": text.strip(),
             "value": verdict,
             "score": score,
+            "verdict_inconsistent_with_reasoning": verdict_inconsistent_with_reasoning,
         }
 
 

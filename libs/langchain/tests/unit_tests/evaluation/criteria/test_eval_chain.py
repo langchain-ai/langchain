@@ -49,6 +49,32 @@ def test_resolve_criteria_str() -> None:
                 "score": 1,
             },
         ),
+        (
+            "The submission only interacts with the return date picker.\n\n"
+            "The submission does not meet the criteria of correctness because it "
+            "fails the requirements and is incomplete.\n\n"
+            "Y",
+            {
+                "reasoning": (
+                    "The submission only interacts with the return date picker.\n\n"
+                    "The submission does not meet the criteria of correctness because "
+                    "it fails the requirements and is incomplete."
+                ),
+                "value": "Y",
+                "score": None,
+            },
+        ),
+        (
+            "The submitted answer matches the reference answer.\n\n"
+            "Therefore, the submission meets the criteria.\n\n"
+            "N",
+            {
+                "reasoning": "The submitted answer matches the reference answer.\n\n"
+                "Therefore, the submission meets the criteria.",
+                "value": "N",
+                "score": None,
+            },
+        ),
     ],
 )
 def test_criteria_result_output_parser_parse(text: str, want: dict) -> None:
