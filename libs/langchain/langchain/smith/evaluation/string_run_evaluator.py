@@ -31,7 +31,9 @@ def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
         return []
     first_message = messages[0]
     if "lc" in first_message:
-        return [load(dumpd(message)) for message in messages]
+        return [
+            load(dumpd(message), allowed_objects="messages") for message in messages
+        ]
     return messages_from_dict(messages)
 
 
