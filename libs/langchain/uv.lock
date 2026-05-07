@@ -2632,7 +2632,7 @@ wheels = [
 
 [[package]]
 name = "langchain-classic"
-version = "1.0.6"
+version = "1.0.7"
 source = { editable = "." }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
