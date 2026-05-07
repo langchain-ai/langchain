@@ -20,250 +20,250 @@ version of LangChain where the code was in a different location.
 # First value is the value that it is serialized as
 # Second value is the path to load it from
 SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
-    ("langchain", "schema", "messages", "AIMessage"): (
+    ("langchain_classic", "schema", "messages", "AIMessage"): (
         "langchain_core",
         "messages",
         "ai",
         "AIMessage",
     ),
-    ("langchain", "schema", "messages", "AIMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "AIMessageChunk"): (
         "langchain_core",
         "messages",
         "ai",
         "AIMessageChunk",
     ),
-    ("langchain", "schema", "messages", "BaseMessage"): (
+    ("langchain_classic", "schema", "messages", "BaseMessage"): (
         "langchain_core",
         "messages",
         "base",
         "BaseMessage",
     ),
-    ("langchain", "schema", "messages", "BaseMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "BaseMessageChunk"): (
         "langchain_core",
         "messages",
         "base",
         "BaseMessageChunk",
     ),
-    ("langchain", "schema", "messages", "ChatMessage"): (
+    ("langchain_classic", "schema", "messages", "ChatMessage"): (
         "langchain_core",
         "messages",
         "chat",
         "ChatMessage",
     ),
-    ("langchain", "schema", "messages", "FunctionMessage"): (
+    ("langchain_classic", "schema", "messages", "FunctionMessage"): (
         "langchain_core",
         "messages",
         "function",
         "FunctionMessage",
     ),
-    ("langchain", "schema", "messages", "HumanMessage"): (
+    ("langchain_classic", "schema", "messages", "HumanMessage"): (
         "langchain_core",
         "messages",
         "human",
         "HumanMessage",
     ),
-    ("langchain", "schema", "messages", "SystemMessage"): (
+    ("langchain_classic", "schema", "messages", "SystemMessage"): (
         "langchain_core",
         "messages",
         "system",
         "SystemMessage",
     ),
-    ("langchain", "schema", "messages", "ToolMessage"): (
+    ("langchain_classic", "schema", "messages", "ToolMessage"): (
         "langchain_core",
         "messages",
         "tool",
         "ToolMessage",
     ),
-    ("langchain", "schema", "messages", "RemoveMessage"): (
+    ("langchain_classic", "schema", "messages", "RemoveMessage"): (
         "langchain_core",
         "messages",
         "modifier",
         "RemoveMessage",
     ),
-    ("langchain", "schema", "agent", "AgentAction"): (
+    ("langchain_classic", "schema", "agent", "AgentAction"): (
         "langchain_core",
         "agents",
         "AgentAction",
     ),
-    ("langchain", "schema", "agent", "AgentFinish"): (
+    ("langchain_classic", "schema", "agent", "AgentFinish"): (
         "langchain_core",
         "agents",
         "AgentFinish",
     ),
-    ("langchain", "schema", "prompt_template", "BasePromptTemplate"): (
+    ("langchain_classic", "schema", "prompt_template", "BasePromptTemplate"): (
         "langchain_core",
         "prompts",
         "base",
         "BasePromptTemplate",
     ),
-    ("langchain", "chains", "llm", "LLMChain"): (
+    ("langchain_classic", "chains", "llm", "LLMChain"): (
         "langchain",
         "chains",
         "llm",
         "LLMChain",
     ),
-    ("langchain", "prompts", "prompt", "PromptTemplate"): (
+    ("langchain_classic", "prompts", "prompt", "PromptTemplate"): (
         "langchain_core",
         "prompts",
         "prompt",
         "PromptTemplate",
     ),
-    ("langchain", "prompts", "chat", "MessagesPlaceholder"): (
+    ("langchain_classic", "prompts", "chat", "MessagesPlaceholder"): (
         "langchain_core",
         "prompts",
         "chat",
         "MessagesPlaceholder",
     ),
-    ("langchain", "llms", "openai", "OpenAI"): (
+    ("langchain_classic", "llms", "openai", "OpenAI"): (
         "langchain_openai",
         "llms",
         "base",
         "OpenAI",
     ),
-    ("langchain", "prompts", "chat", "ChatPromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "ChatPromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "ChatPromptTemplate",
     ),
-    ("langchain", "prompts", "chat", "HumanMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "HumanMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "HumanMessagePromptTemplate",
     ),
-    ("langchain", "prompts", "chat", "SystemMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "SystemMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "SystemMessagePromptTemplate",
     ),
-    ("langchain", "prompts", "image", "ImagePromptTemplate"): (
+    ("langchain_classic", "prompts", "image", "ImagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "image",
         "ImagePromptTemplate",
     ),
-    ("langchain", "schema", "agent", "AgentActionMessageLog"): (
+    ("langchain_classic", "schema", "agent", "AgentActionMessageLog"): (
         "langchain_core",
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "ToolAgentAction"): (
+    ("langchain_classic", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
         "tools",
         "ToolAgentAction",
     ),
-    ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "BaseMessagePromptTemplate",
     ),
-    ("langchain", "schema", "output", "ChatGeneration"): (
+    ("langchain_classic", "schema", "output", "ChatGeneration"): (
         "langchain_core",
         "outputs",
         "chat_generation",
         "ChatGeneration",
     ),
-    ("langchain", "schema", "output", "Generation"): (
+    ("langchain_classic", "schema", "output", "Generation"): (
         "langchain_core",
         "outputs",
         "generation",
         "Generation",
     ),
-    ("langchain", "schema", "document", "Document"): (
+    ("langchain_classic", "schema", "document", "Document"): (
         "langchain_core",
         "documents",
         "base",
         "Document",
     ),
-    ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
+    ("langchain_classic", "output_parsers", "fix", "OutputFixingParser"): (
         "langchain",
         "output_parsers",
         "fix",
         "OutputFixingParser",
     ),
-    ("langchain", "prompts", "chat", "AIMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "AIMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "AIMessagePromptTemplate",
     ),
-    ("langchain", "output_parsers", "regex", "RegexParser"): (
+    ("langchain_classic", "output_parsers", "regex", "RegexParser"): (
         "langchain",
         "output_parsers",
         "regex",
         "RegexParser",
     ),
-    ("langchain", "schema", "runnable", "DynamicRunnable"): (
+    ("langchain_classic", "schema", "runnable", "DynamicRunnable"): (
         "langchain_core",
         "runnables",
         "configurable",
         "DynamicRunnable",
     ),
-    ("langchain", "schema", "prompt", "PromptValue"): (
+    ("langchain_classic", "schema", "prompt", "PromptValue"): (
         "langchain_core",
         "prompt_values",
         "PromptValue",
     ),
-    ("langchain", "schema", "runnable", "RunnableBinding"): (
+    ("langchain_classic", "schema", "runnable", "RunnableBinding"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableBinding",
     ),
-    ("langchain", "schema", "runnable", "RunnableBranch"): (
+    ("langchain_classic", "schema", "runnable", "RunnableBranch"): (
         "langchain_core",
         "runnables",
         "branch",
         "RunnableBranch",
     ),
-    ("langchain", "schema", "runnable", "RunnableWithFallbacks"): (
+    ("langchain_classic", "schema", "runnable", "RunnableWithFallbacks"): (
         "langchain_core",
         "runnables",
         "fallbacks",
         "RunnableWithFallbacks",
     ),
-    ("langchain", "schema", "output_parser", "StrOutputParser"): (
+    ("langchain_classic", "schema", "output_parser", "StrOutputParser"): (
         "langchain_core",
         "output_parsers",
         "string",
         "StrOutputParser",
     ),
-    ("langchain", "chat_models", "openai", "ChatOpenAI"): (
+    ("langchain_classic", "chat_models", "openai", "ChatOpenAI"): (
         "langchain_openai",
         "chat_models",
         "base",
         "ChatOpenAI",
     ),
-    ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
+    ("langchain_classic", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
         "langchain_core",
         "output_parsers",
         "list",
         "CommaSeparatedListOutputParser",
     ),
-    ("langchain", "schema", "runnable", "RunnableParallel"): (
+    ("langchain_classic", "schema", "runnable", "RunnableParallel"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableParallel",
     ),
-    ("langchain", "chat_models", "azure_openai", "AzureChatOpenAI"): (
+    ("langchain_classic", "chat_models", "azure_openai", "AzureChatOpenAI"): (
         "langchain_openai",
         "chat_models",
         "azure",
         "AzureChatOpenAI",
     ),
-    ("langchain", "chat_models", "bedrock", "BedrockChat"): (
+    ("langchain_classic", "chat_models", "bedrock", "BedrockChat"): (
         "langchain_aws",
         "chat_models",
         "bedrock",
         "ChatBedrock",
     ),
-    ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
+    ("langchain_classic", "chat_models", "anthropic", "ChatAnthropic"): (
         "langchain_anthropic",
         "chat_models",
         "ChatAnthropic",
@@ -288,34 +288,34 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatBaseten",
     ),
-    ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
+    ("langchain_classic", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
         "chat_models",
         "ChatFireworks",
     ),
-    ("langchain", "chat_models", "google_palm", "ChatGooglePalm"): (
+    ("langchain_classic", "chat_models", "google_palm", "ChatGooglePalm"): (
         "langchain",
         "chat_models",
         "google_palm",
         "ChatGooglePalm",
     ),
-    ("langchain", "chat_models", "vertexai", "ChatVertexAI"): (
+    ("langchain_classic", "chat_models", "vertexai", "ChatVertexAI"): (
         "langchain_google_vertexai",
         "chat_models",
         "ChatVertexAI",
     ),
-    ("langchain", "chat_models", "mistralai", "ChatMistralAI"): (
+    ("langchain_classic", "chat_models", "mistralai", "ChatMistralAI"): (
         "langchain_mistralai",
         "chat_models",
         "ChatMistralAI",
     ),
-    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+    ("langchain_classic", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
         "langchain_aws",
         "chat_models",
         "anthropic",
         "ChatAnthropicBedrock",
     ),
-    ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
+    ("langchain_classic", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",
         "chat_models",
         "bedrock",
@@ -332,223 +332,223 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatGoogleGenerativeAI",
     ),
-    ("langchain", "schema", "output", "ChatGenerationChunk"): (
+    ("langchain_classic", "schema", "output", "ChatGenerationChunk"): (
         "langchain_core",
         "outputs",
         "chat_generation",
         "ChatGenerationChunk",
     ),
-    ("langchain", "schema", "messages", "ChatMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "ChatMessageChunk"): (
         "langchain_core",
         "messages",
         "chat",
         "ChatMessageChunk",
     ),
-    ("langchain", "schema", "messages", "HumanMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "HumanMessageChunk"): (
         "langchain_core",
         "messages",
         "human",
         "HumanMessageChunk",
     ),
-    ("langchain", "schema", "messages", "FunctionMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "FunctionMessageChunk"): (
         "langchain_core",
         "messages",
         "function",
         "FunctionMessageChunk",
     ),
-    ("langchain", "schema", "messages", "SystemMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "SystemMessageChunk"): (
         "langchain_core",
         "messages",
         "system",
         "SystemMessageChunk",
     ),
-    ("langchain", "schema", "messages", "ToolMessageChunk"): (
+    ("langchain_classic", "schema", "messages", "ToolMessageChunk"): (
         "langchain_core",
         "messages",
         "tool",
         "ToolMessageChunk",
     ),
-    ("langchain", "schema", "output", "GenerationChunk"): (
+    ("langchain_classic", "schema", "output", "GenerationChunk"): (
         "langchain_core",
         "outputs",
         "generation",
         "GenerationChunk",
     ),
-    ("langchain", "llms", "openai", "BaseOpenAI"): (
+    ("langchain_classic", "llms", "openai", "BaseOpenAI"): (
         "langchain",
         "llms",
         "openai",
         "BaseOpenAI",
     ),
-    ("langchain", "llms", "bedrock", "Bedrock"): (
+    ("langchain_classic", "llms", "bedrock", "Bedrock"): (
         "langchain_aws",
         "llms",
         "bedrock",
         "BedrockLLM",
     ),
-    ("langchain", "llms", "bedrock", "BedrockLLM"): (
+    ("langchain_classic", "llms", "bedrock", "BedrockLLM"): (
         "langchain_aws",
         "llms",
         "bedrock",
         "BedrockLLM",
     ),
-    ("langchain", "llms", "fireworks", "Fireworks"): (
+    ("langchain_classic", "llms", "fireworks", "Fireworks"): (
         "langchain_fireworks",
         "llms",
         "Fireworks",
     ),
-    ("langchain", "llms", "google_palm", "GooglePalm"): (
+    ("langchain_classic", "llms", "google_palm", "GooglePalm"): (
         "langchain",
         "llms",
         "google_palm",
         "GooglePalm",
     ),
-    ("langchain", "llms", "openai", "AzureOpenAI"): (
+    ("langchain_classic", "llms", "openai", "AzureOpenAI"): (
         "langchain_openai",
         "llms",
         "azure",
         "AzureOpenAI",
     ),
-    ("langchain", "llms", "replicate", "Replicate"): (
+    ("langchain_classic", "llms", "replicate", "Replicate"): (
         "langchain",
         "llms",
         "replicate",
         "Replicate",
     ),
-    ("langchain", "llms", "vertexai", "VertexAI"): (
+    ("langchain_classic", "llms", "vertexai", "VertexAI"): (
         "langchain_vertexai",
         "llms",
         "VertexAI",
     ),
-    ("langchain", "output_parsers", "combining", "CombiningOutputParser"): (
+    ("langchain_classic", "output_parsers", "combining", "CombiningOutputParser"): (
         "langchain",
         "output_parsers",
         "combining",
         "CombiningOutputParser",
     ),
-    ("langchain", "schema", "prompt_template", "BaseChatPromptTemplate"): (
+    ("langchain_classic", "schema", "prompt_template", "BaseChatPromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "BaseChatPromptTemplate",
     ),
-    ("langchain", "prompts", "chat", "ChatMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "ChatMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "ChatMessagePromptTemplate",
     ),
-    ("langchain", "prompts", "few_shot_with_templates", "FewShotPromptWithTemplates"): (
+    ("langchain_classic", "prompts", "few_shot_with_templates", "FewShotPromptWithTemplates"): (
         "langchain_core",
         "prompts",
         "few_shot_with_templates",
         "FewShotPromptWithTemplates",
     ),
-    ("langchain", "prompts", "pipeline"): (
+    ("langchain_classic", "prompts", "pipeline"): (
         "langchain_core",
         "prompts",
         "pipeline",
     ),
-    ("langchain", "prompts", "base", "StringPromptTemplate"): (
+    ("langchain_classic", "prompts", "base", "StringPromptTemplate"): (
         "langchain_core",
         "prompts",
         "string",
         "StringPromptTemplate",
     ),
-    ("langchain", "prompts", "base", "StringPromptValue"): (
+    ("langchain_classic", "prompts", "base", "StringPromptValue"): (
         "langchain_core",
         "prompt_values",
         "StringPromptValue",
     ),
-    ("langchain", "prompts", "chat", "BaseStringMessagePromptTemplate"): (
+    ("langchain_classic", "prompts", "chat", "BaseStringMessagePromptTemplate"): (
         "langchain_core",
         "prompts",
         "chat",
         "BaseStringMessagePromptTemplate",
     ),
-    ("langchain", "prompts", "chat", "ChatPromptValue"): (
+    ("langchain_classic", "prompts", "chat", "ChatPromptValue"): (
         "langchain_core",
         "prompt_values",
         "ChatPromptValue",
     ),
-    ("langchain", "prompts", "chat", "ChatPromptValueConcrete"): (
+    ("langchain_classic", "prompts", "chat", "ChatPromptValueConcrete"): (
         "langchain_core",
         "prompt_values",
         "ChatPromptValueConcrete",
     ),
-    ("langchain", "schema", "runnable", "HubRunnable"): (
+    ("langchain_classic", "schema", "runnable", "HubRunnable"): (
         "langchain",
         "runnables",
         "hub",
         "HubRunnable",
     ),
-    ("langchain", "schema", "runnable", "RunnableBindingBase"): (
+    ("langchain_classic", "schema", "runnable", "RunnableBindingBase"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableBindingBase",
     ),
-    ("langchain", "schema", "runnable", "OpenAIFunctionsRouter"): (
+    ("langchain_classic", "schema", "runnable", "OpenAIFunctionsRouter"): (
         "langchain",
         "runnables",
         "openai_functions",
         "OpenAIFunctionsRouter",
     ),
-    ("langchain", "schema", "runnable", "RouterRunnable"): (
+    ("langchain_classic", "schema", "runnable", "RouterRunnable"): (
         "langchain_core",
         "runnables",
         "router",
         "RouterRunnable",
     ),
-    ("langchain", "schema", "runnable", "RunnablePassthrough"): (
+    ("langchain_classic", "schema", "runnable", "RunnablePassthrough"): (
         "langchain_core",
         "runnables",
         "passthrough",
         "RunnablePassthrough",
     ),
-    ("langchain", "schema", "runnable", "RunnableSequence"): (
+    ("langchain_classic", "schema", "runnable", "RunnableSequence"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableSequence",
     ),
-    ("langchain", "schema", "runnable", "RunnableEach"): (
+    ("langchain_classic", "schema", "runnable", "RunnableEach"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableEach",
     ),
-    ("langchain", "schema", "runnable", "RunnableEachBase"): (
+    ("langchain_classic", "schema", "runnable", "RunnableEachBase"): (
         "langchain_core",
         "runnables",
         "base",
         "RunnableEachBase",
     ),
-    ("langchain", "schema", "runnable", "RunnableConfigurableAlternatives"): (
+    ("langchain_classic", "schema", "runnable", "RunnableConfigurableAlternatives"): (
         "langchain_core",
         "runnables",
         "configurable",
         "RunnableConfigurableAlternatives",
     ),
-    ("langchain", "schema", "runnable", "RunnableConfigurableFields"): (
+    ("langchain_classic", "schema", "runnable", "RunnableConfigurableFields"): (
         "langchain_core",
         "runnables",
         "configurable",
         "RunnableConfigurableFields",
     ),
-    ("langchain", "schema", "runnable", "RunnableWithMessageHistory"): (
+    ("langchain_classic", "schema", "runnable", "RunnableWithMessageHistory"): (
         "langchain_core",
         "runnables",
         "history",
         "RunnableWithMessageHistory",
     ),
-    ("langchain", "schema", "runnable", "RunnableAssign"): (
+    ("langchain_classic", "schema", "runnable", "RunnableAssign"): (
         "langchain_core",
         "runnables",
         "passthrough",
         "RunnableAssign",
     ),
-    ("langchain", "schema", "runnable", "RunnableRetry"): (
+    ("langchain_classic", "schema", "runnable", "RunnableRetry"): (
         "langchain_core",
         "runnables",
         "retry",
