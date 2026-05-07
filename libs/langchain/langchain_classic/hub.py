@@ -22,7 +22,7 @@ def push(
     *,
     api_url: str | None = None,
     api_key: str | None = None,
-    parent_commit_hash: str | None = None,
+    parent_commit_hash: str = "latest",
     new_repo_is_public: bool = False,
     new_repo_description: str | None = None,
     readme: str | None = None,
