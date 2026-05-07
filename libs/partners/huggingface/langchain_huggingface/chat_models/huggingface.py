@@ -1167,9 +1167,8 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": formatted_tool,
                 },
             )
-            if is_pydantic_schema:
-                msg = "Pydantic schema is not supported for function calling"
-                raise NotImplementedError(msg)
+            # Pydantic schemas are supported via function calling
+            # Previously raised NotImplementedError; now enabled.
             output_parser: JsonOutputKeyToolsParser | JsonOutputParser = (
                 JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
             )
