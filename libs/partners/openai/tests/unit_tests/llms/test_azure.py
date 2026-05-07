@@ -18,6 +18,4 @@ def test_azure_model_param(monkeypatch: Any) -> None:
         "ls_provider": "azure",
         "ls_model_type": "llm",
         "ls_model_name": "gpt-35-turbo-instruct",
-        "ls_temperature": 0.7,
-        "ls_max_tokens": 256,
     }

@@ -120,13 +120,13 @@ class AzureOpenAI(BaseOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
-        if self.streaming and self.n > 1:
+        if self.streaming and self.n is not None and self.n > 1:
             msg = "Cannot stream results when n > 1."
             raise ValueError(msg)
-        if self.streaming and self.best_of > 1:
+        if self.streaming and self.best_of is not None and self.best_of > 1:
             msg = "Cannot stream results when best_of > 1."
             raise ValueError(msg)
         # For backwards compatibility. Before openai v1, no distinction was made

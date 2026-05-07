@@ -21,8 +21,6 @@ def test_openai_model_param() -> None:
         "ls_provider": "openai",
         "ls_model_type": "llm",
         "ls_model_name": "foo",
-        "ls_temperature": 0.7,
-        "ls_max_tokens": 256,
     }
 
     ls_params = llm._get_ls_params(model="bar")

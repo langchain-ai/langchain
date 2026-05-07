@@ -175,27 +175,27 @@ class BaseOpenAI(BaseLLM):
     model_name: str = Field(default="gpt-3.5-turbo-instruct", alias="model")
     """Model name to use."""
 
-    temperature: float = 0.7
+    temperature: float | None = None
     """What sampling temperature to use."""
 
-    max_tokens: int = 256
+    max_tokens: int | None = None
     """The maximum number of tokens to generate in the completion.
     -1 returns as many tokens as possible given the prompt and
     the models maximal context size."""
 
-    top_p: float = 1
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
-    frequency_penalty: float = 0
+    frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
 
-    presence_penalty: float = 0
+    presence_penalty: float | None = None
     """Penalizes repeated tokens."""
 
-    n: int = 1
+    n: int | None = None
     """How many completions to generate for each prompt."""
 
-    best_of: int = 1
+    best_of: int | None = None
     """Generates best_of completions server-side and returns the "best"."""
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -313,13 +313,13 @@ class BaseOpenAI(BaseLLM):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if self.n < 1:
+        if self.n is not None and self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
-        if self.streaming and self.n > 1:
+        if self.streaming and self.n is not None and self.n > 1:
             msg = "Cannot stream results when n > 1."
             raise ValueError(msg)
-        if self.streaming and self.best_of > 1:
+        if self.streaming and self.best_of is not None and self.best_of > 1:
             msg = "Cannot stream results when best_of > 1."
             raise ValueError(msg)
 
@@ -355,31 +355,24 @@ class BaseOpenAI(BaseLLM):
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
-        normal_params: dict[str, Any] = {
+        exclude_if_none = {
             "temperature": self.temperature,
             "top_p": self.top_p,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "n": self.n,
+            "best_of": self.best_of,
             "seed": self.seed,
             "logprobs": self.logprobs,
+            "logit_bias": self.logit_bias,
+            "max_tokens": self.max_tokens,
+            "extra_body": self.extra_body,
         }
 
-        if self.logit_bias is not None:
-            normal_params["logit_bias"] = self.logit_bias
-
-        if self.max_tokens is not None:
-            normal_params["max_tokens"] = self.max_tokens
-
-        if self.extra_body is not None:
-            normal_params["extra_body"] = self.extra_body
-
-        # Azure gpt-35-turbo doesn't support best_of
-        # don't specify best_of if it is 1
-        if self.best_of > 1:
-            normal_params["best_of"] = self.best_of
-
-        return {**normal_params, **self.model_kwargs}
+        return {
+            **{k: v for k, v in exclude_if_none.items() if v is not None},
+            **self.model_kwargs,
+        }
 
     def _stream(
         self,
@@ -589,7 +582,7 @@ class BaseOpenAI(BaseLLM):
         """Get the sub prompts for llm call."""
         if stop is not None:
             params["stop"] = stop
-        if params["max_tokens"] == -1:
+        if params.get("max_tokens") == -1:
             if len(prompts) != 1:
                 msg = "max_tokens set to -1 not supported for multiple inputs."
                 raise ValueError(msg)
@@ -610,7 +603,7 @@ class BaseOpenAI(BaseLLM):
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
-        n = params.get("n", self.n)
+        n = params.get("n", self.n) or 1
         for i, _ in enumerate(prompts):
             sub_choices = choices[i * n : (i + 1) * n]
             generations.append(
