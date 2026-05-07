@@ -942,6 +942,64 @@ class TestJinja2SecurityBlocking:
 class TestClassSpecificValidatorsInLoad:
     """Tests that load() properly integrates with class-specific validators."""
 
+    def test_legacy_langchain_classic_mappings(self) -> None:
+        """Legacy IDs should resolve to the package that owns their classes."""
+        expected_mappings = {
+            ("langchain", "chains", "llm", "LLMChain"): (
+                "langchain_classic",
+                "chains",
+                "llm",
+                "LLMChain",
+            ),
+            ("langchain", "schema", "agent", "ToolAgentAction"): (
+                "langchain_classic",
+                "agents",
+                "output_parsers",
+                "tools",
+                "ToolAgentAction",
+            ),
+            ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
+                "langchain_classic",
+                "output_parsers",
+                "fix",
+                "OutputFixingParser",
+            ),
+            ("langchain", "output_parsers", "regex", "RegexParser"): (
+                "langchain_classic",
+                "output_parsers",
+                "regex",
+                "RegexParser",
+            ),
+            ("langchain", "output_parsers", "combining", "CombiningOutputParser"): (
+                "langchain_classic",
+                "output_parsers",
+                "combining",
+                "CombiningOutputParser",
+            ),
+            ("langchain", "schema", "runnable", "HubRunnable"): (
+                "langchain_classic",
+                "runnables",
+                "hub",
+                "HubRunnable",
+            ),
+            ("langchain", "schema", "runnable", "OpenAIFunctionsRouter"): (
+                "langchain_classic",
+                "runnables",
+                "openai_functions",
+                "OpenAIFunctionsRouter",
+            ),
+            ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+                "langchain_classic",
+                "agents",
+                "output_parsers",
+                "openai_tools",
+                "OpenAIToolAgentAction",
+            ),
+        }
+
+        for legacy_id, class_path in expected_mappings.items():
+            assert ALL_SERIALIZABLE_MAPPINGS[legacy_id] == class_path
+
     def test_validator_registry_keys_in_serializable_mapping(self) -> None:
         """All CLASS_INIT_VALIDATORS keys must exist in ALL_SERIALIZABLE_MAPPINGS."""
         all_known_paths = set(ALL_SERIALIZABLE_MAPPINGS.keys()) | set(
