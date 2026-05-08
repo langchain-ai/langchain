@@ -1982,7 +1982,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.2.17"
+version = "1.2.18"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
