@@ -13,6 +13,7 @@ from langchain_core.documents import Document
 from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load, loads
 from langchain_core.load.load import (
     ALL_SERIALIZABLE_MAPPINGS,
+    DEFAULT_NAMESPACES,
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful
@@ -58,6 +59,65 @@ def test_simple_serialization() -> None:
         "repr": "Foo(bar=1, baz='hello')",
         "type": "not_implemented",
     }
+
+
+def test_legacy_langchain_targets_resolve_to_classic_namespace() -> None:
+    moved_paths = {
+        ("langchain", "chains", "llm", "LLMChain"): (
+            "langchain_classic",
+            "chains",
+            "llm",
+            "LLMChain",
+        ),
+        ("langchain", "schema", "agent", "ToolAgentAction"): (
+            "langchain_classic",
+            "agents",
+            "output_parsers",
+            "tools",
+            "ToolAgentAction",
+        ),
+        ("langchain", "output_parsers", "fix", "OutputFixingParser"): (
+            "langchain_classic",
+            "output_parsers",
+            "fix",
+            "OutputFixingParser",
+        ),
+        ("langchain", "output_parsers", "regex", "RegexParser"): (
+            "langchain_classic",
+            "output_parsers",
+            "regex",
+            "RegexParser",
+        ),
+        ("langchain", "output_parsers", "combining", "CombiningOutputParser"): (
+            "langchain_classic",
+            "output_parsers",
+            "combining",
+            "CombiningOutputParser",
+        ),
+        ("langchain", "schema", "runnable", "HubRunnable"): (
+            "langchain_classic",
+            "runnables",
+            "hub",
+            "HubRunnable",
+        ),
+        ("langchain", "schema", "runnable", "OpenAIFunctionsRouter"): (
+            "langchain_classic",
+            "runnables",
+            "openai_functions",
+            "OpenAIFunctionsRouter",
+        ),
+        ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+            "langchain_classic",
+            "agents",
+            "output_parsers",
+            "openai_tools",
+            "OpenAIToolAgentAction",
+        ),
+    }
+
+    assert DEFAULT_NAMESPACES.count("langchain_classic") == 1
+    for legacy_path, classic_path in moved_paths.items():
+        assert ALL_SERIALIZABLE_MAPPINGS[legacy_path] == classic_path
 
 
 def test_simple_serialization_is_serializable() -> None:

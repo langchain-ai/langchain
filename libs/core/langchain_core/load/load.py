@@ -124,6 +124,7 @@ from langchain_core.load.validators import CLASS_INIT_VALIDATORS
 
 DEFAULT_NAMESPACES = [
     "langchain",
+    "langchain_classic",
     "langchain_core",
     "langchain_community",
     "langchain_anthropic",
