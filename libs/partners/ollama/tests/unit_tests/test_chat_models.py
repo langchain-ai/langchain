@@ -2,15 +2,13 @@
 
 import json
 import logging
-from collections.abc import Generator
-from contextlib import contextmanager
+import warnings
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import ChatMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
@@ -20,17 +18,6 @@ from langchain_ollama.chat_models import (
 )
 
 MODEL_NAME = "llama3.1"
-
-
-@contextmanager
-def _mock_httpx_client_stream(
-    *_args: Any, **_kwargs: Any
-) -> Generator[Response, Any, Any]:
-    yield Response(
-        status_code=200,
-        content='{"message": {"role": "assistant", "content": "The meaning ..."}}',
-        request=Request(method="POST", url="http://whocares:11434"),
-    )
 
 
 dummy_raw_tool_call = {
@@ -105,25 +92,37 @@ def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
     assert response_different == {"functionName": "function_b"}
 
 
-def test_arbitrary_roles_accepted_in_chatmessages(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_arbitrary_roles_accepted_in_chatmessages() -> None:
     """Test that `ChatOllama` accepts arbitrary roles in `ChatMessage`."""
-    monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
-    llm = ChatOllama(
-        model=MODEL_NAME,
-        verbose=True,
-        format=None,
-    )
-    messages = [
-        ChatMessage(
-            role="somerandomrole",
-            content="I'm ok with you adding any role message now!",
-        ),
-        ChatMessage(role="control", content="thinking"),
-        ChatMessage(role="user", content="What is the meaning of life?"),
+    response = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "The meaning of life..."},
+        }
     ]
-    llm.invoke(messages)
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(
+            model=MODEL_NAME,
+            verbose=True,
+            format=None,
+        )
+        messages = [
+            ChatMessage(
+                role="somerandomrole",
+                content="I'm ok with you adding any role message now!",
+            ),
+            ChatMessage(role="control", content="thinking"),
+            ChatMessage(role="user", content="What is the meaning of life?"),
+        ]
+        llm.invoke(messages)
 
 
 @patch("langchain_ollama.chat_models.validate_model")
@@ -449,6 +448,310 @@ def test_reasoning_param_passed_to_client() -> None:
         assert call_kwargs["think"] is True
 
 
+def test_logprobs_params_passed_to_client() -> None:
+    """Test that logprobs parameters are correctly passed to the Ollama client."""
+    response = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hello!"},
+            "done": True,
+            "done_reason": "stop",
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        # Case 1: logprobs=True, top_logprobs=5 in init
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=5)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 5
+
+        # Case 2: override via invoke kwargs
+        llm = ChatOllama(model=MODEL_NAME)
+        llm.invoke([HumanMessage("Hello")], logprobs=True, top_logprobs=3)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 3
+
+        # Case 3: auto-enabled logprobs propagates to client
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            llm = ChatOllama(model=MODEL_NAME, top_logprobs=3)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is True
+        assert call_kwargs["top_logprobs"] == 3
+
+        # Case 4: defaults are None when not set
+        llm = ChatOllama(model=MODEL_NAME)
+        llm.invoke([HumanMessage("Hello")])
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert call_kwargs["logprobs"] is None
+        assert call_kwargs["top_logprobs"] is None
+
+
+def test_top_logprobs_validation() -> None:
+    """Test that top_logprobs must be a positive integer."""
+    with patch("langchain_ollama.chat_models.Client"):
+        with pytest.raises(ValueError, match="`top_logprobs` must be a positive"):
+            ChatOllama(model=MODEL_NAME, top_logprobs=0)
+
+        with pytest.raises(ValueError, match="`top_logprobs` must be a positive"):
+            ChatOllama(model=MODEL_NAME, top_logprobs=-1)
+
+        # Valid values should not raise
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=1)
+        assert llm.top_logprobs == 1
+
+
+def test_top_logprobs_without_logprobs_auto_enables() -> None:
+    """Test that setting top_logprobs without logprobs auto-enables logprobs."""
+    with patch("langchain_ollama.chat_models.Client"):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            llm = ChatOllama(model=MODEL_NAME, top_logprobs=5)
+            assert llm.logprobs is True
+            assert len(w) == 1
+            assert "Setting `logprobs=True` automatically" in str(w[0].message)
+
+        # No warning when logprobs=True explicitly
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ChatOllama(model=MODEL_NAME, logprobs=True, top_logprobs=5)
+            logprobs_warnings = [x for x in w if "top_logprobs" in str(x.message)]
+            assert len(logprobs_warnings) == 0
+
+
+def test_top_logprobs_with_logprobs_false_raises() -> None:
+    """Setting top_logprobs with logprobs=False is a contradictory config."""
+    with (
+        patch("langchain_ollama.chat_models.Client"),
+        pytest.raises(ValueError, match=r"logprobs.*explicitly.*False"),
+    ):
+        ChatOllama(model=MODEL_NAME, logprobs=False, top_logprobs=5)
+
+
+def test_logprobs_accumulated_from_stream_into_response_metadata() -> None:
+    """Logprobs from intermediate streaming chunks are accumulated into the
+    final response_metadata when using invoke()."""
+    stream_responses = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "The"},
+            "done": False,
+            "logprobs": [
+                {"token": "The", "logprob": -0.5, "bytes": [84, 104, 101]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": " sky"},
+            "done": False,
+            "logprobs": [
+                {"token": " sky", "logprob": -0.1, "bytes": [32, 115, 107, 121]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+        },
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = iter(stream_responses)
+
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True)
+        result = llm.invoke([HumanMessage("What color is the sky?")])
+
+        logprobs = result.response_metadata["logprobs"]
+        assert len(logprobs) == 2
+        assert logprobs[0]["token"] == "The"
+        assert logprobs[0]["logprob"] == -0.5
+        assert logprobs[1]["token"] == " sky"
+        assert logprobs[1]["logprob"] == -0.1
+
+
+def test_logprobs_on_individual_streaming_chunks() -> None:
+    """Each streaming chunk should carry its own per-token logprobs in
+    response_metadata when logprobs are enabled."""
+    stream_responses = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hi"},
+            "done": False,
+            "logprobs": [
+                {"token": "Hi", "logprob": -0.3, "bytes": [72, 105]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "!"},
+            "done": False,
+            "logprobs": [
+                {"token": "!", "logprob": -0.01, "bytes": [33]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+        },
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = iter(stream_responses)
+
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True)
+        chunks = list(llm.stream([HumanMessage("Hello")]))
+
+        assert chunks[0].response_metadata["logprobs"] == [
+            {"token": "Hi", "logprob": -0.3, "bytes": [72, 105]},
+        ]
+
+        assert chunks[1].response_metadata["logprobs"] == [
+            {"token": "!", "logprob": -0.01, "bytes": [33]},
+        ]
+
+        assert "logprobs" not in chunks[2].response_metadata
+
+
+async def test_logprobs_on_individual_async_streaming_chunks() -> None:
+    """Async streaming chunks should carry per-token logprobs in
+    response_metadata when logprobs are enabled."""
+    stream_responses = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hi"},
+            "done": False,
+            "logprobs": [
+                {"token": "Hi", "logprob": -0.3, "bytes": [72, 105]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "!"},
+            "done": False,
+            "logprobs": [
+                {"token": "!", "logprob": -0.01, "bytes": [33]},
+            ],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+        },
+    ]
+
+    async def async_stream_responses() -> Any:
+        for resp in stream_responses:
+            yield resp
+
+    with patch("langchain_ollama.chat_models.AsyncClient") as mock_client_class:
+        mock_client = AsyncMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = async_stream_responses()
+
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True)
+        chunks = [chunk async for chunk in llm.astream([HumanMessage("Hello")])]
+
+        assert chunks[0].response_metadata["logprobs"] == [
+            {"token": "Hi", "logprob": -0.3, "bytes": [72, 105]},
+        ]
+
+        assert chunks[1].response_metadata["logprobs"] == [
+            {"token": "!", "logprob": -0.01, "bytes": [33]},
+        ]
+
+        assert "logprobs" not in chunks[2].response_metadata
+
+
+def test_logprobs_empty_list_preserved() -> None:
+    """An empty logprobs list `[]` should be preserved, not treated as absent."""
+    stream_responses = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hi"},
+            "done": False,
+            "logprobs": [],
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+        },
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = iter(stream_responses)
+
+        llm = ChatOllama(model=MODEL_NAME, logprobs=True)
+        chunks = list(llm.stream([HumanMessage("Hello")]))
+
+        assert chunks[0].response_metadata["logprobs"] == []
+
+
+def test_logprobs_none_when_not_requested() -> None:
+    """When logprobs are not requested, response_metadata should not contain
+    logprobs (or it should be None)."""
+    stream_responses = [
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": "Hello!"},
+            "done": False,
+        },
+        {
+            "model": MODEL_NAME,
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+        },
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = iter(stream_responses)
+
+        llm = ChatOllama(model=MODEL_NAME)
+        result = llm.invoke([HumanMessage("Hello")])
+
+        assert result.response_metadata.get("logprobs") is None
+
+
 def test_create_chat_stream_raises_when_client_none() -> None:
     """Test that _create_chat_stream raises RuntimeError when client is None."""
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -509,3 +812,328 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         # Check that 'strict' was NOT passed to the client
         call_kwargs = mock_client.chat.call_args[1]
         assert "strict" not in call_kwargs
+
+
+def test_chat_ollama_supports_response_format_json_schema() -> None:
+    """Test that ChatOllama correctly maps json_schema response_format to format."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        schema = {"type": "object", "properties": {"foo": {"type": "string"}}}
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": "test", "schema": schema, "strict": True},
+        }
+
+        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") == schema
+
+
+def test_chat_ollama_supports_response_format_json_object() -> None:
+    """Test ChatOllama maps json_object response_format to format='json'."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "json_object"}
+
+        llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") == "json"
+
+
+def test_chat_ollama_prioritizes_explicit_format() -> None:
+    """Test explicit 'format' arg takes precedence over 'response_format'."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "json_object"}
+
+        # User passes BOTH format param and response_format
+        # Should warn about ignored response_format
+        with pytest.warns(UserWarning, match="Both 'format' and 'response_format'"):
+            llm.invoke(
+                [HumanMessage("Hello")],
+                format="some_custom_format",
+                response_format=response_format,
+            )
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        # Should keep the explicit format
+        assert call_kwargs.get("format") == "some_custom_format"
+
+
+def test_chat_ollama_warns_invalid_response_format_type() -> None:
+    """Test ChatOllama warns on non-dict response_format."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        # Pass a list (invalid type) instead of a dict
+        response_format = ["invalid_type"]
+
+        with pytest.warns(UserWarning, match="Ignored invalid 'response_format' type"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_unrecognized_response_format_type() -> None:
+    """Test ChatOllama warns on unrecognized response_format type (e.g. 'text')."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+        response_format = {"type": "text"}  # Not json_object or json_schema
+
+        with pytest.warns(UserWarning, match="Ignored unrecognized 'response_format'"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_json_schema_missing_schema_key() -> None:
+    """Test ChatOllama warns when json_schema block has no 'schema' key."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # json_schema present but no schema key
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": "test"},
+        }
+        with pytest.warns(UserWarning, match="no 'schema' key was found"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_json_schema_missing_json_schema_key() -> None:
+    """Test ChatOllama warns when json_schema type has no 'json_schema' block."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # type is json_schema but json_schema key is missing entirely
+        response_format = {"type": "json_schema"}
+        with pytest.warns(UserWarning, match="'json_schema' value is"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_chat_ollama_warns_json_schema_block_not_dict() -> None:
+    """Test ChatOllama warns when json_schema value is not a dict."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = [
+            {
+                "model": "gpt-oss:20b",
+                "created_at": "2025-01-01T00:00:00.000000000Z",
+                "done": True,
+                "done_reason": "stop",
+                "message": {"role": "assistant", "content": "{}"},
+            }
+        ]
+
+        llm = ChatOllama(model="gpt-oss:20b")
+
+        # json_schema is a string instead of a dict
+        response_format = {"type": "json_schema", "json_schema": "not_a_dict"}
+        with pytest.warns(UserWarning, match="'json_schema' value is"):
+            llm.invoke([HumanMessage("Hello")], response_format=response_format)
+
+        call_kwargs = mock_client.chat.call_args[1]
+        assert "response_format" not in call_kwargs
+        assert call_kwargs.get("format") is None
+
+
+def test_reasoning_content_serialized_as_thinking() -> None:
+    """Test that `reasoning_content` in `AIMessage` is serialized as `'thinking'`.
+
+    When an AIMessage has `reasoning_content` in `additional_kwargs` (set during
+    deserialization of Ollama thinking responses), it should be written back as
+    the 'thinking' field in the outgoing Ollama message dict so the model can
+    see its prior chain-of-thought in multi-turn conversations.
+
+    Reproduces https://github.com/langchain-ai/langchain/issues/36177.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="deepseek-r1")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Solve 2+2"),
+        AIMessage(
+            content="4",
+            additional_kwargs={"reasoning_content": "2+2 equals 4"},
+        ),
+        HumanMessage(content="Now solve 3+3"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assistant_msg = ollama_messages[1]
+    assert assistant_msg["role"] == "assistant"
+    assert assistant_msg.get("thinking") == "2+2 equals 4", (
+        "reasoning_content should be serialized as 'thinking' in the Ollama message"
+    )
+
+
+def test_convert_messages_does_not_mutate_input_list() -> None:
+    """Test that `_convert_messages_to_ollama_messages` does not mutate the input list.
+
+    Previously, the v1 content conversion replaced elements in the input list
+    via `messages[idx] = ...`, which mutated the caller's list in-place.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36564.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    v1_ai_message = AIMessage(
+        content=[{"type": "text", "text": "Hello from v1"}],
+        response_metadata={"output_version": "v1"},
+    )
+    messages: list = [
+        HumanMessage(content="Hi"),
+        v1_ai_message,
+    ]
+
+    # Keep a reference to the original second element
+    original_message = messages[1]
+
+    llm._convert_messages_to_ollama_messages(messages)
+
+    assert messages[1] is original_message, (
+        "_convert_messages_to_ollama_messages should not mutate the caller's list"
+    )
+
+
+def test_reasoning_content_absent_no_thinking_key() -> None:
+    """AIMessage without `reasoning_content` should not produce a `thinking` key."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Hi"),
+        AIMessage(content="Hello"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert "thinking" not in ollama_messages[1]
+
+
+def test_reasoning_content_empty_string_preserved() -> None:
+    """An explicitly set empty-string `reasoning_content` should still round-trip."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(content="Hi"),
+        AIMessage(content="Hello", additional_kwargs={"reasoning_content": ""}),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert ollama_messages[1].get("thinking") == ""
+
+
+def test_non_ai_message_reasoning_content_ignored() -> None:
+    """Non-AIMessage types with `reasoning_content` should not produce `thinking`."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content="Hi",
+            additional_kwargs={"reasoning_content": "should be ignored"},
+        ),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+    assert "thinking" not in ollama_messages[0]

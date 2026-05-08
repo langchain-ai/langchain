@@ -24,7 +24,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.15.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.2.21,<2.0.0",
+    "langchain-core>=1.3.2,<2.0.0",
 ]
 
 [project.urls]
@@ -33,7 +33,7 @@ Documentation = "https://reference.langchain.com/python/integrations/langchain_q
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-qdrant%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
@@ -44,14 +44,15 @@ fastembed = [
 
 [dependency-groups]
 test = [
-    "pytest>=7.3.0,<8.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
-    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-benchmark",
+    "pytest-xdist>=3.6.1,<4.0.0",
     "freezegun>=1.2.2,<2.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "syrupy>=5.0.0,<6.0.0",
     "requests>=2.31.0,<3.0.0",
     "langchain-core",
     "langchain-tests",
@@ -70,7 +71,7 @@ typing = [
 # Remove this override once fastembed releases a version that allows pillow>=12.1.1.
 [tool.uv]
 override-dependencies = ["pillow>=12.1.1"]
-constraint-dependencies = ["pygments>=2.20.0"]
+constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

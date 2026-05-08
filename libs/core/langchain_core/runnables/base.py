@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from langchain_core._api import beta_decorator
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
@@ -102,6 +103,10 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
+    )
+    from langchain_core.language_models.chat_model_stream import (
+        AsyncChatModelStream,
+        ChatModelStream,
     )
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
@@ -1169,6 +1174,46 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         yield await self.ainvoke(input, config, **kwargs)
 
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> ChatModelStream:
+        """Stream content-block lifecycle events (v2 protocol).
+
+        Implemented by `BaseChatModel` (and forwarded by `RunnableBinding`).
+        Generic `Runnable`s don't participate in the v2 event protocol —
+        use `.stream()` instead.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `stream_v2`. "
+            "`stream_v2` is only implemented by chat models; use `.stream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
+
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> AsyncChatModelStream:
+        """Async variant of `stream_v2`. See that method.
+
+        Raises:
+            NotImplementedError: Always, on the base `Runnable` class.
+        """
+        msg = (
+            f"{type(self).__name__} does not implement `astream_v2`. "
+            "`astream_v2` is only implemented by chat models; use `.astream()` "
+            "for generic Runnables."
+        )
+        raise NotImplementedError(msg)
+
     @overload
     def astream_log(
         self,
@@ -1245,6 +1290,11 @@ class Runnable(ABC, Generic[Input, Output]):
             A `RunLogPatch` or `RunLog` object.
 
         """
+        warn_deprecated(
+            since="1.3.3",
+            message=("astream_log is deprecated. Use astream instead."),
+            removal="2.0.0",
+        )
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -1494,6 +1544,14 @@ class Runnable(ABC, Generic[Input, Output]):
                 **kwargs,
             )
         elif version == "v1":
+            warn_deprecated(
+                since="1.3.3",
+                message=(
+                    "astream_events version='v1' is deprecated. "
+                    "Use version='v2' or astream instead."
+                ),
+                removal="2.0.0",
+            )
             # First implementation, built on top of astream_log API
             # This implementation will be deprecated as of 0.2.0
             event_stream = _astream_events_implementation_v1(
@@ -5888,6 +5946,43 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             **{**self.kwargs, **kwargs},
         ):
             yield item
+
+    @override
+    def stream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> ChatModelStream:
+        """Forward `stream_v2` to the bound runnable with bound kwargs merged.
+
+        Chat-model-specific: the bound runnable must implement `stream_v2`
+        (see `BaseChatModel`). Without this override, `__getattr__` would
+        forward the call but drop `self.kwargs` — losing tools bound via
+        `bind_tools`, `stop` sequences, etc.
+        """
+        return self.bound.stream_v2(
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
+
+    @override
+    async def astream_v2(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
+    ) -> AsyncChatModelStream:
+        """Forward `astream_v2` to the bound runnable with bound kwargs merged.
+
+        Async variant of `stream_v2`. See that method for the full rationale.
+        """
+        return await self.bound.astream_v2(
+            input,
+            self._merge_configs(config),
+            **{**self.kwargs, **kwargs},
+        )
 
     @override
     async def astream_events(

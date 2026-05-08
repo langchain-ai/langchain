@@ -874,9 +874,9 @@ def filter_messages(
 
         filter_messages(
             messages,
-            incl_names=("example_user", "example_assistant"),
-            incl_types=("system",),
-            excl_ids=("bar",),
+            include_names=("example_user", "example_assistant"),
+            include_types=("system",),
+            exclude_ids=("bar",),
         )
         ```
 

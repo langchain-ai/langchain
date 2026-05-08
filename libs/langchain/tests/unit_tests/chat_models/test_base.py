@@ -275,6 +275,7 @@ def test_configurable_with_default() -> None:
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
+            "output_config": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

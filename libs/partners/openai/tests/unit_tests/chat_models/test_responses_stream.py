@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+import copy
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
@@ -46,6 +48,8 @@ from openai.types.shared.response_format_text import ResponseFormatText
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
+MODEL = "gpt-5.4"
+
 responses_stream = [
     ResponseCreatedEvent(
         response=Response(
@@ -55,7 +59,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[],
             parallel_tool_calls=True,
@@ -87,7 +91,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[],
             parallel_tool_calls=True,
@@ -533,7 +537,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[
                 ResponseReasoningItem(
@@ -721,9 +725,7 @@ def _strip_none(obj: Any) -> Any:
     ],
 )
 def test_responses_stream(output_version: str, expected_content: list[dict]) -> None:
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
-    )
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -761,6 +763,68 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         assert dumped == payload["input"][idx]
 
 
+def test_responses_stream_v2_emits_reasoning_lifecycle() -> None:
+    """`stream_v2` must emit `content-block-finish` events for reasoning blocks.
+
+    Regression test: the protocol bridge should surface the full lifecycle
+    (`content-block-start` / `content-block-delta` / `content-block-finish`)
+    for every reasoning block observed on the wire, not just text blocks.
+    """
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        events = list(llm.stream_v2("test"))
+
+    assert_valid_event_stream(events)
+
+    reasoning_starts = [
+        e
+        for e in events
+        if e["event"] == "content-block-start"
+        and e["content_block"]["type"] == "reasoning"
+    ]
+    reasoning_finishes = [
+        e
+        for e in events
+        if e["event"] == "content-block-finish"
+        and e["content_block"]["type"] == "reasoning"
+    ]
+
+    # The mock stream carries four reasoning summary parts (two per reasoning
+    # item, across two reasoning items), which surface as four reasoning
+    # content blocks in `output_version="v1"`.
+    assert len(reasoning_starts) == 4, (
+        f"expected 4 reasoning start events, got {len(reasoning_starts)}"
+    )
+    all_finish_types = [
+        e["content_block"]["type"]
+        for e in events
+        if e["event"] == "content-block-finish"
+    ]
+    assert len(reasoning_finishes) == 4, (
+        f"expected 4 reasoning finish events, got {len(reasoning_finishes)}: "
+        f"all finish events = {all_finish_types}"
+    )
+
+    # Finish events must carry the accumulated reasoning text.
+    reasoning_texts = [
+        cast("dict[str, Any]", f["content_block"])["reasoning"]
+        for f in reasoning_finishes
+    ]
+    assert reasoning_texts == [
+        "reasoning block one",
+        "another reasoning block",
+        "more reasoning",
+        "still more reasoning",
+    ]
+
+
 def test_responses_stream_with_image_generation_multiple_calls() -> None:
     """Test that streaming with image_generation tool works across multiple calls.
 
@@ -772,7 +836,7 @@ def test_responses_stream_with_image_generation_multiple_calls() -> None:
         {"type": "function", "name": "my_tool", "parameters": {}},
     ]
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model=MODEL,
         use_responses_api=True,
         streaming=True,
     )
@@ -807,7 +871,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
                 incomplete_details=None,
                 instructions=None,
                 metadata={},
-                model="gpt-4o-2025-01-01",
+                model=MODEL,
                 object="response",
                 output=[],
                 parallel_tool_calls=True,
@@ -837,7 +901,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
                 incomplete_details=None,
                 instructions=None,
                 metadata={},
-                model="gpt-4o-2025-01-01",
+                model=MODEL,
                 object="response",
                 output=[],
                 parallel_tool_calls=True,
@@ -917,7 +981,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
                 incomplete_details=None,
                 instructions=None,
                 metadata={},
-                model="gpt-4o-2025-01-01",
+                model=MODEL,
                 object="response",
                 output=[
                     ResponseFunctionToolCallItem(
@@ -957,9 +1021,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
         ),
     ]
 
-    llm = ChatOpenAI(
-        model="gpt-4o", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -986,3 +1048,106 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
     assert first_block.get("namespace") == "my_namespace", (
         f"Expected namespace 'my_namespace', got {first_block.get('namespace')}"
     )
+
+
+def test_responses_stream_tolerates_dict_response_field() -> None:
+    """Regression test for `AttributeError: 'dict' object has no attribute 'id'`.
+
+    The OpenAI SDK types `<event>.response` strictly as `Response`, but raw dicts
+    have been observed in the wild.
+    """
+    stream = copy.deepcopy(responses_stream)
+    first_event = stream[0]
+    assert isinstance(first_event, ResponseCreatedEvent)
+    first_event.response = first_event.response.model_dump(mode="json")  # type: ignore[assignment]
+    assert isinstance(first_event.response, dict)
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"
+
+
+@pytest.mark.parametrize(
+    ("event_index", "event_type"),
+    [(0, ResponseCreatedEvent), (46, ResponseCompletedEvent)],
+)
+def test_responses_stream_normalizes_in_memory_prompt_cache_retention(
+    event_index: int, event_type: type
+) -> None:
+    """`prompt_cache_retention="in_memory"` from the API must not abort streams.
+
+    The API emits the underscore form while older `openai` packages declare only
+    `"in-memory"` in the Literal (openai-python#2883). `_coerce_chunk_response`
+    should normalize so both the `response.created` and `response.completed`
+    handlers can validate successfully.
+    """
+    stream = copy.deepcopy(responses_stream)
+    target = stream[event_index]
+    assert isinstance(target, event_type)
+    assert isinstance(target, (ResponseCreatedEvent, ResponseCompletedEvent))
+    dumped = target.response.model_dump(mode="json")
+    dumped["prompt_cache_retention"] = "in_memory"
+    target.response = dumped  # type: ignore[assignment]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"
+    # The completed event drives usage/metadata aggregation, so assert it
+    # survived coercion when that branch is exercised.
+    if event_type is ResponseCompletedEvent:
+        assert full.usage_metadata is not None
+
+
+def test_responses_stream_tolerates_unknown_literal_drift() -> None:
+    """API drift ahead of SDK Literal declarations must not abort streams.
+
+    When the API returns a value the installed SDK's Literal does not know
+    about, `_coerce_chunk_response` should fall back to a non-validating
+    construct so streaming still completes.
+    """
+    stream = copy.deepcopy(responses_stream)
+    first_event = stream[0]
+    assert isinstance(first_event, ResponseCreatedEvent)
+    dumped = first_event.response.model_dump(mode="json")
+    dumped["status"] = "something_new"
+    first_event.response = dumped  # type: ignore[assignment]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"

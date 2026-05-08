@@ -21,11 +21,12 @@ jobs:
   reopen-linked-prs:
     runs-on: ubuntu-latest
     permissions:
+      actions: write
       pull-requests: write
 
     steps:
       - name: Find and reopen matching PRs
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -157,5 +158,38 @@ jobs:
                 }
               } catch (e) {
                 core.warning(`Could not minimize stale comment on PR #${prNumber}: ${e.message}`);
+              }
+
+              // Re-run the failed require_issue_link check so it picks up the
+              // new assignment.  The re-run uses the original event payload but
+              // fetches live issue data, so the assignment check will pass.
+              //
+              // Limitation: we look up runs by the PR's current head SHA.  If the
+              // contributor pushed new commits while the PR was closed, head.sha
+              // won't match the SHA of the original failed run and the query will
+              // return 0 results.  This is acceptable because any push after reopen
+              // triggers a fresh require_issue_link run against the new SHA.
+              try {
+                const { data: pr } = await github.rest.pulls.get({
+                  owner, repo, pull_number: prNumber,
+                });
+                const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                  owner, repo,
+                  workflow_id: 'require_issue_link.yml',
+                  head_sha: pr.head.sha,
+                  status: 'failure',
+                  per_page: 1,
+                });
+                if (runs.workflow_runs.length > 0) {
+                  await github.rest.actions.reRunWorkflowFailedJobs({
+                    owner, repo,
+                    run_id: runs.workflow_runs[0].id,
+                  });
+                  console.log(`Re-ran failed require_issue_link run ${runs.workflow_runs[0].id} for PR #${prNumber}`);
+                } else {
+                  console.log(`No failed require_issue_link runs found for PR #${prNumber} — skipping re-run`);
+                }
+              } catch (e) {
+                core.warning(`Could not re-run require_issue_link check for PR #${prNumber} (HTTP ${e.status ?? 'unknown'}): ${e.message}`);
               }
             }
