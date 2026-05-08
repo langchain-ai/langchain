@@ -14,7 +14,14 @@ from fireworks.client.error import (  # type: ignore[import-untyped]
     RateLimitError,
     ServiceUnavailableError,
 )
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
@@ -22,6 +29,9 @@ from langchain_fireworks.chat_models import (
     _completion_with_retry,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
+    _convert_message_to_dict,
+    _format_message_content,
+    _sanitize_chat_completions_content,
     _usage_to_metadata,
 )
 
@@ -90,6 +100,344 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" not in message.additional_kwargs
+
+
+def test_format_message_content_passthrough_string() -> None:
+    """Plain string content is returned unchanged."""
+    assert _format_message_content("hello") == "hello"
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Fireworks's chat completions schema rejects unknown keys on tool message
+    content blocks (`Extra inputs are not permitted, ... [0].id`).
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="def456",
+    )
+    assert _convert_message_to_dict(message) == {
+        "role": "tool",
+        "content": [{"type": "text", "text": "foo"}],
+        "tool_call_id": "def456",
+    }
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
+    blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
+    assert _sanitize_chat_completions_content(blocks) == blocks
+
+
+def test_format_message_content_translates_v1_image_block() -> None:
+    """Canonical v1 image block is translated to OpenAI image_url + data URI."""
+    blocks = [{"type": "image", "base64": "abc", "mime_type": "image/png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_v0_base64_image_block() -> None:
+    """v0 source_type='base64' image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "qqq",
+            "mime_type": "image/png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,qqq"}},
+    ]
+
+
+def test_format_message_content_passes_through_existing_image_url() -> None:
+    """Already-OpenAI image_url blocks pass through unchanged."""
+    blocks = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/y.png"}},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == blocks
+
+
+@pytest.mark.parametrize(
+    "btype",
+    [
+        "tool_use",
+        "thinking",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    ],
+)
+def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
+    """Block types not part of the OpenAI chat completions wire format are stripped."""
+    blocks = [
+        {"type": "text", "text": "visible"},
+        {"type": btype, "foo": "bar"},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [{"type": "text", "text": "visible"}]
+
+
+def test_format_message_content_preserves_order_around_dropped_blocks() -> None:
+    """Surviving blocks keep their order when interleaved drops are removed."""
+    blocks = [
+        {"type": "text", "text": "before"},
+        {"type": "thinking", "thinking": "..."},
+        {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        {"type": "tool_use", "name": "t", "input": {}},
+        {"type": "text", "text": "after"},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "text", "text": "before"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        {"type": "text", "text": "after"},
+    ]
+
+
+def test_format_message_content_translates_v1_url_image_block() -> None:
+    """v1 image block with a top-level URL maps to an OpenAI image_url block."""
+    blocks = [{"type": "image", "url": "https://example.com/img.png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+    ]
+
+
+def test_format_message_content_translates_v0_url_image_block() -> None:
+    """v0 source_type=url image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/v0.png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/v0.png"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_base64_image() -> None:
+    """Legacy Anthropic-shape image with base64 source maps to a data URI."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": "abc",
+            },
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_url_image() -> None:
+    """Legacy Anthropic-shape image with url source maps to image_url."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {"type": "url", "url": "https://example.com/anthropic.png"},
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/anthropic.png"},
+        },
+    ]
+
+
+def test_format_message_content_translates_v1_audio_block() -> None:
+    """v1 audio block is translated to OpenAI input_audio shape."""
+    blocks = [{"type": "audio", "base64": "aGVsbG8=", "mime_type": "audio/wav"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "input_audio", "input_audio": {"data": "aGVsbG8=", "format": "wav"}},
+    ]
+
+
+def test_format_message_content_translates_v1_file_block_base64() -> None:
+    """v1 file block with base64 + filename maps to OpenAI file_data shape."""
+    blocks = [
+        {
+            "type": "file",
+            "base64": "JVBERi0=",
+            "mime_type": "application/pdf",
+            "filename": "x.pdf",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0=",
+                "filename": "x.pdf",
+            },
+        },
+    ]
+
+
+def test_convert_message_to_dict_translates_tool_message_image() -> None:
+    """ToolMessage with a canonical image block lands as OpenAI image_url on the wire.
+
+    Reproduces the failure mode where a tool that returns an image (e.g. a
+    file-reader) hands back `content_blocks=[{"type": "image", ...}]` and the
+    message round-trips into a Fireworks chat completions request.
+    """
+    tool_message = ToolMessage(
+        content=[{"type": "image", "base64": "abc", "mime_type": "image/png"}],
+        tool_call_id="call_1",
+    )
+
+    result = _convert_message_to_dict(tool_message)
+
+    assert result == {
+        "role": "tool",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+        "tool_call_id": "call_1",
+    }
+
+
+def test_convert_message_to_dict_translates_human_mixed_content() -> None:
+    """HumanMessage with mixed text + image blocks translates correctly."""
+    human_message = HumanMessage(
+        content=[
+            {"type": "text", "text": "what is this?"},
+            {"type": "image", "base64": "xyz", "mime_type": "image/jpeg"},
+        ]
+    )
+
+    result = _convert_message_to_dict(human_message)
+
+    assert result == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "what is this?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,xyz"},
+            },
+        ],
+    }
+
+
+def test_convert_message_to_dict_chat_message_uses_translator() -> None:
+    """ChatMessage path also runs content through the formatter."""
+    chat_message = ChatMessage(
+        role="custom",
+        content=[{"type": "image", "base64": "zz", "mime_type": "image/gif"}],
+    )
+
+    result = _convert_message_to_dict(chat_message)
+
+    assert result == {
+        "role": "custom",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/gif;base64,zz"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_string_content_unchanged() -> None:
+    """String content on common message types passes through unmodified."""
+    assert _convert_message_to_dict(HumanMessage(content="hi"))["content"] == "hi"
+    assert _convert_message_to_dict(SystemMessage(content="sys"))["content"] == "sys"
+    assert (
+        _convert_message_to_dict(ToolMessage(content="r1", tool_call_id="t"))["content"]
+        == "r1"
+    )
+
+
+def test_convert_message_to_dict_translates_system_list_content() -> None:
+    """SystemMessage with list content is routed through the formatter."""
+    system_message = SystemMessage(
+        content=[
+            {"type": "text", "text": "rules"},
+            {"type": "thinking", "thinking": "drop me"},
+        ]
+    )
+
+    result = _convert_message_to_dict(system_message)
+
+    assert result == {
+        "role": "system",
+        "content": [{"type": "text", "text": "rules"}],
+    }
+
+
+def test_convert_message_to_dict_translates_ai_message_image_content() -> None:
+    """AIMessage with a canonical image block is translated, not forwarded raw."""
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "see attached"},
+            {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        ]
+    )
+
+    result = _convert_message_to_dict(ai_message)
+
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {"type": "text", "text": "see attached"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_propagates_translator_value_error() -> None:
+    """Translator errors surface to callers instead of shipping bad payloads.
+
+    Chat completions does not support file URLs; the translator raises rather
+    than letting an unsupported block through.
+    """
+    bad_message = HumanMessage(
+        content=[{"type": "file", "url": "https://example.com/doc.pdf"}]
+    )
+
+    with pytest.raises(ValueError, match="file URLs"):
+        _convert_message_to_dict(bad_message)
 
 
 def _make_llm(max_retries: int | None = 2) -> ChatFireworks:
@@ -653,3 +1001,142 @@ class TestStreamUsage:
             "output_tokens": 2,
             "total_tokens": 7,
         }
+
+
+class TestServiceTier:
+    """Tests for the `service_tier` field plumbing."""
+
+    def test_service_tier_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "service_tier" not in model._default_params
+
+    def test_service_tier_in_default_params_when_set(self) -> None:
+        model = _make_model(service_tier="priority")
+        assert model._default_params["service_tier"] == "priority"
+
+    def test_service_tier_passed_to_client_when_set(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["service_tier"] == "priority"
+
+    def test_service_tier_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "service_tier" not in call_kwargs
+
+    def test_service_tier_echoed_in_response_metadata(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            "service_tier": "priority",
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert result.response_metadata["service_tier"] == "priority"
+
+    def test_service_tier_echoed_in_stream_chunks(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                },
+                "service_tier": "priority",
+            },
+        ]
+        model.client.create.return_value = iter(chunks)
+        out = list(model.stream("Hello"))
+        tagged = [c for c in out if c.response_metadata.get("service_tier")]
+        assert tagged
+        assert all(c.response_metadata["service_tier"] == "priority" for c in tagged)
+
+    def test_service_tier_absent_when_not_in_response(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert "service_tier" not in result.response_metadata
+
+    def test_service_tier_in_llm_output_when_response_carries_it(self) -> None:
+        model = _make_model(service_tier="priority")
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "hi"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                },
+                "service_tier": "priority",
+            }
+        )
+        assert chat_result.llm_output is not None
+        assert chat_result.llm_output["service_tier"] == "priority"
+
+    def test_service_tier_not_inferred_from_request(self) -> None:
+        """Init-set tier must not leak into response_metadata if API omits it."""
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert "service_tier" not in result.response_metadata

@@ -57,6 +57,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import (
     ToolCallChunk,
@@ -166,6 +170,89 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from text content blocks.
+
+    Fireworks's chat completions endpoint rejects unknown fields on tool
+    message content blocks (e.g. the `id` that LangChain auto-generates on
+    `TextContentBlock`). For list content, keep only `type` and `text` on
+    text blocks; pass other blocks and non-list content through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
+            sanitized.append({"type": "text", "text": block["text"]})
+        else:
+            sanitized.append(block)
+    return sanitized
+
+
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Fireworks chat completions wire format.
+
+    Adapted from `langchain_openai.chat_models.base._format_message_content`,
+    scoped to the chat completions API: drops content block types the wire
+    format does not carry, translates canonical v0/v1 multimodal data blocks
+    via `convert_to_openai_data_block(block, api="chat/completions")`, and
+    converts legacy Anthropic-shape image blocks (`{"type": "image",
+    "source": {...}}`) to OpenAI `image_url` blocks. String and non-list
+    content are returned unchanged.
+
+    Args:
+        content: The message content. Strings and non-list values are
+            returned as-is; lists are walked block by block.
+
+    Returns:
+        The formatted content, ready to be placed on the chat completions
+        wire. List inputs return a new list with translations applied; other
+        inputs are returned unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and "type" in block:
+            btype = block["type"]
+            if btype in (
+                "tool_use",
+                "thinking",
+                "reasoning_content",
+                "function_call",
+                "code_interpreter_call",
+            ):
+                continue
+            if is_data_content_block(block):
+                formatted.append(
+                    convert_to_openai_data_block(block, api="chat/completions")
+                )
+                continue
+            if (
+                btype == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if (
+                    source.get("type") == "base64"
+                    and (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                    continue
+                if source.get("type") == "url" and (url := source.get("url")):
+                    formatted.append({"type": "image_url", "image_url": {"url": url}})
+                    continue
+                continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -178,14 +265,23 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {
+            "role": message.role,
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _format_message_content(message.content),
+        }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -206,7 +302,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         else:
             pass
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict = {
+            "role": "system",
+            "content": _format_message_content(message.content),
+        }
     elif isinstance(message, FunctionMessage):
         message_dict = {
             "role": "function",
@@ -216,7 +315,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
             "tool_call_id": message.tool_call_id,
         }
     else:
@@ -241,6 +342,9 @@ def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     choices = chunk.get("choices") or []
+    response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
+    if service_tier := chunk.get("service_tier"):
+        response_metadata["service_tier"] = service_tier
     if not choices:
         # Final chunk emitted when `stream_options.include_usage=True`:
         # `choices` is empty and the chunk carries only `usage`.
@@ -253,7 +357,7 @@ def _convert_chunk_to_message_chunk(
         return AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "fireworks"},
+            response_metadata=response_metadata,
         )
     choice = choices[0]
     _dict = choice["delta"]
@@ -288,7 +392,7 @@ def _convert_chunk_to_message_chunk(
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "fireworks"},
+            response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -567,6 +671,21 @@ class ChatFireworks(BaseChatModel):
     A value of `None` or `0` disables retries.
     """
 
+    service_tier: str | None = None
+    """Service tier for the request.
+
+    Forwarded as the `service_tier` field on the Fireworks chat completions
+    request when set. Pass `'priority'` to opt into Fireworks' priority tier;
+    leave as `None` to use the default tier.
+
+    To use Fireworks' fast mode instead, select a fast-routed `model`; fast mode
+    is not controlled by this field. See Fireworks'
+    [serverless product docs](https://docs.fireworks.ai/guides/serverless-products)
+    for the current list of fast routers and tiers.
+
+    !!! version-added "Added in `langchain-fireworks` 1.3.0"
+    """
+
     model_config = ConfigDict(
         populate_by_name=True,
     )
@@ -589,11 +708,7 @@ class ChatFireworks(BaseChatModel):
             raise ValueError(msg)
 
         client_params = {
-            "api_key": (
-                self.fireworks_api_key.get_secret_value()
-                if self.fireworks_api_key
-                else None
-            ),
+            "api_key": self.fireworks_api_key.get_secret_value(),
             "base_url": self.fireworks_api_base,
             "timeout": self.request_timeout,
         }
@@ -621,6 +736,8 @@ class ChatFireworks(BaseChatModel):
             params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.service_tier is not None:
+            params["service_tier"] = self.service_tier
         return params
 
     def _get_ls_params(
@@ -739,16 +856,20 @@ class ChatFireworks(BaseChatModel):
         if not isinstance(response, dict):
             response = response.model_dump()
         token_usage = response.get("usage", {})
+        service_tier = response.get("service_tier")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
-                message.response_metadata["model_provider"] = "fireworks"
-                message.response_metadata["model_name"] = self.model_name
+            if isinstance(message, AIMessage):
+                if token_usage:
+                    message.usage_metadata = {
+                        "input_tokens": token_usage.get("prompt_tokens", 0),
+                        "output_tokens": token_usage.get("completion_tokens", 0),
+                        "total_tokens": token_usage.get("total_tokens", 0),
+                    }
+                    message.response_metadata["model_provider"] = "fireworks"
+                    message.response_metadata["model_name"] = self.model_name
+                if service_tier:
+                    message.response_metadata["service_tier"] = service_tier
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -761,6 +882,8 @@ class ChatFireworks(BaseChatModel):
             "token_usage": token_usage,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        if service_tier:
+            llm_output["service_tier"] = service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(

@@ -449,7 +449,7 @@ class _TracerCore(ABC):
             kwargs.update({"metadata": metadata})
 
         if self._schema_format in {"original", "original+chat"}:
-            inputs = {"input": input_str}
+            inputs = inputs if isinstance(inputs, dict) else {"input": input_str}
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
