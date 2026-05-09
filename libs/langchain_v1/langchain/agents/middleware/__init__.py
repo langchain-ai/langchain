@@ -2,6 +2,10 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware.atr_threat_detection import (
+    ATRThreatDetectionMiddleware,
+    ThreatDetectionError,
+)
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -44,6 +48,7 @@ from langchain.agents.middleware.types import (
 )
 
 __all__ = [
+    "ATRThreatDetectionMiddleware",
     "AgentMiddleware",
     "AgentState",
     "ClearToolUsesEdit",
@@ -69,6 +74,7 @@ __all__ = [
     "Runtime",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
+    "ThreatDetectionError",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
