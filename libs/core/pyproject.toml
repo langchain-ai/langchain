@@ -122,8 +122,10 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "S", "SLF",]
+"tests/**" = [ "ARG", "D1", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
+"langchain_core/_security/_policy.py" = [ "EM101", "EM102", "TRY003", "B008", "TRY300",]
+"langchain_core/_security/_transport.py" = [ "EM101", "EM102", "TRY003", "TRY203", "B008",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]

@@ -118,6 +118,7 @@ from langchain_openai.chat_models._compat import (
 )
 
 if TYPE_CHECKING:
+    import httpx
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -125,6 +126,19 @@ logger = logging.getLogger(__name__)
 # This SSL context is equivelent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_ssrf_client: httpx.Client | None = None
+
+
+def _get_ssrf_safe_client() -> httpx.Client:
+    global _ssrf_client
+    if _ssrf_client is None:
+        from langchain_core._security._transport import ssrf_safe_client
+
+        _ssrf_client = ssrf_safe_client(
+            verify=global_ssl_context, follow_redirects=False
+        )
+    return _ssrf_client
 
 WellKnownTools = (
     "file_search",
@@ -3313,22 +3327,51 @@ def _url_to_size(image_source: str) -> Optional[tuple[int, int]]:
         )
         return None
     if _is_url(image_source):
+        import httpx
+
+        # Set reasonable limits to prevent resource exhaustion
+        # Timeout prevents indefinite hangs on slow/malicious servers
+        timeout = 5.0  # seconds
+        # Max size matches OpenAI's 50 MB payload limit
+        max_size = 50 * 1024 * 1024  # 50 MB
+
         try:
-            import httpx
-        except ImportError:
-            logger.info(
-                "Unable to count image tokens. To count image tokens please install "
-                "`pip install -U httpx`."
-            )
+            response = _get_ssrf_safe_client().get(image_source, timeout=timeout)
+            response.raise_for_status()
+
+            # Check response size before loading into memory
+            content_length = response.headers.get("content-length")
+            if content_length and int(content_length) > max_size:
+                logger.warning(
+                    "Image URL exceeds maximum size limit of %d bytes", max_size
+                )
+                return None
+
+            # Also check actual content size
+            if len(response.content) > max_size:
+                logger.warning(
+                    "Image URL exceeds maximum size limit of %d bytes", max_size
+                )
+                return None
+
+            with Image.open(BytesIO(response.content)) as img:
+                width, height = img.size
+            return width, height
+        except httpx.TimeoutException:
+            logger.warning("Image URL request timed out after %s seconds", timeout)
             return None
-        response = httpx.get(image_source)
-        response.raise_for_status()
-        width, height = Image.open(BytesIO(response.content)).size
-        return width, height
+        except httpx.HTTPStatusError as e:
+            logger.warning("Image URL returned HTTP error: %s", e)
+            return None
+        except Exception as e:
+            logger.warning("Failed to fetch or process image from URL: %s", e)
+            return None
+
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)
-        width, height = Image.open(BytesIO(data)).size
+        with Image.open(BytesIO(data)) as img:
+            width, height = img.size
         return width, height
     return None
 
