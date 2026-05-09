@@ -318,6 +318,7 @@ class Chroma(VectorStore):
         create_collection_if_not_exists: bool | None = True,  # noqa: FBT001, FBT002
         *,
         ssl: bool = False,
+        allowed_image_dir: Path | str | None = None,
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -338,13 +339,18 @@ class Chroma(VectorStore):
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             collection_configuration: Index configuration for the collection.
-
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             relevance_score_fn: Function to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to `True`.
+            allowed_image_dir: Directory that image URIs passed to `add_images`
+                    must reside in. When set, each URI is resolved to its canonical
+                    path and must fall under this directory (symlinks are followed
+                    before the check). When `None` (default), absolute paths and
+                    any path component equal to `".."` are rejected as a strict
+                    fallback.
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
@@ -408,6 +414,9 @@ class Chroma(VectorStore):
         else:
             self._client = chromadb.Client(settings=_settings)
 
+        self._allowed_image_dir: Path | None = (
+            Path(allowed_image_dir).resolve() if allowed_image_dir is not None else None
+        )
         self._embedding_function = embedding_function
         self._chroma_collection: chromadb.Collection | None = None
         self._collection_name = collection_name
@@ -483,6 +492,37 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
+    def _validate_image_uri(self, uri: str) -> None:
+        """Validate that `uri` is safe to open as an image.
+
+        Args:
+            uri: File path to validate.
+
+        Raises:
+            ValueError: If the path is outside `allowed_image_dir`, is absolute
+                when no allowed directory is configured, or contains `".."`.
+        """
+        path = Path(uri)
+        if self._allowed_image_dir is not None:
+            try:
+                path.resolve().relative_to(self._allowed_image_dir)
+            except ValueError:
+                msg = (
+                    f"Image path {uri!r} is outside the allowed directory "
+                    f"{str(self._allowed_image_dir)!r}."
+                )
+                raise ValueError(msg)
+        else:
+            if path.is_absolute():
+                msg = (
+                    f"Absolute image path {uri!r} rejected. "
+                    f"Pass allowed_image_dir to enable file access."
+                )
+                raise ValueError(msg)
+            if ".." in path.parts:
+                msg = f"Path traversal attempt rejected: {uri!r}"
+                raise ValueError(msg)
+
     @staticmethod
     def encode_image(uri: str) -> str:
         """Get base64 string from image URI."""
@@ -524,9 +564,12 @@ class Chroma(VectorStore):
             List of IDs of the added images.
 
         Raises:
-            ValueError: When metadata is incorrect.
+            ValueError: When metadata is incorrect, or when a URI fails path
+                validation (see `allowed_image_dir`).
         """
         # Map from uris to b64 encoded strings
+        for uri in uris:
+            self._validate_image_uri(uri)
         b64_texts = [self.encode_image(uri=uri) for uri in uris]
         # Populate IDs
         if ids is None:
