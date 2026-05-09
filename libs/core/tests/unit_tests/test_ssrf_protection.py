@@ -124,6 +124,51 @@ class TestValidateSafeUrl:
         assert result == url
 
 
+class TestSSRFBypassRemoval:
+    """Regression tests for the removed test-environment bypass in validate_safe_url.
+
+    Previously, LANGCHAIN_ENV=local_test combined with a hostname matching
+    `startswith("test") and "server" in hostname` caused validate_safe_url to
+    return the URL unchecked. These tests verify that path no longer exists.
+    """
+
+    def test_exploit_hostname_blocked_even_with_local_test(
+        self, monkeypatch: Any
+    ) -> None:
+        # Hostname satisfies the old bypass conditions but must not be whitelisted.
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_test")
+        with pytest.raises(ValueError):
+            validate_safe_url("http://test.attacker.server.com/steal")
+
+    def test_local_test_still_allows_testserver(self, monkeypatch: Any) -> None:
+        # Legitimate use-case: LANGCHAIN_ENV=local_test whitelists testserver
+        # via the policy path, not the (now-removed) raw bypass.
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_test")
+        result = validate_safe_url("http://testserver/api")
+        assert result == "http://testserver/api"
+
+    def test_local_dev_still_allows_testserver(self, monkeypatch: Any) -> None:
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_dev")
+        result = validate_safe_url("http://testserver/api")
+        assert result == "http://testserver/api"
+
+    def test_arbitrary_local_prefix_no_longer_whitelists(
+        self, monkeypatch: Any
+    ) -> None:
+        # local_staging was previously whitelisted by startswith("local").
+        # After the fix it must NOT get the automatic allowlist expansion.
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_staging")
+        with pytest.raises(ValueError):
+            validate_safe_url("http://testserver/api")
+
+    def test_no_env_var_does_not_whitelist_testserver(
+        self, monkeypatch: Any
+    ) -> None:
+        monkeypatch.delenv("LANGCHAIN_ENV", raising=False)
+        with pytest.raises(ValueError):
+            validate_safe_url("http://testserver/api")
+
+
 class TestIsSafeUrl:
     """Tests for is_safe_url function (non-throwing version)."""
 

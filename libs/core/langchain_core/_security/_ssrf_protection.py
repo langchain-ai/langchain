@@ -3,7 +3,6 @@
 Delegates all validation to `langchain_core._security._policy`.
 """
 
-import os
 import socket
 from typing import Annotated, Any
 from urllib.parse import urlparse
@@ -64,14 +63,6 @@ def validate_safe_url(
     url_str = str(url)
     parsed = urlparse(url_str)
     hostname = parsed.hostname or ""
-
-    # Test-environment bypass (preserved from original implementation)
-    if (
-        os.environ.get("LANGCHAIN_ENV") == "local_test"
-        and hostname.startswith("test")
-        and "server" in hostname
-    ):
-        return url_str
 
     policy = _policy_for(allow_private=allow_private, allow_http=allow_http)
 
