@@ -1723,6 +1723,214 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
+class _BedrockLikeAnthropic(ChatAnthropic):
+    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests.
+
+    Vertex is not modeled here: `langchain-google-vertexai`'s
+    `ChatAnthropicVertex` does not subclass `ChatAnthropic` and ships its own
+    `_get_request_payload`, so it never reaches the gate under test.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-bedrock-chat"
+
+
+def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
+    """Non-direct subclasses must place `cache_control` inside the last block.
+
+    Transports like Bedrock reject the top-level `cache_control` field, so
+    the kwarg has to be expanded into a nested breakpoint to remain effective.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+
+    assert "cache_control" not in payload
+    last_message = payload["messages"][-1]
+    assert last_message["content"] == [
+        {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+def test_cache_control_kwarg_bedrock_with_list_content() -> None:
+    """`cache_control` lands on the last block when content is already a list."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage([{"type": "text", "text": "foo"}])]
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "1h"}
+    )
+
+    assert "cache_control" not in payload
+    last_block = payload["messages"][-1]["content"][-1]
+    assert last_block["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+
+
+def test_cache_control_kwarg_bedrock_skips_code_execution_blocks() -> None:
+    """`cache_control` must skip `code_execution`-related blocks.
+
+    Anthropic rejects breakpoints applied to those blocks, so the injector
+    walks backwards until it finds an eligible block.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "earlier text"},
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "get_weather",
+                "input": {"location": "NYC"},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            },
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    last_content = payload["messages"][-1]["content"]
+    assert last_content[0]["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in last_content[1]
+
+
+def test_cache_control_kwarg_bedrock_walks_back_to_earlier_message() -> None:
+    """When the last message has no eligible blocks, walk back to a prior one.
+
+    Pins the contract that `reversed(formatted_messages)` is intentional: a
+    refactor that only inspects the last message would silently regress.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("earlier"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    first_message_content = payload["messages"][0]["content"]
+    assert first_message_content == [
+        {"type": "text", "text": "earlier", "cache_control": {"type": "ephemeral"}}
+    ]
+    last_message_content = payload["messages"][-1]["content"]
+    assert all("cache_control" not in block for block in last_message_content)
+
+
+def test_cache_control_kwarg_bedrock_no_eligible_block_warns() -> None:
+    """When every candidate is `code_execution`-related, warn and drop the kwarg.
+
+    Pins the silent-drop contract: payload remains valid for Anthropic, but
+    the caller is told their cache request was skipped.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    with pytest.warns(UserWarning, match="cache_control.*dropped"):
+        payload = llm._get_request_payload(
+            [ai_message],
+            cache_control={"type": "ephemeral"},
+        )
+
+    assert "cache_control" not in payload
+    only_block = payload["messages"][-1]["content"][0]
+    assert "cache_control" not in only_block
+
+
+def test_cache_control_absent_kwarg_bedrock_is_noop() -> None:
+    """Without a `cache_control` kwarg, the Bedrock branch must not mutate."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+
+    assert "cache_control" not in payload
+    for message in payload["messages"]:
+        content = message["content"]
+        if isinstance(content, list):
+            for block in content:
+                assert "cache_control" not in block
+
+
+def test_cache_control_kwarg_unknown_subclass_injects_into_blocks() -> None:
+    """Any subclass that overrides `_llm_type` is treated as non-direct.
+
+    The gate is allowlist-shaped on `"anthropic-chat"`, so a future subclass
+    routing through a new transport is safe by default rather than silently
+    sending an unsupported top-level field.
+    """
+
+    class _FutureTransportAnthropic(ChatAnthropic):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-some-future-transport"
+
+    llm = _FutureTransportAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload(
+        [HumanMessage("hello")],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert "cache_control" not in payload
+    assert payload["messages"][-1]["content"] == [
+        {"type": "text", "text": "hello", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("llm_type", "expected"),
+    [
+        ("anthropic-chat", True),
+        ("anthropic-bedrock-chat", False),
+        ("anthropic-chat-vertexai", False),
+        ("", False),
+        ("ANTHROPIC-CHAT", False),
+        (None, False),
+        (object(), False),
+    ],
+)
+def test_is_direct_anthropic_llm_type(llm_type: object, expected: bool) -> None:  # noqa: FBT001
+    """Predicate is exact-match and tolerates non-string inputs."""
+    from langchain_anthropic.chat_models import _is_direct_anthropic_llm_type
+
+    assert _is_direct_anthropic_llm_type(llm_type) is expected
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
@@ -2313,7 +2521,9 @@ def test_effort_in_output_config() -> None:
         model="claude-opus-4-5-20251101",
         output_config={"effort": "low"},
     )
-    assert model.model_kwargs["output_config"] == {"effort": "low"}
+    assert model.output_config == {"effort": "low"}
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
 
 
 def test_effort_priority() -> None:
@@ -2764,3 +2974,238 @@ def test_thinking_in_params_recognizes_adaptive() -> None:
     assert not _thinking_in_params({"thinking": {"type": "disabled"}})
     assert not _thinking_in_params({"thinking": {}})
     assert not _thinking_in_params({})
+
+
+def test_effort_xhigh() -> None:
+    """Test that xhigh effort level is accepted and lands in output_config."""
+    model = ChatAnthropic(model="claude-opus-4-6", effort="xhigh")
+    assert model.effort == "xhigh"
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "xhigh"
+
+
+def test_output_config_top_level_field() -> None:
+    """Test that output_config is a top-level field, not model_kwargs."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={
+            "effort": "low",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    assert model.output_config == {
+        "effort": "low",
+        "task_budget": {"type": "tokens", "total": 50000},
+    }
+    assert "output_config" not in model.model_kwargs
+
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_output_config_merged_with_kwargs() -> None:
+    """Test that call-time output_config overrides field-level output_config."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload(
+        "Test query",
+        output_config={
+            "effort": "high",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    # Call-time kwargs override field-level
+    assert payload["output_config"]["effort"] == "high"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_task_budget_auto_appends_beta() -> None:
+    """Test that task_budget in output_config triggers beta header."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "betas" in payload
+    assert "task-budgets-2026-03-13" in payload["betas"]
+
+
+def test_task_budget_beta_not_duplicated() -> None:
+    """Test that task_budget beta is not duplicated if already present."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["task-budgets-2026-03-13"],
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("task-budgets-2026-03-13") == 1
+
+
+def test_no_task_budget_no_beta() -> None:
+    """Test that task_budget beta is not added when no task_budget is set."""
+    model = ChatAnthropic(model=MODEL_NAME, output_config={"effort": "high"})
+    payload = model._get_request_payload("Test query")
+    betas = payload.get("betas")
+    if betas:
+        assert "task-budgets-2026-03-13" not in betas
+
+
+def test_anthropic_stream_v2_lifecycle() -> None:
+    """Validate lifecycle events across a thinking + text + tool_use stream.
+
+    Anthropic emits raw `content_block_start` / `content_block_delta` /
+    `content_block_stop` events with integer `index` fields, interleaved
+    with `message_start` and `message_delta`. This test threads a
+    realistic event sequence through `_stream` via a mocked raw client
+    and asserts that `stream_v2` produces a spec-conformant event
+    stream: paired start/finish per block, no interleaving, sequential
+    `uint` wire indices.
+    """
+    from unittest.mock import patch
+
+    from anthropic.types import (
+        InputJSONDelta,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+        ThinkingBlock,
+        ThinkingDelta,
+        ToolUseBlock,
+    )
+    from anthropic.types.raw_message_delta_event import Delta as RawMessageDelta
+    from anthropic.types.raw_message_delta_event import (
+        MessageDeltaUsage as RawMessageDeltaUsage,
+    )
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    msg = Message(
+        id="msg_1",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # thinking block (index=0)
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(signature="", thinking="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="Let me ", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        # text block (index=1)
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=1,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="The answer ", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="is 42.", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=1, type="content_block_stop"),
+        # tool_use block (index=2)
+        RawContentBlockStartEvent(
+            content_block=ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="search",
+                type="tool_use",
+            ),
+            index=2,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json='{"q":', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json=' "weather"}', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=2, type="content_block_stop"),
+        # message_delta with final usage and stop_reason
+        RawMessageDeltaEvent(
+            delta=RawMessageDelta(stop_reason="tool_use", stop_sequence=None),
+            type="message_delta",
+            usage=RawMessageDeltaUsage(
+                output_tokens=50,
+                input_tokens=10,
+                cache_read_input_tokens=0,
+                cache_creation_input_tokens=0,
+            ),
+        ),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+
+    # Enable thinking so `coerce_content_to_string=False` in `_stream`,
+    # which gives every content block an integer `index` field — the
+    # structured path the protocol bridge actually exercises.  Default
+    # (no tools / thinking / documents) coerces text to a plain string,
+    # which strips indices and is a separate code path not covered here.
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    def mock_create(_payload: Any) -> list:
+        return events
+
+    with patch.object(llm, "_create", mock_create):
+        stream_events = list(llm.stream_v2("Test query"))
+
+    assert_valid_event_stream(stream_events)
+
+    finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
+    types = [f["content_block"]["type"] for f in finishes]
+    assert types == ["reasoning", "text", "tool_call"]
+
+    wire_indices = [f["index"] for f in finishes]
+    assert wire_indices == [0, 1, 2]
+
+    # Content accumulation reaches content-block-finish intact.
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content_block"])
+    text_block = cast("dict[str, Any]", finishes[1]["content_block"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content_block"])
+    assert reasoning_block["reasoning"] == "Let me think."
+    assert text_block["text"] == "The answer is 42."
+    assert tool_block["args"] == {"q": "weather"}
+    assert tool_block["name"] == "search"
+
+    # message-finish carries the tool_use stop reason inside metadata
+    # (protocol 0.0.9 moved the finish reason off the top-level event
+    # and into `metadata`, where the bridge deposits the provider's raw
+    # `stop_reason` alongside other response metadata).
+    message_finish = stream_events[-1]
+    assert message_finish["event"] == "message-finish"
+    assert message_finish["metadata"]["stop_reason"] == "tool_use"

@@ -616,6 +616,28 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
+def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_v2` on chat completions emits a spec-conformant lifecycle."""
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    llm = ChatOpenAI(model="gpt-4o")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events = list(llm.stream_v2("你的名字叫什么？只回答名字"))
+
+    assert_valid_event_stream(events)
+    # At minimum, a text block with the accumulated answer.
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len(finishes) >= 1
+    text_finishes = [f for f in finishes if f["content_block"]["type"] == "text"]
+    assert len(text_finishes) == 1
+
+
 @pytest.fixture
 def mock_completion() -> dict:
     return {
@@ -2895,6 +2917,52 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
+
+
+def test_convert_from_v1_to_responses_missing_type() -> None:
+    """Regression: blocks without 'type' should be skipped, not raise KeyError."""
+    content: list = [
+        {"type": "text", "text": "Hello", "annotations": []},
+        {"summary": [{"type": "summary_text", "text": "..."}]},  # no "type" key
+        {"index": 0},  # no "type" key
+    ]
+    result = _convert_from_v1_to_responses(content, [])
+    # Blocks without "type" should be skipped
+    assert len(result) == 1
+    assert result[0] == {"type": "text", "text": "Hello", "annotations": []}
+
+
+def test_v03_reasoning_without_type_roundtrip() -> None:
+    """Regression: v0.3 reasoning stored without 'type' key should roundtrip."""
+    message_v03 = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello!", "annotations": []},
+        ],
+        additional_kwargs={
+            # Reasoning stored without "type" (as produced by streaming v0.3 path)
+            "reasoning": {
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "Thinking..."}],
+            },
+        },
+        response_metadata={"id": "resp_123"},
+        id="msg_123",
+    )
+
+    converted = _convert_from_v03_ai_message(message_v03)
+
+    # Reasoning block should have "type" restored
+    reasoning_blocks = [
+        b
+        for b in converted.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) == 1
+    assert reasoning_blocks[0]["type"] == "reasoning"
+
+    # Full pipeline should not raise
+    result = _construct_responses_api_input([converted])
+    assert len(result) > 0
 
 
 def test_get_last_messages() -> None:

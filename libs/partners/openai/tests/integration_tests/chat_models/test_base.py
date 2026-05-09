@@ -22,7 +22,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from pydantic import BaseModel, field_validator
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -1277,3 +1278,63 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
         raise AssertionError
+
+
+class _Person(BaseModel):
+    """A person with a name and age."""
+
+    name: str = Field(description="The person's name")
+    age: int = Field(description="The person's age in years")
+
+
+@pytest.mark.vcr
+def test_streaming_tool_call_v1_v2_parity() -> None:
+    """`stream()` and `stream_v2()` must agree on their final `AIMessage`.
+
+    Both paths are invoked against the same HTTP response (the cassette's
+    single recorded interaction, replayed for both calls via
+    `allow_playback_repeats=True`). Any remaining divergence is a real
+    library issue, not a difference between two LLM calls.
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        output_version="v1",
+    )
+    with_tool = llm.bind_tools([_Person], tool_choice="_Person")
+    prompt = "Extract: Erick is 27 years old."
+
+    v1: AIMessageChunk | None = None
+    for chunk in with_tool.stream(prompt):
+        assert isinstance(chunk, AIMessageChunk)
+        v1 = chunk if v1 is None else v1 + chunk
+    assert isinstance(v1, AIMessageChunk)
+
+    stream = with_tool.stream_v2(prompt)
+    events = list(stream)
+    assert_valid_event_stream(events)
+    v2 = stream.output
+    assert isinstance(v2, AIMessage)
+
+    assert v1.tool_calls == v2.tool_calls
+    assert v1.invalid_tool_calls == v2.invalid_tool_calls
+    assert v1.content_blocks == v2.content_blocks
+
+    # `usage_metadata` top-level counts must match. The detail dicts
+    # (`input_token_details`, `output_token_details`) survive in v1 but
+    # are dropped by the bridge's `_to_protocol_usage` because
+    # `langchain_protocol.UsageInfo` has no fields for them. Tracked
+    # as a protocol-repo change; compare counts strictly for now.
+    detail_keys = {"input_token_details", "output_token_details"}
+    v1_usage = {
+        k: v for k, v in (v1.usage_metadata or {}).items() if k not in detail_keys
+    }
+    v2_usage = {
+        k: v for k, v in (v2.usage_metadata or {}).items() if k not in detail_keys
+    }
+    assert v1_usage == v2_usage
+
+    # `response_metadata` must match exactly: the bridge passes the
+    # provider's raw `finish_reason` through without normalization, so
+    # OpenAI's `"stop"` on a forced tool call appears on both paths.
+    assert v1.response_metadata == v2.response_metadata

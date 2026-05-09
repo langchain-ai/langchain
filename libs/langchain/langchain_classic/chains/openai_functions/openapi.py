@@ -27,6 +27,12 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+_OPENAPI_REPLACEMENT = (
+    "Bind your OpenAPI operations as tools on a chat model with "
+    "`ChatModel.bind_tools(...)` and execute the resulting tool calls with an "
+    "HTTP client (e.g. `requests` or `httpx`)."
+)
+
 
 def _format_url(url: str, path_params: dict) -> str:
     expected_path_param = re.findall(r"{(.*?)}", url)
@@ -83,6 +89,11 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
     return {"type": "object", "properties": properties, "required": required}
 
 
+@deprecated(
+    since="1.0.4",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
+)
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
 ) -> tuple[list[dict[str, Any]], Callable]:
@@ -198,13 +209,20 @@ def openapi_spec_to_openai_fn(
     return functions, default_call_api
 
 
+@deprecated(
+    since="1.0.4",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
+)
 class SimpleRequestChain(Chain):
     """Chain for making a simple request to an API endpoint."""
 
     request_method: Callable
     """Method to use for making the request."""
+
     output_key: str = "response"
     """Key to use for the output of the request."""
+
     input_key: str = "function"
     """Key to use for the input of the request."""
 
@@ -251,12 +269,8 @@ class SimpleRequestChain(Chain):
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in langchain 1.0. "
-        "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"
-    ),
-    removal="1.0",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
 )
 def get_openapi_chain(
     spec: OpenAPISpec | str,
@@ -271,87 +285,13 @@ def get_openapi_chain(
 ) -> SequentialChain:
     r"""Create a chain for querying an API from a OpenAPI spec.
 
-    Note: this class is deprecated. See below for a replacement implementation.
-        The benefits of this implementation are:
-
-        - Uses LLM tool calling features to encourage properly-formatted API requests;
-        - Includes async support.
-
-        ```python
-        from typing import Any
-
-        from langchain_classic.chains.openai_functions.openapi import openapi_spec_to_openai_fn
-        from langchain_community.utilities.openapi import OpenAPISpec
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_openai import ChatOpenAI
-
-        # Define API spec. Can be JSON or YAML
-        api_spec = \"\"\"
-        {
-        "openapi": "3.1.0",
-        "info": {
-            "title": "JSONPlaceholder API",
-            "version": "1.0.0"
-        },
-        "servers": [
-            {
-            "url": "https://jsonplaceholder.typicode.com"
-            }
-        ],
-        "paths": {
-            "/posts": {
-            "get": {
-                "summary": "Get posts",
-                "parameters": [
-                {
-                    "name": "_limit",
-                    "in": "query",
-                    "required": false,
-                    "schema": {
-                    "type": "integer",
-                    "example": 2
-                    },
-                    "description": "Limit the number of results"
-                }
-                ]
-            }
-            }
-        }
-        }
-        \"\"\"
-
-        parsed_spec = OpenAPISpec.from_text(api_spec)
-        openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
-        tools = [
-            {"type": "function", "function": fn}
-            for fn in openai_fns
-        ]
-
-        prompt = ChatPromptTemplate.from_template(
-            "Use the provided APIs to respond to this user query:\\n\\n{query}"
-        )
-        model = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
-
-        def _execute_tool(message) -> Any:
-            if tool_calls := message.tool_calls:
-                tool_call = message.tool_calls[0]
-                response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
-                response.raise_for_status()
-                return response.json()
-            else:
-                return message.content
-
-        chain = prompt | model | _execute_tool
-        ```
-
-        ```python
-        response = chain.invoke({"query": "Get me top two posts."})
-        ```
+    !!! warning "Deprecated"
+        This function and all related utilities in this module are deprecated.
+        Use LLM tool calling features directly with an HTTP client instead.
 
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
-        llm: language model, should be an OpenAI function-calling model, e.g.
-            `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
+        llm: language model, should be an OpenAI function-calling model.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
         params: Request parameters.
@@ -360,7 +300,7 @@ def get_openapi_chain(
         llm_chain_kwargs: LLM chain additional keyword arguments.
         **kwargs: Additional keyword arguments to pass to the chain.
 
-    """  # noqa: E501
+    """
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:

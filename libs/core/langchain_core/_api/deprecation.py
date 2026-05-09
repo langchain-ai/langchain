@@ -136,9 +136,8 @@ def deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
@@ -472,21 +471,13 @@ def warn_deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
     """
-    if not pending:
-        if not removal:
-            removal = f"in {removal}" if removal else "within ?? minor releases"
-            msg = (
-                f"Need to determine which default deprecation schedule to use. "
-                f"{removal}"
-            )
-            raise NotImplementedError(msg)
+    if not pending and removal:
         removal = f"in {removal}"
 
     if not message:
