@@ -566,6 +566,57 @@ def test_retry_with_failure_then_success() -> None:
         assert call_count == 2, f"Expected 2 calls, but got {call_count}"
 
 
+def test_bind_tools_strict_not_forwarded_to_request_payload() -> None:
+    """`strict` from upstream structured-output bindings must not reach Mistral."""
+    chat = ChatMistralAI(model="test")
+    captured_payloads = []
+
+    def mock_post(*args: Any, **kwargs: Any) -> MagicMock:
+        captured_payloads.append(kwargs["json"])
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello!",
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 1,
+                "completion_tokens": 1,
+                "total_tokens": 2,
+            },
+        }
+        return mock_response
+
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "MeetingAction",
+            "schema": {
+                "type": "object",
+                "properties": {"task": {"type": "string"}},
+                "required": ["task"],
+            },
+            "strict": True,
+        },
+    }
+
+    bound = chat.bind_tools([], strict=True, response_format=response_format)
+
+    with patch.object(chat.client, "post", side_effect=mock_post):
+        result = bound.invoke("Hello")
+
+    assert result.content == "Hello!"
+    assert len(captured_payloads) == 1
+    assert "strict" not in captured_payloads[0]
+    assert captured_payloads[0]["response_format"] == response_format
+
+
 def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     """
     Tests whether the conversion of an AIMessage with more than one tool call

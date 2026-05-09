@@ -103,6 +103,16 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _sanitize_mistral_request_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Remove LangChain-level params that Mistral rejects at the API boundary."""
+    if "strict" not in payload:
+        return payload
+
+    sanitized_payload = payload.copy()
+    sanitized_payload.pop("strict")
+    return sanitized_payload
+
+
 def _create_retry_decorator(
     llm: ChatMistralAI,
     run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
@@ -233,6 +243,7 @@ async def acompletion_with_retry(
     async def _completion_with_retry(**kwargs: Any) -> Any:
         if "stream" not in kwargs:
             kwargs["stream"] = False
+        kwargs = _sanitize_mistral_request_payload(kwargs)
         stream = kwargs["stream"]
         if stream:
             event_source = aconnect_sse(
@@ -618,6 +629,7 @@ class ChatMistralAI(BaseChatModel):
         def _completion_with_retry(**kwargs: Any) -> Any:
             if "stream" not in kwargs:
                 kwargs["stream"] = False
+            kwargs = _sanitize_mistral_request_payload(kwargs)
             stream = kwargs["stream"]
             if stream:
 
