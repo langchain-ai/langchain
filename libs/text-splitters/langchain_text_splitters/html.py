@@ -18,8 +18,7 @@ from typing import (
     cast,
 )
 
-import requests
-from langchain_core._api import beta
+from langchain_core._api import beta, deprecated
 from langchain_core.documents import BaseDocumentTransformer, Document
 from typing_extensions import override
 
@@ -188,8 +187,19 @@ class HTMLHeaderTextSplitter:
         """
         return self.split_text_from_file(StringIO(text))
 
+    @deprecated(
+        since="0.3.11",
+        removal="1.0.0",
+        message=(
+            "Please fetch the HTML content from the URL yourself and pass it "
+            "to split_text."
+        ),
+    )
     def split_text_from_url(
-        self, url: str, timeout: int = 10, **kwargs: Any
+        self,
+        url: str,
+        timeout: int = 10,
+        **kwargs: Any,  # noqa: ARG002
     ) -> list[Document]:
         """Fetch text content from a URL and split it into documents.
 
@@ -204,11 +214,16 @@ class HTMLHeaderTextSplitter:
             the header hierarchy to their corresponding titles.
 
         Raises:
-            requests.RequestException: If the HTTP request fails.
+            httpx.HTTPError: If the HTTP request fails.
         """
-        response = requests.get(url, timeout=timeout, **kwargs)
-        response.raise_for_status()
-        return self.split_text(response.text)
+        from langchain_core._security._transport import (  # noqa: PLC0415
+            ssrf_safe_client,
+        )
+
+        with ssrf_safe_client() as client:
+            response = client.get(url, timeout=timeout)
+            response.raise_for_status()
+            return self.split_text(response.text)
 
     def split_text_from_file(self, file: Union[str, IO[str]]) -> list[Document]:
         """Split HTML content from a file into a list of Document objects.
