@@ -1,4 +1,6 @@
 import inspect
+import subprocess
+import sys
 import warnings
 from typing import Any
 
@@ -588,3 +590,43 @@ def test_deprecated_property_has_pep702_attribute() -> None:
     # The __deprecated__ attribute is on the underlying fget function
     assert hasattr(prop.fget, "__deprecated__")
     assert prop.fget.__deprecated__ == "Use new_property instead."
+
+
+def test_importing_deprecation_does_not_load_pydantic_v1() -> None:
+    """`langchain_core._api.deprecation` must not eagerly import `pydantic.v1`.
+
+    Pydantic emits a `UserWarning` from `pydantic/v1/__init__.py` on Python 3.14+,
+    and the module is on the import path for much of `langchain_core`. Run in a
+    fresh subprocess because sibling tests in this process may have already
+    imported `pydantic.v1` transitively.
+    """
+    code = (
+        "import sys\n"
+        "import langchain_core._api.deprecation  # noqa: F401\n"
+        "loaded = sorted(m for m in sys.modules if m.startswith('pydantic.v1'))\n"
+        "assert not loaded, loaded\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_deprecated_pydantic_v1_field_info() -> None:
+    """The lazy v1 `FieldInfo` branch wraps and reconstructs the field correctly.
+
+    Verifies behavior when `pydantic.v1` is loaded by the caller.
+    """
+    from pydantic.v1 import BaseModel as V1Base  # noqa: PLC0415
+    from pydantic.v1.fields import FieldInfo as V1FieldInfo  # noqa: PLC0415
+
+    field = V1FieldInfo(default=1, description="original")
+    wrapped = deprecated(since="2.0.0", name="x", removal="3.0.0")(field)
+
+    assert isinstance(wrapped, V1FieldInfo)
+    assert wrapped.default == 1
+    assert "deprecated" in (wrapped.description or "").lower()
+    assert "original" in (wrapped.description or "")
+
+    # Sanity: still usable as a v1 model field.
+    class M(V1Base):
+        x: int = wrapped  # type: ignore[assignment]
+
+    assert M(x=2).x == 2
