@@ -35,7 +35,7 @@ from langchain_classic.agents.output_parsers.openai_functions import (
 _NOT_SET = object()
 
 
-@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="1.0")
+@deprecated("0.1.0", alternative="create_openai_functions_agent", removal="2.0.0")
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 

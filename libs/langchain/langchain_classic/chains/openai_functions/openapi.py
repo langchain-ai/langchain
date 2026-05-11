@@ -27,6 +27,12 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+_OPENAPI_REPLACEMENT = (
+    "Bind your OpenAPI operations as tools on a chat model with "
+    "`ChatModel.bind_tools(...)` and execute the resulting tool calls with an "
+    "HTTP client (e.g. `requests` or `httpx`)."
+)
+
 
 def _format_url(url: str, path_params: dict) -> str:
     expected_path_param = re.findall(r"{(.*?)}", url)
@@ -85,11 +91,8 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
 
 @deprecated(
     since="1.0.4",
-    message=(
-        "This function is deprecated and will be removed in a future version. "
-        "Use LLM tool calling features directly with an HTTP client instead."
-    ),
-    removal="2.0",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
 )
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
@@ -208,19 +211,18 @@ def openapi_spec_to_openai_fn(
 
 @deprecated(
     since="1.0.4",
-    message=(
-        "This class is deprecated and will be removed in a future version. "
-        "Use LLM tool calling features directly with an HTTP client instead."
-    ),
-    removal="2.0",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
 )
 class SimpleRequestChain(Chain):
     """Chain for making a simple request to an API endpoint."""
 
     request_method: Callable
     """Method to use for making the request."""
+
     output_key: str = "response"
     """Key to use for the output of the request."""
+
     input_key: str = "function"
     """Key to use for the input of the request."""
 
@@ -267,11 +269,8 @@ class SimpleRequestChain(Chain):
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in a future version. "
-        "Use LLM tool calling features directly with an HTTP client instead."
-    ),
-    removal="2.0",
+    removal="2.0.0",
+    addendum=_OPENAPI_REPLACEMENT,
 )
 def get_openapi_chain(
     spec: OpenAPISpec | str,
@@ -292,8 +291,7 @@ def get_openapi_chain(
 
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
-        llm: language model, should be an OpenAI function-calling model, e.g.
-            `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
+        llm: language model, should be an OpenAI function-calling model.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
         params: Request parameters.

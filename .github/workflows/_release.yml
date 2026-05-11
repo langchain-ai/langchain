@@ -268,50 +268,11 @@ jobs:
             echo EOF
           } >> "$GITHUB_OUTPUT"
 
-  test-pypi-publish:
-    name: 🧪 Publish to TestPyPI
-    # release-notes must run before publishing because its check-tags step
-    # validates version/tag state — do not remove this dependency.
-    needs:
-      - build
-      - release-notes
-    runs-on: ubuntu-latest
-    permissions:
-      # This permission is used for trusted publishing:
-      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
-      #
-      # Trusted publishing has to also be configured on PyPI for each package:
-      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
-
-      - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
-        with:
-          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
-          verbose: true
-          print-hash: true
-          repository-url: https://test.pypi.org/legacy/
-          # We overwrite any existing distributions with the same name and version.
-          # This is *only for CI use* and is *extremely dangerous* otherwise!
-          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
-          skip-existing: true
-          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
-          attestations: false
-
   pre-release-checks:
     name: ✅ Pre-release checks
     needs:
       - build
       - release-notes
-      - test-pypi-publish
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -461,6 +422,45 @@ jobs:
           LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
+
+  test-pypi-publish:
+    name: 🧪 Publish to TestPyPI
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
+    needs:
+      - build
+      - release-notes
+      - pre-release-checks
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   # Test select published packages against new core
   # Done when code changes are made to langchain-core

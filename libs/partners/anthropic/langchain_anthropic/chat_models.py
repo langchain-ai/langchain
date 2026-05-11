@@ -1285,8 +1285,9 @@ class ChatAnthropic(BaseChatModel):
         # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
             warnings.warn(
-                "The 'output_format' parameter is deprecated and will be removed in a "
-                "future version. Use 'output_config={\"format\": ...}' instead.",
+                "The 'output_format' parameter is deprecated and will be removed in "
+                "langchain-anthropic 2.0.0. Use 'output_config={\"format\": ...}' "
+                "instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
