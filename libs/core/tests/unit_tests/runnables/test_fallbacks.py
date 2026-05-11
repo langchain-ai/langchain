@@ -400,3 +400,22 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+def test_fallbacks_getattr_unresolvable_forward_ref() -> None:
+    """__getattr__ should not raise NameError when get_type_hints fails.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/36579.
+    Methods whose annotations contain unresolvable forward references (e.g. when
+    the method's module defines ``from __future__ import annotations`` and the
+    referenced name is not importable at runtime) used to propagate a NameError
+    from ``typing.get_type_hints``.  The fix wraps the call in a try/except so
+    that the attribute is treated as a non-Runnable-returning method.
+    """
+    from langchain_core.runnables.fallbacks import _returns_runnable
+
+    def _method_with_bad_annotation() -> "NonExistentClass":  # type: ignore[name-defined]  # noqa: F821
+        return None  # type: ignore[return-value]
+
+    # Should not raise NameError even though the annotation is unresolvable
+    assert _returns_runnable(_method_with_bad_annotation) is False
