@@ -6,7 +6,7 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
@@ -256,6 +256,27 @@ def test_state_schema_with_private_state_field() -> None:
     assert len(result["messages"]) == 4  # Human, AI (tool call), Tool result, AI (final)
 
 
+def test_last_schema_wins_for_conflicting_field() -> None:
+    """The last schema in the list wins when multiple schemas declare the same field.
+
+    In practice this means state_schema (passed last) overrides middleware annotations,
+    and a later middleware overrides an earlier one.
+    """
+
+    class FirstState(AgentState[Any]):
+        shared_field: Annotated[str, "first"]
+
+    class MiddleState(AgentState[Any]):
+        shared_field: Annotated[str, "middle"]
+
+    class LastState(AgentState[Any]):
+        shared_field: Annotated[str, "last"]
+
+    resolved, _, _ = factory._resolve_schemas([FirstState, MiddleState, LastState])
+    hints = get_type_hints(resolved, include_extras=True)
+    assert get_args(hints["shared_field"])[1] == "last"
+
+
 def test_get_schema_type_hints_cache_hits_for_reused_schema() -> None:
     """Test repeated schema resolution reuses cached type hints for the same schema."""
 
@@ -266,9 +287,9 @@ def test_get_schema_type_hints_cache_hits_for_reused_schema() -> None:
 
     factory._get_schema_type_hints.cache_clear()
 
-    factory._resolve_schemas({CachedState})
+    factory._resolve_schemas([CachedState])
     first_info = factory._get_schema_type_hints.cache_info()
-    factory._resolve_schemas({CachedState})
+    factory._resolve_schemas([CachedState])
     second_info = factory._get_schema_type_hints.cache_info()
 
     assert first_info.misses == 1
@@ -293,9 +314,9 @@ def test_get_schema_type_hints_cache_accepts_distinct_local_schema_types() -> No
     schema_a = make_state_schema("LocalStateA")
     schema_b = make_state_schema("LocalStateB")
 
-    factory._resolve_schemas({schema_a, schema_b})
+    factory._resolve_schemas([schema_a, schema_b])
     first_info = factory._get_schema_type_hints.cache_info()
-    factory._resolve_schemas({schema_a, schema_b})
+    factory._resolve_schemas([schema_a, schema_b])
     second_info = factory._get_schema_type_hints.cache_info()
 
     assert first_info.misses == 2
