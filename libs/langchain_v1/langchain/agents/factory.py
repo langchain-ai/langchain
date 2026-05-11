@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import itertools
 from dataclasses import dataclass, field, fields
@@ -576,6 +577,42 @@ def _handle_structured_output_error(
     return True, handle_errors(exception)
 
 
+# Keys that LangGraph injects into config["configurable"] for internal graph
+# routing. They must not be visible to user middleware.
+_INTERNAL_CONFIGURABLE_PREFIXES: tuple[str, ...] = ("__pregel",)
+_INTERNAL_CONFIGURABLE_EXACT: frozenset[str] = frozenset(
+    {"checkpoint_id", "checkpoint_map", "checkpoint_ns"}
+)
+
+
+def _sanitize_tool_call_request_config(request: ToolCallRequest) -> ToolCallRequest:
+    """Return a copy of *request* with internal LangGraph keys stripped from
+    ``request.runtime.config["configurable"]``.
+
+    LangGraph injects ``__pregel_*`` / ``checkpoint_*`` keys into
+    ``config["configurable"]`` for internal graph routing. These keys must
+    never be visible to user-supplied middleware (issue #37248).
+
+    The ``execute`` handler passed to middleware already captures the
+    *original* full config via closure inside ``ToolNode._arun_one`` /
+    ``_run_one``, so stripping the keys here does not affect actual tool
+    execution.
+    """
+    raw_configurable: dict[str, Any] = request.runtime.config.get("configurable", {})
+    clean_configurable = {
+        k: v
+        for k, v in raw_configurable.items()
+        if not any(k.startswith(p) for p in _INTERNAL_CONFIGURABLE_PREFIXES)
+        and k not in _INTERNAL_CONFIGURABLE_EXACT
+    }
+    if len(clean_configurable) == len(raw_configurable):
+        # Nothing to strip — avoid unnecessary copies.
+        return request
+    sanitized_config = {**request.runtime.config, "configurable": clean_configurable}
+    sanitized_runtime = dataclasses.replace(request.runtime, config=sanitized_config)
+    return request.override(runtime=sanitized_runtime)
+
+
 def _chain_tool_call_wrappers(
     wrappers: Sequence[ToolCallWrapper],
 ) -> ToolCallWrapper | None:
@@ -923,6 +960,34 @@ def create_agent(
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
+
+    # Sanitize config[\"configurable\"] for user middleware (issue #37248).
+    # LangGraph puts internal __pregel_* / checkpoint_* keys into configurable
+    # for graph routing.  Wrap each user-facing wrapper with a thin sanitizer
+    # so that request.runtime.config[\"configurable\"] contains only user-supplied
+    # keys.  The execute() closure inside ToolNode already captures the original
+    # full config, so actual tool execution is unaffected.
+    if wrap_tool_call_wrapper is not None:
+        _user_wrap = wrap_tool_call_wrapper
+
+        def _sanitized_wrap(
+            request: ToolCallRequest,
+            execute: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return _user_wrap(_sanitize_tool_call_request_config(request), execute)
+
+        wrap_tool_call_wrapper = _sanitized_wrap
+
+    if awrap_tool_call_wrapper is not None:
+        _user_awrap = awrap_tool_call_wrapper
+
+        async def _sanitized_awrap(
+            request: ToolCallRequest,
+            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+        ) -> ToolMessage | Command[Any]:
+            return await _user_awrap(_sanitize_tool_call_request_config(request), execute)
+
+        awrap_tool_call_wrapper = _sanitized_awrap
 
     # Setup tools
     tool_node: ToolNode | None = None
