@@ -167,7 +167,7 @@ class QdrantVectorStore(VectorStore):
         # await vector_store.adelete(ids=["3"])
 
         # search
-        # results = vector_store.asimilarity_search(query="thud",k=1)
+        # results = await vector_store.asimilarity_search(query="thud", k=1)
 
         # search with score
         results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
