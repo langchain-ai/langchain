@@ -119,6 +119,8 @@ class ChatOpenRouter(BaseChatModel):
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
+        | `session_id` | `str | None` | Group related requests for observability. |
+        | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -291,6 +293,42 @@ class ChatOpenRouter(BaseChatModel):
 
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
+
+    session_id: str | None = Field(
+        default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
+    )
+    """Identifier used by OpenRouter to group related requests together.
+
+    Useful any time multiple requests should share an observability
+    grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
+    run). Equivalent to setting the `x-session-id` HTTP header on the
+    underlying request. OpenRouter rejects values longer than 128
+    characters.
+
+    Falls back to the `OPENROUTER_SESSION_ID` environment variable when
+    unset, so callers can group all requests from a process without
+    threading the value through application code. Empty strings are
+    treated as unset.
+
+    Example: `"conv-2026-04-30-abc"`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
+    trace: dict[str, Any] | None = None
+    """Trace metadata for observability tools (e.g. Langfuse, LangSmith).
+
+    Forwarded by OpenRouter to configured broadcast destinations. Common
+    keys include `trace_id`, `trace_name`, `span_name`, `generation_name`,
+    and `parent_span_id`; see the OpenRouter broadcast docs for the
+    current full set. Unknown keys are forwarded as custom metadata.
+
+    No environment-variable fallback — set per-call or on the constructor.
+
+    Example: `{"trace_id": "abc-123", "span_name": "summarize"}`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -703,6 +741,10 @@ class ChatOpenRouter(BaseChatModel):
             params["route"] = self.route
         if self.plugins is not None:
             params["plugins"] = self.plugins
+        if self.session_id:
+            params["session_id"] = self.session_id
+        if self.trace is not None:
+            params["trace"] = self.trace
         return params
 
     def _create_message_dicts(
@@ -1124,6 +1166,86 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
+def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
+    """Merge a run of consecutive same-`(type, index)` reasoning fragments."""
+    merged_entry: dict[str, Any] = {}
+    text_parts: list[str] = []
+    has_text = False
+    for frag in run:
+        for k, v in frag.items():
+            if k == "text":
+                has_text = True
+                if v:
+                    text_parts.append(v)
+            elif v is not None:
+                merged_entry[k] = v
+    if has_text:
+        merged_entry["text"] = "".join(text_parts)
+    return merged_entry
+
+
+def _merge_reasoning_details(
+    details: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge fragmented `reasoning_details` from streaming chunk concatenation.
+
+    During streaming, `AIMessageChunk.__add__` list-concatenates
+    `reasoning_details` in `additional_kwargs`, fragmenting a single entry
+    into many. When serialized back to the API via
+    `_convert_message_to_dict`, these fragments cause
+    `BadRequestResponseError` on multi-turn conversations (the provider
+    rejects the malformed thinking block with `Invalid signature`).
+
+    Streaming deltas tag each fragment with the `index` of the entry it
+    belongs to in the original (non-streamed) array, so this function groups
+    consecutive entries by `(type, index)` and merges each group into one.
+    Entries without an `index` are preserved as-is, since non-streaming
+    responses can legitimately contain multiple entries.
+
+    Within a merged group, `text` values are concatenated in order. Other
+    metadata fields (e.g. `format`, `signature`) use last-non-`None`-wins
+    semantics, which preserves stable provider metadata without concatenating
+    repeated strings — Anthropic-style reasoning streams emit a single
+    signature-bearing fragment at the end of the block.
+
+    A list with zero or one items passes through unchanged.
+    """
+    if not isinstance(details, list) or len(details) <= 1:
+        return details
+
+    merged: list[dict[str, Any]] = []
+    i = 0
+    while i < len(details):
+        entry = details[i]
+        # Without an index we cannot distinguish streaming fragments from
+        # distinct non-streaming entries, so leave them alone. Same for any
+        # non-dict items that may have slipped in upstream.
+        if not isinstance(entry, dict) or entry.get("index") is None:
+            merged.append(entry)
+            i += 1
+            continue
+
+        entry_type = entry.get("type", "")
+        entry_index = entry["index"]
+        run = [entry]
+        i += 1
+        while i < len(details):
+            nxt = details[i]
+            if (
+                isinstance(nxt, dict)
+                and nxt.get("type", "") == entry_type
+                and nxt.get("index") == entry_index
+            ):
+                run.append(nxt)
+                i += 1
+            else:
+                break
+
+        merged.append(entry if len(run) == 1 else _merge_reasoning_run(run))
+
+    return merged
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Convert a LangChain message to an OpenRouter-compatible dict payload.
 
@@ -1175,14 +1297,15 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
             ):
                 message_dict["content"] = None
         # Preserve reasoning content for multi-turn conversations (e.g.
-        # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
-        # optional structured details in "reasoning_details".
+        # tool-calling loops). OpenRouter stores reasoning text in `reasoning`
+        # and structured fragment details in `reasoning_details`; the latter
+        # is merged before serialization to undo streaming fragmentation.
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = message.additional_kwargs[
-                "reasoning_details"
-            ]
+            message_dict["reasoning_details"] = _merge_reasoning_details(
+                message.additional_kwargs["reasoning_details"]
+            )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
@@ -1389,13 +1512,16 @@ def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     Returns:
         Usage metadata with input/output token details.
     """
+    _input = token_usage.get("prompt_tokens")
     input_tokens = int(
-        token_usage.get("prompt_tokens") or token_usage.get("input_tokens") or 0
+        _input if _input is not None else (token_usage.get("input_tokens") or 0)
     )
+    _output = token_usage.get("completion_tokens")
     output_tokens = int(
-        token_usage.get("completion_tokens") or token_usage.get("output_tokens") or 0
+        _output if _output is not None else (token_usage.get("output_tokens") or 0)
     )
-    total_tokens = int(token_usage.get("total_tokens") or input_tokens + output_tokens)
+    _total = token_usage.get("total_tokens")
+    total_tokens = int(_total if _total is not None else input_tokens + output_tokens)
 
     input_details_dict = (
         token_usage.get("prompt_tokens_details")

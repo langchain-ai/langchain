@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessageChunk,
+    HumanMessage,
+)
 from pydantic import BaseModel, Field
 
 from langchain_openrouter.chat_models import ChatOpenRouter
@@ -66,4 +71,45 @@ def test_reasoning_content() -> None:
         reasoning={"effort": "low"},
     )
     response = model.invoke("What is 2 + 2?")
+    assert response.content
+
+
+def test_streaming_reasoning_multi_turn() -> None:
+    """Multi-turn streaming with reasoning preserves the thinking signature.
+
+    Regression test for #36400. During streaming, `reasoning_details` is
+    fragmented into multiple list entries by `AIMessageChunk.__add__` (because
+    `index` is a float and `langchain_core.utils._merge.merge_lists` only
+    auto-merges int-indexed dicts). When sent back on the next turn, the
+    fragmented entries cause Anthropic via OpenRouter to reject the request
+    with `"Invalid signature in thinking block"`. The fix in
+    `_convert_message_to_dict` merges fragments before serialization.
+    """
+    model = ChatOpenRouter(
+        model="anthropic/claude-haiku-4.5",
+        reasoning={"effort": "low"},
+    )
+
+    messages: list = [HumanMessage(content="What is 2+2? Think briefly.")]
+
+    full: BaseMessageChunk | None = None
+    for chunk in model.stream(messages):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
+    assert full.additional_kwargs.get("reasoning_details"), (
+        "expected reasoning_details on the streamed chunk"
+    )
+
+    # Hand-build the AIMessage from the accumulated chunk and continue the
+    # conversation. Pre-fix, this raises a 400 from the provider.
+    assistant_msg = AIMessage(
+        content=full.content,
+        additional_kwargs=full.additional_kwargs,
+        response_metadata=full.response_metadata,
+    )
+    messages.append(assistant_msg)
+    messages.append(HumanMessage(content="Now what is 3+3?"))
+
+    response = model.invoke(messages)
     assert response.content

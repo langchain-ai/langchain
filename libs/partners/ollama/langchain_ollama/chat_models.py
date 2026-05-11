@@ -44,6 +44,7 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -83,7 +84,7 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message
-from pydantic import BaseModel, PrivateAttr, model_validator
+from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
@@ -626,6 +627,31 @@ class ChatOllama(BaseChatModel):
     same prompt.
     """
 
+    logprobs: bool | None = None
+    """Whether to return logprobs.
+
+    !!! note
+
+        When streaming, per-token logprobs are available on each intermediate
+        chunk (via `response_metadata["logprobs"]`) and are accumulated into the
+        final aggregated response when using `invoke()`.
+    """
+
+    top_logprobs: int | None = None
+    """Number of most likely tokens to return at each token position, each with
+    an associated log probability. Must be a positive integer.
+
+    If set without `logprobs=True`, `logprobs` will be enabled automatically.
+    """
+
+    @field_validator("top_logprobs")
+    @classmethod
+    def _validate_top_logprobs(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            msg = "`top_logprobs` must be a positive integer."
+            raise ValueError(msg)
+        return v
+
     stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
@@ -766,12 +792,19 @@ class ChatOllama(BaseChatModel):
                 if v is not None
             }
 
+        format_param = self._resolve_format_param(
+            kwargs.pop("format", self.format),
+            kwargs.pop("response_format", None),
+        )
+
         params = {
             "messages": ollama_messages,
             "stream": kwargs.pop("stream", True),
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
-            "format": kwargs.pop("format", self.format),
+            "format": format_param,
+            "logprobs": kwargs.pop("logprobs", self.logprobs),
+            "top_logprobs": kwargs.pop("top_logprobs", self.top_logprobs),
             "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
@@ -787,9 +820,127 @@ class ChatOllama(BaseChatModel):
 
         return params
 
+    def _resolve_format_param(
+        self,
+        format_param: str | dict[str, Any] | None,
+        response_format: Any | None,
+    ) -> str | dict[str, Any] | None:
+        """Resolve the format parameter.
+
+        Converts an OpenAI-style `response_format` dict to the `format`
+        parameter expected by Ollama.
+
+        Args:
+            format_param: The explicit `format` value (takes priority).
+            response_format: An OpenAI-style `response_format` dict.
+
+        Returns:
+            The resolved format value to pass to the Ollama client.
+        """
+        if format_param is not None:
+            if response_format is not None:
+                warnings.warn(
+                    "Both 'format' and 'response_format' were provided. "
+                    "'response_format' will be ignored in favor of 'format'.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            return format_param
+
+        if response_format is None:
+            return None
+
+        return self._convert_response_format(response_format)
+
+    def _convert_response_format(
+        self,
+        response_format: Any,
+    ) -> str | dict[str, Any] | None:
+        """Convert an OpenAI-style `response_format` to an Ollama `format` value.
+
+        Args:
+            response_format: The `response_format` value to convert.
+
+        Returns:
+            The Ollama-compatible `format` value, or `None` if conversion fails.
+        """
+        if not isinstance(response_format, dict):
+            warnings.warn(
+                f"Ignored invalid 'response_format' type: {type(response_format)}. "
+                "Expected a dictionary.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return None
+
+        fmt_type = response_format.get("type")
+        if fmt_type == "json_object":
+            return "json"
+        if fmt_type == "json_schema":
+            return self._extract_json_schema(response_format)
+
+        warnings.warn(
+            f"Ignored unrecognized 'response_format' type: {fmt_type}. "
+            "Expected 'json_object' or 'json_schema'.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return None
+
+    def _extract_json_schema(
+        self,
+        response_format: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        """Extract the raw JSON schema from an OpenAI ``json_schema`` envelope.
+
+        Args:
+            response_format: A dict with ``type: "json_schema"``.
+
+        Returns:
+            The raw JSON schema dict, or ``None`` if extraction fails.
+        """
+        json_schema_block = response_format.get("json_schema")
+        if not isinstance(json_schema_block, dict):
+            warnings.warn(
+                "response_format has type 'json_schema' but 'json_schema' "
+                f"value is {type(json_schema_block)}, expected a dict "
+                "containing a 'schema' key. "
+                "The format parameter will not be set.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return None
+        schema = json_schema_block.get("schema")
+        if schema is None:
+            warnings.warn(
+                "response_format has type 'json_schema' but no 'schema' "
+                "key was found in 'json_schema'. "
+                "The format parameter will not be set.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return schema
+
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
+        if self.top_logprobs is not None and self.logprobs is not True:
+            if self.logprobs is False:
+                msg = (
+                    "`top_logprobs` is set but `logprobs` is explicitly `False`. "
+                    "Either set `logprobs=True` to use `top_logprobs`, or remove "
+                    "`top_logprobs`."
+                )
+                raise ValueError(msg)
+            # logprobs is None (unset) — auto-enable as convenience
+            self.logprobs = True
+            warnings.warn(
+                "`top_logprobs` is set but `logprobs` was not explicitly enabled. "
+                "Setting `logprobs=True` automatically.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         client_kwargs = self.client_kwargs or {}
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
@@ -820,6 +971,7 @@ class ChatOllama(BaseChatModel):
         Returns:
             List of messages in Ollama format.
         """
+        messages = list(messages)  # shallow copy to avoid mutating caller's list
         for idx, message in enumerate(messages):
             # Handle message content written in v1 format
             if (
@@ -924,6 +1076,10 @@ class ChatOllama(BaseChatModel):
                 msg_["tool_calls"] = tool_calls
             if tool_call_id:
                 msg_["tool_call_id"] = tool_call_id
+            if isinstance(message, AIMessage):
+                thinking = message.additional_kwargs.get("reasoning_content")
+                if thinking is not None:
+                    msg_["thinking"] = thinking
             ollama_messages.append(msg_)
 
         return ollama_messages
@@ -1096,7 +1252,12 @@ class ChatOllama(BaseChatModel):
                     generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
-                    generation_info = None
+                    chunk_logprobs = stream_resp.get("logprobs")
+                    generation_info = (
+                        {"logprobs": chunk_logprobs}
+                        if chunk_logprobs is not None
+                        else None
+                    )
 
                 additional_kwargs = {}
                 if (
@@ -1173,7 +1334,12 @@ class ChatOllama(BaseChatModel):
                     generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
-                    generation_info = None
+                    chunk_logprobs = stream_resp.get("logprobs")
+                    generation_info = (
+                        {"logprobs": chunk_logprobs}
+                        if chunk_logprobs is not None
+                        else None
+                    )
 
                 additional_kwargs = {}
                 if (
@@ -1539,7 +1705,7 @@ class ChatOllama(BaseChatModel):
             )
             if is_pydantic_schema:
                 output_parser: Runnable = PydanticToolsParser(
-                    tools=[schema],  # type: ignore[list-item]
+                    tools=[schema],  # ty: ignore[invalid-argument-type]
                     first_tool_only=True,
                 )
             else:
@@ -1555,7 +1721,7 @@ class ChatOllama(BaseChatModel):
                 },
             )
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                PydanticOutputParser(pydantic_object=schema)  # ty: ignore[invalid-argument-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
@@ -1579,7 +1745,7 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                output_parser = PydanticOutputParser(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)
