@@ -254,6 +254,34 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 
+    def _should_interrupt(
+        self,
+        tool_call: ToolCall,
+        config: InterruptOnConfig,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> bool:
+        """Evaluate the per-call predicate, if any.
+
+        Returns `True` when the call should interrupt, `False` to auto-approve.
+        When no `interrupt_when` is configured, returns `True` (unchanged behavior).
+        """
+        interrupt_when = config.get("interrupt_when")
+        if interrupt_when is None:
+            return True
+        tool_runtime: ToolRuntime[ContextT, Any] = ToolRuntime(
+            state=state,
+            context=runtime.context,
+            config={},
+            stream_writer=runtime.stream_writer,
+            tool_call_id=tool_call["id"],
+            store=runtime.store,
+            tools=[],
+            execution_info=None,
+            server_info=None,
+        )
+        return interrupt_when(tool_call, tool_runtime)
+
     def _create_action_and_config(
         self,
         tool_call: ToolCall,
@@ -371,13 +399,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         interrupt_indices: list[int] = []
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
-                action_request, review_config = self._create_action_and_config(
-                    tool_call, config, state, runtime
-                )
-                action_requests.append(action_request)
-                review_configs.append(review_config)
-                interrupt_indices.append(idx)
+            config = self.interrupt_on.get(tool_call["name"])
+            if config is None:
+                continue
+            if not self._should_interrupt(tool_call, config, state, runtime):
+                continue
+            action_request, review_config = self._create_action_and_config(
+                tool_call, config, state, runtime
+            )
+            action_requests.append(action_request)
+            review_configs.append(review_config)
+            interrupt_indices.append(idx)
 
         # If no interrupts needed, return early
         if not action_requests:

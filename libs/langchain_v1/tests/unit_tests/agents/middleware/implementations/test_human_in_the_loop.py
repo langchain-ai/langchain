@@ -894,3 +894,31 @@ def test_interrupt_on_config_accepts_interrupt_when() -> None:
         "interrupt_when": lambda _tc, _rt: True,
     }
     assert config["interrupt_when"](None, None) is True  # type: ignore[arg-type]
+
+
+def test_interrupt_when_false_auto_approves() -> None:
+    """`interrupt_when` returning `False` skips the interrupt entirely."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve", "reject"],
+                "interrupt_when": lambda _tc, _rt: False,
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="Writing safe file",
+        tool_calls=[{"name": "edit_file", "args": {"path": "/safe/path"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    def fail_if_called(_: Any) -> dict[str, Any]:
+        raise AssertionError("interrupt() should not be called when predicate returns False")
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=fail_if_called,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is None
