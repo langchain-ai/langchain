@@ -999,3 +999,45 @@ def test_interrupt_when_mixed_calls_same_tool() -> None:
     revised = result["messages"][0].tool_calls
     assert [tc["id"] for tc in revised] == ["1", "2"]
     assert [tc["args"]["path"] for tc in revised] == ["/etc/secret", "/wiki/page"]
+
+
+def test_interrupt_when_mixed_configured_tools() -> None:
+    """Unlisted, listed-with-false, and listed-with-true tools all behave correctly."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve"],
+                "interrupt_when": lambda _tc, _rt: False,
+            },
+            "delete_file": {
+                "allowed_decisions": ["approve", "reject"],
+                "interrupt_when": lambda _tc, _rt: True,
+            },
+        }
+    )
+    ai_message = AIMessage(
+        content="Three calls",
+        tool_calls=[
+            {"name": "search", "args": {"q": "x"}, "id": "1"},
+            {"name": "edit_file", "args": {"path": "/wiki/page"}, "id": "2"},
+            {"name": "delete_file", "args": {"path": "/wiki/page"}, "id": "3"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    captured: dict[str, Any] = {}
+
+    def mock_approve(request: Any) -> dict[str, Any]:
+        captured["request"] = request
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_approve,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert [a["name"] for a in captured["request"]["action_requests"]] == ["delete_file"]
+    assert result is not None
+    revised = result["messages"][0].tool_calls
+    assert [tc["id"] for tc in revised] == ["1", "2", "3"]
