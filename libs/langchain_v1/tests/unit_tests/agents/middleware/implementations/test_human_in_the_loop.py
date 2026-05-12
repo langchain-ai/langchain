@@ -922,3 +922,38 @@ def test_interrupt_when_false_auto_approves() -> None:
         result = middleware.after_model(state, Runtime())
 
     assert result is None
+
+
+def test_interrupt_when_true_interrupts() -> None:
+    """`interrupt_when` returning `True` interrupts with the configured decisions."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve", "reject"],
+                "interrupt_when": lambda _tc, _rt: True,
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="Writing protected file",
+        tool_calls=[{"name": "edit_file", "args": {"path": "/etc/secret"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    captured: dict[str, Any] = {}
+
+    def mock_approve(request: Any) -> dict[str, Any]:
+        captured["request"] = request
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_approve,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    assert len(captured["request"]["action_requests"]) == 1
+    assert captured["request"]["action_requests"][0]["name"] == "edit_file"
+    assert captured["request"]["review_configs"][0]["allowed_decisions"] == ["approve", "reject"]
+    assert result["messages"][0].tool_calls[0]["id"] == "1"
