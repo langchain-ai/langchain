@@ -232,8 +232,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 * `InterruptOnConfig` indicates the specific decisions allowed for this
                     tool.
 
-                    The `InterruptOnConfig` can include a `description` field (`str` or
-                    `Callable`) for custom formatting of the interrupt description.
+                    The `InterruptOnConfig` can include:
+                    - a `description` field (`str` or `Callable`) for custom formatting
+                      of the interrupt description, and
+                    - an `interrupt_when` predicate `(ToolCall, ToolRuntime) -> bool`.
+                      When set, only calls for which the predicate returns `True`
+                      interrupt. Calls returning `False` are auto-approved exactly as
+                      if the tool were not listed in `interrupt_on`. Predicates must be
+                      synchronous and deterministic (LangGraph interrupt replay re-runs
+                      them on resume).
             description_prefix: The prefix to use when constructing action requests.
 
                 This is used to provide context about the tool call and the action being
