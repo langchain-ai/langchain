@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
@@ -132,10 +133,22 @@ class BaseMessage(Serializable):
 
     """
 
-    id: str | None = Field(default=None, coerce_numbers_to_str=True)
-    """An optional unique identifier for the message.
+    id: str | None = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        coerce_numbers_to_str=True,
+    )
+    """A unique identifier for the message.
 
-    This should ideally be provided by the provider/model which created the message.
+    Auto-assigned as a UUID on creation when not provided. The id is used by
+    LangGraph's ``DeltaChannel`` reducer and other components to deduplicate
+    messages: a message written to a channel can be updated in-place on
+    subsequent writes because it carries a stable id from birth. Without an id
+    the deduplication logic cannot match a message to its prior version across
+    checkpoint serialization boundaries, causing duplicates.
+
+    The type is ``str | None`` rather than ``str`` so that existing serialized
+    messages without an ``id`` field deserialize cleanly (they get ``None``
+    back, not an error). New messages created at runtime always receive a UUID.
 
     """
 
