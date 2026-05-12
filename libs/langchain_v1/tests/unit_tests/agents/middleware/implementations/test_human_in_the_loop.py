@@ -1079,3 +1079,30 @@ def test_interrupt_when_tool_runtime_fields() -> None:
     assert rt.server_info is None
     assert captured["tool_call"]["id"] == "abc"
     assert captured["tool_call"]["args"] == {"path": "/x"}
+
+
+def test_interrupt_when_exceptions_propagate() -> None:
+    """A predicate that raises propagates the exception (no silent auto-approval)."""
+
+    class PredicateBug(RuntimeError):
+        pass
+
+    def bad_predicate(_tc: Any, _rt: Any) -> bool:
+        raise PredicateBug("kaboom")
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve"],
+                "interrupt_when": bad_predicate,
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="One call",
+        tool_calls=[{"name": "edit_file", "args": {"path": "/x"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with pytest.raises(PredicateBug, match="kaboom"):
+        middleware.after_model(state, Runtime())
