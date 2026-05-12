@@ -1288,7 +1288,9 @@ def create_agent(
             )
         return request.model.bind(**request.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
+    def _execute_model_sync(
+        request: ModelRequest[ContextT], config: RunnableConfig
+    ) -> ModelResponse:
         """Execute model and return response.
 
         This is the core model execution logic wrapped by `wrap_model_call` handlers.
@@ -1301,7 +1303,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        output = model_.invoke(messages, config=config)
         if name:
             output.name = name
 
@@ -1315,7 +1317,11 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
+    def model_node(
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+        config: RunnableConfig,
+    ) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1328,14 +1334,19 @@ def create_agent(
             runtime=runtime,
         )
 
+        def execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
+            return _execute_model_sync(request, config)
+
         if wrap_model_call_handler is None:
-            model_response = _execute_model_sync(request)
+            model_response = execute_model_sync(request)
             return _build_commands(model_response)
 
-        result = wrap_model_call_handler(request, _execute_model_sync)
+        result = wrap_model_call_handler(request, execute_model_sync)
         return _build_commands(result.model_response, result.commands)
 
-    async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
+    async def _execute_model_async(
+        request: ModelRequest[ContextT], config: RunnableConfig
+    ) -> ModelResponse:
         """Execute model asynchronously and return response.
 
         This is the core async model execution logic wrapped by `wrap_model_call`
@@ -1349,7 +1360,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        output = await model_.ainvoke(messages, config=config)
         if name:
             output.name = name
 
@@ -1363,7 +1374,11 @@ def create_agent(
             structured_response=structured_response,
         )
 
-    async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
+    async def amodel_node(
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+        config: RunnableConfig,
+    ) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1376,11 +1391,14 @@ def create_agent(
             runtime=runtime,
         )
 
+        async def execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
+            return await _execute_model_async(request, config)
+
         if awrap_model_call_handler is None:
-            model_response = await _execute_model_async(request)
+            model_response = await execute_model_async(request)
             return _build_commands(model_response)
 
-        result = await awrap_model_call_handler(request, _execute_model_async)
+        result = await awrap_model_call_handler(request, execute_model_async)
         return _build_commands(result.model_response, result.commands)
 
     # Use sync or async based on model capabilities
