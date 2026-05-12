@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import AsyncIterator, Iterator, Mapping
 from operator import itemgetter
@@ -102,6 +103,167 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     )
 
 
+def _is_builtin_tool(tool: dict) -> bool:
+    return "type" in tool and tool["type"] != "function"
+
+
+def _use_responses_api(payload: dict) -> bool:
+    """Determine whether to route a payload through the Responses API.
+
+    Returns True if the payload contains a built-in tool (any element of
+    `tools` whose `type` is not `"function"`) or any Responses-only field.
+    """
+    uses_builtin_tools = "tools" in payload and any(
+        _is_builtin_tool(tool) for tool in payload["tools"]
+    )
+    responses_only_args = {
+        "include",
+        "input",
+        "instructions",
+        "previous_response_id",
+    }
+    return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+
+
+def _get_attr(obj: Any, name: str, default: Any = None) -> Any:
+    """Safely fetch an attribute from an SDK object or a dict."""
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return getattr(obj, name, default)
+
+
+def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
+    """Build `UsageMetadata` from a Responses API usage payload."""
+    if usage is None:
+        return None
+    input_tokens = _get_attr(usage, "input_tokens", 0) or 0
+    output_tokens = _get_attr(usage, "output_tokens", 0) or 0
+    total_tokens = (
+        _get_attr(usage, "total_tokens", None)
+        if _get_attr(usage, "total_tokens", None) is not None
+        else input_tokens + output_tokens
+    )
+    return UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+    )
+
+
+def _extract_responses_text(response: Any) -> str:
+    """Extract assistant text content from a Responses API response.
+
+    Prefers `response.output_text`, otherwise walks `output[*].content[*].text`.
+    """
+    text = _get_attr(response, "output_text", None)
+    if isinstance(text, str) and text:
+        return text
+    output = _get_attr(response, "output", None) or []
+    parts: list[str] = []
+    for item in output:
+        item_type = _get_attr(item, "type", None)
+        if item_type and item_type != "message":
+            continue
+        content_blocks = _get_attr(item, "content", None) or []
+        for block in content_blocks:
+            block_text = _get_attr(block, "text", None)
+            if isinstance(block_text, str):
+                parts.append(block_text)
+    return "".join(parts)
+
+
+def _convert_responses_to_chat_result(response: Any) -> ChatResult:
+    """Convert a Responses API response object to a `ChatResult`.
+
+    Maps `output_text`/`output[*].content[*].text` to `AIMessage.content`,
+    surfaces `function_call` items as `tool_calls`, populates `usage_metadata`,
+    and preserves response metadata (`id`, `model`, `status`, `object`) along
+    with any `citations`, `images`, `related_questions`, or `search_results`
+    fields surfaced by the Agent API.
+    """
+    content = _extract_responses_text(response)
+
+    tool_calls: list[dict[str, Any]] = []
+    output = _get_attr(response, "output", None) or []
+    additional_kwargs: dict[str, Any] = {}
+    for item in output:
+        if _get_attr(item, "type", None) == "function_call":
+            raw_args = _get_attr(item, "arguments", "") or ""
+            try:
+                parsed_args = json.loads(raw_args) if raw_args else {}
+            except (TypeError, ValueError):
+                parsed_args = {"__raw_arguments__": raw_args}
+            tool_calls.append(
+                {
+                    "name": _get_attr(item, "name", ""),
+                    "args": parsed_args,
+                    "id": _get_attr(item, "call_id", None)
+                    or _get_attr(item, "id", None),
+                    "type": "tool_call",
+                }
+            )
+
+    usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
+
+    response_metadata: dict[str, Any] = {}
+    for key in ("id", "model", "status", "object"):
+        value = _get_attr(response, key, None)
+        if value is not None:
+            response_metadata[key] = value
+    for key in ("citations", "images", "related_questions", "search_results"):
+        value = _get_attr(response, key, None)
+        if value:
+            response_metadata[key] = value
+
+    message = AIMessage(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_calls=tool_calls,  # type: ignore[arg-type]
+        usage_metadata=usage_metadata,
+        response_metadata=response_metadata,
+    )
+    return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+def _convert_responses_stream_event_to_chunk(
+    event: Any,
+) -> ChatGenerationChunk | None:
+    """Convert a Responses API streaming event to a `ChatGenerationChunk`.
+
+    Returns `None` for events that do not produce a chunk. Raises
+    `RuntimeError` on `response.error` events.
+    """
+    event_type = _get_attr(event, "type", None)
+    if event_type == "response.output_text.delta":
+        delta = _get_attr(event, "delta", "") or ""
+        return ChatGenerationChunk(message=AIMessageChunk(content=delta))
+    if event_type == "response.completed":
+        response = _get_attr(event, "response", None)
+        usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
+        response_metadata: dict[str, Any] = {}
+        if response is not None:
+            for key in ("id", "model", "status", "object"):
+                value = _get_attr(response, key, None)
+                if value is not None:
+                    response_metadata[key] = value
+        return ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                usage_metadata=usage_metadata,
+                response_metadata=response_metadata,
+            )
+        )
+    if event_type == "response.error":
+        error = _get_attr(event, "error", None)
+        message = (
+            _get_attr(error, "message", None)
+            if error is not None
+            else _get_attr(event, "message", None)
+        ) or "Perplexity Responses API stream error"
+        raise RuntimeError(message)
+    return None
+
+
 class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
@@ -181,6 +343,31 @@ class ChatPerplexity(BaseChatModel):
         response = model.invoke(messages)
         response.response_metadata
         ```
+
+        Agent API (Responses):
+
+        Set `use_responses_api=True` to route requests through Perplexity's Agent
+        API (the Perplexity-flavored Responses API), or leave it unset to have it
+        auto-detected when a built-in tool (e.g. `web_search`) or any
+        Responses-only field (`previous_response_id`, `instructions`, `input`,
+        `include`) is supplied.
+
+        ```python
+        from langchain_perplexity import ChatPerplexity
+
+        model = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+        model.invoke("What is the capital of France?")
+        ```
+
+        Auto-detection example:
+
+        ```python
+        model = ChatPerplexity(model="openai/gpt-5.4")
+        model.invoke(
+            "Find recent news about AI.",
+            tools=[{"type": "web_search"}],
+        )
+        ```
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)
@@ -211,6 +398,18 @@ class ChatPerplexity(BaseChatModel):
 
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
+
+    use_responses_api: bool | None = None
+    """Whether to use the Responses (Agent) API instead of the Chat Completions API.
+
+    If not specified then will be inferred based on invocation params. Specifically,
+    requests will be routed to the Responses API when the payload includes a built-in
+    tool (any `tools[*]` whose `type` is not `"function"`) or any of the
+    Responses-only fields: `previous_response_id`, `instructions`, `input`, `include`.
+
+    Set explicitly to `True` to always use the Responses API, or `False` to always
+    use Chat Completions.
+    """
 
     search_mode: Literal["academic", "sec", "web"] | None = None
     """Search mode for specialized content: "academic", "sec", or "web"."""
@@ -386,6 +585,65 @@ class ChatPerplexity(BaseChatModel):
         message_dicts = [self._convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
+    def _use_responses_api(self, payload: dict) -> bool:
+        """Return True if `payload` should be routed through the Responses API.
+
+        Honors `self.use_responses_api` when set explicitly; otherwise delegates
+        to the module-level :func:`_use_responses_api` heuristic.
+        """
+        if isinstance(self.use_responses_api, bool):
+            return self.use_responses_api
+        return _use_responses_api(payload)
+
+    def _to_responses_payload(
+        self,
+        message_dicts: list[dict[str, Any]],
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Translate a Chat Completions-style payload to the Responses API shape.
+
+        Renames `messages` to `input`, drops fields that the Responses API does
+        not accept, and renames `max_tokens` to `max_output_tokens`.
+        """
+        payload: dict[str, Any] = {"input": message_dicts}
+        # Fields handled by the Responses API natively.
+        passthrough_keys = {
+            "model",
+            "temperature",
+            "top_p",
+            "top_k",
+            "tools",
+            "tool_choice",
+            "previous_response_id",
+            "instructions",
+            "include",
+            "stream",
+            "extra_body",
+            "extra_headers",
+            "extra_query",
+            "timeout",
+            "metadata",
+            "response_format",
+        }
+        for key, value in params.items():
+            if value is None:
+                continue
+            if key == "messages":
+                continue
+            if key == "max_tokens":
+                payload["max_output_tokens"] = value
+                continue
+            if key in passthrough_keys:
+                payload[key] = value
+                continue
+            # Unknown / Perplexity-specific keys: route under extra_body so the
+            # SDK forwards them to the Agent API without breaking strict typing.
+            extra_body = payload.setdefault("extra_body", {})
+            if not isinstance(extra_body, dict):
+                continue
+            extra_body[key] = value
+        return payload
+
     def _convert_delta_to_message_chunk(
         self, _dict: Mapping[str, Any], default_class: type[BaseMessageChunk]
     ) -> BaseMessageChunk:
@@ -426,6 +684,20 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
         params.pop("stream", None)
+        if self._use_responses_api({**params, "messages": message_dicts}):
+            responses_payload = self._to_responses_payload(message_dicts, params)
+            responses_payload["stream"] = True
+            stream_events = self.client.responses.create(**responses_payload)
+            for event in stream_events:
+                response_chunk = _convert_responses_stream_event_to_chunk(event)
+                if response_chunk is None:
+                    continue
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        response_chunk.text, chunk=response_chunk
+                    )
+                yield response_chunk
+            return
         if stop:
             params["stop_sequences"] = stop
         stream_resp = self.client.chat.completions.create(
@@ -521,6 +793,22 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         default_chunk_class = AIMessageChunk
         params.pop("stream", None)
+        if self._use_responses_api({**params, "messages": message_dicts}):
+            responses_payload = self._to_responses_payload(message_dicts, params)
+            responses_payload["stream"] = True
+            stream_events = await self.async_client.responses.create(
+                **responses_payload
+            )
+            async for event in stream_events:
+                response_chunk = _convert_responses_stream_event_to_chunk(event)
+                if response_chunk is None:
+                    continue
+                if run_manager:
+                    await run_manager.on_llm_new_token(
+                        response_chunk.text, chunk=response_chunk
+                    )
+                yield response_chunk
+            return
         if stop:
             params["stop_sequences"] = stop
         stream_resp = await self.async_client.chat.completions.create(
@@ -616,6 +904,11 @@ class ChatPerplexity(BaseChatModel):
                 return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+        if self._use_responses_api({**params, "messages": message_dicts}):
+            responses_payload = self._to_responses_payload(message_dicts, params)
+            responses_payload.pop("stream", None)
+            response = self.client.responses.create(**responses_payload)
+            return _convert_responses_to_chat_result(response)
         response = self.client.chat.completions.create(messages=message_dicts, **params)
 
         if hasattr(response, "usage") and response.usage:
@@ -673,6 +966,11 @@ class ChatPerplexity(BaseChatModel):
                 return await agenerate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+        if self._use_responses_api({**params, "messages": message_dicts}):
+            responses_payload = self._to_responses_payload(message_dicts, params)
+            responses_payload.pop("stream", None)
+            response = await self.async_client.responses.create(**responses_payload)
+            return _convert_responses_to_chat_result(response)
         response = await self.async_client.chat.completions.create(
             messages=message_dicts, **params
         )
