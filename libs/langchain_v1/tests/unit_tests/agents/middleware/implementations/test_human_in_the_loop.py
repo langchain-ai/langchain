@@ -1066,11 +1066,18 @@ def test_interrupt_when_tool_runtime_fields() -> None:
     )
     state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
 
-    middleware.after_model(state, Runtime())
+    sentinel_context = object()
+    sentinel_store = object()
+    runtime = Runtime(context=sentinel_context, store=sentinel_store)  # type: ignore[arg-type]
+
+    middleware.after_model(state, runtime)
 
     rt = captured["runtime"]
     assert rt.tool_call_id == "abc"
     assert rt.state is state
+    assert rt.context is sentinel_context
+    assert rt.store is sentinel_store
+    assert rt.stream_writer is runtime.stream_writer
     assert rt.tools == []
     assert rt.config == {}
     assert rt.execution_info is None
