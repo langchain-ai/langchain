@@ -14,6 +14,7 @@ from langchain.agents.middleware.types import (
     ResponseT,
     StateT,
 )
+from langchain.tools import ToolRuntime
 
 
 class Action(TypedDict):
@@ -130,6 +131,18 @@ class _DescriptionFactory(Protocol):
         ...
 
 
+class _InterruptWhen(Protocol):
+    """Predicate that decides whether a tool call should trigger an interrupt."""
+
+    def __call__(
+        self,
+        tool_call: ToolCall,
+        runtime: ToolRuntime[ContextT, Any],
+    ) -> bool:
+        """Return `True` to interrupt this tool call, `False` to auto-approve it."""
+        ...
+
+
 class InterruptOnConfig(TypedDict):
     """Configuration for an action requiring human in the loop.
 
@@ -177,6 +190,24 @@ class InterruptOnConfig(TypedDict):
     """
     args_schema: NotRequired[dict[str, Any]]
     """JSON schema for the args associated with the action, if edits are allowed."""
+
+    interrupt_when: NotRequired[_InterruptWhen]
+    """Optional predicate gating whether this tool call triggers an interrupt.
+
+    Called with the proposed `ToolCall` and a `ToolRuntime` constructed by the
+    middleware. Return `True` to interrupt (with this config's `allowed_decisions`)
+    or `False` to auto-approve the call as if the tool were not listed in
+    `interrupt_on`.
+
+    Predicates must be synchronous and deterministic — LangGraph interrupt replay
+    on resume requires the same interrupts to fire on each evaluation. Exceptions
+    propagate.
+
+    Note: the `ToolRuntime` constructed for predicate evaluation has three
+    deviations from a tool-time `ToolRuntime`: `tools=[]`, `config={}`, and
+    `execution_info`/`server_info=None`. Predicates should rely on `state`,
+    `tool_call_id`, `context`, and `store` rather than these fields.
+    """
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):

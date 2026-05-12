@@ -883,3 +883,14 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+
+
+def test_interrupt_on_config_accepts_interrupt_when() -> None:
+    """`InterruptOnConfig` accepts an optional `interrupt_when` predicate."""
+    from langchain.agents.middleware.human_in_the_loop import _InterruptWhen  # noqa: F401
+
+    config: InterruptOnConfig = {
+        "allowed_decisions": ["approve", "reject"],
+        "interrupt_when": lambda _tc, _rt: True,
+    }
+    assert config["interrupt_when"](None, None) is True  # type: ignore[arg-type]
