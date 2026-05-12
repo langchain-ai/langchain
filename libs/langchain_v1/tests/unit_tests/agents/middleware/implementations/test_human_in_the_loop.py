@@ -957,3 +957,45 @@ def test_interrupt_when_true_interrupts() -> None:
     assert captured["request"]["action_requests"][0]["name"] == "edit_file"
     assert captured["request"]["review_configs"][0]["allowed_decisions"] == ["approve", "reject"]
     assert result["messages"][0].tool_calls[0]["id"] == "1"
+
+
+def test_interrupt_when_mixed_calls_same_tool() -> None:
+    """One protected-path call interrupts, one wiki call auto-approves, order preserved."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve", "reject"],
+                "interrupt_when": lambda tc, _rt: bool(
+                    re.match(r"^/etc/", tc["args"].get("path", ""))
+                ),
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="Two writes",
+        tool_calls=[
+            {"name": "edit_file", "args": {"path": "/etc/secret"}, "id": "1"},
+            {"name": "edit_file", "args": {"path": "/wiki/page"}, "id": "2"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    captured: dict[str, Any] = {}
+
+    def mock_approve(request: Any) -> dict[str, Any]:
+        captured["request"] = request
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_approve,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert len(captured["request"]["action_requests"]) == 1
+    assert captured["request"]["action_requests"][0]["args"] == {"path": "/etc/secret"}
+
+    assert result is not None
+    revised = result["messages"][0].tool_calls
+    assert [tc["id"] for tc in revised] == ["1", "2"]
+    assert [tc["args"]["path"] for tc in revised] == ["/etc/secret", "/wiki/page"]
