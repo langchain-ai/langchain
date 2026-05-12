@@ -787,6 +787,64 @@ class TestResponseFormatAsProviderStrategy:
         assert len(response["messages"]) == 4
 
 
+class TestResponseFormatAsProviderStrategyNoTools:
+    """Tests for ProviderStrategy when no user tools are supplied.
+
+    OpenAI and OpenAI-compatible servers (e.g. vLLM ≥ v0.20.0) reject requests
+    that include ``"tools": []`` — the field must be omitted entirely when there
+    are no tools.  These tests guard against the regression reported in
+    https://github.com/langchain-ai/langchain/issues/37184.
+    """
+
+    def test_no_tools_does_not_call_bind_tools(self) -> None:
+        """bind_tools must not be called when the tool list is empty.
+
+        FakeToolCallingModel.bind_tools raises ValueError for an empty list,
+        mirroring the behaviour of real OpenAI-compatible providers.  A
+        successful invocation here proves that the ProviderStrategy branch
+        falls back to model.bind() instead of model.bind_tools([]).
+        """
+        model = FakeToolCallingModel(structured_response=EXPECTED_WEATHER_PYDANTIC)
+
+        # No tools — this is the scenario that triggered the vLLM v0.20.0 error.
+        agent = create_agent(
+            model, [], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_no_tools_bind_tools_not_invoked(self) -> None:
+        """bind_tools must never be invoked when final_tools is empty."""
+        model = FakeToolCallingModel(structured_response=EXPECTED_WEATHER_PYDANTIC)
+
+        with patch.object(
+            FakeToolCallingModel, "bind_tools", wraps=FakeToolCallingModel.bind_tools
+        ) as mock_bind_tools:
+            agent = create_agent(
+                model, [], response_format=ProviderStrategy(WeatherBaseModel)
+            )
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        mock_bind_tools.assert_not_called()
+
+    def test_with_tools_still_works(self) -> None:
+        """Agents with tools + ProviderStrategy must still work correctly (no regression)."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+        model = FakeToolCallingModel(
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+
 class TestDynamicModelWithResponseFormat:
     """Test response_format with middleware that modifies the model."""
 

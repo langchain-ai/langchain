@@ -1246,12 +1246,16 @@ def create_agent(
         if isinstance(effective_response_format, ProviderStrategy):
             # (Backward compatibility) Use OpenAI format structured output
             kwargs = effective_response_format.to_model_kwargs()
-            return (
-                request.model.bind_tools(
+            if final_tools:
+                bound_model = request.model.bind_tools(
                     final_tools, strict=True, **kwargs, **request.model_settings
-                ),
-                effective_response_format,
-            )
+                )
+            else:
+                # Omit `tools` entirely when the list is empty: the OpenAI spec
+                # (and OpenAI-compatible servers such as vLLM ≥ v0.20.0) reject
+                # requests that send `"tools": []`.
+                bound_model = request.model.bind(**kwargs, **request.model_settings)
+            return bound_model, effective_response_format
 
         if isinstance(effective_response_format, ToolStrategy):
             # Current implementation requires that tools used for structured output
