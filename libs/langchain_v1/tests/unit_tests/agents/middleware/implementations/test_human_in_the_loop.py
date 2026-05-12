@@ -12,6 +12,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.types import AgentState
+from langchain.tools import ToolRuntime
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -887,8 +888,6 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
 
 def test_interrupt_on_config_accepts_interrupt_when() -> None:
     """`InterruptOnConfig` accepts an optional `interrupt_when` predicate."""
-    from langchain.agents.middleware.human_in_the_loop import _InterruptWhen  # noqa: F401
-
     config: InterruptOnConfig = {
         "allowed_decisions": ["approve", "reject"],
         "interrupt_when": lambda _tc, _rt: True,
@@ -913,7 +912,8 @@ def test_interrupt_when_false_auto_approves() -> None:
     state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
 
     def fail_if_called(_: Any) -> dict[str, Any]:
-        raise AssertionError("interrupt() should not be called when predicate returns False")
+        msg = "interrupt() should not be called when predicate returns False"
+        raise AssertionError(msg)
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
@@ -1045,8 +1045,6 @@ def test_interrupt_when_mixed_configured_tools() -> None:
 
 def test_interrupt_when_tool_runtime_fields() -> None:
     """Predicate receives a `ToolRuntime` with correct fields and documented deviations."""
-    from langchain.tools import ToolRuntime
-
     captured: dict[str, Any] = {}
 
     def capture_predicate(tc: ToolCall, rt: ToolRuntime[Any, Any]) -> bool:
@@ -1084,11 +1082,12 @@ def test_interrupt_when_tool_runtime_fields() -> None:
 def test_interrupt_when_exceptions_propagate() -> None:
     """A predicate that raises propagates the exception (no silent auto-approval)."""
 
-    class PredicateBug(RuntimeError):
+    class PredicateBugError(RuntimeError):
         pass
 
     def bad_predicate(_tc: Any, _rt: Any) -> bool:
-        raise PredicateBug("kaboom")
+        msg = "kaboom"
+        raise PredicateBugError(msg)
 
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
@@ -1104,5 +1103,5 @@ def test_interrupt_when_exceptions_propagate() -> None:
     )
     state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
 
-    with pytest.raises(PredicateBug, match="kaboom"):
+    with pytest.raises(PredicateBugError, match="kaboom"):
         middleware.after_model(state, Runtime())
