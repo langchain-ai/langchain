@@ -1041,3 +1041,41 @@ def test_interrupt_when_mixed_configured_tools() -> None:
     assert result is not None
     revised = result["messages"][0].tool_calls
     assert [tc["id"] for tc in revised] == ["1", "2", "3"]
+
+
+def test_interrupt_when_tool_runtime_fields() -> None:
+    """Predicate receives a `ToolRuntime` with correct fields and documented deviations."""
+    from langchain.tools import ToolRuntime
+
+    captured: dict[str, Any] = {}
+
+    def capture_predicate(tc: ToolCall, rt: ToolRuntime[Any, Any]) -> bool:
+        captured["tool_call"] = tc
+        captured["runtime"] = rt
+        return False
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "edit_file": {
+                "allowed_decisions": ["approve"],
+                "interrupt_when": capture_predicate,
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="One call",
+        tool_calls=[{"name": "edit_file", "args": {"path": "/x"}, "id": "abc"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    middleware.after_model(state, Runtime())
+
+    rt = captured["runtime"]
+    assert rt.tool_call_id == "abc"
+    assert rt.state is state
+    assert rt.tools == []
+    assert rt.config == {}
+    assert rt.execution_info is None
+    assert rt.server_info is None
+    assert captured["tool_call"]["id"] == "abc"
+    assert captured["tool_call"]["args"] == {"path": "/x"}
