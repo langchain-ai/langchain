@@ -170,6 +170,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             if not matching:
                 return "No files found"
 
+            matching.sort(key=lambda entry: entry[1], reverse=True)
             file_paths = [p for p, _ in matching]
             return "\n".join(file_paths)
 

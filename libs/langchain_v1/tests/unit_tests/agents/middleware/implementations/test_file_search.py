@@ -1,5 +1,6 @@
 """Unit tests for file search middleware."""
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -209,6 +210,28 @@ class TestFilesystemGlobSearch:
         result = middleware.glob_search.func(pattern="*.py", path="/nonexistent")
 
         assert result == "No files found"
+
+    def test_glob_results_sorted_by_mtime_descending(self, tmp_path: Path) -> None:
+        """Glob results must be sorted by modification time, newest first."""
+        # mtimes deliberately uncorrelated with alphabetical or creation order
+        # so no filesystem traversal order accidentally yields the expected output.
+        for name, mtime in [
+            ("a.txt", 2_000_000.0),
+            ("b.txt", 4_000_000.0),
+            ("c.txt", 1_000_000.0),
+            ("d.txt", 3_000_000.0),
+        ]:
+            file_path = tmp_path / name
+            file_path.write_text("x", encoding="utf-8")
+            os.utime(file_path, (mtime, mtime))
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.txt")
+
+        assert result.splitlines() == ["/b.txt", "/d.txt", "/a.txt", "/c.txt"]
 
 
 class TestPathTraversalSecurity:
