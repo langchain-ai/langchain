@@ -1,5 +1,6 @@
 """Unit tests for file search middleware."""
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -199,6 +200,49 @@ class TestFilesystemGlobSearch:
         result = middleware.glob_search.func(pattern="*.py")
 
         assert result == "No files found"
+
+    def test_glob_sorts_by_modification_time_descending(self, tmp_path: Path) -> None:
+        """Result list must be ordered most-recently-modified first."""
+        a_file = tmp_path / "a.py"
+        b_file = tmp_path / "b.py"
+        c_file = tmp_path / "c.py"
+        for f in (a_file, b_file, c_file):
+            f.write_text("content", encoding="utf-8")
+
+        # Stamp mtimes so alphabetical order (a, b, c) is opposite of mtime order.
+        os.utime(a_file, (1_000_000_000, 1_000_000_000))
+        os.utime(b_file, (1_000_000_500, 1_000_000_500))
+        os.utime(c_file, (1_000_001_000, 1_000_001_000))
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py")
+
+        assert result.splitlines() == ["/c.py", "/b.py", "/a.py"]
+
+    def test_glob_sort_across_subdirectories(self, tmp_path: Path) -> None:
+        """Sort order must hold across files in different subdirectories."""
+        (tmp_path / "x").mkdir()
+        (tmp_path / "y").mkdir()
+        a_file = tmp_path / "x" / "a.py"
+        b_file = tmp_path / "y" / "b.py"
+        c_file = tmp_path / "x" / "c.py"
+        for f in (a_file, b_file, c_file):
+            f.write_text("content", encoding="utf-8")
+
+        os.utime(a_file, (1_000_000_000, 1_000_000_000))
+        os.utime(b_file, (1_000_000_500, 1_000_000_500))
+        os.utime(c_file, (1_000_001_000, 1_000_001_000))
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="**/*.py")
+
+        assert result.splitlines() == ["/x/c.py", "/y/b.py", "/x/a.py"]
 
     def test_glob_invalid_path(self, tmp_path: Path) -> None:
         """Test glob search with non-existent path."""
