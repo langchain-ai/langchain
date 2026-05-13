@@ -282,7 +282,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 None,
             )
         if decision["type"] == "reject" and "reject" in allowed_decisions:
-            # Create a tool message with the human's text response
+            # Create a tool message with the human's text response.
+            # Return `None` for the tool call so it is omitted from the revised `AIMessage`.
+            # Otherwise consumers (for example LangGraph's `ToolNode`) may still execute
+            # calls listed on the latest `AIMessage` even when a rejection `ToolMessage`
+            # is already present.
             content = decision.get("message") or (
                 f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}"
             )
@@ -292,7 +296,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 tool_call_id=tool_call["id"],
                 status="error",
             )
-            return tool_call, tool_message
+            return None, tool_message
         if decision["type"] == "respond" and "respond" in allowed_decisions:
             # Skip tool execution; the human answers on behalf of the tool.
             tool_message = ToolMessage(

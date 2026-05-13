@@ -144,10 +144,43 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert "messages" in result
         assert len(result["messages"]) == 2
         assert isinstance(result["messages"][0], AIMessage)
+        assert result["messages"][0].tool_calls == []
         assert isinstance(result["messages"][1], ToolMessage)
         assert result["messages"][1].content == "Custom response message"
         assert result["messages"][1].name == "test_tool"
         assert result["messages"][1].tool_call_id == "1"
+
+
+def test_human_in_the_loop_reject_omits_tool_call_from_ai_message_gh37093() -> None:
+    """Regression for HumanInTheLoop reject semantics (langchain-ai/langchain#37093).
+
+    A reject decision must not leave the tool call on the revised `AIMessage`; otherwise
+    LangGraph `ToolNode` can still execute it when driven from raw message state.
+    """
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["reject"]}}
+    )
+    ai_message = AIMessage(
+        content="Calling tool",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "call_123"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "reject", "message": "No"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    updated = result["messages"][0]
+    assert isinstance(updated, AIMessage)
+    assert updated.tool_calls == []
+    tm = result["messages"][1]
+    assert isinstance(tm, ToolMessage)
+    assert tm.tool_call_id == "call_123"
+    assert tm.content == "No"
+    assert tm.status == "error"
 
 
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
@@ -314,13 +347,13 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         assert "messages" in result
         assert (
             len(result["messages"]) == 2
-        )  # AI message with accepted tool call + tool message for rejected
+        )  # AI message with only approved tool calls + tool message for rejected
 
-        # First message should be the AI message with both tool calls
+        # First message should be the AI message with only the approved tool call
         updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 2  # Both tool calls remain
+        assert len(updated_ai_message.tool_calls) == 1
         assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
-        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Got response
+        assert updated_ai_message.tool_calls[0]["id"] == "1"
 
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]
@@ -868,15 +901,14 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert len(result["messages"]) == 2  # AI message + tool message for rejection
 
         updated_ai_message = result["messages"][0]
-        # tool_b is still in the list (with rejection handled via tool message)
-        assert len(updated_ai_message.tool_calls) == 5
+        # Rejected tool_b is omitted from the AI message; rejection is carried by ToolMessage.
+        assert len(updated_ai_message.tool_calls) == 4
 
-        # Verify order maintained: A (auto) -> B (rejected) -> C (auto) -> D (approved) -> E (auto)
+        # Verify order maintained: A (auto) -> C (auto) -> D (approved) -> E (auto)
         assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
-        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
-        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
-        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
-        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_e"
 
         # Check rejection tool message
         tool_message = result["messages"][1]
