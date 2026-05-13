@@ -2178,6 +2178,106 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     ]
 
 
+def test__construct_lc_result_from_responses_api_azure_reasoning_empty_summary() -> (
+    None
+):
+    """Regression test for #36862 — Azure returns reasoning in content, not summary."""
+    response = Response(
+        id="resp_azure_test",
+        created_at=0,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_azure",
+                summary=[],  # empty — Azure behavior
+                content=[
+                    {"type": "reasoning_text", "text": "Step 1: Analyzing the problem"},
+                    {"type": "reasoning_text", "text": "Step 2: Calculating result"},
+                ],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_azure",
+                content=[
+                    ResponseOutputText(type="output_text", text="42", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+    message = result.generations[0].message
+    reasoning_block = next(
+        b
+        for b in message.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    )
+
+    # Verify summary is promoted from content
+    assert reasoning_block["summary"], "summary should not be empty after promotion"
+    assert len(reasoning_block["summary"]) == 2
+    summary_0 = {"type": "summary_text", "text": "Step 1: Analyzing the problem"}
+    summary_1 = {"type": "summary_text", "text": "Step 2: Calculating result"}
+    assert reasoning_block["summary"][0] == summary_0
+    assert reasoning_block["summary"][1] == summary_1
+    # Verify original content is preserved
+    assert "content" in reasoning_block
+    assert reasoning_block["content"][0]["type"] == "reasoning_text"
+    assert reasoning_block["content"][1]["type"] == "reasoning_text"
+
+
+def test__construct_lc_result_from_responses_api_reasoning_openai_format() -> None:
+    """Test that OpenAI format (pre-populated summary) is not modified."""
+    response = Response(
+        id="resp_openai_test",
+        created_at=0,
+        model="o4-mini",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_openai",
+                summary=[Summary(type="summary_text", text="OpenAI format reasoning")],
+                content=[{"type": "reasoning_text", "text": "internal reasoning"}],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_openai",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="result", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+    message = result.generations[0].message
+    reasoning_block = next(
+        b
+        for b in message.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    )
+
+    # Verify existing summary is preserved (not added/modified)
+    assert reasoning_block["summary"]
+    assert len(reasoning_block["summary"]) == 1
+    assert reasoning_block["summary"][0]["text"] == "OpenAI format reasoning"
+
+
 def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
     None
 ):

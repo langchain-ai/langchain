@@ -4679,8 +4679,24 @@ def _construct_lc_result_from_responses_api(
                 "id": output.call_id,
             }
             tool_calls.append(tool_call)
+        elif output.type == "reasoning":
+            reasoning_dict = output.model_dump(exclude_none=True, mode="json")
+
+            # Azure compatibility: promote reasoning_text from content to summary
+            # when summary is empty but content contains reasoning_text items
+            if not reasoning_dict.get("summary") and reasoning_dict.get("content"):
+                promoted_summary = [
+                    {"type": "summary_text", "text": item["text"]}
+                    for item in reasoning_dict["content"]
+                    if isinstance(item, dict)
+                    and item.get("type") == "reasoning_text"
+                    and item.get("text")
+                ]
+                if promoted_summary:
+                    reasoning_dict["summary"] = promoted_summary
+
+            content_blocks.append(reasoning_dict)
         elif output.type in (
-            "reasoning",
             "compaction",
             "web_search_call",
             "file_search_call",
@@ -4982,6 +4998,19 @@ def _convert_responses_chunk_to_generation_chunk(
         _advance(chunk.output_index)
         current_sub_index = 0
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+
+        # Azure compatibility: same promotion logic for streaming chunks
+        if not reasoning.get("summary") and reasoning.get("content"):
+            promoted_summary = [
+                {"type": "summary_text", "text": item["text"]}
+                for item in reasoning["content"]
+                if isinstance(item, dict)
+                and item.get("type") == "reasoning_text"
+                and item.get("text")
+            ]
+            if promoted_summary:
+                reasoning["summary"] = promoted_summary
+
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
