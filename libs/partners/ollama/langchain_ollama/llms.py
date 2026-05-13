@@ -513,10 +513,11 @@ class OllamaLLM(BaseLLM):
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
                     generation_info={
-                        "finish_reason": self.stop,
                         **additional_kwargs,
                         **(
-                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                            {**dict(stream_resp), "finish_reason": stream_resp.get("done_reason")}
+                            if stream_resp.get("done") is True
+                            else {}
                         ),
                     },
                 )
@@ -544,10 +545,11 @@ class OllamaLLM(BaseLLM):
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
                     generation_info={
-                        "finish_reason": self.stop,
                         **additional_kwargs,
                         **(
-                            dict(stream_resp) if stream_resp.get("done") is True else {}
+                            {**dict(stream_resp), "finish_reason": stream_resp.get("done_reason")}
+                            if stream_resp.get("done") is True
+                            else {}
                         ),
                     },
                 )
