@@ -210,6 +210,37 @@ class TestFilesystemGlobSearch:
 
         assert result == "No files found"
 
+    def test_glob_sorted_by_modification_time(self, tmp_path: Path) -> None:
+        """Test that glob results are sorted by modification time (newest first)."""
+        import time
+
+        # Create three files with distinct mtimes
+        file1 = tmp_path / "oldest.txt"
+        file1.write_text("content1", encoding="utf-8")
+        time.sleep(0.1)
+
+        file2 = tmp_path / "middle.txt"
+        file2.write_text("content2", encoding="utf-8")
+        time.sleep(0.1)
+
+        file3 = tmp_path / "newest.txt"
+        file3.write_text("content3", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.txt")
+
+        # Parse results
+        lines = result.strip().split("\n")
+        assert len(lines) == 3
+
+        # Verify order: newest first (descending by mtime)
+        assert lines[0] == "/newest.txt"
+        assert lines[1] == "/middle.txt"
+        assert lines[2] == "/oldest.txt"
+
 
 class TestPathTraversalSecurity:
     """Security tests for path traversal protection."""
