@@ -292,7 +292,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 tool_call_id=tool_call["id"],
                 status="error",
             )
-            return tool_call, tool_message
+            return None, tool_message
         if decision["type"] == "respond" and "respond" in allowed_decisions:
             # Skip tool execution; the human answers on behalf of the tool.
             tool_message = ToolMessage(
