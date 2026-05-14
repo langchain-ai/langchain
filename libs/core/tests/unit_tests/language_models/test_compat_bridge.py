@@ -15,6 +15,10 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
+)
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
 
@@ -668,8 +672,6 @@ def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> 
     invariant is the general one — chunks' `additional_kwargs` survive into
     the assembled message in *some* form a follow-up turn can reach.
     """
-    from langchain_core.language_models.chat_model_stream import ChatModelStream
-
     thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
     tool_call_id = "tc-abc"
 
@@ -715,10 +717,9 @@ def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> 
     # Either `additional_kwargs` (mirrors non-streaming), or an `extras`
     # field on the `tool_call` block (the v1 protocol's slot for
     # provider-specific data).
-    via_additional_kwargs = (
-        msg.additional_kwargs.get("__gemini_function_call_thought_signatures__", {})
-        .get(tool_call_id)
-    )
+    via_additional_kwargs = msg.additional_kwargs.get(
+        "__gemini_function_call_thought_signatures__", {}
+    ).get(tool_call_id)
     tool_call_blocks = [
         b
         for b in (msg.content if isinstance(msg.content, list) else [])
@@ -745,10 +746,10 @@ def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> 
 
 
 @pytest.mark.asyncio
-async def test_achunks_to_events_preserves_additional_kwargs_on_assembled_message() -> None:
+async def test_achunks_to_events_preserves_additional_kwargs_on_assembled_message() -> (
+    None
+):
     """Async twin of the additional_kwargs preservation regression."""
-    from langchain_core.language_models.chat_model_stream import AsyncChatModelStream
-
     thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
     tool_call_id = "tc-abc"
 
@@ -790,10 +791,9 @@ async def test_achunks_to_events_preserves_additional_kwargs_on_assembled_messag
         stream.dispatch(event)
     msg = await stream.output
 
-    via_additional_kwargs = (
-        msg.additional_kwargs.get("__gemini_function_call_thought_signatures__", {})
-        .get(tool_call_id)
-    )
+    via_additional_kwargs = msg.additional_kwargs.get(
+        "__gemini_function_call_thought_signatures__", {}
+    ).get(tool_call_id)
     assert via_additional_kwargs == thought_signature
 
 
