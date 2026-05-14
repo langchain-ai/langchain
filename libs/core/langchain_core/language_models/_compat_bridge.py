@@ -626,9 +626,7 @@ def chunks_to_events(
         # chunks (e.g. an accumulating `function_call`), matching how
         # `AIMessageChunk` merges itself.
         if msg.additional_kwargs:
-            additional_kwargs = merge_dicts(
-                additional_kwargs, msg.additional_kwargs
-            )
+            additional_kwargs = merge_dicts(additional_kwargs, msg.additional_kwargs)
 
         if not started:
             started = True
@@ -708,9 +706,7 @@ async def achunks_to_events(
         # provider-specific data (e.g. Gemini thought signatures) reaches
         # the assembled message instead of being dropped.
         if msg.additional_kwargs:
-            additional_kwargs = merge_dicts(
-                additional_kwargs, msg.additional_kwargs
-            )
+            additional_kwargs = merge_dicts(additional_kwargs, msg.additional_kwargs)
 
         if not started:
             started = True
