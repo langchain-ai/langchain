@@ -189,13 +189,9 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API key"""
     api_base: str = Field(
-        alias="base_url",
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
-    """DeepSeek API base URL.
-
-    Automatically read from env variable `DEEPSEEK_API_BASE` if not provided.
-    """
+    """DeepSeek API base URL"""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -258,8 +254,12 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    def _resolve_model_profile(self) -> ModelProfile | None:
-        return _get_default_model_profile(self.model_name) or None
+    @model_validator(mode="after")
+    def _set_model_profile(self) -> Self:
+        """Set model profile if not overridden."""
+        if self.profile is None:
+            self.profile = _get_default_model_profile(self.model_name)
+        return self
 
     def _get_request_payload(
         self,
@@ -268,8 +268,16 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        messages = self._convert_input(input_).to_messages()
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
+        for original_message, message in zip(
+            messages, payload["messages"], strict=False
+        ):
+            reasoning_content = original_message.additional_kwargs.get(
+                "reasoning_content"
+            )
+            if message["role"] == "assistant" and reasoning_content is not None:
+                message["reasoning_content"] = reasoning_content
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
             elif message["role"] == "assistant" and isinstance(
