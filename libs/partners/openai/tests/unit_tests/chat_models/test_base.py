@@ -3776,3 +3776,156 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: response header propagation with response_format (json_schema) streaming
+# ---------------------------------------------------------------------------
+
+_BETA_STREAM_CHUNK = {
+    "id": "chatcmpl-test123",
+    "object": "chat.completion.chunk",
+    "created": 1689989000,
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "delta": {"role": "assistant", "content": ""},
+            "finish_reason": None,
+        }
+    ],
+}
+
+_BETA_STREAM_FINAL_COMPLETION: dict = {
+    "id": "chatcmpl-test123",
+    "object": "chat.completion",
+    "created": 1689989000,
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "message": {"role": "assistant", "content": '{"answer": "hello"}'},
+            "finish_reason": "stop",
+        }
+    ],
+}
+
+
+class MockBetaCompletionStream:
+    """Sync mock for the context manager returned by beta.chat.completions.stream()."""
+
+    def __init__(
+        self,
+        chunks: list,
+        headers: dict,
+        final_completion: dict,
+    ) -> None:
+        self._chunks = chunks
+        self._response = MagicMock()
+        self._response.headers = headers
+        self._final_completion = final_completion
+
+    def __enter__(self) -> "MockBetaCompletionStream":
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        pass
+
+    def __iter__(self) -> Any:
+        return iter(self._chunks)
+
+    def get_final_completion(self) -> dict:
+        return self._final_completion
+
+
+class MockAsyncBetaCompletionStream:
+    """Async mock for the context manager returned by async beta.chat.completions.stream()."""
+
+    def __init__(
+        self,
+        chunks: list,
+        headers: dict,
+        final_completion: dict,
+    ) -> None:
+        self._chunks = chunks
+        self._response = MagicMock()
+        self._response.headers = headers
+        self._final_completion = final_completion
+
+    async def __aenter__(self) -> "MockAsyncBetaCompletionStream":
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        pass
+
+    async def __aiter__(self) -> Any:
+        for chunk in self._chunks:
+            yield chunk
+
+    async def get_final_completion(self) -> dict:
+        return self._final_completion
+
+
+def _make_mock_beta_root_client(stream: Any) -> MagicMock:
+    mock = MagicMock()
+    mock.beta.chat.completions.stream.return_value = stream
+    return mock
+
+
+def test_stream_response_format_propagates_headers() -> None:
+    """First streamed chunk carries x-request-id when include_response_headers=True."""
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {"name": "answer", "schema": {"type": "object"}, "strict": True},
+    }
+    headers = {"x-request-id": "req-abc123", "content-type": "application/json"}
+    beta_stream = MockBetaCompletionStream(
+        chunks=[_BETA_STREAM_CHUNK],
+        headers=headers,
+        final_completion=_BETA_STREAM_FINAL_COMPLETION,
+    )
+    mock_root = _make_mock_beta_root_client(beta_stream)
+
+    llm = ChatOpenAI(model="gpt-4o", include_response_headers=True)
+    with patch.object(llm, "root_client", mock_root), patch.object(
+        llm, "client", MagicMock()
+    ):
+        chunks = list(llm.stream("Say hello.", response_format=response_format))
+
+    assert chunks, "Expected at least one chunk"
+    first_chunk_headers = chunks[0].response_metadata.get("headers", {})
+    assert first_chunk_headers.get("x-request-id") == "req-abc123", (
+        f"Expected 'x-request-id' in first chunk response_metadata['headers'], "
+        f"got: {first_chunk_headers}"
+    )
+
+
+async def test_astream_response_format_propagates_headers() -> None:
+    """First async-streamed chunk carries x-request-id when include_response_headers=True."""
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {"name": "answer", "schema": {"type": "object"}, "strict": True},
+    }
+    headers = {"x-request-id": "req-async456", "content-type": "application/json"}
+    beta_stream = MockAsyncBetaCompletionStream(
+        chunks=[_BETA_STREAM_CHUNK],
+        headers=headers,
+        final_completion=_BETA_STREAM_FINAL_COMPLETION,
+    )
+    mock_root = MagicMock()
+    mock_root.beta.chat.completions.stream.return_value = beta_stream
+
+    llm = ChatOpenAI(model="gpt-4o", include_response_headers=True)
+    with patch.object(llm, "root_async_client", mock_root), patch.object(
+        llm, "async_client", AsyncMock()
+    ):
+        chunks = []
+        async for chunk in llm.astream("Say hello.", response_format=response_format):
+            chunks.append(chunk)
+
+    assert chunks, "Expected at least one chunk"
+    first_chunk_headers = chunks[0].response_metadata.get("headers", {})
+    assert first_chunk_headers.get("x-request-id") == "req-async456", (
+        f"Expected 'x-request-id' in first chunk response_metadata['headers'], "
+        f"got: {first_chunk_headers}"
+    )

@@ -1554,11 +1554,6 @@ class BaseChatOpenAI(BaseChatModel):
 
         try:
             if "response_format" in payload:
-                if self.include_response_headers:
-                    warnings.warn(
-                        "Cannot currently include response headers when "
-                        "response_format is specified."
-                    )
                 payload.pop("stream")
                 response_stream = self.root_client.beta.chat.completions.stream(
                     **payload
@@ -1573,6 +1568,10 @@ class BaseChatOpenAI(BaseChatModel):
                     response = self.client.create(**payload)
                 context_manager = response
             with context_manager as response:
+                if "response_format" in payload and self.include_response_headers:
+                    http_response = getattr(response, "_response", None)
+                    if http_response is not None:
+                        base_generation_info = {"headers": dict(http_response.headers)}
                 is_first_chunk = True
                 for chunk in response:
                     if not isinstance(chunk, dict):
@@ -1813,11 +1812,6 @@ class BaseChatOpenAI(BaseChatModel):
 
         try:
             if "response_format" in payload:
-                if self.include_response_headers:
-                    warnings.warn(
-                        "Cannot currently include response headers when "
-                        "response_format is specified."
-                    )
                 payload.pop("stream")
                 response_stream = self.root_async_client.beta.chat.completions.stream(
                     **payload
@@ -1834,6 +1828,10 @@ class BaseChatOpenAI(BaseChatModel):
                     response = await self.async_client.create(**payload)
                 context_manager = response
             async with context_manager as response:
+                if "response_format" in payload and self.include_response_headers:
+                    http_response = getattr(response, "_response", None)
+                    if http_response is not None:
+                        base_generation_info = {"headers": dict(http_response.headers)}
                 is_first_chunk = True
                 async for chunk in _astream_with_chunk_timeout(
                     response,
