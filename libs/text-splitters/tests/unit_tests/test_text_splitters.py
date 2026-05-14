@@ -764,6 +764,33 @@ Not a comment
     assert chunks == ["harry", "***\nbabylon is"]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=30, chunk_overlap=0
+    )
+    code = """
+package MyModule;
+use strict;
+use warnings;
+
+sub hello {
+    my $name = shift;
+    print "Hello, $name!\n";
+}
+
+1;
+__END__
+This is some documentation.
+"""
+    chunks = splitter.split_text(code)
+    # Verify we get chunks and no error
+    assert len(chunks) > 0
+    # The chunk size 30 should force splits at logical boundaries
+    assert any("package MyModule;" in c for c in chunks)
+    assert any("sub hello" in c for c in chunks)
+    assert any("__END__" in c for c in chunks)
+
+
 def test_proto_file_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.PROTO, chunk_size=CHUNK_SIZE, chunk_overlap=0

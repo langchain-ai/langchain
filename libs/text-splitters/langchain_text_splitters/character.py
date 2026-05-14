@@ -807,6 +807,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nmy ",
                 "\nour ",
                 "\nlocal ",
+                # Split along the __END__ token
+                "\n__END__",
                 # Split by the normal type of lines
                 "\n\n",
                 "\n",
