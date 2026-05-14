@@ -639,9 +639,7 @@ async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
 
     events = [
         event
-        async for event in achunks_to_events(
-            _aiter_chunks(chunks), message_id="msg-1"
-        )
+        async for event in achunks_to_events(_aiter_chunks(chunks), message_id="msg-1")
     ]
     finish_blocks: list[Any] = [
         e["content"] for e in events if e["event"] == "content-block-finish"
