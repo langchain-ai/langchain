@@ -93,7 +93,8 @@ class BaseOpenAI(BaseLLM):
             `OPENAI_API_KEY`.
         openai_api_base:
             Base URL path for API requests, leave blank if not using a proxy or
-            service emulator.
+            service emulator. Falls back to env var `OPENAI_API_BASE`, then to
+            `OPENAI_BASE_URL` (read by the underlying SDK client).
         openai_organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
@@ -206,7 +207,14 @@ class BaseOpenAI(BaseLLM):
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    emulator.
+
+    Resolution order (first match wins):
+
+    1. Explicit `base_url` (or `openai_api_base`) kwarg.
+    2. Env var `OPENAI_API_BASE` (read by LangChain at init).
+    3. Env var `OPENAI_BASE_URL` (read by the underlying `openai` SDK client).
+    """
 
     openai_organization: str | None = Field(
         alias="organization",
