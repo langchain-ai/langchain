@@ -5,7 +5,8 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -103,15 +104,6 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 
 class TestChatDeepSeekCustomUnit:
     """Custom tests specific to DeepSeek chat model."""
-
-    def test_base_url_alias(self) -> None:
-        """Test that `base_url` is accepted as an alias for `api_base`."""
-        chat_model = ChatDeepSeek(
-            model=MODEL_NAME,
-            api_key=SecretStr("api_key"),
-            base_url="http://example.test/v1",
-        )
-        assert chat_model.api_base == "http://example.test/v1"
 
     def test_create_chat_result_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from response."""
@@ -253,6 +245,49 @@ class TestChatDeepSeekCustomUnit:
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
 
+    def test_get_request_payload_preserves_assistant_reasoning_content(self) -> None:
+        """Test that assistant reasoning_content is mirrored into outbound payloads."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        assistant_message = AIMessage(
+            content="Final answer",
+            additional_kwargs={"reasoning_content": "Need to preserve reasoning"},
+        )
+
+        payload = chat_model._get_request_payload([assistant_message])
+
+        assert payload["messages"][0]["content"] == "Final answer"
+        assert (
+            payload["messages"][0]["reasoning_content"] == "Need to preserve reasoning"
+        )
+
+    def test_get_request_payload_preserves_reasoning_content_with_tool_calls(
+        self,
+    ) -> None:
+        """Test that reasoning_content survives assistant tool-call turns."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        assistant_message = AIMessage(
+            content="",
+            additional_kwargs={"reasoning_content": "Call add before answering"},
+            tool_calls=[
+                create_tool_call(
+                    name="add",
+                    args={"a": 17, "b": 25},
+                    id="call_add_1",
+                )
+            ],
+        )
+        tool_message = ToolMessage(content="42", tool_call_id="call_add_1")
+
+        payload = chat_model._get_request_payload([assistant_message, tool_message])
+
+        assert (
+            payload["messages"][0]["reasoning_content"] == "Call add before answering"
+        )
+        assert payload["messages"][0]["tool_calls"][0]["function"]["name"] == "add"
+        assert payload["messages"][1]["content"] == "42"
+
 
 class SampleTool(PydanticBaseModel):
     """Sample tool schema for testing."""
@@ -338,7 +373,7 @@ class TestChatDeepSeekAzureToolChoice:
         return ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
-            base_url=endpoint,
+            api_base=endpoint,
         )
 
     def test_is_azure_endpoint_detection(self) -> None:
@@ -365,7 +400,7 @@ class TestChatDeepSeekAzureToolChoice:
             llm = ChatDeepSeek(
                 model="deepseek-chat",
                 api_key=SecretStr("test_key"),
-                base_url=endpoint,
+                api_base=endpoint,
             )
             assert not llm._is_azure_endpoint, f"Expected non-Azure for {endpoint}"
 
