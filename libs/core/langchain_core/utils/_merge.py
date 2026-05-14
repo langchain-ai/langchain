@@ -56,8 +56,21 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
+                # LangSmith identity fields are constant across all streaming chunks
+                # (set once by the provider, e.g. "amazon_bedrock", "openai").
+                # They must never be concatenated; skip if the value is identical.
+                _LANGSMITH_IDENTITY_KEYS = {
+                    "id",
+                    "output_version",
+                    "model_provider",
+                    # LangSmith tracing params — all identity / constant per request
+                    "ls_provider",
+                    "ls_model_name",
+                    "ls_model_type",
+                    "ls_integration",
+                }
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in {"id", "output_version", "model_provider"}
+                    right_k in _LANGSMITH_IDENTITY_KEYS
                     and merged[right_k] == right_v
                 ):
                     continue

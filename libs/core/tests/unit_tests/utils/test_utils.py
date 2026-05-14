@@ -129,6 +129,36 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # LangSmith identity string fields must NOT be concatenated across chunks.
+        # Regression tests for github.com/langchain-ai/langchain/issues/36993.
+        # All these fields are constants emitted on every streaming chunk; they must
+        # be de-duplicated (last-wins / skip), never accumulated.
+        (
+            {"ls_provider": "amazon_bedrock"},
+            {"ls_provider": "amazon_bedrock"},
+            {"ls_provider": "amazon_bedrock"},
+        ),
+        (
+            {"ls_model_name": "anthropic.claude-3-5-sonnet"},
+            {"ls_model_name": "anthropic.claude-3-5-sonnet"},
+            {"ls_model_name": "anthropic.claude-3-5-sonnet"},
+        ),
+        (
+            {"ls_model_type": "chat"},
+            {"ls_model_type": "chat"},
+            {"ls_model_type": "chat"},
+        ),
+        (
+            {"ls_integration": "langchain-aws"},
+            {"ls_integration": "langchain-aws"},
+            {"ls_integration": "langchain-aws"},
+        ),
+        # Realistic multi-key streaming chunk scenario
+        (
+            {"ls_provider": "amazon_bedrock", "model_provider": "bedrock_converse"},
+            {"ls_provider": "amazon_bedrock", "model_provider": "bedrock_converse"},
+            {"ls_provider": "amazon_bedrock", "model_provider": "bedrock_converse"},
+        ),
     ],
 )
 def test_merge_dicts(
