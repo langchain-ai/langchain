@@ -814,11 +814,22 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             soup: Parsed HTML content using BeautifulSoup.
         """
         for a_tag in _find_all_tags(soup, name="a"):
-            a_href = a_tag.get("href", "")
+            a_href = a_tag.get("href", "").strip()
             a_text = a_tag.get_text(strip=True)
+
+            # Skip malformed or empty links
+            if not a_href or not a_text:
+                continue
+
+            # Skip javascript pseudo-links
+            if a_href.lower().startswith("javascript:"):
+                continue
+
             markdown_link = f"[{a_text}]({a_href})"
+
             wrapper = soup.new_tag("link-wrapper")
             wrapper.string = markdown_link
+
             a_tag.replace_with(NavigableString(markdown_link))
 
     def _filter_tags(self, soup: BeautifulSoup) -> None:

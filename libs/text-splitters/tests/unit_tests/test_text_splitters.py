@@ -1302,6 +1302,31 @@ def test_html_code_splitter() -> None:
         "<p>Some more text</p>\n            </div>",
     ]
 
+def test_html_semantic_preserving_splitter_skips_invalid_links() -> None:
+    """Test that invalid or unsafe links are skipped."""
+    html = """
+    <html>
+        <body>
+            <p><a href="">Empty Link</a></p>
+            <p><a href="javascript:void(0)">Bad Link</a></p>
+            <p><a href="https://example.com">Valid Link</a></p>
+        </body>
+    </html>
+    """
+
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        preserve_links=True,
+    )
+
+    docs = splitter.split_text(html)
+
+    combined_text = " ".join(doc.page_content for doc in docs)
+
+    assert "[Valid Link](https://example.com)" in combined_text
+    assert "javascript:void(0)" not in combined_text
+    assert "[]( )" not in combined_text
+
 
 def test_md_header_text_splitter_1() -> None:
     """Test markdown splitter by header: Case 1."""
