@@ -529,6 +529,128 @@ def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
     assert "tool_call" in types
 
 
+def test_chunks_to_events_reasoning_then_tool_call_no_index() -> None:
+    """Reasoning followed by a tool_call in separate no-index chunks survives.
+
+    Regression for langchain-ai/langchain#37420. Some providers (notably Gemini
+    via the `google_genai` translator) emit per-chunk content blocks without an
+    `index` field. The bridge's positional fallback keys reasoning and
+    tool_call chunks identically (both at position 0 within their own chunk),
+    so the second-arriving block previously overwrote the first in the
+    accumulator. End result: the final assembled `AIMessage` had only the
+    `tool_call` and the reasoning was silently dropped from `.content`.
+    """
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "First "}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "thought."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc1",
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+    finish_blocks: list[Any] = [
+        e["content"] for e in events if e["event"] == "content-block-finish"
+    ]
+    finish_types = [b.get("type") for b in finish_blocks]
+    assert "reasoning" in finish_types, (
+        f"Reasoning block was dropped during chunk accumulation. "
+        f"Finish events saw types: {finish_types}"
+    )
+    assert "tool_call" in finish_types
+
+    reasoning_finish = next(b for b in finish_blocks if b.get("type") == "reasoning")
+    assert reasoning_finish["reasoning"] == "First thought."
+
+    tool_call_finish = next(b for b in finish_blocks if b.get("type") == "tool_call")
+    assert tool_call_finish["id"] == "tc1"
+    assert tool_call_finish["name"] == "get_weather"
+    assert tool_call_finish["args"] == {"city": "San Francisco"}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
+    """Async twin of the no-index reasoning + tool_call regression."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "First "}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "thought."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc1",
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(chunks), message_id="msg-1"
+        )
+    ]
+    finish_blocks: list[Any] = [
+        e["content"] for e in events if e["event"] == "content-block-finish"
+    ]
+    finish_types = [b.get("type") for b in finish_blocks]
+    assert "reasoning" in finish_types
+    assert "tool_call" in finish_types
+
+
 def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
     """Reasoning packed into additional_kwargs surfaces as a reasoning block."""
     chunks = [
