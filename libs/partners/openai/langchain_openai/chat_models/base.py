@@ -1555,15 +1555,30 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             if "response_format" in payload:
                 if self.include_response_headers:
-                    warnings.warn(
-                        "Cannot currently include response headers when "
-                        "response_format is specified."
+                    # Capture HTTP response headers while still streaming
+                    # structured output. The `beta.chat.completions.stream`
+                    # helper does not expose the raw response, so we drive the
+                    # underlying `create(stream=True, response_format=...)` via
+                    # `with_raw_response` for headers and rewrap the resulting
+                    # stream so `get_final_completion()` continues to work.
+                    from openai.lib.streaming.chat import ChatCompletionStream
+
+                    raw_response = self.client.with_raw_response.create(**payload)
+                    base_generation_info = {"headers": dict(raw_response.headers)}
+                    raw_stream = raw_response.parse()
+                    context_manager = ChatCompletionStream(
+                        raw_stream=raw_stream,
+                        response_format=payload.get(
+                            "response_format", openai.NOT_GIVEN
+                        ),
+                        input_tools=payload.get("tools", openai.NOT_GIVEN),
                     )
-                payload.pop("stream")
-                response_stream = self.root_client.beta.chat.completions.stream(
-                    **payload
-                )
-                context_manager = response_stream
+                else:
+                    payload.pop("stream")
+                    response_stream = self.root_client.beta.chat.completions.stream(
+                        **payload
+                    )
+                    context_manager = response_stream
             else:
                 if self.include_response_headers:
                     raw_response = self.client.with_raw_response.create(**payload)
@@ -1814,15 +1829,28 @@ class BaseChatOpenAI(BaseChatModel):
         try:
             if "response_format" in payload:
                 if self.include_response_headers:
-                    warnings.warn(
-                        "Cannot currently include response headers when "
-                        "response_format is specified."
+                    # See the sync `_stream` for the rationale; this is the
+                    # async equivalent.
+                    from openai.lib.streaming.chat import AsyncChatCompletionStream
+
+                    raw_response = await self.async_client.with_raw_response.create(
+                        **payload
                     )
-                payload.pop("stream")
-                response_stream = self.root_async_client.beta.chat.completions.stream(
-                    **payload
-                )
-                context_manager = response_stream
+                    base_generation_info = {"headers": dict(raw_response.headers)}
+                    raw_stream = raw_response.parse()
+                    context_manager = AsyncChatCompletionStream(
+                        raw_stream=raw_stream,
+                        response_format=payload.get(
+                            "response_format", openai.NOT_GIVEN
+                        ),
+                        input_tools=payload.get("tools", openai.NOT_GIVEN),
+                    )
+                else:
+                    payload.pop("stream")
+                    response_stream = (
+                        self.root_async_client.beta.chat.completions.stream(**payload)
+                    )
+                    context_manager = response_stream
             else:
                 if self.include_response_headers:
                     raw_response = await self.async_client.with_raw_response.create(

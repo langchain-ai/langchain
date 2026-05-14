@@ -638,6 +638,185 @@ def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None
     assert len(text_finishes) == 1
 
 
+def _make_structured_stream_mocks(
+    chunks: list[dict], headers: dict[str, str]
+) -> tuple[MagicMock, type]:
+    """Build mock objects that stand in for the openai SDK pieces touched by
+    structured-output streaming with `include_response_headers=True`.
+
+    Returns a `with_raw_response.create`-style mock client and a fake
+    ChatCompletionStream class to patch in.
+    """
+
+    class _FakeRawStream:
+        response = MagicMock()
+
+        def __init__(self, items: list[dict]) -> None:
+            self._items = items
+
+        def __iter__(self) -> Any:
+            return iter(self._items)
+
+    class _FakeChatCompletionStream:
+        def __init__(self, *, raw_stream: Any, response_format: Any, input_tools: Any):
+            self._items = list(raw_stream)
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *exc: Any) -> None:
+            return None
+
+        def __iter__(self) -> Any:
+            yield from self._items
+
+    raw_resp = MagicMock()
+    raw_resp.headers = headers
+    raw_resp.parse.return_value = _FakeRawStream(chunks)
+
+    client = MagicMock()
+    client.with_raw_response.create.return_value = raw_resp
+    return client, _FakeChatCompletionStream
+
+
+def _make_structured_astream_mocks(
+    chunks: list[dict], headers: dict[str, str]
+) -> tuple[AsyncMock, type]:
+    """Async counterpart of `_make_structured_stream_mocks`."""
+
+    class _FakeAsyncRawStream:
+        response = MagicMock()
+
+        def __init__(self, items: list[dict]) -> None:
+            self._items = items
+
+        def __aiter__(self) -> Self:
+            self._iter = iter(self._items)
+            return self
+
+        async def __anext__(self) -> dict:
+            try:
+                return next(self._iter)
+            except StopIteration as e:
+                raise StopAsyncIteration from e
+
+    class _FakeAsyncChatCompletionStream:
+        def __init__(self, *, raw_stream: Any, response_format: Any, input_tools: Any):
+            self._raw = raw_stream
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *exc: Any) -> None:
+            return None
+
+        def __aiter__(self) -> Any:
+            return self._raw.__aiter__()
+
+    raw_resp = MagicMock()
+    raw_resp.headers = headers
+    raw_resp.parse.return_value = _FakeAsyncRawStream(chunks)
+
+    client = AsyncMock()
+    client.with_raw_response.create = AsyncMock(return_value=raw_resp)
+    return client, _FakeAsyncChatCompletionStream
+
+
+def test_stream_with_response_format_includes_response_headers() -> None:
+    """Regression test for issue #37421.
+
+    `ChatOpenAI(include_response_headers=True).stream(...)` must propagate
+    HTTP response headers (notably `x-request-id`) when the payload contains
+    `response_format` — the path taken by
+    `with_structured_output(method="json_schema").stream(...)`.
+    """
+    chunks = [
+        {
+            "id": "chatcmpl-1",
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": '{"answer":"hi"}'},
+                    "finish_reason": None,
+                }
+            ],
+        },
+        {
+            "id": "chatcmpl-1",
+            "model": "gpt-4o",
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        },
+    ]
+    headers = {"x-request-id": "test-req-id", "content-type": "text/event-stream"}
+    mock_client, FakeStream = _make_structured_stream_mocks(chunks, headers)
+
+    llm = ChatOpenAI(model="gpt-4o", streaming=True, include_response_headers=True)
+    with (
+        patch.object(llm, "client", mock_client),
+        patch("openai.lib.streaming.chat.ChatCompletionStream", FakeStream),
+    ):
+        seen_headers: dict[str, str] | None = None
+        for chunk in llm.stream(
+            "hi", response_format={"type": "json_object"}, stream_usage=False
+        ):
+            md = getattr(chunk, "response_metadata", {}) or {}
+            if md.get("headers") and seen_headers is None:
+                seen_headers = md["headers"]
+
+    assert mock_client.with_raw_response.create.called, (
+        "Expected the streaming path with response_format + include_response_headers "
+        "to use with_raw_response.create so HTTP headers can be captured."
+    )
+    payload = mock_client.with_raw_response.create.call_args.kwargs
+    assert "response_format" in payload
+    assert seen_headers == headers
+
+
+async def test_astream_with_response_format_includes_response_headers() -> None:
+    """Async counterpart of `test_stream_with_response_format_includes_response_headers`."""
+    chunks = [
+        {
+            "id": "chatcmpl-1",
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": '{"answer":"hi"}'},
+                    "finish_reason": None,
+                }
+            ],
+        },
+        {
+            "id": "chatcmpl-1",
+            "model": "gpt-4o",
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        },
+    ]
+    headers = {"x-request-id": "test-req-id", "content-type": "text/event-stream"}
+    mock_client, FakeStream = _make_structured_astream_mocks(chunks, headers)
+
+    llm = ChatOpenAI(model="gpt-4o", streaming=True, include_response_headers=True)
+    with (
+        patch.object(llm, "async_client", mock_client),
+        patch(
+            "openai.lib.streaming.chat.AsyncChatCompletionStream", FakeStream
+        ),
+    ):
+        seen_headers: dict[str, str] | None = None
+        async for chunk in llm.astream(
+            "hi", response_format={"type": "json_object"}, stream_usage=False
+        ):
+            md = getattr(chunk, "response_metadata", {}) or {}
+            if md.get("headers") and seen_headers is None:
+                seen_headers = md["headers"]
+
+    assert mock_client.with_raw_response.create.called
+    payload = mock_client.with_raw_response.create.call_args.kwargs
+    assert "response_format" in payload
+    assert seen_headers == headers
+
+
 @pytest.fixture
 def mock_completion() -> dict:
     return {
