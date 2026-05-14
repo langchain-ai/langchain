@@ -57,6 +57,7 @@ from langchain_protocol.protocol import (
 )
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.utils._merge import merge_dicts
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -525,6 +526,7 @@ def _build_message_finish(
     *,
     usage: dict[str, Any] | None,
     response_metadata: dict[str, Any] | None,
+    additional_kwargs: dict[str, Any] | None = None,
 ) -> MessageFinishData:
     # Protocol 0.0.9 removed the top-level `reason` field from
     # `MessageFinishData`; the provider's raw `finish_reason` /
@@ -536,6 +538,16 @@ def _build_message_finish(
         finish_data["usage"] = usage_info
     if response_metadata:
         finish_data["metadata"] = dict(response_metadata)
+    # `additional_kwargs` is an off-spec extension on the message-finish
+    # event (parallel to `metadata`, which `MessageFinishData` also doesn't
+    # formally declare but the consumer reads). It carries provider-side
+    # kwargs that don't map onto a typed protocol field — notably Gemini's
+    # `__gemini_function_call_thought_signatures__`, which the model
+    # requires on follow-up turns to replay prior thinking. Without this,
+    # streaming-assembled messages would silently drop data that
+    # `ainvoke` preserves, breaking multi-turn streaming flows.
+    if additional_kwargs:
+        finish_data["additional_kwargs"] = dict(additional_kwargs)
     return cast("MessageFinishData", finish_data)
 
 
@@ -582,6 +594,7 @@ def chunks_to_events(
     next_wire_idx = 0
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
+    additional_kwargs: dict[str, Any] = {}
 
     for chunk in chunks:
         msg = chunk.message
@@ -604,6 +617,19 @@ def chunks_to_events(
         if merged_rm:
             response_metadata.update(merged_rm)
 
+        # Carry chunks' `additional_kwargs` through to the assembled
+        # message. Provider-side fields that don't map onto a typed
+        # protocol block (e.g. Gemini's per-tool-call thought signatures)
+        # live here on non-streaming `ainvoke` results; dropping them on
+        # the streaming path silently diverges multi-turn behavior. Use
+        # `merge_dicts` because the same key can arrive in pieces across
+        # chunks (e.g. an accumulating `function_call`), matching how
+        # `AIMessageChunk` merges itself.
+        if msg.additional_kwargs:
+            additional_kwargs = merge_dicts(
+                additional_kwargs, msg.additional_kwargs
+            )
+
         if not started:
             started = True
             yield _build_message_start(msg, message_id)
@@ -646,6 +672,7 @@ def chunks_to_events(
     yield _build_message_finish(
         usage=usage,
         response_metadata=response_metadata,
+        additional_kwargs=additional_kwargs,
     )
 
 
@@ -660,6 +687,7 @@ async def achunks_to_events(
     next_wire_idx = 0
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
+    additional_kwargs: dict[str, Any] = {}
 
     async for chunk in chunks:
         msg = chunk.message
@@ -676,6 +704,14 @@ async def achunks_to_events(
         if merged_rm:
             response_metadata.update(merged_rm)
 
+        # See sync twin: carry chunk `additional_kwargs` through so
+        # provider-specific data (e.g. Gemini thought signatures) reaches
+        # the assembled message instead of being dropped.
+        if msg.additional_kwargs:
+            additional_kwargs = merge_dicts(
+                additional_kwargs, msg.additional_kwargs
+            )
+
         if not started:
             started = True
             yield _build_message_start(msg, message_id)
@@ -718,6 +754,7 @@ async def achunks_to_events(
     yield _build_message_finish(
         usage=usage,
         response_metadata=response_metadata,
+        additional_kwargs=additional_kwargs,
     )
 
 

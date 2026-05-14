@@ -649,6 +649,154 @@ async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
     assert "tool_call" in finish_types
 
 
+def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> None:
+    """Streaming-assembled `AIMessage` must retain chunk `additional_kwargs`.
+
+    When Gemini emits a `tool_call` after `thinking`, the source chunk
+    carries a `__gemini_function_call_thought_signatures__` entry in
+    `additional_kwargs`, keyed by `tool_call_id`. This signature is required
+    on follow-up turns so Gemini can replay the prior thought trace.
+
+    Non-streaming `ainvoke` returns the provider's `AIMessage` unchanged, so
+    the signature is preserved. The v3 streaming path runs chunks through
+    `chunks_to_events` -> `ChatModelStream._assemble_message`; before this
+    fix, that path built a fresh `AIMessage` without forwarding
+    `additional_kwargs`, so the signature was silently dropped and
+    multi-turn streaming Gemini diverged from non-streaming.
+
+    Provider-specific kwargs aren't this layer's business individually; the
+    invariant is the general one — chunks' `additional_kwargs` survive into
+    the assembled message in *some* form a follow-up turn can reach.
+    """
+    from langchain_core.language_models.chat_model_stream import ChatModelStream
+
+    thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
+    tool_call_id = "tc-abc"
+
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "Thinking..."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": tool_call_id,
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                additional_kwargs={
+                    "__gemini_function_call_thought_signatures__": {
+                        tool_call_id: thought_signature,
+                    },
+                },
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    stream = ChatModelStream()
+    for event in chunks_to_events(iter(chunks), message_id="msg-1"):
+        stream.dispatch(event)
+    msg = stream.output
+
+    # Reachable through *some* channel a downstream consumer can route on.
+    # Either `additional_kwargs` (mirrors non-streaming), or an `extras`
+    # field on the `tool_call` block (the v1 protocol's slot for
+    # provider-specific data).
+    via_additional_kwargs = (
+        msg.additional_kwargs.get("__gemini_function_call_thought_signatures__", {})
+        .get(tool_call_id)
+    )
+    tool_call_blocks = [
+        b
+        for b in (msg.content if isinstance(msg.content, list) else [])
+        if isinstance(b, dict) and b.get("type") == "tool_call"
+    ]
+    via_block_extras = next(
+        (
+            b.get("extras", {}).get("thought_signature")
+            for b in tool_call_blocks
+            if b.get("id") == tool_call_id
+        ),
+        None,
+    )
+
+    signature_preserved = via_additional_kwargs or via_block_extras
+    assert signature_preserved == thought_signature, (
+        "Chunk-level additional_kwargs (Gemini thought signature) was dropped "
+        "during v3 stream assembly. Streaming-assembled AIMessage exposes "
+        f"additional_kwargs={msg.additional_kwargs!r}, tool_call blocks="
+        f"{tool_call_blocks!r}. Non-streaming `ainvoke` preserves this "
+        "signature in additional_kwargs unchanged; streaming should not "
+        "diverge."
+    )
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_preserves_additional_kwargs_on_assembled_message() -> None:
+    """Async twin of the additional_kwargs preservation regression."""
+    from langchain_core.language_models.chat_model_stream import AsyncChatModelStream
+
+    thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
+    tool_call_id = "tc-abc"
+
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "Thinking..."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": tool_call_id,
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                additional_kwargs={
+                    "__gemini_function_call_thought_signatures__": {
+                        tool_call_id: thought_signature,
+                    },
+                },
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    stream = AsyncChatModelStream()
+    async for event in achunks_to_events(_aiter_chunks(chunks), message_id="msg-1"):
+        stream.dispatch(event)
+    msg = await stream.output
+
+    via_additional_kwargs = (
+        msg.additional_kwargs.get("__gemini_function_call_thought_signatures__", {})
+        .get(tool_call_id)
+    )
+    assert via_additional_kwargs == thought_signature
+
+
 def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
     """Reasoning packed into additional_kwargs surfaces as a reasoning block."""
     chunks = [
