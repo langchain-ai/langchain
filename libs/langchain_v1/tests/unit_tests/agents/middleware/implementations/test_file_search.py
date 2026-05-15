@@ -200,6 +200,30 @@ class TestFilesystemGlobSearch:
 
         assert result == "No files found"
 
+    def test_glob_sorts_by_mtime_descending(self, tmp_path: Path) -> None:
+        """Test that glob results are sorted by modification time descending."""
+        import time
+
+        # Create files with distinct modification times
+        old_file = tmp_path / "old.py"
+        old_file.write_text("old", encoding="utf-8")
+        # Ensure a measurable time difference
+        time.sleep(0.05)
+
+        new_file = tmp_path / "new.py"
+        new_file.write_text("new", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py")
+
+        lines = result.split("\n")
+        # Most recently modified first
+        assert lines[0] == "/new.py"
+        assert lines[1] == "/old.py"
+
     def test_glob_invalid_path(self, tmp_path: Path) -> None:
         """Test glob search with non-existent path."""
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
