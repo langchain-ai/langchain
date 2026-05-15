@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -252,6 +252,74 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Test that reasoning_content in AIMessage.additional_kwargs is preserved in the request payload."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(
+                content="Hi there!",
+                additional_kwargs={"reasoning_content": "Let me think about this..."},
+            ),
+            HumanMessage(content="What did you think about?"),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assistant_msg = payload["messages"][1]
+        assert assistant_msg["role"] == "assistant"
+        assert assistant_msg["content"] == "Hi there!"
+        assert assistant_msg["reasoning_content"] == "Let me think about this..."
+
+    def test_get_request_payload_preserves_reasoning_content_in_tool_flow(self) -> None:
+        """Test that reasoning_content is preserved in tool-calling flows."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="What's the weather?"),
+            AIMessage(
+                content="",
+                additional_kwargs={
+                    "reasoning_content": "I need to call the weather tool.",
+                    "tool_calls": [
+                        {
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": '{"location": "NYC"}',
+                            },
+                        }
+                    ],
+                },
+                tool_calls=[
+                    {
+                        "id": "call_1",
+                        "name": "get_weather",
+                        "args": {"location": "NYC"},
+                    }
+                ],
+            ),
+            ToolMessage(content='{"temp": 72}', tool_call_id="call_1"),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assistant_msg = payload["messages"][1]
+        assert assistant_msg["role"] == "assistant"
+        assert assistant_msg["reasoning_content"] == "I need to call the weather tool."
+
+    def test_get_request_payload_no_reasoning_content(self) -> None:
+        """Test that messages without reasoning_content are unaffected."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello"),
+            AIMessage(content="Hi there!"),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assistant_msg = payload["messages"][1]
+        assert assistant_msg["role"] == "assistant"
+        assert assistant_msg["content"] == "Hi there!"
+        assert "reasoning_content" not in assistant_msg
 
 
 class SampleTool(PydanticBaseModel):

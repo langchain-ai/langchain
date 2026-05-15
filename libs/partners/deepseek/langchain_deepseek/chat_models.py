@@ -268,8 +268,12 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        # Convert input to messages before calling super, so we can map
+        # original AIMessage objects (with additional_kwargs) to their
+        # serialized dicts in the payload.
+        messages = self._convert_input(input_).to_messages()
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
+        for lc_message, message in zip(messages, payload["messages"]):
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
             elif message["role"] == "assistant" and isinstance(
@@ -283,6 +287,19 @@ class ChatDeepSeek(BaseChatOpenAI):
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
                 message["content"] = "".join(text_parts) if text_parts else ""
+
+            # Preserve reasoning_content from additional_kwargs so that
+            # DeepSeek reasoner models can use it in multi-turn and
+            # tool-calling flows.  The parent _convert_message_to_dict
+            # does not know about this non-standard field and silently
+            # drops it.
+            if (
+                isinstance(lc_message, AIMessage)
+                and "reasoning_content" in lc_message.additional_kwargs
+            ):
+                message["reasoning_content"] = lc_message.additional_kwargs[
+                    "reasoning_content"
+                ]
 
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
