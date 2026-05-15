@@ -2879,6 +2879,56 @@ async def test_tool_error_event_includes_tool_call_id() -> None:
     assert error_event["data"]["tool_call_id"] == tool_call_id
 
 
+async def test_tool_start_event_includes_tool_call_id() -> None:
+    """Test that on_tool_start event includes tool_call_id when provided."""
+
+    @tool
+    def sample_tool(x: int) -> str:
+        """A sample tool."""
+        return f"value: {x}"
+
+    tool_call_id = "test-tool-call-id-123"
+    tool_call = {
+        "name": "sample_tool",
+        "args": {"x": 42},
+        "id": tool_call_id,
+        "type": "tool_call",
+    }
+
+    events = [
+        event async for event in sample_tool.astream_events(tool_call, version="v2")
+    ]
+
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+
+    start_event = start_events[0]
+    assert start_event["name"] == "sample_tool"
+    assert "tool_call_id" in start_event["data"]
+    assert start_event["data"]["tool_call_id"] == tool_call_id
+
+
+async def test_tool_start_event_tool_call_id_is_none_when_not_provided() -> None:
+    """Test that on_tool_start event has tool_call_id=None when not provided."""
+
+    @tool
+    def sample_tool_no_id(x: int) -> str:
+        """A sample tool."""
+        return f"value: {x}"
+
+    events = [
+        event async for event in sample_tool_no_id.astream_events({"x": 42}, version="v2")
+    ]
+
+    start_events = [e for e in events if e["event"] == "on_tool_start"]
+    assert len(start_events) == 1
+
+    start_event = start_events[0]
+    assert start_event["name"] == "sample_tool_no_id"
+    assert "tool_call_id" in start_event["data"]
+    assert start_event["data"]["tool_call_id"] is None
+
+
 async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None:
     """Test that on_tool_error event has tool_call_id=None when not provided."""
 
