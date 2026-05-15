@@ -3776,3 +3776,140 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+_BETA_STREAM_CHUNK = {
+    "id": "chatcmpl-test",
+    "object": "chat.completion.chunk",
+    "created": 1689989000,
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "delta": {"role": "assistant", "content": ""},
+            "finish_reason": None,
+        }
+    ],
+}
+
+_BETA_STREAM_FINAL_COMPLETION = {
+    "id": "chatcmpl-test",
+    "object": "chat.completion",
+    "created": 1689989000,
+    "model": "gpt-4o",
+    "choices": [
+        {
+            "index": 0,
+            "message": {"role": "assistant", "content": '{"answer": "hello"}'},
+            "finish_reason": "stop",
+        }
+    ],
+}
+
+_BETA_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {"name": "answer", "schema": {"type": "object"}, "strict": True},
+}
+
+
+class MockBetaCompletionStream:
+    def __init__(self, headers: dict[str, str]) -> None:
+        self._chunks = [_BETA_STREAM_CHUNK]
+        self._current_chunk = 0
+        self._response = MagicMock()
+        self._response.headers = headers
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        pass
+
+    def __iter__(self) -> Self:
+        return self
+
+    def __next__(self) -> dict:
+        if self._current_chunk < len(self._chunks):
+            chunk = self._chunks[self._current_chunk]
+            self._current_chunk += 1
+            return chunk
+        raise StopIteration
+
+    def get_final_completion(self) -> dict:
+        return _BETA_STREAM_FINAL_COMPLETION
+
+
+class MockAsyncBetaCompletionStream:
+    def __init__(self, headers: dict[str, str]) -> None:
+        self._chunks = [_BETA_STREAM_CHUNK]
+        self._current_chunk = 0
+        self._response = MagicMock()
+        self._response.headers = headers
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        pass
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> dict:
+        if self._current_chunk < len(self._chunks):
+            chunk = self._chunks[self._current_chunk]
+            self._current_chunk += 1
+            return chunk
+        raise StopAsyncIteration
+
+    async def get_final_completion(self) -> dict:
+        return _BETA_STREAM_FINAL_COMPLETION
+
+
+def test_stream_response_format_includes_response_headers() -> None:
+    """Test response headers are preserved when streaming with response_format."""
+    llm = ChatOpenAI(
+        model="gpt-4o", include_response_headers=True, api_key="test-api-key"
+    )
+    headers = {"x-request-id": "req-sync", "content-type": "application/json"}
+    mock_root_client = MagicMock()
+    mock_root_client.beta.chat.completions.stream.return_value = (
+        MockBetaCompletionStream(headers)
+    )
+
+    with patch.object(llm, "root_client", mock_root_client):
+        chunks = list(llm.stream("Say hello.", response_format=_BETA_RESPONSE_FORMAT))
+
+    assert chunks[0].response_metadata["headers"] == headers
+
+
+async def test_astream_response_format_includes_response_headers() -> None:
+    """Test response headers are preserved when async streaming with response_format."""
+    llm = ChatOpenAI(
+        model="gpt-4o", include_response_headers=True, api_key="test-api-key"
+    )
+    headers = {"x-request-id": "req-async", "content-type": "application/json"}
+    mock_root_client = MagicMock()
+    mock_root_client.beta.chat.completions.stream.return_value = (
+        MockAsyncBetaCompletionStream(headers)
+    )
+
+    with patch.object(llm, "root_async_client", mock_root_client):
+        chunks = [
+            chunk
+            async for chunk in llm.astream(
+                "Say hello.", response_format=_BETA_RESPONSE_FORMAT
+            )
+        ]
+
+    assert chunks[0].response_metadata["headers"] == headers
