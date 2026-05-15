@@ -657,6 +657,31 @@ class Runnable(ABC, Generic[Input, Output]):
             A new `Runnable`.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
+    def __and__(
+        self,
+        other: Runnable[Any, Any]
+        | Callable[[Any], Any]
+        | Mapping[str, Runnable[Any, Any] | Callable[[Any], Any] | Any],
+    ) -> RunnableSerializable[Input, dict[str, Any]]:
+        """Runnable ``&`` operator — creates a ``RunnableParallel``.
+
+        Both runnables receive the same input and their outputs
+        are returned as ``{"left": ..., "right": ...}``.
+
+        Example:
+            parallel = chain_a & chain_b
+            parallel.invoke(x)  # {"left": chain_a(x), "right": chain_b(x)}
+        """
+        return RunnableParallel(left=self, right=coerce_to_runnable(other))
+
+    def __rand__(
+        self,
+        other: Runnable[Any, Any]
+        | Callable[[Any], Any]
+        | Mapping[str, Runnable[Any, Any] | Callable[[Any], Any] | Any],
+    ) -> RunnableSerializable[Input, dict[str, Any]]:
+        """Reverse ``&`` operator for ``RunnableParallel``."""
+        return RunnableParallel(left=coerce_to_runnable(other), right=self)
 
     def pipe(
         self,
