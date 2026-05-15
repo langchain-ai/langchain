@@ -52,6 +52,28 @@ class EventData(TypedDict, total=False):
     link errors to specific tool calls in stateless agent implementations.
     """
 
+StreamEventName = Literal[
+    "on_llm_start",
+    "on_llm_stream",
+    "on_llm_end",
+    "on_llm_error",
+    "on_chat_model_start",
+    "on_chat_model_stream",
+    "on_chat_model_end",
+    "on_tool_start",
+    "on_tool_end",
+    "on_tool_error",
+    "on_chain_start",
+    "on_chain_stream",
+    "on_chain_end",
+    "on_chain_error",
+    "on_retriever_start",
+    "on_retriever_end",
+    "on_retriever_error",
+    "on_prompt_start",
+    "on_prompt_end",
+    "on_custom_event",
+]
 
 class BaseStreamEvent(TypedDict):
     """Streaming event.
@@ -99,7 +121,7 @@ class BaseStreamEvent(TypedDict):
         ```
     """
 
-    event: str
+    event: StreamEventName
     """Event names are of the format: `on_[runnable_type]_(start|stream|end)`.
 
     Runnable types are one of:
