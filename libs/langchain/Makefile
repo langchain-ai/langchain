@@ -1,5 +1,4 @@
-.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format type lint_diff format_diff lint_package lint_tests help
-
+.PHONY: all check_imports coverage extended_tests format format_diff integration_tests lint lint_diff lint_package lint_tests test test_watch test_watch_extended tests type help
 # Default target executed when no arguments are given to make.
 all: help
 

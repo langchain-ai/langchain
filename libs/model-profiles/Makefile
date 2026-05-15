@@ -1,4 +1,4 @@
-.PHONY: all format lint type test tests integration_tests help extended_tests refresh-profiles
+.PHONY: all benchmark check_imports format format_diff help integration_test integration_tests lint lint_diff lint_package lint_tests refresh-profiles test test_watch tests type
 
 # Default target executed when no arguments are given to make.
 all: help
