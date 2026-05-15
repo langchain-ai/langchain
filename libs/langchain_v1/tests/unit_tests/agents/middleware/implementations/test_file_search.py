@@ -74,6 +74,28 @@ class TestFilesystemGrepSearch:
         assert "/file3.txt" in result
         assert "/file2.py" not in result
 
+    def test_grep_python_fallback_reads_utf8_files(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Find UTF-8 files even when the platform default is not UTF-8."""
+        (tmp_path / "notes.md").write_text("needle\u200d\n", encoding="utf-8")
+
+        original_read_text = Path.read_text
+
+        def fake_windows_read_text(self: Path, *args: Any, **kwargs: Any) -> str:
+            if not args and "encoding" not in kwargs:
+                kwargs["encoding"] = "cp1252"
+            return original_read_text(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", fake_windows_read_text)
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="needle")
+
+        assert "/notes.md" in result
+
     def test_grep_with_include_filter(self, tmp_path: Path) -> None:
         """Test grep search with include pattern filter."""
         (tmp_path / "file1.py").write_text("def hello():\n    pass\n", encoding="utf-8")
