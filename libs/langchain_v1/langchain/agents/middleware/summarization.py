@@ -77,6 +77,23 @@ _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 
+# Some providers tag emitted messages with a `model_provider` string that differs from
+# their LangSmith `ls_provider`. The reported-token check below compares the two, so we
+# accept known aliases per `ls_provider`.
+_LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
+    "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+}
+
+
+def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
+    if model_ls_provider is None:
+        return False
+    if message_provider == model_ls_provider:
+        return True
+    aliases = _LS_PROVIDER_ALIASES.get(model_ls_provider)
+    return aliases is not None and message_provider in aliases
+
+
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
 
@@ -379,7 +396,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             and (reported_tokens := last_ai_message.usage_metadata.get("total_tokens", -1))
             and reported_tokens >= threshold
             and (message_provider := last_ai_message.response_metadata.get("model_provider"))
-            and message_provider == self.model._get_ls_params().get("ls_provider")  # noqa: SLF001
+            and _provider_matches(
+                message_provider,
+                self.model._get_ls_params().get("ls_provider"),  # noqa: SLF001
+            )
         ):
             return True
         return False
