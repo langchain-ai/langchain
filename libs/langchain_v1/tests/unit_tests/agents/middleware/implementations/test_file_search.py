@@ -74,6 +74,36 @@ class TestFilesystemGrepSearch:
         assert "/file3.txt" in result
         assert "/file2.py" not in result
 
+    def test_grep_python_fallback_reads_utf8_explicitly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Search UTF-8 files without relying on the platform default encoding."""
+        file_path = tmp_path / "notes.md"
+        file_path.write_text("cafe\ncafé\n", encoding="utf-8")
+
+        original_read_text = Path.read_text
+
+        def read_text_with_cp1252_default(
+            self: Path,
+            encoding: str | None = None,
+            errors: str | None = None,
+        ) -> str:
+            return original_read_text(
+                self,
+                encoding=encoding or "cp1252",
+                errors=errors,
+            )
+
+        monkeypatch.setattr(Path, "read_text", read_text_with_cp1252_default)
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="café")
+
+        assert "/notes.md" in result
+
     def test_grep_with_include_filter(self, tmp_path: Path) -> None:
         """Test grep search with include pattern filter."""
         (tmp_path / "file1.py").write_text("def hello():\n    pass\n", encoding="utf-8")
