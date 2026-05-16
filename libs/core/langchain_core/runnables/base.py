@@ -865,6 +865,12 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         return await run_in_executor(config, self.invoke, input, config, **kwargs)
 
+    def invoke(self, input, config=None, **kwargs):
+        print(f"[DEBUG] invoke called with config: {config}")
+        config = ensure_config(config)
+        print(f"[DEBUG] after ensure_config: {config}")
+
+
     def batch(
         self,
         inputs: list[Input],

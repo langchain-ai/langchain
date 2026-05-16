@@ -320,3 +320,133 @@ async def test_run_in_executor() -> None:
 
     with pytest.raises(RuntimeError):
         await run_in_executor(None, raises_stop_iter)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for issue #37373
+# ---------------------------------------------------------------------------
+
+
+def test_configurable_data_included_in_metadata() -> None:
+    """
+    Regression test for issue #37373.
+    Allowlisted configurable keys (model, checkpoint_ns) are automatically
+    included in metadata so that callbacks and monitoring tools can access them.
+    """
+    from langchain_core.runnables import RunnableLambda
+
+    received_config: RunnableConfig = {}
+
+    def capture_config(x: Any, config: RunnableConfig) -> Any:
+        received_config.update(config)
+        return x
+
+    runnable = RunnableLambda(capture_config)
+
+    config = cast(
+        "RunnableConfig",
+        {
+            "configurable": {"model": "gpt-4o", "checkpoint_ns": "ns-1"},
+            "metadata": {"source": "test"},
+        },
+    )
+
+    runnable.invoke("test", config=config)
+
+    # Verify allowlisted configurable keys are propagated to metadata
+    metadata = received_config.get("metadata", {})
+    assert "model" in metadata, (
+        "model should be copied from configurable into metadata"
+    )
+    assert metadata["model"] == "gpt-4o"
+    assert "checkpoint_ns" in metadata, (
+        "checkpoint_ns should be copied from configurable into metadata"
+    )
+    assert metadata["checkpoint_ns"] == "ns-1"
+
+    # Verify original metadata is preserved alongside the propagated keys
+    assert metadata["source"] == "test", "Original metadata should be preserved"
+
+
+def test_metadata_not_overwritten_by_configurable() -> None:
+    """
+    Verify that if an allowlisted key exists in both metadata and configurable,
+    the original metadata value takes precedence over the configurable value.
+    """
+    from langchain_core.runnables import RunnableLambda
+
+    received_config: RunnableConfig = {}
+
+    def capture_config(x: Any, config: RunnableConfig) -> Any:
+        received_config.update(config)
+        return x
+
+    runnable = RunnableLambda(capture_config)
+
+    config = cast(
+        "RunnableConfig",
+        {
+            "configurable": {
+                "model": "from-configurable",
+                "checkpoint_ns": "from-configurable",
+            },
+            "metadata": {
+                "model": "from-metadata",        # Should take precedence
+                "checkpoint_ns": "from-metadata",  # Should take precedence
+            },
+        },
+    )
+
+    runnable.invoke("test", config=config)
+
+    metadata = received_config.get("metadata", {})
+    assert metadata["model"] == "from-metadata", (
+        "Explicit metadata value should take precedence over configurable"
+    )
+    assert metadata["checkpoint_ns"] == "from-metadata", (
+        "Explicit metadata value should take precedence over configurable"
+    )
+
+
+def test_non_allowlisted_configurable_keys_not_in_metadata() -> None:
+    """
+    Verify that arbitrary configurable keys (user_id, session_id, api_key, etc.)
+    are NOT automatically propagated to metadata — only the allowlisted keys are.
+    """
+    from langchain_core.runnables import RunnableLambda
+
+    received_config: RunnableConfig = {}
+
+    def capture_config(x: Any, config: RunnableConfig) -> Any:
+        received_config.update(config)
+        return x
+
+    runnable = RunnableLambda(capture_config)
+
+    config = cast(
+        "RunnableConfig",
+        {
+            "configurable": {
+                "user_id": "alice",
+                "session_id": "123",
+                "some_api_key": "secret",
+            },
+            "metadata": {"source": "test"},
+        },
+    )
+
+    runnable.invoke("test", config=config)
+
+    metadata = received_config.get("metadata", {})
+    # Non-allowlisted keys must NOT leak into metadata
+    assert "user_id" not in metadata, (
+        "user_id is not allowlisted and should not appear in metadata"
+    )
+    assert "session_id" not in metadata, (
+        "session_id is not allowlisted and should not appear in metadata"
+    )
+    assert "some_api_key" not in metadata, (
+        "some_api_key is not allowlisted and should not appear in metadata"
+    )
+    # Original metadata should still be intact
+    assert metadata["source"] == "test", "Original metadata should be preserved"

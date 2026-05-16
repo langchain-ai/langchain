@@ -286,6 +286,12 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
+
+    # FIX: Merge configurable values into metadata (without overwriting existing keys)
+    for k, v in empty.get("configurable", {}).items():
+        if k not in empty["metadata"]:
+            empty["metadata"][k] = v
+
     for configurable_key in ("model", "checkpoint_ns"):
         if (
             isinstance(
