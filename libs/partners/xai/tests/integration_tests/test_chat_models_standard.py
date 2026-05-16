@@ -34,6 +34,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "model": MODEL_NAME,
+            "temperature": 0,
             "rate_limiter": rate_limiter,
         }
 
