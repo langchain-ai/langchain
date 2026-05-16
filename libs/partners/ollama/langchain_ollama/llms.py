@@ -510,15 +510,16 @@ class OllamaLLM(BaseLLM):
                 if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
+                done = stream_resp.get("done") is True
+                done_reason = stream_resp.get("done_reason")
+                generation_info: dict[str, Any] = {**additional_kwargs}
+                if done:
+                    generation_info["finish_reason"] = done_reason
+                    generation_info |= stream_resp
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info={
-                        "finish_reason": self.stop,
-                        **additional_kwargs,
-                        **(
-                            dict(stream_resp) if stream_resp.get("done") is True else {}
-                        ),
-                    },
+                    generation_info=generation_info,
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -541,15 +542,16 @@ class OllamaLLM(BaseLLM):
                 if reasoning and (thinking_content := stream_resp.get("thinking")):
                     additional_kwargs["reasoning_content"] = thinking_content
 
+                done = stream_resp.get("done") is True
+                done_reason = stream_resp.get("done_reason")
+                generation_info: dict[str, Any] = {**additional_kwargs}
+                if done:
+                    generation_info["finish_reason"] = done_reason
+                    generation_info |= stream_resp
+
                 chunk = GenerationChunk(
                     text=(stream_resp.get("response", "")),
-                    generation_info={
-                        "finish_reason": self.stop,
-                        **additional_kwargs,
-                        **(
-                            dict(stream_resp) if stream_resp.get("done") is True else {}
-                        ),
-                    },
+                    generation_info=generation_info,
                 )
                 if run_manager:
                     await run_manager.on_llm_new_token(
