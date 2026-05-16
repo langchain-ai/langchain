@@ -3,7 +3,7 @@ import json
 import math
 import re
 from collections.abc import Callable, Sequence
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import pytest
 from typing_extensions import NotRequired, override
@@ -11,10 +11,13 @@ from typing_extensions import NotRequired, override
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
+    ChatMessageChunk,
     FunctionMessage,
     HumanMessage,
+    HumanMessageChunk,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -3028,7 +3031,7 @@ def test_convert_to_messages_lc_envelope_tool_with_artifact() -> None:
                 content="result body",
                 tool_call_id="tc-99",
                 status="success",
-                additional_kwargs={"artifact": {"extra": "payload"}},
+                artifact={"extra": "payload"},
             )
         ]
     )
@@ -3048,18 +3051,39 @@ def test_convert_to_messages_lc_envelope_function() -> None:
     assert revived.name == "get_answer"
 
 
-def test_convert_to_messages_lc_envelope_chunk_aliases_collapse_to_parent() -> None:
-    """Chunk class names route to their parent message-type strings.
-
-    `AIMessageChunk` / `HumanMessageChunk` envelopes share dispatch with
-    their parent classes, so clients submitting chunks see them revived
-    as the corresponding finalized message types.
-    """
+def test_convert_to_messages_lc_envelope_chunk_preserves_chunk_type() -> None:
     [revived] = convert_to_messages(
         [_lc_envelope("HumanMessageChunk", content="streaming chunk")]
     )
-    assert isinstance(revived, HumanMessage)
+    assert isinstance(revived, HumanMessageChunk)
     assert revived.content == "streaming chunk"
+
+
+def test_convert_to_messages_lc_envelope_accepts_actual_to_json_output() -> None:
+    messages = [
+        AIMessage(
+            content="thinking",
+            usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+            invalid_tool_calls=[
+                {
+                    "name": "broken",
+                    "args": "{",
+                    "id": "bad-call",
+                    "error": "invalid JSON",
+                    "type": "invalid_tool_call",
+                }
+            ],
+        ),
+        AIMessageChunk(content="streaming chunk"),
+        ChatMessage(content="custom speaker", role="critic"),
+        ChatMessageChunk(content="custom speaker chunk", role="critic"),
+    ]
+
+    revived = convert_to_messages(
+        [cast("MessageLikeRepresentation", message.to_json()) for message in messages]
+    )
+
+    assert revived == messages
 
 
 def test_convert_to_messages_lc_envelope_unknown_class_falls_through() -> None:
