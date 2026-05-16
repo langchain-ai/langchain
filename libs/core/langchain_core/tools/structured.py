@@ -11,6 +11,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    cast,
 )
 
 from pydantic import Field, SkipValidation
@@ -256,10 +257,13 @@ class StructuredTool(BaseTool):
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
-        return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
+        return cast(
+            frozenset[str],
+            frozenset(
+                k
+                for k, v in signature(fn).parameters.items()
+                if _is_injected_arg_type(v.annotation)
+            ),
         )
 
 
