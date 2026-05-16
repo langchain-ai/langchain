@@ -403,3 +403,17 @@ class TestGrepEdgeCases:
 
         # Large file should be skipped
         assert "/small.txt" in result
+
+    def test_grep_utf8_file_with_non_ascii_content(self, tmp_path: Path) -> None:
+        """Test that grep correctly reads UTF-8 files containing non-ASCII characters."""
+        (tmp_path / "utf8.md").write_bytes(
+            "# Héllo wörld\ncafé résumé\n".encode("utf-8")
+        )
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="café")
+
+        assert "/utf8.md" in result
