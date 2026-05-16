@@ -62,7 +62,7 @@ def test_ensure_config() -> None:
     assert config["configurable"] is not arg["configurable"]
     assert config == {
         "tags": ["tag1", "tag2"],
-        "metadata": {"foo": "bar"},
+        "metadata": {"foo": "bar", "baz": "qux", "something": "else"},
         "callbacks": [arg["callbacks"][0]],
         "recursion_limit": 100,
         "configurable": {"baz": "qux", "something": "else"},
@@ -97,8 +97,18 @@ def test_ensure_config_copies_model_to_metadata() -> None:
 
     assert config["metadata"] == {
         "nooverride": 18,
-        "model": "gpt-4o",
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
         "checkpoint_ns": "ns-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "model": "gpt-4o",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
+        "some_api_key": "opaque-token",
     }
     assert config["configurable"] == {
         "thread_id": "th-123",
@@ -218,10 +228,12 @@ def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules
         "baz": "qux",
         "thread_id": "th-123",
         "checkpoint_id": "ckpt-1",
+        "checkpoint_ns": "from-configurable",
         "task_id": "task-1",
         "run_id": "run-456",
         "assistant_id": "asst-789",
         "graph_id": "graph-0",
+        "model": "from-configurable",
         "user_id": "uid-1",
         "cron_id": "cron-1",
         "langgraph_auth_user_id": "user-1",

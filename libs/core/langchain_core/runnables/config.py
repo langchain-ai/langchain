@@ -147,14 +147,17 @@ CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
 ) -> dict[str, Any] | None:
-    """Get LangSmith-only inheritable metadata defaults derived from config."""
+    """Get LangSmith-only inheritable metadata defaults derived from config.
+
+    Note: configurable keys are already copied to metadata by ensure_config,
+    so this function returns the same data for LangSmith tracer defaults.
+    """
     configurable = config.get("configurable") or {}
     metadata = {
         key: value
         for key, value in configurable.items()
         if not key.startswith("__")
         and isinstance(value, (str, int, float, bool))
-        and key not in config.get("metadata", {})
         and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
     }
     return metadata or None
@@ -286,17 +289,14 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for configurable_key in ("model", "checkpoint_ns"):
+    for key, value in empty.get("configurable", {}).items():
         if (
-            isinstance(
-                configurable_value := empty.get("configurable", {}).get(
-                    configurable_key
-                ),
-                str,
-            )
-            and configurable_key not in empty["metadata"]
+            not key.startswith("__")
+            and isinstance(value, (str, int, float, bool))
+            and key not in empty["metadata"]
+            and key != "api_key"
         ):
-            empty["metadata"][configurable_key] = configurable_value
+            empty["metadata"][key] = value
     return empty
 
 
