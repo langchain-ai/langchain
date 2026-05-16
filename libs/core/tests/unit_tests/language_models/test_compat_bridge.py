@@ -15,6 +15,10 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
+)
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk
 
@@ -527,6 +531,270 @@ def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
     types = [b.get("type") for b in finish_blocks]
     assert "text" in types
     assert "tool_call" in types
+
+
+def test_chunks_to_events_reasoning_then_tool_call_no_index() -> None:
+    """Reasoning followed by a tool_call in separate no-index chunks survives.
+
+    Regression for langchain-ai/langchain#37420. Some providers (notably Gemini
+    via the `google_genai` translator) emit per-chunk content blocks without an
+    `index` field. The bridge's positional fallback keys reasoning and
+    tool_call chunks identically (both at position 0 within their own chunk),
+    so the second-arriving block previously overwrote the first in the
+    accumulator. End result: the final assembled `AIMessage` had only the
+    `tool_call` and the reasoning was silently dropped from `.content`.
+    """
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "First "}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "thought."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc1",
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+    finish_blocks: list[Any] = [
+        e["content"] for e in events if e["event"] == "content-block-finish"
+    ]
+    finish_types = [b.get("type") for b in finish_blocks]
+    assert "reasoning" in finish_types, (
+        f"Reasoning block was dropped during chunk accumulation. "
+        f"Finish events saw types: {finish_types}"
+    )
+    assert "tool_call" in finish_types
+
+    reasoning_finish = next(b for b in finish_blocks if b.get("type") == "reasoning")
+    assert reasoning_finish["reasoning"] == "First thought."
+
+    tool_call_finish = next(b for b in finish_blocks if b.get("type") == "tool_call")
+    assert tool_call_finish["id"] == "tc1"
+    assert tool_call_finish["name"] == "get_weather"
+    assert tool_call_finish["args"] == {"city": "San Francisco"}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
+    """Async twin of the no-index reasoning + tool_call regression."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "First "}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "thought."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc1",
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    events = [
+        event
+        async for event in achunks_to_events(_aiter_chunks(chunks), message_id="msg-1")
+    ]
+    finish_blocks: list[Any] = [
+        e["content"] for e in events if e["event"] == "content-block-finish"
+    ]
+    finish_types = [b.get("type") for b in finish_blocks]
+    assert "reasoning" in finish_types
+    assert "tool_call" in finish_types
+
+
+def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> None:
+    """Streaming-assembled `AIMessage` must retain chunk `additional_kwargs`.
+
+    When Gemini emits a `tool_call` after `thinking`, the source chunk
+    carries a `__gemini_function_call_thought_signatures__` entry in
+    `additional_kwargs`, keyed by `tool_call_id`. This signature is required
+    on follow-up turns so Gemini can replay the prior thought trace.
+
+    Non-streaming `ainvoke` returns the provider's `AIMessage` unchanged, so
+    the signature is preserved. The v3 streaming path runs chunks through
+    `chunks_to_events` -> `ChatModelStream._assemble_message`; before this
+    fix, that path built a fresh `AIMessage` without forwarding
+    `additional_kwargs`, so the signature was silently dropped and
+    multi-turn streaming Gemini diverged from non-streaming.
+
+    Provider-specific kwargs aren't this layer's business individually; the
+    invariant is the general one — chunks' `additional_kwargs` survive into
+    the assembled message in *some* form a follow-up turn can reach.
+    """
+    thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
+    tool_call_id = "tc-abc"
+
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "Thinking..."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": tool_call_id,
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                additional_kwargs={
+                    "__gemini_function_call_thought_signatures__": {
+                        tool_call_id: thought_signature,
+                    },
+                },
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    stream = ChatModelStream()
+    for event in chunks_to_events(iter(chunks), message_id="msg-1"):
+        stream.dispatch(event)
+    msg = stream.output
+
+    # Reachable through *some* channel a downstream consumer can route on.
+    # Either `additional_kwargs` (mirrors non-streaming), or an `extras`
+    # field on the `tool_call` block (the v1 protocol's slot for
+    # provider-specific data).
+    via_additional_kwargs = msg.additional_kwargs.get(
+        "__gemini_function_call_thought_signatures__", {}
+    ).get(tool_call_id)
+    tool_call_blocks = [
+        b
+        for b in (msg.content if isinstance(msg.content, list) else [])
+        if isinstance(b, dict) and b.get("type") == "tool_call"
+    ]
+    via_block_extras = next(
+        (
+            b.get("extras", {}).get("thought_signature")
+            for b in tool_call_blocks
+            if b.get("id") == tool_call_id
+        ),
+        None,
+    )
+
+    signature_preserved = via_additional_kwargs or via_block_extras
+    assert signature_preserved == thought_signature, (
+        "Chunk-level additional_kwargs (Gemini thought signature) was dropped "
+        "during v3 stream assembly. Streaming-assembled AIMessage exposes "
+        f"additional_kwargs={msg.additional_kwargs!r}, tool_call blocks="
+        f"{tool_call_blocks!r}. Non-streaming `ainvoke` preserves this "
+        "signature in additional_kwargs unchanged; streaming should not "
+        "diverge."
+    )
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_preserves_additional_kwargs_on_assembled_message() -> (
+    None
+):
+    """Async twin of the additional_kwargs preservation regression."""
+    thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
+    tool_call_id = "tc-abc"
+
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "Thinking..."}],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": tool_call_id,
+                        "name": "get_weather",
+                        "args": {"city": "San Francisco"},
+                    }
+                ],
+                additional_kwargs={
+                    "__gemini_function_call_thought_signatures__": {
+                        tool_call_id: thought_signature,
+                    },
+                },
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+    stream = AsyncChatModelStream()
+    async for event in achunks_to_events(_aiter_chunks(chunks), message_id="msg-1"):
+        stream.dispatch(event)
+    msg = await stream.output
+
+    via_additional_kwargs = msg.additional_kwargs.get(
+        "__gemini_function_call_thought_signatures__", {}
+    ).get(tool_call_id)
+    assert via_additional_kwargs == thought_signature
 
 
 def test_chunks_to_events_reasoning_in_additional_kwargs() -> None:
