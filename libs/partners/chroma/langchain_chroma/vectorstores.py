@@ -1231,7 +1231,7 @@ class Chroma(VectorStore):
             ValueError: If the embedding function is not provided.
         """
         text = [document.page_content for document in documents]
-        metadata = [document.metadata for document in documents]
+        metadata = [document.metadata if document.metadata is not None else {} for document in documents]
         if self._embedding_function is None:
             msg = "For update, you must specify an embedding function on creation."
             raise ValueError(
