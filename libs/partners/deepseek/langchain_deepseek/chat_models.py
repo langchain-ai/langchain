@@ -284,24 +284,6 @@ class ChatDeepSeek(BaseChatOpenAI):
                 ]
                 message["content"] = "".join(text_parts) if text_parts else ""
 
-            # Echo reasoning_content back to the API for multi-turn reasoning.
-            # DeepSeek's reasoner models require prior reasoning_content to be
-            # included on each request — see
-            # https://api-docs.deepseek.com/guides/reasoning_model
-            # _convert_message_to_dict does not include reasoning_content from
-            # additional_kwargs, so we need to inject it here.
-            if message.get("role") == "assistant" and "reasoning_content" not in message:
-                # Reach back into the original messages to find reasoning_content.
-                # We convert input_ to messages and match by index.
-                messages_list = self._convert_input(input_).to_messages()
-                idx = payload["messages"].index(message)
-                if idx < len(messages_list):
-                    orig_msg = messages_list[idx]
-                    if isinstance(orig_msg, AIMessage):
-                        rc = orig_msg.additional_kwargs.get("reasoning_content")
-                        if rc is not None:
-                            message["reasoning_content"] = rc
-
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
         # It only accepts string values: "none", "auto", or "required".
