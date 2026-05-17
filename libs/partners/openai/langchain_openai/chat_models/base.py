@@ -1972,9 +1972,15 @@ class BaseChatOpenAI(BaseChatModel):
                 else tool
                 for tool in tools
             ]
-
+    
+        # Filter out empty tools lists for strict OpenAI-compatible providers
+        # (e.g., Qwen-Plus via DashScope) that enforce minItems: 1 on the
+        # tools array and reject empty lists with 400 BadRequestError.
+        # See: https://github.com/langchain-ai/langchain/issues/34907
+        if isinstance(params.get("tools"), list) and not params["tools"]:
+            del params["tools"]
+    
         return params
-
     def _get_ls_params(
         self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
