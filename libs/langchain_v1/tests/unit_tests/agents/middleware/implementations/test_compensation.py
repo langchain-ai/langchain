@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 
 from langchain.agents.middleware.compensation import (
     CompensationMiddleware,
@@ -16,9 +16,17 @@ from langchain.agents.middleware.types import (
 )
 
 
-def _fake_runtime(tools: dict[str, Any] | None = None) -> SimpleNamespace:
-    """Create a fake runtime with a tools dict for testing."""
-    return SimpleNamespace(tools=tools or {})
+def _fake_runtime(tools: list[BaseTool] | None = None) -> SimpleNamespace:
+    """Create a fake runtime with a tools list for testing.
+
+    Args:
+        tools: List of ``BaseTool`` instances to include in the runtime.
+
+    Returns:
+        A ``SimpleNamespace`` whose ``tools`` attribute is a list, matching
+        the real ``ToolRuntime.tools: list[BaseTool]`` type.
+    """
+    return SimpleNamespace(tools=tools or [])
 
 
 def _make_request(
@@ -27,7 +35,16 @@ def _make_request(
     state: dict[str, Any] | None = None,
     runtime: SimpleNamespace | None = None,
 ) -> ToolCallRequest:
-    """Create a minimal ToolCallRequest for testing."""
+    """Create a minimal ToolCallRequest for testing.
+
+    Args:
+        tool_name: The name of the tool being called.
+        state: Optional agent state dict; defaults to ``{"messages": []}``.
+        runtime: Optional fake runtime; defaults to an empty tool list.
+
+    Returns:
+        A ``ToolCallRequest`` suitable for passing to middleware methods.
+    """
     return ToolCallRequest(
         tool_call={
             "name": tool_name,
@@ -138,11 +155,7 @@ def test_failure_triggers_compensation() -> None:
         ],
     }
 
-    runtime = _fake_runtime(
-        {
-            "refund_card": refund_card,
-        }
-    )
+    runtime = _fake_runtime([refund_card])
 
     request = _make_request(
         tool_name="send_email",
@@ -205,12 +218,7 @@ def test_reverse_order_compensation() -> None:
         ],
     }
 
-    runtime = _fake_runtime(
-        {
-            "compensation_a": compensation_a,
-            "compensation_b": compensation_b,
-        }
-    )
+    runtime = _fake_runtime([compensation_a, compensation_b])
 
     request = _make_request(
         tool_name="failing_tool",
@@ -264,11 +272,7 @@ def test_compensation_failure_does_not_mask_original_error() -> None:
         ],
     }
 
-    runtime = _fake_runtime(
-        {
-            "failing_compensation_tool": failing_compensation_tool,
-        }
-    )
+    runtime = _fake_runtime([failing_compensation_tool])
 
     request = _make_request(
         tool_name="main_tool",
@@ -322,11 +326,7 @@ async def test_async_compensation_execution() -> None:
         ],
     }
 
-    runtime = _fake_runtime(
-        {
-            "refund_card": refund_card,
-        }
-    )
+    runtime = _fake_runtime([refund_card])
 
     request = _make_request(
         tool_name="failing_tool",
@@ -350,3 +350,164 @@ async def test_async_compensation_execution() -> None:
         )
 
     assert executed == ["async_1"]
+
+
+@pytest.mark.asyncio
+async def test_async_success_adds_recovery_entry() -> None:
+    """Test async successful tool execution appends a recovery entry."""
+    middleware = CompensationMiddleware(
+        compensation_pairs={
+            "charge_card": "refund_card",
+        },
+        compensation_schemas={
+            "charge_card": lambda result: {"payment_id": result["payment_id"]},
+        },
+    )
+
+    request = _make_request(tool_name="charge_card")
+
+    async def mock_handler(req: ToolCallRequest) -> dict[str, Any]:
+        return {"payment_id": "async_pay_456"}
+
+    result = await middleware.awrap_tool_call(request, mock_handler)
+
+    assert result["payment_id"] == "async_pay_456"
+
+    recovery_log = request.state["recovery_log"]
+    assert len(recovery_log) == 1
+    assert recovery_log[0]["tool"] == "charge_card"
+    assert recovery_log[0]["compensation_tool"] == "refund_card"
+    assert recovery_log[0]["compensation_args"] == {"payment_id": "async_pay_456"}
+
+
+def test_missing_compensation_tool_is_skipped_during_rollback() -> None:
+    """Test that a missing compensation tool in the runtime is silently skipped.
+
+    If the recovery log references a tool that is not present in
+    ``runtime.tools``, the rollback should continue with the remaining entries
+    and the original exception must still be re-raised.
+    """
+    executed: list[str] = []
+
+    @tool
+    def present_tool() -> str:
+        """A compensation tool that is present in the runtime."""
+        executed.append("present")
+        return "done"
+
+    middleware = CompensationMiddleware(
+        compensation_pairs={},
+        compensation_schemas={},
+    )
+
+    state: dict[str, Any] = {
+        "messages": [],
+        "recovery_log": [
+            {
+                "tool": "tool_a",
+                "compensation_tool": "ghost_tool",  # not in runtime
+                "compensation_args": {},
+            },
+            {
+                "tool": "tool_b",
+                "compensation_tool": "present_tool",
+                "compensation_args": {},
+            },
+        ],
+    }
+
+    # Only present_tool is in the runtime — ghost_tool is absent
+    runtime = _fake_runtime([present_tool])
+
+    request = _make_request(
+        tool_name="failing_tool",
+        state=state,
+        runtime=runtime,
+    )
+
+    def mock_handler(req: ToolCallRequest) -> Any:
+        msg = "original error"
+        raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="original error"):
+        middleware.wrap_tool_call(request, mock_handler)
+
+    # present_tool should still have been compensated
+    assert executed == ["present"]
+
+
+def test_multiple_successes_then_failure_rolls_back_all() -> None:
+    """Test that multiple succeeded tool calls are all rolled back on failure.
+
+    Simulates two tool calls that succeed (adding entries to the recovery log
+    via wrap_tool_call) followed by a third call that fails.  All two
+    compensation tools must be called in reverse order.
+    """
+    rolled_back: list[str] = []
+
+    @tool
+    def cancel_flight(booking_id: str) -> str:
+        """Cancel a flight booking."""
+        rolled_back.append(f"flight:{booking_id}")
+        return "cancelled"
+
+    @tool
+    def cancel_hotel(reservation_id: str) -> str:
+        """Cancel a hotel reservation."""
+        rolled_back.append(f"hotel:{reservation_id}")
+        return "cancelled"
+
+    middleware = CompensationMiddleware(
+        compensation_pairs={
+            "book_flight": "cancel_flight",
+            "book_hotel": "cancel_hotel",
+        },
+        compensation_schemas={
+            "book_flight": lambda r: {"booking_id": r["booking_id"]},
+            "book_hotel": lambda r: {"reservation_id": r["reservation_id"]},
+        },
+    )
+
+    state: dict[str, Any] = {"messages": []}
+    runtime = _fake_runtime([cancel_flight, cancel_hotel])
+
+    # --- First call: book_flight succeeds ---
+    request1 = _make_request(
+        tool_name="book_flight",
+        state=state,
+        runtime=runtime,
+    )
+    middleware.wrap_tool_call(
+        request1,
+        lambda req: {"booking_id": "FL-001"},
+    )
+
+    # --- Second call: book_hotel succeeds ---
+    request2 = _make_request(
+        tool_name="book_hotel",
+        state=state,
+        runtime=runtime,
+    )
+    middleware.wrap_tool_call(
+        request2,
+        lambda req: {"reservation_id": "HT-001"},
+    )
+
+    assert len(state["recovery_log"]) == 2
+
+    # --- Third call: rent_car fails → triggers rollback ---
+    request3 = _make_request(
+        tool_name="rent_car",
+        state=state,
+        runtime=runtime,
+    )
+
+    def failing_handler(req: ToolCallRequest) -> Any:
+        msg = "no cars available"
+        raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="no cars available"):
+        middleware.wrap_tool_call(request3, failing_handler)
+
+    # Compensations must fire in reverse order: hotel first, then flight
+    assert rolled_back == ["hotel:HT-001", "flight:FL-001"]
