@@ -1137,3 +1137,30 @@ def test_non_ai_message_reasoning_content_ignored() -> None:
     ]
     ollama_messages = llm._convert_messages_to_ollama_messages(messages)
     assert "thinking" not in ollama_messages[0]
+
+
+def test_multimodal_message_content_has_no_leading_newline() -> None:
+    """Test that multimodal text content does not start with a newline."""
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Extract all text from this image.",
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": (
+                        "data:image/png;base64,"
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                    )
+                },
+            },
+        ]
+    )
+
+    model = ChatOllama(model="any")
+
+    ollama_messages = model._convert_messages_to_ollama_messages([message])
+
+    assert ollama_messages[0]["content"] == "Extract all text from this image."
