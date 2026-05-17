@@ -1,7 +1,12 @@
+"""Compensation middleware for transactional tool rollback."""
+
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from typing import Any
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -23,6 +28,7 @@ class CompensationMiddleware(AgentMiddleware):
         *,
         state_key: str = "recovery_log",
     ) -> None:
+        """Initialize compensation middleware."""
         self.compensation_pairs = compensation_pairs
         self.compensation_schemas = compensation_schemas
         self.state_key = state_key
@@ -71,11 +77,7 @@ class CompensationMiddleware(AgentMiddleware):
 
         schema_builder = self.compensation_schemas.get(tool_name)
 
-        if schema_builder is None:
-            compensation_args = {}
-        else:
-            compensation_args = schema_builder(result)
-
+        compensation_args = {} if schema_builder is None else schema_builder(result)
         return {
             "compensation_tool": compensation_tool,
             "compensation_args": compensation_args,
@@ -99,11 +101,8 @@ class CompensationMiddleware(AgentMiddleware):
             if compensation_tool is None:
                 continue
 
-            try:
+            with suppress(Exception):
                 compensation_tool.invoke(compensation_args)
-            except Exception:
-                # Do not mask the original failure
-                continue
 
     async def _execute_compensations_async(
         self,
@@ -122,16 +121,15 @@ class CompensationMiddleware(AgentMiddleware):
             if compensation_tool is None:
                 continue
 
-            try:
+            with suppress(Exception):
                 await compensation_tool.ainvoke(compensation_args)
-            except Exception:
-                continue
 
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], Any],
     ) -> Any:
+        """Wrap synchronous tool execution with rollback support."""
         recovery_log = self._get_recovery_log(request.state)
 
         tool_name = request.tool_call["name"]
@@ -148,15 +146,9 @@ class CompensationMiddleware(AgentMiddleware):
                 self._append_recovery_entry(
                     recovery_log=recovery_log,
                     tool_name=tool_name,
-                    compensation_tool=compensation_entry[
-                        "compensation_tool"
-                    ],
-                    compensation_args=compensation_entry[
-                        "compensation_args"
-                    ],
+                    compensation_tool=compensation_entry["compensation_tool"],
+                    compensation_args=compensation_entry["compensation_args"],
                 )
-
-            return result
 
         except Exception:
             self._execute_compensations_sync(
@@ -164,12 +156,15 @@ class CompensationMiddleware(AgentMiddleware):
                 recovery_log=recovery_log,
             )
             raise
+        else:
+            return result
 
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], Awaitable[Any]],
     ) -> Any:
+        """Wrap asynchronous tool execution with rollback support."""
         recovery_log = self._get_recovery_log(request.state)
 
         tool_name = request.tool_call["name"]
@@ -186,15 +181,9 @@ class CompensationMiddleware(AgentMiddleware):
                 self._append_recovery_entry(
                     recovery_log=recovery_log,
                     tool_name=tool_name,
-                    compensation_tool=compensation_entry[
-                        "compensation_tool"
-                    ],
-                    compensation_args=compensation_entry[
-                        "compensation_args"
-                    ],
+                    compensation_tool=compensation_entry["compensation_tool"],
+                    compensation_args=compensation_entry["compensation_args"],
                 )
-
-            return result
 
         except Exception:
             await self._execute_compensations_async(
@@ -202,3 +191,5 @@ class CompensationMiddleware(AgentMiddleware):
                 recovery_log=recovery_log,
             )
             raise
+        else:
+            return result
