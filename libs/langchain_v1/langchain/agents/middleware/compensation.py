@@ -17,8 +17,19 @@ from langchain.agents.middleware.types import (
 class CompensationMiddleware(AgentMiddleware):
     """Middleware providing transactional compensation for tool calls.
 
-    When a tool call succeeds, a compensation entry is added to the recovery log.
-    If a later tool call fails, compensating tools are executed in reverse order.
+    This middleware implements the Saga Pattern for agent workflows. When a tool
+    call executes successfully, a matching compensation blueprint is appended to a
+    state-managed recovery log. If any subsequent tool call encounters an unhandled
+    exception, the middleware intercepts the failure, iterates through the recovery
+    log, and executes the compensating tools in reverse chronological order (LIFO).
+
+    Attributes:
+        compensation_pairs: A dictionary mapping a forward tool name to its corresponding
+            compensating tool name.
+        compensation_schemas: A dictionary mapping a forward tool name to a schema builder
+            callable that transforms the raw tool result into compensation arguments.
+        state_key: The tracking identifier key inside the `AgentState` dictionary where
+            the recovery logs are recorded.
     """
 
     def __init__(
@@ -32,7 +43,7 @@ class CompensationMiddleware(AgentMiddleware):
 
         Args:
             compensation_pairs: Mapping from tool name to its compensation
-                tool name (e.g. ``{"charge_card": "refund_card"}``).
+                tool name (e.g., `{"charge_card": "refund_card"}`).
             compensation_schemas: Mapping from tool name to a callable that
                 builds compensation arguments from the tool result.
             state_key: Key in agent state used to store the recovery log.
@@ -51,7 +62,7 @@ class CompensationMiddleware(AgentMiddleware):
             state: The current agent state dictionary.
 
         Returns:
-            The list of succeeded tool call entries stored under ``state_key``.
+            The list of succeeded tool call entries stored under `state_key`.
         """
         log = state.get(self.state_key)
 
@@ -91,24 +102,23 @@ class CompensationMiddleware(AgentMiddleware):
         tool_name: str,
         result: Any,
     ) -> dict[str, Any] | None:
-        """Build the compensation entry (tool name and arguments) for a succeeded call.
+        """Build the compensation entry for a succeeded call.
 
         Args:
             tool_name: The name of the tool that succeeded.
             result: The return value of the tool call, used to derive compensation args.
 
         Returns:
-            A dict with ``compensation_tool`` and ``compensation_args`` keys, or
-            ``None`` if the tool has no registered compensation pair.
+            A dict with `compensation_tool` and `compensation_args` keys, or
+            `None` if the tool has no registered compensation pair.
         """
         if tool_name not in self.compensation_pairs:
             return None
 
         compensation_tool = self.compensation_pairs[tool_name]
-
         schema_builder = self.compensation_schemas.get(tool_name)
-
         compensation_args = {} if schema_builder is None else schema_builder(result)
+
         return {
             "compensation_tool": compensation_tool,
             "compensation_args": compensation_args,
@@ -120,7 +130,7 @@ class CompensationMiddleware(AgentMiddleware):
         request: ToolCallRequest,
         recovery_log: list[dict[str, Any]],
     ) -> None:
-        """Execute compensation tools synchronously in reverse order of succeeded calls.
+        """Execute compensation tools synchronously in reverse order.
 
         Compensation failures are silently suppressed so they do not mask the
         original error that triggered the rollback.
@@ -134,7 +144,6 @@ class CompensationMiddleware(AgentMiddleware):
         for entry in reversed(recovery_log):
             compensation_tool_name = entry["compensation_tool"]
             compensation_args = entry["compensation_args"]
-
             compensation_tool = tools_by_name.get(compensation_tool_name)
 
             if compensation_tool is None:
@@ -149,7 +158,7 @@ class CompensationMiddleware(AgentMiddleware):
         request: ToolCallRequest,
         recovery_log: list[dict[str, Any]],
     ) -> None:
-        """Execute compensation tools asynchronously in reverse order of succeeded calls.
+        """Execute compensation tools asynchronously in reverse order.
 
         Compensation failures are silently suppressed so they do not mask the
         original error that triggered the rollback.
@@ -163,7 +172,6 @@ class CompensationMiddleware(AgentMiddleware):
         for entry in reversed(recovery_log):
             compensation_tool_name = entry["compensation_tool"]
             compensation_args = entry["compensation_args"]
-
             compensation_tool = tools_by_name.get(compensation_tool_name)
 
             if compensation_tool is None:
@@ -180,7 +188,7 @@ class CompensationMiddleware(AgentMiddleware):
         """Wrap synchronous tool execution with rollback support.
 
         On success, a compensation entry is appended to the recovery log stored
-        in ``request.state[state_key]``.  On failure, all previously succeeded
+        in `request.state[state_key]`. On failure, all previously succeeded
         compensable tools are rolled back in reverse order before re-raising the
         original exception.
 
@@ -193,16 +201,14 @@ class CompensationMiddleware(AgentMiddleware):
             The result of the tool call on success.
 
         Raises:
-            Exception: Re-raises the original exception from ``handler`` after
+            Exception: Re-raises the original exception from `handler` after
                 executing any registered compensations.
         """
         recovery_log = self._get_recovery_log(request.state)
-
         tool_name = request.tool_call["name"]
 
         try:
             result = handler(request)
-
             compensation_entry = self._build_compensation_entry(
                 tool_name=tool_name,
                 result=result,
@@ -233,7 +239,7 @@ class CompensationMiddleware(AgentMiddleware):
         """Wrap asynchronous tool execution with rollback support.
 
         On success, a compensation entry is appended to the recovery log stored
-        in ``request.state[state_key]``.  On failure, all previously succeeded
+        in `request.state[state_key]`. On failure, all previously succeeded
         compensable tools are rolled back in reverse order before re-raising the
         original exception.
 
@@ -246,16 +252,14 @@ class CompensationMiddleware(AgentMiddleware):
             The result of the tool call on success.
 
         Raises:
-            Exception: Re-raises the original exception from ``handler`` after
+            Exception: Re-raises the original exception from `handler` after
                 executing any registered compensations.
         """
         recovery_log = self._get_recovery_log(request.state)
-
         tool_name = request.tool_call["name"]
 
         try:
             result = await handler(request)
-
             compensation_entry = self._build_compensation_entry(
                 tool_name=tool_name,
                 result=result,
