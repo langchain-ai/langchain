@@ -179,6 +179,8 @@ def _normalize_to_model_response(
 def _build_commands(
     model_response: ModelResponse,
     middleware_commands: list[Command[Any]] | None = None,
+    *,
+    clear_structured_response: bool = False,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
@@ -190,6 +192,8 @@ def _build_commands(
             structured output.
         middleware_commands: Commands accumulated from middleware layers during
             composition (inner-first ordering).
+        clear_structured_response: Whether to clear a previous structured response
+            when this model response does not include a new one.
 
     Returns:
         List of ``Command`` objects ready to be returned from a model node.
@@ -198,6 +202,8 @@ def _build_commands(
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
+    elif clear_structured_response:
+        state["structured_response"] = None
 
     for cmd in middleware_commands or []:
         if cmd.goto:
@@ -1330,10 +1336,17 @@ def create_agent(
 
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                clear_structured_response=initial_response_format is not None,
+            )
 
         result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            clear_structured_response=initial_response_format is not None,
+        )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1378,10 +1391,17 @@ def create_agent(
 
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                clear_structured_response=initial_response_format is not None,
+            )
 
         result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            clear_structured_response=initial_response_format is not None,
+        )
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
@@ -1759,7 +1779,7 @@ def _make_model_to_tools_edge(
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 5. If there is a structured response, exit the loop
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
@@ -1786,7 +1806,7 @@ def _make_model_to_model_edge(
             )
 
         # 2. Exit condition: A structured response was generated
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 3. Default: Continue the loop, there may have been an issue with structured

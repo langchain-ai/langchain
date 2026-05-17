@@ -12,7 +12,8 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
-from pydantic import BaseModel, Field
+from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict
 
 from langchain.agents import create_agent
@@ -71,6 +72,18 @@ weather_json_schema = {
 class LocationResponse(BaseModel):
     city: str = Field(description="The city name")
     country: str = Field(description="The country name")
+
+
+class ValidatedAnswer(BaseModel):
+    text: str
+
+    @field_validator("text")
+    @classmethod
+    def reject_bad(cls, value: str) -> str:
+        if value == "BAD":
+            msg = "bad sentinel"
+            raise ValueError(msg)
+        return value
 
 
 class LocationTypedDict(TypedDict):
@@ -231,6 +244,28 @@ class TestResponseFormatAsModel:
 
 
 class TestResponseFormatAsToolStrategy:
+    def test_checkpointed_retry_clears_stale_structured_response(self) -> None:
+        """Test retries don't reuse a previous turn's structured response."""
+        tool_calls = [
+            [{"name": "ValidatedAnswer", "id": "1", "args": {"text": "Hi"}}],
+            [{"name": "ValidatedAnswer", "id": "2", "args": {"text": "BAD"}}],
+            [{"name": "ValidatedAnswer", "id": "3", "args": {"text": "Bye"}}],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(ValidatedAnswer, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        config = {"configurable": {"thread_id": "structured-retry"}}
+
+        first_response = agent.invoke({"messages": [HumanMessage("say hi")]}, config=config)
+        second_response = agent.invoke({"messages": [HumanMessage("say bye")]}, config=config)
+
+        assert first_response["structured_response"] == ValidatedAnswer(text="Hi")
+        assert second_response["structured_response"] == ValidatedAnswer(text="Bye")
+
     def test_pydantic_model(self) -> None:
         """Test response_format as ToolStrategy with Pydantic model."""
         tool_calls = [
