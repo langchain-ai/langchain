@@ -21,6 +21,7 @@ from fireworks.client.error import (  # type: ignore[import-untyped]
     BadGatewayError,
     FireworksError,
     InternalServerError,
+    InvalidRequestError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -28,6 +29,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -436,6 +438,17 @@ def _promote_http_status_error(exc: httpx.HTTPStatusError) -> NoReturn:
     raise exc
 
 
+class FireworksContextOverflowError(InvalidRequestError, ContextOverflowError):
+    """`InvalidRequestError` raised when input exceeds Fireworks's context limit."""
+
+
+def _handle_fireworks_invalid_request(e: InvalidRequestError) -> NoReturn:
+    """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
+    if "prompt is too long" in str(e):
+        raise FireworksContextOverflowError(str(e)) from e
+    raise e
+
+
 def _raise_empty_stream() -> NoReturn:
     """Raise a descriptive error when the SDK returns a zero-chunk stream."""
     msg = "Received empty stream from Fireworks"
@@ -791,9 +804,13 @@ class ChatFireworks(BaseChatModel):
             params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in _completion_with_retry(
-            self, run_manager=run_manager, messages=message_dicts, **params
-        ):
+        try:
+            stream = _completion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except InvalidRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
@@ -837,9 +854,12 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = _completion_with_retry(
-            self, run_manager=run_manager, messages=message_dicts, **params
-        )
+        try:
+            response = _completion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except InvalidRequestError as e:
+            _handle_fireworks_invalid_request(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -899,9 +919,13 @@ class ChatFireworks(BaseChatModel):
             params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await _acompletion_with_retry(
-            self, run_manager=run_manager, messages=message_dicts, **params
-        ):
+        try:
+            stream = await _acompletion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except InvalidRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
@@ -948,9 +972,12 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await _acompletion_with_retry(
-            self, run_manager=run_manager, messages=message_dicts, **params
-        )
+        try:
+            response = await _acompletion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except InvalidRequestError as e:
+            _handle_fireworks_invalid_request(e)
         return self._create_chat_result(response)
 
     @property

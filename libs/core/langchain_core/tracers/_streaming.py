@@ -33,8 +33,9 @@ class _V2StreamingCallbackHandler:
     """Marker base class for handlers that consume `on_stream_event` (v2).
 
     A handler inheriting from this class signals that it wants content-
-    block lifecycle events from `stream_v2` / `astream_v2` rather than
-    the v1 `on_llm_new_token` chunks. `BaseChatModel.invoke` uses
+    block lifecycle events from `stream_events(version="v3")` (and its
+    async equivalent) rather than the v1 `on_llm_new_token` chunks.
+    `BaseChatModel.invoke` uses
     `isinstance(handler, _V2StreamingCallbackHandler)` to decide whether
     to route an invoke through the v2 event generator.
 

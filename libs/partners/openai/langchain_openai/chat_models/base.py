@@ -521,6 +521,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
+        or "prompt is too long" in e.message
     ):
         raise OpenAIContextOverflowError(
             message=e.message, response=e.response, body=e.body
@@ -659,7 +660,18 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     openai_api_base: str | None = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
+    """Base URL path for API requests, leave blank if not using a proxy or service emulator.
+
+    Resolution order (first match wins):
+
+    1. Explicit `base_url` (or `openai_api_base`) kwarg.
+    2. Env var `OPENAI_API_BASE` (read by LangChain at init).
+    3. Env var `OPENAI_BASE_URL` (read by the underlying `openai` SDK client).
+
+    `OPENAI_BASE_URL` is also inspected by LangChain only to decide whether to
+    default-enable `stream_usage` — when set, the default is left off because many
+    non-OpenAI endpoints do not support streaming token usage.
+    """  # noqa: E501
 
     openai_organization: str | None = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -2567,7 +2579,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         | `timeout`      | `float | Tuple[float, float] | Any | None` | Timeout for requests.                                                               |
         | `max_retries`  | `int | None`                               | Max number of retries.                                                              |
         | `api_key`      | `str | None`                               | OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.        |
-        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator.       |
+        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator. Falls back to env var `OPENAI_API_BASE`, then to `OPENAI_BASE_URL` (read by the underlying SDK client). |
         | `organization` | `str | None`                               | OpenAI organization ID. If not passed in will be read from env var `OPENAI_ORG_ID`. |
 
         See full list of supported init args and their descriptions below.
