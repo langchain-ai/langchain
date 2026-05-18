@@ -51,7 +51,7 @@ typing = [
     "mypy>=1.19.1,<1.20.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
-    "langchain-text-splitters",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
@@ -72,7 +72,7 @@ test = [
     "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
-    "langchain-tests",
+    "langchain-tests>=1.0.0,<2.0.0",
     "pytest-benchmark",
     "pytest-codspeed",
 ]
