@@ -90,7 +90,9 @@ class ModelRequest(Generic[ContextT]):
     """Model request information for the agent.
 
     Type Parameters:
-        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+        ContextT: The type of the runtime context.
+
+            Defaults to `None` if not specified.
     """
 
     model: BaseChatModel
@@ -117,7 +119,7 @@ class ModelRequest(Generic[ContextT]):
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
     ) -> None:
-        """Initialize ModelRequest with backward compatibility for system_prompt.
+        """Initialize `ModelRequest` with backward compatibility for `system_prompt`.
 
         Args:
             model: The chat model to use.
@@ -129,7 +131,7 @@ class ModelRequest(Generic[ContextT]):
             runtime: Runtime context.
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
-            system_prompt: System prompt string (deprecated, converted to SystemMessage).
+            system_prompt: System prompt string (deprecated, converted to `SystemMessage`).
 
         Raises:
             ValueError: If both `system_prompt` and `system_message` are provided.
@@ -245,7 +247,7 @@ class ModelRequest(Generic[ContextT]):
 
                 ```python
                 new_request = request.override(
-                    model=ChatOpenAI(model="gpt-4o"),
+                    model=ChatOpenAI(model="gpt-5.5"),
                     system_message=SystemMessage(content="New instructions"),
                 )
                 ```

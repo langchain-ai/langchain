@@ -539,12 +539,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_name: str | None = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. `'gpt-4o'`, `'gpt-35-turbo'`, etc.
+    """Name of the deployed OpenAI model.
 
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
 
     !!! warning
+
         Does NOT affect completion.
     """
 

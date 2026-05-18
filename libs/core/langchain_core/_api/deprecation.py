@@ -12,19 +12,38 @@ module.
 import contextlib
 import functools
 import inspect
+import sys
 import warnings
 from collections.abc import Callable, Generator
 from typing import (
+    TYPE_CHECKING,
     Any,
     ParamSpec,
+    TypeGuard,
     TypeVar,
     cast,
 )
 
 from pydantic.fields import FieldInfo
-from pydantic.v1.fields import FieldInfo as FieldInfoV1
 
 from langchain_core._api.internal import is_caller_internal
+
+if TYPE_CHECKING:
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1
+
+
+def _is_pydantic_v1_field_info(obj: Any) -> TypeGuard["FieldInfoV1"]:
+    """Check if `obj` is a `pydantic.v1.fields.FieldInfo` without forcing import.
+
+    Importing `pydantic.v1` emits a `UserWarning` on Python 3.14+. Skipping the
+    import entirely when no caller has constructed a v1 `FieldInfo` keeps that
+    warning out of `langchain_core`'s import path. If a caller did construct one,
+    `pydantic.v1.fields` is already in `sys.modules` and isinstance is safe.
+    """
+    mod = sys.modules.get("pydantic.v1.fields")
+    if mod is None:
+        return False
+    return isinstance(obj, mod.FieldInfo)
 
 
 def _build_deprecation_message(
@@ -59,7 +78,9 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-# Last Any should be FieldInfoV1 but this leads to circular imports
+# Bound is `Any` (not `FieldInfoV1`) because importing `pydantic.v1` at module
+# scope emits a `UserWarning` on Python 3.14+; v1 `FieldInfo` support is handled
+# at runtime via `_is_pydantic_v1_field_info`.
 T = TypeVar("T", bound=type | Callable[..., Any] | Any)
 
 
@@ -246,7 +267,7 @@ def deprecated(
                 )
                 return obj
 
-        elif isinstance(obj, FieldInfoV1):
+        elif _is_pydantic_v1_field_info(obj):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -256,6 +277,8 @@ def deprecated(
             old_doc = obj.description
 
             def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+                from pydantic.v1.fields import FieldInfo as FieldInfoV1  # noqa: PLC0415
+
                 return cast(
                     "T",
                     FieldInfoV1(

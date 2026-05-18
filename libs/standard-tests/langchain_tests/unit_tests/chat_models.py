@@ -721,7 +721,7 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def model_override_value(self) -> str:
-            return "gpt-4o-mini"  # e.g. if default is "gpt-4o"
+            return "gpt-5.4-mini"  # e.g. if default is "gpt-5.5"
         ```
 
     ??? info "`enable_vcr_tests`"

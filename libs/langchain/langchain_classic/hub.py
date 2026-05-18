@@ -2,64 +2,27 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.load.dump import dumps
-from langchain_core.load.load import loads
-from langchain_core.prompts import BasePromptTemplate
+from langsmith import Client as LangSmithClient
 
 
-def _get_client(
-    api_key: str | None = None,
-    api_url: str | None = None,
-) -> Any:
-    """Get a client for interacting with the LangChain Hub.
-
-    Attempts to use LangSmith client if available, otherwise falls back to
-    the legacy `langchainhub` client.
-
-    Args:
-        api_key: API key to authenticate with the LangChain Hub API.
-        api_url: URL of the LangChain Hub API.
-
-    Returns:
-        Client instance for interacting with the hub.
-
-    Raises:
-        ImportError: If neither `langsmith` nor `langchainhub` can be imported.
-    """
-    try:
-        from langsmith import Client as LangSmithClient
-
-        ls_client = LangSmithClient(api_url, api_key=api_key)
-        if hasattr(ls_client, "push_prompt") and hasattr(ls_client, "pull_prompt"):
-            return ls_client
-        from langchainhub import Client as LangChainHubClient
-
-        return LangChainHubClient(api_url, api_key=api_key)
-    except ImportError:
-        try:
-            from langchainhub import Client as LangChainHubClient
-
-            return LangChainHubClient(api_url, api_key=api_key)
-        except ImportError as e:
-            msg = (
-                "Could not import langsmith or langchainhub (deprecated),"
-                "please install with `pip install langsmith`."
-            )
-            raise ImportError(msg) from e
-
-
+@deprecated(
+    since="1.0.6",
+    removal="2.0.0",
+    message=(
+        "langchain_classic.hub.push is deprecated. Use the LangSmith SDK instead."
+    ),
+)
 def push(
     repo_full_name: str,
     object: Any,  # noqa: A002
     *,
     api_url: str | None = None,
     api_key: str | None = None,
-    parent_commit_hash: str | None = None,
+    parent_commit_hash: str = "latest",
     new_repo_is_public: bool = False,
     new_repo_description: str | None = None,
     readme: str | None = None,
@@ -84,28 +47,15 @@ def push(
     Returns:
         URL where the pushed object can be viewed in a browser.
     """
-    client = _get_client(api_key=api_key, api_url=api_url)
-
-    # Then it's langsmith
-    if hasattr(client, "push_prompt"):
-        return client.push_prompt(
-            repo_full_name,
-            object=object,
-            parent_commit_hash=parent_commit_hash,
-            is_public=new_repo_is_public,
-            description=new_repo_description,
-            readme=readme,
-            tags=tags,
-        )
-
-    # Then it's langchainhub
-    manifest_json = dumps(object)
-    return client.push(
+    client = LangSmithClient(api_url, api_key=api_key)
+    return client.push_prompt(
         repo_full_name,
-        manifest_json,
+        object=object,
         parent_commit_hash=parent_commit_hash,
-        new_repo_is_public=new_repo_is_public,
-        new_repo_description=new_repo_description,
+        is_public=new_repo_is_public,
+        description=new_repo_description,
+        readme=readme,
+        tags=tags,
     )
 
 
@@ -163,26 +113,5 @@ def pull(
     Returns:
         The pulled LangChain object.
     """
-    client = _get_client(api_key=api_key, api_url=api_url)
-
-    # Then it's langsmith
-    if hasattr(client, "pull_prompt"):
-        return client.pull_prompt(owner_repo_commit, include_model=include_model)
-
-    # Then it's langchainhub
-    if hasattr(client, "pull_repo"):
-        # >= 0.1.15
-        res_dict = client.pull_repo(owner_repo_commit)
-        allowed_objects: Literal["all", "core"] = "all" if include_model else "core"
-        obj = loads(json.dumps(res_dict["manifest"]), allowed_objects=allowed_objects)
-        if isinstance(obj, BasePromptTemplate):
-            if obj.metadata is None:
-                obj.metadata = {}
-            obj.metadata["lc_hub_owner"] = res_dict["owner"]
-            obj.metadata["lc_hub_repo"] = res_dict["repo"]
-            obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
-        return obj
-
-    # Then it's < 0.1.15 langchainhub
-    resp: str = client.pull(owner_repo_commit)
-    return loads(resp, allowed_objects="core")
+    client = LangSmithClient(api_url, api_key=api_key)
+    return client.pull_prompt(owner_repo_commit, include_model=include_model)
