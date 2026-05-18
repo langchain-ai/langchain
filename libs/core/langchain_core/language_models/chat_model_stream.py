@@ -519,6 +519,7 @@ class _ChatModelStreamBase:
         self._usage_value: UsageInfo | None = None
         self._start_metadata: MessageMetadata | None = None
         self._finish_metadata: dict[str, Any] | None = None
+        self._additional_kwargs: dict[str, Any] | None = None
         self._done: bool = False
         self._error: BaseException | None = None
         self._output_message: AIMessage | None = None
@@ -896,6 +897,15 @@ class _ChatModelStreamBase:
         self._done = True
         self._usage_value = data.get("usage")
         self._finish_metadata = cast("dict[str, Any] | None", data.get("metadata"))
+        # Off-spec extension carrying provider-side `additional_kwargs`
+        # that don't map onto a typed protocol field (e.g. Gemini's
+        # `__gemini_function_call_thought_signatures__`). The compat
+        # bridge emits this on `message-finish` so the assembled message
+        # carries the same data `ainvoke` would have preserved.
+        self._additional_kwargs = cast(
+            "dict[str, Any] | None",
+            cast("dict[str, Any]", data).get("additional_kwargs"),
+        )
 
         # Finalize any unswept chunks — both client- and server-side.
         _sweep_chunk_store(
@@ -1011,14 +1021,17 @@ class _ChatModelStreamBase:
             for itc in self._invalid_tool_calls_acc
         ]
 
-        return AIMessage(
-            content=content,
-            id=self._message_id,
-            tool_calls=tool_calls,
-            invalid_tool_calls=invalid_tool_calls,
-            usage_metadata=self._usage_value,
-            response_metadata=response_metadata,
-        )
+        message_kwargs: dict[str, Any] = {
+            "content": content,
+            "id": self._message_id,
+            "tool_calls": tool_calls,
+            "invalid_tool_calls": invalid_tool_calls,
+            "usage_metadata": self._usage_value,
+            "response_metadata": response_metadata,
+        }
+        if self._additional_kwargs:
+            message_kwargs["additional_kwargs"] = dict(self._additional_kwargs)
+        return AIMessage(**message_kwargs)
 
 
 # ---------------------------------------------------------------------------
