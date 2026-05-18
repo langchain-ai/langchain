@@ -1105,6 +1105,27 @@ class ChatModelUnitTests(ChatModelTests):
         except ValidationError as e:
             pytest.fail(f"Validation error: {e}")
 
+    def test_standard_params_model_override(self, model: BaseChatModel) -> None:
+        """Test that `ls_model_name` reflects a per-call `model` kwarg override.
+
+        If a caller invokes the model with `model="some-other-model"` (e.g.
+        via `bind` or directly through `invoke`), the trace should report
+        that model rather than the constructor's default — otherwise
+        traces silently misattribute calls to the wrong model.
+
+        ??? question "Troubleshooting"
+
+            Subclasses that override `_get_ls_params` should read the model
+            from `kwargs` first, falling back to the configured attribute:
+            `params.get("model", self.model_name)`.
+        """
+        override = "test-model-override-sentinel"
+        ls_params = model._get_ls_params(model=override)
+        assert ls_params.get("ls_model_name") == override, (
+            "ls_model_name did not reflect the per-call `model` override; "
+            "_get_ls_params should honor kwargs['model']."
+        )
+
     def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
         """Test serialization and deserialization of the model.
 
