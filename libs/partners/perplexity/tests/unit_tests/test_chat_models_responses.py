@@ -392,7 +392,7 @@ def test_stream_yields_text_chunks_and_final_usage() -> None:
     chunks = list(llm.stream("greet me"))
 
     text_chunks = [c for c in chunks if c.content]
-    assert "".join(c.content for c in text_chunks) == "Hello world"
+    assert "".join(c.content for c in text_chunks) == "Hello world"  # type: ignore[misc]
     usage_chunks = [
         c for c in chunks if isinstance(c, AIMessageChunk) and c.usage_metadata
     ]
@@ -441,7 +441,7 @@ async def test_astream_yields_text_chunks_and_final_usage() -> None:
         assert isinstance(chunk, AIMessageChunk)
         collected.append(chunk)
 
-    text = "".join(c.content for c in collected if c.content)
+    text = "".join(c.content for c in collected if c.content)  # type: ignore[misc]
     assert text == "foobar"
     usage_chunks = [c for c in collected if c.usage_metadata]
     assert usage_chunks
