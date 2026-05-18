@@ -1,0 +1,175 @@
+# Pre-merge banned-trailer check.
+
+name: "🏷️ PR trailer lint"
+
+on:
+  pull_request:
+    types: [ opened, edited, synchronize, reopened ]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  trailer-check:
+    if: github.repository_owner == 'langchain-ai'
+    name: "validate squash-merge has no banned trailers"
+    runs-on: ubuntu-latest
+    # Serialize per-PR. Rapid `edited`/`synchronize` events on a PR open can
+    # otherwise produce two concurrent runs that both observe "no existing
+    # sticky" and both call `createComment`, leaving a duplicate failure
+    # comment that the find-first updater will never reconcile. We queue
+    # (cancel-in-progress: false) rather than cancel, so the in-flight run
+    # finishes its sticky write before the next event evaluates.
+    concurrency:
+      group: pr-trailer-lint-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Check PR title and body for banned trailer
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        # Bound the comment-write tail so a hung GitHub API call cannot leave
+        # the check stuck "in progress" past the runner default. `core.setFailed`
+        # is invoked before the sticky write, so the failure status is already
+        # recorded if this timeout fires.
+        timeout-minutes: 5
+        with:
+          script: |
+            if (!context.payload.pull_request) {
+              core.setFailed('No pull_request payload — workflow must run on pull_request events.');
+              return;
+            }
+            const { title, body, number } = context.payload.pull_request;
+            // Normalize line endings — GitHub returns whatever the editor used,
+            // and CRLF leaves stray \r chars in offending-line displays.
+            const fullBody = (body || '').replace(/\r\n/g, '\n');
+            const STICKY_MARKER = '<!-- pr-trailer-lint -->';
+
+            // Mirrors the org ruleset regex on the default branch. Keep in lock-step:
+            // the live source of truth is the ruleset's `commit_message_pattern.pattern`
+            // field at GitHub org settings → Rulesets → `block-anthropic-coauthor`
+            // (or whichever ruleset blocks this trailer on the default branch).
+            // The pattern below is informational; verify against the live ruleset
+            // when updating either side, or this check silently passes pushes
+            // that the ruleset will then reject (defeating the entire purpose).
+            //
+            // Case-folding is intentionally narrow (`[Aa]`/`[Bb]`) because the
+            // ruleset's pattern is narrow. Do NOT add the `i` flag — that would
+            // catch cases the ruleset does not, surfacing false positives the
+            // ruleset would let through.
+            const BANNED_REGEX = /Co-[Aa]uthored-[Bb]y:.*<noreply@anthropic\.com>/;
+
+            const squashMessage = `${title} (#${number})\n\n${fullBody}`;
+
+            async function findStickyComment() {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo,
+                issue_number: number,
+                per_page: 100,
+              });
+              return comments.find(c => c.body && c.body.startsWith(STICKY_MARKER));
+            }
+
+            // Comment write paths can fail for several reasons that should not
+            // turn this advisory job red on its own: fork PRs run with
+            // restricted tokens, secondary rate limits, transient API errors.
+            // Fall back to `core.summary` so a maintainer can paste the
+            // remediation manually. The check still fails — `setFailed` is
+            // invoked before this function, so the failure signal is already
+            // recorded by the time the comment write is attempted.
+            //
+            // The try/catch wraps ONLY the write call so that a bug in
+            // `findStickyComment` (e.g., pagination throwing) surfaces with
+            // its true cause instead of being misattributed to "fork PR token".
+            async function postStickyOrSummary(commentBody, summaryHeading) {
+              const existing = await findStickyComment();
+              try {
+                if (existing) {
+                  if (existing.body !== commentBody) {
+                    await github.rest.issues.updateComment({
+                      ...context.repo,
+                      comment_id: existing.id,
+                      body: commentBody,
+                    });
+                  }
+                } else {
+                  await github.rest.issues.createComment({
+                    ...context.repo,
+                    issue_number: number,
+                    body: commentBody,
+                  });
+                }
+              } catch (commentErr) {
+                core.warning(`Could not post sticky comment (fork PR token, rate limit, or transient API error): ${commentErr.message}`);
+                await core.summary
+                  .addHeading(summaryHeading)
+                  .addRaw('Paste the following into the PR as a comment:')
+                  .addCodeBlock(commentBody, 'markdown')
+                  .write();
+              }
+            }
+
+            const lines = squashMessage.split('\n');
+            const offendingIndices = [];
+            for (let i = 0; i < lines.length; i++) {
+              if (BANNED_REGEX.test(lines[i])) {
+                offendingIndices.push(i);
+              }
+            }
+
+            if (offendingIndices.length === 0) {
+              core.info('No banned trailer in squash-merge message.');
+              // Mark any prior failure comment as resolved. We update rather
+              // than delete because `deleteComment` 403s under restricted
+              // fork-PR tokens, whereas `updateComment` on a bot-authored
+              // comment works in both modes. Wrapped in try/catch because a
+              // transient API failure during cleanup must NOT turn a green
+              // check into red.
+              try {
+                const existing = await findStickyComment();
+                if (existing) {
+                  const resolvedBody = [
+                    STICKY_MARKER,
+                    '✅ **Trailer fixed.** The previous warning is resolved.',
+                  ].join('\n');
+                  if (existing.body !== resolvedBody) {
+                    await github.rest.issues.updateComment({
+                      ...context.repo,
+                      comment_id: existing.id,
+                      body: resolvedBody,
+                    });
+                  }
+                }
+              } catch (cleanupErr) {
+                core.warning(`Check passed but could not update prior failure comment to resolved: ${cleanupErr.message}`);
+              }
+              return;
+            }
+
+            const offendingExcerpt = offendingIndices
+              .map(i => `Line ${i + 1}: ${lines[i]}`)
+              .join('\n');
+
+            const commentBody = [
+              STICKY_MARKER,
+              '⚠️ **Banned trailer in PR — would block the squash-merge push to the default branch.**',
+              '',
+              'The would-be squash-merge commit message contains a `Co-authored-by: ... <noreply@anthropic.com>` line. An organization ruleset on the default branch rejects any push whose commit message matches that pattern, so this PR cannot be merged until the trailer is removed.',
+              '',
+              '**Found:**',
+              '```',
+              offendingExcerpt,
+              '```',
+              '',
+              '### Fix',
+              '',
+              'Edit the PR description and remove the offending line(s). The trailer is auto-inserted by some Claude-based authoring tools — strip it before opening or merging the PR. Save the description; this check will re-run automatically.',
+            ].join('\n');
+
+            // Set the failure signal BEFORE the sticky write — if the comment
+            // API hangs, the runner-level timeout fires with the failure
+            // status already recorded. Reversing the order leaves the check
+            // stuck "in progress" instead of red.
+            core.setFailed(`PR contains banned trailer matching ${BANNED_REGEX}`);
+            await postStickyOrSummary(
+              commentBody,
+              'Banned trailer in PR; comment could not be posted',
+            );
