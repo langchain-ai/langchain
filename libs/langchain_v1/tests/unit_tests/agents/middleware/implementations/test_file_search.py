@@ -75,6 +75,44 @@ class TestFilesystemGrepSearch:
         assert "/file3.txt" in result
         assert "/file2.py" not in result
 
+    def test_grep_python_fallback_reads_utf8_explicitly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Search UTF-8 files without relying on the system default encoding."""
+        utf8_file = tmp_path / "utf8.md"
+        utf8_file.write_bytes("caf\u00e9 needle\n".encode())
+        invalid_file = tmp_path / "invalid.md"
+        invalid_file.write_bytes(b"\xffneedle\n")
+
+        original_read_text = Path.read_text
+
+        def fake_read_text(path: Path, *args: Any, **kwargs: Any) -> str:
+            encoding = kwargs.get("encoding")
+            if args:
+                encoding = args[0]
+            if path == utf8_file and encoding is None:
+                codec = "cp1252"
+                reason = "character maps to <undefined>"
+                raise UnicodeDecodeError(
+                    codec,
+                    b"\x81",
+                    0,
+                    1,
+                    reason,
+                )
+            return original_read_text(path, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_text", fake_read_text)
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="needle", output_mode="content")
+
+        assert "/utf8.md:1:caf\u00e9 needle" in result
+        assert "/invalid.md" not in result
+
     def test_grep_with_include_filter(self, tmp_path: Path) -> None:
         """Test grep search with include pattern filter."""
         (tmp_path / "file1.py").write_text("def hello():\n    pass\n", encoding="utf-8")
