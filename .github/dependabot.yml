@@ -55,6 +55,7 @@ updates:
       - "/libs/partners/nomic/"
       - "/libs/partners/ollama/"
       - "/libs/partners/openai/"
+      - "/libs/partners/ai_audit_shelf/"
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"

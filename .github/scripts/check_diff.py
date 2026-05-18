@@ -338,6 +338,7 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
+            dirs_to_run["test"].add("libs/partners/ai_audit_shelf")
             dirs_to_run["test"].add("libs/partners/anthropic")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")

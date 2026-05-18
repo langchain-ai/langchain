@@ -35,6 +35,7 @@ jobs:
             // Mapping table for package names to labels
             const mapping = {
               "langchain": "langchain",
+              "langchain-ai-audit-shelf": "ai-audit-shelf",
               "langchain-openai": "openai",
               "langchain-anthropic": "anthropic",
               "langchain-classic": "langchain-classic",

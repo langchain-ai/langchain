@@ -98,6 +98,7 @@ body:
       options:
         - label: langchain
         - label: langchain-openai
+        - label: langchain-ai-audit-shelf
         - label: langchain-anthropic
         - label: langchain-classic
         - label: langchain-core

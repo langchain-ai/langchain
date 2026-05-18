@@ -63,6 +63,7 @@ on:
           - nomic
           - ollama
           - openai
+          - ai_audit_shelf
           - openrouter
           - perplexity
           - qdrant
