@@ -1211,6 +1211,8 @@ class TestEagerAiohttpSessionSuppression:
 
         after = [m.is_running_in_async_context for m in modules]
         assert before == after
+
+
 _CONTEXT_OVERFLOW_MESSAGE = (
     '{"error": {"object": "error", "type": "invalid_request_error", '
     '"code": "invalid_request_error", "message": "The prompt is too long: '
