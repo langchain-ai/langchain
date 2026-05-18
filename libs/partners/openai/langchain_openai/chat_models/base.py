@@ -2323,7 +2323,7 @@ class BaseChatOpenAI(BaseChatModel):
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    model = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-5.5")
 
                     structured_model = model.with_structured_output(
                         ResponseSchema,
@@ -3472,7 +3472,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    model = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-5.5")
 
                     structured_model = model.with_structured_output(
                         ResponseSchema,

@@ -155,8 +155,6 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     "gpt-4.1",
     "gpt-4o",
     "gpt-oss",
-    "o3-pro",
-    "o3-mini",
 ]
 
 

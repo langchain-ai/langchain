@@ -105,7 +105,7 @@ class ChatOpenRouter(BaseChatModel):
 
         | Param | Type | Description |
         | ----- | ---- | ----------- |
-        | `model` | `str` | Model name, e.g. `'openai/gpt-4o-mini'`. |
+        | `model` | `str` | Model name |
         | `temperature` | `float | None` | Sampling temperature. |
         | `max_tokens` | `int | None` | Max tokens to generate. |
 

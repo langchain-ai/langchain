@@ -1267,7 +1267,7 @@ def trim_messages(
             messages,
             max_tokens=45,
             strategy="last",
-            token_counter=ChatOpenAI(model="gpt-4o"),
+            token_counter=ChatOpenAI(model="openai:gpt-5.5"),
             # Most chat models expect that chat history starts with either:
             # (1) a HumanMessage or
             # (2) a SystemMessage followed by a HumanMessage
