@@ -3,7 +3,6 @@ import os  # type: ignore[import-not-found]
 from exa_py import Exa
 from langchain_core.utils import convert_to_secret_str
 
-
 _INTEGRATION_HEADER = "langchain-integration"
 
 
