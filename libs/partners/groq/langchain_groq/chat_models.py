@@ -5,13 +5,16 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from typing import NoReturn
 from operator import itemgetter
 from typing import Any, Literal, cast
 
+import groq
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -86,6 +89,43 @@ _STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+class GroqContextOverflowError(groq.BadRequestError, ContextOverflowError):
+    """BadRequestError raised when input exceeds Groq's context limit."""
+
+
+def _handle_groq_bad_request(e: groq.BadRequestError) -> NoReturn:
+    """Handle Groq BadRequestError."""
+    error_body = e.body if isinstance(e.body, dict) else {}
+    error_code = error_body.get("error", {}).get("code", "")
+    error_message = (e.message or "").lower()
+    if (
+        error_code == "context_length_exceeded"
+        or "context_length_exceeded" in str(e)
+        or "reduce the length of the messages" in error_message
+        or "maximum context length" in error_message
+    ):
+        raise GroqContextOverflowError(
+            message=e.message,
+            response=e.response,
+            body=e.body,
+        ) from e
+    raise e
+
+
+def _count_message_content_tokens(
+    content: str | list[str | dict[str, Any]], encoding: Any
+) -> int:
+    if isinstance(content, str):
+        return len(encoding.encode(content))
+    total = 0
+    for block in content:
+        if isinstance(block, str):
+            total += len(encoding.encode(block))
+        elif isinstance(block, dict) and block.get("type") == "text":
+            total += len(encoding.encode(block.get("text", "")))
+    return total
 
 
 class ChatGroq(BaseChatModel):
@@ -523,8 +563,6 @@ class ChatGroq(BaseChatModel):
         }
 
         try:
-            import groq  # noqa: PLC0415
-
             sync_specific: dict[str, Any] = {"http_client": self.http_client}
             if not self.client:
                 self.client = groq.Groq(
@@ -624,7 +662,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        try:
+            response = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_bad_request(e)
         return self._create_chat_result(response, params)
 
     async def _agenerate(
@@ -645,7 +686,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        try:
+            response = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_bad_request(e)
         return self._create_chat_result(response, params)
 
     def _stream(
@@ -660,7 +704,11 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        try:
+            stream = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_bad_request(e)
+        for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -712,9 +760,11 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        try:
+            stream = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_bad_request(e)
+        async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -755,6 +805,36 @@ class ChatGroq(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+    ) -> int:
+        """Return the number of tokens used, including tool schemas when provided.
+
+        Uses tiktoken's `cl100k_base` encoding as an approximation for Groq-served
+        models (Llama, Qwen, etc.). Exact token counts vary by model.
+        """
+        try:
+            import tiktoken  # noqa: PLC0415
+        except ImportError:
+            return super().get_num_tokens_from_messages(messages, tools=tools)
+
+        encoding = tiktoken.get_encoding("cl100k_base")
+        total = 0
+        for message in messages:
+            total += 4
+            total += _count_message_content_tokens(message.content, encoding)
+        if tools is not None:
+            for tool in tools:
+                try:
+                    tool_schema = convert_to_openai_tool(tool)
+                    schema_str = json.dumps(tool_schema)
+                    total += len(encoding.encode(schema_str)) + 3
+                except Exception:  # noqa: BLE001
+                    total += 100
+        return total
 
     #
     # Internal methods

@@ -2,11 +2,14 @@
 
 import json
 import os
+import warnings
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import groq
 import langchain_core.load as lc_load
 import pytest
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -17,14 +20,17 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.runnables import RunnableBinding, RunnableSequence
+from langchain_core.tools import tool
 from pydantic import BaseModel
 
 from langchain_groq.chat_models import (
     ChatGroq,
+    GroqContextOverflowError,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _create_usage_metadata,
     _format_message_content,
+    _handle_groq_bad_request,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -1095,3 +1101,147 @@ def test_format_message_content_mixed() -> None:
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
     ]
     assert expected == _format_message_content(content)
+
+
+_CONTEXT_OVERFLOW_ERROR_BODY = {
+    "error": {
+        "message": "Please reduce the length of the messages or completion.",
+        "type": "invalid_request_error",
+        "param": "messages",
+        "code": "context_length_exceeded",
+    }
+}
+_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = groq.BadRequestError(
+    message=_CONTEXT_OVERFLOW_ERROR_BODY["error"]["message"],
+    response=MagicMock(status_code=400),
+    body=_CONTEXT_OVERFLOW_ERROR_BODY,
+)
+
+
+def test_handle_groq_bad_request_context_length() -> None:
+    """Context length errors map to `ContextOverflowError`."""
+    with pytest.raises(GroqContextOverflowError) as exc_info:
+        _handle_groq_bad_request(_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR)
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_handle_groq_bad_request_other_errors_reraise() -> None:
+    """Non-context errors are re-raised unchanged."""
+    error = groq.BadRequestError(
+        message="Invalid model name.",
+        response=MagicMock(status_code=400),
+        body={"error": {"code": "invalid_request", "type": "invalid_request_error"}},
+    )
+    with pytest.raises(groq.BadRequestError):
+        _handle_groq_bad_request(error)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Context overflow errors surface on invoke."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    with (
+        patch.object(llm.client, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+    assert "reduce the length" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Context overflow errors surface on ainvoke."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    with (
+        patch.object(llm.async_client, "create", new_callable=AsyncMock) as mock_create,
+        pytest.raises(ContextOverflowError),
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Context overflow errors surface on stream."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    with (
+        patch.object(llm.client, "create") as mock_create,
+        pytest.raises(ContextOverflowError),
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Context overflow errors surface on astream."""
+    llm = ChatGroq(model="llama-3.1-8b-instant", streaming=False)
+    with (
+        patch.object(
+            llm.async_client,
+            "create",
+            new_callable=AsyncMock,
+            side_effect=_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR,
+        ),
+        pytest.raises(ContextOverflowError),
+    ):
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """`ContextOverflowError` is also catchable as `groq.BadRequestError`."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    with (
+        patch.object(llm.client, "create") as mock_create,
+        pytest.raises(groq.BadRequestError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+@tool
+def get_weather(location: str) -> str:
+    """Get the weather for a location."""
+    return f"Weather in {location}: sunny"
+
+
+class _MockTiktokenEncoding:
+    def encode(self, text: str) -> list[int]:
+        return list(range(max(len(text) // 4, 1)))
+
+
+def test_get_num_tokens_from_messages_without_tools() -> None:
+    """Token count without tools returns a positive integer."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    messages = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="Hello world"),
+    ]
+    with patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()):
+        count = llm.get_num_tokens_from_messages(messages)
+    assert count > 0
+    assert isinstance(count, int)
+
+
+def test_get_num_tokens_from_messages_with_tools() -> None:
+    """Token count with tools is higher than without."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    messages = [HumanMessage(content="What's the weather?")]
+    with patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()):
+        count_no_tools = llm.get_num_tokens_from_messages(messages)
+        count_with_tools = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert count_with_tools > count_no_tools
+    assert count_with_tools - count_no_tools >= 20
+
+
+def test_get_num_tokens_from_messages_no_warning_with_tools() -> None:
+    """Tool schemas are counted without the base class warning."""
+    llm = ChatGroq(model="llama-3.1-8b-instant")
+    messages = [HumanMessage(content="Hello")]
+    with (
+        patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+        tool_warnings = [w for w in caught if "Ignoring tools" in str(w.message)]
+        assert len(tool_warnings) == 0

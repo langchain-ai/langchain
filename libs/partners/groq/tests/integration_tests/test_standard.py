@@ -49,6 +49,10 @@ class TestGroq(ChatModelIntegrationTests):
     def supports_json_mode(self) -> bool:
         return True
 
+    @property
+    def raises_on_context_overflow(self) -> bool:
+        return True
+
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_json_schema(
