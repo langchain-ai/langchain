@@ -22,6 +22,10 @@ class TestMistralStandard(ChatModelIntegrationTests):
     def supports_json_mode(self) -> bool:
         return True
 
+    @property
+    def raises_on_context_overflow(self) -> bool:
+        return True
+
     @pytest.mark.xfail(reason=("MistralAI inconsistently fails to return valid fields"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         super().test_structured_output_pydantic_2_v1(model)

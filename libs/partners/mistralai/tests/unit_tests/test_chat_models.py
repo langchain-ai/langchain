@@ -1,6 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
+import warnings
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
@@ -8,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -18,14 +20,17 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.tools import tool
 from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    MistralContextOverflowError,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
     _format_message_content,
+    _handle_mistral_http_error,
     _is_valid_mistral_tool_call_id,
     _sanitize_chat_completions_content,
 )
@@ -602,3 +607,145 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
+
+
+_CONTEXT_OVERFLOW_MESSAGE = (
+    "Error response 400 while fetching https://api.mistral.ai/v1/chat/completions: "
+    '{"object":"error","message":"The number of tokens in the prompt exceeds '
+    'the model\'s maximum context length.","type":"invalid_request_error",'
+    '"code":"context_length_exceeded"}'
+)
+
+
+def _context_overflow_http_error() -> httpx.HTTPStatusError:
+    response = MagicMock()
+    response.status_code = 400
+    response.request = MagicMock()
+    return httpx.HTTPStatusError(
+        _CONTEXT_OVERFLOW_MESSAGE,
+        request=response.request,
+        response=response,
+    )
+
+
+def test_handle_mistral_http_error_context_length() -> None:
+    """Context length errors map to `ContextOverflowError`."""
+    with pytest.raises(MistralContextOverflowError) as exc_info:
+        _handle_mistral_http_error(_context_overflow_http_error())
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_handle_mistral_http_error_other_errors_reraise() -> None:
+    """Non-context errors are re-raised unchanged."""
+    response = MagicMock()
+    response.status_code = 400
+    response.request = MagicMock()
+    error = httpx.HTTPStatusError(
+        "Error response 400: invalid model",
+        request=response.request,
+        response=response,
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        _handle_mistral_http_error(error)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Context overflow errors surface on invoke."""
+    with (
+        patch(
+            "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+            side_effect=_context_overflow_http_error(),
+        ),
+        pytest.raises(ContextOverflowError),
+    ):
+        llm = ChatMistralAI(model="mistral-large-latest", max_retries=0)  # type: ignore[call-arg]
+        llm.invoke([HumanMessage(content="test")])
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Context overflow errors surface on ainvoke."""
+    llm = ChatMistralAI(model="mistral-large-latest", max_retries=0)  # type: ignore[call-arg]
+    with (
+        patch(
+            "langchain_mistralai.chat_models.acompletion_with_retry",
+            side_effect=_context_overflow_http_error(),
+        ),
+        pytest.raises(ContextOverflowError),
+    ):
+        await llm.ainvoke([HumanMessage(content="test")])
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Context overflow errors surface on stream."""
+    with (
+        patch(
+            "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+            side_effect=_context_overflow_http_error(),
+        ),
+        pytest.raises(ContextOverflowError),
+    ):
+        llm = ChatMistralAI(model="mistral-large-latest", max_retries=0)  # type: ignore[call-arg]
+        list(llm.stream([HumanMessage(content="test")]))
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """`ContextOverflowError` is also catchable as `httpx.HTTPStatusError`."""
+    with (
+        patch(
+            "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+            side_effect=_context_overflow_http_error(),
+        ),
+        pytest.raises(httpx.HTTPStatusError) as exc_info,
+    ):
+        llm = ChatMistralAI(model="mistral-large-latest", max_retries=0)  # type: ignore[call-arg]
+        llm.invoke([HumanMessage(content="test")])
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+@tool
+def get_weather(location: str) -> str:
+    """Get the weather for a location."""
+    return f"Weather in {location}: sunny"
+
+
+class _MockTiktokenEncoding:
+    def encode(self, text: str) -> list[int]:
+        return list(range(max(len(text) // 4, 1)))
+
+
+def test_get_num_tokens_from_messages_without_tools() -> None:
+    """Token count without tools returns a positive integer."""
+    llm = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
+    messages = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="Hello world"),
+    ]
+    with patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()):
+        count = llm.get_num_tokens_from_messages(messages)
+    assert count > 0
+    assert isinstance(count, int)
+
+
+def test_get_num_tokens_from_messages_with_tools() -> None:
+    """Token count with tools is higher than without."""
+    llm = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
+    messages = [HumanMessage(content="What's the weather?")]
+    with patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()):
+        count_no_tools = llm.get_num_tokens_from_messages(messages)
+        count_with_tools = llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+    assert count_with_tools > count_no_tools
+    assert count_with_tools - count_no_tools >= 20
+
+
+def test_get_num_tokens_from_messages_no_warning_with_tools() -> None:
+    """Tool schemas are counted without the base class warning."""
+    llm = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
+    messages = [HumanMessage(content="Hello")]
+    with (
+        patch("tiktoken.get_encoding", return_value=_MockTiktokenEncoding()),
+        warnings.catch_warnings(record=True) as caught,
+    ):
+        warnings.simplefilter("always")
+        llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+        tool_warnings = [w for w in caught if "Ignoring tools" in str(w.message)]
+        assert len(tool_warnings) == 0

@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NoReturn,
     cast,
 )
 
@@ -23,6 +24,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -101,6 +103,45 @@ _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+class MistralContextOverflowError(httpx.HTTPStatusError, ContextOverflowError):
+    """HTTPStatusError raised when input exceeds Mistral's context limit."""
+
+
+def _is_mistral_context_overflow_error(error_message: str) -> bool:
+    error_str = error_message.lower()
+    return (
+        "context_length_exceeded" in error_str
+        or ("tokens" in error_str and "exceed" in error_str)
+        or ("context" in error_str and "length" in error_str)
+        or "reduce the length of the messages" in error_str
+    )
+
+
+def _handle_mistral_http_error(e: httpx.HTTPStatusError) -> NoReturn:
+    """Handle Mistral HTTP errors."""
+    if _is_mistral_context_overflow_error(str(e)):
+        raise MistralContextOverflowError(
+            message=str(e),
+            request=e.request,
+            response=e.response,
+        ) from e
+    raise e
+
+
+def _count_message_content_tokens(
+    content: str | list[str | dict[str, Any]], encoding: Any
+) -> int:
+    if isinstance(content, str):
+        return len(encoding.encode(content))
+    total = 0
+    for block in content:
+        if isinstance(block, str):
+            total += len(encoding.encode(block))
+        elif isinstance(block, dict) and block.get("type") == "text":
+            total += len(encoding.encode(block.get("text", "")))
+    return total
 
 
 def _create_retry_decorator(
@@ -187,10 +228,12 @@ def _raise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
-            msg,
-            request=response.request,
-            response=response,
+        _handle_mistral_http_error(
+            httpx.HTTPStatusError(
+                msg,
+                request=response.request,
+                response=response,
+            )
         )
 
 
@@ -202,10 +245,12 @@ async def _araise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
-            msg,
-            request=response.request,
-            response=response,
+        _handle_mistral_http_error(
+            httpx.HTTPStatusError(
+                msg,
+                request=response.request,
+                response=response,
+            )
         )
 
 
@@ -705,6 +750,36 @@ class ChatMistralAI(BaseChatModel):
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model) or None
 
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+    ) -> int:
+        """Return the number of tokens used, including tool schemas when provided.
+
+        Uses tiktoken's `cl100k_base` encoding as an approximation. Exact token counts
+        vary by model.
+        """
+        try:
+            import tiktoken  # noqa: PLC0415
+        except ImportError:
+            return super().get_num_tokens_from_messages(messages, tools=tools)
+
+        encoding = tiktoken.get_encoding("cl100k_base")
+        total = 0
+        for message in messages:
+            total += 4
+            total += _count_message_content_tokens(message.content, encoding)
+        if tools is not None:
+            for tool in tools:
+                try:
+                    tool_schema = convert_to_openai_tool(tool)
+                    schema_str = json.dumps(tool_schema)
+                    total += len(encoding.encode(schema_str)) + 3
+                except Exception:  # noqa: BLE001
+                    total += 100
+        return total
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -715,9 +790,12 @@ class ChatMistralAI(BaseChatModel):
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        )
+        try:
+            response = self.completion_with_retry(
+                messages=message_dicts, run_manager=run_manager, **params
+            )
+        except httpx.HTTPStatusError as e:
+            _handle_mistral_http_error(e)
         return self._create_chat_result(response)
 
     def _create_chat_result(self, response: dict) -> ChatResult:
@@ -771,9 +849,13 @@ class ChatMistralAI(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         index = -1
         index_type = ""
-        for chunk in self.completion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        ):
+        try:
+            stream = self.completion_with_retry(
+                messages=message_dicts, run_manager=run_manager, **params
+            )
+        except httpx.HTTPStatusError as e:
+            _handle_mistral_http_error(e)
+        for chunk in stream:
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(
@@ -801,9 +883,13 @@ class ChatMistralAI(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         index = -1
         index_type = ""
-        async for chunk in await acompletion_with_retry(
-            self, messages=message_dicts, run_manager=run_manager, **params
-        ):
+        try:
+            stream = await acompletion_with_retry(
+                self, messages=message_dicts, run_manager=run_manager, **params
+            )
+        except httpx.HTTPStatusError as e:
+            _handle_mistral_http_error(e)
+        async for chunk in stream:
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(
@@ -828,9 +914,12 @@ class ChatMistralAI(BaseChatModel):
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = await acompletion_with_retry(
-            self, messages=message_dicts, run_manager=run_manager, **params
-        )
+        try:
+            response = await acompletion_with_retry(
+                self, messages=message_dicts, run_manager=run_manager, **params
+            )
+        except httpx.HTTPStatusError as e:
+            _handle_mistral_http_error(e)
         return self._create_chat_result(response)
 
     def bind_tools(
