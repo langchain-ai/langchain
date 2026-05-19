@@ -196,6 +196,17 @@ class ChatModelTests(BaseStandardTests):
         return True
 
     @property
+    def raises_on_context_overflow(self) -> bool:
+        """Whether the chat model raises `ContextOverflowError` on context overflow.
+
+        Override and return `True` if your integration maps provider context-overflow
+        errors to `langchain_core.exceptions.ContextOverflowError`.
+
+        This enables automatic `SummarizationMiddleware` integration.
+        """
+        return False
+
+    @property
     def supports_anthropic_inputs(self) -> bool:
         """Whether the chat model supports Anthropic-style inputs."""
         return False

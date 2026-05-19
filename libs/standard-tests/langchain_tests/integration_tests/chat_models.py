@@ -17,6 +17,7 @@ from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,
     ChatModelStream,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -3532,3 +3533,51 @@ class ChatModelIntegrationTests(ChatModelTests):
                 or "こ" in customer_name_jp
                 or "ん" in customer_name_jp
             ), f"Japanese Unicode characters not found in: {customer_name_jp}"
+
+    def test_context_overflow_raises_correct_error(
+        self, model: BaseChatModel
+    ) -> None:
+        """Test that the model raises `ContextOverflowError` on context limit exceeded.
+
+        This verifies the integration with `SummarizationMiddleware`, which
+        auto-triggers when `ContextOverflowError` is raised.
+
+        If your model does not support this, override `raises_on_context_overflow`
+        to return `False` and this test will be skipped.
+        """
+        if not self.raises_on_context_overflow:
+            pytest.skip(
+                "raises_on_context_overflow is False. "
+                "Set to True and implement ContextOverflowError mapping to enable."
+            )
+
+        model_profile = model.profile
+        if model_profile and model_profile.get("max_input_tokens"):
+            target_tokens = model_profile["max_input_tokens"] + 1000
+        else:
+            target_tokens = 50_000
+
+        overflow_content = "Repeat this word: hello. " * target_tokens
+        messages = [HumanMessage(content=overflow_content)]
+
+        with pytest.raises(ContextOverflowError):
+            model.invoke(messages)
+
+    async def test_context_overflow_raises_correct_error_async(
+        self, model: BaseChatModel
+    ) -> None:
+        """Async variant of `test_context_overflow_raises_correct_error`."""
+        if not self.raises_on_context_overflow:
+            pytest.skip("raises_on_context_overflow is False.")
+
+        model_profile = model.profile
+        if model_profile and model_profile.get("max_input_tokens"):
+            target_tokens = model_profile["max_input_tokens"] + 1000
+        else:
+            target_tokens = 50_000
+
+        overflow_content = "Repeat this word: hello. " * target_tokens
+        messages = [HumanMessage(content=overflow_content)]
+
+        with pytest.raises(ContextOverflowError):
+            await model.ainvoke(messages)
