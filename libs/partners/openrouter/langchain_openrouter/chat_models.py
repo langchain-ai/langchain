@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import warnings
+
+import httpx
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, cast
@@ -69,6 +71,10 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openrouter._client_utils import (
+    get_default_async_httpx_client,
+    get_default_httpx_client,
+)
 from langchain_openrouter.data._profiles import _PROFILES
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -141,6 +147,20 @@ class ChatOpenRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)
     """Underlying SDK client (`openrouter.OpenRouter`)."""
+
+    http_client: Any = Field(default=None, exclude=True)
+    """Optional custom `httpx.Client` to use for sync requests.
+    
+    If not provided, a cached default client will be shared across all
+    instances with the same configuration.
+    """
+
+    http_async_client: Any = Field(default=None, exclude=True)
+    """Optional custom `httpx.AsyncClient` to use for async requests.
+    
+    If not provided, a cached default client will be shared across all
+    instances with the same configuration.
+    """
 
     openrouter_api_key: SecretStr | None = Field(
         alias="api_key",
@@ -386,17 +406,27 @@ class ChatOpenRouter(BaseChatModel):
             extra_headers["X-Title"] = self.app_title
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
-        if extra_headers:
-            import httpx  # noqa: PLC0415
-
-            client_kwargs["client"] = httpx.Client(
-                headers=extra_headers, follow_redirects=True
+        # Use cached default httpx clients to avoid per-instance connection
+        # pool leaks.  Pass extra_headers so attribution data is included on
+        # every request without constructing a fresh client each time.
+        # If the user has supplied an explicit http_client / http_async_client,
+        # use those instead (matching ChatOpenAI's public surface).
+        client_kwargs["client"] = (
+            self.http_client
+            or get_default_httpx_client(
+                base_url=self.openrouter_api_base,
+                timeout=httpx.USE_DEFAULT if self.request_timeout is None else httpx.Timeout(timeout=self.request_timeout / 1000),
+                headers=extra_headers or None,
             )
-            client_kwargs["async_client"] = httpx.AsyncClient(
-                headers=extra_headers, follow_redirects=True
+        )
+        client_kwargs["async_client"] = (
+            self.http_async_client
+            or get_default_async_httpx_client(
+                base_url=self.openrouter_api_base,
+                timeout=httpx.USE_DEFAULT if self.request_timeout is None else httpx.Timeout(timeout=self.request_timeout / 1000),
+                headers=extra_headers or None,
             )
-        if self.request_timeout is not None:
-            client_kwargs["timeout_ms"] = self.request_timeout
+        )
         if self.max_retries > 0:
             client_kwargs["retry_config"] = RetryConfig(
                 strategy="backoff",
