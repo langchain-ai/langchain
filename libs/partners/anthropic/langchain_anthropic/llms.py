@@ -288,6 +288,10 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             stop_sequences=stop if stop else None,
             **params,
         )
+        if not response.content:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty content list
         return response.content[0].text
 
     def convert_prompt(self, prompt: PromptValue) -> str:

@@ -332,6 +332,10 @@ def test_stateful_api() -> None:
         "what's my name", previous_response_id=response.response_metadata["id"]
     )
     assert isinstance(second_response.content, list)
+    if not second_response.content:
+        raise ValueError(
+            "LLM returned empty response"
+        )  # pact: guard empty content list
     assert "bobo" in second_response.content[0]["text"].lower()  # type: ignore
 
 
