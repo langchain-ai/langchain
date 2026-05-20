@@ -15,15 +15,14 @@ from typing import (
 )
 
 import httpx
-from fireworks.client import AsyncFireworks, Fireworks  # type: ignore[import-untyped]
-from fireworks.client.error import (  # type: ignore[import-untyped]
+from fireworks import (
     APITimeoutError,
-    BadGatewayError,
+    AsyncFireworks,
+    BadRequestError,
+    Fireworks,
     FireworksError,
     InternalServerError,
-    InvalidRequestError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -410,20 +409,19 @@ def _convert_chunk_to_message_chunk(
 class _RetryableHTTPStatusError(FireworksError):
     """Internal marker for 5xx `httpx.HTTPStatusError` responses.
 
-    The Fireworks SDK maps a subset of status codes (500, 502, 503) to typed
-    exceptions but lets others (504, 507-511, Cloudflare-edge 520-599)
-    propagate as raw `httpx.HTTPStatusError`. Promoting those to this marker
-    inside `_call` keeps the retryable set expressible as a list of classes
-    for `create_base_retry_decorator`, preserving parity with `ChatMistralAI`.
+    The 1.x SDK wraps every status response into a typed `APIStatusError`
+    subclass, so this path is defense-in-depth: it only fires when a raw
+    `httpx.HTTPStatusError` escapes the SDK (e.g., a custom `http_client` or
+    monkey-patched transport raises one directly). Promoting it here keeps the
+    retryable set expressible as a list of classes for
+    `create_base_retry_decorator`.
     """
 
 
 _RETRYABLE_ERRORS: tuple[type[BaseException], ...] = (
     APITimeoutError,
-    BadGatewayError,
     InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
     httpx.TimeoutException,
     httpx.TransportError,
     _RetryableHTTPStatusError,
@@ -438,14 +436,16 @@ def _promote_http_status_error(exc: httpx.HTTPStatusError) -> NoReturn:
     raise exc
 
 
-class FireworksContextOverflowError(InvalidRequestError, ContextOverflowError):
-    """`InvalidRequestError` raised when input exceeds Fireworks's context limit."""
+class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
+    """`BadRequestError` raised when input exceeds Fireworks's context limit."""
 
 
-def _handle_fireworks_invalid_request(e: InvalidRequestError) -> NoReturn:
+def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
     """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
     if "prompt is too long" in str(e):
-        raise FireworksContextOverflowError(str(e)) from e
+        raise FireworksContextOverflowError(
+            str(e), response=e.response, body=e.body
+        ) from e
     raise e
 
 
@@ -461,14 +461,13 @@ def _create_retry_decorator(
 ) -> Callable[[Any], Any]:
     """Return a tenacity retry decorator for Fireworks SDK calls.
 
-    Retries are implemented here because the pinned Fireworks SDK 0.x does
-    not honor its own `_max_retries` attribute on completion resources.
+    Retries live here rather than in the SDK so each attempt is visible to the
+    LangChain `run_manager.on_retry` callback. The SDK's own retry layer is
+    suppressed via `max_retries=0` on the client; see `validate_environment`.
     """
     # `max_retries` counts retries *after* the initial attempt.
     # `create_base_retry_decorator` forwards its `max_retries` to
     # `stop_after_attempt`, which counts total attempts — so offset by 1.
-    # Note: this diverges from `ChatMistralAI`, which passes the raw value;
-    # the fireworks field docstring is the source of truth here.
     # `None` and `0` both mean "single attempt, no retries".
     attempts = (llm.max_retries + 1) if llm.max_retries else 1
     return create_base_retry_decorator(
@@ -478,6 +477,36 @@ def _create_retry_decorator(
     )
 
 
+def _prepare_sdk_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Move fields the 1.x SDK does not model into `extra_body`.
+
+    The Stainless-generated `chat.completions.create` signature has a fixed set
+    of typed parameters. Fireworks accepts additional fields on the wire (notably
+    `stream_options.include_usage`) that the SDK schema does not declare. The
+    SDK exposes `extra_body` precisely for this — merge anything that looks
+    extra-body-shaped into it so it lands in the JSON request body.
+
+    If a caller supplies both `extra_body={"stream_options": ...}` and a
+    top-level `stream_options=...`, the value already in `extra_body` wins
+    (callers using `extra_body` are presumed to want explicit control); the
+    discarded top-level value is logged.
+    """
+    extra_body = dict(kwargs.pop("extra_body", None) or {})
+    top_level_stream_options = kwargs.pop("stream_options", None)
+    if top_level_stream_options is not None:
+        if "stream_options" in extra_body:
+            logger.warning(
+                "Both `extra_body['stream_options']` and a top-level "
+                "`stream_options` were supplied; using `extra_body`'s value "
+                "and discarding the top-level value.",
+            )
+        else:
+            extra_body["stream_options"] = top_level_stream_options
+    if extra_body:
+        kwargs["extra_body"] = extra_body
+    return kwargs
+
+
 def _completion_with_retry(
     llm: ChatFireworks,
     run_manager: CallbackManagerForLLMRun | None = None,
@@ -485,6 +514,7 @@ def _completion_with_retry(
 ) -> Any:
     """Retry the sync completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    kwargs = _prepare_sdk_kwargs(kwargs)
 
     @retry_decorator
     def _call() -> Any:
@@ -517,12 +547,17 @@ async def _acompletion_with_retry(
 ) -> Any:
     """Retry the async completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    kwargs = _prepare_sdk_kwargs(kwargs)
 
     @retry_decorator
     async def _call() -> Any:
         if kwargs.get("stream"):
             try:
-                result = llm.async_client.acreate(**kwargs)
+                # 1.x async `create()` is a coroutine that resolves to an
+                # `AsyncStream` when `stream=True`. Await it, then advance the
+                # async iterator once inside the retry boundary so transport
+                # errors surface here rather than at first downstream consumer.
+                result = await llm.async_client.create(**kwargs)
                 agen = result.__aiter__()
                 first = await agen.__anext__()
             except StopAsyncIteration:
@@ -531,7 +566,7 @@ async def _acompletion_with_retry(
                 _promote_http_status_error(e)
             return _aprepend_chunk(first, agen)
         try:
-            return await llm.async_client.acreate(**kwargs)
+            return await llm.async_client.create(**kwargs)
         except httpx.HTTPStatusError as e:
             _promote_http_status_error(e)
 
@@ -549,11 +584,6 @@ async def _aprepend_chunk(first: Any, rest: AsyncIterator[Any]) -> AsyncIterator
         yield item
 
 
-# This is basically a copy and replace for ChatFireworks, except
-# - I needed to gut out tiktoken and some of the token estimation logic
-# (not sure how important it is)
-# - Environment variable is different
-# we should refactor into some OpenAI-like class in the future
 class ChatFireworks(BaseChatModel):
     """`Fireworks` Chat large language models API.
 
@@ -598,8 +628,19 @@ class ChatFireworks(BaseChatModel):
         return True
 
     client: Any = Field(default=None, exclude=True)
+    """Internal `fireworks.Fireworks().chat.completions` resource.
+
+    Constructed with `max_retries=0` so retries are owned by
+    `_create_retry_decorator` (which surfaces each attempt to the LangChain
+    `run_manager`). Callers reaching for this directly should set their own
+    retry layer.
+    """
 
     async_client: Any = Field(default=None, exclude=True)
+    """Internal `fireworks.AsyncFireworks().chat.completions` resource.
+
+    Constructed with `max_retries=0`; see `client`.
+    """
 
     model_name: str = Field(alias="model")
     """Model name to use."""
@@ -720,16 +761,33 @@ class ChatFireworks(BaseChatModel):
             msg = "n must be 1 when streaming."
             raise ValueError(msg)
 
-        client_params = {
-            "api_key": self.fireworks_api_key.get_secret_value(),
-            "base_url": self.fireworks_api_base,
-            "timeout": self.request_timeout,
-        }
-
+        api_key = self.fireworks_api_key.get_secret_value()
+        base_url = self.fireworks_api_base
+        # 0.x accepted a `(connect, read)` tuple. 1.x's SDK only accepts a
+        # float, `httpx.Timeout`, or `None` — normalize so existing user code
+        # keeps working.
+        if isinstance(self.request_timeout, tuple):
+            connect, read = self.request_timeout
+            timeout: Any = httpx.Timeout(read, connect=connect)
+        else:
+            timeout = self.request_timeout
+        # `langchain-fireworks` owns retry/backoff via `_create_retry_decorator`
+        # so the LangChain `run_manager` sees each attempt. Suppress the
+        # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
-            self.client = Fireworks(**client_params).chat.completions
+            self.client = Fireworks(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=0,
+            ).chat.completions
         if not self.async_client:
-            self.async_client = AsyncFireworks(**client_params).chat.completions
+            self.async_client = AsyncFireworks(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=0,
+            ).chat.completions
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
@@ -808,7 +866,7 @@ class ChatFireworks(BaseChatModel):
             stream = _completion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
             )
-        except InvalidRequestError as e:
+        except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         for chunk in stream:
             if not isinstance(chunk, dict):
@@ -858,7 +916,7 @@ class ChatFireworks(BaseChatModel):
             response = _completion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
             )
-        except InvalidRequestError as e:
+        except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         return self._create_chat_result(response)
 
@@ -923,7 +981,7 @@ class ChatFireworks(BaseChatModel):
             stream = await _acompletion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
             )
-        except InvalidRequestError as e:
+        except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         async for chunk in stream:
             if not isinstance(chunk, dict):
@@ -976,7 +1034,7 @@ class ChatFireworks(BaseChatModel):
             response = await _acompletion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
             )
-        except InvalidRequestError as e:
+        except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         return self._create_chat_result(response)
 
