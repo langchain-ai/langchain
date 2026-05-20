@@ -360,11 +360,13 @@ def _format_data_content_block(block: dict) -> dict:
                 },
             }
         elif "base64" in block or block.get("source_type") == "base64":
+            # Anthropic's API only accepts "application/pdf" as the media_type
+            # for base64 document sources. Ignore any user-provided mime_type.
             formatted_block = {
                 "type": "document",
                 "source": {
                     "type": "base64",
-                    "media_type": block.get("mime_type") or "application/pdf",
+                    "media_type": "application/pdf",
                     "data": block.get("base64") or block.get("data", ""),
                 },
             }

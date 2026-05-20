@@ -1106,6 +1106,46 @@ def test__format_messages_with_cache_control() -> None:
     ]
     assert actual_messages == expected_messages
 
+    # Test that non-PDF mime_type on base64 file blocks is overridden to application/pdf
+    # (Anthropic's API only accepts application/pdf for base64 document sources)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "summarize",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "text/csv",
+                    "base64": "<base64 csv data>",
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "summarize",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 csv data>",
+                    },
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
     # Also test file inputs
     ## Images
     for block in [
