@@ -1,6 +1,6 @@
 import re
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
@@ -10,8 +10,28 @@ from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
+    ToolCallReviewRequest,
 )
 from langchain.agents.middleware.types import AgentState
+
+
+def _make_request(
+    tool_call: dict[str, Any],
+    state: AgentState[Any] | None = None,
+    runtime: Runtime | None = None,
+) -> MagicMock:
+    """Build a mock ToolCallRequest for wrap_tool_call tests."""
+    req = MagicMock()
+    req.tool_call = tool_call
+    req.state = state or AgentState[Any](messages=[])
+    req.runtime = runtime or Runtime()
+
+    def _override(**kwargs: Any) -> MagicMock:
+        new_tc = kwargs.get("tool_call", tool_call)
+        return _make_request(new_tc, req.state, req.runtime)
+
+    req.override.side_effect = _override
+    return req
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -883,3 +903,315 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+
+
+# ---------------------------------------------------------------------------
+# interrupt_mode="per_call" — wrap_tool_call behaviour
+# ---------------------------------------------------------------------------
+
+
+def test_per_call_after_model_is_noop() -> None:
+    """after_model returns None in per_call mode regardless of pending tool calls."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": True},
+        interrupt_mode="per_call",
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+    result = middleware.after_model(state, Runtime())
+    assert result is None
+
+
+def test_batch_mode_wrap_tool_call_passthrough() -> None:
+    """wrap_tool_call is a no-op passthrough in batch mode."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
+    expected = ToolMessage(content="result", name="test_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "test_tool", "args": {}, "id": "1"})
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
+        result = middleware.wrap_tool_call(request, handler)
+        mock_interrupt.assert_not_called()
+
+    handler.assert_called_once_with(request)
+    assert result is expected
+
+
+def test_per_call_approve() -> None:
+    """Approve decision calls the handler unchanged."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve"]}},
+        interrupt_mode="per_call",
+    )
+    expected = ToolMessage(content="ok", name="test_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "test_tool", "args": {"x": 1}, "id": "1"})
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"type": "approve"},
+    ):
+        result = middleware.wrap_tool_call(request, handler)
+
+    handler.assert_called_once()
+    assert result is expected
+
+
+def test_per_call_edit() -> None:
+    """Edit decision calls handler with a modified request; original request is not mutated."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["edit"]}},
+        interrupt_mode="per_call",
+    )
+    expected = ToolMessage(content="ok", name="test_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "test_tool", "args": {"x": 1}, "id": "1"})
+
+    edit_decision = {
+        "type": "edit",
+        "edited_action": Action(name="test_tool", args={"x": 99}),
+    }
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value=edit_decision,
+    ):
+        result = middleware.wrap_tool_call(request, handler)
+
+    handler.assert_called_once()
+    called_request = handler.call_args[0][0]
+    assert called_request.tool_call["args"] == {"x": 99}
+    assert called_request.tool_call["id"] == "1"
+    assert result is expected
+
+
+def test_per_call_reject() -> None:
+    """Reject decision returns a synthetic error ToolMessage; handler is never called."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["reject"]}},
+        interrupt_mode="per_call",
+    )
+    handler = MagicMock()
+    request = _make_request({"name": "test_tool", "args": {}, "id": "1"})
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"type": "reject", "message": "Not allowed"},
+    ):
+        result = middleware.wrap_tool_call(request, handler)
+
+    handler.assert_not_called()
+    assert isinstance(result, ToolMessage)
+    assert result.content == "Not allowed"
+    assert result.status == "error"
+    assert result.tool_call_id == "1"
+
+
+def test_per_call_respond() -> None:
+    """Respond decision returns a synthetic success ToolMessage; handler is never called."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"ask_user": {"allowed_decisions": ["respond"]}},
+        interrupt_mode="per_call",
+    )
+    handler = MagicMock()
+    request = _make_request({"name": "ask_user", "args": {"q": "?"}, "id": "1"})
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"type": "respond", "message": "My answer"},
+    ):
+        result = middleware.wrap_tool_call(request, handler)
+
+    handler.assert_not_called()
+    assert isinstance(result, ToolMessage)
+    assert result.content == "My answer"
+    assert result.status == "success"
+    assert result.tool_call_id == "1"
+
+
+def test_per_call_auto_approve_unknown_tool() -> None:
+    """Tool not in interrupt_on passes straight through without an interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"known_tool": True},
+        interrupt_mode="per_call",
+    )
+    expected = ToolMessage(content="r", name="unknown_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "unknown_tool", "args": {}, "id": "1"})
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
+        result = middleware.wrap_tool_call(request, handler)
+        mock_interrupt.assert_not_called()
+
+    handler.assert_called_once_with(request)
+    assert result is expected
+
+
+def test_per_call_interrupt_payload_is_single_item() -> None:
+    """Interrupt payload is a ToolCallReviewRequest (not a batched HITLRequest)."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve"]}},
+        interrupt_mode="per_call",
+    )
+    handler = MagicMock(
+        return_value=ToolMessage(content="ok", name="test_tool", tool_call_id="1")
+    )
+    request = _make_request({"name": "test_tool", "args": {"x": 1}, "id": "1"})
+
+    captured: Any = None
+
+    def capture(payload: Any) -> Any:
+        nonlocal captured
+        captured = payload
+        return {"type": "approve"}
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=capture):
+        middleware.wrap_tool_call(request, handler)
+
+    assert captured is not None
+    assert "action_request" in captured
+    assert "review_config" in captured
+    assert captured["action_request"]["name"] == "test_tool"
+    assert captured["review_config"]["allowed_decisions"] == ["approve"]
+    # Must NOT look like a batched HITLRequest
+    assert "action_requests" not in captured
+    assert "decisions" not in captured
+
+
+# ---------------------------------------------------------------------------
+# when predicate — batch and per_call modes
+# ---------------------------------------------------------------------------
+
+
+def test_when_predicate_batch_skips_interrupt_when_false() -> None:
+    """`when` returning False prevents the tool call from joining the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": False}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
+        result = middleware.after_model(state, Runtime())
+        mock_interrupt.assert_not_called()
+
+    assert result is None
+
+
+def test_when_predicate_batch_fires_interrupt_when_true() -> None:
+    """`when` returning True allows the tool call to trigger the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": True}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "approve"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+
+
+def test_when_predicate_per_call_skips_interrupt_when_false() -> None:
+    """`when` returning False passes the call straight through in per_call mode."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+            )
+        },
+        interrupt_mode="per_call",
+    )
+    expected = ToolMessage(content="ok", name="test_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "test_tool", "args": {"risky": False}, "id": "1"})
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
+        result = middleware.wrap_tool_call(request, handler)
+        mock_interrupt.assert_not_called()
+
+    handler.assert_called_once_with(request)
+    assert result is expected
+
+
+def test_when_predicate_per_call_fires_interrupt_when_true() -> None:
+    """`when` returning True triggers the interrupt in per_call mode."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+            )
+        },
+        interrupt_mode="per_call",
+    )
+    expected = ToolMessage(content="ok", name="test_tool", tool_call_id="1")
+    handler = MagicMock(return_value=expected)
+    request = _make_request({"name": "test_tool", "args": {"risky": True}, "id": "1"})
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"type": "approve"},
+    ):
+        result = middleware.wrap_tool_call(request, handler)
+
+    handler.assert_called_once()
+    assert result is expected
+
+
+def test_when_predicate_receives_correct_args() -> None:
+    """The when predicate receives (tool_call, state, runtime) with correct values."""
+    captured_args: list[Any] = []
+
+    def capture_when(tc: Any, state: Any, runtime: Any) -> bool:
+        captured_args.extend([tc, state, runtime])
+        return True
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=capture_when,
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"val": 42}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+    runtime = Runtime()
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "approve"}]},
+    ):
+        middleware.after_model(state, runtime)
+
+    tool_call_arg, state_arg, runtime_arg = captured_args
+    assert tool_call_arg["name"] == "test_tool"
+    assert tool_call_arg["args"] == {"val": 42}
+    assert state_arg is state
+    assert runtime_arg is runtime
