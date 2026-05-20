@@ -3053,15 +3053,15 @@ def test_no_task_budget_no_beta() -> None:
         assert "task-budgets-2026-03-13" not in betas
 
 
-def test_anthropic_stream_v2_lifecycle() -> None:
+def test_anthropic_stream_events_v3_lifecycle() -> None:
     """Validate lifecycle events across a thinking + text + tool_use stream.
 
     Anthropic emits raw `content_block_start` / `content_block_delta` /
     `content_block_stop` events with integer `index` fields, interleaved
     with `message_start` and `message_delta`. This test threads a
     realistic event sequence through `_stream` via a mocked raw client
-    and asserts that `stream_v2` produces a spec-conformant event
-    stream: paired start/finish per block, no interleaving, sequential
+    and asserts that `stream_events(version="v3")` produces a spec-conformant
+    event stream: paired start/finish per block, no interleaving, sequential
     `uint` wire indices.
     """
     from unittest.mock import patch
@@ -3182,21 +3182,21 @@ def test_anthropic_stream_v2_lifecycle() -> None:
         return events
 
     with patch.object(llm, "_create", mock_create):
-        stream_events = list(llm.stream_v2("Test query"))
+        stream_events = list(llm.stream_events("Test query", version="v3"))
 
     assert_valid_event_stream(stream_events)
 
     finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
-    types = [f["content_block"]["type"] for f in finishes]
+    types = [f["content"]["type"] for f in finishes]
     assert types == ["reasoning", "text", "tool_call"]
 
     wire_indices = [f["index"] for f in finishes]
     assert wire_indices == [0, 1, 2]
 
     # Content accumulation reaches content-block-finish intact.
-    reasoning_block = cast("dict[str, Any]", finishes[0]["content_block"])
-    text_block = cast("dict[str, Any]", finishes[1]["content_block"])
-    tool_block = cast("dict[str, Any]", finishes[2]["content_block"])
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content"])
+    text_block = cast("dict[str, Any]", finishes[1]["content"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content"])
     assert reasoning_block["reasoning"] == "Let me think."
     assert text_block["text"] == "The answer is 42."
     assert tool_block["args"] == {"q": "weather"}
@@ -3206,6 +3206,6 @@ def test_anthropic_stream_v2_lifecycle() -> None:
     # (protocol 0.0.9 moved the finish reason off the top-level event
     # and into `metadata`, where the bridge deposits the provider's raw
     # `stop_reason` alongside other response metadata).
-    message_finish = stream_events[-1]
+    message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"

@@ -16,7 +16,7 @@ from langchain_core.language_models.chat_model_stream import (
 )
 
 if TYPE_CHECKING:
-    from langchain_protocol.protocol import ContentBlockFinishData, MessagesData
+    from langchain_protocol.protocol import ContentBlockFinishData
 
 # ---------------------------------------------------------------------------
 # Projection unit tests
@@ -244,7 +244,7 @@ class TestAsyncProjection:
         """Concurrent `stream.text` + `await stream.output` both drive the pump."""
         stream = AsyncChatModelStream(message_id="m1")
 
-        events: list[MessagesData] = [
+        events: list[dict[str, Any]] = [
             {
                 "event": "message-start",
                 "role": "ai",
@@ -313,7 +313,7 @@ class TestChatModelStream:
 
     def test_text_deltas_via_pump(self) -> None:
         stream = ChatModelStream()
-        events: list[MessagesData] = [
+        events: list[dict[str, Any]] = [
             {"event": "message-start", "role": "ai"},
             {
                 "event": "content-block-delta",
@@ -363,7 +363,7 @@ class TestChatModelStream:
             }
         )
         stream.dispatch(
-            {  # type: ignore[arg-type,misc]
+            {
                 "event": "content-block-delta",
                 "index": 0,
                 "content_block": {

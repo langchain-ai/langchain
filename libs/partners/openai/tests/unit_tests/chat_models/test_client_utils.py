@@ -810,3 +810,21 @@ def test_client_build_applies_socket_options_when_user_opts_in(
     assert all(tuple(opts) == tuple(explicit) for opts in recorded), (
         f"expected user-supplied opts, got {recorded!r}"
     )
+
+
+def test_sync_client_wrapper_del_handles_uninitialized_client() -> None:
+    """Test sync wrapper finalizer handles clients without initialized state."""
+    client = _client_utils._SyncHttpxClientWrapper.__new__(
+        _client_utils._SyncHttpxClientWrapper
+    )
+
+    client.__del__()
+
+
+async def test_async_client_wrapper_del_handles_uninitialized_client() -> None:
+    """Test async wrapper finalizer handles clients without initialized state."""
+    client = _client_utils._AsyncHttpxClientWrapper.__new__(
+        _client_utils._AsyncHttpxClientWrapper
+    )
+
+    client.__del__()

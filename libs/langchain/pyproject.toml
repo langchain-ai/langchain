@@ -84,9 +84,9 @@ test = [
     "requests-mock>=1.11.0,<2.0.0",
     "toml>=0.10.2,<1.0.0",
     "packaging>=24.2.0,<27.0.0",
-    "langchain-tests",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
     "langchain-openai",
 ]
 test_integration = [
@@ -94,8 +94,8 @@ test_integration = [
     "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.16.0",
@@ -113,16 +113,16 @@ typing = [
     "types-chardet>=5.0.4.6,<6.0.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
     "fastapi<1.0.0,>=0.116.1",
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
     "setuptools>=67.6.1,<83.0.0",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 
 
