@@ -13,7 +13,7 @@ import pytest as pytest
 
 from langchain_fireworks import Fireworks
 
-_MODEL = "accounts/fireworks/models/deepseek-v3p1"
+_MODEL = "accounts/fireworks/models/kimi-k2-instruct-0905"
 
 
 def test_fireworks_call() -> None:
