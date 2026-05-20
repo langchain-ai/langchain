@@ -93,6 +93,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     model_validator,
 )
@@ -642,6 +643,15 @@ class ChatFireworks(BaseChatModel):
     Constructed with `max_retries=0`; see `client`.
     """
 
+    _sdk_client: Any = PrivateAttr(default=None)
+    """Owning `fireworks.Fireworks` instance, retained so `close()` can call
+    into the underlying HTTPX client. The 1.x SDK does not expose lifecycle
+    methods on the `chat.completions` resource itself.
+    """
+
+    _async_sdk_client: Any = PrivateAttr(default=None)
+    """Owning `fireworks.AsyncFireworks` instance; see `_sdk_client`."""
+
     model_name: str = Field(alias="model")
     """Model name to use."""
 
@@ -775,20 +785,43 @@ class ChatFireworks(BaseChatModel):
         # so the LangChain `run_manager` sees each attempt. Suppress the
         # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
-            self.client = Fireworks(
+            self._sdk_client = Fireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
-            ).chat.completions
+            )
+            self.client = self._sdk_client.chat.completions
         if not self.async_client:
-            self.async_client = AsyncFireworks(
+            self._async_sdk_client = AsyncFireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
-            ).chat.completions
+            )
+            self.async_client = self._async_sdk_client.chat.completions
         return self
+
+    def close(self) -> None:
+        """Close the underlying sync HTTP client.
+
+        After calling, sync invocations on this model will raise. Async
+        invocations remain available until `aclose()` is also called. Safe to
+        call multiple times.
+        """
+        if self._sdk_client is not None:
+            self._sdk_client.close()
+
+    async def aclose(self) -> None:
+        """Close the underlying async HTTP client.
+
+        Releases the aiohttp-backed connector that the 1.x SDK uses by
+        default. Without this, transient `ChatFireworks` instances can leak
+        an `Unclosed connector` warning at GC if the event loop has already
+        stopped. Safe to call multiple times.
+        """
+        if self._async_sdk_client is not None:
+            await self._async_sdk_client.close()
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
