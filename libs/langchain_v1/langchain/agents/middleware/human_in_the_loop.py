@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langgraph.config import get_config
+from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
@@ -18,10 +20,9 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Callable
 
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
 
 class Action(TypedDict):
@@ -208,21 +209,6 @@ class InterruptOnConfig(TypedDict):
     """
 
 
-class ToolCallReviewRequest(TypedDict):
-    """Interrupt payload for a single tool call review (per-call HITL).
-
-    Used as the value passed to `interrupt()` when
-    `HumanInTheLoopMiddleware` is configured with `interrupt_mode="per_call"`.
-    Resume with a single `Decision` (not wrapped in `HITLResponse`).
-    """
-
-    action_request: ActionRequest
-    """The action being reviewed."""
-
-    review_config: ReviewConfig
-    """Review policy for this action."""
-
-
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
 
@@ -231,7 +217,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         interrupt_on: dict[str, bool | InterruptOnConfig],
         *,
         description_prefix: str = "Tool execution requires approval",
-        interrupt_mode: Literal["batch", "per_call"] = "batch",
     ) -> None:
         """Initialize the human in the loop middleware.
 
@@ -250,22 +235,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     `Callable`) for custom formatting of the interrupt description.
 
                     A `when` predicate can also be provided to dynamically control
-                    whether a tool call triggers an interrupt. Works in both modes.
+                    whether a tool call triggers an interrupt.
             description_prefix: The prefix to use when constructing action requests.
 
                 This is used to provide context about the tool call and the action being
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
-            interrupt_mode: Controls how interrupts are raised.
-
-                * `"batch"` (default): all tool calls requiring approval are collected
-                    into a single `HITLRequest` interrupt after the model responds.
-                    Resume with `HITLResponse(decisions=[...])`.
-                * `"per_call"`: one interrupt fires per tool call via `wrap_tool_call`.
-                    Interrupts may run in parallel for concurrent tool calls. Each
-                    interrupt payload is a `ToolCallReviewRequest`; resume with a single
-                    `Decision`.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -279,7 +255,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
-        self.interrupt_mode = interrupt_mode
 
     def _create_action_and_config(
         self,
@@ -384,9 +359,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             ValueError: If the number of human decisions does not match the number of
                 interrupted tool calls.
         """
-        if self.interrupt_mode == "per_call":
-            return None
-
         messages = state["messages"]
         if not messages:
             return None
@@ -404,11 +376,25 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             if (config := self.interrupt_on.get(tool_call["name"])) is not None:
                 when = config.get("when")
                 if when is not None:
+                    try:
+                        runnable_config = get_config()
+                    except RuntimeError:
+                        runnable_config = {}
+                    tool_runtime = ToolRuntime(
+                        state=state,
+                        context=runtime.context,
+                        config=runnable_config,
+                        stream_writer=runtime.stream_writer,
+                        tool_call_id=tool_call["id"],
+                        store=runtime.store,
+                        execution_info=runtime.execution_info,
+                        server_info=runtime.server_info,
+                    )
                     req = ToolCallRequest(
                         tool_call=tool_call,
                         tool=None,
                         state=state,
-                        runtime=runtime,  # type: ignore[arg-type]
+                        runtime=tool_runtime,  # type: ignore[arg-type]
                     )
                     if not when(req):
                         continue
@@ -481,98 +467,3 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             Updated message with the revised tool calls.
         """
         return self.after_model(state, runtime)
-
-    def wrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]:
-        """Per-call HITL intercept. No-op passthrough in `"batch"` mode.
-
-        In `"per_call"` mode, raises one `interrupt()` per tool call with a
-        `ToolCallReviewRequest` payload. Resume with a single `Decision`.
-
-        Args:
-            request: Tool call request with the call dict, `BaseTool`, state, and
-                runtime.
-            handler: Callable that executes the tool.
-
-        Returns:
-            `ToolMessage` from the tool, or a synthetic `ToolMessage` for
-            `"reject"` / `"respond"` decisions.
-        """
-        if self.interrupt_mode == "batch":
-            return handler(request)
-
-        tool_call = request.tool_call
-        config = self.interrupt_on.get(tool_call["name"])
-        if config is None:
-            return handler(request)
-
-        when = config.get("when")
-        if when is not None and not when(request):
-            return handler(request)
-
-        action_request, review_config = self._create_action_and_config(
-            tool_call, config, request.state, request.runtime
-        )
-        decision: Decision = interrupt(
-            ToolCallReviewRequest(action_request=action_request, review_config=review_config)
-        )
-
-        revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-        if tool_message is not None:
-            return tool_message
-
-        if revised_tool_call is None:
-            msg = f"_process_decision returned no tool call or message for '{tool_call['name']}'"
-            raise RuntimeError(msg)
-        if revised_tool_call != tool_call:
-            request = request.override(tool_call=revised_tool_call)
-        return handler(request)
-
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> ToolMessage | Command[Any]:
-        """Async per-call HITL intercept. No-op passthrough in `"batch"` mode.
-
-        Args:
-            request: Tool call request with the call dict, `BaseTool`, state, and
-                runtime.
-            handler: Async callable that executes the tool.
-
-        Returns:
-            `ToolMessage` from the tool, or a synthetic `ToolMessage` for
-            `"reject"` / `"respond"` decisions.
-        """
-        if self.interrupt_mode == "batch":
-            return await handler(request)
-
-        tool_call = request.tool_call
-        config = self.interrupt_on.get(tool_call["name"])
-        if config is None:
-            return await handler(request)
-
-        when = config.get("when")
-        if when is not None and not when(request):
-            return await handler(request)
-
-        action_request, review_config = self._create_action_and_config(
-            tool_call, config, request.state, request.runtime
-        )
-        decision: Decision = interrupt(
-            ToolCallReviewRequest(action_request=action_request, review_config=review_config)
-        )
-
-        revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
-        if tool_message is not None:
-            return tool_message
-
-        if revised_tool_call is None:
-            msg = f"_process_decision returned no tool call or message for '{tool_call['name']}'"
-            raise RuntimeError(msg)
-        if revised_tool_call != tool_call:
-            request = request.override(tool_call=revised_tool_call)
-        return await handler(request)

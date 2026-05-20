@@ -7,7 +7,6 @@ from langchain.agents.middleware.file_search import FilesystemFileSearchMiddlewa
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
-    ToolCallReviewRequest,
 )
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
@@ -73,7 +72,6 @@ __all__ = [
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
-    "ToolCallReviewRequest",
     "ToolRetryMiddleware",
     "after_agent",
     "after_model",
