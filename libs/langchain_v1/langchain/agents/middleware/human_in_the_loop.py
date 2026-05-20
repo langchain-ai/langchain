@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.types import interrupt
@@ -186,21 +186,23 @@ class InterruptOnConfig(TypedDict):
     args_schema: NotRequired[dict[str, Any]]
     """JSON schema for the args associated with the action, if edits are allowed."""
 
-    when: NotRequired[Callable[[ToolCall, AgentState[Any], Runtime[Any]], bool]]
+    when: NotRequired[Callable[[ToolCallRequest], bool]]
     """Optional predicate controlling whether to interrupt for a given tool call.
 
-    Called with the tool call, current agent state, and runtime. When provided,
-    the interrupt only fires if this returns `True`. Works in both `"batch"` and
-    `"per_call"` modes.
+    Receives a `ToolCallRequest` and returns `True` to interrupt or `False` to
+    auto-approve. Works in both `"batch"` and `"per_call"` modes.
+
+    In `"batch"` mode the request is constructed with `tool=None` and
+    `runtime` set to the node-level `Runtime` (not a `ToolRuntime`), so
+    `request.runtime.tool_call_id` and `request.runtime.tools` are not available.
+    In `"per_call"` mode the full `ToolCallRequest` from `wrap_tool_call` is passed.
 
     Example:
         ```python
         # Only interrupt delete_file calls targeting /etc
         config = InterruptOnConfig(
             allowed_decisions=["approve", "reject"],
-            when=lambda tool_call, state, runtime: (
-                tool_call["args"].get("path", "").startswith("/etc")
-            ),
+            when=lambda req: req.tool_call["args"].get("path", "").startswith("/etc"),
         )
         ```
     """
@@ -283,8 +285,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-        state: AgentState[Any],
-        runtime: Runtime[ContextT],
+        state: Any,
+        runtime: Any,
     ) -> tuple[ActionRequest, ReviewConfig]:
         """Create an ActionRequest and ReviewConfig for a tool call."""
         tool_name = tool_call["name"]
@@ -401,8 +403,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if (config := self.interrupt_on.get(tool_call["name"])) is not None:
                 when = config.get("when")
-                if when is not None and not when(tool_call, state, runtime):
-                    continue
+                if when is not None:
+                    req = ToolCallRequest(
+                        tool_call=tool_call,
+                        tool=None,
+                        state=state,
+                        runtime=runtime,  # type: ignore[arg-type]
+                    )
+                    if not when(req):
+                        continue
                 action_request, review_config = self._create_action_and_config(
                     tool_call, config, state, runtime
                 )
@@ -495,18 +504,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         if self.interrupt_mode == "batch":
             return handler(request)
 
-        tool_call = cast("ToolCall", request.tool_call)
+        tool_call = request.tool_call
         config = self.interrupt_on.get(tool_call["name"])
         if config is None:
             return handler(request)
 
-        state = cast("AgentState[Any]", request.state)
         when = config.get("when")
-        if when is not None and not when(tool_call, state, request.runtime):
+        if when is not None and not when(request):
             return handler(request)
 
         action_request, review_config = self._create_action_and_config(
-            tool_call, config, state, request.runtime
+            tool_call, config, request.state, request.runtime
         )
         decision: Decision = interrupt(
             ToolCallReviewRequest(action_request=action_request, review_config=review_config)
@@ -542,18 +550,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         if self.interrupt_mode == "batch":
             return await handler(request)
 
-        tool_call = cast("ToolCall", request.tool_call)
+        tool_call = request.tool_call
         config = self.interrupt_on.get(tool_call["name"])
         if config is None:
             return await handler(request)
 
-        state = cast("AgentState[Any]", request.state)
         when = config.get("when")
-        if when is not None and not when(tool_call, state, request.runtime):
+        if when is not None and not when(request):
             return await handler(request)
 
         action_request, review_config = self._create_action_and_config(
-            tool_call, config, state, request.runtime
+            tool_call, config, request.state, request.runtime
         )
         decision: Decision = interrupt(
             ToolCallReviewRequest(action_request=action_request, review_config=review_config)

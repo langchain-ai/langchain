@@ -10,9 +10,8 @@ from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
-    ToolCallReviewRequest,
 )
-from langchain.agents.middleware.types import AgentState
+from langchain.agents.middleware.types import AgentState, ToolCallRequest
 
 
 def _make_request(
@@ -1055,9 +1054,7 @@ def test_per_call_interrupt_payload_is_single_item() -> None:
         interrupt_on={"test_tool": {"allowed_decisions": ["approve"]}},
         interrupt_mode="per_call",
     )
-    handler = MagicMock(
-        return_value=ToolMessage(content="ok", name="test_tool", tool_call_id="1")
-    )
+    handler = MagicMock(return_value=ToolMessage(content="ok", name="test_tool", tool_call_id="1"))
     request = _make_request({"name": "test_tool", "args": {"x": 1}, "id": "1"})
 
     captured: Any = None
@@ -1091,7 +1088,7 @@ def test_when_predicate_batch_skips_interrupt_when_false() -> None:
         interrupt_on={
             "test_tool": InterruptOnConfig(
                 allowed_decisions=["approve"],
-                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+                when=lambda req: req.tool_call["args"].get("risky", False),
             )
         }
     )
@@ -1114,7 +1111,7 @@ def test_when_predicate_batch_fires_interrupt_when_true() -> None:
         interrupt_on={
             "test_tool": InterruptOnConfig(
                 allowed_decisions=["approve"],
-                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+                when=lambda req: req.tool_call["args"].get("risky", False),
             )
         }
     )
@@ -1139,7 +1136,7 @@ def test_when_predicate_per_call_skips_interrupt_when_false() -> None:
         interrupt_on={
             "test_tool": InterruptOnConfig(
                 allowed_decisions=["approve"],
-                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+                when=lambda req: req.tool_call["args"].get("risky", False),
             )
         },
         interrupt_mode="per_call",
@@ -1162,7 +1159,7 @@ def test_when_predicate_per_call_fires_interrupt_when_true() -> None:
         interrupt_on={
             "test_tool": InterruptOnConfig(
                 allowed_decisions=["approve"],
-                when=lambda tc, state, runtime: tc["args"].get("risky", False),
+                when=lambda req: req.tool_call["args"].get("risky", False),
             )
         },
         interrupt_mode="per_call",
@@ -1183,10 +1180,10 @@ def test_when_predicate_per_call_fires_interrupt_when_true() -> None:
 
 def test_when_predicate_receives_correct_args() -> None:
     """The when predicate receives (tool_call, state, runtime) with correct values."""
-    captured_args: list[Any] = []
+    captured: list[Any] = []
 
-    def capture_when(tc: Any, state: Any, runtime: Any) -> bool:
-        captured_args.extend([tc, state, runtime])
+    def capture_when(req: ToolCallRequest) -> bool:
+        captured.append(req)
         return True
 
     middleware = HumanInTheLoopMiddleware(
@@ -1210,8 +1207,9 @@ def test_when_predicate_receives_correct_args() -> None:
     ):
         middleware.after_model(state, runtime)
 
-    tool_call_arg, state_arg, runtime_arg = captured_args
-    assert tool_call_arg["name"] == "test_tool"
-    assert tool_call_arg["args"] == {"val": 42}
-    assert state_arg is state
-    assert runtime_arg is runtime
+    assert len(captured) == 1
+    req = captured[0]
+    assert req.tool_call["name"] == "test_tool"
+    assert req.tool_call["args"] == {"val": 42}
+    assert req.state is state
+    assert req.runtime is runtime
