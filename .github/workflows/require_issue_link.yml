@@ -50,7 +50,7 @@ jobs:
     steps:
       - name: Check for issue link and assignee
         id: check-link
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -283,7 +283,7 @@ jobs:
         if: >-
           env.ENFORCE_ISSUE_LINK == 'true' &&
           (steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true')
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -312,7 +312,7 @@ jobs:
         if: >-
           env.ENFORCE_ISSUE_LINK == 'true' &&
           steps.check-link.outputs.has-link == 'true' && steps.check-link.outputs.is-assigned == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -366,7 +366,7 @@ jobs:
         if: >-
           env.ENFORCE_ISSUE_LINK == 'true' &&
           (steps.check-link.outputs.has-link != 'true' || steps.check-link.outputs.is-assigned != 'true')
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -393,9 +393,9 @@ jobs:
                 marker,
                 '**This PR has been automatically closed** because you are not assigned to the linked issue.',
                 '',
-                'External contributors must be assigned to an issue before opening a PR for it. Please:',
-                '1. Comment on the linked issue to request assignment from a maintainer',
-                '2. Once assigned, your PR will be reopened automatically',
+                'Opening a PR is **not** an indication that it will be accepted. This process exists so maintainers can confirm a change is aligned with the project direction *before* you invest time implementing it. Please:',
+                '1. Comment on the linked issue explaining the approach you would like to take and why — include enough detail for a maintainer to evaluate the design. Do **not** post a drive-by "please assign me" comment with no substance; those will be ignored.',
+                '2. Wait for a maintainer to assign you. Once assigned, your PR will be reopened automatically.',
                 '',
                 '*Maintainers: reopen this PR or remove the `missing-issue-link` label to bypass this check.*',
               ];

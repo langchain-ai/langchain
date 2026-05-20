@@ -26,8 +26,10 @@ Can be either:
 - A literal action string (`'error'` or `'continue'`)
     - `'error'`: Re-raise the exception, stopping agent execution.
     - `'continue'`: Inject a message with the error details, allowing the agent to continue.
-       For tool retries, a `ToolMessage` with the error details will be injected.
-       For model retries, an `AIMessage` with the error details will be returned.
+
+        For tool retries, a `ToolMessage` with the error details will be injected.
+
+        For model retries, an `AIMessage` with the error details will be returned.
 - A callable that takes an exception and returns a string for error message content
 """
 
