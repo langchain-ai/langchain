@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import datetime
 import json
@@ -360,14 +362,33 @@ def _format_data_content_block(block: dict) -> dict:
                 },
             }
         elif "base64" in block or block.get("source_type") == "base64":
-            formatted_block = {
-                "type": "document",
-                "source": {
-                    "type": "base64",
-                    "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block.get("base64") or block.get("data", ""),
-                },
-            }
+            mime_type = block.get("mime_type") or "application/pdf"
+            data = block.get("base64") or block.get("data", "")
+            if mime_type.startswith("text/") and mime_type != "application/pdf":
+                try:
+                    text = base64.b64decode(data).decode("utf-8")
+                    formatted_block = {
+                        "type": "document",
+                        "source": {"type": "text", "media_type": "text/plain", "data": text},
+                    }
+                except (binascii.Error, UnicodeDecodeError):
+                    formatted_block = {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": mime_type,
+                            "data": data,
+                        },
+                    }
+            else:
+                formatted_block = {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": mime_type,
+                        "data": data,
+                    },
+                }
         elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
