@@ -14,6 +14,7 @@ from langchain_openai.chat_models.codex import (
     ACCOUNT_ID_HEADER,
     CHATGPT_CODEX_BASE_URL,
     DEFAULT_INSTRUCTIONS,
+    ORIGINATOR_ENV_VAR,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
     _SyncTokenCallable,
@@ -116,6 +117,52 @@ def test_request_payload_can_disable_originator_header() -> None:
     model = _build_model(token_provider=provider, include_originator_header=False)
     payload = model._get_request_payload([HumanMessage("hi")])
     assert "extra_headers" not in payload
+
+
+def test_constructor_originator_overrides_default() -> None:
+    """An explicit `originator=` constructor value replaces the package default."""
+    model = _build_model(originator="my-app/1.2")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][ORIGINATOR_HEADER] == "my-app/1.2"
+
+
+def test_env_var_overrides_default_originator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`LANGCHAIN_CODEX_ORIGINATOR` sets the default when no constructor value."""
+    monkeypatch.setenv(ORIGINATOR_ENV_VAR, "env-app/2.0")
+    model = _build_model()
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][ORIGINATOR_HEADER] == "env-app/2.0"
+
+
+def test_constructor_originator_wins_over_env_var(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit constructor value beats the env var (resolution order)."""
+    monkeypatch.setenv(ORIGINATOR_ENV_VAR, "env-app/2.0")
+    model = _build_model(originator="ctor-app/9.9")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][ORIGINATOR_HEADER] == "ctor-app/9.9"
+
+
+def test_empty_env_var_falls_back_to_package_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty `LANGCHAIN_CODEX_ORIGINATOR` is treated as unset."""
+    monkeypatch.setenv(ORIGINATOR_ENV_VAR, "")
+    model = _build_model()
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][ORIGINATOR_HEADER] == ORIGINATOR_VALUE
+
+
+def test_caller_extra_headers_override_originator_field() -> None:
+    """A per-call `extra_headers` originator beats the model's field value."""
+    model = _build_model(originator="ctor-app")
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], extra_headers={ORIGINATOR_HEADER: "call-app"}
+    )
+    assert payload["extra_headers"][ORIGINATOR_HEADER] == "call-app"
 
 
 def test_request_payload_pulls_fresh_account_id_each_call() -> None:

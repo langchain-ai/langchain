@@ -11,6 +11,7 @@ The standard `ChatOpenAI` (API-key) flow is untouched.
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
@@ -38,15 +39,28 @@ logger = logging.getLogger(__name__)
 CHATGPT_CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex"
 ORIGINATOR_HEADER = "originator"
 ORIGINATOR_VALUE = "langchain"
-ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
-DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenAI."
-"""Fallback value for the Responses-API `instructions` field.
+"""Built-in default for the `originator` header value.
 
-`instructions` *is* the system prompt for a Responses-API request — the
-ChatGPT Codex backend rejects requests without it (400
-`Instructions are required`). Most callers should pass their own
-`instructions` (constructor or per-call) rather than rely on this generic
-fallback.
+Identifies requests as coming from `langchain-openai`. Override per-instance
+via the `originator` field or globally via the `LANGCHAIN_CODEX_ORIGINATOR`
+env var.
+"""
+ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
+ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+
+
+def _default_originator() -> str:
+    """Resolve the `originator` header default, honoring the env-var override."""
+    return os.environ.get(ORIGINATOR_ENV_VAR) or ORIGINATOR_VALUE
+
+
+DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenAI."
+"""Generic fallback for the Responses-API `instructions` field.
+
+The Codex backend rejects any request missing a top-level `instructions`
+value (400 `Instructions are required`), so this constant keeps zero-config
+construction working. **Most callers should override it** with their own
+prompt — see `ChatOpenAICodex.instructions` for the resolution rules.
 """
 _FORCED_VALUES: dict[str, Any] = {
     "use_responses_api": True,
@@ -84,9 +98,20 @@ class ChatOpenAICodex(ChatOpenAI):
         # reads from by default — so subsequent constructions need no
         # explicit `token_provider`.
         login_chatgpt()
-        model = ChatOpenAICodex(model="gpt-5.2-codex")
+        model = ChatOpenAICodex(
+            model="gpt-5.5",
+            instructions="You are a senior Python reviewer. Be terse.",
+        )
         response = model.invoke("hello")
         ```
+
+    !!! tip "Override `instructions`"
+
+        The Codex backend requires a top-level `instructions` value on every
+        request. A generic default keeps zero-config use working, but most
+        callers should override it via the constructor (above) or per call
+        (`model.invoke(..., instructions=...)`). See the field's docstring
+        for the full resolution rules.
 
     !!! note
 
@@ -112,29 +137,60 @@ class ChatOpenAICodex(ChatOpenAI):
     """
 
     include_originator_header: bool = True
-    """Whether to send the optional `originator: langchain` header."""
+    """Whether to send the optional `originator` header."""
+
+    originator: str = Field(default_factory=_default_originator)
+    """Value sent in the `originator` request header.
+
+    Identifies the client making the request. Defaults to `"langchain"` so
+    OpenAI telemetry attributes calls to this package. Downstream consumers
+    (e.g., a framework built on top of `ChatOpenAICodex`) can override this
+    to identify themselves instead.
+
+    Resolution order (first match wins):
+
+    1. Constructor / kwarg value (`ChatOpenAICodex(originator="my-app")`).
+    2. The `LANGCHAIN_CODEX_ORIGINATOR` env var, if set and non-empty.
+    3. `ORIGINATOR_VALUE` (`"langchain"`).
+
+    Ignored when `include_originator_header=False`. A per-call
+    `extra_headers={"originator": "..."}` still wins over this field for
+    that one call (caller-supplied headers always override Codex defaults).
+    """
 
     instructions: str = Field(default=DEFAULT_INSTRUCTIONS)
     """System prompt sent in the Responses-API `instructions` field.
 
-    The ChatGPT Codex backend requires this field to be present and non-empty
-    on every call. **Callers should almost always supply their own value**,
-    either at construction time or per call:
+    `instructions` is a *top-level* field of the Responses API request — it
+    is not a chat message. The Codex backend rejects any request where this
+    field is missing or empty (400 `Instructions are required`), so this
+    field always carries a value:
+
+    - this constructor field (defaults to a generic ChatGPT prompt), or
+    - an explicit `instructions=` kwarg passed to `invoke` / `stream`,
+        which overrides the constructor value for that one call only.
+
+    The Codex backend is stateless for this client (`store=False` is
+    forced), so `instructions` is sent on every request and can be changed
+    between calls — useful for switching persona / tooling mid-conversation:
 
     ```python
     model = ChatOpenAICodex(
-        model="gpt-5.2-codex",
+        model="gpt-5.5",
         instructions="You are a senior Python reviewer. Be terse.",
     )
-    # or per-call:
-    model.invoke("...", instructions="You are a senior Python reviewer.")
+    model.invoke("review this diff…")
+    model.invoke(
+        "now translate the review to French",
+        instructions="You are a translator.",
+    )
     ```
 
-    An explicit `instructions` kwarg on the call always wins over this
-    field. Passing a `SystemMessage` in `input` does **not** populate this
-    field — `SystemMessage` becomes an entry in the `input` list, which is
-    distinct from the top-level `instructions` field that the Codex
-    backend requires.
+    `instructions` is distinct from any `SystemMessage` placed in the input
+    list. A `SystemMessage` becomes an entry in the `input` array (a chat
+    turn); `instructions` is a separate top-level directive applied to the
+    response generation. Passing a `SystemMessage` does **not** populate
+    this field.
     """
 
     _resolved_token_provider: ChatGPTOAuthTokenProvider = PrivateAttr()
@@ -194,7 +250,7 @@ class ChatOpenAICodex(ChatOpenAI):
         if account_id:
             headers[ACCOUNT_ID_HEADER] = account_id
         if self.include_originator_header:
-            headers[ORIGINATOR_HEADER] = ORIGINATOR_VALUE
+            headers[ORIGINATOR_HEADER] = self.originator
         return headers
 
     def _merge_codex_headers(
