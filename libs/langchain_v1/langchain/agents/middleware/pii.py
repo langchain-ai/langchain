@@ -344,7 +344,17 @@ class _PIIStreamTransformer(StreamTransformer):
             return
         delta_type = delta.get("type")
         if delta_type == "text-delta":
-            self._mutate_text_delta(delta, payload, run_id)
+            self._mutate_string_field_delta(delta, payload, run_id, "text")
+            return
+        if delta_type == "reasoning-delta":
+            # Reasoning content (chain-of-thought from extended-thinking
+            # models) is a real PII surface — models echo back
+            # user-supplied data or synthesize it from context. Run the
+            # same lookback machinery as text-delta against the
+            # `reasoning` field. Block indices are unique within a
+            # message regardless of block type, so the buffer key
+            # `(run_id, index)` naturally disjoint from text-delta keys.
+            self._mutate_string_field_delta(delta, payload, run_id, "reasoning")
             return
         if delta_type == "block-delta":
             fields = delta.get("fields")
@@ -353,12 +363,28 @@ class _PIIStreamTransformer(StreamTransformer):
                 "server_tool_call_chunk",
             }:
                 self._mutate_tool_call_chunk_delta(fields)
-        # Other delta types (reasoning-delta, data-delta) pass through.
+        # `data-delta` (binary/base64 payloads) passes through — regex
+        # detection on base64 strings would produce mostly false matches
+        # and rarely catches real PII, since binary payloads aren't a
+        # typical PII surface. Users with structured-data PII concerns
+        # should attach a custom detector that understands their
+        # payload format.
 
-    def _mutate_text_delta(
-        self, delta: dict[str, Any], payload: dict[str, Any], run_id: str
+    def _mutate_string_field_delta(
+        self,
+        delta: dict[str, Any],
+        payload: dict[str, Any],
+        run_id: str,
+        field: str,
     ) -> None:
-        text = delta.get("text")
+        """Apply the lookback-buffer redaction to a string field on a delta.
+
+        Shared by `text-delta` (`field="text"`) and `reasoning-delta`
+        (`field="reasoning"`). Buffer is keyed by `(run_id, block_index)`;
+        block indices are unique within a message so different block
+        types share the same key space without collision.
+        """
+        text = delta.get(field)
         if not isinstance(text, str) or not text:
             return
         index = payload.get("index")
@@ -377,7 +403,7 @@ class _PIIStreamTransformer(StreamTransformer):
             # either to its full text (clean) or to empty (PII found —
             # `after_model` raises shortly after).
             self._buffers[key] = combined
-            delta["text"] = ""
+            delta[field] = ""
             return
 
         # Run detection on the full accumulated buffer before splitting.
@@ -391,7 +417,7 @@ class _PIIStreamTransformer(StreamTransformer):
 
         emit_end = max(0, len(combined) - self._lookback)
         self._buffers[key] = combined[emit_end:]
-        delta["text"] = combined[:emit_end]
+        delta[field] = combined[:emit_end]
 
     def _mutate_tool_call_chunk_delta(self, fields: dict[str, Any]) -> None:
         """Redact PII in cumulative tool-call args.
@@ -428,22 +454,32 @@ class _PIIStreamTransformer(StreamTransformer):
         if isinstance(content, dict):
             ctype = content.get("type")
             if ctype == "text":
-                text = content.get("text")
-                if isinstance(text, str) and text:
-                    matches = self._rule.detector(text)
-                    if matches:
-                        # `block` withholds the content from the consumer;
-                        # `after_model` raises `PIIDetectionError` on the
-                        # original state message shortly after.
-                        if self._rule.strategy == "block":
-                            content["text"] = ""
-                        else:
-                            content["text"] = apply_strategy(text, matches, self._rule.strategy)
+                self._finalize_string_field(content, "text")
+            elif ctype == "reasoning":
+                self._finalize_string_field(content, "reasoning")
             elif ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}:
                 args = content.get("args")
                 if isinstance(args, dict):
                     content["args"] = self._redact_value(args)
         self._buffers.pop(key, None)
+
+    def _finalize_string_field(self, content: dict[str, Any], field: str) -> None:
+        """Re-redact a string content-block field on `content-block-finish`.
+
+        Used for `text` and `reasoning` content blocks. `block` withholds
+        the content from the consumer; `after_model` raises
+        `PIIDetectionError` on the original state message shortly after.
+        """
+        text = content.get(field)
+        if not isinstance(text, str) or not text:
+            return
+        matches = self._rule.detector(text)
+        if not matches:
+            return
+        if self._rule.strategy == "block":
+            content[field] = ""
+        else:
+            content[field] = apply_strategy(text, matches, self._rule.strategy)
 
     def _drop_run(self, run_id: str) -> None:
         # Release any buffered tails for this run_id — content-block-finish

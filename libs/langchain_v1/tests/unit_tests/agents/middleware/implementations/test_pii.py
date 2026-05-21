@@ -865,6 +865,114 @@ class TestPIIStreamTransformer:
         assert "[REDACTED_EMAIL]" in redacted.content
         assert redacted.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
 
+    def test_reasoning_delta_uses_lookback(self) -> None:
+        """`reasoning-delta` events go through the same lookback as text-delta."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=32)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "reasoning-delta",
+                                "reasoning": "User mentioned alice@example.com",
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-finish",
+                            "index": 0,
+                            "content": {
+                                "type": "reasoning",
+                                "reasoning": "User mentioned alice@example.com",
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        for e in events:
+            transformer.process(e)
+
+        # The finalize snapshot is redacted. The delta itself may emit
+        # nothing (entire string fits within lookback) — the consumer's
+        # ChatModelStream reconciles against the finalize content.
+        finalized = events[1]["params"]["data"][0]["content"]["reasoning"]
+        assert "alice@example.com" not in finalized
+        assert "[REDACTED_EMAIL]" in finalized
+
+    def test_reasoning_delta_block_strategy_emptied(self) -> None:
+        """`block` strategy withholds reasoning deltas."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "reasoning-delta",
+                                "reasoning": "User mentioned alice@example.com",
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-finish",
+                            "index": 0,
+                            "content": {
+                                "type": "reasoning",
+                                "reasoning": "User mentioned alice@example.com",
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        for e in events:
+            transformer.process(e)
+
+        delta_reasoning = events[0]["params"]["data"][0]["delta"]["reasoning"]
+        finalized = events[1]["params"]["data"][0]["content"]["reasoning"]
+        assert delta_reasoning == ""
+        assert finalized == ""
+
     def test_tool_call_args_redacted_on_block_delta(self) -> None:
         """A `block-delta` event with a `tool_call_chunk` field redacts the args."""
         rule = RedactionRule(pii_type="email").resolve()
@@ -1536,12 +1644,18 @@ class TestPIIStreamTransformer:
         # The finalized snapshot always re-runs detection over the full text.
         assert "alice@example.com" not in finals[0]
 
-    def test_non_text_delta_passes_through_untouched(self) -> None:
-        """Reasoning/data deltas should not be mutated by the text-only path."""
+    def test_data_delta_passes_through_untouched(self) -> None:
+        """`data-delta` (binary/base64 payloads) is not a typical PII surface.
+
+        Regex detection on base64 strings would produce false positives
+        and rarely catches real PII. Users with structured-data PII
+        concerns should attach a custom detector that understands their
+        payload format.
+        """
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        reasoning_event = {
+        data_event = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1552,20 +1666,18 @@ class TestPIIStreamTransformer:
                         "event": "content-block-delta",
                         "index": 0,
                         "delta": {
-                            "type": "reasoning-delta",
-                            "reasoning": "alice@example.com thinking",
+                            "type": "data-delta",
+                            "data": "YWxpY2VAZXhhbXBsZS5jb20=",  # base64 of email
                         },
                     },
                     {"run_id": "r1"},
                 ),
             },
         }
-        transformer.process(reasoning_event)
-        # The reasoning field is left alone — this transformer scopes itself
-        # to text-delta only, matching its docstring contract.
+        transformer.process(data_event)
         assert (
-            reasoning_event["params"]["data"][0]["delta"]["reasoning"]
-            == "alice@example.com thinking"
+            data_event["params"]["data"][0]["delta"]["data"]
+            == "YWxpY2VAZXhhbXBsZS5jb20="
         )
 
     def test_transformer_registered_before_messages_transformer_on_agent(self) -> None:
