@@ -778,8 +778,8 @@ def _run_transformer(transformer: Any, events: list[dict[str, Any]]) -> list[dic
 class TestPIIStreamTransformer:
     """Tests for the in-flight stream transformer."""
 
-    def test_pii_fully_inside_one_delta_with_whitespace_after(self) -> None:
-        """Single delta containing the full PII followed by whitespace should redact it."""
+    def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
+        """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
@@ -790,16 +790,16 @@ class TestPIIStreamTransformer:
         _run_transformer(transformer, events)
         streamed, finals = _emitted_text(events)  # type: ignore[misc]
 
+        # The raw email never reaches the wire — the delta is held in the
+        # lookback buffer and the finalize snapshot is the redacted text.
         assert "alice@example.com" not in streamed
-        assert "[REDACTED_EMAIL]" in streamed
         assert "alice@example.com" not in finals[0]
         assert "[REDACTED_EMAIL]" in finals[0]
 
     def test_pii_split_across_deltas_is_caught(self) -> None:
         """Email split mid-string across deltas should still be redacted in stream."""
         rule = RedactionRule(pii_type="email").resolve()
-        # Disable whitespace flush so we exercise the lookback buffer path.
-        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
         events = [
             _make_delta_event("Hi, contact alice"),
@@ -814,44 +814,26 @@ class TestPIIStreamTransformer:
         assert "alice@example.com" not in streamed
         assert "alice@example.com" not in finals[0]
 
-    def test_whitespace_boundary_flushes_safe_prefix_early(self) -> None:
-        """Whitespace appearing inside a delta should release everything before it."""
-        rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule, lookback=128, whitespace_boundary=True)
+    def test_credit_card_split_across_whitespace_is_caught(self) -> None:
+        """Card with whitespace separators must not leak across deltas."""
+        rule = RedactionRule(pii_type="credit_card").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
-        # 20 chars then a space — even though we're under the 128-char
-        # lookback, whitespace flush should release the prefix.
-        events = [_make_delta_event("Just some plain text here.")]
+        events = [
+            _make_delta_event("Card: 5425 "),
+            _make_delta_event("2334 3010 9903 next"),
+            _make_finish_event("Card: 5425 2334 3010 9903 next"),
+        ]
         _run_transformer(transformer, events)
-        streamed, _ = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
 
-        # "Just some plain text " is safe (last whitespace at end), so the
-        # delta should emit everything up to and including the last space.
-        assert streamed.startswith("Just some plain text ")
-
-    def test_custom_detector_defaults_to_no_whitespace_flush(self) -> None:
-        """A PIIMiddleware with a custom regex should NOT whitespace-flush by default."""
-        middleware = PIIMiddleware(
-            "api_key",
-            detector=r"sk-[a-zA-Z0-9]{8}",
-            strategy="redact",
-            apply_to_output=True,
-        )
-
-        # The middleware should register a transformer.
-        assert len(middleware.transformers) == 1
-        factory = middleware.transformers[0]
-        transformer = factory(())
-        # The transformer was wired with whitespace_boundary=False since
-        # the detector is custom.
-        assert transformer._whitespace_boundary is False
-
-    def test_builtin_detector_defaults_to_whitespace_flush(self) -> None:
-        """A built-in PII type should default to whitespace flush enabled."""
-        middleware = PIIMiddleware("email", apply_to_output=True)
-        assert len(middleware.transformers) == 1
-        transformer = middleware.transformers[0](())
-        assert transformer._whitespace_boundary is True
+        # No prefix of the card may reach the wire — the lookback buffer
+        # holds whitespace-separated groups until detection runs over the
+        # full concatenation.
+        assert "5425 2334 3010 9903" not in streamed
+        assert "5425" not in streamed
+        assert "5425 2334 3010 9903" not in finals[0]
+        assert "[REDACTED_CREDIT_CARD]" in finals[0]
 
     def test_apply_to_output_false_registers_no_transformer(self) -> None:
         """Streaming redaction is gated on apply_to_output."""
@@ -886,7 +868,7 @@ class TestPIIStreamTransformer:
     def test_buffers_isolated_by_run_id(self) -> None:
         """Two concurrent runs share the transformer instance but not buffer state."""
         rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
         events = [
             _make_delta_event("Hi alice", run_id="run-A"),
@@ -919,7 +901,7 @@ class TestPIIStreamTransformer:
     def test_message_finish_drops_buffers(self) -> None:
         """Abandoned blocks (no content-block-finish) should still release memory."""
         rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
         _run_transformer(
             transformer,
@@ -943,7 +925,7 @@ class TestPIIStreamTransformer:
     def test_finalize_clears_all_state(self) -> None:
         """Mux close should be safe — finalize wipes any held buffers."""
         rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
         _run_transformer(transformer, [_make_delta_event("hanging text")])
         assert transformer._buffers
         transformer.finalize()
@@ -956,7 +938,7 @@ class TestPIIStreamTransformer:
         """
         # Choose an absurdly small lookback so a normal email exceeds it.
         rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule, lookback=4, whitespace_boundary=False)
+        transformer = _PIIStreamTransformer(rule=rule, lookback=4)
 
         events = [
             _make_delta_event("hello alice@example.com goodbye"),

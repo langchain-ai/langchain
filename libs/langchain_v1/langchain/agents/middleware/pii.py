@@ -10,7 +10,6 @@ from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
-    BUILTIN_DETECTORS,
     PIIDetectionError,
     PIIMatch,
     RedactionRule,
@@ -40,12 +39,11 @@ if TYPE_CHECKING:
 _DEFAULT_STREAM_LOOKBACK = 128
 """Default trailing-buffer size for cross-delta PII detection.
 
-The transformer holds the last `lookback` characters in a per-content-block
-buffer so that PII patterns straddling delta boundaries are detected before
-the safe prefix is released downstream. 128 covers the common long matches
-(JWTs in URLs, long email locals) without significantly delaying first-token
-latency in practice — the whitespace-boundary flush typically releases the
-held tail well before this cap is reached.
+The transformer always holds the last `lookback` characters in a per-content
+block buffer so that PII patterns straddling delta boundaries are detected
+before any text is released downstream. 128 comfortably covers the built-in
+detectors (the credit-card regex tops out at 19 characters; URLs and emails
+are typically well under 100) while bounding first-token latency.
 """
 
 
@@ -58,11 +56,10 @@ class _PIIStreamTransformer(StreamTransformer):
 
     Holds a sliding buffer of the most recent text per (run_id, content
     block index) so PII patterns that straddle delta boundaries are caught.
-    The buffer's safe prefix (anything older than `lookback` chars, or
-    anything before the last whitespace when `whitespace_boundary` is set)
-    is redacted with the resolved rule's strategy and emitted as the new
-    delta text. The tail stays in the buffer until the next delta or the
-    block's finish event flushes it.
+    Anything older than `lookback` characters is redacted with the resolved
+    rule's strategy and emitted as the new delta text; the trailing tail
+    stays in the buffer until a later delta extends it past the cap or the
+    block's finish event flushes the snapshot.
     """
 
     before_builtins: ClassVar[bool] = True
@@ -74,12 +71,10 @@ class _PIIStreamTransformer(StreamTransformer):
         *,
         rule: ResolvedRedactionRule,
         lookback: int = _DEFAULT_STREAM_LOOKBACK,
-        whitespace_boundary: bool = True,
     ) -> None:
         super().__init__(scope)
         self._rule = rule
         self._lookback = lookback
-        self._whitespace_boundary = whitespace_boundary
         self._buffers: dict[tuple[str, int], str] = {}
 
     def init(self) -> dict[str, Any]:
@@ -126,14 +121,6 @@ class _PIIStreamTransformer(StreamTransformer):
         combined = held + text
 
         safe_end = max(0, len(combined) - self._lookback)
-        if self._whitespace_boundary:
-            # Extend the safe prefix to include any whitespace at or after
-            # the lookback cutoff — for whitespace-free PII patterns this
-            # is always safe and dramatically reduces first-token latency.
-            for i in range(len(combined) - 1, safe_end - 1, -1):
-                if combined[i].isspace():
-                    safe_end = i + 1
-                    break
 
         if safe_end == 0:
             # Nothing safe to emit yet — hold the entire combined buffer
@@ -260,7 +247,6 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         apply_to_output: bool = False,
         apply_to_tool_results: bool = False,
         stream_lookback: int = _DEFAULT_STREAM_LOOKBACK,
-        stream_whitespace_boundary: bool | None = None,
     ) -> None:
         """Initialize the PII detection middleware.
 
@@ -293,15 +279,14 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 just in the final `state["messages"]`.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
             stream_lookback: Trailing-buffer size for cross-delta PII
-                detection in the stream transformer. Patterns longer than
-                this may slip through when split across deltas; the default
-                covers built-in types comfortably.
-            stream_whitespace_boundary: Whether the stream transformer may
-                flush the held buffer up to the last whitespace. Defaults
-                to `True` for built-in `pii_type` values (all of which match
-                whitespace-free spans) and `False` for custom detectors
-                (which may legitimately match across whitespace). Set
-                explicitly to override.
+                detection in the stream transformer. The transformer always
+                holds the last `stream_lookback` characters back until the
+                buffer extends past the cap or the block finishes, so the
+                value sets both the longest reliably-caught pattern and the
+                worst-case first-token latency. Patterns longer than this
+                may slip past in-flight detection when split across deltas,
+                but the finalize snapshot always re-runs detection over the
+                full block text.
 
         Raises:
             ValueError: If `pii_type` is not built-in and no detector is provided.
@@ -327,18 +312,13 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         # (raising mid-stream would leave projections in a torn state);
         # users mixing `block` with output redaction still get state-level
         # blocking via `after_model`.
-        is_builtin = pii_type in BUILTIN_DETECTORS and detector is None
-        if stream_whitespace_boundary is None:
-            stream_whitespace_boundary = is_builtin
         self._stream_lookback = stream_lookback
-        self._stream_whitespace_boundary = stream_whitespace_boundary
         if self.apply_to_output and self.strategy != "block":
             self.transformers = (
                 partial(
                     _PIIStreamTransformer,
                     rule=self._resolved_rule,
                     lookback=self._stream_lookback,
-                    whitespace_boundary=self._stream_whitespace_boundary,
                 ),
             )
 
