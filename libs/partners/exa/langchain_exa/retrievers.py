@@ -56,7 +56,7 @@ class ExaSearchRetriever(BaseRetriever):
     use_autoprompt: bool | None = None
     """Whether to use autoprompt for the search."""
     type: str = "auto"
-    """The type of search, 'auto', 'fast', 'instant', or 'deep'. Default: auto"""
+    """The type of search, 'auto', 'fast', or 'deep'. Default: auto"""
     highlights: HighlightsContentsOptions | bool | None = None
     """Whether to set the page content to the highlights of the results."""
     text_contents_options: TextContentsOptions | dict[str, Any] | Literal[True] = True

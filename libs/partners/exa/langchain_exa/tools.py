@@ -116,7 +116,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         use_autoprompt: bool | None = None,  # noqa: FBT001
         livecrawl: Literal["always", "fallback", "never"] | None = None,
         summary: bool | dict[str, str] | None = None,  # noqa: FBT001
-        type: Literal["auto", "deep", "fast", "instant"] | None = None,  # noqa: A002
+        type: Literal["auto", "deep", "fast"] | None = None,  # noqa: A002
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> list[dict] | str:
         # TODO: rename `type` to something else, as it is a reserved keyword
@@ -136,7 +136,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
             use_autoprompt: Whether to use autoprompt for the search.
             livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
-            type: The type of search, 'auto', 'fast', 'instant', or 'deep'.
+            type: The type of search, 'auto', 'fast', or 'deep'.
             run_manager: The run manager for callbacks.
 
         """  # noqa: E501
