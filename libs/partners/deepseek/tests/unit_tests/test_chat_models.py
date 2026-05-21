@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -252,6 +252,43 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_includes_reasoning_content(self) -> None:
+        """Test that `AIMessage` reasoning content is included in the payload."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="What is the weather?"),
+            AIMessage(
+                content="",
+                additional_kwargs={"reasoning_content": "I should call a tool."},
+                tool_calls=[
+                    {
+                        "name": "GetWeather",
+                        "args": {"location": "San Francisco, CA"},
+                        "id": "call_1",
+                    },
+                ],
+            ),
+            ToolMessage(content="sunny", tool_call_id="call_1"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assert payload["messages"][1]["role"] == "assistant"
+        assert payload["messages"][1]["reasoning_content"] == "I should call a tool."
+
+    def test_get_request_payload_ignores_invalid_reasoning_content(self) -> None:
+        """Test that empty or non-string reasoning content is not included."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            AIMessage(content="", additional_kwargs={"reasoning_content": ""}),
+            AIMessage(content="", additional_kwargs={"reasoning_content": 1}),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assert "reasoning_content" not in payload["messages"][0]
+        assert "reasoning_content" not in payload["messages"][1]
 
 
 class SampleTool(PydanticBaseModel):
