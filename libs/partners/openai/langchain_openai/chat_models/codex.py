@@ -15,6 +15,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.messages import SystemMessage
 from pydantic import Field, PrivateAttr, model_validator
 
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -54,6 +55,57 @@ def _default_originator() -> str:
     return os.environ.get(ORIGINATOR_ENV_VAR) or ORIGINATOR_VALUE
 
 
+def _flatten_system_message_content(system_messages: list[SystemMessage]) -> str:
+    """Join `SystemMessage` content into a single `instructions` string.
+
+    Codex rejects `SystemMessage` entries in the input list, so their
+    content is lifted into the top-level `instructions` field. Content
+    that uses list-of-content-blocks form is accepted only when every
+    block is `{"type": "text", ...}`; anything else cannot be flattened
+    into the string-typed `instructions` field.
+
+    Raises:
+        ValueError: A `SystemMessage` carries a non-text content block.
+    """
+    parts: list[str] = []
+    for index, message in enumerate(system_messages):
+        content = message.content
+        if isinstance(content, str):
+            parts.append(content)
+            continue
+        if not isinstance(content, list):
+            msg = (
+                f"`SystemMessage` at index {index} has unsupported content "
+                f"type {type(content).__name__!r}; only `str` and "
+                "list-of-text-blocks are accepted by `ChatOpenAICodex`."
+            )
+            raise ValueError(msg)
+        text_parts: list[str] = []
+        for block_index, block in enumerate(content):
+            if not isinstance(block, dict) or block.get("type") != "text":
+                msg = (
+                    f"`SystemMessage` at index {index} contains a "
+                    f"non-text content block at position {block_index} "
+                    "(Codex `instructions` is a string field — only "
+                    '`{"type": "text", "text": "..."}` blocks can be '
+                    "lifted into it). Move the non-text content to a "
+                    "`HumanMessage`, or pass plain instructions via the "
+                    "constructor or `instructions=` kwarg."
+                )
+                raise ValueError(msg)
+            text_value = block.get("text", "")
+            if not isinstance(text_value, str):
+                msg = (
+                    f"`SystemMessage` at index {index} has a text block "
+                    f"at position {block_index} whose `text` is not a "
+                    "string."
+                )
+                raise ValueError(msg)
+            text_parts.append(text_value)
+        parts.append("".join(text_parts))
+    return "\n\n".join(parts)
+
+
 DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenAI."
 """Generic fallback for the Responses-API `instructions` field.
 
@@ -64,27 +116,38 @@ prompt — see `ChatOpenAICodex.instructions` for the resolution rules.
 """
 _FORCED_VALUES: dict[str, Any] = {
     "use_responses_api": True,
-    "output_version": "responses/v1",
     "store": False,
     "streaming": True,
 }
 """Values forced onto every `ChatOpenAICodex` instance.
 
-The ChatGPT Codex backend rejects non-streaming requests
-(`400 'Stream must be set to true'`) and requests that ask it to persist
-response data (`400 'Store must be set to false'`). Pinning `streaming=True`
-routes `invoke` through `_stream` so a streaming request is always sent and
-chunks are aggregated back into a single message for the caller.
+These are the wire-level constraints the Codex backend imposes:
+
+- `use_responses_api=True`: Codex is only reachable through the Responses
+    API surface.
+- `store=False`: the backend rejects `store=true`
+    (`400 'Store must be set to false'`).
+- `streaming=True`: the backend rejects non-streaming requests
+    (`400 'Stream must be set to true'`). Pinning this routes `invoke`
+    through `_stream` so a streaming request is always sent and chunks
+    are aggregated back into a single message for the caller.
+
+`output_version` is intentionally **not** forced — it is a client-side
+`AIMessage` projection (see `ChatOpenAI.output_version`) that never
+appears in the request payload, so callers can pick `"v0"`, `"v1"`, or
+`"responses/v1"` freely.
 """
 
 
 class ChatOpenAICodex(ChatOpenAI):
     """`ChatOpenAI` variant authed by a ChatGPT OAuth subscription.
 
-    Routes requests to `https://chatgpt.com/backend-api/codex` and enforces
-    Responses API behavior (`use_responses_api=True`,
-    `output_version="responses/v1"`). These values are *forced* — passing a
-    conflicting value to the constructor raises. Authorization and
+    Routes requests to `https://chatgpt.com/backend-api/codex` and forces
+    the wire-level fields the Codex backend requires
+    (`use_responses_api=True`, `store=False`, `streaming=True`). These
+    values are forced — passing a conflicting value to the constructor
+    raises. `output_version` (a client-side `AIMessage` projection) is
+    not forced; pick whichever projection you want. Authorization and
     `ChatGPT-Account-Id` headers are taken from `token_provider` on every
     request so a freshly-refreshed access token is always used.
 
@@ -163,12 +226,17 @@ class ChatOpenAICodex(ChatOpenAI):
 
     `instructions` is a *top-level* field of the Responses API request — it
     is not a chat message. The Codex backend rejects any request where this
-    field is missing or empty (400 `Instructions are required`), so this
-    field always carries a value:
+    field is missing or empty (400 `Instructions are required`) **and**
+    rejects any `SystemMessage` entry in the input list
+    (400 `System messages are not allowed`). To bridge those constraints
+    transparently, `ChatOpenAICodex` resolves `instructions` per call with
+    this precedence (highest wins):
 
-    - this constructor field (defaults to a generic ChatGPT prompt), or
-    - an explicit `instructions=` kwarg passed to `invoke` / `stream`,
-        which overrides the constructor value for that one call only.
+    1. Explicit `instructions=` kwarg on `invoke` / `stream`.
+    2. Concatenated content of any `SystemMessage` entries in the input
+        list — joined with `"\\n\\n"` and stripped from the input before
+        sending. Set the explicit kwarg in (1) to override.
+    3. This constructor field (defaults to a generic ChatGPT prompt).
 
     The Codex backend is stateless for this client (`store=False` is
     forced), so `instructions` is sent on every request and can be changed
@@ -186,11 +254,10 @@ class ChatOpenAICodex(ChatOpenAI):
     )
     ```
 
-    `instructions` is distinct from any `SystemMessage` placed in the input
-    list. A `SystemMessage` becomes an entry in the `input` array (a chat
-    turn); `instructions` is a separate top-level directive applied to the
-    response generation. Passing a `SystemMessage` does **not** populate
-    this field.
+    `SystemMessage` content that uses list-of-content-blocks form is
+    accepted only if every block is `{"type": "text", ...}`; any other
+    block type raises `ValueError` since it cannot be flattened into the
+    string-typed `instructions` field.
     """
 
     _resolved_token_provider: ChatGPTOAuthTokenProvider = PrivateAttr()
@@ -271,8 +338,32 @@ class ChatOpenAICodex(ChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
-        """Build the request payload and attach Codex auth headers."""
-        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        """Build the request payload and attach Codex auth headers.
+
+        Lifts any `SystemMessage` content out of the input list into the
+        top-level `instructions` field, since Codex rejects `SystemMessage`
+        chat turns. See the `instructions` field docstring for the
+        precedence rules.
+        """
+        messages = self._convert_input(input_).to_messages()
+        system_messages = [m for m in messages if isinstance(m, SystemMessage)]
+        if system_messages:
+            non_system = [m for m in messages if not isinstance(m, SystemMessage)]
+            lifted = _flatten_system_message_content(system_messages)
+            explicit = kwargs.get("instructions")
+            if explicit is not None:
+                logger.warning(
+                    "Both `instructions=` and a `SystemMessage` were provided; "
+                    "the explicit `instructions=` kwarg wins and the "
+                    "`SystemMessage` content is discarded for this call. "
+                    "Discarded length: %d.",
+                    len(lifted),
+                )
+            else:
+                kwargs["instructions"] = lifted
+            messages = non_system
+
+        payload = super()._get_request_payload(messages, stop=stop, **kwargs)
         # The Codex backend rejects requests without `instructions` — populate
         # the field's value if the caller didn't supply one. An explicit empty
         # string from the caller is preserved (the backend will reject it, but
