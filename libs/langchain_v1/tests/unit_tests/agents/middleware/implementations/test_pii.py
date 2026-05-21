@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
 from langgraph.stream.transformers import MessagesTransformer
@@ -1052,8 +1052,7 @@ class TestPIIStreamingEndToEnd:
 
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-        delta_texts: list[str] = []
-        finalized_texts: list[str] = []
+        surfaces: list[str] = []
         async for event in run:
             if event.get("method") != "messages":
                 continue
@@ -1061,27 +1060,31 @@ class TestPIIStreamingEndToEnd:
             if not isinstance(data, tuple) or len(data) != 2:
                 continue
             payload = data[0]
-            if not isinstance(payload, dict):
-                continue
-            kind = payload.get("event")
-            if kind == "content-block-delta":
-                delta = payload.get("delta") or {}
-                if delta.get("type") == "text-delta":
-                    delta_texts.append(delta.get("text", ""))
-            elif kind == "content-block-finish":
-                content = payload.get("content") or {}
-                if content.get("type") == "text":
-                    finalized_texts.append(content.get("text", ""))
+            # v3 protocol-event shape: dict with `event` discriminator.
+            if isinstance(payload, dict):
+                kind = payload.get("event")
+                if kind == "content-block-delta":
+                    delta = payload.get("delta") or {}
+                    if delta.get("type") == "text-delta":
+                        surfaces.append(delta.get("text", ""))
+                elif kind == "content-block-finish":
+                    content = payload.get("content") or {}
+                    if content.get("type") == "text":
+                        surfaces.append(content.get("text", ""))
+            # Legacy `(BaseMessage, metadata)` shape: message carries text
+            # directly on `.content`. The langgraph→langchain adapter falls
+            # back to this when `_astream` isn't streaming chunks.
+            elif isinstance(payload, BaseMessage):
+                content = payload.content
+                if isinstance(content, str):
+                    surfaces.append(content)
 
-        # Per-delta texts on the wire are redacted in flight.
-        for text in delta_texts:
-            assert "alice@example.com" not in text
-        # The finalized snapshot is also redacted in full.
-        for text in finalized_texts:
+        # Every observed text surface — deltas, finalized snapshots, or
+        # legacy whole-message payloads — must already be redacted.
+        for text in surfaces:
             assert "alice@example.com" not in text
         # And the redaction marker actually shows up somewhere.
-        joined = "".join(delta_texts) + "".join(finalized_texts)
-        assert "[REDACTED_EMAIL]" in joined
+        assert any("[REDACTED_EMAIL]" in text for text in surfaces)
 
     @pytest.mark.anyio
     async def test_subgraph_redaction_via_create_agent_in_tool(self) -> None:

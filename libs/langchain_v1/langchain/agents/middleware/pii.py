@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, ToolMessage
 from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
@@ -90,6 +90,17 @@ class _PIIStreamTransformer(StreamTransformer):
         if not isinstance(data, tuple) or len(data) != 2:  # noqa: PLR2004
             return True
         payload, metadata = data
+
+        # Legacy `(BaseMessage, metadata)` shape: the langgraph→langchain
+        # integration emits this when a model only implements `_generate`
+        # (or when its `_astream` falls back), producing a single event
+        # carrying the full message rather than streamed content-block
+        # deltas. Scrub `.content` in place so the consumer sees redacted
+        # text regardless of which shape the runtime emitted.
+        if isinstance(payload, BaseMessage):
+            self._mutate_message(payload)
+            return True
+
         if not isinstance(payload, dict):
             return True
         kind = payload.get("event")
@@ -102,6 +113,14 @@ class _PIIStreamTransformer(StreamTransformer):
         elif kind in {"message-finish", "error"}:
             self._drop_run(run_id)
         return True
+
+    def _mutate_message(self, message: BaseMessage) -> None:
+        content = message.content
+        if not isinstance(content, str) or not content:
+            return
+        matches = self._rule.detector(content)
+        if matches:
+            message.content = apply_strategy(content, matches, self._rule.strategy)
 
     def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
         delta = payload.get("delta")
