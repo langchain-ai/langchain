@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import re
@@ -203,6 +204,28 @@ def vcr_config() -> dict:
     return config
 
 
+def _normalize_tool_descriptions(body: Any) -> Any:
+    """Strip common leading whitespace from `tools[*].description` strings.
+
+    Python 3.13+ runs `inspect.cleandoc` on docstrings at compile time, but
+    cassettes recorded on Python 3.12 (or earlier) preserve the raw indented
+    form. Normalize the `description` field — populated from a tool's
+    docstring by `@tool` — so cassettes recorded on any Python version match
+    requests issued by any other version. Scoped to `tools[*].description`
+    to avoid mutating user-visible message content.
+    """
+    if not isinstance(body, dict):
+        return body
+    tools = body.get("tools")
+    if isinstance(tools, list):
+        for entry in tools:
+            if isinstance(entry, dict):
+                description = entry.get("description")
+                if isinstance(description, str):
+                    entry["description"] = inspect.cleandoc(description)
+    return body
+
+
 def _json_body_matcher(r1: Any, r2: Any) -> None:
     """Match request bodies as parsed JSON, ignoring key order."""
     b1 = r1.body or b""
@@ -212,8 +235,8 @@ def _json_body_matcher(r1: Any, r2: Any) -> None:
     if isinstance(b2, bytes):
         b2 = b2.decode("utf-8")
     try:
-        j1 = json.loads(b1)
-        j2 = json.loads(b2)
+        j1 = _normalize_tool_descriptions(json.loads(b1))
+        j2 = _normalize_tool_descriptions(json.loads(b2))
     except (json.JSONDecodeError, ValueError):
         assert b1 == b2, f"body mismatch (non-JSON):\n{b1}\n!=\n{b2}"
         return
