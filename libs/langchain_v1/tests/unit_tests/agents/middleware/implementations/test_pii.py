@@ -873,10 +873,54 @@ class TestPIIStreamTransformer:
         middleware = PIIMiddleware("email", apply_to_output=False)
         assert middleware.transformers == ()
 
-    def test_block_strategy_skips_stream_transformer(self) -> None:
-        """`block` strategy can't run mid-stream — fall back to state-level only."""
+    def test_block_strategy_installs_buffering_stream_transformer(self) -> None:
+        """`block` + output streaming installs a buffering transformer.
+
+        `after_model` is still the canonical blocker. The transformer's
+        job is to make sure no PII reaches the streamed surface before
+        that hook can raise.
+        """
         middleware = PIIMiddleware("email", strategy="block", apply_to_output=True)
-        assert middleware.transformers == ()
+        assert len(middleware.transformers) == 1
+
+    def test_block_strategy_empties_deltas_and_finalize_when_pii_present(self) -> None:
+        """Stream PII under `block`: every delta empty, finalize empty too."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            _make_delta_event("Reach me at alice"),
+            _make_delta_event("@example.com soon"),
+            _make_finish_event("Reach me at alice@example.com soon"),
+        ]
+        _run_transformer(transformer, events)
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+
+        # No characters of the PII (or the surrounding text) reach the
+        # consumer — every delta is empty and the finalize snapshot is
+        # zeroed when PII is detected.
+        assert streamed == ""
+        assert finals[0] == ""
+
+    def test_block_strategy_releases_full_text_at_finalize_when_clean(self) -> None:
+        """Stream clean text under `block`: deltas empty, finalize is the full text."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            _make_delta_event("Hello there, "),
+            _make_delta_event("how are you?"),
+            _make_finish_event("Hello there, how are you?"),
+        ]
+        _run_transformer(transformer, events)
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+
+        # Deltas hold everything back; the finalize event carries the
+        # whole block at once. `ChatModelStream._resolve_block_text`
+        # turns this into a single trailing delta for the consumer's
+        # `msg.text` projection.
+        assert streamed == ""
+        assert finals[0] == "Hello there, how are you?"
 
     def test_finalize_block_redacts_full_text_even_if_stream_redaction_partial(
         self,
@@ -1118,6 +1162,44 @@ class TestPIIStreamingEndToEnd:
             assert "alice@example.com" not in text
         # And the redaction marker actually shows up somewhere.
         assert any("[REDACTED_EMAIL]" in text for text in surfaces)
+
+    @pytest.mark.anyio
+    async def test_block_strategy_emits_no_pii_and_run_raises(self) -> None:
+        """`block` + `apply_to_output=True` + streaming.
+
+        Closes the bypass where the transformer was skipped for `block`,
+        leaving plaintext deltas to reach the consumer before
+        `after_model` raised. The buffering transformer now keeps every
+        wire surface empty and `after_model` raises on the original
+        message in state.
+        """
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Email me at alice@example.com.")])
+        )
+        agent = create_agent(
+            model,
+            [],
+            middleware=[PIIMiddleware("email", strategy="block", apply_to_output=True)],
+        )
+
+        collected = ""
+
+        async def drain() -> None:
+            nonlocal collected
+            run = await agent.astream_events(
+                {"messages": [HumanMessage("hi")]}, version="v3"
+            )
+            async for msg in run.messages:
+                async for chunk in msg.text:
+                    collected += chunk
+
+        with pytest.raises(PIIDetectionError):
+            await drain()
+
+        # No characters of the PII surface ever reach the consumer — the
+        # raised error is the only signal that something was blocked.
+        assert "alice@example.com" not in collected
+        assert "alice" not in collected
 
     @pytest.mark.anyio
     async def test_subgraph_redaction_via_create_agent_in_tool(self) -> None:

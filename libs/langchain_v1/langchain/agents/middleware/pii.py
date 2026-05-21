@@ -95,10 +95,13 @@ class _PIIStreamTransformer(StreamTransformer):
         # integration emits this when a model only implements `_generate`
         # (or when its `_astream` falls back), producing a single event
         # carrying the full message rather than streamed content-block
-        # deltas. Scrub `.content` in place so the consumer sees redacted
-        # text regardless of which shape the runtime emitted.
+        # deltas. For non-`block` strategies, scrub `.content` in place
+        # so the consumer sees redacted text (after_model re-runs and is
+        # idempotent on the now-redacted state). For `block`, replace the
+        # event payload with an empty copy — the original message stays
+        # in state for `after_model` to raise on.
         if isinstance(payload, BaseMessage):
-            self._mutate_message(payload)
+            self._mutate_legacy_payload(event, payload, metadata)
             return True
 
         if not isinstance(payload, dict):
@@ -114,13 +117,38 @@ class _PIIStreamTransformer(StreamTransformer):
             self._drop_run(run_id)
         return True
 
-    def _mutate_message(self, message: BaseMessage) -> None:
+    def _mutate_legacy_payload(
+        self,
+        event: ProtocolEvent,
+        message: BaseMessage,
+        metadata: Any,
+    ) -> None:
+        """Scrub a legacy `(BaseMessage, metadata)` payload.
+
+        For non-`block` strategies the message's `.content` is mutated in
+        place — `after_model` runs on the same object in graph state and
+        is idempotent over already-redacted text, so the wire and state
+        both end up redacted.
+
+        For `block`, the event's `data` tuple is replaced with one
+        carrying a fresh empty-content message of the same class and id.
+        That keeps the original message in graph state intact so
+        `after_model` can still raise `PIIDetectionError`, while ensuring
+        downstream stream consumers — including `MessagesTransformer`,
+        which runs *after* this transformer but sees the same event
+        object — never observe the PII.
+        """
         content = message.content
         if not isinstance(content, str) or not content:
             return
         matches = self._rule.detector(content)
-        if matches:
-            message.content = apply_strategy(content, matches, self._rule.strategy)
+        if not matches:
+            return
+        if self._rule.strategy == "block":
+            empty = type(message)(content="", id=getattr(message, "id", None))
+            event["params"]["data"] = (empty, metadata)
+            return
+        message.content = apply_strategy(content, matches, self._rule.strategy)
 
     def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
         delta = payload.get("delta")
@@ -138,6 +166,17 @@ class _PIIStreamTransformer(StreamTransformer):
         key = (run_id, index)
         held = self._buffers.get(key, "")
         combined = held + text
+
+        if self._rule.strategy == "block":
+            # `block` withholds every delta from the consumer and defers
+            # the decision to `_finalize_block`. Detection runs once on
+            # the assembled block so we don't pay regex cost per delta,
+            # and the consumer sees no content until the block resolves
+            # either to its full text (clean) or to empty (PII found —
+            # `after_model` raises shortly after).
+            self._buffers[key] = combined
+            delta["text"] = ""
+            return
 
         # Run detection on the full accumulated buffer before splitting.
         # Detecting only on the about-to-emit prefix would miss matches
@@ -166,7 +205,15 @@ class _PIIStreamTransformer(StreamTransformer):
             if isinstance(text, str) and text:
                 matches = self._rule.detector(text)
                 if matches:
-                    content["text"] = apply_strategy(text, matches, self._rule.strategy)
+                    # `block` withholds the content from the consumer;
+                    # `after_model` raises `PIIDetectionError` on the
+                    # original state message shortly after.
+                    if self._rule.strategy == "block":
+                        content["text"] = ""
+                    else:
+                        content["text"] = apply_strategy(
+                            text, matches, self._rule.strategy
+                        )
         self._buffers.pop(key, None)
 
     def _drop_run(self, run_id: str) -> None:
@@ -322,12 +369,13 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Stream transformer mirrors `apply_to_output` — it scrubs the
         # streamed surface of the same model output that `after_model`
-        # scrubs in state. `block` is not supported on the streaming path
-        # (raising mid-stream would leave projections in a torn state);
-        # users mixing `block` with output redaction still get state-level
-        # blocking via `after_model`.
+        # scrubs in state. `after_model` remains the canonical blocker;
+        # for `block` the transformer withholds every delta and either
+        # releases the full text at finalize (clean) or empties the
+        # finalize content (PII present — `after_model` raises shortly
+        # after on the original state message).
         self._stream_lookback = stream_lookback
-        if self.apply_to_output and self.strategy != "block":
+        if self.apply_to_output:
             self.transformers = (
                 partial(
                     _PIIStreamTransformer,
