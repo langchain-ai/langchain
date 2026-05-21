@@ -819,6 +819,52 @@ class TestPIIStreamTransformer:
         redacted = transformer._redact_value(value)
         assert redacted == value
 
+    def test_redact_value_walks_ai_message_tool_calls(self) -> None:
+        """`_redact_value` redacts `AIMessage.tool_calls[*].args` even with empty content.
+
+        The legacy `(AIMessage, metadata)` payload path on the `messages`
+        channel mutates `tool_calls` in place before the `values` event
+        fires, but on the v3 streaming path the state's AIMessage is
+        assembled by langgraph without going through that mutation.
+        `_redact_value` is what scrubs the message when the `values`
+        snapshot walks it — it must not stop at empty content.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
+            ],
+            id="m1",
+        )
+        redacted = transformer._redact_value(msg)
+
+        # Original message stays intact for state-level enforcers.
+        assert msg.tool_calls[0]["args"] == {"to": "alice@example.com"}
+        # The returned copy has scrubbed tool_calls and is a fresh object.
+        assert redacted is not msg
+        assert redacted.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+
+    def test_redact_value_walks_both_content_and_tool_calls(self) -> None:
+        """Content and tool_calls both carry PII — both get scrubbed in one pass."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = AIMessage(
+            content="Reaching out from bob@example.com",
+            tool_calls=[
+                ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
+            ],
+            id="m1",
+        )
+        redacted = transformer._redact_value(msg)
+
+        assert "bob@example.com" not in redacted.content
+        assert "[REDACTED_EMAIL]" in redacted.content
+        assert redacted.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+
     def test_tool_call_args_redacted_on_block_delta(self) -> None:
         """A `block-delta` event with a `tool_call_chunk` field redacts the args."""
         rule = RedactionRule(pii_type="email").resolve()

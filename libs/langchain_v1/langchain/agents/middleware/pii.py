@@ -293,17 +293,43 @@ class _PIIStreamTransformer(StreamTransformer):
                 return ""
             return apply_strategy(value, matches, self._rule.strategy)
         if isinstance(value, BaseMessage):
+            update: dict[str, Any] = {}
+
             content = value.content
-            if not isinstance(content, str) or not content:
+            if isinstance(content, str) and content:
+                matches = self._rule.detector(content)
+                if matches:
+                    if self._rule.strategy == "block":
+                        update["content"] = ""
+                    else:
+                        update["content"] = apply_strategy(content, matches, self._rule.strategy)
+
+            # `AIMessage.tool_calls` carry PII in `args` independently of
+            # `.content` (the common shape for tool-calling responses is
+            # empty content + populated `tool_calls`). Walk each call's
+            # args through the recursion so a state snapshot containing
+            # such a message doesn't leak the args on the wire.
+            if isinstance(value, AIMessage) and value.tool_calls:
+                new_tool_calls: list[Any] = []
+                tool_calls_changed = False
+                for tc in value.tool_calls:
+                    if isinstance(tc, dict):
+                        args = tc.get("args")
+                        if isinstance(args, dict):
+                            redacted_args = self._redact_value(args)
+                            if redacted_args != args:
+                                new_tc = dict(tc)
+                                new_tc["args"] = redacted_args
+                                new_tool_calls.append(new_tc)
+                                tool_calls_changed = True
+                                continue
+                    new_tool_calls.append(tc)
+                if tool_calls_changed:
+                    update["tool_calls"] = new_tool_calls
+
+            if not update:
                 return value
-            matches = self._rule.detector(content)
-            if not matches:
-                return value
-            if self._rule.strategy == "block":
-                new_content: str = ""
-            else:
-                new_content = apply_strategy(content, matches, self._rule.strategy)
-            return value.model_copy(update={"content": new_content})
+            return value.model_copy(update=update)
         if isinstance(value, dict):
             return {k: self._redact_value(v) for k, v in value.items()}
         if isinstance(value, list):
