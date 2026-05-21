@@ -2966,6 +2966,25 @@ def test_bind_tools_keeps_forced_tool_choice_when_thinking_disabled() -> None:
     result = chat_model_disabled.bind_tools([GetWeather], tool_choice="any")
     assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
 
+def test_bind_tools_does_not_mutate_tool_choice_dict() -> None:
+    """bind_tools should not mutate a caller-provided tool_choice dict."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+    original = dict(tool_choice)
+
+    chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=tool_choice,
+        parallel_tool_calls=False,
+    )
+
+    assert tool_choice == original, (
+        f"bind_tools mutated caller-provided tool_choice: {tool_choice}"
+    )
+
 
 def test_thinking_in_params_recognizes_adaptive() -> None:
     """_thinking_in_params should recognize both enabled and adaptive types."""
