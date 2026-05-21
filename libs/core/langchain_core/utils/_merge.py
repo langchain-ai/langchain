@@ -68,7 +68,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
-            elif isinstance(merged[right_k], int):
+            elif isinstance(merged[right_k], (int, float)):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to
@@ -201,6 +201,8 @@ def merge_obj(left: Any, right: Any) -> Any:
         return merge_lists(left, right)
     if left == right:
         return left
+    if isinstance(left, (int, float)):
+        return left + right
     msg = (
         f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
         f"list, or else be two equal objects."

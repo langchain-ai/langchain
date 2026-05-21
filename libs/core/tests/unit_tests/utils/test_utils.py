@@ -129,6 +129,10 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Float fields should be summed (e.g., logprobs, scores, costs)
+        ({"score": 0.5}, {"score": 0.3}, {"score": 0.8}),
+        ({"logprob": -1.2}, {"logprob": -0.5}, {"logprob": -1.7}),
+        ({"cost": 0.0}, {"cost": 0.001}, {"cost": 0.001}),
     ],
 )
 def test_merge_dicts(
@@ -478,6 +482,10 @@ def test_merge_lists_all_none() -> None:
         (42, 42, 42),
         (3.14, 3.14, 3.14),
         (True, True, True),
+        # Unequal numeric values should be summed
+        (10, 5, 15),
+        (0.5, 0.3, 0.8),
+        (-1.2, -0.5, -1.7),
     ],
 )
 def test_merge_obj(left: Any, right: Any, expected: Any) -> None:
@@ -494,10 +502,4 @@ def test_merge_obj_type_mismatch() -> None:
 def test_merge_obj_unmergeable_values() -> None:
     """Test `merge_obj` raises `ValueError` on unmergeable values."""
     with pytest.raises(ValueError, match="Unable to merge"):
-        merge_obj(1, 2)  # Different integers
-
-
-def test_merge_obj_tuple_raises() -> None:
-    """Test `merge_obj` raises `ValueError` for tuples."""
-    with pytest.raises(ValueError, match="Unable to merge"):
-        merge_obj((1, 2), (3, 4))
+        merge_obj((1, 2), (3, 4))  # Tuples are not supported
