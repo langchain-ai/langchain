@@ -7,10 +7,6 @@ import base64
 import hashlib
 import json
 import os
-import threading
-import urllib.error
-import urllib.parse
-import urllib.request
 from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
 from typing import Any, Literal, overload
@@ -786,6 +782,21 @@ def test_callback_handler_error_logs_server_side(
 
 
 def test_wait_for_callback_times_out(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Stub out HTTPServer so no real socket is bound — the timeout path
+    # doesn't need a working server.
+    class _FakeServer:
+        timeout = 0.0
+
+        def __init__(self, *_a: Any, **_k: Any) -> None:
+            pass
+
+        def handle_request(self) -> None:
+            return
+
+        def server_close(self) -> None:
+            return
+
+    monkeypatch.setattr(oauth_module.http.server, "HTTPServer", _FakeServer)
     # Force the loop to never satisfy the deadline.
     times = iter([0.0, 0.0, 9999.0])
     monkeypatch.setattr(oauth_module.time, "monotonic", lambda: next(times))
@@ -813,42 +824,46 @@ def _run_callback_handler(
 def _run_callback_handler(
     *, path: str, capture_body: bool = False
 ) -> dict[str, str] | None | tuple[dict[str, str] | None, str]:
-    """Drive a real `_CallbackHandler` against a localhost request.
+    """Drive `_CallbackHandler.do_GET` in-process without binding a socket.
 
-    Returns the populated `server_result` if the callback was matched, or
-    `None` if the handler 404'd. When `capture_body=True`, returns a
-    `(result, body)` tuple where `body` is the decoded response body.
+    Bypasses `BaseHTTPRequestHandler.__init__` (which reads a real socket)
+    and overrides `send_response`/`send_header`/`end_headers` so the
+    response is captured in a `BytesIO`. Returns the populated
+    `server_result` if the callback was matched, or `None` if the handler
+    404'd. When `capture_body=True`, returns a `(result, body)` tuple
+    where `body` is the decoded response body.
     """
-    import http.server
+    import io
 
     class _BoundCallbackHandler(_CallbackHandler):
         server_result: dict[str, str] = {}
 
+        def __init__(self, request_path: str) -> None:
+            # Skip BaseHTTPRequestHandler.__init__: it expects a real socket.
+            self.path = request_path
+            self.command = "GET"
+            self.request_version = "HTTP/1.1"
+            self.client_address = ("127.0.0.1", 0)
+            self.status_code: int | None = None
+            self.body_buffer = io.BytesIO()
+            self.wfile = self.body_buffer
+
+        def send_response(self, code: int, message: str | None = None) -> None:
+            self.status_code = code
+
+        def send_header(self, keyword: str, value: str) -> None:
+            return
+
+        def end_headers(self) -> None:
+            return
+
     _BoundCallbackHandler.callback_path = "/auth/callback"
-    server = http.server.HTTPServer(("127.0.0.1", 0), _BoundCallbackHandler)
-    port = server.server_address[1]
-    captured_status: list[int] = []
-    captured_body = ""
-
-    def _serve() -> None:
-        server.handle_request()
-
-    thread = threading.Thread(target=_serve, daemon=True)
-    thread.start()
-    try:
-        url = f"http://127.0.0.1:{port}{path}"
-        with urllib.request.urlopen(url, timeout=2.0) as resp:  # noqa: S310
-            captured_status.append(resp.status)
-            captured_body = resp.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        captured_status.append(exc.code)
-    finally:
-        thread.join(timeout=2.0)
-        server.server_close()
-    result: dict[str, str] | None
-    result = (
+    handler = _BoundCallbackHandler(path)
+    handler.do_GET()
+    captured_body = handler.body_buffer.getvalue().decode("utf-8")
+    result: dict[str, str] | None = (
         None
-        if captured_status and captured_status[0] == 404
+        if handler.status_code == 404
         else dict(_BoundCallbackHandler.server_result)
     )
     if capture_body:
