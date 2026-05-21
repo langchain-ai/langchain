@@ -1019,6 +1019,196 @@ class TestPIIStreamTransformer:
         }
         assert transformer.process(event) is True
 
+    def test_tool_started_input_is_redacted(self) -> None:
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-started",
+                    "tool_call_id": "c1",
+                    "tool_name": "send_email",
+                    "input": {"to": "alice@example.com", "subject": "clean"},
+                },
+            },
+        }
+        transformer.process(event)
+        assert event["params"]["data"]["input"] == {
+            "to": "[REDACTED_EMAIL]",
+            "subject": "clean",
+        }
+
+    def test_tool_output_delta_string_uses_lookback(self) -> None:
+        """String tool-output deltas get the lookback redaction same as text."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
+
+        events = [
+            {
+                "type": "event",
+                "method": "tools",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": {
+                        "event": "tool-output-delta",
+                        "tool_call_id": "c1",
+                        "delta": "Result: alice",
+                    },
+                },
+            },
+            {
+                "type": "event",
+                "method": "tools",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": {
+                        "event": "tool-output-delta",
+                        "tool_call_id": "c1",
+                        "delta": "@example.com end",
+                    },
+                },
+            },
+        ]
+        for e in events:
+            transformer.process(e)
+        streamed = (
+            events[0]["params"]["data"]["delta"]
+            + events[1]["params"]["data"]["delta"]
+        )
+        assert "alice@example.com" not in streamed
+
+    def test_tool_output_delta_dict_walks_strings(self) -> None:
+        """Structured tool-output deltas redact each string leaf in place."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-output-delta",
+                    "tool_call_id": "c1",
+                    "delta": {"row": {"email": "alice@example.com"}, "ok": True},
+                },
+            },
+        }
+        transformer.process(event)
+        assert event["params"]["data"]["delta"] == {
+            "row": {"email": "[REDACTED_EMAIL]"},
+            "ok": True,
+        }
+
+    def test_tool_finished_output_redacted(self) -> None:
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-finished",
+                    "tool_call_id": "c1",
+                    "output": {"email": "alice@example.com", "clean": "yes"},
+                },
+            },
+        }
+        transformer.process(event)
+        assert event["params"]["data"]["output"] == {
+            "email": "[REDACTED_EMAIL]",
+            "clean": "yes",
+        }
+
+    def test_tool_error_message_redacted(self) -> None:
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-error",
+                    "tool_call_id": "c1",
+                    "message": "failed for alice@example.com",
+                },
+            },
+        }
+        transformer.process(event)
+        assert "alice@example.com" not in event["params"]["data"]["message"]
+        assert "[REDACTED_EMAIL]" in event["params"]["data"]["message"]
+
+    def test_tool_finished_clears_per_tool_buffer(self) -> None:
+        """tool-finished drops the lookback buffer for that tool_call_id."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
+
+        delta_event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-output-delta",
+                    "tool_call_id": "c1",
+                    "delta": "partial text",
+                },
+            },
+        }
+        transformer.process(delta_event)
+        assert ("", "c1") in transformer._buffers
+
+        finish_event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-finished",
+                    "tool_call_id": "c1",
+                    "output": "done",
+                },
+            },
+        }
+        transformer.process(finish_event)
+        assert ("", "c1") not in transformer._buffers
+
+    def test_tool_output_delta_block_strategy_emptied(self) -> None:
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-output-delta",
+                    "tool_call_id": "c1",
+                    "delta": "Result: alice@example.com",
+                },
+            },
+        }
+        transformer.process(event)
+        assert event["params"]["data"]["delta"] == ""
+
     def test_tool_call_args_block_strategy_emptied(self) -> None:
         """`block` strategy zeroes args when PII is detected."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()

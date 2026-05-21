@@ -126,8 +126,71 @@ class _PIIStreamTransformer(StreamTransformer):
         return True
 
     def _process_tools_event(self, event: ProtocolEvent) -> bool:
-        # Tasks 8-10 fill this in.
+        data = event["params"].get("data")
+        if not isinstance(data, dict):
+            return True
+        kind = data.get("event")
+        tool_call_id = data.get("tool_call_id")
+
+        if kind == "tool-started":
+            if isinstance(data.get("input"), dict):
+                data["input"] = self._redact_value(data["input"])
+        elif kind == "tool-output-delta":
+            if isinstance(tool_call_id, str):
+                self._mutate_tool_output_delta(data, tool_call_id)
+        elif kind == "tool-finished":
+            if "output" in data:
+                data["output"] = self._redact_value(data["output"])
+            if isinstance(tool_call_id, str):
+                self._buffers.pop(("", tool_call_id), None)
+        elif kind == "tool-error":
+            msg = data.get("message")
+            if isinstance(msg, str) and msg:
+                matches = self._rule.detector(msg)
+                if matches:
+                    if self._rule.strategy == "block":
+                        data["message"] = ""
+                    else:
+                        data["message"] = apply_strategy(
+                            msg, matches, self._rule.strategy
+                        )
+            if isinstance(tool_call_id, str):
+                self._buffers.pop(("", tool_call_id), None)
+
         return True
+
+    def _mutate_tool_output_delta(self, data: dict[str, Any], tool_call_id: str) -> None:
+        """Redact a `tool-output-delta` payload.
+
+        String deltas go through the same lookback machinery as
+        text-deltas, keyed by `("", tool_call_id)` — tool_call_ids are
+        unique within a run, so a flat key suffices and avoids the
+        run_id propagation gap on the `tools` channel.
+
+        Structured deltas (dict/list) walk recursively without
+        buffering — they don't have a position-stable shape across
+        deltas to buffer against.
+        """
+        delta = data.get("delta")
+        if isinstance(delta, str):
+            key: tuple[str, int | str] = ("", tool_call_id)
+            held = self._buffers.get(key, "")
+            combined = held + delta
+
+            if self._rule.strategy == "block":
+                self._buffers[key] = combined
+                data["delta"] = ""
+                return
+
+            matches = self._rule.detector(combined)
+            if matches:
+                combined = apply_strategy(combined, matches, self._rule.strategy)
+
+            emit_end = max(0, len(combined) - self._lookback)
+            self._buffers[key] = combined[emit_end:]
+            data["delta"] = combined[:emit_end]
+        elif isinstance(delta, (dict, list)):
+            data["delta"] = self._redact_value(delta)
 
     def _mutate_legacy_payload(
         self,
