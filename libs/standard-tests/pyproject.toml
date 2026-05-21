@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.1.8"
+version = "1.1.9"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.0,<2.0.0",
