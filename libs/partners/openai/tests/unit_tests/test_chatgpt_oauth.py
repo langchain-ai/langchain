@@ -8,9 +8,10 @@ import hashlib
 import json
 import os
 import threading
+import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -443,7 +444,7 @@ def test_token_is_expired_uses_skew_with_frozen_clock(
 
     class _FrozenDatetime(datetime):
         @classmethod
-        def now(cls, tz: timezone | None = None) -> datetime:  # type: ignore[override]
+        def now(cls, tz: tzinfo | None = None) -> datetime:  # type: ignore[override]
             return frozen if tz is None else frozen.astimezone(tz)
 
     monkeypatch.setattr("langchain_openai.chatgpt_oauth.datetime", _FrozenDatetime)
