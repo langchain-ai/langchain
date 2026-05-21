@@ -21,11 +21,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.3.0a2"
+version = "1.3.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.0a2,<2.0.0",
-    "langgraph>=1.2.0a5,<1.3.0",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langgraph>=1.2.0,<1.3.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -72,7 +72,7 @@ test = [
     "syrupy>=5.0.0,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
-    "langchain-tests",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
 ]
 lint = [
@@ -88,8 +88,8 @@ test_integration = [
     "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "langchainhub>=0.1.16,<1.0.0",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 
 [tool.uv]

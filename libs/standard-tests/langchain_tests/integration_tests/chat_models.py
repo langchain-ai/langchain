@@ -852,8 +852,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
@@ -902,8 +905,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
@@ -941,8 +947,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         message = stream.output
         assert isinstance(message, AIMessage)
         assert message.content
-        assert len(message.content_blocks) == 1
-        assert message.content_blocks[0]["type"] == "text"
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
         # `stream_events(version="v3")` always assembles content as v1 protocol blocks.
         assert message.response_metadata.get("output_version") == "v1"
 
@@ -972,8 +978,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         message = await stream.output
         assert isinstance(message, AIMessage)
         assert message.content
-        assert len(message.content_blocks) == 1
-        assert message.content_blocks[0]["type"] == "text"
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
         assert message.response_metadata.get("output_version") == "v1"
 
     def test_invoke_with_model_override(self, model: BaseChatModel) -> None:

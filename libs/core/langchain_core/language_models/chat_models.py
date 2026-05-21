@@ -1474,7 +1474,31 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
-        """Get standard params for tracing."""
+        """Get standard params for LangSmith tracing.
+
+        Subclasses **should override** this method to populate `ls_provider`
+        and `ls_model_name` from provider-specific attributes (e.g. `self.model`,
+        `self.model_name`, `self.model_id`) and to honor per-call overrides
+        passed via `kwargs["model"]` so that runtime `bind`/`invoke` model
+        changes are reflected in traces.
+
+        The implementation here is a best-effort fallback for subclasses that
+        do not override it. It is not part of a stable contract and the
+        derivation rules may change:
+
+        - `ls_provider` is derived from the class name by stripping a leading
+            or trailing `"Chat"` and lowercasing the remainder. This produces
+            ugly values for multi-word providers (e.g. `ChatGoogleGenerativeAI`
+            would become `"googlegenerativeai"`).
+
+            Override to set a stable, conventional value
+            such as `"google_genai"`.
+        - `ls_model_name` is resolved from `kwargs["model"]`, then
+            `self.model`, then `self.model_name`.
+
+            Subclasses whose model attribute has a different name
+            (`model_id`, `deployment_name`, ...) must override.
+        """
         # get default provider from class name
         default_provider = self.__class__.__name__
         if default_provider.startswith("Chat"):

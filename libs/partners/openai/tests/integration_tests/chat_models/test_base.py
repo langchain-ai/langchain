@@ -898,7 +898,7 @@ def test_json_schema_openai_format(
 
 def test_audio_output_modality() -> None:
     llm = ChatOpenAI(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio",
         temperature=0,
         model_kwargs={
             "modalities": ["text", "audio"],
@@ -926,7 +926,7 @@ def test_audio_output_modality() -> None:
 
 def test_audio_input_modality() -> None:
     llm = ChatOpenAI(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio",
         temperature=0,
         model_kwargs={
             "modalities": ["text", "audio"],

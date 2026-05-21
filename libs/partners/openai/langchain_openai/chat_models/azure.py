@@ -539,12 +539,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_name: str | None = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. `'gpt-4o'`, `'gpt-35-turbo'`, etc.
+    """Name of the deployed OpenAI model.
 
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
 
     !!! warning
+
         Does NOT affect completion.
     """
 
@@ -748,7 +749,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.model_name:
+        if "model" in kwargs:
+            # Honor explicit per-call override resolved by super().
+            pass
+        elif self.model_name:
             if self.model_version and self.model_version not in self.model_name:
                 params["ls_model_name"] = (
                     self.model_name + "-" + self.model_version.lstrip("-")

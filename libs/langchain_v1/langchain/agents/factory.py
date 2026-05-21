@@ -81,6 +81,7 @@ if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
+    from langgraph.stream._mux import TransformerFactory
     from langgraph.types import Checkpointer
 
     from langchain.agents.middleware.types import ToolCallWrapper
@@ -155,8 +156,6 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     "gpt-4.1",
     "gpt-4o",
     "gpt-oss",
-    "o3-pro",
-    "o3-mini",
 ]
 
 
@@ -710,7 +709,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
-    transformers: Sequence[Callable[[tuple[str, ...]], Any]] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -808,9 +807,11 @@ def create_agent(
         cache: An optional `BaseCache` instance to enable caching of graph execution.
         transformers: Optional sequence of scope-aware `StreamTransformer`
             factories to register on the compiled graph in addition to
-            the agent defaults. Each factory is invoked per-scope
-            (`factory(scope)`) so subgraph mini-muxes get fresh
-            instances. Appended after the built-in `ToolCallTransformer`.
+            the agent defaults. Each factory is invoked as `factory(scope)`
+            so every invocation receives a fresh instance. The final order
+            on the compiled graph is: `ToolCallTransformer`, then any
+            factories declared by middleware via
+            `AgentMiddleware.transformers`, then any factories supplied here.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -869,11 +870,8 @@ def create_agent(
     initial_response_format: ToolStrategy[Any] | ProviderStrategy[Any] | AutoStrategy[Any] | None
     if response_format is None:
         initial_response_format = None
-    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        # Preserve explicitly requested strategies
-        initial_response_format = response_format
-    elif isinstance(response_format, AutoStrategy):
-        # AutoStrategy provided - preserve it for later auto-detection
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy, AutoStrategy)):
+        # Explicit Tool/Provider strategy, or AutoStrategy for later capability detection
         initial_response_format = response_format
     else:
         # Raw schema - wrap in AutoStrategy to enable auto-detection
@@ -1667,6 +1665,8 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
+    middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1675,7 +1675,11 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[ToolCallTransformer, *(transformers or ())],
+        transformers=[
+            ToolCallTransformer,
+            *middleware_transformers,
+            *(transformers or ()),
+        ],
     ).with_config(config)
 
 
