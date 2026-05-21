@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.stream._mux import TransformerFactory
     from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
@@ -396,6 +397,16 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
+
+    transformers: Sequence[TransformerFactory] = ()
+    """Stream transformer factories registered by the middleware.
+
+    Each entry is a scope-aware factory invoked as `factory(scope)` so every
+    invocation receives a fresh instance. Factories are merged with the
+    `transformers` argument of [`create_agent`][langchain.agents.create_agent]
+    at graph compile time, after the `ToolCallTransformer` and before any
+    user-supplied entries.
+    """
 
     @property
     def name(self) -> str:
