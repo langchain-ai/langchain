@@ -973,10 +973,16 @@ class TestPIIStreamTransformer:
         assert delta_reasoning == ""
         assert finalized == ""
 
-    def test_tool_call_args_redacted_on_block_delta(self) -> None:
-        """A `block-delta` event with a `tool_call_chunk` field redacts the args."""
+    def test_tool_call_args_short_args_withheld_during_streaming(self) -> None:
+        """Tool-call args shorter than `stream_lookback` are withheld on each chunk.
+
+        The redacted args dict surfaces on `content-block-finish` via
+        `_finalize_block` — the consumer's `tool_calls_proj` replaces
+        wholesale on each chunk, so this is equivalent to "no args
+        during streaming, redacted dict at finalize".
+        """
         rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule)
+        transformer = _PIIStreamTransformer(rule=rule)  # default lookback=128
 
         events = [
             {
@@ -1007,8 +1013,109 @@ class TestPIIStreamTransformer:
         _run_transformer(transformer, events)
 
         fields = events[0]["params"]["data"][0]["delta"]["fields"]
-        assert "alice@example.com" not in fields["args"]
-        assert "[REDACTED_EMAIL]" in fields["args"]
+        # 27 chars < lookback (128), so emit_end = 0 — nothing reaches the wire.
+        assert fields["args"] == ""
+
+    def test_tool_call_args_long_args_emit_safe_prefix(self) -> None:
+        """Args longer than `stream_lookback` stream the redacted safe prefix.
+
+        Detection runs on the full cumulative args, so any complete PII
+        anywhere in the string is redacted before emission. The trailing
+        `stream_lookback` characters are withheld — they might be the
+        start of a partial PII match that completes in a future delta.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        # 50-char args with PII near the start; emit_end = 50 - 8 = 42.
+        args = '{"to": "alice@example.com", "subject": "hi"}'
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "block-delta",
+                                "fields": {
+                                    "type": "tool_call_chunk",
+                                    "id": "call_1",
+                                    "name": "send_email",
+                                    "args": args,
+                                },
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+
+        emitted = events[0]["params"]["data"][0]["delta"]["fields"]["args"]
+        # The full cumulative args was detected and redacted before
+        # truncation, so the prefix that lands on the wire has no PII.
+        assert "alice@example.com" not in emitted
+        assert "[REDACTED_EMAIL]" in emitted
+
+    def test_tool_call_args_partial_pii_across_chunks_withheld(self) -> None:
+        """Cumulative chunks that grow into PII don't leak intermediate states.
+
+        Regression for Corridor's partial-exposure window: a model
+        streaming `{"to": "alice@` then `{"to": "alice@example.com"}`
+        would expose the partial first chunk under the old in-place
+        redaction. With lookback withholding, the partial chunk is
+        below the lookback threshold and never reaches the wire.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)  # default lookback=128
+
+        chunks = [
+            '{"to": "alice@',
+            '{"to": "alice@example',
+            '{"to": "alice@example.com"}',
+        ]
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "block-delta",
+                                "fields": {
+                                    "type": "tool_call_chunk",
+                                    "id": "c1",
+                                    "name": "send_email",
+                                    "args": c,
+                                },
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            }
+            for c in chunks
+        ]
+        _run_transformer(transformer, events)
+
+        # None of the intermediate accumulation states reach the wire —
+        # all chunks are below the 128-char lookback, so emit_end = 0.
+        for e in events:
+            args_on_wire = e["params"]["data"][0]["delta"]["fields"]["args"]
+            assert "alice@" not in args_on_wire
+            assert "alice" not in args_on_wire
+            assert args_on_wire == ""
 
     def test_finalize_block_redacts_tool_call_args(self) -> None:
         """`content-block-finish` with type=tool_call walks args dict."""
@@ -1675,10 +1782,7 @@ class TestPIIStreamTransformer:
             },
         }
         transformer.process(data_event)
-        assert (
-            data_event["params"]["data"][0]["delta"]["data"]
-            == "YWxpY2VAZXhhbXBsZS5jb20="
-        )
+        assert data_event["params"]["data"][0]["delta"]["data"] == "YWxpY2VAZXhhbXBsZS5jb20="
 
     def test_transformer_registered_before_messages_transformer_on_agent(self) -> None:
         """The PIIMiddleware transformer must run before MessagesTransformer.

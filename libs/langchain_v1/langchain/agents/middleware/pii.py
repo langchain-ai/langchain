@@ -420,27 +420,50 @@ class _PIIStreamTransformer(StreamTransformer):
         delta[field] = combined[:emit_end]
 
     def _mutate_tool_call_chunk_delta(self, fields: dict[str, Any]) -> None:
-        """Redact PII in cumulative tool-call args.
+        """Redact cumulative tool-call args with lookback withholding.
 
         Each `tool_call_chunk` `block-delta` event carries the full
         accumulated args string (verified against `_compat_bridge.py`
         — `delta_source = current` for these block types — and against
         the consumer-side `_merge_block_delta_into_store`, which
-        replaces rather than appends). Running detection on the field
-        directly catches any complete PII; partial PII at the tail is
-        caught on the next delta (which carries a longer cumulative
-        string) or by `_finalize_block` on the parsed args dict.
+        replaces wholesale rather than appends).
+
+        Detection runs on the full cumulative args so any complete PII
+        anywhere in the string is redacted before emission. Lookback
+        withholding then trims the trailing `stream_lookback` characters
+        from what reaches the consumer — those characters might be the
+        start of a partial PII match that completes in a future
+        cumulative delta. The trimmed tail surfaces at `content-block-
+        finish` where `_finalize_block` redacts the parsed args dict.
+
+        For args that fit within `stream_lookback` (the typical case),
+        this withholds the entire args string during streaming — the
+        redacted args dict appears only at finalize. For args that
+        exceed `stream_lookback`, the safe prefix streams incrementally
+        as the cumulative state grows. PII that appears more than
+        `stream_lookback` characters from the cumulative tail in a
+        delta where it hasn't yet completed can still surface in the
+        emit prefix — same residual exposure as PII longer than
+        `stream_lookback` on the text path. The `content-block-finish`
+        snapshot redaction is the backstop.
         """
         args = fields.get("args")
         if not isinstance(args, str) or not args:
             return
-        matches = self._rule.detector(args)
-        if not matches:
-            return
+
         if self._rule.strategy == "block":
+            # `block` withholds every wire surface during streaming;
+            # `_finalize_block` empties the parsed args on PII and
+            # `after_model` raises shortly after.
             fields["args"] = ""
             return
-        fields["args"] = apply_strategy(args, matches, self._rule.strategy)
+
+        matches = self._rule.detector(args)
+        if matches:
+            args = apply_strategy(args, matches, self._rule.strategy)
+
+        emit_end = max(0, len(args) - self._lookback)
+        fields["args"] = args[:emit_end]
 
     def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
         index = payload.get("index")
