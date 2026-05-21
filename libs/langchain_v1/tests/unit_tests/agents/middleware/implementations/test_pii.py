@@ -974,6 +974,26 @@ class TestPIIStreamTransformer:
         assert out_msg.tool_calls == []
         assert original.tool_calls[0]["args"] == {"to": "alice@example.com"}
 
+    def test_legacy_payload_redacts_tool_message_content(self) -> None:
+        """`(ToolMessage, metadata)` payload redacts `.content`."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = ToolMessage(content="Result: alice@example.com", tool_call_id="c1", id="m1")
+        event: dict[str, Any] = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (msg, {"run_id": "r1"}),
+            },
+        }
+        transformer.process(event)
+        out_msg = event["params"]["data"][0]
+        assert "alice@example.com" not in out_msg.content
+        assert "[REDACTED_EMAIL]" in out_msg.content
+
     def test_tool_call_args_block_strategy_emptied(self) -> None:
         """`block` strategy zeroes args when PII is detected."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
