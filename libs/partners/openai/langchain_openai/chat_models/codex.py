@@ -15,8 +15,8 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.messages import SystemMessage
-from pydantic import Field, PrivateAttr, model_validator
+from langchain_core.messages import BaseMessage, SystemMessage
+from pydantic import Field, model_validator
 
 from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.chatgpt_oauth import (
@@ -29,9 +29,7 @@ if TYPE_CHECKING:
 
     from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
     from langchain_core.language_models import LanguageModelInput
-    from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
-    from typing_extensions import Self
 
 
 logger = logging.getLogger(__name__)
@@ -53,6 +51,36 @@ ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
 def _default_originator() -> str:
     """Resolve the `originator` header default, honoring the env-var override."""
     return os.environ.get(ORIGINATOR_ENV_VAR) or ORIGINATOR_VALUE
+
+
+def _maybe_has_system_messages(input_: Any) -> bool:
+    """Return `True` if `input_` *could* contain a system-role message.
+
+    Cheap structural probe used to skip the full `_convert_input` pipeline
+    when there is no chance the lift logic will fire. False positives only
+    cost an extra conversion; false negatives would silently skip the lift,
+    so the probe is biased toward `True` for unknown shapes.
+    """
+    if isinstance(input_, str):
+        return False
+    if isinstance(input_, BaseMessage):
+        return isinstance(input_, SystemMessage)
+    if isinstance(input_, (list, tuple)):
+        for item in input_:
+            if isinstance(item, SystemMessage):
+                return True
+            if isinstance(item, dict) and item.get("role") in ("system", "developer"):
+                return True
+            if (
+                isinstance(item, tuple)
+                and item
+                and isinstance(item[0], str)
+                and item[0] in ("system", "developer")
+            ):
+                return True
+        return False
+    # `PromptValue` or any future shape — be safe and run the slow path.
+    return True
 
 
 def _flatten_system_message_content(system_messages: list[SystemMessage]) -> str:
@@ -199,26 +227,24 @@ class ChatOpenAICodex(ChatOpenAI):
     constructed.
     """
 
-    include_originator_header: bool = True
-    """Whether to send the optional `originator` header."""
-
-    originator: str = Field(default_factory=_default_originator)
-    """Value sent in the `originator` request header.
+    originator: str | None = Field(default_factory=_default_originator)
+    """Value sent in the `originator` request header, or `None` to omit it.
 
     Identifies the client making the request. Defaults to `"langchain"` so
     OpenAI telemetry attributes calls to this package. Downstream consumers
     (e.g., a framework built on top of `ChatOpenAICodex`) can override this
-    to identify themselves instead.
+    to identify themselves instead, or set `None` to suppress the header.
 
     Resolution order (first match wins):
 
-    1. Constructor / kwarg value (`ChatOpenAICodex(originator="my-app")`).
-    2. The `LANGCHAIN_CODEX_ORIGINATOR` env var, if set and non-empty.
-    3. `ORIGINATOR_VALUE` (`"langchain"`).
+    1. Per-call `extra_headers={"originator": "..."}` (always trumps the
+        field; pass an explicit value to override on a single call).
+    2. Constructor / kwarg value (`ChatOpenAICodex(originator="my-app")`).
+    3. The `LANGCHAIN_CODEX_ORIGINATOR` env var, if set and non-empty.
+    4. `ORIGINATOR_VALUE` (`"langchain"`).
 
-    Ignored when `include_originator_header=False`. A per-call
-    `extra_headers={"originator": "..."}` still wins over this field for
-    that one call (caller-supplied headers always override Codex defaults).
+    Setting `originator=None` disables the header entirely; the constructor
+    default never resolves to `None`.
     """
 
     instructions: str = Field(default=DEFAULT_INSTRUCTIONS)
@@ -260,8 +286,6 @@ class ChatOpenAICodex(ChatOpenAI):
     string-typed `instructions` field.
     """
 
-    _resolved_token_provider: ChatGPTOAuthTokenProvider = PrivateAttr()
-
     @model_validator(mode="before")
     @classmethod
     def _apply_codex_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -298,25 +322,15 @@ class ChatOpenAICodex(ChatOpenAI):
         values.setdefault("api_key", _SyncTokenCallable(provider))
         return values
 
-    @model_validator(mode="after")
-    def _capture_token_provider(self) -> Self:
-        """Stash the provider on a private attr for header construction."""
-        self._resolved_token_provider = self.token_provider
-        return self
-
     def _codex_headers_sync(self) -> dict[str, str]:
-        token = self._resolved_token_provider.get_token()
-        return self._build_headers(token.account_id)
-
-    async def _codex_headers_async(self) -> dict[str, str]:
-        token = await self._resolved_token_provider.aget_token()
+        token = self.token_provider.get_token()
         return self._build_headers(token.account_id)
 
     def _build_headers(self, account_id: str | None) -> dict[str, str]:
         headers: dict[str, str] = {}
         if account_id:
             headers[ACCOUNT_ID_HEADER] = account_id
-        if self.include_originator_header:
+        if self.originator is not None:
             headers[ORIGINATOR_HEADER] = self.originator
         return headers
 
@@ -344,26 +358,33 @@ class ChatOpenAICodex(ChatOpenAI):
         top-level `instructions` field, since Codex rejects `SystemMessage`
         chat turns. See the `instructions` field docstring for the
         precedence rules.
-        """
-        messages = self._convert_input(input_).to_messages()
-        system_messages = [m for m in messages if isinstance(m, SystemMessage)]
-        if system_messages:
-            non_system = [m for m in messages if not isinstance(m, SystemMessage)]
-            lifted = _flatten_system_message_content(system_messages)
-            explicit = kwargs.get("instructions")
-            if explicit is not None:
-                logger.warning(
-                    "Both `instructions=` and a `SystemMessage` were provided; "
-                    "the explicit `instructions=` kwarg wins and the "
-                    "`SystemMessage` content is discarded for this call. "
-                    "Discarded length: %d.",
-                    len(lifted),
-                )
-            else:
-                kwargs["instructions"] = lifted
-            messages = non_system
 
-        payload = super()._get_request_payload(messages, stop=stop, **kwargs)
+        Fast path: when the input can't carry a `SystemMessage`, skip the
+        local conversion and delegate `input_` straight to super — that
+        way `_convert_input` only runs once (inside super) instead of once
+        here and again there.
+        """
+        payload_input: LanguageModelInput = input_
+        if _maybe_has_system_messages(input_):
+            messages = self._convert_input(input_).to_messages()
+            system_messages = [m for m in messages if isinstance(m, SystemMessage)]
+            if system_messages:
+                non_system = [m for m in messages if not isinstance(m, SystemMessage)]
+                lifted = _flatten_system_message_content(system_messages)
+                explicit = kwargs.get("instructions")
+                if explicit is not None:
+                    logger.warning(
+                        "Both `instructions=` and a `SystemMessage` were "
+                        "provided; the explicit `instructions=` kwarg wins "
+                        "and the `SystemMessage` content is discarded for "
+                        "this call. Discarded length: %d.",
+                        len(lifted),
+                    )
+                else:
+                    kwargs["instructions"] = lifted
+                payload_input = non_system
+
+        payload = super()._get_request_payload(payload_input, stop=stop, **kwargs)
         # The Codex backend rejects requests without `instructions` — populate
         # the field's value if the caller didn't supply one. An explicit empty
         # string from the caller is preserved (the backend will reject it, but
@@ -381,7 +402,7 @@ class ChatOpenAICodex(ChatOpenAI):
     ) -> ChatResult:
         # Prime the cache via async refresh so the sync header build that
         # happens inside `super()._agenerate` does not block the event loop.
-        await self._resolved_token_provider.aget_token()
+        await self.token_provider.aget_token()
         return await super()._agenerate(
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
@@ -393,7 +414,7 @@ class ChatOpenAICodex(ChatOpenAI):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        await self._resolved_token_provider.aget_token()
+        await self.token_provider.aget_token()
         async for chunk in super()._astream(
             messages, stop=stop, run_manager=run_manager, **kwargs
         ):

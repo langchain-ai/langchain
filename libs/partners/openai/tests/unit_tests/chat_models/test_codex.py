@@ -10,6 +10,7 @@ import pytest
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from langchain_openai import ChatOpenAICodex
+from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.chat_models.codex import (
     ACCOUNT_ID_HEADER,
     CHATGPT_CODEX_BASE_URL,
@@ -69,9 +70,10 @@ def test_defaults_route_to_chatgpt_codex_backend() -> None:
     model = _build_model()
     assert model.openai_api_base == CHATGPT_CODEX_BASE_URL
     assert model.use_responses_api is True
-    assert model.output_version == "responses/v1"
     assert model.store is False
     assert model.streaming is True
+    # `output_version` is a client-side projection and isn't forced — the
+    # base default applies unless the caller picks one explicitly.
 
 
 def test_uses_callable_api_key_from_token_provider() -> None:
@@ -113,8 +115,9 @@ def test_request_payload_omits_account_id_when_unknown() -> None:
 
 
 def test_request_payload_can_disable_originator_header() -> None:
+    """`originator=None` omits the header entirely."""
     provider = FakeTokenProvider(account_id=None)
-    model = _build_model(token_provider=provider, include_originator_header=False)
+    model = _build_model(token_provider=provider, originator=None)
     payload = model._get_request_payload([HumanMessage("hi")])
     assert "extra_headers" not in payload
 
@@ -188,13 +191,22 @@ def test_conflicting_use_responses_api_raises() -> None:
         )
 
 
-def test_conflicting_output_version_raises() -> None:
-    with pytest.raises(ValueError, match="output_version"):
-        ChatOpenAICodex(
-            model="gpt-5.2-codex",
-            token_provider=FakeTokenProvider(),
-            output_version="v0",
-        )
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_explicit_output_version_is_respected(output_version: str) -> None:
+    """`output_version` is a client-side projection — any value is allowed.
+
+    Also pins the wire-level invariant: regardless of the constructor
+    choice, `output_version` never appears in the outbound payload (it's
+    consumed entirely by the response projection layer).
+    """
+    model = ChatOpenAICodex(
+        model="gpt-5.2-codex",
+        token_provider=FakeTokenProvider(),
+        output_version=output_version,
+    )
+    assert model.output_version == output_version
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert "output_version" not in payload
 
 
 def test_conflicting_store_raises() -> None:
@@ -256,17 +268,141 @@ def test_request_payload_preserves_explicit_empty_instructions() -> None:
     assert payload["instructions"] == ""
 
 
-def test_system_message_does_not_populate_top_level_instructions() -> None:
-    """A `SystemMessage` in `input` doesn't fill the top-level `instructions`.
+def test_system_message_is_lifted_into_top_level_instructions() -> None:
+    """`SystemMessage` content overrides the constructor `instructions`.
 
-    `SystemMessage` becomes an entry in the `input` list, leaving the
-    separate top-level `instructions` field at the model's configured value.
+    Codex rejects `SystemMessage` chat turns (400 "System messages are
+    not allowed"), so `ChatOpenAICodex` lifts their content into the
+    top-level `instructions` field and strips them from the input list.
     """
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
         [SystemMessage("from-system-message"), HumanMessage("hi")]
     )
-    assert payload["instructions"] == "model-level"
+    assert payload["instructions"] == "from-system-message"
+    input_messages = payload["input"]
+    assert all(entry.get("role") != "system" for entry in input_messages)
+    assert any(
+        entry.get("role") == "user" and "hi" in str(entry.get("content"))
+        for entry in input_messages
+    )
+
+
+def test_back_to_back_system_messages_join_in_input_order() -> None:
+    """Adjacent `SystemMessage` entries are concatenated with `"\\n\\n"`."""
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [
+            SystemMessage("first"),
+            SystemMessage("second"),
+            HumanMessage("hi"),
+        ]
+    )
+    assert payload["instructions"] == "first\n\nsecond"
+
+
+def test_interleaved_system_messages_are_still_lifted() -> None:
+    """`SystemMessage`s anywhere in the input are lifted into `instructions`.
+
+    Codex is stateless per call and has no equivalent of an in-line system
+    turn, so positional intent (e.g., switching persona mid-conversation)
+    can't be preserved. All `SystemMessage`s are concatenated in input
+    order and stripped; the remaining (non-system) messages keep their
+    relative order.
+    """
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [
+            HumanMessage("hi"),
+            SystemMessage("midway-system"),
+            HumanMessage("bye"),
+            SystemMessage("tail-system"),
+        ]
+    )
+    assert payload["instructions"] == "midway-system\n\ntail-system"
+    contents = [entry.get("content") for entry in payload["input"]]
+    assert all(entry.get("role") != "system" for entry in payload["input"])
+    assert contents == ["hi", "bye"]
+
+
+def test_explicit_instructions_kwarg_wins_over_system_message() -> None:
+    """A per-call `instructions=` kwarg always beats lifted `SystemMessage`."""
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [SystemMessage("from-system-message"), HumanMessage("hi")],
+        instructions="from-kwarg",
+    )
+    assert payload["instructions"] == "from-kwarg"
+
+
+def test_explicit_instructions_kwarg_overrides_logs_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The override path emits a warning so callers can audit the conflict."""
+    model = _build_model(instructions="model-level")
+    with caplog.at_level("WARNING", logger="langchain_openai.chat_models.codex"):
+        model._get_request_payload(
+            [SystemMessage("discarded"), HumanMessage("hi")],
+            instructions="from-kwarg",
+        )
+    assert any(
+        "explicit `instructions=` kwarg wins" in record.getMessage()
+        for record in caplog.records
+    )
+
+
+def test_system_message_with_text_blocks_is_lifted() -> None:
+    """List-of-text-blocks `SystemMessage` content flattens cleanly."""
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [
+            SystemMessage(
+                [
+                    {"type": "text", "text": "part one. "},
+                    {"type": "text", "text": "part two."},
+                ]
+            ),
+            HumanMessage("hi"),
+        ]
+    )
+    assert payload["instructions"] == "part one. part two."
+
+
+def test_system_message_with_non_text_block_raises() -> None:
+    """Non-text content blocks can't be flattened into `instructions`."""
+    model = _build_model(instructions="model-level")
+    with pytest.raises(ValueError, match="non-text content block"):
+        model._get_request_payload(
+            [
+                SystemMessage(
+                    [
+                        {"type": "text", "text": "ok"},
+                        {"type": "image_url", "image_url": "http://example/x.png"},
+                    ]
+                ),
+                HumanMessage("hi"),
+            ]
+        )
+
+
+def test_system_message_with_non_string_text_value_raises() -> None:
+    """A text block whose `text` isn't a string is a programming error."""
+    from langchain_openai.chat_models.codex import _flatten_system_message_content
+
+    # Constructed directly (bypassing the `SystemMessage` content type so
+    # we can hit the helper's defensive type check).
+    bad = SystemMessage.model_construct(content=[{"type": "text", "text": 42}])
+    with pytest.raises(ValueError, match=r"text.*not a string"):
+        _flatten_system_message_content([bad])
+
+
+def test_system_message_with_unsupported_content_type_raises() -> None:
+    """Content that's neither str nor list (e.g., int) is rejected upfront."""
+    from langchain_openai.chat_models.codex import _flatten_system_message_content
+
+    bad = SystemMessage.model_construct(content=123)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="unsupported content type"):
+        _flatten_system_message_content([bad])
 
 
 def test_caller_headers_win_over_codex_defaults() -> None:
@@ -293,14 +429,42 @@ async def test_agenerate_primes_async_token_cache(
     async def _fake_super_agenerate(*_a: Any, **_k: Any) -> Any:
         return "sentinel"
 
-    monkeypatch.setattr(
-        "langchain_openai.chat_models.base.ChatOpenAI._agenerate",
-        _fake_super_agenerate,
-    )
+    monkeypatch.setattr(ChatOpenAI, "_agenerate", _fake_super_agenerate)
     before = provider.async_calls
     result = await model._agenerate([HumanMessage("hi")])
     assert result == "sentinel"
     assert provider.async_calls == before + 1
+
+
+async def test_astream_primes_async_token_cache_and_yields_headers_via_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`_astream` primes the async cache and the sync payload still attaches headers.
+
+    The sync payload builder (`_get_request_payload`) is what actually
+    stamps `ChatGPT-Account-Id` + `originator` on outbound requests; the
+    async path's only job is to refresh the token off the event loop
+    before the sync builder reads from the (now warm) cache. Verifies
+    both halves of that contract.
+    """
+    provider = FakeTokenProvider(account_id="acct-async")
+    model = _build_model(token_provider=provider)
+
+    async def _fake_super_astream(*_a: Any, **_k: Any) -> Any:
+        yield "chunk"
+
+    monkeypatch.setattr(ChatOpenAI, "_astream", _fake_super_astream)
+    before = provider.async_calls
+    received = [chunk async for chunk in model._astream([HumanMessage("hi")])]
+    assert received == ["chunk"]
+    assert provider.async_calls == before + 1
+
+    # Sync payload (which is what the SDK ultimately serializes) carries
+    # the codex headers even after the async refresh path primed them.
+    payload = model._get_request_payload([HumanMessage("hi")])
+    headers = payload["extra_headers"]
+    assert headers[ACCOUNT_ID_HEADER] == "acct-async"
+    assert headers[ORIGINATOR_HEADER] == ORIGINATOR_VALUE
 
 
 def test_callable_api_key_returns_provider_token() -> None:
