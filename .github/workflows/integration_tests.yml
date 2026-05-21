@@ -212,12 +212,46 @@ jobs:
               ;;
           esac
 
+      - name: "🧾 Build LangSmith Metadata"
+        # GHA expression values flow through intermediate env vars (injection
+        # hardening) and jq -nc builds the JSON, so quotes/newlines in any
+        # field can't corrupt the payload.
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_WORKFLOW: ${{ github.workflow }}
+          GH_EVENT: ${{ github.event_name }}
+          GH_REF: ${{ github.ref }}
+          WORKING_DIRECTORY: ${{ matrix.working-directory }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          metadata=$(jq -nc \
+            --arg github_sha "$GH_SHA" \
+            --arg github_run_id "$GH_RUN_ID" \
+            --arg github_run_attempt "$GH_RUN_ATTEMPT" \
+            --arg github_run_url "$GH_RUN_URL" \
+            --arg github_workflow "$GH_WORKFLOW" \
+            --arg github_event "$GH_EVENT" \
+            --arg github_ref "$GH_REF" \
+            --arg working_directory "$WORKING_DIRECTORY" \
+            --arg python_version "$PYTHON_VERSION" \
+            '{github_sha: $github_sha, github_run_id: $github_run_id, github_run_attempt: $github_run_attempt, github_run_url: $github_run_url, github_workflow: $github_workflow, github_event: $github_event, github_ref: $github_ref, working_directory: $working_directory, python_version: $python_version}')
+          echo "LANGSMITH_METADATA=$metadata" >> "$GITHUB_ENV"
+
       - name: "🚀 Run Integration Tests"
         # WARNING: All secrets below are available to every matrix job regardless of
         # which package is being tested. This is intentional for simplicity, but means
         # any test file could technically access any key. Only use for trusted code.
         env:
           LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
+
+          # Route traces to one project with GitHub run metadata so failures link back to the originating Actions run.
+          LANGSMITH_TRACING: "true"
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: "oss-python-integration-tests"
+          LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
