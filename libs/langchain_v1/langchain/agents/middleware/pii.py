@@ -178,8 +178,22 @@ class _PIIStreamTransformer(StreamTransformer):
         delta = payload.get("delta")
         if not isinstance(delta, dict):
             return
-        if delta.get("type") != "text-delta":
+        delta_type = delta.get("type")
+        if delta_type == "text-delta":
+            self._mutate_text_delta(delta, payload, run_id)
             return
+        if delta_type == "block-delta":
+            fields = delta.get("fields")
+            if isinstance(fields, dict) and fields.get("type") in {
+                "tool_call_chunk",
+                "server_tool_call_chunk",
+            }:
+                self._mutate_tool_call_chunk_delta(fields)
+        # Other delta types (reasoning-delta, data-delta) pass through.
+
+    def _mutate_text_delta(
+        self, delta: dict[str, Any], payload: dict[str, Any], run_id: str
+    ) -> None:
         text = delta.get("text")
         if not isinstance(text, str) or not text:
             return
@@ -214,6 +228,29 @@ class _PIIStreamTransformer(StreamTransformer):
         emit_end = max(0, len(combined) - self._lookback)
         self._buffers[key] = combined[emit_end:]
         delta["text"] = combined[:emit_end]
+
+    def _mutate_tool_call_chunk_delta(self, fields: dict[str, Any]) -> None:
+        """Redact PII in cumulative tool-call args.
+
+        Each `tool_call_chunk` `block-delta` event carries the full
+        accumulated args string (verified against `_compat_bridge.py`
+        — `delta_source = current` for these block types — and against
+        the consumer-side `_merge_block_delta_into_store`, which
+        replaces rather than appends). Running detection on the field
+        directly catches any complete PII; partial PII at the tail is
+        caught on the next delta (which carries a longer cumulative
+        string) or by `_finalize_block` on the parsed args dict.
+        """
+        args = fields.get("args")
+        if not isinstance(args, str) or not args:
+            return
+        matches = self._rule.detector(args)
+        if not matches:
+            return
+        if self._rule.strategy == "block":
+            fields["args"] = ""
+            return
+        fields["args"] = apply_strategy(args, matches, self._rule.strategy)
 
     def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
         index = payload.get("index")

@@ -819,6 +819,79 @@ class TestPIIStreamTransformer:
         redacted = transformer._redact_value(value)
         assert redacted == value
 
+    def test_tool_call_args_redacted_on_block_delta(self) -> None:
+        """A `block-delta` event with a `tool_call_chunk` field redacts the args."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "block-delta",
+                                "fields": {
+                                    "type": "tool_call_chunk",
+                                    "id": "call_1",
+                                    "name": "send_email",
+                                    "args": '{"to": "alice@example.com"}',
+                                },
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+
+        fields = events[0]["params"]["data"][0]["delta"]["fields"]
+        assert "alice@example.com" not in fields["args"]
+        assert "[REDACTED_EMAIL]" in fields["args"]
+
+    def test_tool_call_args_block_strategy_emptied(self) -> None:
+        """`block` strategy zeroes args when PII is detected."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-delta",
+                            "index": 0,
+                            "delta": {
+                                "type": "block-delta",
+                                "fields": {
+                                    "type": "tool_call_chunk",
+                                    "id": "call_1",
+                                    "name": "send_email",
+                                    "args": '{"to": "alice@example.com"}',
+                                },
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+
+        fields = events[0]["params"]["data"][0]["delta"]["fields"]
+        assert fields["args"] == ""
+
     def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
         """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
         rule = RedactionRule(pii_type="email").resolve()
