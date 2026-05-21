@@ -1822,7 +1822,7 @@ class ChatAnthropic(BaseChatModel):
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            kwargs["tool_choice"] = dict(tool_choice)
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):
