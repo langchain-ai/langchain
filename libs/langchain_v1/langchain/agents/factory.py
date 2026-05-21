@@ -808,7 +808,10 @@ def create_agent(
             factories to register on the compiled graph in addition to
             the agent defaults. Each factory is invoked per-scope
             (`factory(scope)`) so subgraph mini-muxes get fresh
-            instances. Appended after the built-in `ToolCallTransformer`.
+            instances. The final order on the compiled graph is:
+            built-in `ToolCallTransformer`, then any factories declared by
+            middleware via `AgentMiddleware.transformers`, then any
+            factories supplied here.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -1662,6 +1665,8 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
+    middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1670,7 +1675,11 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[ToolCallTransformer, *(transformers or ())],
+        transformers=[
+            ToolCallTransformer,
+            *middleware_transformers,
+            *(transformers or ()),
+        ],
     ).with_config(config)
 
 
