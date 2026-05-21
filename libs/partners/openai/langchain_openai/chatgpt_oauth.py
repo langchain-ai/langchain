@@ -16,6 +16,7 @@ invocation. `ChatOpenAICodex` only consumes a `ChatGPTOAuthTokenProvider`.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import contextlib
 import hashlib
@@ -28,7 +29,7 @@ import threading
 import time
 import urllib.parse
 import webbrowser
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -61,20 +62,43 @@ class ChatGPTToken:
     """A ChatGPT OAuth token bundle.
 
     `expires_at` is timezone-aware UTC. Optional fields are populated when
-    decodable from the `id_token` JWT.
+    decodable from the `id_token` JWT. Secret-bearing fields (`access_token`,
+    `refresh_token`, `id_token`) are excluded from the default `repr` so the
+    token does not leak into logs or tracebacks.
     """
 
-    access_token: str
-    refresh_token: str
+    access_token: str = field(repr=False)
+    refresh_token: str = field(repr=False)
     expires_at: datetime
     account_id: str | None = None
     plan_type: str | None = None
     user_id: str | None = None
-    id_token: str | None = None
+    id_token: str | None = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        """Validate non-empty secrets and timezone-aware `expires_at`."""
+        if not self.access_token:
+            msg = "`access_token` must be a non-empty string."
+            raise ValueError(msg)
+        if not self.refresh_token:
+            msg = "`refresh_token` must be a non-empty string."
+            raise ValueError(msg)
+        if self.expires_at.tzinfo is None:
+            msg = "`expires_at` must be timezone-aware (UTC)."
+            raise ValueError(msg)
 
     def is_expired(self, *, skew: timedelta = DEFAULT_REFRESH_SKEW) -> bool:
-        """Return True if the token is past (or within `skew` of) expiry."""
+        """Return `True` if the token is past (or within `skew` of) expiry."""
         return datetime.now(timezone.utc) >= (self.expires_at - skew)
+
+
+class ChatGPTOAuthRefreshError(RuntimeError):
+    """Raised when a refresh-token grant fails irrecoverably.
+
+    Typically signals that the stored refresh token has been revoked or has
+    expired; the caller should re-run `login_chatgpt()` (or the device-code
+    equivalent) to obtain a new bundle.
+    """
 
 
 @runtime_checkable
@@ -86,11 +110,19 @@ class ChatGPTOAuthTokenProvider(Protocol):
         ...
 
     async def aget_token(self) -> ChatGPTToken:
-        """Async variant of `get_token`."""
+        """Async variant of `get_token`.
+
+        Implementations must offer the same locking and refresh guarantees
+        as `get_token`: concurrent callers must not race on token storage.
+        """
         ...
 
     def get_access_token(self) -> str:
         """Return only the access token string (sync callable for SDKs)."""
+        ...
+
+    async def aget_access_token(self) -> str:
+        """Return only the access token string (async callable for SDKs)."""
         ...
 
 
@@ -142,7 +174,18 @@ def _extract_chatgpt_claims(id_token: str | None) -> dict[str, str | None]:
 
 
 def _expires_at_from_response(payload: dict[str, Any]) -> datetime:
-    expires_in = int(payload.get("expires_in", 0) or 0)
+    raw = payload.get("expires_in")
+    try:
+        expires_in = int(raw) if raw is not None else 0
+    except (TypeError, ValueError) as exc:
+        msg = f"OAuth token response had invalid `expires_in`: {raw!r}"
+        raise ChatGPTOAuthRefreshError(msg) from exc
+    if expires_in <= 0:
+        msg = (
+            "OAuth token response had missing or non-positive `expires_in`; "
+            "refusing to store an immediately-expired token."
+        )
+        raise ChatGPTOAuthRefreshError(msg)
     return datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
 
@@ -152,9 +195,18 @@ def _token_from_response(
     fallback_refresh_token: str | None = None,
 ) -> ChatGPTToken:
     """Build a `ChatGPTToken` from an OAuth token-endpoint response."""
+    if not payload.get("access_token"):
+        msg = "OAuth token response did not include an `access_token`."
+        raise ChatGPTOAuthRefreshError(msg)
     id_token = payload.get("id_token")
     claims = _extract_chatgpt_claims(id_token)
-    refresh_token = payload.get("refresh_token") or fallback_refresh_token or ""
+    refresh_token = payload.get("refresh_token") or fallback_refresh_token
+    if not refresh_token:
+        msg = (
+            "OAuth token response did not include a `refresh_token` and no "
+            "prior refresh token was available; re-run `login_chatgpt()`."
+        )
+        raise ChatGPTOAuthRefreshError(msg)
     return ChatGPTToken(
         access_token=payload["access_token"],
         refresh_token=refresh_token,
@@ -167,9 +219,15 @@ def _token_from_response(
 
 
 def _serialize_token(token: ChatGPTToken) -> dict[str, Any]:
-    data = asdict(token)
-    data["expires_at"] = token.expires_at.astimezone(timezone.utc).isoformat()
-    return data
+    return {
+        "access_token": token.access_token,
+        "refresh_token": token.refresh_token,
+        "expires_at": token.expires_at.astimezone(timezone.utc).isoformat(),
+        "account_id": token.account_id,
+        "plan_type": token.plan_type,
+        "user_id": token.user_id,
+        "id_token": token.id_token,
+    }
 
 
 def _deserialize_token(data: dict[str, Any]) -> ChatGPTToken:
@@ -194,12 +252,30 @@ def _deserialize_token(data: dict[str, Any]) -> ChatGPTToken:
     )
 
 
+def _chmod_warn(path: Path, mode: int) -> None:
+    """Best-effort `chmod` that logs (but does not raise) on failure.
+
+    On filesystems without POSIX perms (Windows, some FUSE/SMB mounts) the
+    file may end up world-readable. Logging surfaces that to operators so
+    they don't silently trust the "private perms" claim of the caller.
+    """
+    try:
+        os.chmod(path, mode)  # noqa: PTH101
+    except (OSError, NotImplementedError) as exc:
+        logger.warning(
+            "Failed to set permissions %o on %s: %s — token store may not "
+            "have private permissions on this filesystem.",
+            mode,
+            path,
+            exc,
+        )
+
+
 def _atomic_write_private_json(path: Path, data: dict[str, Any]) -> None:
     """Write `data` as JSON to `path` with 0600 perms (where supported)."""
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
-    with contextlib.suppress(OSError, NotImplementedError):
-        os.chmod(parent, 0o700)  # noqa: PTH101
+    _chmod_warn(parent, 0o700)
     tmp = path.with_suffix(path.suffix + ".tmp")
     payload = json.dumps(data, indent=2, sort_keys=True)
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
@@ -212,31 +288,51 @@ def _atomic_write_private_json(path: Path, data: dict[str, Any]) -> None:
             tmp.unlink()
         raise
     tmp.replace(path)
-    with contextlib.suppress(OSError, NotImplementedError):
-        os.chmod(path, 0o600)  # noqa: PTH101
+    _chmod_warn(path, 0o600)
 
 
 @contextlib.contextmanager
 def _file_lock(path: Path) -> Iterator[None]:
-    """Best-effort cross-platform file lock around refresh + write."""
+    """Best-effort cross-platform file lock around refresh + write.
+
+    On POSIX this acquires an exclusive `fcntl.flock` on a sibling
+    `.lock` file. On Windows (or any platform where `fcntl` is
+    unavailable) the lock degrades to a no-op and a warning is logged so
+    callers know that cross-process safety is best-effort.
+    """
     lock_path = path.with_suffix(path.suffix + ".lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+    locked = False
     try:
         try:
             import fcntl
-
-            fcntl.flock(fd, fcntl.LOCK_EX)
-        except (ImportError, OSError):
-            pass
+        except ImportError:
+            logger.warning(
+                "fcntl is unavailable on this platform; ChatGPT token store "
+                "at %s is not protected against cross-process races.",
+                path,
+            )
+        else:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX)
+                locked = True
+            except OSError as exc:
+                logger.warning(
+                    "fcntl.flock failed on %s: %s — token store is not "
+                    "protected against cross-process races.",
+                    lock_path,
+                    exc,
+                )
         yield
     finally:
-        try:
-            import fcntl
+        if locked:
+            try:
+                import fcntl
 
-            fcntl.flock(fd, fcntl.LOCK_UN)
-        except (ImportError, OSError):
-            pass
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except (ImportError, OSError) as exc:
+                logger.warning("Failed to release file lock on %s: %s", lock_path, exc)
         os.close(fd)
 
 
@@ -244,6 +340,34 @@ def _redact(value: str | None) -> str:
     if not value:
         return "<empty>"
     return f"<redacted len={len(value)}>"
+
+
+def _parse_oauth_error(resp: httpx.Response) -> tuple[str | None, str]:
+    """Return `(error_code, body_excerpt)` from an OAuth error response."""
+    try:
+        payload = resp.json()
+    except (ValueError, json.JSONDecodeError):
+        return None, resp.text[:500]
+    if isinstance(payload, dict):
+        error = payload.get("error")
+        description = payload.get("error_description") or ""
+        excerpt = f"{error}: {description}".strip(": ") or resp.text[:500]
+        return (error if isinstance(error, str) else None), excerpt
+    return None, resp.text[:500]
+
+
+def _raise_for_oauth_response(url: str, resp: httpx.Response) -> None:
+    if resp.status_code < 400:
+        return
+    error_code, excerpt = _parse_oauth_error(resp)
+    if error_code == "invalid_grant":
+        msg = (
+            "ChatGPT refresh token is no longer valid (`invalid_grant`). "
+            "Re-run `login_chatgpt()` to obtain a new token."
+        )
+        raise ChatGPTOAuthRefreshError(msg)
+    msg = f"OAuth request to {url} failed with status {resp.status_code}: {excerpt}"
+    raise RuntimeError(msg)
 
 
 def _post_form(
@@ -259,12 +383,7 @@ def _post_form(
             data=data,
             headers={"Accept": "application/json"},
         )
-    if resp.status_code >= 400:
-        msg = (
-            f"OAuth request to {url} failed with status {resp.status_code}: "
-            f"{resp.text[:500]}"
-        )
-        raise RuntimeError(msg)
+    _raise_for_oauth_response(url, resp)
     return resp.json()
 
 
@@ -274,18 +393,14 @@ async def _apost_form(
     *,
     timeout: float = 30.0,
 ) -> dict[str, Any]:
+    """POST a form payload asynchronously and return the parsed JSON body."""
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(
             url,
             data=data,
             headers={"Accept": "application/json"},
         )
-    if resp.status_code >= 400:
-        msg = (
-            f"OAuth request to {url} failed with status {resp.status_code}: "
-            f"{resp.text[:500]}"
-        )
-        raise RuntimeError(msg)
+    _raise_for_oauth_response(url, resp)
     return resp.json()
 
 
@@ -317,24 +432,50 @@ class FileChatGPTOAuthTokenProvider:
 
     @classmethod
     def from_default_store(cls) -> FileChatGPTOAuthTokenProvider:
-        """Construct a provider rooted at the default store path."""
+        """Construct a provider with all defaults (path, client ID, etc.).
+
+        Equivalent to `FileChatGPTOAuthTokenProvider()`; the alias exists as
+        a discoverable entry point for callers reading the default-path
+        contract from the module docstring.
+        """
         return cls()
 
     def _read_from_disk(self) -> ChatGPTToken | None:
+        """Return the stored token, or `None` if no store exists.
+
+        Raises `RuntimeError` (rather than returning `None`) if the file
+        exists but cannot be parsed — that way the user is not told to
+        "re-login" when the actual fix is to repair or remove a corrupt
+        store at `self.path`.
+        """
         if not self.path.exists():
             return None
         try:
-            data = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            logger.warning(
-                "Failed to load ChatGPT token store at %s: %s", self.path, exc
+            raw_text = self.path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            msg = (
+                f"Failed to read ChatGPT token store at {self.path}: {exc}. "
+                "Repair file permissions/encoding or delete the file and "
+                "re-run `login_chatgpt()`."
             )
-            return None
+            raise RuntimeError(msg) from exc
+        try:
+            data = json.loads(raw_text)
+        except json.JSONDecodeError as exc:
+            msg = (
+                f"ChatGPT token store at {self.path} is not valid JSON: "
+                f"{exc}. Delete the file and re-run `login_chatgpt()`."
+            )
+            raise RuntimeError(msg) from exc
         try:
             return _deserialize_token(data)
         except (KeyError, ValueError) as exc:
-            logger.warning("ChatGPT token store at %s is invalid: %s", self.path, exc)
-            return None
+            msg = (
+                f"ChatGPT token store at {self.path} is missing required "
+                f"fields ({exc}). Delete the file and re-run "
+                "`login_chatgpt()`."
+            )
+            raise RuntimeError(msg) from exc
 
     def _write_to_disk(self, token: ChatGPTToken) -> None:
         _atomic_write_private_json(self.path, _serialize_token(token))
@@ -372,18 +513,6 @@ class FileChatGPTOAuthTokenProvider:
         )
         return self._apply_refresh_response(response, existing.refresh_token)
 
-    async def _refresh_async(self, existing: ChatGPTToken) -> ChatGPTToken:
-        logger.debug(
-            "Refreshing ChatGPT access token (refresh_token=%s).",
-            _redact(existing.refresh_token),
-        )
-        response = await _apost_form(
-            self.token_url,
-            self._build_refresh_payload(existing.refresh_token),
-            timeout=self.timeout,
-        )
-        return self._apply_refresh_response(response, existing.refresh_token)
-
     def _load_existing(self) -> ChatGPTToken:
         existing = self._cached or self._read_from_disk()
         if existing is None:
@@ -404,16 +533,33 @@ class FileChatGPTOAuthTokenProvider:
             return self._refresh_sync(existing)
 
     async def aget_token(self) -> ChatGPTToken:
-        """Async variant of `get_token`."""
-        existing = self._load_existing()
-        if not existing.is_expired(skew=self.refresh_skew):
-            self._cached = existing
-            return existing
-        return await self._refresh_async(existing)
+        """Async variant of `get_token` with the same locking guarantees.
+
+        The thread lock and cross-process file lock are acquired off the
+        event loop via `asyncio.to_thread` so concurrent async callers do
+        not race on `_cached` or on the on-disk token bundle. The HTTP
+        refresh runs synchronously inside that worker thread; this avoids
+        nesting event loops while still keeping the cross-process lock
+        held for the entire refresh + write window.
+        """
+        return await asyncio.to_thread(self._aget_token_locked_blocking)
+
+    def _aget_token_locked_blocking(self) -> ChatGPTToken:
+        with self._lock, _file_lock(self.path):
+            existing = self._load_existing()
+            if not existing.is_expired(skew=self.refresh_skew):
+                self._cached = existing
+                return existing
+            return self._refresh_sync(existing)
 
     def get_access_token(self) -> str:
         """Return only the access-token string."""
         return self.get_token().access_token
+
+    async def aget_access_token(self) -> str:
+        """Return only the access-token string (async)."""
+        token = await self.aget_token()
+        return token.access_token
 
 
 def _generate_pkce_pair() -> tuple[str, str]:
@@ -489,7 +635,15 @@ def _wait_for_callback(
         server_result: dict[str, str] = {}
 
     _BoundCallbackHandler.callback_path = callback_path
-    server = http.server.HTTPServer((host, port), _BoundCallbackHandler)
+    try:
+        server = http.server.HTTPServer((host, port), _BoundCallbackHandler)
+    except OSError as exc:
+        msg = (
+            f"Could not bind ChatGPT OAuth callback server on "
+            f"http://{host}:{port}: {exc}. Free the port or pass `port=` "
+            "to `login_chatgpt()` with an unused port."
+        )
+        raise RuntimeError(msg) from exc
     server.timeout = 1.0
     deadline = time.monotonic() + timeout
     try:
@@ -548,20 +702,33 @@ def login_chatgpt(
         scope=scope,
     )
 
+    # Surface the URL prominently so users can complete sign-in manually if
+    # the browser launch fails or the environment is headless.
+    print(  # noqa: T201
+        f"\nChatGPT sign-in: open the following URL in a browser:\n  {authorize_url}\n"
+    )
     logger.info("Opening ChatGPT sign-in flow at %s", CHATGPT_AUTHORIZE_URL)
     if open_browser:
-        with contextlib.suppress(webbrowser.Error):
+        try:
             webbrowser.open(authorize_url)
+        except webbrowser.Error as exc:
+            logger.warning(
+                "Could not launch a browser: %s. Copy the URL above instead.",
+                exc,
+            )
 
     result = _wait_for_callback(
         host=host, port=port, callback_path=callback_path, timeout=timeout
     )
+    # Validate `state` first: a CSRF mismatch is a security signal and must
+    # fail closed before any other branch (including server-reported errors)
+    # is considered.
+    if result.get("state") != state:
+        msg = "ChatGPT OAuth callback state mismatch."
+        raise RuntimeError(msg)
     if "error" in result:
         description = result.get("error_description", "")
         msg = f"ChatGPT OAuth callback returned error: {result['error']} {description}"
-        raise RuntimeError(msg)
-    if result.get("state") != state:
-        msg = "ChatGPT OAuth callback state mismatch."
         raise RuntimeError(msg)
     code = result.get("code")
     if not code:
@@ -633,6 +800,7 @@ def login_chatgpt_device(
 
     deadline = time.monotonic() + timeout
     authorization_code: str | None = None
+    current_interval = poll_interval
     while time.monotonic() < deadline:
         poll = _post_form(
             CHATGPT_DEVICE_TOKEN_URL,
@@ -641,13 +809,15 @@ def login_chatgpt_device(
         if poll.get("authorization_code"):
             authorization_code = poll["authorization_code"]
             break
-        if poll.get("error") and poll["error"] not in {
-            "authorization_pending",
-            "slow_down",
-        }:
-            msg = f"Device authorization failed: {poll['error']}"
+        error = poll.get("error")
+        if error == "slow_down":
+            # RFC 8628 §3.5: bump the poll interval by 5 seconds to comply
+            # with server-side rate limiting; otherwise we risk being banned.
+            current_interval += 5
+        elif error and error != "authorization_pending":
+            msg = f"Device authorization failed: {error}"
             raise RuntimeError(msg)
-        time.sleep(poll_interval)
+        time.sleep(current_interval)
     if not authorization_code:
         msg = "Timed out waiting for ChatGPT device authorization."
         raise TimeoutError(msg)
@@ -674,6 +844,7 @@ __all__ = [
     "CHATGPT_AUTHORIZE_URL",
     "CHATGPT_CLIENT_ID",
     "CHATGPT_TOKEN_URL",
+    "ChatGPTOAuthRefreshError",
     "ChatGPTOAuthTokenProvider",
     "ChatGPTToken",
     "FileChatGPTOAuthTokenProvider",

@@ -23,7 +23,12 @@ from langchain_openai.chatgpt_oauth import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
     from langchain_core.language_models import LanguageModelInput
+    from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, ChatResult
     from typing_extensions import Self
 
 
@@ -34,14 +39,19 @@ CHATGPT_CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex"
 ORIGINATOR_HEADER = "originator"
 ORIGINATOR_VALUE = "langchain"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+_FORCED_VALUES: dict[str, Any] = {
+    "use_responses_api": True,
+    "output_version": "responses/v1",
+}
 
 
 class ChatOpenAICodex(ChatOpenAI):
     """`ChatOpenAI` variant authed by a ChatGPT OAuth subscription.
 
-    Routes requests to `https://chatgpt.com/backend-api/codex` and forces
+    Routes requests to `https://chatgpt.com/backend-api/codex` and enforces
     Responses API behavior (`use_responses_api=True`,
-    `output_version="responses/v1"`). Authorization and
+    `output_version="responses/v1"`). These values are *forced* — passing a
+    conflicting value to the constructor raises. Authorization and
     `ChatGPT-Account-Id` headers are taken from `token_provider` on every
     request so a freshly-refreshed access token is always used.
 
@@ -50,7 +60,11 @@ class ChatOpenAICodex(ChatOpenAI):
         from langchain_openai import ChatOpenAICodex
         from langchain_openai.chatgpt_oauth import login_chatgpt
 
-        login_chatgpt()  # one-time setup; opens browser
+        # One-time setup. The returned provider writes to the default store
+        # at `~/.langchain/chatgpt-auth.json`, which `ChatOpenAICodex` also
+        # reads from by default — so subsequent constructions need no
+        # explicit `token_provider`.
+        login_chatgpt()
         model = ChatOpenAICodex(model="gpt-5.2-codex")
         response = model.invoke("hello")
         ```
@@ -77,13 +91,24 @@ class ChatOpenAICodex(ChatOpenAI):
     @model_validator(mode="before")
     @classmethod
     def _apply_codex_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
-        """Force Codex-specific defaults before the parent validator runs."""
+        """Apply Codex-specific defaults before the parent validator runs."""
         if not isinstance(values, dict):
             return values
+        for key, forced in _FORCED_VALUES.items():
+            supplied = values.get(key)
+            if supplied is not None and supplied != forced:
+                msg = (
+                    f"`ChatOpenAICodex` requires `{key}={forced!r}`; "
+                    f"got `{key}={supplied!r}`. Use `ChatOpenAI` if you "
+                    "need to customize this."
+                )
+                raise ValueError(msg)
+            values[key] = forced
         values.setdefault("base_url", CHATGPT_CODEX_BASE_URL)
+        # `openai_api_base` is the legacy alias for `base_url` on `ChatOpenAI`;
+        # mirror whichever the caller supplied so older code paths still hit
+        # the Codex endpoint.
         values.setdefault("openai_api_base", values.get("base_url"))
-        values.setdefault("use_responses_api", True)
-        values.setdefault("output_version", "responses/v1")
 
         provider = values.get("token_provider")
         if provider is None:
@@ -105,23 +130,31 @@ class ChatOpenAICodex(ChatOpenAI):
         self._resolved_token_provider = self.token_provider
         return self
 
-    def _account_headers(
-        self, token_provider: ChatGPTOAuthTokenProvider
-    ) -> dict[str, str]:
-        token = token_provider.get_token()
+    def _codex_headers_sync(self) -> dict[str, str]:
+        token = self._resolved_token_provider.get_token()
+        return self._build_headers(token.account_id)
+
+    async def _codex_headers_async(self) -> dict[str, str]:
+        token = await self._resolved_token_provider.aget_token()
+        return self._build_headers(token.account_id)
+
+    def _build_headers(self, account_id: str | None) -> dict[str, str]:
         headers: dict[str, str] = {}
-        if token.account_id:
-            headers[ACCOUNT_ID_HEADER] = token.account_id
+        if account_id:
+            headers[ACCOUNT_ID_HEADER] = account_id
         if self.include_originator_header:
             headers[ORIGINATOR_HEADER] = ORIGINATOR_VALUE
         return headers
 
-    def _inject_codex_headers(self, payload: dict[str, Any]) -> dict[str, Any]:
-        headers = self._account_headers(self._resolved_token_provider)
-        if headers:
-            existing = dict(payload.get("extra_headers") or {})
-            existing.update(headers)
-            payload["extra_headers"] = existing
+    def _merge_codex_headers(
+        self, payload: dict[str, Any], headers: dict[str, str]
+    ) -> dict[str, Any]:
+        # Caller-supplied `extra_headers` win over our Codex defaults so
+        # users can override (e.g., to send a different `originator`).
+        if not headers:
+            return payload
+        merged = {**headers, **(payload.get("extra_headers") or {})}
+        payload["extra_headers"] = merged
         return payload
 
     def _get_request_payload(
@@ -133,7 +166,34 @@ class ChatOpenAICodex(ChatOpenAI):
     ) -> dict:
         """Build the request payload and attach Codex auth headers."""
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        return self._inject_codex_headers(payload)
+        return self._merge_codex_headers(payload, self._codex_headers_sync())
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        # Prime the cache via async refresh so the sync header build that
+        # happens inside `super()._agenerate` does not block the event loop.
+        await self._resolved_token_provider.aget_token()
+        return await super()._agenerate(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        await self._resolved_token_provider.aget_token()
+        async for chunk in super()._astream(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        ):
+            yield chunk
 
     def _get_ls_params(
         self, stop: list[str] | None = None, **kwargs: Any

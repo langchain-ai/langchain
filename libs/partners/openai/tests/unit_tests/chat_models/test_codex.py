@@ -49,6 +49,10 @@ class FakeTokenProvider:
     def get_access_token(self) -> str:
         return self.get_token().access_token
 
+    async def aget_access_token(self) -> str:
+        token = await self.aget_token()
+        return token.access_token
+
 
 def _build_model(**overrides: Any) -> ChatOpenAICodex:
     provider = overrides.pop("token_provider", None) or FakeTokenProvider()
@@ -67,15 +71,16 @@ def test_defaults_route_to_chatgpt_codex_backend() -> None:
 
 
 def test_uses_callable_api_key_from_token_provider() -> None:
+    """The SDK-facing `api_key` must resolve to the provider's current token."""
     provider = FakeTokenProvider(access_token="abc")
     model = _build_model(token_provider=provider)
-    # OpenAI SDK stores the callable internally; the SecretStr wrapping in
-    # `validate_environment` resolves to the callable for sync requests.
-    assert callable(model.openai_api_key) or hasattr(
-        model.openai_api_key, "get_secret_value"
-    )
-    callable_ = _SyncTokenCallable(provider)
-    assert callable_() == "abc"
+    secret = model.openai_api_key
+    assert secret is not None
+    if callable(secret):
+        assert secret() == "abc"
+    else:
+        # `ChatOpenAI.validate_environment` wraps callables in `SecretStr`.
+        assert secret.get_secret_value() == "abc"
     assert provider.calls >= 1
 
 
@@ -122,6 +127,73 @@ def test_request_payload_pulls_fresh_account_id_each_call() -> None:
 def test_invalid_token_provider_rejected() -> None:
     with pytest.raises(TypeError):
         ChatOpenAICodex(model="gpt-5.2-codex", token_provider="not-a-provider")
+
+
+def test_conflicting_use_responses_api_raises() -> None:
+    with pytest.raises(ValueError, match="use_responses_api"):
+        ChatOpenAICodex(
+            model="gpt-5.2-codex",
+            token_provider=FakeTokenProvider(),
+            use_responses_api=False,
+        )
+
+
+def test_conflicting_output_version_raises() -> None:
+    with pytest.raises(ValueError, match="output_version"):
+        ChatOpenAICodex(
+            model="gpt-5.2-codex",
+            token_provider=FakeTokenProvider(),
+            output_version="v0",
+        )
+
+
+def test_caller_headers_win_over_codex_defaults() -> None:
+    """Caller-supplied `extra_headers` must override the Codex injections."""
+    provider = FakeTokenProvider(account_id="acct-1")
+    model = _build_model(token_provider=provider)
+    payload = model._get_request_payload(
+        [HumanMessage("hi")],
+        extra_headers={ORIGINATOR_HEADER: "custom-app"},
+    )
+    headers = payload["extra_headers"]
+    assert headers[ORIGINATOR_HEADER] == "custom-app"
+    # The auto-injected account ID still rides along when not overridden.
+    assert headers[ACCOUNT_ID_HEADER] == "acct-1"
+
+
+async def test_agenerate_primes_async_token_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`_agenerate` must call `aget_token` so refresh doesn't block the loop."""
+    provider = FakeTokenProvider()
+    model = _build_model(token_provider=provider)
+
+    async def _fake_super_agenerate(*_a: Any, **_k: Any) -> Any:
+        return "sentinel"
+
+    monkeypatch.setattr(
+        "langchain_openai.chat_models.base.ChatOpenAI._agenerate",
+        _fake_super_agenerate,
+    )
+    before = provider.async_calls
+    result = await model._agenerate([HumanMessage("hi")])
+    assert result == "sentinel"
+    assert provider.async_calls == before + 1
+
+
+def test_callable_api_key_returns_provider_token() -> None:
+    """The `api_key` callable wired into the SDK must yield the access token."""
+    provider = FakeTokenProvider(access_token="abc-123")
+    model = _build_model(token_provider=provider)
+    # ChatOpenAI converts callable api_keys into a `SecretStr` wrapping
+    # whatever the callable returns; resolving it should return the
+    # provider's current access token.
+    secret = model.openai_api_key
+    assert secret is not None
+    if callable(secret):
+        assert secret() == "abc-123"
+    else:
+        assert secret.get_secret_value() == "abc-123"
 
 
 def test_ls_params_uses_codex_provider_tag() -> None:
