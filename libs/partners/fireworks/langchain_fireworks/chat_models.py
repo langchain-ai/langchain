@@ -16,7 +16,7 @@ from typing import (
 
 import httpx
 from fireworks import (
-    APITimeoutError,
+    APIConnectionError,
     AsyncFireworks,
     BadRequestError,
     Fireworks,
@@ -420,7 +420,7 @@ class _RetryableHTTPStatusError(FireworksError):
 
 
 _RETRYABLE_ERRORS: tuple[type[BaseException], ...] = (
-    APITimeoutError,
+    APIConnectionError,
     InternalServerError,
     RateLimitError,
     httpx.TimeoutException,
@@ -466,10 +466,11 @@ def _create_retry_decorator(
     LangChain `run_manager.on_retry` callback. The SDK's own retry layer is
     suppressed via `max_retries=0` on the client; see `validate_environment`.
     """
-    # `max_retries` counts retries *after* the initial attempt.
-    # `create_base_retry_decorator` forwards its `max_retries` to
-    # `stop_after_attempt`, which counts total attempts — so offset by 1.
-    # `None` and `0` both mean "single attempt, no retries".
+    # `max_retries` counts retries *after* the initial attempt (default lives on
+    # the `ChatFireworks.max_retries` field). `create_base_retry_decorator`
+    # forwards its `max_retries` to `stop_after_attempt`, which counts total
+    # attempts — so offset by 1. `None` and `0` both mean "single attempt, no
+    # retries".
     attempts = (llm.max_retries + 1) if llm.max_retries else 1
     return create_base_retry_decorator(
         error_types=list(_RETRYABLE_ERRORS),
@@ -725,13 +726,14 @@ class ChatFireworks(BaseChatModel):
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
-    max_retries: int | None = None
+    max_retries: int | None = 2
     """Maximum number of retries after the initial attempt when generating.
 
     Retries use exponential backoff and trigger on transient errors:
-    `RateLimitError`, `APITimeoutError`, 5xx responses (including those that
-    surface as `httpx.HTTPStatusError` rather than typed SDK errors), and
-    underlying transport errors (`httpx.TimeoutException`, `httpx.TransportError`).
+    `RateLimitError`, `APIConnectionError` (including its `APITimeoutError`
+    subclass), 5xx responses (including those that surface as
+    `httpx.HTTPStatusError` rather than typed SDK errors), and underlying
+    transport errors (`httpx.TimeoutException`, `httpx.TransportError`).
     A value of `None` or `0` disables retries.
     """
 
