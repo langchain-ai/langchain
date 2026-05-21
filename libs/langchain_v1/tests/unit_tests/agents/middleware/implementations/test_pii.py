@@ -1078,10 +1078,7 @@ class TestPIIStreamTransformer:
         ]
         for e in events:
             transformer.process(e)
-        streamed = (
-            events[0]["params"]["data"]["delta"]
-            + events[1]["params"]["data"]["delta"]
-        )
+        streamed = events[0]["params"]["data"]["delta"] + events[1]["params"]["data"]["delta"]
         assert "alice@example.com" not in streamed
 
     def test_tool_output_delta_dict_walks_strings(self) -> None:
@@ -1665,6 +1662,170 @@ class TestPIIStreamingEndToEnd:
         # raised error is the only signal that something was blocked.
         assert "alice@example.com" not in collected
         assert "alice" not in collected
+
+    @pytest.mark.anyio
+    async def test_tool_call_args_redacted_end_to_end(self) -> None:
+        """Tool-call args containing PII don't reach the consumer."""
+
+        @tool
+        def echo(text: str) -> str:
+            """Echo."""
+            return f"echo: {text}"
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(name="echo", args={"text": "ping alice@example.com"}, id="c1")],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            [echo],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+        )
+
+        surfaces: list[str] = []
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        async for event in run:
+            if not isinstance(event, dict):
+                continue
+            data = event.get("params", {}).get("data")
+            if isinstance(data, tuple) and len(data) == 2:
+                p = data[0]
+                if isinstance(p, BaseMessage):
+                    surfaces.append(str(p.content))
+                    surfaces.extend(
+                        str(tc.get("args")) for tc in getattr(p, "tool_calls", None) or []
+                    )
+                elif isinstance(p, dict):
+                    if p.get("event") == "content-block-finish":
+                        c = p.get("content") or {}
+                        if c.get("type") == "text":
+                            surfaces.append(str(c.get("text", "")))
+                        elif c.get("type") in {"tool_call", "server_tool_call"}:
+                            surfaces.append(str(c.get("args")))
+                    elif p.get("event") == "content-block-delta":
+                        d = p.get("delta") or {}
+                        if d.get("type") == "block-delta":
+                            f = d.get("fields") or {}
+                            if f.get("type") in {
+                                "tool_call_chunk",
+                                "server_tool_call_chunk",
+                            }:
+                                surfaces.append(str(f.get("args", "")))
+            elif isinstance(data, dict):
+                e = data.get("event")
+                if e == "tool-started":
+                    surfaces.append(str(data.get("input")))
+                elif e == "tool-output-delta":
+                    surfaces.append(str(data.get("delta")))
+                elif e == "tool-finished":
+                    surfaces.append(str(data.get("output")))
+                elif e == "tool-error":
+                    surfaces.append(str(data.get("message", "")))
+
+        for s in surfaces:
+            assert "alice@example.com" not in s, f"PII leaked on surface: {s!r}"
+        assert any("[REDACTED_EMAIL]" in s for s in surfaces), (
+            f"redaction marker not observed; surfaces={surfaces}"
+        )
+
+    @pytest.mark.anyio
+    async def test_tool_output_redacted_end_to_end(self) -> None:
+        """Tool output containing PII is redacted on every stream surface."""
+
+        @tool
+        def lookup_user(user_id: str) -> str:
+            """Look up a user — returns PII."""
+            return f"User {user_id}: alice@example.com"
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(name="lookup_user", args={"user_id": "u1"}, id="c1")],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            [lookup_user],
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    apply_to_input=True,
+                    apply_to_output=True,
+                    apply_to_tool_results=True,
+                )
+            ],
+        )
+
+        surfaces: list[str] = []
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        async for event in run:
+            if not isinstance(event, dict):
+                continue
+            data = event.get("params", {}).get("data")
+            if isinstance(data, tuple) and len(data) == 2:
+                p = data[0]
+                if isinstance(p, BaseMessage):
+                    surfaces.append(str(p.content))
+                elif isinstance(p, dict):
+                    surfaces.append(repr(p))
+            elif isinstance(data, dict):
+                surfaces.append(repr(data))
+
+        for s in surfaces:
+            assert "alice@example.com" not in s, f"tool output leaked on surface: {s!r}"
+
+    @pytest.mark.anyio
+    async def test_block_raises_on_tool_output_pii(self) -> None:
+        """`block` + tool output with PII → run raises, no leak on the wire."""
+
+        @tool
+        def lookup_user(user_id: str) -> str:
+            """Look up a user — returns PII."""
+            return f"User {user_id}: alice@example.com"
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(name="lookup_user", args={"user_id": "u1"}, id="c1")],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            [lookup_user],
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    strategy="block",
+                    apply_to_input=True,
+                    apply_to_output=True,
+                    apply_to_tool_results=True,
+                )
+            ],
+        )
+
+        collected: list[str] = []
+
+        async def drain() -> None:
+            run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+            async for event in run:
+                if isinstance(event, dict):
+                    data = event.get("params", {}).get("data")
+                    if isinstance(data, tuple) and len(data) == 2:
+                        p = data[0]
+                        if isinstance(p, BaseMessage):
+                            collected.append(str(p.content))
+                        elif isinstance(p, dict):
+                            collected.append(repr(p))
+                    elif isinstance(data, dict):
+                        collected.append(repr(data))
+
+        with pytest.raises(PIIDetectionError):
+            await drain()
+
+        for s in collected:
+            assert "alice@example.com" not in s, f"PII leaked under block: {s!r}"
 
     @pytest.mark.anyio
     async def test_subgraph_redaction_via_create_agent_in_tool(self) -> None:

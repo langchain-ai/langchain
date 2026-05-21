@@ -63,7 +63,7 @@ class _PIIStreamTransformer(StreamTransformer):
     """
 
     before_builtins: ClassVar[bool] = True
-    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages", "tools")
+    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages", "tools", "values")
 
     def __init__(
         self,
@@ -90,6 +90,25 @@ class _PIIStreamTransformer(StreamTransformer):
             return self._process_messages_event(event)
         if method == "tools":
             return self._process_tools_event(event)
+        if method == "values":
+            return self._process_values_event(event)
+        return True
+
+    def _process_values_event(self, event: ProtocolEvent) -> bool:
+        """Redact the state snapshot on the `values` channel.
+
+        State snapshots emitted between nodes carry the full state dict,
+        which typically includes the messages list. Walking the snapshot
+        with `_redact_value` returns a fresh structure where every
+        message has a redacted copy of its content — the original
+        objects in graph state remain intact for the state-level
+        enforcer (`apply_to_tool_results` via `before_model`) to act on
+        independently when the agent loops back.
+        """
+        data = event["params"].get("data")
+        if data is None:
+            return True
+        event["params"]["data"] = self._redact_value(data)
         return True
 
     def _process_messages_event(self, event: ProtocolEvent) -> bool:
@@ -151,9 +170,7 @@ class _PIIStreamTransformer(StreamTransformer):
                     if self._rule.strategy == "block":
                         data["message"] = ""
                     else:
-                        data["message"] = apply_strategy(
-                            msg, matches, self._rule.strategy
-                        )
+                        data["message"] = apply_strategy(msg, matches, self._rule.strategy)
             if isinstance(tool_call_id, str):
                 self._buffers.pop(("", tool_call_id), None)
 
@@ -215,10 +232,9 @@ class _PIIStreamTransformer(StreamTransformer):
         """
         content = message.content
         tool_calls = getattr(message, "tool_calls", None) or []
-        has_string_content = isinstance(content, str) and bool(content)
 
         content_matches: list[PIIMatch] = []
-        if has_string_content:
+        if isinstance(content, str) and content:
             content_matches = self._rule.detector(content)
 
         tool_call_hits: list[int] = []
@@ -235,25 +251,23 @@ class _PIIStreamTransformer(StreamTransformer):
             event["params"]["data"] = (empty, metadata)
             return
 
-        if content_matches:
+        if content_matches and isinstance(content, str):
             message.content = apply_strategy(content, content_matches, self._rule.strategy)
         if tool_call_hits and isinstance(message, AIMessage):
-            new_tool_calls = list(message.tool_calls)
+            new_tool_calls: list[Any] = list(message.tool_calls)
             for i in tool_call_hits:
                 tc = dict(new_tool_calls[i])
                 tc["args"] = self._redact_value(tc.get("args") or {})
-                new_tool_calls[i] = tc  # type: ignore[assignment]
+                new_tool_calls[i] = tc
             message.tool_calls = new_tool_calls
 
     def _args_contain_pii(self, args: dict[str, Any]) -> bool:
         """Cheap check: does any string leaf in args trigger detection?"""
         for v in args.values():
-            if isinstance(v, str):
-                if v and self._rule.detector(v):
-                    return True
-            elif isinstance(v, (dict, list, tuple)):
-                if self._redact_value(v) != v:
-                    return True
+            if isinstance(v, str) and v and self._rule.detector(v):
+                return True
+            if isinstance(v, (dict, list, tuple)) and self._redact_value(v) != v:
+                return True
         return False
 
     def _redact_value(self, value: Any) -> Any:
@@ -262,6 +276,12 @@ class _PIIStreamTransformer(StreamTransformer):
         Returns a new value where every `str` leaf that contains PII has
         been replaced (or emptied under `block`). Non-string leaves and
         the structure itself are preserved.
+
+        `BaseMessage` payloads (typically `ToolMessage` from
+        `tool-finished.output`) return a fresh copy with `.content`
+        redacted — never mutated in place. The original object stays
+        intact for the state-level enforcer (`before_model` with
+        `apply_to_tool_results`) to act on independently.
         """
         if isinstance(value, str):
             if not value:
@@ -272,6 +292,18 @@ class _PIIStreamTransformer(StreamTransformer):
             if self._rule.strategy == "block":
                 return ""
             return apply_strategy(value, matches, self._rule.strategy)
+        if isinstance(value, BaseMessage):
+            content = value.content
+            if not isinstance(content, str) or not content:
+                return value
+            matches = self._rule.detector(content)
+            if not matches:
+                return value
+            if self._rule.strategy == "block":
+                new_content: str = ""
+            else:
+                new_content = apply_strategy(content, matches, self._rule.strategy)
+            return value.model_copy(update={"content": new_content})
         if isinstance(value, dict):
             return {k: self._redact_value(v) for k, v in value.items()}
         if isinstance(value, list):
@@ -380,9 +412,7 @@ class _PIIStreamTransformer(StreamTransformer):
                         if self._rule.strategy == "block":
                             content["text"] = ""
                         else:
-                            content["text"] = apply_strategy(
-                                text, matches, self._rule.strategy
-                            )
+                            content["text"] = apply_strategy(text, matches, self._rule.strategy)
             elif ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}:
                 args = content.get("args")
                 if isinstance(args, dict):
