@@ -856,6 +856,69 @@ class TestPIIStreamTransformer:
         assert "alice@example.com" not in fields["args"]
         assert "[REDACTED_EMAIL]" in fields["args"]
 
+    def test_finalize_block_redacts_tool_call_args(self) -> None:
+        """`content-block-finish` with type=tool_call walks args dict."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-finish",
+                            "index": 0,
+                            "content": {
+                                "type": "tool_call",
+                                "id": "call_1",
+                                "name": "send_email",
+                                "args": {"to": "alice@example.com", "subject": "clean"},
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+        args = events[0]["params"]["data"][0]["content"]["args"]
+        assert args == {"to": "[REDACTED_EMAIL]", "subject": "clean"}
+
+    def test_finalize_block_zeroes_tool_call_args_under_block(self) -> None:
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-finish",
+                            "index": 0,
+                            "content": {
+                                "type": "tool_call",
+                                "id": "call_1",
+                                "name": "send_email",
+                                "args": {"to": "alice@example.com"},
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+        args = events[0]["params"]["data"][0]["content"]["args"]
+        assert args == {"to": ""}
+
     def test_tool_call_args_block_strategy_emptied(self) -> None:
         """`block` strategy zeroes args when PII is detected."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()

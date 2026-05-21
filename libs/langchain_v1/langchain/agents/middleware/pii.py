@@ -261,18 +261,26 @@ class _PIIStreamTransformer(StreamTransformer):
         # of deltas, not what we emitted on the wire. Re-run detection over
         # its full text so the snapshot matches the redacted stream.
         content = payload.get("content")
-        if isinstance(content, dict) and content.get("type") == "text":
-            text = content.get("text")
-            if isinstance(text, str) and text:
-                matches = self._rule.detector(text)
-                if matches:
-                    # `block` withholds the content from the consumer;
-                    # `after_model` raises `PIIDetectionError` on the
-                    # original state message shortly after.
-                    if self._rule.strategy == "block":
-                        content["text"] = ""
-                    else:
-                        content["text"] = apply_strategy(text, matches, self._rule.strategy)
+        if isinstance(content, dict):
+            ctype = content.get("type")
+            if ctype == "text":
+                text = content.get("text")
+                if isinstance(text, str) and text:
+                    matches = self._rule.detector(text)
+                    if matches:
+                        # `block` withholds the content from the consumer;
+                        # `after_model` raises `PIIDetectionError` on the
+                        # original state message shortly after.
+                        if self._rule.strategy == "block":
+                            content["text"] = ""
+                        else:
+                            content["text"] = apply_strategy(
+                                text, matches, self._rule.strategy
+                            )
+            elif ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}:
+                args = content.get("args")
+                if isinstance(args, dict):
+                    content["args"] = self._redact_value(args)
         self._buffers.pop(key, None)
 
     def _drop_run(self, run_id: str) -> None:
