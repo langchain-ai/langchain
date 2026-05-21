@@ -20,6 +20,7 @@ import asyncio
 import base64
 import contextlib
 import hashlib
+import html
 import http.server
 import json
 import logging
@@ -32,7 +33,7 @@ import webbrowser
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 import httpx
 
@@ -613,15 +614,93 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
-        body = (
-            "<html><body><h2>Sign-in complete</h2>"
-            "<p>You may close this window.</p></body></html>"
-        )
+        error = self.server_result.get("error")
+        if error:
+            error_description = self.server_result.get("error_description")
+            logger.error(
+                "ChatGPT OAuth callback returned error %r (%s)",
+                error,
+                error_description or "no description",
+            )
+            if error_description:
+                description = f"{error_description} (error: {error})"
+            else:
+                description = (
+                    f"ChatGPT returned error '{error}'. Close this tab and "
+                    "try `login_chatgpt()` again."
+                )
+            body = _oauth_error_html(description)
+        else:
+            body = _oauth_success_html(
+                "ChatGPT sign-in complete. You can close this browser tab "
+                "and return to your terminal.",
+            )
         self.wfile.write(body.encode("utf-8"))
 
     def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
         # Don't leak callback URLs (which contain auth codes) into stderr.
         return
+
+
+def _oauth_success_html(message: str) -> str:
+    return _oauth_result_html(
+        title="ChatGPT sign-in complete",
+        heading="You're signed in",
+        message=message,
+        status="success",
+    )
+
+
+def _oauth_error_html(message: str) -> str:
+    return _oauth_result_html(
+        title="ChatGPT sign-in failed",
+        heading="Sign-in failed",
+        message=message,
+        status="error",
+    )
+
+
+def _oauth_result_html(
+    *,
+    title: str,
+    heading: str,
+    message: str,
+    status: Literal["success", "error"],
+) -> str:
+    accent = "#137333" if status == "success" else "#b3261e"
+    background = "#eef7f0" if status == "success" else "#fceeee"
+    mark = "&check;" if status == "success" else "!"
+    escaped_title = html.escape(title)
+    escaped_heading = html.escape(heading)
+    escaped_message = html.escape(message)
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        f"<title>{escaped_title}</title>"
+        "<style>"
+        "body{margin:0;min-height:100vh;display:grid;place-items:center;"
+        "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
+        "background:#f8faf9;color:#1f2328}"
+        ".panel{width:min(480px,calc(100vw - 40px));box-sizing:border-box;"
+        "padding:32px;border:1px solid #d8dee4;border-radius:8px;"
+        "background:#fff;box-shadow:0 18px 45px rgba(31,35,40,.08)}"
+        ".mark{width:44px;height:44px;border-radius:50%;display:grid;"
+        "place-items:center;margin-bottom:20px;font-weight:700;font-size:22px}"
+        "h1{font-size:24px;line-height:1.2;margin:0 0 10px}"
+        "p{font-size:15px;line-height:1.5;margin:0;color:#57606a}"
+        "@media (prefers-color-scheme: dark){"
+        "body{background:#0d1117;color:#e6edf3}"
+        ".panel{background:#161b22;border-color:#30363d;"
+        "box-shadow:0 18px 45px rgba(0,0,0,.4)}"
+        "p{color:#9da7b3}}"
+        "</style></head><body>"
+        '<main class="panel">'
+        f'<div class="mark" style="background:{background};color:{accent}">'
+        f"{mark}</div>"
+        f"<h1>{escaped_heading}</h1><p>{escaped_message}</p>"
+        "</main>"
+        "</body></html>"
+    )
 
 
 def _wait_for_callback(
@@ -690,6 +769,10 @@ def login_chatgpt(
     Returns:
         A `FileChatGPTOAuthTokenProvider` ready for use by
             `ChatOpenAICodex`.
+
+    See Also:
+        `login_chatgpt_device`: Headless fallback for environments without a
+            browser or the ability to bind a localhost callback port.
     """
     redirect_uri = f"http://{host}:{port}{callback_path}"
     state = secrets.token_urlsafe(32)
@@ -775,6 +858,10 @@ def login_chatgpt_device(
 
     Returns:
         A configured `FileChatGPTOAuthTokenProvider`.
+
+    See Also:
+        `login_chatgpt`: Browser-based loopback flow preferred when a local
+            browser and free callback port are available.
     """
     _verifier, challenge = _generate_pkce_pair()
     start = _post_form(

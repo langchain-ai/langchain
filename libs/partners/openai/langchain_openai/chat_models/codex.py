@@ -39,10 +39,29 @@ CHATGPT_CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex"
 ORIGINATOR_HEADER = "originator"
 ORIGINATOR_VALUE = "langchain"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenAI."
+"""Fallback value for the Responses-API `instructions` field.
+
+`instructions` *is* the system prompt for a Responses-API request — the
+ChatGPT Codex backend rejects requests without it (400
+`Instructions are required`). Most callers should pass their own
+`instructions` (constructor or per-call) rather than rely on this generic
+fallback.
+"""
 _FORCED_VALUES: dict[str, Any] = {
     "use_responses_api": True,
     "output_version": "responses/v1",
+    "store": False,
+    "streaming": True,
 }
+"""Values forced onto every `ChatOpenAICodex` instance.
+
+The ChatGPT Codex backend rejects non-streaming requests
+(`400 'Stream must be set to true'`) and requests that ask it to persist
+response data (`400 'Store must be set to false'`). Pinning `streaming=True`
+routes `invoke` through `_stream` so a streaming request is always sent and
+chunks are aggregated back into a single message for the caller.
+"""
 
 
 class ChatOpenAICodex(ChatOpenAI):
@@ -70,9 +89,18 @@ class ChatOpenAICodex(ChatOpenAI):
         ```
 
     !!! note
+
         Token storage is handled by `FileChatGPTOAuthTokenProvider`, which
         defaults to `~/.langchain/chatgpt-auth.json` so it does not collide
         with the Codex CLI / VS Code session at `~/.codex/auth.json`.
+
+    !!! note "Always streams over the wire"
+
+        The Codex backend only accepts streaming requests, so `streaming=True`
+        is forced. `invoke` still returns a single aggregated `AIMessage` —
+        chunks are collected internally — but the underlying HTTP request is
+        a stream either way. Expect every call to show up as a streamed
+        request in network logs and LangSmith traces.
     """
 
     token_provider: Any = Field(default=None, exclude=True)
@@ -85,6 +113,29 @@ class ChatOpenAICodex(ChatOpenAI):
 
     include_originator_header: bool = True
     """Whether to send the optional `originator: langchain` header."""
+
+    instructions: str = Field(default=DEFAULT_INSTRUCTIONS)
+    """System prompt sent in the Responses-API `instructions` field.
+
+    The ChatGPT Codex backend requires this field to be present and non-empty
+    on every call. **Callers should almost always supply their own value**,
+    either at construction time or per call:
+
+    ```python
+    model = ChatOpenAICodex(
+        model="gpt-5.2-codex",
+        instructions="You are a senior Python reviewer. Be terse.",
+    )
+    # or per-call:
+    model.invoke("...", instructions="You are a senior Python reviewer.")
+    ```
+
+    An explicit `instructions` kwarg on the call always wins over this
+    field. Passing a `SystemMessage` in `input` does **not** populate this
+    field — `SystemMessage` becomes an entry in the `input` list, which is
+    distinct from the top-level `instructions` field that the Codex
+    backend requires.
+    """
 
     _resolved_token_provider: ChatGPTOAuthTokenProvider = PrivateAttr()
 
@@ -166,6 +217,12 @@ class ChatOpenAICodex(ChatOpenAI):
     ) -> dict:
         """Build the request payload and attach Codex auth headers."""
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # The Codex backend rejects requests without `instructions` — populate
+        # the field's value if the caller didn't supply one. An explicit empty
+        # string from the caller is preserved (the backend will reject it, but
+        # silently overwriting it would hide a programming error).
+        if payload.get("instructions") is None:
+            payload["instructions"] = self.instructions
         return self._merge_codex_headers(payload, self._codex_headers_sync())
 
     async def _agenerate(

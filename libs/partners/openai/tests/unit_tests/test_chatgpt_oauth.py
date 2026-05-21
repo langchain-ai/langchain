@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, overload
 
 import httpx
 import pytest
@@ -718,6 +718,73 @@ def test_callback_handler_extracts_error() -> None:
     assert result == {"error": "access_denied", "error_description": "nope"}
 
 
+def test_callback_handler_success_renders_success_page() -> None:
+    result, body = _run_callback_handler(
+        path="/auth/callback?code=abc&state=xyz",
+        capture_body=True,
+    )
+    assert result == {"code": "abc", "state": "xyz"}
+    # The apostrophe in "You're" is HTML-escaped by `html.escape`.
+    assert "You&#x27;re signed in" in body
+    assert "ChatGPT sign-in complete" in body
+    assert "Sign-in failed" not in body
+
+
+def test_callback_handler_error_renders_error_page() -> None:
+    result, body = _run_callback_handler(
+        path="/auth/callback?error=access_denied&error_description=user+declined",
+        capture_body=True,
+    )
+    assert result == {"error": "access_denied", "error_description": "user declined"}
+    assert "Sign-in failed" in body
+    assert "user declined" in body
+    # Provider error code is surfaced for debuggability.
+    assert "access_denied" in body
+    assert "You're signed in" not in body
+
+
+def test_callback_handler_error_without_description_surfaces_code() -> None:
+    """The provider's `error` code must reach the user when no description."""
+    result, body = _run_callback_handler(
+        path="/auth/callback?error=invalid_scope",
+        capture_body=True,
+    )
+    assert result == {"error": "invalid_scope"}
+    assert "Sign-in failed" in body
+    assert "invalid_scope" in body
+
+
+def test_callback_handler_escapes_html_in_error_description() -> None:
+    """Reflected XSS regression: `error_description` must be HTML-escaped."""
+    result, body = _run_callback_handler(
+        path=(
+            "/auth/callback?error=oops&error_description="
+            "%3Cscript%3Ealert(1)%3C%2Fscript%3E"
+        ),
+        capture_body=True,
+    )
+    assert result == {
+        "error": "oops",
+        "error_description": "<script>alert(1)</script>",
+    }
+    assert "<script>alert(1)</script>" not in body
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in body
+
+
+def test_callback_handler_error_logs_server_side(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Operators need a server-side record of provider OAuth failures."""
+    with caplog.at_level("ERROR", logger="langchain_openai.chatgpt_oauth"):
+        _run_callback_handler(
+            path="/auth/callback?error=access_denied&error_description=nope",
+        )
+    assert any(
+        "access_denied" in rec.message and rec.levelname == "ERROR"
+        for rec in caplog.records
+    )
+
+
 def test_wait_for_callback_times_out(monkeypatch: pytest.MonkeyPatch) -> None:
     # Force the loop to never satisfy the deadline.
     times = iter([0.0, 0.0, 9999.0])
@@ -731,11 +798,26 @@ def test_wait_for_callback_times_out(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
 
-def _run_callback_handler(*, path: str) -> dict[str, str] | None:
+@overload
+def _run_callback_handler(
+    *, path: str, capture_body: Literal[False] = False
+) -> dict[str, str] | None: ...
+
+
+@overload
+def _run_callback_handler(
+    *, path: str, capture_body: Literal[True]
+) -> tuple[dict[str, str] | None, str]: ...
+
+
+def _run_callback_handler(
+    *, path: str, capture_body: bool = False
+) -> dict[str, str] | None | tuple[dict[str, str] | None, str]:
     """Drive a real `_CallbackHandler` against a localhost request.
 
     Returns the populated `server_result` if the callback was matched, or
-    `None` if the handler 404'd.
+    `None` if the handler 404'd. When `capture_body=True`, returns a
+    `(result, body)` tuple where `body` is the decoded response body.
     """
     import http.server
 
@@ -746,6 +828,7 @@ def _run_callback_handler(*, path: str) -> dict[str, str] | None:
     server = http.server.HTTPServer(("127.0.0.1", 0), _BoundCallbackHandler)
     port = server.server_address[1]
     captured_status: list[int] = []
+    captured_body = ""
 
     def _serve() -> None:
         server.handle_request()
@@ -756,14 +839,21 @@ def _run_callback_handler(*, path: str) -> dict[str, str] | None:
         url = f"http://127.0.0.1:{port}{path}"
         with urllib.request.urlopen(url, timeout=2.0) as resp:  # noqa: S310
             captured_status.append(resp.status)
+            captured_body = resp.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         captured_status.append(exc.code)
     finally:
         thread.join(timeout=2.0)
         server.server_close()
-    if captured_status and captured_status[0] == 404:
-        return None
-    return dict(_BoundCallbackHandler.server_result)
+    result: dict[str, str] | None
+    result = (
+        None
+        if captured_status and captured_status[0] == 404
+        else dict(_BoundCallbackHandler.server_result)
+    )
+    if capture_body:
+        return result, captured_body
+    return result
 
 
 def test_file_lock_logs_warning_when_fcntl_unavailable(

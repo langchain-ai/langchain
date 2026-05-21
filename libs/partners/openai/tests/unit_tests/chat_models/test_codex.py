@@ -7,12 +7,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from langchain_openai import ChatOpenAICodex
 from langchain_openai.chat_models.codex import (
     ACCOUNT_ID_HEADER,
     CHATGPT_CODEX_BASE_URL,
+    DEFAULT_INSTRUCTIONS,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
     _SyncTokenCallable,
@@ -68,6 +69,8 @@ def test_defaults_route_to_chatgpt_codex_backend() -> None:
     assert model.openai_api_base == CHATGPT_CODEX_BASE_URL
     assert model.use_responses_api is True
     assert model.output_version == "responses/v1"
+    assert model.store is False
+    assert model.streaming is True
 
 
 def test_uses_callable_api_key_from_token_provider() -> None:
@@ -145,6 +148,78 @@ def test_conflicting_output_version_raises() -> None:
             token_provider=FakeTokenProvider(),
             output_version="v0",
         )
+
+
+def test_conflicting_store_raises() -> None:
+    with pytest.raises(ValueError, match="store"):
+        ChatOpenAICodex(
+            model="gpt-5.2-codex",
+            token_provider=FakeTokenProvider(),
+            store=True,
+        )
+
+
+def test_conflicting_streaming_raises() -> None:
+    with pytest.raises(ValueError, match="streaming"):
+        ChatOpenAICodex(
+            model="gpt-5.2-codex",
+            token_provider=FakeTokenProvider(),
+            streaming=False,
+        )
+
+
+def test_request_payload_sends_store_false_and_stream_true() -> None:
+    """The Codex backend 400s with `store=True` or non-streaming requests."""
+    model = _build_model()
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["store"] is False
+    assert payload["stream"] is True
+
+
+def test_request_payload_sets_default_instructions() -> None:
+    """The Codex backend 400s without `instructions`; default must be injected."""
+    model = _build_model()
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["instructions"] == DEFAULT_INSTRUCTIONS
+
+
+def test_request_payload_respects_constructor_instructions() -> None:
+    model = _build_model(instructions="custom system prompt")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["instructions"] == "custom system prompt"
+
+
+def test_request_payload_respects_per_call_instructions_override() -> None:
+    """An `instructions` kwarg at invoke time wins over the model default."""
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], instructions="call-level"
+    )
+    assert payload["instructions"] == "call-level"
+
+
+def test_request_payload_preserves_explicit_empty_instructions() -> None:
+    """An explicit empty `instructions=""` must not be overwritten silently.
+
+    The backend will reject it, but silently replacing it with the default
+    would hide the caller's bug.
+    """
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload([HumanMessage("hi")], instructions="")
+    assert payload["instructions"] == ""
+
+
+def test_system_message_does_not_populate_top_level_instructions() -> None:
+    """A `SystemMessage` in `input` doesn't fill the top-level `instructions`.
+
+    `SystemMessage` becomes an entry in the `input` list, leaving the
+    separate top-level `instructions` field at the model's configured value.
+    """
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [SystemMessage("from-system-message"), HumanMessage("hi")]
+    )
+    assert payload["instructions"] == "model-level"
 
 
 def test_caller_headers_win_over_codex_defaults() -> None:
