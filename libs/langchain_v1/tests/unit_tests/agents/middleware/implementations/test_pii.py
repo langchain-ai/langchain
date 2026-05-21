@@ -814,6 +814,39 @@ class TestPIIStreamTransformer:
         assert "alice@example.com" not in streamed
         assert "alice@example.com" not in finals[0]
 
+    def test_pii_straddling_lookback_boundary_is_caught(self) -> None:
+        r"""PII whose start falls in the safe prefix and end in the held tail.
+
+        When `len(combined) > lookback`, the safe/tail split lands inside
+        the buffer. Detecting only on the about-to-emit prefix misses
+        PII that straddles the boundary — the regex's `\b...\b` anchors
+        require a complete match, so a truncated prefix produces no
+        detection and the partial PII would leak raw. The transformer
+        must run detection on the full accumulated buffer first.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=32)
+
+        # Single 50-char delta with a 30-char email at position 0.
+        # `safe_end = 50 - 32 = 18` falls inside the email, so the old
+        # logic would emit `"alice@longerdomain"` raw and hold the rest.
+        email = "alice@longerdomain.example.com"
+        text = email + "x" * 20
+        events = [
+            _make_delta_event(text),
+            _make_finish_event(text),
+        ]
+        _run_transformer(transformer, events)
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+
+        # No prefix of the email reaches the wire.
+        assert email not in streamed
+        assert "alice@longerdomain" not in streamed
+        assert "alice@" not in streamed
+        # And the finalized snapshot is fully redacted.
+        assert email not in finals[0]
+        assert "[REDACTED_EMAIL]" in finals[0]
+
     def test_credit_card_split_across_whitespace_is_caught(self) -> None:
         """Card with whitespace separators must not leak across deltas."""
         rule = RedactionRule(pii_type="credit_card").resolve()

@@ -139,23 +139,18 @@ class _PIIStreamTransformer(StreamTransformer):
         held = self._buffers.get(key, "")
         combined = held + text
 
-        safe_end = max(0, len(combined) - self._lookback)
-
-        if safe_end == 0:
-            # Nothing safe to emit yet — hold the entire combined buffer
-            # and zero out this delta's text so the consumer doesn't see
-            # the original (potentially un-redacted) bytes.
-            self._buffers[key] = combined
-            delta["text"] = ""
-            return
-
-        safe_text = combined[:safe_end]
-        tail = combined[safe_end:]
-        matches = self._rule.detector(safe_text)
+        # Run detection on the full accumulated buffer before splitting.
+        # Detecting only on the about-to-emit prefix would miss matches
+        # that straddle the lookback boundary — the detector's regex
+        # needs a complete, boundary-anchored hit, so a truncated prefix
+        # would fail to match and the partial PII would leak on the wire.
+        matches = self._rule.detector(combined)
         if matches:
-            safe_text = apply_strategy(safe_text, matches, self._rule.strategy)
-        self._buffers[key] = tail
-        delta["text"] = safe_text
+            combined = apply_strategy(combined, matches, self._rule.strategy)
+
+        emit_end = max(0, len(combined) - self._lookback)
+        self._buffers[key] = combined[emit_end:]
+        delta["text"] = combined[:emit_end]
 
     def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
         index = payload.get("index")
