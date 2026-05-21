@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from functools import partial
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
+    BUILTIN_DETECTORS,
     PIIDetectionError,
     PIIMatch,
     RedactionRule,
@@ -31,6 +34,154 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from langgraph.runtime import Runtime
+    from langgraph.stream._types import ProtocolEvent
+
+
+_DEFAULT_STREAM_LOOKBACK = 128
+"""Default trailing-buffer size for cross-delta PII detection.
+
+The transformer holds the last `lookback` characters in a per-content-block
+buffer so that PII patterns straddling delta boundaries are detected before
+the safe prefix is released downstream. 128 covers the common long matches
+(JWTs in URLs, long email locals) without significantly delaying first-token
+latency in practice — the whitespace-boundary flush typically releases the
+held tail well before this cap is reached.
+"""
+
+
+class _PIIStreamTransformer(StreamTransformer):
+    """Mutates `content-block-delta` text on `messages` events in flight.
+
+    Runs before built-in stream transformers so the redacted text is what
+    every downstream consumer sees — both the main protocol event log and
+    the `run.messages` projection that `MessagesTransformer` snapshots into.
+
+    Holds a sliding buffer of the most recent text per (run_id, content
+    block index) so PII patterns that straddle delta boundaries are caught.
+    The buffer's safe prefix (anything older than `lookback` chars, or
+    anything before the last whitespace when `whitespace_boundary` is set)
+    is redacted with the resolved rule's strategy and emitted as the new
+    delta text. The tail stays in the buffer until the next delta or the
+    block's finish event flushes it.
+    """
+
+    before_builtins: ClassVar[bool] = True
+    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages",)
+
+    def __init__(
+        self,
+        scope: tuple[str, ...] = (),
+        *,
+        rule: ResolvedRedactionRule,
+        lookback: int = _DEFAULT_STREAM_LOOKBACK,
+        whitespace_boundary: bool = True,
+    ) -> None:
+        super().__init__(scope)
+        self._rule = rule
+        self._lookback = lookback
+        self._whitespace_boundary = whitespace_boundary
+        self._buffers: dict[tuple[str, int], str] = {}
+
+    def init(self) -> dict[str, Any]:
+        # No projection — this transformer mutates events in place rather
+        # than building a derived view.
+        return {}
+
+    def process(self, event: ProtocolEvent) -> bool:
+        if event["method"] != "messages":
+            return True
+        params = event["params"]
+        data = params.get("data")
+        if not isinstance(data, tuple) or len(data) != 2:  # noqa: PLR2004
+            return True
+        payload, metadata = data
+        if not isinstance(payload, dict):
+            return True
+        kind = payload.get("event")
+        run_id = str(metadata.get("run_id", "")) if metadata else ""
+
+        if kind == "content-block-delta":
+            self._mutate_delta(payload, run_id)
+        elif kind == "content-block-finish":
+            self._finalize_block(payload, run_id)
+        elif kind in {"message-finish", "error"}:
+            self._drop_run(run_id)
+        return True
+
+    def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
+        delta = payload.get("delta")
+        if not isinstance(delta, dict):
+            return
+        if delta.get("type") != "text-delta":
+            return
+        text = delta.get("text")
+        if not isinstance(text, str) or not text:
+            return
+        index = payload.get("index")
+        if not isinstance(index, int):
+            return
+
+        key = (run_id, index)
+        held = self._buffers.get(key, "")
+        combined = held + text
+
+        safe_end = max(0, len(combined) - self._lookback)
+        if self._whitespace_boundary:
+            # Extend the safe prefix to include any whitespace at or after
+            # the lookback cutoff — for whitespace-free PII patterns this
+            # is always safe and dramatically reduces first-token latency.
+            for i in range(len(combined) - 1, safe_end - 1, -1):
+                if combined[i].isspace():
+                    safe_end = i + 1
+                    break
+
+        if safe_end == 0:
+            # Nothing safe to emit yet — hold the entire combined buffer
+            # and zero out this delta's text so the consumer doesn't see
+            # the original (potentially un-redacted) bytes.
+            self._buffers[key] = combined
+            delta["text"] = ""
+            return
+
+        safe_text = combined[:safe_end]
+        tail = combined[safe_end:]
+        matches = self._rule.detector(safe_text)
+        if matches:
+            safe_text = apply_strategy(safe_text, matches, self._rule.strategy)
+        self._buffers[key] = tail
+        delta["text"] = safe_text
+
+    def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
+        index = payload.get("index")
+        if not isinstance(index, int):
+            return
+        key = (run_id, index)
+        # The finalized block carries the model's original concatenation
+        # of deltas, not what we emitted on the wire. Re-run detection over
+        # its full text so the snapshot matches the redacted stream.
+        content = payload.get("content")
+        if isinstance(content, dict) and content.get("type") == "text":
+            text = content.get("text")
+            if isinstance(text, str) and text:
+                matches = self._rule.detector(text)
+                if matches:
+                    content["text"] = apply_strategy(text, matches, self._rule.strategy)
+        self._buffers.pop(key, None)
+
+    def _drop_run(self, run_id: str) -> None:
+        # Release any buffered tails for this run_id — content-block-finish
+        # should have already done so for normal completion, but message-finish
+        # / error paths need an explicit sweep so abandoned blocks don't
+        # accumulate in long-lived processes.
+        stale = [key for key in self._buffers if key[0] == run_id]
+        for key in stale:
+            del self._buffers[key]
+
+    def finalize(self) -> None:
+        self._buffers.clear()
+
+    def fail(self, err: BaseException) -> None:  # noqa: ARG002
+        self._buffers.clear()
 
 
 class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -108,6 +259,8 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         apply_to_input: bool = True,
         apply_to_output: bool = False,
         apply_to_tool_results: bool = False,
+        stream_lookback: int = _DEFAULT_STREAM_LOOKBACK,
+        stream_whitespace_boundary: bool | None = None,
     ) -> None:
         """Initialize the PII detection middleware.
 
@@ -133,7 +286,22 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 * If `None`: Uses built-in detector for the `pii_type`
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
+
+                When `True`, a stream transformer is also installed so that
+                streamed deltas are redacted in flight (the consumer sees
+                redacted text in `astream_events` / `run.messages`), not
+                just in the final `state["messages"]`.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
+            stream_lookback: Trailing-buffer size for cross-delta PII
+                detection in the stream transformer. Patterns longer than
+                this may slip through when split across deltas; the default
+                covers built-in types comfortably.
+            stream_whitespace_boundary: Whether the stream transformer may
+                flush the held buffer up to the last whitespace. Defaults
+                to `True` for built-in `pii_type` values (all of which match
+                whitespace-free spans) and `False` for custom detectors
+                (which may legitimately match across whitespace). Set
+                explicitly to override.
 
         Raises:
             ValueError: If `pii_type` is not built-in and no detector is provided.
@@ -152,6 +320,27 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         self.pii_type = self._resolved_rule.pii_type
         self.strategy = self._resolved_rule.strategy
         self.detector = self._resolved_rule.detector
+
+        # Stream transformer mirrors `apply_to_output` — it scrubs the
+        # streamed surface of the same model output that `after_model`
+        # scrubs in state. `block` is not supported on the streaming path
+        # (raising mid-stream would leave projections in a torn state);
+        # users mixing `block` with output redaction still get state-level
+        # blocking via `after_model`.
+        is_builtin = pii_type in BUILTIN_DETECTORS and detector is None
+        if stream_whitespace_boundary is None:
+            stream_whitespace_boundary = is_builtin
+        self._stream_lookback = stream_lookback
+        self._stream_whitespace_boundary = stream_whitespace_boundary
+        if self.apply_to_output and self.strategy != "block":
+            self.transformers = (
+                partial(
+                    _PIIStreamTransformer,
+                    rule=self._resolved_rule,
+                    lookback=self._stream_lookback,
+                    whitespace_boundary=self._stream_whitespace_boundary,
+                ),
+            )
 
     @property
     def name(self) -> str:

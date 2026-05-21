@@ -4,15 +4,20 @@ import re
 from typing import Any
 
 import pytest
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.tools import tool
 from langgraph.runtime import Runtime
+from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
     PIIMatch,
     PIIMiddleware,
+    _PIIStreamTransformer,
     detect_credit_card,
     detect_email,
     detect_ip,
@@ -696,3 +701,479 @@ class TestMultipleMiddleware:
         content = result["messages"][0].content
         assert "test@example.com" not in content
         assert "10.0.0.1" not in content
+
+
+# ============================================================================
+# Stream Transformer Tests
+# ============================================================================
+
+
+def _make_delta_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict[str, Any]:
+    """Build a `messages` protocol event for a text content-block delta."""
+    return {
+        "type": "event",
+        "method": "messages",
+        "params": {
+            "namespace": [],
+            "timestamp": 0,
+            "data": (
+                {
+                    "event": "content-block-delta",
+                    "index": index,
+                    "delta": {"type": "text-delta", "text": text},
+                },
+                {"run_id": run_id},
+            ),
+        },
+    }
+
+
+def _make_finish_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict[str, Any]:
+    """Build a `messages` protocol event for content-block-finish on a text block."""
+    return {
+        "type": "event",
+        "method": "messages",
+        "params": {
+            "namespace": [],
+            "timestamp": 0,
+            "data": (
+                {
+                    "event": "content-block-finish",
+                    "index": index,
+                    "content": {"type": "text", "text": text},
+                },
+                {"run_id": run_id},
+            ),
+        },
+    }
+
+
+def _emitted_text(events: list[dict[str, Any]]) -> str:
+    """Concatenate delta + finalized text the way a streaming consumer would."""
+    parts = []
+    final_by_index: dict[int, str] = {}
+    for event in events:
+        payload = event["params"]["data"][0]
+        kind = payload.get("event")
+        if kind == "content-block-delta":
+            delta = payload["delta"]
+            if delta.get("type") == "text-delta":
+                parts.append(delta["text"])
+        elif kind == "content-block-finish":
+            content = payload.get("content", {})
+            if content.get("type") == "text":
+                final_by_index[payload["index"]] = content["text"]
+    # Concatenated delta stream is what the consumer sees in real time;
+    # finalized text is the snapshot. Return both via a tuple-like dict.
+    return "".join(parts), final_by_index  # type: ignore[return-value]
+
+
+def _run_transformer(transformer: Any, events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Feed events through the transformer (mutates in place) and return them."""
+    for event in events:
+        transformer.process(event)
+    return events
+
+
+class TestPIIStreamTransformer:
+    """Tests for the in-flight stream transformer."""
+
+    def test_pii_fully_inside_one_delta_with_whitespace_after(self) -> None:
+        """Single delta containing the full PII followed by whitespace should redact it."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            _make_delta_event("Reach me at alice@example.com tomorrow."),
+            _make_finish_event("Reach me at alice@example.com tomorrow."),
+        ]
+        _run_transformer(transformer, events)
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+
+        assert "alice@example.com" not in streamed
+        assert "[REDACTED_EMAIL]" in streamed
+        assert "alice@example.com" not in finals[0]
+        assert "[REDACTED_EMAIL]" in finals[0]
+
+    def test_pii_split_across_deltas_is_caught(self) -> None:
+        """Email split mid-string across deltas should still be redacted in stream."""
+        rule = RedactionRule(pii_type="email").resolve()
+        # Disable whitespace flush so we exercise the lookback buffer path.
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+
+        events = [
+            _make_delta_event("Hi, contact alice"),
+            _make_delta_event("@example.com when ready"),
+            _make_finish_event("Hi, contact alice@example.com when ready"),
+        ]
+        _run_transformer(transformer, events)
+        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+
+        # The held-buffer should have prevented the raw email from being
+        # released until detection ran over the concatenation.
+        assert "alice@example.com" not in streamed
+        assert "alice@example.com" not in finals[0]
+
+    def test_whitespace_boundary_flushes_safe_prefix_early(self) -> None:
+        """Whitespace appearing inside a delta should release everything before it."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=128, whitespace_boundary=True)
+
+        # 20 chars then a space — even though we're under the 128-char
+        # lookback, whitespace flush should release the prefix.
+        events = [_make_delta_event("Just some plain text here.")]
+        _run_transformer(transformer, events)
+        streamed, _ = _emitted_text(events)  # type: ignore[misc]
+
+        # "Just some plain text " is safe (last whitespace at end), so the
+        # delta should emit everything up to and including the last space.
+        assert streamed.startswith("Just some plain text ")
+
+    def test_custom_detector_defaults_to_no_whitespace_flush(self) -> None:
+        """A PIIMiddleware with a custom regex should NOT whitespace-flush by default."""
+        middleware = PIIMiddleware(
+            "api_key",
+            detector=r"sk-[a-zA-Z0-9]{8}",
+            strategy="redact",
+            apply_to_output=True,
+        )
+
+        # The middleware should register a transformer.
+        assert len(middleware.transformers) == 1
+        factory = middleware.transformers[0]
+        transformer = factory(())
+        # The transformer was wired with whitespace_boundary=False since
+        # the detector is custom.
+        assert transformer._whitespace_boundary is False
+
+    def test_builtin_detector_defaults_to_whitespace_flush(self) -> None:
+        """A built-in PII type should default to whitespace flush enabled."""
+        middleware = PIIMiddleware("email", apply_to_output=True)
+        assert len(middleware.transformers) == 1
+        transformer = middleware.transformers[0](())
+        assert transformer._whitespace_boundary is True
+
+    def test_apply_to_output_false_registers_no_transformer(self) -> None:
+        """Streaming redaction is gated on apply_to_output."""
+        middleware = PIIMiddleware("email", apply_to_output=False)
+        assert middleware.transformers == ()
+
+    def test_block_strategy_skips_stream_transformer(self) -> None:
+        """`block` strategy can't run mid-stream — fall back to state-level only."""
+        middleware = PIIMiddleware("email", strategy="block", apply_to_output=True)
+        assert middleware.transformers == ()
+
+    def test_finalize_block_redacts_full_text_even_if_stream_redaction_partial(
+        self,
+    ) -> None:
+        """content-block-finish always re-redacts the finalized text snapshot."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        # Stream the email in a single delta WITHOUT trailing whitespace,
+        # so the in-stream lookback might not redact it yet — finalize must
+        # still produce a redacted snapshot.
+        events = [
+            _make_delta_event("alice@example.com"),
+            _make_finish_event("alice@example.com"),
+        ]
+        _run_transformer(transformer, events)
+        _, finals = _emitted_text(events)  # type: ignore[misc]
+
+        assert "alice@example.com" not in finals[0]
+        assert "[REDACTED_EMAIL]" in finals[0]
+
+    def test_buffers_isolated_by_run_id(self) -> None:
+        """Two concurrent runs share the transformer instance but not buffer state."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+
+        events = [
+            _make_delta_event("Hi alice", run_id="run-A"),
+            _make_delta_event("Bob's addr is bob", run_id="run-B"),
+            _make_delta_event("@example.com soon", run_id="run-A"),
+            _make_delta_event("@other.com soon", run_id="run-B"),
+            _make_finish_event("Hi alice@example.com soon", run_id="run-A"),
+            _make_finish_event("Bob's addr is bob@other.com soon", run_id="run-B"),
+        ]
+        _run_transformer(transformer, events)
+
+        run_a = "".join(
+            e["params"]["data"][0]["delta"]["text"]
+            for e in events
+            if e["params"]["data"][0].get("event") == "content-block-delta"
+            and e["params"]["data"][1].get("run_id") == "run-A"
+        )
+        run_b = "".join(
+            e["params"]["data"][0]["delta"]["text"]
+            for e in events
+            if e["params"]["data"][0].get("event") == "content-block-delta"
+            and e["params"]["data"][1].get("run_id") == "run-B"
+        )
+        # Splits would have leaked if buffers crossed run_ids.
+        assert "alice@example.com" not in run_a
+        assert "alice@example.com" not in run_b
+        assert "bob@other.com" not in run_a
+        assert "bob@other.com" not in run_b
+
+    def test_message_finish_drops_buffers(self) -> None:
+        """Abandoned blocks (no content-block-finish) should still release memory."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+
+        _run_transformer(
+            transformer,
+            [_make_delta_event("partial text without finish")],
+        )
+        assert ("r1", 0) in transformer._buffers
+
+        # message-finish for the run wipes any (run-id, *) entries.
+        message_finish_event = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": ({"event": "message-finish"}, {"run_id": "r1"}),
+            },
+        }
+        transformer.process(message_finish_event)
+        assert ("r1", 0) not in transformer._buffers
+
+    def test_finalize_clears_all_state(self) -> None:
+        """Mux close should be safe — finalize wipes any held buffers."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64, whitespace_boundary=False)
+        _run_transformer(transformer, [_make_delta_event("hanging text")])
+        assert transformer._buffers
+        transformer.finalize()
+        assert transformer._buffers == {}
+
+    def test_long_pii_exceeding_lookback_still_caught_on_finalize(self) -> None:
+        """Patterns longer than `lookback` may slip past the in-stream cap.
+
+        The finalize snapshot is always redacted in full regardless.
+        """
+        # Choose an absurdly small lookback so a normal email exceeds it.
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=4, whitespace_boundary=False)
+
+        events = [
+            _make_delta_event("hello alice@example.com goodbye"),
+            _make_finish_event("hello alice@example.com goodbye"),
+        ]
+        _run_transformer(transformer, events)
+        _, finals = _emitted_text(events)  # type: ignore[misc]
+        # The finalized snapshot always re-runs detection over the full text.
+        assert "alice@example.com" not in finals[0]
+
+    def test_non_text_delta_passes_through_untouched(self) -> None:
+        """Reasoning/data deltas should not be mutated by the text-only path."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        reasoning_event = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (
+                    {
+                        "event": "content-block-delta",
+                        "index": 0,
+                        "delta": {
+                            "type": "reasoning-delta",
+                            "reasoning": "alice@example.com thinking",
+                        },
+                    },
+                    {"run_id": "r1"},
+                ),
+            },
+        }
+        transformer.process(reasoning_event)
+        # The reasoning field is left alone — this transformer scopes itself
+        # to text-delta only, matching its docstring contract.
+        assert (
+            reasoning_event["params"]["data"][0]["delta"]["reasoning"]
+            == "alice@example.com thinking"
+        )
+
+    def test_transformer_registered_before_messages_transformer_on_agent(self) -> None:
+        """The PIIMiddleware transformer must run before MessagesTransformer.
+
+        Otherwise the built-in `messages` projection snapshots the original
+        text before redaction, defeating the whole point of the in-flight
+        path.
+        """
+        model = FakeToolCallingModel()
+        agent = create_agent(model, [], middleware=[PIIMiddleware("email", apply_to_output=True)])
+
+        run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        transformers = run._mux._transformers  # type: ignore[attr-defined]
+
+        pii_idx = next(
+            i for i, t in enumerate(transformers) if isinstance(t, _PIIStreamTransformer)
+        )
+        messages_idx = next(
+            i for i, t in enumerate(transformers) if isinstance(t, MessagesTransformer)
+        )
+        assert pii_idx < messages_idx, (
+            "PIIStreamTransformer must be registered before MessagesTransformer "
+            "so it can mutate delta.text before the messages projection snapshots it"
+        )
+
+        # Drain to close cleanly.
+        list(run.tool_calls)
+
+
+class TestPIIStreamingEndToEnd:
+    """End-to-end tests with a real streaming chat model wired into create_agent."""
+
+    @pytest.mark.anyio
+    async def test_streamed_messages_projection_is_redacted(self) -> None:
+        """Iterating `run.messages` should yield text with PII already redacted.
+
+        Drives a `GenericFakeChatModel` (which actually streams content via
+        `_stream` / `_astream` and produces `content-block-delta` protocol
+        events) through `create_agent` and asserts the `.text` projection
+        of each `ChatModelStream` does not contain the original PII.
+        """
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Reach me at alice@example.com today.")])
+        )
+        agent = create_agent(model, [], middleware=[PIIMiddleware("email", apply_to_output=True)])
+
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+
+        collected_text = ""
+        async for msg in run.messages:
+            async for chunk in msg.text:
+                collected_text += chunk
+
+        assert "alice@example.com" not in collected_text
+        assert "[REDACTED_EMAIL]" in collected_text
+
+    @pytest.mark.anyio
+    async def test_main_event_log_carries_redacted_deltas(self) -> None:
+        """Raw protocol events on the main log must not leak the original PII.
+
+        Iterates the run as a raw protocol event stream (the same surface
+        external consumers see via `stream_events(version="v3")`) and
+        asserts every `content-block-delta` event's `delta.text` is
+        already redacted.
+        """
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Reach me at alice@example.com today.")])
+        )
+        agent = create_agent(model, [], middleware=[PIIMiddleware("email", apply_to_output=True)])
+
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+
+        delta_texts: list[str] = []
+        finalized_texts: list[str] = []
+        async for event in run:
+            if event.get("method") != "messages":
+                continue
+            data = event["params"].get("data")
+            if not isinstance(data, tuple) or len(data) != 2:
+                continue
+            payload = data[0]
+            if not isinstance(payload, dict):
+                continue
+            kind = payload.get("event")
+            if kind == "content-block-delta":
+                delta = payload.get("delta") or {}
+                if delta.get("type") == "text-delta":
+                    delta_texts.append(delta.get("text", ""))
+            elif kind == "content-block-finish":
+                content = payload.get("content") or {}
+                if content.get("type") == "text":
+                    finalized_texts.append(content.get("text", ""))
+
+        # Per-delta texts on the wire are redacted in flight.
+        for text in delta_texts:
+            assert "alice@example.com" not in text
+        # The finalized snapshot is also redacted in full.
+        for text in finalized_texts:
+            assert "alice@example.com" not in text
+        # And the redaction marker actually shows up somewhere.
+        joined = "".join(delta_texts) + "".join(finalized_texts)
+        assert "[REDACTED_EMAIL]" in joined
+
+    @pytest.mark.anyio
+    async def test_subgraph_redaction_via_create_agent_in_tool(self) -> None:
+        """A sub-agent invoked inside a tool inherits the parent's transformer.
+
+        `StreamMux._make_child` clones the factory list down to every
+        subgraph scope, so a fresh `_PIIStreamTransformer` runs at the
+        sub-agent's mini-mux too. This is the supported pattern: attach
+        `PIIMiddleware` to the outer agent and every nested model call
+        — including those run by sub-agents inside tools — gets redacted
+        in flight by its own scoped instance of the transformer.
+        """
+        inner_model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Hi bob@example.com, here is data.")])
+        )
+        # No PII middleware on the inner agent — the outer's transformer
+        # factory propagates down to the subgraph scope.
+        inner_agent = create_agent(inner_model, [])
+
+        @tool
+        def delegate(query: str) -> str:
+            """Hand the query off to the inner agent."""
+            result = inner_agent.invoke({"messages": [HumanMessage(query)]})
+            return str(result["messages"][-1].content)
+
+        outer_model = FakeToolCallingModel(
+            tool_calls=[
+                [{"name": "delegate", "args": {"query": "hi"}, "id": "tc1"}],
+                [],
+            ]
+        )
+        outer_agent = create_agent(
+            outer_model,
+            [delegate],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+        )
+
+        run = await outer_agent.astream_events({"messages": [HumanMessage("go")]}, version="v3")
+
+        seen_email_in_deltas = False
+        seen_email_in_finalized = False
+        seen_redaction = False
+        async for event in run:
+            if event.get("method") != "messages":
+                continue
+            data = event["params"].get("data")
+            if not isinstance(data, tuple) or len(data) != 2:
+                continue
+            payload = data[0]
+            if not isinstance(payload, dict):
+                continue
+            kind = payload.get("event")
+            if kind == "content-block-delta":
+                delta = payload.get("delta") or {}
+                if delta.get("type") == "text-delta":
+                    text = delta.get("text", "")
+                    if "bob@example.com" in text:
+                        seen_email_in_deltas = True
+                    if "[REDACTED_EMAIL]" in text:
+                        seen_redaction = True
+            elif kind == "content-block-finish":
+                content = payload.get("content") or {}
+                if content.get("type") == "text":
+                    text = content.get("text", "")
+                    if "bob@example.com" in text:
+                        seen_email_in_finalized = True
+                    if "[REDACTED_EMAIL]" in text:
+                        seen_redaction = True
+
+        assert not seen_email_in_deltas, (
+            "raw PII leaked through a subgraph's streamed deltas — child "
+            "mini-mux did not inherit the outer transformer factory"
+        )
+        assert not seen_email_in_finalized, (
+            "raw PII leaked through a subgraph's content-block-finish snapshot"
+        )
+        assert seen_redaction, "transformer never fired at the subgraph scope"
