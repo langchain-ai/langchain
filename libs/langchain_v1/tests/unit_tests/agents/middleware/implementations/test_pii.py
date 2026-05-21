@@ -919,6 +919,61 @@ class TestPIIStreamTransformer:
         args = events[0]["params"]["data"][0]["content"]["args"]
         assert args == {"to": ""}
 
+    def test_legacy_payload_redacts_tool_call_args(self) -> None:
+        """`(AIMessage, metadata)` shape redacts tool_calls[].args."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
+            ],
+            id="m1",
+        )
+        event: dict[str, Any] = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (msg, {"run_id": "r1"}),
+            },
+        }
+        transformer.process(event)
+        out_msg = event["params"]["data"][0]
+        assert out_msg.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+
+    def test_legacy_payload_block_replaces_message_when_tool_call_has_pii(self) -> None:
+        """`block` + legacy AIMessage with PII in tool_calls → empty replacement."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        original = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
+            ],
+            id="m1",
+        )
+        event: dict[str, Any] = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (original, {"run_id": "r1"}),
+            },
+        }
+        transformer.process(event)
+        out_msg = event["params"]["data"][0]
+        # Replaced with an empty-content copy; original retains its data
+        # for `after_model` to raise on.
+        assert out_msg is not original
+        assert out_msg.content == ""
+        assert out_msg.tool_calls == []
+        assert original.tool_calls[0]["args"] == {"to": "alice@example.com"}
+
     def test_tool_call_args_block_strategy_emptied(self) -> None:
         """`block` strategy zeroes args when PII is detected."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()

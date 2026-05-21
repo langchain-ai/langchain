@@ -125,10 +125,10 @@ class _PIIStreamTransformer(StreamTransformer):
     ) -> None:
         """Scrub a legacy `(BaseMessage, metadata)` payload.
 
-        For non-`block` strategies the message's `.content` is mutated in
-        place — `after_model` runs on the same object in graph state and
-        is idempotent over already-redacted text, so the wire and state
-        both end up redacted.
+        For non-`block` strategies, `.content` and any `tool_calls` on an
+        `AIMessage` are mutated in place — `after_model` runs on the same
+        object in graph state and is idempotent over already-redacted
+        text.
 
         For `block`, the event's `data` tuple is replaced with one
         carrying a fresh empty-content message of the same class and id.
@@ -139,16 +139,47 @@ class _PIIStreamTransformer(StreamTransformer):
         object — never observe the PII.
         """
         content = message.content
-        if not isinstance(content, str) or not content:
+        tool_calls = getattr(message, "tool_calls", None) or []
+        has_string_content = isinstance(content, str) and bool(content)
+
+        content_matches: list[PIIMatch] = []
+        if has_string_content:
+            content_matches = self._rule.detector(content)
+
+        tool_call_hits: list[int] = []
+        for i, tc in enumerate(tool_calls):
+            args = tc.get("args") if isinstance(tc, dict) else None
+            if isinstance(args, dict) and self._args_contain_pii(args):
+                tool_call_hits.append(i)
+
+        if not content_matches and not tool_call_hits:
             return
-        matches = self._rule.detector(content)
-        if not matches:
-            return
+
         if self._rule.strategy == "block":
             empty = type(message)(content="", id=getattr(message, "id", None))
             event["params"]["data"] = (empty, metadata)
             return
-        message.content = apply_strategy(content, matches, self._rule.strategy)
+
+        if content_matches:
+            message.content = apply_strategy(content, content_matches, self._rule.strategy)
+        if tool_call_hits and isinstance(message, AIMessage):
+            new_tool_calls = list(message.tool_calls)
+            for i in tool_call_hits:
+                tc = dict(new_tool_calls[i])
+                tc["args"] = self._redact_value(tc.get("args") or {})
+                new_tool_calls[i] = tc  # type: ignore[assignment]
+            message.tool_calls = new_tool_calls
+
+    def _args_contain_pii(self, args: dict[str, Any]) -> bool:
+        """Cheap check: does any string leaf in args trigger detection?"""
+        for v in args.values():
+            if isinstance(v, str):
+                if v and self._rule.detector(v):
+                    return True
+            elif isinstance(v, (dict, list, tuple)):
+                if self._redact_value(v) != v:
+                    return True
+        return False
 
     def _redact_value(self, value: Any) -> Any:
         """Recursively redact PII in string leaves of a nested structure.
