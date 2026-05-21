@@ -104,7 +104,7 @@ def test_audio_model() -> None:
         @property
         def chat_model_params(self) -> dict:
             return {
-                "model": "gpt-4o-audio-preview",
+                "model": "gpt-audio",
                 "temperature": 0,
                 "model_kwargs": {
                     "modalities": ["text", "audio"],
