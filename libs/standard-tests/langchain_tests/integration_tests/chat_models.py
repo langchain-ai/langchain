@@ -853,7 +853,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert full.text
-        assert any(block["type"] == "text" for block in full.content_blocks)
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
@@ -903,7 +906,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessageChunk)
         assert full.content
         assert full.text
-        assert any(block["type"] == "text" for block in full.content_blocks)
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
