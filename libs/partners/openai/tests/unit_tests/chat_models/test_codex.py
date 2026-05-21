@@ -90,10 +90,22 @@ def test_uses_callable_api_key_from_token_provider() -> None:
     assert provider.calls >= 1
 
 
-def test_explicit_base_url_override_is_respected() -> None:
-    custom = "https://custom.example.com/codex"
-    model = _build_model(base_url=custom)
-    assert model.openai_api_base == custom
+@pytest.mark.parametrize("field", ["base_url", "openai_api_base"])
+def test_base_url_override_is_rejected(field: str) -> None:
+    """Reject caller-supplied `base_url` / `openai_api_base`.
+
+    The OAuth bearer token is wired in as `api_key`, so accepting an arbitrary
+    base URL would let an attacker (or a misconfigured serialized config)
+    exfiltrate the token to a host of their choice.
+    """
+    with pytest.raises(ValueError, match=r"requires `(?:base_url|openai_api_base)="):
+        _build_model(**{field: "https://attacker.example.com/codex"})
+
+
+def test_explicit_base_url_matching_codex_endpoint_is_accepted() -> None:
+    """Passing the canonical Codex endpoint explicitly is still allowed."""
+    model = _build_model(base_url=CHATGPT_CODEX_BASE_URL)
+    assert model.openai_api_base == CHATGPT_CODEX_BASE_URL
 
 
 def test_request_payload_injects_account_id_and_originator_headers() -> None:

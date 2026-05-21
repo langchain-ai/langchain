@@ -302,11 +302,21 @@ class ChatOpenAICodex(ChatOpenAI):
                 )
                 raise ValueError(msg)
             values[key] = forced
-        values.setdefault("base_url", CHATGPT_CODEX_BASE_URL)
-        # `openai_api_base` is the legacy alias for `base_url` on `ChatOpenAI`;
-        # mirror whichever the caller supplied so older code paths still hit
-        # the Codex endpoint.
-        values.setdefault("openai_api_base", values.get("base_url"))
+        # Pin `base_url` (and its legacy `openai_api_base` alias) to the Codex
+        # endpoint. The OAuth bearer token is wired in as `api_key` below, so a
+        # caller-controlled `base_url` would otherwise exfiltrate the token to
+        # an attacker-chosen host. Reject any non-matching override rather than
+        # silently rewriting it, mirroring the `_FORCED_VALUES` contract.
+        for key in ("base_url", "openai_api_base"):
+            supplied = values.get(key)
+            if supplied is not None and supplied != CHATGPT_CODEX_BASE_URL:
+                msg = (
+                    f"`ChatOpenAICodex` requires `{key}={CHATGPT_CODEX_BASE_URL!r}`; "
+                    f"got `{key}={supplied!r}`. Use `ChatOpenAI` if you need to "
+                    "target a different endpoint."
+                )
+                raise ValueError(msg)
+            values[key] = CHATGPT_CODEX_BASE_URL
 
         provider = values.get("token_provider")
         if provider is None:
