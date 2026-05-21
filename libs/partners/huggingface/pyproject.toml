@@ -57,7 +57,7 @@ test = [
     "transformers>=5.0.0,<6.0.0",
     "sentence-transformers>=5.2.0,<6.0.0",
     "langchain-core>=1.4.0,<2.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain-community",
     "langchain>=1.0.0,<2.0.0",
 ]
