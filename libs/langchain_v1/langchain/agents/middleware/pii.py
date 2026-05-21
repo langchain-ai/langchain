@@ -537,10 +537,31 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
 
-                When `True`, a stream transformer is also installed so that
-                streamed deltas are redacted in flight (the consumer sees
-                redacted text in `astream_events` / `run.messages`), not
-                just in the final `state["messages"]`.
+                When `True`, a stream transformer is also installed so
+                that every wire surface of an agent run is redacted in
+                flight:
+
+                * Streamed AI text deltas (`content-block-delta` of type
+                  `text-delta`)
+                * Streamed tool-call arguments (`content-block-delta`
+                  with `tool_call_chunk` / `server_tool_call_chunk`
+                  fields, plus the finalized `tool_call` content block
+                  on `content-block-finish`)
+                * Tool execution events on the `tools` channel
+                  (`tool-started.input`, `tool-output-delta`,
+                  `tool-finished.output`, `tool-error.message`)
+                * State snapshots on the `values` channel — message
+                  lists are walked and each message's `.content` is
+                  redacted on a fresh copy (state itself stays intact
+                  for `before_model` / `after_model` to act on
+                  independently)
+
+                State-level redaction via `after_model` (and
+                `before_model` with `apply_to_tool_results`) remains the
+                canonical enforcer; the streaming transformer ensures
+                consumers reading `astream_events(version="v3")` or
+                `run.messages` / `run.tool_calls` / `run.values` never
+                see PII on the wire.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
             stream_lookback: Trailing-buffer size for cross-delta PII
                 detection in the stream transformer. The transformer always
