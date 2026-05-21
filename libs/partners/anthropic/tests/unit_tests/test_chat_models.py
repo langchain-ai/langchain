@@ -1191,6 +1191,28 @@ def test__format_messages_with_cache_control() -> None:
         assert actual_messages == expected_messages
 
 
+def test__format_messages_with_text_file_base64() -> None:
+    messages = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {"type": "file", "mime_type": "text/csv", "base64": "YSxiLGMKMSwyLDMK"},
+            ],
+        ),
+    ]
+
+    _, actual_messages = _format_messages(messages)
+
+    assert actual_messages[0]["content"][1] == {
+        "type": "document",
+        "source": {
+            "type": "text",
+            "media_type": "text/plain",
+            "data": "a,b,c\n1,2,3\n",
+        },
+    }
+
+
 def test__format_messages_with_citations() -> None:
     input_messages = [
         HumanMessage(
