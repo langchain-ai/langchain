@@ -1186,9 +1186,7 @@ class TestPIIStreamingEndToEnd:
 
         async def drain() -> None:
             nonlocal collected
-            run = await agent.astream_events(
-                {"messages": [HumanMessage("hi")]}, version="v3"
-            )
+            run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
             async for msg in run.messages:
                 async for chunk in msg.text:
                     collected += chunk

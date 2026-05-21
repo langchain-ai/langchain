@@ -211,9 +211,7 @@ class _PIIStreamTransformer(StreamTransformer):
                     if self._rule.strategy == "block":
                         content["text"] = ""
                     else:
-                        content["text"] = apply_strategy(
-                            text, matches, self._rule.strategy
-                        )
+                        content["text"] = apply_strategy(text, matches, self._rule.strategy)
         self._buffers.pop(key, None)
 
     def _drop_run(self, run_id: str) -> None:
