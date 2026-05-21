@@ -778,6 +778,47 @@ def _run_transformer(transformer: Any, events: list[dict[str, Any]]) -> list[dic
 class TestPIIStreamTransformer:
     """Tests for the in-flight stream transformer."""
 
+    def test_redact_value_walks_nested_strings(self) -> None:
+        """`_redact_value` redacts PII in string leaves of nested dict/list."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        value = {
+            "to": "alice@example.com",
+            "cc": ["bob@example.com", "no-pii"],
+            "nested": {"hidden": "user mail: charlie@example.com"},
+            "count": 3,
+            "flag": True,
+        }
+        redacted = transformer._redact_value(value)
+
+        assert redacted == {
+            "to": "[REDACTED_EMAIL]",
+            "cc": ["[REDACTED_EMAIL]", "no-pii"],
+            "nested": {"hidden": "user mail: [REDACTED_EMAIL]"},
+            "count": 3,
+            "flag": True,
+        }
+
+    def test_redact_value_block_strategy_returns_empty_strings(self) -> None:
+        """Under `block`, leaves with PII become empty strings (not raise)."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        value = {"to": "alice@example.com", "subject": "clean"}
+        redacted = transformer._redact_value(value)
+
+        assert redacted == {"to": "", "subject": "clean"}
+
+    def test_redact_value_passthrough_for_clean_input(self) -> None:
+        """No PII anywhere → returns an equal value."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        value = {"a": "hello", "b": [1, 2, "world"], "c": None}
+        redacted = transformer._redact_value(value)
+        assert redacted == value
+
     def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
         """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
         rule = RedactionRule(pii_type="email").resolve()

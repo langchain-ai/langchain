@@ -150,6 +150,30 @@ class _PIIStreamTransformer(StreamTransformer):
             return
         message.content = apply_strategy(content, matches, self._rule.strategy)
 
+    def _redact_value(self, value: Any) -> Any:
+        """Recursively redact PII in string leaves of a nested structure.
+
+        Returns a new value where every `str` leaf that contains PII has
+        been replaced (or emptied under `block`). Non-string leaves and
+        the structure itself are preserved.
+        """
+        if isinstance(value, str):
+            if not value:
+                return value
+            matches = self._rule.detector(value)
+            if not matches:
+                return value
+            if self._rule.strategy == "block":
+                return ""
+            return apply_strategy(value, matches, self._rule.strategy)
+        if isinstance(value, dict):
+            return {k: self._redact_value(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._redact_value(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(self._redact_value(v) for v in value)
+        return value
+
     def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
         delta = payload.get("delta")
         if not isinstance(delta, dict):
