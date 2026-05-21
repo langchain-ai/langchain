@@ -1239,6 +1239,128 @@ def test__format_messages_with_citations() -> None:
     assert actual_messages == expected_messages
 
 
+def test__format_messages_with_text_base64_file_blocks() -> None:
+    """Test that text/* mime type base64 file blocks are decoded to inline text.
+
+    See https://github.com/langchain-ai/langchain/issues/37576
+    Anthropic only accepts application/pdf for base64-encoded documents.
+    For text/* mime types, the content should be decoded and sent as
+    source.type="text" instead of source.type="base64".
+    """
+    import base64
+
+    # Test text/csv with base64 encoding
+    csv_content = "name,age\nAlice,30\nBob,25"
+    csv_base64 = base64.b64encode(csv_content.encode("utf-8")).decode("utf-8")
+
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Analyze this CSV data:",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "text/csv",
+                    "data": csv_base64,
+                },
+            ],
+        ),
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Analyze this CSV data:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/csv",
+                        "data": csv_content,
+                    },
+                },
+            ],
+        },
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    assert actual_messages == expected_messages
+
+    # Test text/plain with base64 encoding
+    plain_content = "This is plain text content."
+    plain_base64 = base64.b64encode(plain_content.encode("utf-8")).decode("utf-8")
+
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "mime_type": "text/plain",
+                    "base64": plain_base64,
+                },
+            ],
+        ),
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/plain",
+                        "data": plain_content,
+                    },
+                },
+            ],
+        },
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    assert actual_messages == expected_messages
+
+    # Test that application/pdf still uses base64 (should NOT be decoded)
+    pdf_content = "dummy pdf content"
+    pdf_base64 = base64.b64encode(pdf_content.encode("utf-8")).decode("utf-8")
+
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": pdf_base64,
+                },
+            ],
+        ),
+    ]
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": pdf_base64,
+                    },
+                },
+            ],
+        },
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    assert actual_messages == expected_messages
+
+
 def test__format_messages_openai_image_format() -> None:
     message = HumanMessage(
         content=[

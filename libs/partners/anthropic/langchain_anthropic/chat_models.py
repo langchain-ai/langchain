@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import copy
 import datetime
 import json
@@ -360,14 +361,30 @@ def _format_data_content_block(block: dict) -> dict:
                 },
             }
         elif "base64" in block or block.get("source_type") == "base64":
-            formatted_block = {
-                "type": "document",
-                "source": {
-                    "type": "base64",
-                    "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block.get("base64") or block.get("data", ""),
-                },
-            }
+            mime_type = block.get("mime_type") or "application/pdf"
+            base64_data = block.get("base64") or block.get("data", "")
+            # For text/* mime types (but not application/pdf), decode the base64
+            # and send as inline text since Anthropic only accepts application/pdf
+            # for base64-encoded documents.
+            if mime_type.startswith("text/") and mime_type != "application/pdf":
+                decoded_data = base64.b64decode(base64_data).decode("utf-8")
+                formatted_block = {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": mime_type,
+                        "data": decoded_data,
+                    },
+                }
+            else:
+                formatted_block = {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": mime_type,
+                        "data": base64_data,
+                    },
+                }
         elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
