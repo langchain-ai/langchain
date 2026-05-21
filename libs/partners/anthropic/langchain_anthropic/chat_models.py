@@ -7,6 +7,8 @@ import datetime
 import json
 import re
 import warnings
+from base64 import b64decode
+from binascii import Error as BinasciiError
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
@@ -360,14 +362,36 @@ def _format_data_content_block(block: dict) -> dict:
                 },
             }
         elif "base64" in block or block.get("source_type") == "base64":
-            formatted_block = {
-                "type": "document",
-                "source": {
-                    "type": "base64",
-                    "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block.get("base64") or block.get("data", ""),
-                },
-            }
+            media_type = block.get("mime_type") or "application/pdf"
+            data = block.get("base64") or block.get("data", "")
+            if media_type.startswith("text/"):
+                try:
+                    formatted_block = {
+                        "type": "document",
+                        "source": {
+                            "type": "text",
+                            "media_type": "text/plain",
+                            "data": b64decode(data, validate=True).decode("utf-8"),
+                        },
+                    }
+                except (BinasciiError, UnicodeDecodeError):
+                    formatted_block = {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": data,
+                        },
+                    }
+            else:
+                formatted_block = {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": data,
+                    },
+                }
         elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",

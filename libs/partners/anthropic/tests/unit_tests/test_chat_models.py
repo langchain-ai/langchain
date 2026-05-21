@@ -1106,6 +1106,47 @@ def test__format_messages_with_cache_control() -> None:
     ]
     assert actual_messages == expected_messages
 
+    # Test base64 text documents are decoded to Anthropic text-source documents.
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "text/csv",
+                    "base64": "YSxiLGMKMSwyLDMK",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "text",
+                        "media_type": "text/plain",
+                        "data": "a,b,c\n1,2,3\n",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
     # Also test file inputs
     ## Images
     for block in [
