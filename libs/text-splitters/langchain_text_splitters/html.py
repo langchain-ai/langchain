@@ -816,6 +816,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         for a_tag in _find_all_tags(soup, name="a"):
             a_href = a_tag.get("href", "")
             a_text = a_tag.get_text(strip=True)
+            # Skip empty, malformed, or unsafe links
+            if not a_href or a_href.startswith("javascript:"):
+                # Replace the <a> tag with just its text content
+                a_tag.replace_with(NavigableString(a_text))
+                continue
             markdown_link = f"[{a_text}]({a_href})"
             wrapper = soup.new_tag("link-wrapper")
             wrapper.string = markdown_link
