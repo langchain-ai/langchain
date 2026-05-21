@@ -994,6 +994,31 @@ class TestPIIStreamTransformer:
         assert "alice@example.com" not in out_msg.content
         assert "[REDACTED_EMAIL]" in out_msg.content
 
+    def test_tools_in_required_stream_modes(self) -> None:
+        """The transformer subscribes to both `messages` and `tools`."""
+        assert "tools" in _PIIStreamTransformer.required_stream_modes
+        assert "messages" in _PIIStreamTransformer.required_stream_modes
+
+    def test_process_tools_event_passes_through(self) -> None:
+        """Tools events route to the new handler without error."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-started",
+                    "tool_call_id": "c1",
+                    "tool_name": "echo",
+                    "input": {},
+                },
+            },
+        }
+        assert transformer.process(event) is True
+
     def test_tool_call_args_block_strategy_emptied(self) -> None:
         """`block` strategy zeroes args when PII is detected."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()

@@ -63,7 +63,7 @@ class _PIIStreamTransformer(StreamTransformer):
     """
 
     before_builtins: ClassVar[bool] = True
-    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages",)
+    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages", "tools")
 
     def __init__(
         self,
@@ -75,7 +75,9 @@ class _PIIStreamTransformer(StreamTransformer):
         super().__init__(scope)
         self._rule = rule
         self._lookback = lookback
-        self._buffers: dict[tuple[str, int], str] = {}
+        # Keyed by `(run_id, content_block_index: int)` for text-deltas
+        # and `(run_id, tool_call_id: str)` for tool-output-deltas.
+        self._buffers: dict[tuple[str, int | str], str] = {}
 
     def init(self) -> dict[str, Any]:
         # No projection — this transformer mutates events in place rather
@@ -83,8 +85,14 @@ class _PIIStreamTransformer(StreamTransformer):
         return {}
 
     def process(self, event: ProtocolEvent) -> bool:
-        if event["method"] != "messages":
-            return True
+        method = event["method"]
+        if method == "messages":
+            return self._process_messages_event(event)
+        if method == "tools":
+            return self._process_tools_event(event)
+        return True
+
+    def _process_messages_event(self, event: ProtocolEvent) -> bool:
         params = event["params"]
         data = params.get("data")
         if not isinstance(data, tuple) or len(data) != 2:  # noqa: PLR2004
@@ -115,6 +123,10 @@ class _PIIStreamTransformer(StreamTransformer):
             self._finalize_block(payload, run_id)
         elif kind in {"message-finish", "error"}:
             self._drop_run(run_id)
+        return True
+
+    def _process_tools_event(self, event: ProtocolEvent) -> bool:
+        # Tasks 8-10 fill this in.
         return True
 
     def _mutate_legacy_payload(
