@@ -72,7 +72,7 @@ test = [
     "syrupy>=5.0.0,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "blockbuster>=1.5.26,<1.6.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
 ]
 lint = [

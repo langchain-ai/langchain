@@ -84,7 +84,7 @@ test = [
     "requests-mock>=1.11.0,<2.0.0",
     "toml>=0.10.2,<1.0.0",
     "packaging>=24.2.0,<27.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain-core>=1.4.0,<2.0.0",
     "langchain-text-splitters>=1.0.0,<2.0.0",
     "langchain-openai",
