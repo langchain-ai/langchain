@@ -1341,13 +1341,12 @@ class TestPIIStreamTransformer:
                 },
             }
         )
-        before = dict(transformer._buffers)
-        assert any("c1" in str(k) for k in before)
+        assert "c1" in transformer._tool_buffers
 
         # An errant message-finish with no run_id used to sweep all
-        # `("", *)` buffer keys — including the tool one. With the
-        # tool-buffer sentinel namespace, the sweep is a no-op for
-        # tool entries.
+        # `("", *)` buffer keys when tool buffers shared the dict. Now
+        # `_drop_run` only touches `_buffers`, so tool entries are
+        # structurally isolated.
         transformer.process(
             {
                 "type": "event",
@@ -1359,7 +1358,7 @@ class TestPIIStreamTransformer:
                 },
             }
         )
-        assert any("c1" in str(k) for k in transformer._buffers)
+        assert "c1" in transformer._tool_buffers
 
     def test_finalize_invalid_tool_call_redacts_string_args(self) -> None:
         """`invalid_tool_call.args` is a raw JSON string, not a dict."""
@@ -1566,7 +1565,7 @@ class TestPIIStreamTransformer:
             },
         }
         transformer.process(delta_event)
-        assert any("c1" in str(k) for k in transformer._buffers)
+        assert "c1" in transformer._tool_buffers
 
         finish_event = {
             "type": "event",
@@ -1582,7 +1581,7 @@ class TestPIIStreamTransformer:
             },
         }
         transformer.process(finish_event)
-        assert not any("c1" in str(k) for k in transformer._buffers)
+        assert "c1" not in transformer._tool_buffers
 
     def test_tool_output_delta_block_strategy_raises(self) -> None:
         """`block` raises immediately on PII in a `tool-output-delta`."""

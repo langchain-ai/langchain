@@ -36,21 +36,6 @@ if TYPE_CHECKING:
     from langgraph.stream._types import ProtocolEvent
 
 
-_TOOL_BUF_RUN_ID = "__tool_buffer__"
-"""Sentinel run_id used for tools-channel buffer keys.
-
-Distinct from any real or missing run_id so `_drop_run("")` on a
-messages-channel `message-finish` doesn't sweep active tool-output
-buffers. The transformer's `_buffers` dict mixes text-delta keys
-`(run_id, block_index)` with tool-output-delta keys
-`(_TOOL_BUF_RUN_ID, tool_call_id)`; the disjoint namespace lets each
-clean up independently."""
-
-
-def _tool_buf_key(tool_call_id: str) -> tuple[str, str]:
-    return (_TOOL_BUF_RUN_ID, tool_call_id)
-
-
 _DEFAULT_STREAM_LOOKBACK = 128
 """Default trailing-buffer size for cross-delta PII detection.
 
@@ -90,9 +75,12 @@ class _PIIStreamTransformer(StreamTransformer):
         super().__init__(scope)
         self._rule = rule
         self._lookback = lookback
-        # Keyed by `(run_id, content_block_index: int)` for text-deltas
-        # and `(run_id, tool_call_id: str)` for tool-output-deltas.
-        self._buffers: dict[tuple[str, int | str], str] = {}
+        # Text/reasoning deltas keyed by `(run_id, content_block_index)`.
+        self._buffers: dict[tuple[str, int], str] = {}
+        # Tool-output-delta buffers keyed by `tool_call_id`. Held in a
+        # separate dict so `_drop_run` on the messages channel can't
+        # sweep active tool-output state.
+        self._tool_buffers: dict[str, str] = {}
 
     def init(self) -> dict[str, Any]:
         # No projection — this transformer mutates events in place rather
@@ -137,12 +125,15 @@ class _PIIStreamTransformer(StreamTransformer):
         # integration emits this when a model only implements `_generate`
         # (or when its `_astream` falls back), producing a single event
         # carrying the full message rather than streamed content-block
-        # deltas. Scrub `.content` in place so the consumer sees redacted
-        # text (after_model re-runs and is idempotent on the now-redacted
-        # state). Under `block`, `_mutate_legacy_payload` raises
-        # `PIIDetectionError` directly via `apply_strategy`.
+        # deltas. Swap in a redacted copy so the consumer sees scrubbed
+        # text on the wire while the original stays intact in graph state
+        # for `after_model` to act on independently. Under `block`,
+        # `_redact_base_message` raises `PIIDetectionError` via
+        # `apply_strategy` before we get here.
         if isinstance(payload, BaseMessage):
-            self._mutate_legacy_payload(payload)
+            redacted = self._redact_base_message(payload)
+            if redacted is not payload:
+                params["data"] = (redacted, metadata)
             return True
 
         if not isinstance(payload, dict):
@@ -183,7 +174,7 @@ class _PIIStreamTransformer(StreamTransformer):
             if "output" in data:
                 data["output"] = self._redact_value(data["output"])
             if isinstance(tool_call_id, str):
-                self._buffers.pop(_tool_buf_key(tool_call_id), None)
+                self._tool_buffers.pop(tool_call_id, None)
         elif kind == "tool-error":
             msg = data.get("message")
             if isinstance(msg, str) and msg:
@@ -191,7 +182,7 @@ class _PIIStreamTransformer(StreamTransformer):
                 if matches:
                     data["message"] = apply_strategy(msg, matches, self._rule.strategy)
             if isinstance(tool_call_id, str):
-                self._buffers.pop(_tool_buf_key(tool_call_id), None)
+                self._tool_buffers.pop(tool_call_id, None)
 
         return True
 
@@ -199,9 +190,8 @@ class _PIIStreamTransformer(StreamTransformer):
         """Redact a `tool-output-delta` payload.
 
         String deltas go through the same lookback machinery as
-        text-deltas, keyed by `(_TOOL_BUF_RUN_ID, tool_call_id)`. The
-        sentinel run_id keeps tool buffers in a disjoint namespace
-        from text-delta buffers so `_drop_run` on the messages channel
+        text-deltas, keyed by `tool_call_id` in the disjoint
+        `_tool_buffers` dict so `_drop_run` on the messages channel
         can't sweep active tool-output state.
 
         Structured deltas (dict/list) walk recursively without
@@ -210,8 +200,7 @@ class _PIIStreamTransformer(StreamTransformer):
         """
         delta = data.get("delta")
         if isinstance(delta, str):
-            key: tuple[str, int | str] = _tool_buf_key(tool_call_id)
-            held = self._buffers.get(key, "")
+            held = self._tool_buffers.get(tool_call_id, "")
             combined = held + delta
 
             matches = self._rule.detector(combined)
@@ -223,37 +212,10 @@ class _PIIStreamTransformer(StreamTransformer):
                 combined = apply_strategy(combined, matches, self._rule.strategy)
 
             emit_end = max(0, len(combined) - self._lookback)
-            self._buffers[key] = combined[emit_end:]
+            self._tool_buffers[tool_call_id] = combined[emit_end:]
             data["delta"] = combined[:emit_end]
         elif isinstance(delta, (dict, list)):
             data["delta"] = self._redact_value(delta)
-
-    def _mutate_legacy_payload(self, message: BaseMessage) -> None:
-        """Scrub a legacy `(BaseMessage, metadata)` payload in place.
-
-        For non-`block` strategies, `.content` and any `tool_calls` /
-        `invalid_tool_calls` on an `AIMessage` are mutated in place —
-        `after_model` runs on the same object in graph state and is
-        idempotent over already-redacted text.
-
-        For `block`, `_redact_base_message` raises `PIIDetectionError`
-        directly via its internal `apply_strategy` calls; control
-        leaves before we touch the live message.
-        """
-        redacted = self._redact_base_message(message)
-        if redacted is message:
-            return
-
-        # Mirror the redacted fields back onto the live message so the
-        # consumer sees them on the wire AND the same object reference
-        # in state ends up redacted (idempotent for `after_model`).
-        if redacted.content != message.content:
-            message.content = redacted.content
-        if isinstance(message, AIMessage) and isinstance(redacted, AIMessage):
-            if redacted.tool_calls != message.tool_calls:
-                message.tool_calls = redacted.tool_calls
-            if redacted.invalid_tool_calls != message.invalid_tool_calls:
-                message.invalid_tool_calls = redacted.invalid_tool_calls
 
     def _redact_tool_call_list(self, calls: list[Any] | None) -> tuple[list[Any], bool]:
         """Walk a list of tool-call (or invalid-tool-call) dicts.
@@ -520,9 +482,11 @@ class _PIIStreamTransformer(StreamTransformer):
 
     def finalize(self) -> None:
         self._buffers.clear()
+        self._tool_buffers.clear()
 
     def fail(self, err: BaseException) -> None:  # noqa: ARG002
         self._buffers.clear()
+        self._tool_buffers.clear()
 
 
 class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
