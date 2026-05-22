@@ -672,9 +672,9 @@ class TestMultipleMiddleware:
         )
 
         # Test with email and IP (url would block, so we omit it)
-        result = agent.invoke(
-            {"messages": [HumanMessage("Contact: test@example.com, IP: 192.168.1.100")]}
-        )
+        result = agent.invoke({
+            "messages": [HumanMessage("Contact: test@example.com, IP: 192.168.1.100")]
+        })
 
         messages = result["messages"]
         content = " ".join(str(msg.content) for msg in messages)
@@ -1326,21 +1326,19 @@ class TestPIIStreamTransformer:
         transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
         # Put a tool-output buffer entry in place.
-        transformer.process(
-            {
-                "type": "event",
-                "method": "tools",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": {
-                        "event": "tool-output-delta",
-                        "tool_call_id": "c1",
-                        "delta": "partial",
-                    },
+        transformer.process({
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-output-delta",
+                    "tool_call_id": "c1",
+                    "delta": "partial",
                 },
-            }
-        )
+            },
+        })
         before = dict(transformer._buffers)
         assert any("c1" in str(k) for k in before)
 
@@ -1348,17 +1346,15 @@ class TestPIIStreamTransformer:
         # `("", *)` buffer keys — including the tool one. With the
         # tool-buffer sentinel namespace, the sweep is a no-op for
         # tool entries.
-        transformer.process(
-            {
-                "type": "event",
-                "method": "messages",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": ({"event": "message-finish"}, {}),
-                },
-            }
-        )
+        transformer.process({
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": ({"event": "message-finish"}, {}),
+            },
+        })
         assert any("c1" in str(k) for k in transformer._buffers)
 
     def test_finalize_invalid_tool_call_redacts_string_args(self) -> None:
@@ -2267,17 +2263,13 @@ class TestPIIStreamingEndToEnd:
             )
 
         # Raw events log
-        run = await _agent().astream_events(
-            {"messages": [HumanMessage("hi")]}, version="v3"
-        )
+        run = await _agent().astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         with pytest.raises(PIIDetectionError):
             async for _event in run:
                 pass
 
         # `run.messages` projection — inner ChatModelStreams also fail.
-        run = await _agent().astream_events(
-            {"messages": [HumanMessage("hi")]}, version="v3"
-        )
+        run = await _agent().astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
         async def drain_messages() -> None:
             async for msg in run.messages:
@@ -2288,9 +2280,7 @@ class TestPIIStreamingEndToEnd:
             await drain_messages()
 
         # `run.values` projection.
-        run = await _agent().astream_events(
-            {"messages": [HumanMessage("hi")]}, version="v3"
-        )
+        run = await _agent().astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         with pytest.raises(PIIDetectionError):
             async for _snapshot in run.values:
                 pass
