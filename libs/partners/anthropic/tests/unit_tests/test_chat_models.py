@@ -3209,3 +3209,62 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+# ---------------------------------------------------------------------------
+# Regression test for #37596 — bind_tools must not mutate caller's tool_choice
+# ---------------------------------------------------------------------------
+
+
+def test_bind_tools_does_not_mutate_caller_tool_choice_dict() -> None:
+    """bind_tools must not modify the caller-provided tool_choice dict in place.
+
+    Previously, when parallel_tool_calls=False was combined with a dict
+    tool_choice, the code would add 'disable_parallel_tool_use' directly to
+    the caller's dict object instead of a copy.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+    original_keys = set(tool_choice.keys())
+
+    chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=tool_choice,
+        parallel_tool_calls=False,
+    )
+
+    # The caller's dict must be unmodified
+    assert set(tool_choice.keys()) == original_keys, (
+        "bind_tools mutated the caller-provided tool_choice dict; "
+        f"unexpected key(s): {set(tool_choice.keys()) - original_keys}"
+    )
+    assert "disable_parallel_tool_use" not in tool_choice
+
+
+def test_bind_tools_tool_choice_in_bound_kwargs_has_disable_parallel() -> None:
+    """The bound kwargs (not the caller's dict) must carry disable_parallel_tool_use."""
+    from typing import cast
+
+    from langchain_core.runnables import RunnableBinding
+
+    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+
+    bound = chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=tool_choice,
+        parallel_tool_calls=False,
+    )
+
+    bound_tc = cast(RunnableBinding, bound).kwargs["tool_choice"]
+    assert bound_tc["disable_parallel_tool_use"] is True
+    # And the original is still clean
+    assert "disable_parallel_tool_use" not in tool_choice
