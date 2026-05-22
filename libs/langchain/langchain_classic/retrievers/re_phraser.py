@@ -89,4 +89,12 @@ class RePhraseQueryRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        raise NotImplementedError
+        re_phrased_question = await self.llm_chain.ainvoke(
+            query,
+            {"callbacks": run_manager.get_child()},
+        )
+        logger.info("Re-phrased question: %s", re_phrased_question)
+        return await self.retriever.ainvoke(
+            re_phrased_question,
+            config={"callbacks": run_manager.get_child()},
+        )
