@@ -1231,7 +1231,14 @@ class Chroma(VectorStore):
             ValueError: If the embedding function is not provided.
         """
         text = [document.page_content for document in documents]
-        metadata = [document.metadata for document in documents]
+        # Normalise empty metadata dicts to None.  ChromaDB's update API rejects
+        # empty dicts with "Expected metadata to be a non-empty dict" — this
+        # matches the behaviour of add_documents(), which also skips empty metadata.
+        metadata = [document.metadata or None for document in documents]
+        # If every element is None, pass None for the whole list so chromadb skips
+        # the metadata update entirely (avoids "metadatas list length mismatch").
+        if all(m is None for m in metadata):
+            metadata = None  # type: ignore[assignment]
         if self._embedding_function is None:
             msg = "For update, you must specify an embedding function on creation."
             raise ValueError(
