@@ -437,21 +437,21 @@ class _PIIStreamTransformer(StreamTransformer):
 
         Detection runs on the full cumulative args so any complete PII
         anywhere in the string is redacted before emission. Lookback
-        withholding then trims the trailing `stream_lookback` characters
+        withholding then trims the trailing the lookback window characters
         from what reaches the consumer — those characters might be the
         start of a partial PII match that completes in a future
         cumulative delta. The trimmed tail surfaces at `content-block-
         finish` where `_finalize_block` redacts the parsed args dict.
 
-        For args that fit within `stream_lookback` (the typical case),
+        For args that fit within the lookback window (the typical case),
         this withholds the entire args string during streaming — the
         redacted args dict appears only at finalize. For args that
-        exceed `stream_lookback`, the safe prefix streams incrementally
+        exceed the lookback window, the safe prefix streams incrementally
         as the cumulative state grows. PII that appears more than
-        `stream_lookback` characters from the cumulative tail in a
+        the lookback window characters from the cumulative tail in a
         delta where it hasn't yet completed can still surface in the
         emit prefix — same residual exposure as PII longer than
-        `stream_lookback` on the text path. The `content-block-finish`
+        the lookback window on the text path. The `content-block-finish`
         snapshot redaction is the backstop.
         """
         args = fields.get("args")
@@ -600,7 +600,6 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         apply_to_input: bool = True,
         apply_to_output: bool = False,
         apply_to_tool_results: bool = False,
-        stream_lookback: int = _DEFAULT_STREAM_LOOKBACK,
     ) -> None:
         """Initialize the PII detection middleware.
 
@@ -653,15 +652,6 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 `run.messages` / `run.tool_calls` / `run.values` never
                 see PII on the wire.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
-            stream_lookback: Trailing-buffer size for cross-delta PII
-                detection in the stream transformer. The transformer always
-                holds the last `stream_lookback` characters back until the
-                buffer extends past the cap or the block finishes, so the
-                value sets both the longest reliably-caught pattern and the
-                worst-case first-token latency. Patterns longer than this
-                may slip past in-flight detection when split across deltas,
-                but the finalize snapshot always re-runs detection over the
-                full block text.
 
         Raises:
             ValueError: If `pii_type` is not built-in and no detector is provided.
@@ -693,13 +683,11 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         # via langgraph's `StreamMux.afail` path. The state-level
         # `after_model` / `before_model` hooks remain a backstop for
         # non-streaming consumers.
-        self._stream_lookback = stream_lookback
         if self.apply_to_output or self.apply_to_tool_results:
             self.transformers = (
                 partial(
                     _PIIStreamTransformer,
                     rule=self._resolved_rule,
-                    lookback=self._stream_lookback,
                 ),
             )
 
