@@ -2230,6 +2230,72 @@ class TestPIIStreamingEndToEnd:
             assert "alice@example.com" not in s, f"PII leaked under block: {s!r}"
 
     @pytest.mark.anyio
+    async def test_block_fails_all_projections_cleanly(self) -> None:
+        """Block raise propagates to every projection cursor via `afail`.
+
+        Verifies the langgraph cleanup chain: `process()` raises →
+        `_apump_next` catches and calls `_mux.afail(err)` → every
+        registered channel (`messages` log, `tool_calls` log, `values`
+        log, raw event log) is failed with the error → every inner
+        ChatModelStream / ToolCallStream the transformers were tracking
+        gets `fail()` called.
+        """
+
+        @tool
+        def lookup(user_id: str) -> str:
+            """Look up."""
+            return f"User {user_id}: alice@example.com"
+
+        def _agent() -> Any:
+            model = FakeToolCallingModel(
+                tool_calls=[
+                    [ToolCall(name="lookup", args={"user_id": "u1"}, id="c1")],
+                    [],
+                ]
+            )
+            return create_agent(
+                model,
+                [lookup],
+                middleware=[
+                    PIIMiddleware(
+                        "email",
+                        strategy="block",
+                        apply_to_output=True,
+                        apply_to_tool_results=True,
+                    )
+                ],
+            )
+
+        # Raw events log
+        run = await _agent().astream_events(
+            {"messages": [HumanMessage("hi")]}, version="v3"
+        )
+        with pytest.raises(PIIDetectionError):
+            async for _event in run:
+                pass
+
+        # `run.messages` projection — inner ChatModelStreams also fail.
+        run = await _agent().astream_events(
+            {"messages": [HumanMessage("hi")]}, version="v3"
+        )
+
+        async def drain_messages() -> None:
+            async for msg in run.messages:
+                async for _chunk in msg.text:
+                    pass
+
+        with pytest.raises(PIIDetectionError):
+            await drain_messages()
+
+        # `run.values` projection.
+        run = await _agent().astream_events(
+            {"messages": [HumanMessage("hi")]}, version="v3"
+        )
+        with pytest.raises(PIIDetectionError):
+            async for _snapshot in run.values:
+                pass
+
+    @pytest.mark.anyio
     async def test_subgraph_redaction_via_create_agent_in_tool(self) -> None:
         """A sub-agent invoked inside a tool inherits the parent's transformer.
 
