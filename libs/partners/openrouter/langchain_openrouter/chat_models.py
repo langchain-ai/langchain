@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from functools import lru_cache
 from operator import itemgetter
 from typing import Any, Literal, cast
+
+import httpx
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -82,6 +85,18 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+@lru_cache
+def _cached_httpx_client(headers: tuple[tuple[str, str], ...]) -> httpx.Client:
+    return httpx.Client(headers=dict(headers), follow_redirects=True)
+
+
+@lru_cache
+def _cached_async_httpx_client(
+    headers: tuple[tuple[str, str], ...],
+) -> httpx.AsyncClient:
+    return httpx.AsyncClient(headers=dict(headers), follow_redirects=True)
+
+
 class ChatOpenRouter(BaseChatModel):
     """OpenRouter chat model integration.
 
@@ -141,6 +156,12 @@ class ChatOpenRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)
     """Underlying SDK client (`openrouter.OpenRouter`)."""
+
+    http_client: httpx.Client | None = Field(default=None, exclude=True)
+    """Custom sync httpx client. When provided, bypasses default client caching."""
+
+    http_async_client: httpx.AsyncClient | None = Field(default=None, exclude=True)
+    """Custom async httpx client. When provided, bypasses default client caching."""
 
     openrouter_api_key: SecretStr | None = Field(
         alias="api_key",
@@ -387,13 +408,16 @@ class ChatOpenRouter(BaseChatModel):
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
         if extra_headers:
-            import httpx  # noqa: PLC0415
-
-            client_kwargs["client"] = httpx.Client(
-                headers=extra_headers, follow_redirects=True
+            headers_key = tuple(sorted(extra_headers.items()))
+            client_kwargs["client"] = (
+                self.http_client
+                if self.http_client is not None
+                else _cached_httpx_client(headers_key)
             )
-            client_kwargs["async_client"] = httpx.AsyncClient(
-                headers=extra_headers, follow_redirects=True
+            client_kwargs["async_client"] = (
+                self.http_async_client
+                if self.http_async_client is not None
+                else _cached_async_httpx_client(headers_key)
             )
         if self.request_timeout is not None:
             client_kwargs["timeout_ms"] = self.request_timeout

@@ -446,6 +446,46 @@ class TestChatOpenRouterInstantiation:
             assert "client" not in call_kwargs
             assert "async_client" not in call_kwargs
 
+    def test_httpx_clients_cached_across_instances(self) -> None:
+        """Instances with the same attribution headers must share one httpx client."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+            )
+            client_a = mock_cls.call_args[1]["client"]
+
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+            )
+            client_b = mock_cls.call_args[1]["client"]
+
+        assert client_a is client_b, (
+            "Two instances with identical headers should reuse the same httpx client"
+        )
+
+    def test_custom_http_client_used_directly(self) -> None:
+        """A caller-supplied http_client bypasses the cache."""
+        import httpx
+
+        custom = httpx.Client(follow_redirects=True)
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                http_client=custom,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert call_kwargs["client"] is custom
+
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
         model = _make_model(reasoning={"effort": "high"})
