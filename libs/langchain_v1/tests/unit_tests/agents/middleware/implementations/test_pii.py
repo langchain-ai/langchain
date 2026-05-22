@@ -807,15 +807,14 @@ class TestPIIStreamTransformer:
             "flag": True,
         }
 
-    def test_redact_value_block_strategy_returns_empty_strings(self) -> None:
-        """Under `block`, leaves with PII become empty strings (not raise)."""
+    def test_redact_value_block_strategy_raises(self) -> None:
+        """Under `block`, `_redact_value` raises on the first matching leaf."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
         value = {"to": "alice@example.com", "subject": "clean"}
-        redacted = transformer._redact_value(value)
-
-        assert redacted == {"to": "", "subject": "clean"}
+        with pytest.raises(PIIDetectionError):
+            transformer._redact_value(value)
 
     def test_redact_value_passthrough_for_clean_input(self) -> None:
         """No PII anywhere → returns an equal value."""
@@ -949,58 +948,32 @@ class TestPIIStreamTransformer:
         assert "alice@example.com" not in finalized
         assert "[REDACTED_EMAIL]" in finalized
 
-    def test_reasoning_delta_block_strategy_emptied(self) -> None:
-        """`block` strategy withholds reasoning deltas."""
+    def test_reasoning_delta_block_strategy_raises(self) -> None:
+        """`block` raises immediately when reasoning content contains PII."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
-            {
-                "type": "event",
-                "method": "messages",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": (
-                        {
-                            "event": "content-block-delta",
-                            "index": 0,
-                            "delta": {
-                                "type": "reasoning-delta",
-                                "reasoning": "User mentioned alice@example.com",
-                            },
+        event = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (
+                    {
+                        "event": "content-block-delta",
+                        "index": 0,
+                        "delta": {
+                            "type": "reasoning-delta",
+                            "reasoning": "User mentioned alice@example.com",
                         },
-                        {"run_id": "r1"},
-                    ),
-                },
+                    },
+                    {"run_id": "r1"},
+                ),
             },
-            {
-                "type": "event",
-                "method": "messages",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": (
-                        {
-                            "event": "content-block-finish",
-                            "index": 0,
-                            "content": {
-                                "type": "reasoning",
-                                "reasoning": "User mentioned alice@example.com",
-                            },
-                        },
-                        {"run_id": "r1"},
-                    ),
-                },
-            },
-        ]
-        for e in events:
-            transformer.process(e)
-
-        delta_reasoning = events[0]["params"]["data"][0]["delta"]["reasoning"]
-        finalized = events[1]["params"]["data"][0]["content"]["reasoning"]
-        assert delta_reasoning == ""
-        assert finalized == ""
+        }
+        with pytest.raises(PIIDetectionError):
+            transformer.process(event)
 
     def test_tool_call_args_short_args_withheld_during_streaming(self) -> None:
         """Tool-call args shorter than `stream_lookback` are withheld on each chunk.
@@ -1178,36 +1151,34 @@ class TestPIIStreamTransformer:
         args = events[0]["params"]["data"][0]["content"]["args"]
         assert args == {"to": "[REDACTED_EMAIL]", "subject": "clean"}
 
-    def test_finalize_block_zeroes_tool_call_args_under_block(self) -> None:
+    def test_finalize_block_raises_on_tool_call_args_under_block(self) -> None:
+        """`block` raises when the finalized tool-call args contain PII."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
-            {
-                "type": "event",
-                "method": "messages",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": (
-                        {
-                            "event": "content-block-finish",
-                            "index": 0,
-                            "content": {
-                                "type": "tool_call",
-                                "id": "call_1",
-                                "name": "send_email",
-                                "args": {"to": "alice@example.com"},
-                            },
+        event = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (
+                    {
+                        "event": "content-block-finish",
+                        "index": 0,
+                        "content": {
+                            "type": "tool_call",
+                            "id": "call_1",
+                            "name": "send_email",
+                            "args": {"to": "alice@example.com"},
                         },
-                        {"run_id": "r1"},
-                    ),
-                },
+                    },
+                    {"run_id": "r1"},
+                ),
             },
-        ]
-        _run_transformer(transformer, events)
-        args = events[0]["params"]["data"][0]["content"]["args"]
-        assert args == {"to": ""}
+        }
+        with pytest.raises(PIIDetectionError):
+            transformer.process(event)
 
     def test_legacy_payload_redacts_tool_call_args(self) -> None:
         """`(AIMessage, metadata)` shape redacts tool_calls[].args."""
@@ -1234,12 +1205,12 @@ class TestPIIStreamTransformer:
         out_msg = event["params"]["data"][0]
         assert out_msg.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
 
-    def test_legacy_payload_block_replaces_message_when_tool_call_has_pii(self) -> None:
-        """`block` + legacy AIMessage with PII in tool_calls → empty replacement."""
+    def test_legacy_payload_block_raises_when_tool_call_has_pii(self) -> None:
+        """`block` + legacy AIMessage with PII in tool_calls → raises immediately."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        original = AIMessage(
+        msg = AIMessage(
             content="",
             tool_calls=[
                 ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
@@ -1252,17 +1223,11 @@ class TestPIIStreamTransformer:
             "params": {
                 "namespace": [],
                 "timestamp": 0,
-                "data": (original, {"run_id": "r1"}),
+                "data": (msg, {"run_id": "r1"}),
             },
         }
-        transformer.process(event)
-        out_msg = event["params"]["data"][0]
-        # Replaced with an empty-content copy; original retains its data
-        # for `after_model` to raise on.
-        assert out_msg is not original
-        assert out_msg.content == ""
-        assert out_msg.tool_calls == []
-        assert original.tool_calls[0]["args"] == {"to": "alice@example.com"}
+        with pytest.raises(PIIDetectionError):
+            transformer.process(event)
 
     def test_legacy_payload_redacts_tool_message_content(self) -> None:
         """`(ToolMessage, metadata)` payload redacts `.content`."""
@@ -1619,7 +1584,8 @@ class TestPIIStreamTransformer:
         transformer.process(finish_event)
         assert not any("c1" in str(k) for k in transformer._buffers)
 
-    def test_tool_output_delta_block_strategy_emptied(self) -> None:
+    def test_tool_output_delta_block_strategy_raises(self) -> None:
+        """`block` raises immediately on PII in a `tool-output-delta`."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
@@ -1636,44 +1602,40 @@ class TestPIIStreamTransformer:
                 },
             },
         }
-        transformer.process(event)
-        assert event["params"]["data"]["delta"] == ""
+        with pytest.raises(PIIDetectionError):
+            transformer.process(event)
 
-    def test_tool_call_args_block_strategy_emptied(self) -> None:
-        """`block` strategy zeroes args when PII is detected."""
+    def test_tool_call_args_block_strategy_raises(self) -> None:
+        """`block` raises immediately when streamed tool-call args contain PII."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
-            {
-                "type": "event",
-                "method": "messages",
-                "params": {
-                    "namespace": [],
-                    "timestamp": 0,
-                    "data": (
-                        {
-                            "event": "content-block-delta",
-                            "index": 0,
-                            "delta": {
-                                "type": "block-delta",
-                                "fields": {
-                                    "type": "tool_call_chunk",
-                                    "id": "call_1",
-                                    "name": "send_email",
-                                    "args": '{"to": "alice@example.com"}',
-                                },
+        event = {
+            "type": "event",
+            "method": "messages",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": (
+                    {
+                        "event": "content-block-delta",
+                        "index": 0,
+                        "delta": {
+                            "type": "block-delta",
+                            "fields": {
+                                "type": "tool_call_chunk",
+                                "id": "call_1",
+                                "name": "send_email",
+                                "args": '{"to": "alice@example.com"}',
                             },
                         },
-                        {"run_id": "r1"},
-                    ),
-                },
+                    },
+                    {"run_id": "r1"},
+                ),
             },
-        ]
-        _run_transformer(transformer, events)
-
-        fields = events[0]["params"]["data"][0]["delta"]["fields"]
-        assert fields["args"] == ""
+        }
+        with pytest.raises(PIIDetectionError):
+            transformer.process(event)
 
     def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
         """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
@@ -1791,24 +1753,19 @@ class TestPIIStreamTransformer:
         middleware = PIIMiddleware("email", strategy="block", apply_to_output=True)
         assert len(middleware.transformers) == 1
 
-    def test_block_strategy_empties_deltas_and_finalize_when_pii_present(self) -> None:
-        """Stream PII under `block`: every delta empty, finalize empty too."""
+    def test_block_strategy_raises_on_first_pii_detection(self) -> None:
+        """Stream PII under `block`: raises immediately when the pattern completes."""
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
-            _make_delta_event("Reach me at alice"),
-            _make_delta_event("@example.com soon"),
-            _make_finish_event("Reach me at alice@example.com soon"),
-        ]
-        _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        # First delta carries an incomplete email — detection won't match.
+        clean_event = _make_delta_event("Reach me at alice")
+        transformer.process(clean_event)  # no raise yet
 
-        # No characters of the PII (or the surrounding text) reach the
-        # consumer — every delta is empty and the finalize snapshot is
-        # zeroed when PII is detected.
-        assert streamed == ""
-        assert finals[0] == ""
+        # Second delta completes the email — detection fires, raises.
+        completing_event = _make_delta_event("@example.com soon")
+        with pytest.raises(PIIDetectionError):
+            transformer.process(completing_event)
 
     def test_block_strategy_releases_full_text_at_finalize_when_clean(self) -> None:
         """Stream clean text under `block`: deltas empty, finalize is the full text."""

@@ -137,13 +137,12 @@ class _PIIStreamTransformer(StreamTransformer):
         # integration emits this when a model only implements `_generate`
         # (or when its `_astream` falls back), producing a single event
         # carrying the full message rather than streamed content-block
-        # deltas. For non-`block` strategies, scrub `.content` in place
-        # so the consumer sees redacted text (after_model re-runs and is
-        # idempotent on the now-redacted state). For `block`, replace the
-        # event payload with an empty copy — the original message stays
-        # in state for `after_model` to raise on.
+        # deltas. Scrub `.content` in place so the consumer sees redacted
+        # text (after_model re-runs and is idempotent on the now-redacted
+        # state). Under `block`, `_mutate_legacy_payload` raises
+        # `PIIDetectionError` directly via `apply_strategy`.
         if isinstance(payload, BaseMessage):
-            self._mutate_legacy_payload(event, payload, metadata)
+            self._mutate_legacy_payload(payload)
             return True
 
         if not isinstance(payload, dict):
@@ -190,10 +189,7 @@ class _PIIStreamTransformer(StreamTransformer):
             if isinstance(msg, str) and msg:
                 matches = self._rule.detector(msg)
                 if matches:
-                    if self._rule.strategy == "block":
-                        data["message"] = ""
-                    else:
-                        data["message"] = apply_strategy(msg, matches, self._rule.strategy)
+                    data["message"] = apply_strategy(msg, matches, self._rule.strategy)
             if isinstance(tool_call_id, str):
                 self._buffers.pop(_tool_buf_key(tool_call_id), None)
 
@@ -218,13 +214,12 @@ class _PIIStreamTransformer(StreamTransformer):
             held = self._buffers.get(key, "")
             combined = held + delta
 
-            if self._rule.strategy == "block":
-                self._buffers[key] = combined
-                data["delta"] = ""
-                return
-
             matches = self._rule.detector(combined)
             if matches:
+                # `apply_strategy` raises `PIIDetectionError` under
+                # `strategy="block"`, failing the run immediately —
+                # cleaner than withholding deltas until `after_model`
+                # raises later.
                 combined = apply_strategy(combined, matches, self._rule.strategy)
 
             emit_end = max(0, len(combined) - self._lookback)
@@ -233,41 +228,20 @@ class _PIIStreamTransformer(StreamTransformer):
         elif isinstance(delta, (dict, list)):
             data["delta"] = self._redact_value(delta)
 
-    def _mutate_legacy_payload(
-        self,
-        event: ProtocolEvent,
-        message: BaseMessage,
-        metadata: Any,
-    ) -> None:
-        """Scrub a legacy `(BaseMessage, metadata)` payload.
+    def _mutate_legacy_payload(self, message: BaseMessage) -> None:
+        """Scrub a legacy `(BaseMessage, metadata)` payload in place.
 
-        For non-`block` strategies, `.content` and any `tool_calls` on an
-        `AIMessage` are mutated in place — `after_model` runs on the same
-        object in graph state and is idempotent over already-redacted
-        text.
+        For non-`block` strategies, `.content` and any `tool_calls` /
+        `invalid_tool_calls` on an `AIMessage` are mutated in place —
+        `after_model` runs on the same object in graph state and is
+        idempotent over already-redacted text.
 
-        For `block`, the event's `data` tuple is replaced with one
-        carrying a fresh empty-content message of the same class and id.
-        That keeps the original message in graph state intact so
-        `after_model` can still raise `PIIDetectionError`, while ensuring
-        downstream stream consumers — including `MessagesTransformer`,
-        which runs *after* this transformer but sees the same event
-        object — never observe the PII.
+        For `block`, `_redact_base_message` raises `PIIDetectionError`
+        directly via its internal `apply_strategy` calls; control
+        leaves before we touch the live message.
         """
-        # Compute the redacted view via the shared BaseMessage walker.
-        # Identity-equal return means nothing dirty; for non-block we
-        # mirror the diff back onto the live message (in-place mutation
-        # is intentional — `after_model` is idempotent on already-redacted
-        # text). For block we replace the event payload with an empty
-        # stub and leave the original message in graph state untouched
-        # for the state-level enforcer to raise on.
         redacted = self._redact_base_message(message)
         if redacted is message:
-            return
-
-        if self._rule.strategy == "block":
-            empty = type(message)(content="", id=getattr(message, "id", None))
-            event["params"]["data"] = (empty, metadata)
             return
 
         # Mirror the redacted fields back onto the live message so the
@@ -335,8 +309,9 @@ class _PIIStreamTransformer(StreamTransformer):
             matches = self._rule.detector(value)
             if not matches:
                 return value
-            if self._rule.strategy == "block":
-                return ""
+            # `apply_strategy` raises `PIIDetectionError` under `block`
+            # — the run fails immediately rather than buffering until a
+            # state-level hook can raise.
             return apply_strategy(value, matches, self._rule.strategy)
         if isinstance(value, BaseMessage):
             return self._redact_base_message(value)
@@ -356,10 +331,7 @@ class _PIIStreamTransformer(StreamTransformer):
         if isinstance(content, str) and content:
             matches = self._rule.detector(content)
             if matches:
-                if self._rule.strategy == "block":
-                    update["content"] = ""
-                else:
-                    update["content"] = apply_strategy(content, matches, self._rule.strategy)
+                update["content"] = apply_strategy(content, matches, self._rule.strategy)
         elif isinstance(content, list) and content:
             # Structured content-blocks shape:
             # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
@@ -438,22 +410,14 @@ class _PIIStreamTransformer(StreamTransformer):
         held = self._buffers.get(key, "")
         combined = held + text
 
-        if self._rule.strategy == "block":
-            # `block` withholds every delta from the consumer and defers
-            # the decision to `_finalize_block`. Detection runs once on
-            # the assembled block so we don't pay regex cost per delta,
-            # and the consumer sees no content until the block resolves
-            # either to its full text (clean) or to empty (PII found —
-            # `after_model` raises shortly after).
-            self._buffers[key] = combined
-            delta[field] = ""
-            return
-
         # Run detection on the full accumulated buffer before splitting.
         # Detecting only on the about-to-emit prefix would miss matches
         # that straddle the lookback boundary — the detector's regex
         # needs a complete, boundary-anchored hit, so a truncated prefix
-        # would fail to match and the partial PII would leak on the wire.
+        # would fail to match and the partial PII would leak on the
+        # wire. Under `strategy="block"`, `apply_strategy` raises
+        # `PIIDetectionError` here, failing the run as soon as PII
+        # arrives rather than buffering until `after_model`.
         matches = self._rule.detector(combined)
         if matches:
             combined = apply_strategy(combined, matches, self._rule.strategy)
@@ -494,15 +458,11 @@ class _PIIStreamTransformer(StreamTransformer):
         if not isinstance(args, str) or not args:
             return
 
-        if self._rule.strategy == "block":
-            # `block` withholds every wire surface during streaming;
-            # `_finalize_block` empties the parsed args on PII and
-            # `after_model` raises shortly after.
-            fields["args"] = ""
-            return
-
         matches = self._rule.detector(args)
         if matches:
+            # `apply_strategy` raises `PIIDetectionError` under
+            # `strategy="block"` — the run fails the moment a complete
+            # PII pattern surfaces in the cumulative args string.
             args = apply_strategy(args, matches, self._rule.strategy)
 
         emit_end = max(0, len(args) - self._lookback)
@@ -537,9 +497,9 @@ class _PIIStreamTransformer(StreamTransformer):
     def _finalize_string_field(self, content: dict[str, Any], field: str) -> None:
         """Re-redact a string content-block field on `content-block-finish`.
 
-        Used for `text` and `reasoning` content blocks. `block` withholds
-        the content from the consumer; `after_model` raises
-        `PIIDetectionError` on the original state message shortly after.
+        Used for `text` and `reasoning` content blocks. Under
+        `strategy="block"` `apply_strategy` raises `PIIDetectionError`,
+        failing the run immediately.
         """
         text = content.get(field)
         if not isinstance(text, str) or not text:
@@ -547,10 +507,7 @@ class _PIIStreamTransformer(StreamTransformer):
         matches = self._rule.detector(text)
         if not matches:
             return
-        if self._rule.strategy == "block":
-            content[field] = ""
-        else:
-            content[field] = apply_strategy(text, matches, self._rule.strategy)
+        content[field] = apply_strategy(text, matches, self._rule.strategy)
 
     def _drop_run(self, run_id: str) -> None:
         # Release any buffered tails for this run_id — content-block-finish
@@ -730,9 +687,12 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         # `apply_to_output` covers AI messages (text, tool-call args,
         # reasoning), `apply_to_tool_results` covers tool execution
         # (the `tools` channel + ToolMessage content on `values` and
-        # `messages`). State-level hooks remain canonical enforcers;
-        # for `block` the transformer withholds every delta and lets
-        # the matching hook raise on the original state message.
+        # `messages`). For `block` the transformer raises
+        # `PIIDetectionError` directly from its event handler the
+        # moment a complete PII pattern is detected, failing the run
+        # via langgraph's `StreamMux.afail` path. The state-level
+        # `after_model` / `before_model` hooks remain a backstop for
+        # non-streaming consumers.
         self._stream_lookback = stream_lookback
         if self.apply_to_output or self.apply_to_tool_results:
             self.transformers = (
