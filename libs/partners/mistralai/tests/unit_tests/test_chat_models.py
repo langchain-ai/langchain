@@ -16,6 +16,7 @@ from langchain_core.messages import (
     InvalidToolCall,
     SystemMessage,
     ToolCall,
+    ToolMessage,
 )
 from pydantic import SecretStr
 
@@ -26,9 +27,28 @@ from langchain_mistralai.chat_models import (  # type: ignore[import]
     _convert_tool_call_id_to_mistral_compatible,
     _format_message_content,
     _is_valid_mistral_tool_call_id,
+    _sanitize_chat_completions_content,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Mistral's chat completions endpoint returns 422 with `extra_forbidden`
+    on `messages[*].tool.content.list[...].text.id` if not stripped.
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="abc12345",
+    )
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [{"type": "text", "text": "foo"}]
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
 
 
 def test_mistralai_model_param() -> None:

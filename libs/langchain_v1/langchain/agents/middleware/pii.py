@@ -71,7 +71,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Redact all emails in user input
         agent = create_agent(
-            "openai:gpt-5",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("email", strategy="redact"),
             ],
@@ -79,7 +79,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Use different strategies for different PII types
         agent = create_agent(
-            "openai:gpt-4o",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("credit_card", strategy="mask"),
                 PIIMiddleware("url", strategy="redact"),
@@ -89,7 +89,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Custom PII type with regex
         agent = create_agent(
-            "openai:gpt-5",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("api_key", detector=r"sk-[a-zA-Z0-9]{32}", strategy="block"),
             ],

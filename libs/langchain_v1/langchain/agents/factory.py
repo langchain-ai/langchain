@@ -22,6 +22,7 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
@@ -80,6 +81,7 @@ if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
+    from langgraph.stream._mux import TransformerFactory
     from langgraph.types import Checkpointer
 
     from langchain.agents.middleware.types import ToolCallWrapper
@@ -154,8 +156,6 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     "gpt-4.1",
     "gpt-4o",
     "gpt-oss",
-    "o3-pro",
-    "o3-mini",
 ]
 
 
@@ -406,8 +406,13 @@ def _get_schema_type_hints(schema: type) -> dict[str, Any]:
     return get_type_hints(schema, include_extras=True)
 
 
-def _resolve_schemas(schemas: set[type]) -> tuple[type, type, type]:
-    """Resolve state, input, and output schemas for the given schemas."""
+def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
+    """Resolve state, input, and output schemas for the given schemas.
+
+    Schemas are merged in list order; later entries override earlier ones when the
+    same field is declared by multiple schemas.  Duplicates are harmless — a type
+    that appears more than once is processed at its last position.
+    """
     schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
@@ -704,6 +709,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -799,6 +805,13 @@ def create_agent(
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        transformers: Optional sequence of scope-aware `StreamTransformer`
+            factories to register on the compiled graph in addition to
+            the agent defaults. Each factory is invoked as `factory(scope)`
+            so every invocation receives a fresh instance. The final order
+            on the compiled graph is: `ToolCallTransformer`, then any
+            factories declared by middleware via
+            `AgentMiddleware.transformers`, then any factories supplied here.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -857,11 +870,8 @@ def create_agent(
     initial_response_format: ToolStrategy[Any] | ProviderStrategy[Any] | AutoStrategy[Any] | None
     if response_format is None:
         initial_response_format = None
-    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        # Preserve explicitly requested strategies
-        initial_response_format = response_format
-    elif isinstance(response_format, AutoStrategy):
-        # AutoStrategy provided - preserve it for later auto-detection
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy, AutoStrategy)):
+        # Explicit Tool/Provider strategy, or AutoStrategy for later capability detection
         initial_response_format = response_format
     else:
         # Raw schema - wrap in AutoStrategy to enable auto-detection
@@ -1023,10 +1033,13 @@ def create_agent(
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas: set[type] = {m.state_schema for m in middleware}
-    # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
-    state_schemas.add(base_state)
+    # Build an ordered list: middleware schemas first (in registration order),
+    # base_state last so it wins any field conflict.  This lets the caller's
+    # explicit state_schema override middleware annotations — e.g. passing
+    # a DeltaChannel-annotated schema wins over BinaryOperatorAggregate from
+    # AgentState without requiring a post-compilation patch.
+    state_schemas: list[type] = [*(m.state_schema for m in middleware), base_state]
 
     resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
@@ -1647,15 +1660,12 @@ def create_agent(
 
     # Set recursion limit to 9_999
     # https://github.com/langchain-ai/langgraph/issues/7313
-    config: RunnableConfig = {
-        "recursion_limit": 9_999,
-        "configurable": {
-            "ls_agent_type": "root",
-        },
-    }
+    config: RunnableConfig = {"recursion_limit": 9_999}
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name
+
+    middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
         checkpointer=checkpointer,
@@ -1665,6 +1675,11 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
+        transformers=[
+            ToolCallTransformer,
+            *middleware_transformers,
+            *(transformers or ()),
+        ],
     ).with_config(config)
 
 

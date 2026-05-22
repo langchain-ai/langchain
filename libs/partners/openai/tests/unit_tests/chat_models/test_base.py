@@ -617,8 +617,8 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
-def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
-    """`stream_v2` on chat completions emits a spec-conformant lifecycle."""
+def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_events(version="v3")` on chat completions emits a valid lifecycle."""
     from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
     llm = ChatOpenAI(model="gpt-4o")
@@ -629,13 +629,13 @@ def test_openai_stream_v2_lifecycle(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     with patch.object(llm, "client", mock_client):
-        events = list(llm.stream_v2("你的名字叫什么？只回答名字"))
+        events = list(llm.stream_events("你的名字叫什么？只回答名字", version="v3"))
 
     assert_valid_event_stream(events)
     # At minimum, a text block with the accumulated answer.
     finishes = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) >= 1
-    text_finishes = [f for f in finishes if f["content_block"]["type"] == "text"]
+    text_finishes = [f for f in finishes if f["content"]["type"] == "text"]
     assert len(text_finishes) == 1
 
 
@@ -3775,6 +3775,33 @@ async def test_context_overflow_error_stream_async_responses_api() -> None:
             pass
 
     assert "exceeds the context window" in str(exc_info.value)
+
+
+def test_context_overflow_error_prompt_too_long() -> None:
+    """Test context overflow error triggered by 'prompt is too long' message."""
+    error_body = {
+        "error": {
+            "message": "prompt is too long: 300000 tokens > 200000 maximum",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = bad_request_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
 
 
 def test_context_overflow_error_backwards_compatibility() -> None:

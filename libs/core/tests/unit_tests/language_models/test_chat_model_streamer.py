@@ -1,9 +1,9 @@
-"""Tests for BaseChatModel.stream_v2() / astream_v2()."""
+"""Tests for `BaseChatModel.stream_events(version="v3")` and its async equivalent."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from pydantic import Field
@@ -19,7 +19,7 @@ from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Awaitable, Iterator
 
     from langchain_protocol.protocol import MessagesData
 
@@ -32,11 +32,11 @@ if TYPE_CHECKING:
 
 
 class TestStreamV2Sync:
-    """Test BaseChatModel.stream_v2() with FakeListChatModel."""
+    """Test `BaseChatModel.stream_events(version="v3")` with `FakeListChatModel`."""
 
     def test_stream_text(self) -> None:
         model = FakeListChatModel(responses=["Hello world!"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         assert isinstance(stream, ChatModelStream)
         deltas = list(stream.text)
@@ -45,7 +45,7 @@ class TestStreamV2Sync:
 
     def test_stream_output(self) -> None:
         model = FakeListChatModel(responses=["Hello!"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         msg = stream.output
         assert isinstance(msg.content, list)
@@ -54,7 +54,7 @@ class TestStreamV2Sync:
 
     def test_stream_usage_none_for_fake(self) -> None:
         model = FakeListChatModel(responses=["Hi"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         # Drain
         for _ in stream.text:
             pass
@@ -62,7 +62,7 @@ class TestStreamV2Sync:
 
     def test_stream_raw_events(self) -> None:
         model = FakeListChatModel(responses=["ab"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         events = list(stream)
         event_types = [e.get("event") for e in events]
@@ -72,12 +72,12 @@ class TestStreamV2Sync:
 
 
 class TestAstreamV2:
-    """Test BaseChatModel.astream_v2() with FakeListChatModel."""
+    """Test `BaseChatModel.astream_events(version="v3")` with `FakeListChatModel`."""
 
     @pytest.mark.asyncio
     async def test_astream_text_await(self) -> None:
         model = FakeListChatModel(responses=["Hello!"])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         assert isinstance(stream, AsyncChatModelStream)
         full = await stream.text
@@ -86,7 +86,7 @@ class TestAstreamV2:
     @pytest.mark.asyncio
     async def test_astream_text_deltas(self) -> None:
         model = FakeListChatModel(responses=["Hi"])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         deltas = [d async for d in stream.text]
         assert "".join(deltas) == "Hi"
@@ -94,7 +94,7 @@ class TestAstreamV2:
     @pytest.mark.asyncio
     async def test_astream_await_output(self) -> None:
         model = FakeListChatModel(responses=["Hey"])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         msg = await stream
         assert msg.content == [{"type": "text", "text": "Hey", "index": 0}]
@@ -193,13 +193,13 @@ class _EmptyStreamModel(BaseChatModel):
 
 
 class TestCallbacks:
-    """Verify stream_v2 fires on_llm_end / on_llm_error callbacks."""
+    """Verify v3 streaming fires `on_llm_end` / `on_llm_error` callbacks."""
 
-    def test_stream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+    def test_stream_events_v3_defers_on_chat_model_start_until_consumed(self) -> None:
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
 
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         assert handler.events == []
 
@@ -210,7 +210,7 @@ class TestCallbacks:
     def test_on_llm_end_fires_after_drain(self) -> None:
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         for _ in stream.text:
             pass
         _ = stream.output
@@ -225,18 +225,20 @@ class TestCallbacks:
     async def test_on_llm_end_fires_async(self) -> None:
         handler = _AsyncRecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
         _ = await stream
 
         assert "on_chat_model_start" in handler.events
         assert "on_llm_end" in handler.events
 
     @pytest.mark.asyncio
-    async def test_astream_v2_defers_on_chat_model_start_until_consumed(self) -> None:
+    async def test_astream_events_v3_defers_on_chat_model_start_until_consumed(
+        self,
+    ) -> None:
         handler = _AsyncRecordingHandler()
         model = FakeListChatModel(responses=["done"], callbacks=[handler])
 
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         assert handler.events == []
 
@@ -251,7 +253,7 @@ class TestCallbacks:
         """
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["hello"], callbacks=[handler])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         _ = stream.output
 
         response = handler.last_llm_end_response
@@ -265,7 +267,7 @@ class TestCallbacks:
     async def test_on_llm_end_receives_assembled_message_async(self) -> None:
         handler = _AsyncRecordingHandler()
         model = FakeListChatModel(responses=["hello"], callbacks=[handler])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
         _ = await stream
 
         response = handler.last_llm_end_response
@@ -277,7 +279,9 @@ class TestCallbacks:
 
     def test_empty_stream_reports_error_without_finish_only_lifecycle(self) -> None:
         handler = _RecordingHandler()
-        stream = _EmptyStreamModel(callbacks=[handler]).stream_v2("test")
+        stream = _EmptyStreamModel(callbacks=[handler]).stream_events(
+            "test", version="v3"
+        )
 
         with pytest.raises(ValueError, match="No generation chunks were returned"):
             list(stream)
@@ -289,7 +293,9 @@ class TestCallbacks:
     @pytest.mark.asyncio
     async def test_empty_astream_reports_error(self) -> None:
         handler = _AsyncRecordingHandler()
-        stream = await _EmptyStreamModel(callbacks=[handler]).astream_v2("test")
+        stream = await _EmptyStreamModel(callbacks=[handler]).astream_events(
+            "test", version="v3"
+        )
 
         with pytest.raises(ValueError, match="No generation chunks were returned"):
             await stream
@@ -303,12 +309,12 @@ class TestCallbacks:
 
 
 class TestOnStreamEvent:
-    """`on_stream_event` must fire once per protocol event from stream_v2."""
+    """`on_stream_event` fires once per protocol event from v3 streaming."""
 
     def test_on_stream_event_fires_for_every_event_sync(self) -> None:
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         _ = stream.output
 
         # Every event the stream sees should also reach the observer.
@@ -322,7 +328,7 @@ class TestOnStreamEvent:
     async def test_on_stream_event_fires_for_every_event_async(self) -> None:
         handler = _AsyncRecordingHandler()
         model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
         _ = await stream
 
         event_types = [e["event"] for e in handler.stream_events]
@@ -334,7 +340,7 @@ class TestOnStreamEvent:
         """Stream events must all fire between on_chat_model_start and on_llm_end."""
         handler = _RecordingHandler()
         model = FakeListChatModel(responses=["Hi"], callbacks=[handler])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         _ = stream.output
 
         # on_stream_event doesn't show up in `events` (different list), but
@@ -346,10 +352,10 @@ class TestOnStreamEvent:
 
 
 class TestCancellation:
-    """Cancellation of `astream_v2` must propagate, not be swallowed."""
+    """Cancellation of `astream_events(version="v3")` must propagate."""
 
     @pytest.mark.asyncio
-    async def test_astream_v2_cancellation_propagates(self) -> None:
+    async def test_astream_events_v3_cancellation_propagates(self) -> None:
         """Cancelling the producer task must raise CancelledError.
 
         Regression test: the producer's `except BaseException` previously
@@ -357,7 +363,7 @@ class TestCancellation:
         `on_llm_error` + `stream._fail` pair that never propagated.
         """
         model = FakeListChatModel(responses=["abcdefghij"], sleep=0.05)
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
         aiter_ = stream.text.__aiter__()
         await aiter_.__anext__()
         task = stream._producer_task
@@ -401,7 +407,7 @@ class _KwargRecordingModel(FakeListChatModel):
 
 
 class TestRunnableBindingForwarding:
-    """`RunnableBinding.stream_v2` must merge bound kwargs into the call.
+    """`RunnableBinding.stream_events(version="v3")` merges bound kwargs.
 
     Without the explicit override on `RunnableBinding`, `__getattr__`
     forwards the call but drops `self.kwargs` — so tools bound via
@@ -409,12 +415,12 @@ class TestRunnableBindingForwarding:
     ignored.
     """
 
-    def test_bound_kwargs_reach_stream_v2(self) -> None:
+    def test_bound_kwargs_reach_stream_events_v3(self) -> None:
         model = _KwargRecordingModel(responses=["hi"])
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-42")
 
-        stream = bound.stream_v2("test")
+        stream = bound.stream_events("test", version="v3")
         for _ in stream.text:
             pass
 
@@ -426,20 +432,53 @@ class TestRunnableBindingForwarding:
         model.received_kwargs = []
         bound = model.bind(my_marker="from-bind")
 
-        stream = bound.stream_v2("test", my_marker="from-call")
+        stream = bound.stream_events("test", my_marker="from-call", version="v3")
         for _ in stream.text:
             pass
 
         assert model.received_kwargs[0].get("my_marker") == "from-call"
 
     @pytest.mark.asyncio
-    async def test_bound_kwargs_reach_astream_v2(self) -> None:
+    async def test_bound_kwargs_reach_astream_events_v3(self) -> None:
         model = _KwargRecordingModel(responses=["hi"])
         model.received_kwargs = []
         bound = model.bind(my_marker="sentinel-async")
 
-        stream = await bound.astream_v2("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
 
         assert len(model.received_kwargs) == 1
         assert model.received_kwargs[0].get("my_marker") == "sentinel-async"
+
+    def test_bound_version_routes_to_v3_without_call_site_repeat(self) -> None:
+        # `bind(version="v3").stream_events(input)` must route to the v3
+        # branch (using the bound `version`) and must not forward `version`
+        # to the underlying model as an extra kwarg.
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(version="v3")
+
+        # `version` is in `self.kwargs`, not at the call site, so the
+        # static return type is the v1/v2 iterator overload — narrow it.
+        stream = cast("ChatModelStream", bound.stream_events("test"))
+        chunks = list(stream.text)
+
+        assert "".join(chunks) == "hi"
+        assert len(model.received_kwargs) == 1
+        assert "version" not in model.received_kwargs[0]
+
+    @pytest.mark.asyncio
+    async def test_bound_version_routes_to_v3_async_without_call_site_repeat(
+        self,
+    ) -> None:
+        model = _KwargRecordingModel(responses=["hi"])
+        model.received_kwargs = []
+        bound = model.bind(version="v3")
+
+        stream = await cast(
+            "Awaitable[AsyncChatModelStream]", bound.astream_events("test")
+        )
+        _ = await stream
+
+        assert len(model.received_kwargs) == 1
+        assert "version" not in model.received_kwargs[0]

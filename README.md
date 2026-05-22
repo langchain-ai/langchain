@@ -23,8 +23,8 @@
 
 LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves.
 
-> [!NOTE]
-> Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+> [!TIP]
+> Just getting started? Check out **[Deep Agents](http://docs.langchain.com/oss/python/deepagents/)** — a higher-level package built on LangChain for agents that have built-in capabilites for common usage patterns such as planning, subagents, file system usage, and more.
 
 ## Quickstart
 
@@ -43,6 +43,8 @@ result = model.invoke("Hello, world!")
 
 If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
 
+For an equivalent JS/TS library, check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
 > [!TIP]
 > For developing, debugging, and deploying AI agents and LLM applications, see [LangSmith](https://docs.langchain.com/langsmith/home).
 
@@ -50,7 +52,7 @@ If you're looking for more advanced customization or agent orchestration, check 
 
 While the LangChain framework can be used standalone, it also integrates seamlessly with any LangChain product, giving developers a full suite of tools when building LLM applications.
 
-- **[Deep Agents](https://github.com/langchain-ai/deepagents)** — Build agents that can plan, use subagents, and leverage file systems for complex tasks
+- **[Deep Agents](http://docs.langchain.com/oss/python/deepagents/)** — Build agents that can plan, use subagents, and leverage file systems for complex tasks
 - **[LangGraph](https://docs.langchain.com/oss/python/langgraph/overview)** — Build agents that can reliably handle complex tasks with our low-level agent orchestration framework
 - **[Integrations](https://docs.langchain.com/oss/python/integrations/providers/overview)** — Chat & embedding models, tools & toolkits, and more
 - **[LangSmith](https://www.langchain.com/langsmith)** — Agent evals, observability, and debugging for LLM apps

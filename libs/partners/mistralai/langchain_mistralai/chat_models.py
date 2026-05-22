@@ -373,6 +373,25 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from text content blocks.
+
+    Mistral's chat completions endpoint rejects unknown fields on tool
+    message content blocks (e.g. the `id` that LangChain auto-generates on
+    `TextContentBlock`). For list content, keep only `type` and `text` on
+    text blocks; pass other blocks and non-list content through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
+            sanitized.append({"type": "text", "text": block["text"]})
+        else:
+            sanitized.append(block)
+    return sanitized
+
+
 def _format_message_content(content: Any) -> Any:
     """Format message content for the Mistral chat completions wire format.
 
@@ -484,7 +503,7 @@ def _convert_message_to_mistral_chat_message(
     if isinstance(message, ToolMessage):
         return {
             "role": "tool",
-            "content": message.content,
+            "content": _sanitize_chat_completions_content(message.content),
             "name": message.name,
             "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
                 message.tool_call_id

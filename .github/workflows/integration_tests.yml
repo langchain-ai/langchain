@@ -27,10 +27,13 @@ on:
           - "standard-tests"
           - "model-profiles"
           - "anthropic"
+          - "aws"
           - "chroma"
           - "deepseek"
           - "exa"
           - "fireworks"
+          - "google-genai"
+          - "google-vertexai"
           - "groq"
           - "huggingface"
           - "mistralai"
@@ -153,7 +156,7 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6
+        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
