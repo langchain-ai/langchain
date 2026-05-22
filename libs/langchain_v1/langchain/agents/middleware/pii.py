@@ -148,7 +148,7 @@ class _PIIStreamTransformer(StreamTransformer):
         if not isinstance(payload, dict):
             return True
         kind = payload.get("event")
-        run_id = str(metadata.get("run_id", "")) if metadata else ""
+        run_id = str(metadata.get("run_id") or "") if metadata else ""
 
         if kind == "content-block-delta":
             self._mutate_delta(payload, run_id)
