@@ -268,21 +268,39 @@ class ChatDeepSeek(BaseChatOpenAI):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
+        # Step 1: Preserve reasoning_content before parent converts AIMessage to dict.
+        # The parent's _convert_message_to_dict() discards additional_kwargs, so we
+        # need to restore reasoning_content after the conversion.
+        reasoning_by_content_hash: dict[int, str] = {}
+        converted_messages = self._convert_input(input_).to_messages()
+        for msg in converted_messages:
+            if isinstance(msg, AIMessage):
+                reasoning = msg.additional_kwargs.get("reasoning_content")
+                if reasoning:
+                    content_hash = hash(str(msg.content))
+                    reasoning_by_content_hash[content_hash] = reasoning
+
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
+            elif message["role"] == "assistant":
                 # DeepSeek API expects assistant content to be a string, not a list.
                 # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+                if isinstance(message.get("content"), list):
+                    text_parts = [
+                        block.get("text", "")
+                        for block in message["content"]
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    ]
+                    message["content"] = "".join(text_parts) if text_parts else ""
+                # Step 2: Restore reasoning_content using hash matching.
+                # We use hash of content to match after the parent's conversion.
+                content_hash = hash(str(message.get("content", "") or ""))
+                if content_hash in reasoning_by_content_hash:
+                    message["reasoning_content"] = reasoning_by_content_hash[
+                        content_hash
+                    ]
 
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
