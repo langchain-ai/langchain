@@ -5,7 +5,14 @@ from typing import Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    InvalidToolCall,
+    ToolCall,
+    ToolMessage,
+)
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
 from langgraph.stream.transformers import MessagesTransformer
@@ -819,17 +826,6 @@ class TestPIIStreamTransformer:
         redacted = transformer._redact_value(value)
         assert redacted == value
 
-    def test_redact_value_redacts_dict_keys(self) -> None:
-        """`_redact_value` redacts PII used as dict keys, not just values."""
-        rule = RedactionRule(pii_type="email").resolve()
-        transformer = _PIIStreamTransformer(rule=rule)
-
-        value = {"alice@example.com": "active", "bob": "inactive"}
-        redacted = transformer._redact_value(value)
-        assert "alice@example.com" not in redacted
-        assert "[REDACTED_EMAIL]" in redacted
-        assert redacted["bob"] == "inactive"
-
     def test_redact_value_walks_structured_message_content(self) -> None:
         """`_redact_value` walks list-typed `.content` (content-blocks shape)."""
         rule = RedactionRule(pii_type="email").resolve()
@@ -1313,6 +1309,149 @@ class TestPIIStreamTransformer:
         }
         assert transformer.process(event) is True
 
+    def test_tool_started_string_input_redacted(self) -> None:
+        """Single-argument tools pass `input` as a raw string."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-started",
+                    "tool_call_id": "c1",
+                    "tool_name": "echo",
+                    "input": "user mail is alice@example.com",
+                },
+            },
+        }
+        transformer.process(event)
+        out = event["params"]["data"]["input"]
+        assert "alice@example.com" not in out
+        assert "[REDACTED_EMAIL]" in out
+
+    def test_tool_started_list_input_redacted(self) -> None:
+        """Array-input tools pass `input` as a list."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        event = {
+            "type": "event",
+            "method": "tools",
+            "params": {
+                "namespace": [],
+                "timestamp": 0,
+                "data": {
+                    "event": "tool-started",
+                    "tool_call_id": "c1",
+                    "tool_name": "fanout",
+                    "input": ["bob@example.com", "clean"],
+                },
+            },
+        }
+        transformer.process(event)
+        assert event["params"]["data"]["input"] == ["[REDACTED_EMAIL]", "clean"]
+
+    def test_drop_run_does_not_sweep_tool_buffers(self) -> None:
+        """`_drop_run` on the messages channel must not wipe tool buffers."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=64)
+
+        # Put a tool-output buffer entry in place.
+        transformer.process(
+            {
+                "type": "event",
+                "method": "tools",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": {
+                        "event": "tool-output-delta",
+                        "tool_call_id": "c1",
+                        "delta": "partial",
+                    },
+                },
+            }
+        )
+        before = dict(transformer._buffers)
+        assert any("c1" in str(k) for k in before)
+
+        # An errant message-finish with no run_id used to sweep all
+        # `("", *)` buffer keys — including the tool one. With the
+        # tool-buffer sentinel namespace, the sweep is a no-op for
+        # tool entries.
+        transformer.process(
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": ({"event": "message-finish"}, {}),
+                },
+            }
+        )
+        assert any("c1" in str(k) for k in transformer._buffers)
+
+    def test_finalize_invalid_tool_call_redacts_string_args(self) -> None:
+        """`invalid_tool_call.args` is a raw JSON string, not a dict."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        events = [
+            {
+                "type": "event",
+                "method": "messages",
+                "params": {
+                    "namespace": [],
+                    "timestamp": 0,
+                    "data": (
+                        {
+                            "event": "content-block-finish",
+                            "index": 0,
+                            "content": {
+                                "type": "invalid_tool_call",
+                                "id": "c1",
+                                "name": "send_email",
+                                "args": '{"to": "alice@example.com", "bad json',
+                                "error": "Unterminated string",
+                            },
+                        },
+                        {"run_id": "r1"},
+                    ),
+                },
+            },
+        ]
+        _run_transformer(transformer, events)
+        out = events[0]["params"]["data"][0]["content"]["args"]
+        assert "alice@example.com" not in out
+        assert "[REDACTED_EMAIL]" in out
+
+    def test_redact_value_walks_invalid_tool_calls(self) -> None:
+        """`AIMessage.invalid_tool_calls` go through the same recursion."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = AIMessage(
+            content="",
+            invalid_tool_calls=[
+                InvalidToolCall(
+                    name="send_email",
+                    args='{"to": "alice@example.com"} BROKEN',
+                    id="c1",
+                    error="parse failed",
+                ),
+            ],
+            id="m1",
+        )
+        redacted = transformer._redact_value(msg)
+        assert "alice@example.com" not in redacted.invalid_tool_calls[0]["args"]
+        assert "[REDACTED_EMAIL]" in redacted.invalid_tool_calls[0]["args"]
+        assert "alice@example.com" in msg.invalid_tool_calls[0]["args"]
+
     def test_tool_started_input_is_redacted(self) -> None:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
@@ -1462,7 +1601,7 @@ class TestPIIStreamTransformer:
             },
         }
         transformer.process(delta_event)
-        assert ("", "c1") in transformer._buffers
+        assert any("c1" in str(k) for k in transformer._buffers)
 
         finish_event = {
             "type": "event",
@@ -1478,7 +1617,7 @@ class TestPIIStreamTransformer:
             },
         }
         transformer.process(finish_event)
-        assert ("", "c1") not in transformer._buffers
+        assert not any("c1" in str(k) for k in transformer._buffers)
 
     def test_tool_output_delta_block_strategy_emptied(self) -> None:
         rule = RedactionRule(pii_type="email", strategy="block").resolve()

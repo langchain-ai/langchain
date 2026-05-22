@@ -36,6 +36,21 @@ if TYPE_CHECKING:
     from langgraph.stream._types import ProtocolEvent
 
 
+_TOOL_BUF_RUN_ID = "__tool_buffer__"
+"""Sentinel run_id used for tools-channel buffer keys.
+
+Distinct from any real or missing run_id so `_drop_run("")` on a
+messages-channel `message-finish` doesn't sweep active tool-output
+buffers. The transformer's `_buffers` dict mixes text-delta keys
+`(run_id, block_index)` with tool-output-delta keys
+`(_TOOL_BUF_RUN_ID, tool_call_id)`; the disjoint namespace lets each
+clean up independently."""
+
+
+def _tool_buf_key(tool_call_id: str) -> tuple[str, str]:
+    return (_TOOL_BUF_RUN_ID, tool_call_id)
+
+
 _DEFAULT_STREAM_LOOKBACK = 128
 """Default trailing-buffer size for cross-delta PII detection.
 
@@ -152,16 +167,24 @@ class _PIIStreamTransformer(StreamTransformer):
         tool_call_id = data.get("tool_call_id")
 
         if kind == "tool-started":
-            if isinstance(data.get("input"), dict):
+            # Tool inputs may be a dict (multi-arg tools), a string
+            # (single-arg tools — `BaseTool._parse_input` passes the
+            # raw string through), or a list (array-input tools).
+            # `_redact_value` handles all three uniformly.
+            if "input" in data:
                 data["input"] = self._redact_value(data["input"])
         elif kind == "tool-output-delta":
-            if isinstance(tool_call_id, str):
-                self._mutate_tool_output_delta(data, tool_call_id)
+            # Use the tool_call_id as buffer key when present; fall back
+            # to a None-keyed slot for the rare malformed/custom emitter
+            # case (the buffer becomes shared but at least redaction runs).
+            self._mutate_tool_output_delta(
+                data, tool_call_id if isinstance(tool_call_id, str) else ""
+            )
         elif kind == "tool-finished":
             if "output" in data:
                 data["output"] = self._redact_value(data["output"])
             if isinstance(tool_call_id, str):
-                self._buffers.pop(("", tool_call_id), None)
+                self._buffers.pop(_tool_buf_key(tool_call_id), None)
         elif kind == "tool-error":
             msg = data.get("message")
             if isinstance(msg, str) and msg:
@@ -172,7 +195,7 @@ class _PIIStreamTransformer(StreamTransformer):
                     else:
                         data["message"] = apply_strategy(msg, matches, self._rule.strategy)
             if isinstance(tool_call_id, str):
-                self._buffers.pop(("", tool_call_id), None)
+                self._buffers.pop(_tool_buf_key(tool_call_id), None)
 
         return True
 
@@ -180,9 +203,10 @@ class _PIIStreamTransformer(StreamTransformer):
         """Redact a `tool-output-delta` payload.
 
         String deltas go through the same lookback machinery as
-        text-deltas, keyed by `("", tool_call_id)` — tool_call_ids are
-        unique within a run, so a flat key suffices and avoids the
-        run_id propagation gap on the `tools` channel.
+        text-deltas, keyed by `(_TOOL_BUF_RUN_ID, tool_call_id)`. The
+        sentinel run_id keeps tool buffers in a disjoint namespace
+        from text-delta buffers so `_drop_run` on the messages channel
+        can't sweep active tool-output state.
 
         Structured deltas (dict/list) walk recursively without
         buffering — they don't have a position-stable shape across
@@ -190,7 +214,7 @@ class _PIIStreamTransformer(StreamTransformer):
         """
         delta = data.get("delta")
         if isinstance(delta, str):
-            key: tuple[str, int | str] = ("", tool_call_id)
+            key: tuple[str, int | str] = _tool_buf_key(tool_call_id)
             held = self._buffers.get(key, "")
             combined = held + delta
 
@@ -230,30 +254,15 @@ class _PIIStreamTransformer(StreamTransformer):
         which runs *after* this transformer but sees the same event
         object — never observe the PII.
         """
-        content = message.content
-        tool_calls = getattr(message, "tool_calls", None) or []
-
-        # Plain-string content: detect via the str path so we can apply
-        # the configured strategy directly. Structured content (list of
-        # content blocks) walks via `_redact_value`, which handles every
-        # string leaf inside.
-        content_matches: list[PIIMatch] = []
-        redacted_content_list: list[Any] | None = None
-        if isinstance(content, str) and content:
-            content_matches = self._rule.detector(content)
-        elif isinstance(content, list) and content:
-            walked = self._redact_value(content)
-            if walked != content:
-                redacted_content_list = walked
-
-        tool_call_hits: list[int] = []
-        for i, tc in enumerate(tool_calls):
-            args = tc.get("args") if isinstance(tc, dict) else None
-            if isinstance(args, dict) and self._args_contain_pii(args):
-                tool_call_hits.append(i)
-
-        content_dirty = bool(content_matches) or redacted_content_list is not None
-        if not content_dirty and not tool_call_hits:
+        # Compute the redacted view via the shared BaseMessage walker.
+        # Identity-equal return means nothing dirty; for non-block we
+        # mirror the diff back onto the live message (in-place mutation
+        # is intentional — `after_model` is idempotent on already-redacted
+        # text). For block we replace the event payload with an empty
+        # stub and leave the original message in graph state untouched
+        # for the state-level enforcer to raise on.
+        redacted = self._redact_base_message(message)
+        if redacted is message:
             return
 
         if self._rule.strategy == "block":
@@ -261,26 +270,41 @@ class _PIIStreamTransformer(StreamTransformer):
             event["params"]["data"] = (empty, metadata)
             return
 
-        if content_matches and isinstance(content, str):
-            message.content = apply_strategy(content, content_matches, self._rule.strategy)
-        elif redacted_content_list is not None:
-            message.content = redacted_content_list
-        if tool_call_hits and isinstance(message, AIMessage):
-            new_tool_calls: list[Any] = list(message.tool_calls)
-            for i in tool_call_hits:
-                tc = dict(new_tool_calls[i])
-                tc["args"] = self._redact_value(tc.get("args") or {})
-                new_tool_calls[i] = tc
-            message.tool_calls = new_tool_calls
+        # Mirror the redacted fields back onto the live message so the
+        # consumer sees them on the wire AND the same object reference
+        # in state ends up redacted (idempotent for `after_model`).
+        if redacted.content != message.content:
+            message.content = redacted.content
+        if isinstance(message, AIMessage) and isinstance(redacted, AIMessage):
+            if redacted.tool_calls != message.tool_calls:
+                message.tool_calls = redacted.tool_calls
+            if redacted.invalid_tool_calls != message.invalid_tool_calls:
+                message.invalid_tool_calls = redacted.invalid_tool_calls
 
-    def _args_contain_pii(self, args: dict[str, Any]) -> bool:
-        """Cheap check: does any string leaf in args trigger detection?"""
-        for v in args.values():
-            if isinstance(v, str) and v and self._rule.detector(v):
-                return True
-            if isinstance(v, (dict, list, tuple)) and self._redact_value(v) != v:
-                return True
-        return False
+    def _redact_tool_call_list(self, calls: list[Any] | None) -> tuple[list[Any], bool]:
+        """Walk a list of tool-call (or invalid-tool-call) dicts.
+
+        Returns `(new_list, changed)`. Each element's `args` is run
+        through `_redact_value` regardless of its type — `tool_call.args`
+        is a dict, `invalid_tool_call.args` is a raw JSON string, and
+        `_redact_value` handles both shapes uniformly. If nothing
+        changed, returns the input list and `changed=False`.
+        """
+        if not calls:
+            return calls or [], False
+        new_calls: list[Any] = []
+        changed = False
+        for tc in calls:
+            if isinstance(tc, dict) and "args" in tc and tc["args"] is not None:
+                redacted = self._redact_value(tc["args"])
+                if redacted != tc["args"]:
+                    new_tc = dict(tc)
+                    new_tc["args"] = redacted
+                    new_calls.append(new_tc)
+                    changed = True
+                    continue
+            new_calls.append(tc)
+        return new_calls, changed
 
     def _redact_value(self, value: Any) -> Any:
         """Recursively redact PII in string leaves of a nested structure.
@@ -290,10 +314,20 @@ class _PIIStreamTransformer(StreamTransformer):
         the structure itself are preserved.
 
         `BaseMessage` payloads (typically `ToolMessage` from
-        `tool-finished.output`) return a fresh copy with `.content`
-        redacted — never mutated in place. The original object stays
-        intact for the state-level enforcer (`before_model` with
+        `tool-finished.output`, or any message reached via the `values`
+        channel) return a fresh copy with `.content` redacted plus
+        `AIMessage.tool_calls[*].args` / `invalid_tool_calls[*].args`
+        walked. The original object stays intact for state-level
+        enforcers (`after_model`, `before_model` with
         `apply_to_tool_results`) to act on independently.
+
+        Scope mirrors the pre-streaming state-level surfaces:
+        `.content` (string or list-of-content-blocks) and `tool_calls`
+        args. Other message attributes (`additional_kwargs`,
+        `response_metadata`, `ToolMessage.artifact`) are intentionally
+        not walked here — they aren't scrubbed in graph state by the
+        existing hooks, so scrubbing them on the wire would create
+        a wire/state divergence.
         """
         if isinstance(value, str):
             if not value:
@@ -305,62 +339,49 @@ class _PIIStreamTransformer(StreamTransformer):
                 return ""
             return apply_strategy(value, matches, self._rule.strategy)
         if isinstance(value, BaseMessage):
-            update: dict[str, Any] = {}
-
-            content = value.content
-            if isinstance(content, str) and content:
-                matches = self._rule.detector(content)
-                if matches:
-                    if self._rule.strategy == "block":
-                        update["content"] = ""
-                    else:
-                        update["content"] = apply_strategy(content, matches, self._rule.strategy)
-            elif isinstance(content, list) and content:
-                # Structured content-blocks shape:
-                # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
-                # Walk each block through the recursion so any string
-                # leaf (text, reasoning, args values, …) gets redacted.
-                redacted_content = self._redact_value(content)
-                if redacted_content != content:
-                    update["content"] = redacted_content
-
-            # `AIMessage.tool_calls` carry PII in `args` independently of
-            # `.content` (the common shape for tool-calling responses is
-            # empty content + populated `tool_calls`). Walk each call's
-            # args through the recursion so a state snapshot containing
-            # such a message doesn't leak the args on the wire.
-            if isinstance(value, AIMessage) and value.tool_calls:
-                new_tool_calls: list[Any] = []
-                tool_calls_changed = False
-                for tc in value.tool_calls:
-                    if isinstance(tc, dict):
-                        args = tc.get("args")
-                        if isinstance(args, dict):
-                            redacted_args = self._redact_value(args)
-                            if redacted_args != args:
-                                new_tc = dict(tc)
-                                new_tc["args"] = redacted_args
-                                new_tool_calls.append(new_tc)
-                                tool_calls_changed = True
-                                continue
-                    new_tool_calls.append(tc)
-                if tool_calls_changed:
-                    update["tool_calls"] = new_tool_calls
-
-            if not update:
-                return value
-            return value.model_copy(update=update)
+            return self._redact_base_message(value)
         if isinstance(value, dict):
-            # Redact both keys and values — a sensitive identifier used
-            # as a map key (e.g., an email-indexed result dict) would
-            # otherwise stream unchanged. Non-string keys pass through
-            # unchanged via the `_redact_value` identity branch.
-            return {self._redact_value(k): self._redact_value(v) for k, v in value.items()}
+            return {k: self._redact_value(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self._redact_value(v) for v in value]
         if isinstance(value, tuple):
             return tuple(self._redact_value(v) for v in value)
         return value
+
+    def _redact_base_message(self, value: BaseMessage) -> BaseMessage:
+        """Return a fresh copy of `value` with PII-carrying surfaces redacted."""
+        update: dict[str, Any] = {}
+
+        content = value.content
+        if isinstance(content, str) and content:
+            matches = self._rule.detector(content)
+            if matches:
+                if self._rule.strategy == "block":
+                    update["content"] = ""
+                else:
+                    update["content"] = apply_strategy(content, matches, self._rule.strategy)
+        elif isinstance(content, list) and content:
+            # Structured content-blocks shape:
+            # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
+            redacted_content = self._redact_value(content)
+            if redacted_content != content:
+                update["content"] = redacted_content
+
+        # `AIMessage.tool_calls` and `.invalid_tool_calls` carry PII in
+        # `args` independently of `.content`. `tool_call.args` is a
+        # dict; `invalid_tool_call.args` is a raw JSON string —
+        # `_redact_value` handles both shapes via the recursion.
+        if isinstance(value, AIMessage):
+            new_tc_list, tc_changed = self._redact_tool_call_list(value.tool_calls)
+            if tc_changed:
+                update["tool_calls"] = new_tc_list
+            new_inv_list, inv_changed = self._redact_tool_call_list(value.invalid_tool_calls)
+            if inv_changed:
+                update["invalid_tool_calls"] = new_inv_list
+
+        if not update:
+            return value
+        return value.model_copy(update=update)
 
     def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
         delta = payload.get("delta")
@@ -387,12 +408,10 @@ class _PIIStreamTransformer(StreamTransformer):
                 "server_tool_call_chunk",
             }:
                 self._mutate_tool_call_chunk_delta(fields)
-        # `data-delta` (binary/base64 payloads) passes through — regex
-        # detection on base64 strings would produce mostly false matches
-        # and rarely catches real PII, since binary payloads aren't a
-        # typical PII surface. Users with structured-data PII concerns
-        # should attach a custom detector that understands their
-        # payload format.
+        # Other delta types (`data-delta`, vendor block types) pass
+        # through. The pre-streaming middleware scrubbed `.content` text
+        # on state messages only; binary payloads and provider-specific
+        # block shapes are out of scope for parity with that surface.
 
     def _mutate_string_field_delta(
         self,
@@ -504,10 +523,15 @@ class _PIIStreamTransformer(StreamTransformer):
                 self._finalize_string_field(content, "text")
             elif ctype == "reasoning":
                 self._finalize_string_field(content, "reasoning")
-            elif ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}:
-                args = content.get("args")
-                if isinstance(args, dict):
-                    content["args"] = self._redact_value(args)
+            elif (
+                ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}
+                and "args" in content
+                and content["args"] is not None
+            ):
+                # `tool_call` / `server_tool_call` args are dicts;
+                # `invalid_tool_call.args` is the raw unparsed JSON
+                # string. `_redact_value` handles both shapes.
+                content["args"] = self._redact_value(content["args"])
         self._buffers.pop(key, None)
 
     def _finalize_string_field(self, content: dict[str, Any], field: str) -> None:
