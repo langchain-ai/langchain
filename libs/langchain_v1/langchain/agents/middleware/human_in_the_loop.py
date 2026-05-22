@@ -152,7 +152,7 @@ class InterruptOnConfig(TypedDict):
     Example:
         ```python
         # Static string description
-        config = ToolConfig(
+        config = InterruptOnConfig(
             allowed_decisions=["approve", "reject"],
             description="Please review this tool execution"
         )
