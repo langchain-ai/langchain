@@ -1,0 +1,47 @@
+# Benchmark workflow for performance testing.
+#
+# Runs benchmarks on pull requests and reports results.
+
+name: "📊 Benchmark"
+
+on:
+  pull_request:
+    paths:
+      - "**.py"
+      - ".github/workflows/_benchmark.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
+
+jobs:
+  benchmark:
+    name: "Run Benchmarks"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: "🐍 Set up Python 3.11 + UV"
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.11"
+
+      - name: "📦 Install UV Package Manager"
+        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
+
+      - name: "📦 Install Dependencies"
+        run: uv sync --group test
+
+      - name: "📊 Run Benchmarks"
+        shell: bash
+        run: |
+          uv run pytest ./tests/benchmarks -v --benchmark-only
