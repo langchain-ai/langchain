@@ -84,3 +84,15 @@ LangChain helps developers build applications powered by LLMs through a standard
 - [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
 - [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+
+## Troubleshooting
+
+If you encounter issues, here are some common solutions:
+
+- **Installation issues**: Ensure you have Python 3.9+ and a compatible package manager (pip or uv). Try `pip install --upgrade langchain` or `uv add langchain`.
+- **Import errors**: Verify your environment is set up correctly. Some components require additional dependencies; check the specific package's README.
+- **API key errors**: Set your API keys as environment variables (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`). Never hardcode keys in your code.
+- **Rate limiting**: Implement retry logic with exponential backoff using LangChain's built-in retry utilities.
+- **Model compatibility**: Check that your model provider SDK is up to date. LangChain abstracts model interfaces, but underlying SDK changes may cause issues.
+
+For further help, visit the [LangChain Forum](https://forum.langchain.com) or [LangSmith Documentation](https://docs.langchain.com/langsmith/home).
