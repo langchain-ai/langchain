@@ -144,6 +144,11 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert "messages" in result
         assert len(result["messages"]) == 2
         assert isinstance(result["messages"][0], AIMessage)
+        # Rejected tool call must be absent from the revised AIMessage so that
+        # ToolNode does not execute it.  Regression: previously returned
+        # `(tool_call, tool_message)` in the reject branch, leaving the call
+        # in place and allowing ToolNode to execute it anyway.
+        assert len(result["messages"][0].tool_calls) == 0
         assert isinstance(result["messages"][1], ToolMessage)
         assert result["messages"][1].content == "Custom response message"
         assert result["messages"][1].name == "test_tool"
@@ -182,6 +187,50 @@ def test_human_in_the_loop_middleware_single_tool_respond() -> None:
         assert tool_message.tool_call_id == "1"
         assert tool_message.status == "success"
 
+
+
+def test_rejected_tool_call_not_executed_by_toolnode() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/37093.
+
+    When a human rejects a tool call, the revised AIMessage must have an
+    empty ``tool_calls`` list so that ToolNode does not execute the rejected
+    action.  Previously ``_process_decision`` returned ``(tool_call, ...)``
+    on rejection, leaving the call in place and allowing ToolNode to pick it
+    up and run the tool anyway.
+    """
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"sensitive_tool": {"allowed_decisions": ["approve", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="Calling sensitive tool",
+        tool_calls=[{"name": "sensitive_tool", "args": {"data": "secret"}, "id": "call_abc"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Do something"), ai_message])
+
+    def mock_reject(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "reject", "message": "Access denied"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    revised_ai_msg = result["messages"][0]
+    assert isinstance(revised_ai_msg, AIMessage)
+    # The rejected call must not appear in tool_calls — ToolNode iterates
+    # this list and would execute any call it finds.
+    assert revised_ai_msg.tool_calls == [], (
+        "rejected tool_calls must be removed so ToolNode cannot execute them"
+    )
+
+    # The ToolMessage carrying the rejection reason must still be present
+    tool_msg = result["messages"][1]
+    assert isinstance(tool_msg, ToolMessage)
+    assert tool_msg.content == "Access denied"
+    assert tool_msg.tool_call_id == "call_abc"
+    assert tool_msg.status == "error"
 
 def test_human_in_the_loop_middleware_respond_disallowed() -> None:
     """Test that `respond` raises when not in `allowed_decisions`."""
