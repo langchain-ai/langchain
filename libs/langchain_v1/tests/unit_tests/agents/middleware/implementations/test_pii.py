@@ -819,6 +819,39 @@ class TestPIIStreamTransformer:
         redacted = transformer._redact_value(value)
         assert redacted == value
 
+    def test_redact_value_redacts_dict_keys(self) -> None:
+        """`_redact_value` redacts PII used as dict keys, not just values."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        value = {"alice@example.com": "active", "bob": "inactive"}
+        redacted = transformer._redact_value(value)
+        assert "alice@example.com" not in redacted
+        assert "[REDACTED_EMAIL]" in redacted
+        assert redacted["bob"] == "inactive"
+
+    def test_redact_value_walks_structured_message_content(self) -> None:
+        """`_redact_value` walks list-typed `.content` (content-blocks shape)."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        msg = AIMessage(
+            content=[
+                {"type": "text", "text": "Reach me at alice@example.com"},
+                {"type": "reasoning", "reasoning": "User mentioned bob@example.com"},
+            ],
+            id="m1",
+        )
+        redacted = transformer._redact_value(msg)
+
+        # Original untouched.
+        assert msg.content[0]["text"] == "Reach me at alice@example.com"
+        # Redacted copy walked every block.
+        assert "alice@example.com" not in redacted.content[0]["text"]
+        assert "[REDACTED_EMAIL]" in redacted.content[0]["text"]
+        assert "bob@example.com" not in redacted.content[1]["reasoning"]
+        assert "[REDACTED_EMAIL]" in redacted.content[1]["reasoning"]
+
     def test_redact_value_walks_ai_message_tool_calls(self) -> None:
         """`_redact_value` redacts `AIMessage.tool_calls[*].args` even with empty content.
 
@@ -1593,10 +1626,21 @@ class TestPIIStreamTransformer:
         assert "5425 2334 3010 9903" not in finals[0]
         assert "[REDACTED_CREDIT_CARD]" in finals[0]
 
-    def test_apply_to_output_false_registers_no_transformer(self) -> None:
-        """Streaming redaction is gated on apply_to_output."""
-        middleware = PIIMiddleware("email", apply_to_output=False)
+    def test_no_transformer_when_neither_output_nor_tool_results_apply(self) -> None:
+        """The transformer is gated on either output- or tool-result scrubbing."""
+        middleware = PIIMiddleware("email", apply_to_output=False, apply_to_tool_results=False)
         assert middleware.transformers == ()
+
+    def test_transformer_installed_for_tool_results_only(self) -> None:
+        """`apply_to_tool_results=True` alone installs the stream transformer.
+
+        Stream consumers see the `tools` channel and `ToolMessage`
+        payloads on the `messages` / `values` channels before the
+        state-level `before_model` enforcer runs. Without the
+        transformer those surfaces would leak raw tool-result PII.
+        """
+        middleware = PIIMiddleware("email", apply_to_output=False, apply_to_tool_results=True)
+        assert len(middleware.transformers) == 1
 
     def test_block_strategy_installs_buffering_stream_transformer(self) -> None:
         """`block` + output streaming installs a buffering transformer.

@@ -233,9 +233,18 @@ class _PIIStreamTransformer(StreamTransformer):
         content = message.content
         tool_calls = getattr(message, "tool_calls", None) or []
 
+        # Plain-string content: detect via the str path so we can apply
+        # the configured strategy directly. Structured content (list of
+        # content blocks) walks via `_redact_value`, which handles every
+        # string leaf inside.
         content_matches: list[PIIMatch] = []
+        redacted_content_list: list[Any] | None = None
         if isinstance(content, str) and content:
             content_matches = self._rule.detector(content)
+        elif isinstance(content, list) and content:
+            walked = self._redact_value(content)
+            if walked != content:
+                redacted_content_list = walked
 
         tool_call_hits: list[int] = []
         for i, tc in enumerate(tool_calls):
@@ -243,7 +252,8 @@ class _PIIStreamTransformer(StreamTransformer):
             if isinstance(args, dict) and self._args_contain_pii(args):
                 tool_call_hits.append(i)
 
-        if not content_matches and not tool_call_hits:
+        content_dirty = bool(content_matches) or redacted_content_list is not None
+        if not content_dirty and not tool_call_hits:
             return
 
         if self._rule.strategy == "block":
@@ -253,6 +263,8 @@ class _PIIStreamTransformer(StreamTransformer):
 
         if content_matches and isinstance(content, str):
             message.content = apply_strategy(content, content_matches, self._rule.strategy)
+        elif redacted_content_list is not None:
+            message.content = redacted_content_list
         if tool_call_hits and isinstance(message, AIMessage):
             new_tool_calls: list[Any] = list(message.tool_calls)
             for i in tool_call_hits:
@@ -303,6 +315,14 @@ class _PIIStreamTransformer(StreamTransformer):
                         update["content"] = ""
                     else:
                         update["content"] = apply_strategy(content, matches, self._rule.strategy)
+            elif isinstance(content, list) and content:
+                # Structured content-blocks shape:
+                # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
+                # Walk each block through the recursion so any string
+                # leaf (text, reasoning, args values, …) gets redacted.
+                redacted_content = self._redact_value(content)
+                if redacted_content != content:
+                    update["content"] = redacted_content
 
             # `AIMessage.tool_calls` carry PII in `args` independently of
             # `.content` (the common shape for tool-calling responses is
@@ -331,7 +351,11 @@ class _PIIStreamTransformer(StreamTransformer):
                 return value
             return value.model_copy(update=update)
         if isinstance(value, dict):
-            return {k: self._redact_value(v) for k, v in value.items()}
+            # Redact both keys and values — a sensitive identifier used
+            # as a map key (e.g., an email-indexed result dict) would
+            # otherwise stream unchanged. Non-string keys pass through
+            # unchanged via the `_redact_value` identity branch.
+            return {self._redact_value(k): self._redact_value(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self._redact_value(v) for v in value]
         if isinstance(value, tuple):
@@ -676,15 +700,17 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         self.strategy = self._resolved_rule.strategy
         self.detector = self._resolved_rule.detector
 
-        # Stream transformer mirrors `apply_to_output` — it scrubs the
-        # streamed surface of the same model output that `after_model`
-        # scrubs in state. `after_model` remains the canonical blocker;
-        # for `block` the transformer withholds every delta and either
-        # releases the full text at finalize (clean) or empties the
-        # finalize content (PII present — `after_model` raises shortly
-        # after on the original state message).
+        # Stream transformer scrubs the streamed surface of the same
+        # messages that the state-level hooks scrub in graph state.
+        # Installed whenever any output-side scrubbing is enabled —
+        # `apply_to_output` covers AI messages (text, tool-call args,
+        # reasoning), `apply_to_tool_results` covers tool execution
+        # (the `tools` channel + ToolMessage content on `values` and
+        # `messages`). State-level hooks remain canonical enforcers;
+        # for `block` the transformer withholds every delta and lets
+        # the matching hook raise on the original state message.
         self._stream_lookback = stream_lookback
-        if self.apply_to_output:
+        if self.apply_to_output or self.apply_to_tool_results:
             self.transformers = (
                 partial(
                     _PIIStreamTransformer,
