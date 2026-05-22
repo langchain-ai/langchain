@@ -1,11 +1,14 @@
 """Test Azure OpenAI Chat API wrapper."""
 
 import os
+import warnings
+from typing import Literal
 from unittest import mock
 
+import openai
 import pytest
 from langchain_core.messages import HumanMessage
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
@@ -265,3 +268,57 @@ def test_max_tokens_converted_to_max_completion_tokens() -> None:
     assert "max_completion_tokens" in payload
     assert payload["max_completion_tokens"] == 1000
     assert "max_tokens" not in payload
+
+
+def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """`AzureChatOpenAI._create_chat_result` re-dumps the response to inspect
+    content-filter metadata. That second dump must exclude the `parsed` field
+    to avoid `PydanticSerializationUnexpectedValue` warnings on structured
+    output responses, matching the exclusion applied in the base class.
+    """
+
+    class ModelOutput(BaseModel):
+        output: str
+
+    class MockParsedMessage(openai.BaseModel):
+        role: Literal["assistant"] = "assistant"
+        content: str = '{"output": "Paris"}'
+        parsed: None = None
+        refusal: str | None = None
+
+    class MockChoice(openai.BaseModel):
+        index: int = 0
+        finish_reason: Literal["stop"] = "stop"
+        message: MockParsedMessage
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-1"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "gpt-4o-mini"
+        choices: list[MockChoice]
+        usage: dict[str, int] | None = None
+
+    parsed_response = ModelOutput(output="Paris")
+    response = MockChatCompletion.model_construct(
+        choices=[
+            MockChoice.model_construct(
+                message=MockParsedMessage.model_construct(parsed=parsed_response)
+            )
+        ],
+        usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    )
+
+    llm = AzureChatOpenAI(
+        azure_deployment="gpt-4o-mini",
+        api_version="2024-10-01-preview",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+    )
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = llm._create_chat_result(response)
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any("field_name='parsed'" in message for message in warning_messages)
+    assert result.generations[0].message.additional_kwargs["parsed"] == parsed_response

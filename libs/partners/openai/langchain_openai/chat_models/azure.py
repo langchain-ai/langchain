@@ -771,7 +771,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
         chat_result = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, dict):
-            response = response.model_dump()
+            # `parsed` may hold arbitrary Pydantic models from structured output;
+            # mirror the exclusion applied in `BaseChatOpenAI._create_chat_result`
+            # so this second dump does not emit
+            # `PydanticSerializationUnexpectedValue` warnings.
+            response = response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 msg = (
