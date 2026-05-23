@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
@@ -69,12 +69,16 @@ class AgentTrajectory:
         lines: list[str] = []
         for step in self.steps:
             lines.append(f"step {step.index}:")
-            for tc in step.action.tool_calls or []:
-                lines.append(f"  - tool_call: {tc.get('name')} {tc.get('args')}")
+            lines.extend(
+                f"  - tool_call: {tc.get('name')} {tc.get('args')}"
+                for tc in step.action.tool_calls or []
+            )
             text = (
                 step.action.content
                 if isinstance(step.action.content, str)
-                else self.final_text if step is self.steps[-1] else ""
+                else self.final_text
+                if step is self.steps[-1]
+                else ""
             )
             if text and text.strip():
                 preview = text.strip().replace("\n", " ")
@@ -115,10 +119,10 @@ class EfficiencyAssertion:
 
 
 _ZERO_WIDTH = {
-    ord("​"): None,
-    ord("‌"): None,
-    ord("‍"): None,
-    ord("﻿"): None,
+    ord("\u200b"): None,  # zero-width space
+    ord("\u200c"): None,  # zero-width non-joiner
+    ord("\u200d"): None,  # zero-width joiner
+    ord("\ufeff"): None,  # zero-width no-break space / BOM
 }
 
 
@@ -269,7 +273,7 @@ class ToolCall(EfficiencyAssertion):
                     return True
         return False
 
-    def describe_failure(self, trajectory: AgentTrajectory) -> str:
+    def describe_failure(self, trajectory: AgentTrajectory) -> str:  # noqa: ARG002
         where = f" in step {self.step}" if self.step is not None else ""
         return f"Missing expected tool call{where}: name={self.name!r}"
 
@@ -379,21 +383,22 @@ def _trajectory_from_messages(messages: list[AnyMessage]) -> AgentTrajectory:
     return AgentTrajectory(steps=steps)
 
 
-def _assert_expectations(
-    trajectory: AgentTrajectory, scorer: TrajectoryScorer
-) -> None:
+def _assert_expectations(trajectory: AgentTrajectory, scorer: TrajectoryScorer) -> None:
     """Run the scorer's checks; hard-fail on success, log on efficiency."""
     # Efficiency assertions are reported but never fail the test.
     for exp in scorer._expectations:
         if not exp.check(trajectory):
             # Pytest-friendly print so the failure shows up in -v output.
-            print(f"[eval expectation miss] {exp.describe_failure(trajectory)}")
+            print(  # noqa: T201 - eval signal is intended user-facing output
+                f"[eval expectation miss] {exp.describe_failure(trajectory)}"
+            )
 
     # Success assertions fail the test if violated.
     for s in scorer._success:
         if not s.check(trajectory):
-            msg = s.describe_failure(trajectory)
-            raise AssertionError(f"success check failed: {msg}\n\ntrajectory:\n{trajectory.pretty()}")
+            detail = s.describe_failure(trajectory)
+            message = f"success check failed: {detail}\n\ntrajectory:\n{trajectory.pretty()}"
+            raise AssertionError(message)
 
 
 def run_agent(
@@ -404,8 +409,11 @@ def run_agent(
     scorer: TrajectoryScorer | None = None,
 ) -> AgentTrajectory:
     """Invoke an agent against a query and optionally score the trajectory."""
-    config = {"configurable": {"thread_id": str(uuid.uuid4())}}
-    result = agent.invoke({"messages": [HumanMessage(content=query)]}, config)
+    config: dict[str, Any] = {"configurable": {"thread_id": str(uuid.uuid4())}}
+    result = agent.invoke(  # type: ignore[call-overload]
+        {"messages": [HumanMessage(content=query)]},
+        config,
+    )
     if not isinstance(result, Mapping):
         msg = f"Expected agent.invoke to return a Mapping, got {type(result)}"
         raise TypeError(msg)

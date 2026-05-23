@@ -21,9 +21,10 @@ between the two repos sees the same API.
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
@@ -63,7 +64,10 @@ def pytest_configure(config: pytest.Config) -> None:
     )
     config.addinivalue_line(
         "markers",
-        "eval_tier(name): tag an eval as 'baseline' (regression gate) or 'hillclimb' (progress tracking)",
+        (
+            "eval_tier(name): tag an eval as 'baseline' (regression gate) "
+            "or 'hillclimb' (progress tracking)"
+        ),
     )
     config.addinivalue_line(
         "markers",
@@ -71,9 +75,7 @@ def pytest_configure(config: pytest.Config) -> None:
     )
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Fail fast if `--model` was not provided when any eval test was collected."""
     if not items:
         return
@@ -106,11 +108,9 @@ def model(model_name: str, request: pytest.FixtureRequest) -> BaseChatModel:
     (`claude-sonnet-4-6`) is handled uniformly. Per-provider API keys must be
     set in the environment.
     """
-    kwargs: dict[str, object] = {}
+    kwargs: dict[str, Any] = {}
     effort = request.config.getoption("--openai-reasoning-effort")
-    if effort and (
-        model_name.startswith(("openai:", "gpt-")) or "openai" in model_name.lower()
-    ):
+    if effort and (model_name.startswith(("openai:", "gpt-")) or "openai" in model_name.lower()):
         kwargs["reasoning_effort"] = effort
 
     # Anthropic short ids work with init_chat_model when model_provider is set.
@@ -125,7 +125,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         return
     model_arg = session.config.getoption("--model")
     tracing = os.environ.get("LANGSMITH_TRACING") or "(not set)"
-    print(
+    print(  # noqa: T201 - eval banner is intended user-facing output
         f"\nlangchain evals: model={model_arg} LANGSMITH_TRACING={tracing}",
         flush=True,
     )

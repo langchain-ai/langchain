@@ -1,4 +1,4 @@
-"""Real-model evals for `TodoListMiddleware`.
+r"""Real-model evals for `TodoListMiddleware`.
 
 These tests verify that `WRITE_TODOS_SYSTEM_PROMPT` produces the intended
 agent-loop behavior: the substantive final answer lands in the
@@ -27,10 +27,12 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langchain.agents.middleware import TodoListMiddleware
 from tests.evals.utils import (
+    AgentTrajectory,
+    MaxToolCallRequests,
+    SuccessAssertion,
     TrajectoryScorer,
     final_text_contains,
     final_text_min_length,
-    max_tool_call_requests,
     run_agent,
     tool_call,
 )
@@ -300,23 +302,21 @@ def test_density_cairo_lands_in_final_message(model: BaseChatModel) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _max_tool_calls_success(n: int):
-    """Wrap `max_tool_call_requests` as a hard-fail SuccessAssertion.
+def _max_tool_calls_success(n: int) -> SuccessAssertion:
+    """Wrap `MaxToolCallRequests` as a hard-fail SuccessAssertion.
 
-    `max_tool_call_requests` is defined as an EfficiencyAssertion (logged but
+    `MaxToolCallRequests` is defined as an EfficiencyAssertion (logged but
     not failing) so it doesn't gate normal evals. For trivial-skip tests we
     want it to be a hard failure when violated — over-using the tool is the
     bug the test is designed to catch.
     """
-    from tests.evals.utils import MaxToolCallRequests, SuccessAssertion
-
     eff = MaxToolCallRequests(n=n)
 
     class _AsSuccess(SuccessAssertion):
-        def check(self, trajectory) -> bool:  # noqa: ANN001
+        def check(self, trajectory: AgentTrajectory) -> bool:
             return eff.check(trajectory)
 
-        def describe_failure(self, trajectory) -> str:  # noqa: ANN001
+        def describe_failure(self, trajectory: AgentTrajectory) -> str:
             return eff.describe_failure(trajectory)
 
     return _AsSuccess()
