@@ -252,7 +252,7 @@ jobs:
           # Route traces to one project with GitHub run metadata so failures link back to the originating Actions run.
           LANGSMITH_TRACING: "true"
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-          LANGSMITH_PROJECT: "oss-python-integration-tests"
+          LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
           LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
