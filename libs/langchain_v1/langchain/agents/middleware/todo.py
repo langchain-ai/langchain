@@ -49,7 +49,7 @@ class WriteTodosInput(BaseModel):
     todos: list[Todo]
 
 
-WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
+WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress and organize complex tasks.
 
 Only use this tool if you think it will be helpful in staying organized. If the user's request is trivial and takes less than 3 steps, it is better to NOT use this tool and just do the task directly.
 
@@ -91,7 +91,7 @@ It is important to skip using this tool when:
     - Complete current tasks before starting new ones
     - Remove tasks that are no longer relevant from the list entirely
     - IMPORTANT: When you write this todo list, you should mark your first task (or tasks) as in_progress immediately!.
-    - IMPORTANT: Unless all tasks are completed, you should always have at least one task in_progress to show the user that you are working on something.
+    - IMPORTANT: Unless all tasks are completed, you should always have at least one task in_progress.
 
 3. **Task Completion Requirements**:
     - ONLY mark a task as completed when you have FULLY accomplished it
@@ -109,7 +109,7 @@ It is important to skip using this tool when:
     - Break complex tasks into smaller, manageable steps
     - Use clear, descriptive task names
 
-Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully
+Being proactive with task management ensures you complete all requirements successfully
 Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all.
 
 ## When You Finish
@@ -119,7 +119,7 @@ Remember: If you only need to make a few tool calls to complete a task, and it i
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
 You have access to the `write_todos` tool to help you manage and plan complex objectives.
-Use this tool for complex objectives to ensure that you are tracking each necessary step and giving the user visibility into your progress.
+Use this tool for complex objectives to ensure that you are tracking each necessary step.
 This tool is very helpful for planning complex objectives, and for breaking down these larger complex objectives into smaller steps.
 
 It is critical that you mark todos as completed as soon as you are done with a step. Do not batch up multiple steps before marking them as completed.
