@@ -132,6 +132,16 @@ jobs:
 
       - name: "📊 Run evals"
         working-directory: libs/langchain_v1
+        # SECURITY: every value derived from `inputs.*` / `matrix.*` is passed
+        # via `env:`, NOT interpolated into the `run:` script body. GitHub
+        # expands `${{ ... }}` textually before the shell runs, so splicing
+        # those expressions into a `run:` block lets a value containing `'`
+        # break out of the literal and execute arbitrary commands with API
+        # keys in scope. Passing them as env vars keeps the values out of the
+        # script source and lets bash quote them safely as `"$VAR"`. We also
+        # invoke `pytest` directly here instead of going through `make`,
+        # because Make's `$(VAR)` is textual expansion and would re-introduce
+        # the same class of injection at the Make layer.
         env:
           # Provider keys. Unset secrets resolve to empty strings; the SDK only
           # complains if the matrix model id actually requires that provider.
@@ -151,36 +161,66 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_TRACING: "true"
           LANGSMITH_PROJECT: "langchain-middleware-evals"
+          # User-controlled inputs surfaced as env vars (not script splices).
+          MODEL: ${{ matrix.model }}
+          TIER: ${{ inputs.tier }}
+          CATEGORY: ${{ inputs.eval_category }}
+          REASONING: ${{ inputs.openai_reasoning_effort }}
+          USER_EXTRA: ${{ inputs.pytest_extra }}
         run: |
-          MODEL='${{ matrix.model }}'
-          TIER='${{ inputs.tier }}'
-          CATEGORY='${{ inputs.eval_category }}'
-          REASONING='${{ inputs.openai_reasoning_effort }}'
-          USER_EXTRA='${{ inputs.pytest_extra }}'
+          set -euo pipefail
 
-          # Build PYTEST_EXTRA from the optional filters.
-          EXTRA=""
+          # Build the pytest arg array from env-provided inputs. Each element
+          # is added as a discrete word in the array so word-splitting and
+          # quoting are handled by bash, not by the script source. Filter
+          # expressions for `-m` are constructed from a fixed template and
+          # concatenated with user-supplied values; the values themselves are
+          # never interpreted as shell.
+          PYTEST_ARGS=(-v --tb=short --model "$MODEL")
+
+          MARKER=""
           if [ "$TIER" != "all" ]; then
-            EXTRA="-m 'eval_tier(\"$TIER\")'"
+            MARKER="eval_tier(\"$TIER\")"
           fi
           if [ -n "$CATEGORY" ]; then
-            if [ -n "$EXTRA" ]; then
-              EXTRA="$EXTRA and eval_category(\"$CATEGORY\")"
+            if [ -n "$MARKER" ]; then
+              MARKER="$MARKER and eval_category(\"$CATEGORY\")"
             else
-              EXTRA="-m 'eval_category(\"$CATEGORY\")'"
+              MARKER="eval_category(\"$CATEGORY\")"
             fi
           fi
+          if [ -n "$MARKER" ]; then
+            PYTEST_ARGS+=(-m "$MARKER")
+          fi
           if [ -n "$REASONING" ]; then
-            EXTRA="$EXTRA --openai-reasoning-effort=$REASONING"
+            PYTEST_ARGS+=("--openai-reasoning-effort=$REASONING")
           fi
           if [ -n "$USER_EXTRA" ]; then
-            EXTRA="$EXTRA $USER_EXTRA"
+            # USER_EXTRA is split on whitespace into discrete args. Users with
+            # workflow_dispatch access who want spaces inside a single arg can
+            # escape with quotes inside the input, but the typical use is
+            # things like `-k density`.
+            # shellcheck disable=SC2086
+            read -r -a USER_ARGS <<< "$USER_EXTRA"
+            PYTEST_ARGS+=("${USER_ARGS[@]}")
           fi
 
-          echo "Model:        $MODEL"
-          echo "Tier:         $TIER"
-          echo "Category:     ${CATEGORY:-(all)}"
-          echo "Reasoning:    ${REASONING:-(default)}"
-          echo "PYTEST_EXTRA: $EXTRA"
+          printf 'Model:        %s\n' "$MODEL"
+          printf 'Tier:         %s\n' "$TIER"
+          printf 'Category:     %s\n' "${CATEGORY:-(all)}"
+          printf 'Reasoning:    %s\n' "${REASONING:-(default)}"
+          printf 'Pytest args:  %s\n' "${PYTEST_ARGS[*]}"
 
-          make evals MODEL="$MODEL" PYTEST_EXTRA="$EXTRA"
+          uv run --group test \
+            --with langchain-anthropic \
+            --with langchain-deepseek \
+            --with langchain-fireworks \
+            --with langchain-google-genai \
+            --with langchain-groq \
+            --with langchain-mistralai \
+            --with langchain-nvidia-ai-endpoints \
+            --with langchain-ollama \
+            --with langchain-openai \
+            --with langchain-openrouter \
+            --with langchain-xai \
+            pytest tests/evals "${PYTEST_ARGS[@]}"
