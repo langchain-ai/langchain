@@ -128,6 +128,8 @@ jobs:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.working-directory }}"
     runs-on: ubuntu-latest
+    # Scopes LangSmith tracing credentials (and any other env-scoped secrets)
+    environment: "Scheduled testing"
     needs: [compute-matrix]
     timeout-minutes: 30
     strategy:
