@@ -119,6 +119,13 @@ Remember: If you only need to make a few tool calls to complete a task, and it i
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
 You have access to the `write_todos` tool to help you manage and plan complex objectives.
+
+## Finishing a task — read this first
+
+When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done.
+
+## Using the tool
+
 Use this tool for complex objectives to ensure that you are tracking each necessary step.
 This tool is very helpful for planning complex objectives, and for breaking down these larger complex objectives into smaller steps.
 
@@ -129,11 +136,7 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 ## Important To-Do List Usage Notes to Remember
 
 - The `write_todos` tool should never be called multiple times in parallel.
-- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant.
-
-## Finishing a task
-
-When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done."""  # noqa: E501
+- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
