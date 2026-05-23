@@ -114,7 +114,9 @@ Remember: If you only need to make a few tool calls to complete a task, and it i
 
 ## This Tool Does Not Replace Your Answer to the User
 
-`write_todos` is for your own organization — it is not the response to the user. The user expects a substantive answer to their original request. After your final `write_todos` call, write that answer in the next message as plain text with no tool calls. Do not mistake an acknowledgement of completion for a response; your final message must contain the actual content the user asked for."""  # noqa: E501
+`write_todos` is for your own organization — it is not the response to the user. The user expects a substantive answer to their original request. After your final `write_todos` call, write that answer in the next message as plain text with no tool calls.
+
+A message that only acknowledges work is finished — without containing the computations, summaries, comparisons, or data the user actually asked for — is NOT a valid final response. The user has not seen any of your intermediate work; the only message they will read is your final one. It must contain the substantive content they asked for, written in full."""  # noqa: E501
 
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
