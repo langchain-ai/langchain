@@ -31,6 +31,22 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 ```bash
 pip install langchain
 # or
+
+
+## Quick Start
+
+Install with:
+```bash
+pip install langchain
+```
+
+Or clone and run:
+```bash
+git clone https://github.com/langchain-ai/langchain.git
+cd langchain
+pip install .
+```
+
 uv add langchain
 ```
 
