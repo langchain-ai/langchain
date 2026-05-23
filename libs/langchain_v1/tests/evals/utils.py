@@ -177,6 +177,39 @@ class FinalTextExcludes(SuccessAssertion):
 
 
 @dataclass(frozen=True)
+class FinalTextContainsAny(SuccessAssertion):
+    """Assert that the final AIMessage contains AT LEAST ONE of these substrings.
+
+    Useful when a behavior can be expressed in several equivalent phrasings
+    (e.g., "unknown" / "no data" / "n/a" / "unable" for "value is missing").
+    The any-of group still proves the behavior — a model that hallucinates
+    instead of acknowledging the gap wouldn't include any of these phrases.
+    """
+
+    texts: tuple[str, ...]
+    case_insensitive: bool = False
+
+    def check(self, trajectory: AgentTrajectory) -> bool:
+        haystack = _normalize(trajectory.final_text)
+        if self.case_insensitive:
+            haystack = haystack.lower()
+        for t in self.texts:
+            needle = _normalize(t)
+            if self.case_insensitive:
+                needle = needle.lower()
+            if needle in haystack:
+                return True
+        return False
+
+    def describe_failure(self, trajectory: AgentTrajectory) -> str:
+        return (
+            f"Expected final text to contain at least one of {list(self.texts)!r} "
+            f"(case_insensitive={self.case_insensitive}); got: "
+            f"{_normalize(trajectory.final_text)!r}"
+        )
+
+
+@dataclass(frozen=True)
 class FinalTextMinLength(SuccessAssertion):
     """Assert that the final AIMessage text is at least ``n`` chars after strip."""
 
@@ -289,6 +322,13 @@ def final_text_contains(text: str, *, case_insensitive: bool = False) -> FinalTe
 
 def final_text_excludes(text: str, *, case_insensitive: bool = False) -> FinalTextExcludes:
     return FinalTextExcludes(text=text, case_insensitive=case_insensitive)
+
+
+def final_text_contains_any(
+    *texts: str, case_insensitive: bool = False
+) -> FinalTextContainsAny:
+    """Assert the final text contains at least one of ``texts``."""
+    return FinalTextContainsAny(texts=tuple(texts), case_insensitive=case_insensitive)
 
 
 def final_text_min_length(n: int) -> FinalTextMinLength:

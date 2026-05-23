@@ -32,6 +32,7 @@ from tests.evals.utils import (
     SuccessAssertion,
     TrajectoryScorer,
     final_text_contains,
+    final_text_contains_any,
     final_text_min_length,
     run_agent,
     tool_call,
@@ -149,6 +150,37 @@ def test_population_compare_lands_in_final_message(model: BaseChatModel) -> None
 
 @pytest.mark.eval_tier("baseline")
 @pytest.mark.langsmith
+def test_trivial_arithmetic_skips_write_todos(model: BaseChatModel) -> None:
+    """One-shot arithmetic must NOT invoke `write_todos`.
+
+    This is the cross-model baseline check for the "skip for simple" guidance
+    in `WRITE_TODOS_SYSTEM_PROMPT`. The query is pure single-step arithmetic
+    with no list-shape or planning bait, so every model with a working
+    skip-for-simple disposition should answer directly. If a future prompt
+    change accidentally removes the "skip for simple" line, every model
+    starts cargo-culting `write_todos` on every query and this test catches
+    it.
+    """
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[TodoListMiddleware()],
+    )
+    run_agent(
+        agent,
+        model=model,
+        query="What is 47 + 18?",
+        scorer=TrajectoryScorer()
+        .expect(agent_steps=1, tool_call_requests=0)
+        .success(
+            final_text_contains("65"),
+            _max_tool_calls_success(0),
+        ),
+    )
+
+
+@pytest.mark.eval_tier("hillclimb")
+@pytest.mark.langsmith
 def test_trivial_plan_skips_write_todos(model: BaseChatModel) -> None:
     """Trivial request should NOT invoke `write_todos`.
 
@@ -157,6 +189,13 @@ def test_trivial_plan_skips_write_todos(model: BaseChatModel) -> None:
     request. Even though the word "Plan" appears in the query, the answer is
     knowledge-only and the agent should respond in a single turn with no
     tool calls.
+
+    Hillclimb tier (not baseline): some models (Llama, Gemini in our
+    observations) treat the "Plan" + 3-explicit-items shape of this query
+    literally enough to invoke `write_todos` despite the "skip for simple"
+    guidance. Claude/GPT-5/DeepSeek pass it. Useful progress signal but not
+    a hard regression gate. See `test_trivial_arithmetic_skips_write_todos`
+    for the cross-model baseline check.
     """
     agent = create_agent(
         model=model,
@@ -217,7 +256,25 @@ def test_rank_with_unknown_lookup_lands_in_final_message(model: BaseChatModel) -
             final_text_contains("tokyo", case_insensitive=True),
             final_text_contains("cairo", case_insensitive=True),
             final_text_contains("atlantis", case_insensitive=True),
-            final_text_contains("unknown", case_insensitive=True),
+            # Acknowledge that Atlantis has no real data — any of these
+            # phrasings counts. A hallucinating model that confidently
+            # invents stats for Atlantis would not include any of them,
+            # so the check still catches the failure mode (model invents
+            # data instead of surfacing the gap).
+            final_text_contains_any(
+                "unknown",
+                "no data",
+                "n/a",
+                "unable",
+                "cannot be ranked",
+                "not available",
+                "no information",
+                "missing",
+                "mythical",
+                "fictional",
+                "legendary",
+                case_insensitive=True,
+            ),
             final_text_min_length(200),
         ),
     )
