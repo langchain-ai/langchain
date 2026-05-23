@@ -54,6 +54,26 @@ def pytest_addoption(parser: pytest.Parser) -> None:
             "skip the reasoning preamble for faster/cheaper runs."
         ),
     )
+    parser.addoption(
+        "--eval-tier",
+        action="append",
+        default=[],
+        help=(
+            "Run only evals tagged with this `eval_tier(...)` value. Repeatable. "
+            "Example: --eval-tier baseline --eval-tier hillclimb. "
+            'Standard `-m` filtering does not work because `eval_tier("name")` '
+            "is not a pytest marker boolean expression."
+        ),
+    )
+    parser.addoption(
+        "--eval-category",
+        action="append",
+        default=[],
+        help=(
+            "Run only evals tagged with this `eval_category(...)` value. "
+            "Repeatable. Example: --eval-category middleware/todo"
+        ),
+    )
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -75,8 +95,29 @@ def pytest_configure(config: pytest.Config) -> None:
     )
 
 
+def _filter_by_marker_arg(
+    items: list[pytest.Item], *, include: list[str], marker_name: str
+) -> None:
+    """Keep only items whose `marker_name(...)` first arg is in ``include``.
+
+    An empty include list means "include everything". When a test is decorated
+    with `@pytest.mark.<marker_name>("value")`, this helper keeps it iff
+    ``value`` is in ``include``. Used to make `--eval-tier baseline` and
+    `--eval-category middleware/todo` actually filter the test set, since
+    pytest's `-m` flag does not understand `<marker>("arg")` syntax.
+    """
+    if not include:
+        return
+    kept: list[pytest.Item] = []
+    for item in items:
+        marker = item.get_closest_marker(marker_name)
+        if marker and marker.args and marker.args[0] in include:
+            kept.append(item)
+    items[:] = kept
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Fail fast if `--model` was not provided when any eval test was collected."""
+    """Fail fast on missing --model, then filter by --eval-tier / --eval-category."""
     if not items:
         return
     if not config.getoption("--model"):
@@ -85,6 +126,17 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             "Example: pytest tests/evals --model claude-sonnet-4-6",
             returncode=2,
         )
+
+    _filter_by_marker_arg(
+        items,
+        include=list(config.getoption("--eval-tier") or []),
+        marker_name="eval_tier",
+    )
+    _filter_by_marker_arg(
+        items,
+        include=list(config.getoption("--eval-category") or []),
+        marker_name="eval_category",
+    )
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:

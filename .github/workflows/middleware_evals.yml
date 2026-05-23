@@ -178,19 +178,15 @@ jobs:
           # never interpreted as shell.
           PYTEST_ARGS=(-v --tb=short --model "$MODEL")
 
-          MARKER=""
+          # Filter via the custom --eval-tier / --eval-category options
+          # registered in tests/evals/conftest.py. Pytest's `-m` flag does
+          # not understand `marker("arg")` syntax, so the conftest filters
+          # tests by marker argument value directly.
           if [ "$TIER" != "all" ]; then
-            MARKER="eval_tier(\"$TIER\")"
+            PYTEST_ARGS+=(--eval-tier "$TIER")
           fi
           if [ -n "$CATEGORY" ]; then
-            if [ -n "$MARKER" ]; then
-              MARKER="$MARKER and eval_category(\"$CATEGORY\")"
-            else
-              MARKER="eval_category(\"$CATEGORY\")"
-            fi
-          fi
-          if [ -n "$MARKER" ]; then
-            PYTEST_ARGS+=(-m "$MARKER")
+            PYTEST_ARGS+=(--eval-category "$CATEGORY")
           fi
           if [ -n "$REASONING" ]; then
             PYTEST_ARGS+=("--openai-reasoning-effort=$REASONING")
