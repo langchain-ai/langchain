@@ -116,7 +116,7 @@ jobs:
   build:
     name: 📦 Build distribution
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
-    environment: Scheduled testing
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -274,6 +274,7 @@ jobs:
     needs:
       - build
       - release-notes
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -433,6 +434,7 @@ jobs:
       - build
       - release-notes
       - pre-release-checks
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -475,6 +477,7 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -638,6 +641,7 @@ jobs:
       # - test-prior-published-packages-against-new-core
       # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -685,6 +689,7 @@ jobs:
       - publish
     # Run if all needed jobs succeeded or were skipped
     if: ${{ !cancelled() && !failure() }}
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to
