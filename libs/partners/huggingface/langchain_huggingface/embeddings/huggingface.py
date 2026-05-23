@@ -74,7 +74,18 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             raise ImportError(msg) from exc
 
         if self.model_kwargs.get("backend", "torch") == "ipex":
-            if not is_optimum_intel_available() or not is_ipex_available():
+            if not is_optimum_intel_available():
+                msg = f"Backend: ipex {IMPORT_ERROR.format('optimum[ipex]')}"
+                raise ImportError(msg)
+
+            if is_optimum_intel_version(">=", "2.0"):
+                msg = (
+                    "IPEX support has been removed in optimum-intel v2. "
+                    "Please downgrade optimum-intel or switch backend."
+                )
+                raise ImportError(msg)
+
+            if not is_ipex_available():
                 msg = f"Backend: ipex {IMPORT_ERROR.format('optimum[ipex]')}"
                 raise ImportError(msg)
 
