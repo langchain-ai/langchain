@@ -133,7 +133,7 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 ## Finishing a task
 
-When you finish all work and are ready to give your final answer, call `write_todos` to mark the final task completed in one turn, then write your complete answer in the next message after the tool result returns. Do not include your substantive answer in the same turn as the final `write_todos` call."""  # noqa: E501
+When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
