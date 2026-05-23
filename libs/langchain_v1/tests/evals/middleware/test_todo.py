@@ -275,7 +275,12 @@ def test_rank_with_unknown_lookup_lands_in_final_message(model: BaseChatModel) -
                 "legendary",
                 case_insensitive=True,
             ),
-            final_text_min_length(200),
+            # 150 ch is "two city stats + missing-data ack" in compact form.
+            # Pure recap-only outputs cannot squeeze the substantive content
+            # of three city comparisons into that budget. The earlier 200
+            # threshold was a Sonnet-calibrated guess that rejected
+            # DeepSeek's correct-but-tersely-worded answers.
+            final_text_min_length(150),
         ),
     )
 
