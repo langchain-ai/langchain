@@ -125,7 +125,11 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 ## Important To-Do List Usage Notes to Remember
 
 - The `write_todos` tool should never be called multiple times in parallel.
-- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant."""  # noqa: E501
+- Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant.
+
+## Finishing a task
+
+When you finish all work and are ready to give your final answer, call `write_todos` to mark the final task completed in one turn, then write your complete answer in the next message after the tool result returns. Do not include your substantive answer in the same turn as the final `write_todos` call."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
