@@ -68,7 +68,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
-            elif isinstance(merged[right_k], int):
+            elif isinstance(merged[right_k], (int, float)):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to
