@@ -110,11 +110,7 @@ It is important to skip using this tool when:
     - Use clear, descriptive task names
 
 Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully
-Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all.
-
-## When You Finish
-
-`write_todos` tracks your work; it does not deliver the answer. Whatever the user asked for — computations, summaries, comparisons, data — must appear as text content in a message after your final `write_todos` call. Marking the last todo complete is not itself an answer to the user."""  # noqa: E501
+Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all."""  # noqa: E501
 
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
