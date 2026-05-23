@@ -132,6 +132,13 @@ jobs:
     environment: "Scheduled testing"
     needs: [compute-matrix]
     timeout-minutes: 30
+    # Serialize same-package shards across workflow runs so a per-package
+    # manual dispatch doesn't race the scheduled "all libs" run against the
+    # same live API credentials. Keyed per (working-directory, python-version)
+    # so the 3.10/3.13 matrix legs within one run still execute in parallel.
+    concurrency:
+      group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
