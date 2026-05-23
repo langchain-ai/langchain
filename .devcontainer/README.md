@@ -33,7 +33,7 @@ If you already have VS Code and Docker installed, you can use the button above t
 
 Alternatively you can also follow these steps to open this repo in a container using the VS Code Dev Containers extension:
 
-1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
+1. If this is your first time using a development container, please ensure your system meets the prerequisites (for example, having Docker installed) described in the getting started steps.
 
 2. Open a locally cloned copy of the code:
 
