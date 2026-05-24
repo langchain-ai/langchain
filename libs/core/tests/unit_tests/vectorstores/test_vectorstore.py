@@ -177,6 +177,13 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
 
+    # Generator input should not be exhausted before documents are created
+    gen_ids = store.add_texts(text for text in ["alpha", "beta"])
+    assert store.get_by_ids(gen_ids) == [
+        Document(id=gen_ids[0], page_content="alpha"),
+        Document(id=gen_ids[1], page_content="beta"),
+    ]
+
 
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
@@ -233,6 +240,13 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
     assert await store.aget_by_ids(ids_2) == [
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
+    ]
+
+    # Generator input should not be exhausted before documents are created
+    gen_ids = await store.aadd_texts(text for text in ["alpha", "beta"])
+    assert await store.aget_by_ids(gen_ids) == [
+        Document(id=gen_ids[0], page_content="alpha"),
+        Document(id=gen_ids[1], page_content="beta"),
     ]
 
 
