@@ -4196,6 +4196,62 @@ def test_html_splitter_replacement_order() -> None:
     assert content == " ".join([f"Hello{i}" for i in range(1, 15)])
 
 
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_injected_chunk_splitter() -> None:
+    """An injected `chunk_splitter` drives further splitting of oversize chunks."""
+    inner = RecursiveCharacterTextSplitter(
+        chunk_size=5,
+        chunk_overlap=0,
+        length_function=lambda s: len(s.split()),
+    )
+    html_content = (
+        "<h1>Section</h1>"
+        "<p>one two three four five six seven eight nine ten eleven twelve.</p>"
+    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            chunk_splitter=inner,
+        )
+    documents = splitter.split_text(html_content)
+
+    assert len(documents) > 1
+    for doc in documents:
+        assert len(doc.page_content.split()) <= 5
+        assert doc.metadata == {"Header 1": "Section"}
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_chunk_splitter_conflict_raises() -> None:
+    """Passing `chunk_splitter` alongside a non-default sizing arg is rejected."""
+    inner = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=0)
+    with (
+        suppress_langchain_beta_warning(),
+        pytest.raises(ValueError, match="mutually exclusive"),
+    ):
+        HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=500,
+            chunk_splitter=inner,
+        )
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_default_chunk_splitter_behavior_unchanged() -> None:
+    """Without `chunk_splitter`, the default character-based path still applies."""
+    html_content = "<h1>Section</h1><p>" + ("word " * 200) + "</p>"
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=100,
+            chunk_overlap=0,
+        )
+    documents = splitter.split_text(html_content)
+    assert len(documents) > 1
+    for doc in documents:
+        assert len(doc.page_content) <= 120
+
+
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     """Test that regex lookahead separator is not re-inserted when merging."""
     text = "SCE191 First chunk. SCE103 Second chunk."

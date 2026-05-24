@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
     from bs4.element import ResultSet
 
+    from langchain_text_splitters.base import TextSplitter
+
 try:
     import nltk
 
@@ -608,6 +610,27 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             custom_handlers={"iframe": custom_iframe_extractor}
         )
         ```
+
+        To use a tokenizer-aware length function (or any other custom
+        `TextSplitter`) for further splitting oversize chunks, build the inner
+        splitter separately and pass it via `chunk_splitter`:
+
+        ```python
+        from langchain_text_splitters import (
+            HTMLSemanticPreservingSplitter,
+            RecursiveCharacterTextSplitter,
+        )
+
+        inner = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+            tokenizer=qwen_tokenizer,
+            chunk_size=512,
+            chunk_overlap=32,
+        )
+        text_splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+            chunk_splitter=inner,
+        )
+        ```
     """  # noqa: D214
 
     def __init__(
@@ -631,6 +654,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         denylist_tags: list[str] | None = None,
         preserve_parent_metadata: bool = False,
         keep_separator: bool | Literal["start", "end"] = True,
+        chunk_splitter: TextSplitter | None = None,
     ) -> None:
         """Initialize splitter.
 
@@ -665,10 +689,20 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 `transform_documents/atransform_documents()`.
             keep_separator: Whether separators should be at the beginning of a chunk, at
                 the end, or not at all.
+            chunk_splitter: Optional pre-built `TextSplitter` used to further split
+                chunks that exceed `max_chunk_size`. Use this to plug in a
+                tokenizer-aware splitter, e.g.
+                `RecursiveCharacterTextSplitter.from_huggingface_tokenizer(...)`.
+                Mutually exclusive with `max_chunk_size`, `chunk_overlap`,
+                `separators`, and `keep_separator` — when `chunk_splitter` is
+                provided, those arguments must be left at their defaults.
 
         Raises:
             ImportError: If BeautifulSoup or NLTK (when stopword removal is enabled)
                 is not installed.
+            ValueError: If `chunk_splitter` is provided together with any of
+                `max_chunk_size`, `chunk_overlap`, `separators`, or
+                `keep_separator` set to a non-default value.
         """
         if not _HAS_BS4:
             msg = (
@@ -678,7 +712,6 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             raise ImportError(msg)
 
         self._headers_to_split_on = sorted(headers_to_split_on)
-        self._max_chunk_size = max_chunk_size
         self._elements_to_preserve = elements_to_preserve or []
         self._preserve_links = preserve_links
         self._preserve_images = preserve_images
@@ -703,7 +736,32 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 for tag in denylist_tags
                 if tag not in [header[0] for header in headers_to_split_on]
             ]
-        if separators:
+        if chunk_splitter is not None:
+            conflicting = [
+                name
+                for name, value, default in (
+                    ("max_chunk_size", max_chunk_size, 1000),
+                    ("chunk_overlap", chunk_overlap, 0),
+                    ("separators", separators, None),
+                    ("keep_separator", keep_separator, True),
+                )
+                if value != default
+            ]
+            if conflicting:
+                msg = (
+                    "`chunk_splitter` is mutually exclusive with "
+                    f"{', '.join(repr(c) for c in conflicting)}. "
+                    "Configure those options on the injected splitter instead."
+                )
+                raise ValueError(msg)
+            self._recursive_splitter = chunk_splitter
+            # `TextSplitter` exposes no public accessor; `_chunk_size` is the
+            # canonical place every subclass stores its size budget. Reading it
+            # here keeps the recurse-or-not gate aligned with the injected
+            # splitter's own configuration.
+            self._max_chunk_size = chunk_splitter._chunk_size  # noqa: SLF001
+        elif separators:
+            self._max_chunk_size = max_chunk_size
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 separators=separators,
                 keep_separator=keep_separator,
@@ -711,6 +769,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 chunk_overlap=chunk_overlap,
             )
         else:
+            self._max_chunk_size = max_chunk_size
             self._recursive_splitter = RecursiveCharacterTextSplitter(
                 keep_separator=keep_separator,
                 chunk_size=max_chunk_size,
