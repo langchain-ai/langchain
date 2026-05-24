@@ -2902,7 +2902,7 @@ def test_router_runnable(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     parent_run = next(r for r in tracer.runs if r.parent_run_id is None)
     assert len(parent_run.child_runs) == 2
     router_run = parent_run.child_runs[1]
-    assert router_run.name == "RunnableSequence"  # TODO: should be RunnableRouter
+    assert router_run.name == "RunnableRouter"
     assert len(router_run.child_runs) == 2
 
 
@@ -3223,14 +3223,6 @@ def test_map_stream() -> None:
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
     ]
-    if not (
-        # TODO: Rewrite properly the statement above
-        streamed_chunks[0] == {"llm": "i"}
-        or {"chat": _any_id_ai_message_chunk(content="i")}
-    ):
-        msg = f"Got an unexpected chunk: {streamed_chunks[0]}"
-        raise AssertionError(msg)
-
     assert len(streamed_chunks) == len(llm_res) + len(chat_res)
 
 
