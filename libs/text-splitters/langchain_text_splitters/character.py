@@ -52,7 +52,13 @@ class CharacterTextSplitter(TextSplitter):
         #    - else -> re-insert literal separator
         merge_sep = ""
         if not (self._keep_separator or is_lookaround):
-            merge_sep = self._separator
+            if self._is_separator_regex:
+                # Use the actual matched text, not the raw regex pattern.
+                # Inserting the pattern string (e.g. r"\s") as literal text is wrong.
+                m = re.search(sep_pattern, text)
+                merge_sep = m.group(0) if m else ""
+            else:
+                merge_sep = self._separator
 
         # 5. Merge adjacent splits and return
         return self._merge_splits(splits, merge_sep)
@@ -127,7 +133,14 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
         # Now go merging things, recursively splitting longer texts.
         good_splits = []
-        separator_ = "" if self._keep_separator else separator
+        if self._keep_separator:
+            separator_ = ""
+        elif self._is_separator_regex:
+            # Use the actual text that matched the regex, not the pattern string itself.
+            m = re.search(separator_, text)
+            separator_ = m.group(0) if m else ""
+        else:
+            separator_ = separator
         for s in splits:
             if self._length_function(s) < self._chunk_size:
                 good_splits.append(s)
