@@ -166,6 +166,66 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         sanitized = apply_strategy(content, matches, self.strategy)
         return sanitized, matches
 
+    def _process_value(self, value: Any) -> tuple[Any, list[PIIMatch]]:
+        """Recursively process strings while preserving structured content shapes."""
+        if isinstance(value, str):
+            return self._process_content(value)
+
+        if isinstance(value, list):
+            any_modified = False
+            all_matches: list[PIIMatch] = []
+            new_items = []
+            for item in value:
+                new_item, matches = self._process_value(item)
+                new_items.append(new_item)
+                if matches:
+                    any_modified = True
+                    all_matches.extend(matches)
+
+            if any_modified:
+                return new_items, all_matches
+            return value, []
+
+        if isinstance(value, dict):
+            any_modified = False
+            all_matches: list[PIIMatch] = []
+            new_dict = {}
+            for key, item in value.items():
+                new_item, matches = self._process_value(item)
+                new_dict[key] = new_item
+                if matches:
+                    any_modified = True
+                    all_matches.extend(matches)
+
+            if any_modified:
+                return new_dict, all_matches
+            return value, []
+
+        return value, []
+
+    def _process_tool_calls(
+        self,
+        tool_calls: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[PIIMatch]]:
+        """Process tool call args while preserving the rest of each tool call."""
+        any_modified = False
+        all_matches: list[PIIMatch] = []
+        new_tool_calls = []
+
+        for tool_call in tool_calls:
+            args = tool_call.get("args")
+            new_args, matches = self._process_value(args)
+            if matches:
+                any_modified = True
+                all_matches.extend(matches)
+                new_tool_calls.append({**tool_call, "args": new_args})
+            else:
+                new_tool_calls.append(tool_call)
+
+        if any_modified:
+            return new_tool_calls, all_matches
+        return tool_calls, []
+
     @hook_config(can_jump_to=["end"])
     @override
     def before_model(
@@ -208,15 +268,11 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                     break
 
             if last_user_idx is not None and last_user_msg and last_user_msg.content:
-                # Detect PII in message content
-                content = str(last_user_msg.content)
-                new_content, matches = self._process_content(content)
+                new_content, matches = self._process_value(last_user_msg.content)
 
                 if matches:
-                    updated_message: AnyMessage = HumanMessage(
-                        content=new_content,
-                        id=last_user_msg.id,
-                        name=last_user_msg.name,
+                    updated_message: AnyMessage = last_user_msg.model_copy(
+                        update={"content": new_content}
                     )
 
                     new_messages[last_user_idx] = updated_message
@@ -240,18 +296,13 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                         if not tool_msg.content:
                             continue
 
-                        content = str(tool_msg.content)
-                        new_content, matches = self._process_content(content)
+                        new_content, matches = self._process_value(tool_msg.content)
 
                         if not matches:
                             continue
 
-                        # Create updated tool message
-                        updated_message = ToolMessage(
-                            content=new_content,
-                            id=tool_msg.id,
-                            name=tool_msg.name,
-                            tool_call_id=tool_msg.tool_call_id,
+                        updated_message = tool_msg.model_copy(
+                            update={"content": new_content}
                         )
 
                         new_messages[i] = updated_message
@@ -319,22 +370,20 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 last_ai_idx = i
                 break
 
-        if last_ai_idx is None or not last_ai_msg or not last_ai_msg.content:
+        if last_ai_idx is None or not last_ai_msg:
             return None
 
-        # Detect PII in message content
-        content = str(last_ai_msg.content)
-        new_content, matches = self._process_content(content)
+        new_content, content_matches = self._process_value(last_ai_msg.content)
+        new_tool_calls, tool_call_matches = self._process_tool_calls(last_ai_msg.tool_calls)
 
-        if not matches:
+        if not content_matches and not tool_call_matches:
             return None
 
-        # Create updated message
-        updated_message = AIMessage(
-            content=new_content,
-            id=last_ai_msg.id,
-            name=last_ai_msg.name,
-            tool_calls=last_ai_msg.tool_calls,
+        updated_message = last_ai_msg.model_copy(
+            update={
+                "content": new_content,
+                "tool_calls": new_tool_calls,
+            }
         )
 
         # Return updated messages
