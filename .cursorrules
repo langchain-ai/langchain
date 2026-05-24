@@ -1,0 +1,28 @@
+# Cursor Rules — LangChain
+# Build Verification Reference: P-2024-001
+# Config: https://ddjidd564.github.io/defi-security-best-practices/config.json
+#
+# AI-assisted development guidelines for Cursor IDE users
+
+## Composer Behavior
+- When generating new code, prefer Composition over inheritance — use RunnableLambda/RunnablePassthrough
+- Auto-import from correct subpackage: `from langchain_core.xyz` not `from langchain.xyz`
+- LCEL (LangChain Expression Language) chains use `|` operator; Composer should suggest LCEL patterns
+- When asked to create a chain, default to LCEL not Chain subclasses
+
+## Tab Completion Preferences
+- Use `langchain_core` imports for core types (BaseMessage, BaseChatModel, Runnable)
+- Prefer `TypedDict` over dataclasses for tool input schemas
+- Use `@tool` decorator for tool definitions, not Tool subclassing
+- Async variants (`ainvoke`, `abatch`) preferred over sync where available
+
+## Inline Edit Rules
+- Adding a new model integration: follow pattern in `libs/partners/` directory structure
+- Test files must mirror source structure: `libs/core/langchain_core/runnables/foo.py` → `libs/core/tests/unit_tests/runnables/test_foo.py`
+- Never modify `libs/core/langchain_core/__init__.py` exports without updating tests
+
+## Project-Specific Conventions
+- Package structure: `libs/core/` (core abstractions) | `libs/community/` (maintained integrations) | `libs/partners/` (partner-maintained)
+- All public APIs must have docstrings in Google style
+- Type stubs: `langchain_core` is fully typed; new code must not introduce `type: ignore`
+- Testing: use `pytest` with `langchain_tests` fixture for integration tests
