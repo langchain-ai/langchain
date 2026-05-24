@@ -401,6 +401,51 @@ class TestPIIMiddlewareIntegration:
         assert result is not None
         assert "[REDACTED_EMAIL]" in result["messages"][0].content
 
+    def test_after_model_redacts_tool_call_args_when_content_is_empty(self) -> None:
+        """Tool-call-only AI messages should still be scrubbed by `after_model`."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_output=True
+        )
+
+        msg = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name="send_email",
+                    args={"to": "alice@example.com"},
+                    id="call_123",
+                    type="tool_call",
+                )
+            ],
+        )
+        state = AgentState[Any](messages=[HumanMessage("hi"), msg])
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][-1]
+        assert redacted.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+        assert msg.tool_calls[0]["args"] == {"to": "alice@example.com"}
+
+    def test_before_model_preserves_structured_input_content(self) -> None:
+        """Structured human-message content should stay structured after redaction."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=True, apply_to_output=False
+        )
+
+        msg = HumanMessage(
+            content=[{"type": "text", "text": "Reach me at alice@example.com"}]
+        )
+        state = AgentState[Any](messages=[msg])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][0]
+        assert isinstance(redacted.content, list)
+        assert redacted.content[0]["text"] == "Reach me at [REDACTED_EMAIL]"
+        assert msg.content[0]["text"] == "Reach me at alice@example.com"
+
     def test_apply_to_both(self) -> None:
         """Test that middleware processes both input and output."""
         middleware = PIIMiddleware(
@@ -416,6 +461,25 @@ class TestPIIMiddlewareIntegration:
         state = AgentState[Any](messages=[AIMessage("My email is ai@example.com")])
         result = middleware.after_model(state, Runtime())
         assert result is not None
+
+    def test_after_model_preserves_structured_output_content(self) -> None:
+        """Structured AI-message content should stay structured after redaction."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_output=True
+        )
+
+        msg = AIMessage(
+            content=[{"type": "text", "text": "Reach me at ai@example.com"}]
+        )
+        state = AgentState[Any](messages=[msg])
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][0]
+        assert isinstance(redacted.content, list)
+        assert redacted.content[0]["text"] == "Reach me at [REDACTED_EMAIL]"
+        assert msg.content[0]["text"] == "Reach me at ai@example.com"
 
     def test_no_pii_returns_none(self) -> None:
         """Test that middleware returns None when no PII detected."""
@@ -459,6 +523,36 @@ class TestPIIMiddlewareIntegration:
         assert isinstance(tool_msg, ToolMessage)
         assert "[REDACTED_EMAIL]" in tool_msg.content
         assert "john@example.com" not in tool_msg.content
+
+    def test_apply_to_tool_results_preserves_structured_content(self) -> None:
+        """Structured tool results should stay structured after redaction."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_tool_results=True
+        )
+
+        tool_msg = ToolMessage(
+            content=[{"type": "text", "text": "Found: john@example.com"}],
+            tool_call_id="call_123",
+        )
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("Search for John"),
+                AIMessage(
+                    content="",
+                    tool_calls=[ToolCall(name="search", args={}, id="call_123", type="tool_call")],
+                ),
+                tool_msg,
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][2]
+        assert isinstance(redacted, ToolMessage)
+        assert isinstance(redacted.content, list)
+        assert redacted.content[0]["text"] == "Found: [REDACTED_EMAIL]"
+        assert tool_msg.content[0]["text"] == "Found: john@example.com"
 
     def test_apply_to_tool_results_mask_strategy(self) -> None:
         """Test that mask strategy works for tool results."""

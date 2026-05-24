@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
@@ -45,6 +45,106 @@ before any text is released downstream. 128 comfortably covers the built-in
 detectors (the credit-card regex tops out at 19 characters; URLs and emails
 are typically well under 100) while bounding first-token latency.
 """
+
+
+def _redact_tool_call_list(
+    calls: list[Any] | None, *, rule: ResolvedRedactionRule
+) -> tuple[list[Any], bool]:
+    """Walk a list of tool-call (or invalid-tool-call) dicts."""
+    if not calls:
+        return calls or [], False
+    new_calls: list[Any] = []
+    changed = False
+    for tc in calls:
+        if isinstance(tc, dict) and "args" in tc and tc["args"] is not None:
+            redacted = _redact_value(tc["args"], rule=rule)
+            if redacted != tc["args"]:
+                new_tc = dict(tc)
+                new_tc["args"] = redacted
+                new_calls.append(new_tc)
+                changed = True
+                continue
+        new_calls.append(tc)
+    return new_calls, changed
+
+
+def _redact_value(value: Any, *, rule: ResolvedRedactionRule) -> Any:
+    """Recursively redact PII in string leaves of a nested structure.
+
+    Returns a new value where every `str` leaf that contains PII has
+    been replaced (or emptied under `block`). Non-string leaves and
+    the structure itself are preserved.
+
+    `BaseMessage` payloads (typically `ToolMessage` from
+    `tool-finished.output`, or any message reached via the `values`
+    channel) return a fresh copy with `.content` redacted plus
+    `AIMessage.tool_calls[*].args` / `invalid_tool_calls[*].args`
+    walked. The original object stays intact for state-level
+    enforcers (`after_model`, `before_model` with
+    `apply_to_tool_results`) to act on independently.
+
+    Scope mirrors the pre-streaming state-level surfaces:
+    `.content` (string or list-of-content-blocks) and `tool_calls`
+    args. Other message attributes (`additional_kwargs`,
+    `response_metadata`, `ToolMessage.artifact`) are intentionally
+    not walked here — they aren't scrubbed in graph state by the
+    existing hooks, so scrubbing them on the wire would create
+    a wire/state divergence.
+    """
+    if isinstance(value, str):
+        if not value:
+            return value
+        matches = rule.detector(value)
+        if not matches:
+            return value
+        # `apply_strategy` raises `PIIDetectionError` under `block`
+        # — the run fails immediately rather than buffering until a
+        # state-level hook can raise.
+        return apply_strategy(value, matches, rule.strategy)
+    if isinstance(value, BaseMessage):
+        return _redact_base_message(value, rule=rule)
+    if isinstance(value, dict):
+        return {k: _redact_value(v, rule=rule) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_redact_value(v, rule=rule) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_value(v, rule=rule) for v in value)
+    return value
+
+
+def _redact_base_message(value: BaseMessage, *, rule: ResolvedRedactionRule) -> BaseMessage:
+    """Return a fresh copy of `value` with PII-carrying surfaces redacted."""
+    update: dict[str, Any] = {}
+
+    content = value.content
+    if isinstance(content, str) and content:
+        matches = rule.detector(content)
+        if matches:
+            update["content"] = apply_strategy(content, matches, rule.strategy)
+    elif isinstance(content, list) and content:
+        # Structured content-blocks shape:
+        # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
+        redacted_content = _redact_value(content, rule=rule)
+        if redacted_content != content:
+            update["content"] = redacted_content
+
+    # `AIMessage.tool_calls` and `.invalid_tool_calls` carry PII in
+    # `args` independently of `.content`. `tool_call.args` is a
+    # dict; `invalid_tool_call.args` is a raw JSON string —
+    # `_redact_value` handles both shapes via the recursion.
+    if isinstance(value, AIMessage):
+        new_tc_list, tc_changed = _redact_tool_call_list(value.tool_calls, rule=rule)
+        if tc_changed:
+            update["tool_calls"] = new_tc_list
+        new_inv_list, inv_changed = _redact_tool_call_list(
+            value.invalid_tool_calls, rule=rule
+        )
+        if inv_changed:
+            update["invalid_tool_calls"] = new_inv_list
+
+    if not update:
+        return value
+    return value.model_copy(update=update)
 
 
 class _PIIStreamTransformer(StreamTransformer):
@@ -218,104 +318,13 @@ class _PIIStreamTransformer(StreamTransformer):
             data["delta"] = self._redact_value(delta)
 
     def _redact_tool_call_list(self, calls: list[Any] | None) -> tuple[list[Any], bool]:
-        """Walk a list of tool-call (or invalid-tool-call) dicts.
-
-        Returns `(new_list, changed)`. Each element's `args` is run
-        through `_redact_value` regardless of its type — `tool_call.args`
-        is a dict, `invalid_tool_call.args` is a raw JSON string, and
-        `_redact_value` handles both shapes uniformly. If nothing
-        changed, returns the input list and `changed=False`.
-        """
-        if not calls:
-            return calls or [], False
-        new_calls: list[Any] = []
-        changed = False
-        for tc in calls:
-            if isinstance(tc, dict) and "args" in tc and tc["args"] is not None:
-                redacted = self._redact_value(tc["args"])
-                if redacted != tc["args"]:
-                    new_tc = dict(tc)
-                    new_tc["args"] = redacted
-                    new_calls.append(new_tc)
-                    changed = True
-                    continue
-            new_calls.append(tc)
-        return new_calls, changed
+        return _redact_tool_call_list(calls, rule=self._rule)
 
     def _redact_value(self, value: Any) -> Any:
-        """Recursively redact PII in string leaves of a nested structure.
-
-        Returns a new value where every `str` leaf that contains PII has
-        been replaced (or emptied under `block`). Non-string leaves and
-        the structure itself are preserved.
-
-        `BaseMessage` payloads (typically `ToolMessage` from
-        `tool-finished.output`, or any message reached via the `values`
-        channel) return a fresh copy with `.content` redacted plus
-        `AIMessage.tool_calls[*].args` / `invalid_tool_calls[*].args`
-        walked. The original object stays intact for state-level
-        enforcers (`after_model`, `before_model` with
-        `apply_to_tool_results`) to act on independently.
-
-        Scope mirrors the pre-streaming state-level surfaces:
-        `.content` (string or list-of-content-blocks) and `tool_calls`
-        args. Other message attributes (`additional_kwargs`,
-        `response_metadata`, `ToolMessage.artifact`) are intentionally
-        not walked here — they aren't scrubbed in graph state by the
-        existing hooks, so scrubbing them on the wire would create
-        a wire/state divergence.
-        """
-        if isinstance(value, str):
-            if not value:
-                return value
-            matches = self._rule.detector(value)
-            if not matches:
-                return value
-            # `apply_strategy` raises `PIIDetectionError` under `block`
-            # — the run fails immediately rather than buffering until a
-            # state-level hook can raise.
-            return apply_strategy(value, matches, self._rule.strategy)
-        if isinstance(value, BaseMessage):
-            return self._redact_base_message(value)
-        if isinstance(value, dict):
-            return {k: self._redact_value(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [self._redact_value(v) for v in value]
-        if isinstance(value, tuple):
-            return tuple(self._redact_value(v) for v in value)
-        return value
+        return _redact_value(value, rule=self._rule)
 
     def _redact_base_message(self, value: BaseMessage) -> BaseMessage:
-        """Return a fresh copy of `value` with PII-carrying surfaces redacted."""
-        update: dict[str, Any] = {}
-
-        content = value.content
-        if isinstance(content, str) and content:
-            matches = self._rule.detector(content)
-            if matches:
-                update["content"] = apply_strategy(content, matches, self._rule.strategy)
-        elif isinstance(content, list) and content:
-            # Structured content-blocks shape:
-            # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
-            redacted_content = self._redact_value(content)
-            if redacted_content != content:
-                update["content"] = redacted_content
-
-        # `AIMessage.tool_calls` and `.invalid_tool_calls` carry PII in
-        # `args` independently of `.content`. `tool_call.args` is a
-        # dict; `invalid_tool_call.args` is a raw JSON string —
-        # `_redact_value` handles both shapes via the recursion.
-        if isinstance(value, AIMessage):
-            new_tc_list, tc_changed = self._redact_tool_call_list(value.tool_calls)
-            if tc_changed:
-                update["tool_calls"] = new_tc_list
-            new_inv_list, inv_changed = self._redact_tool_call_list(value.invalid_tool_calls)
-            if inv_changed:
-                update["invalid_tool_calls"] = new_inv_list
-
-        if not update:
-            return value
-        return value.model_copy(update=update)
+        return _redact_base_message(value, rule=self._rule)
 
     def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
         delta = payload.get("delta")
@@ -660,13 +669,8 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         """Name of the middleware."""
         return f"{self.__class__.__name__}[{self.pii_type}]"
 
-    def _process_content(self, content: str) -> tuple[str, list[PIIMatch]]:
-        """Apply the configured redaction rule to the provided content."""
-        matches = self.detector(content)
-        if not matches:
-            return content, []
-        sanitized = apply_strategy(content, matches, self.strategy)
-        return sanitized, matches
+    def _redact_base_message(self, value: BaseMessage) -> BaseMessage:
+        return _redact_base_message(value, rule=self._resolved_rule)
 
     @hook_config(can_jump_to=["end"])
     @override
@@ -709,19 +713,10 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                     last_user_idx = i
                     break
 
-            if last_user_idx is not None and last_user_msg and last_user_msg.content:
-                # Detect PII in message content
-                content = str(last_user_msg.content)
-                new_content, matches = self._process_content(content)
-
-                if matches:
-                    updated_message: AnyMessage = HumanMessage(
-                        content=new_content,
-                        id=last_user_msg.id,
-                        name=last_user_msg.name,
-                    )
-
-                    new_messages[last_user_idx] = updated_message
+            if last_user_idx is not None and last_user_msg:
+                redacted = self._redact_base_message(last_user_msg)
+                if redacted is not last_user_msg:
+                    new_messages[last_user_idx] = redacted
                     any_modified = True
 
         # Check tool results if enabled
@@ -738,26 +733,10 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 for i in range(last_ai_idx + 1, len(messages)):
                     msg = messages[i]
                     if isinstance(msg, ToolMessage):
-                        tool_msg = msg
-                        if not tool_msg.content:
-                            continue
-
-                        content = str(tool_msg.content)
-                        new_content, matches = self._process_content(content)
-
-                        if not matches:
-                            continue
-
-                        # Create updated tool message
-                        updated_message = ToolMessage(
-                            content=new_content,
-                            id=tool_msg.id,
-                            name=tool_msg.name,
-                            tool_call_id=tool_msg.tool_call_id,
-                        )
-
-                        new_messages[i] = updated_message
-                        any_modified = True
+                        redacted = self._redact_base_message(msg)
+                        if redacted is not msg:
+                            new_messages[i] = redacted
+                            any_modified = True
 
         if any_modified:
             return {"messages": new_messages}
@@ -821,27 +800,16 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 last_ai_idx = i
                 break
 
-        if last_ai_idx is None or not last_ai_msg or not last_ai_msg.content:
+        if last_ai_idx is None or not last_ai_msg:
             return None
 
-        # Detect PII in message content
-        content = str(last_ai_msg.content)
-        new_content, matches = self._process_content(content)
-
-        if not matches:
+        redacted = self._redact_base_message(last_ai_msg)
+        if redacted is last_ai_msg:
             return None
-
-        # Create updated message
-        updated_message = AIMessage(
-            content=new_content,
-            id=last_ai_msg.id,
-            name=last_ai_msg.name,
-            tool_calls=last_ai_msg.tool_calls,
-        )
 
         # Return updated messages
         new_messages = list(messages)
-        new_messages[last_ai_idx] = updated_message
+        new_messages[last_ai_idx] = redacted
 
         return {"messages": new_messages}
 
