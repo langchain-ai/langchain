@@ -1,5 +1,7 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from langgraph.runtime import Runtime
+
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -64,6 +66,7 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",
+    "Runtime",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",

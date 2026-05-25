@@ -123,15 +123,25 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
+    ValidationError,
+    field_validator,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
 from langchain_openai.chat_models._client_utils import (
+    _astream_with_chunk_timeout,
+    _build_proxied_async_httpx_client,
+    _build_proxied_sync_httpx_client,
+    _float_env,
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _log_proxy_env_bypass_once,
+    _resolve_socket_options,
     _resolve_sync_and_async_api_keys,
+    _should_bypass_socket_options_for_proxy_env,
+    _warn_if_proxy_env_shadowed,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -141,14 +151,29 @@ from langchain_openai.chat_models._compat import (
 from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    import httpx
     from langchain_core.language_models import ModelProfile
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+_ssrf_client: httpx.Client | None = None
+
+
+def _get_ssrf_safe_client() -> httpx.Client:
+    global _ssrf_client
+    if _ssrf_client is None:
+        from langchain_core._security._transport import ssrf_safe_client
+
+        _ssrf_client = ssrf_safe_client(
+            verify=global_ssl_context, follow_redirects=False
+        )
+    return _ssrf_client
+
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
@@ -166,6 +191,7 @@ WellKnownTools = (
     "code_interpreter",
     "mcp",
     "image_generation",
+    "tool_search",
 )
 
 
@@ -495,6 +521,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
+        or "prompt is too long" in e.message
     ):
         raise OpenAIContextOverflowError(
             message=e.message, response=e.response, body=e.body
@@ -532,10 +559,18 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
+_RESPONSES_API_ONLY_PREFIXES = (
+    "gpt-5-pro",
+    "gpt-5.2-pro",
+    "gpt-5.4-pro",
+    "gpt-5.5-pro",
+)
+
+
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
-    return "gpt-5.2-pro" in model_name or "codex" in model_name
+    return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -577,8 +612,8 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """API key to use.
 
-    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
-    string, or sync or async callable that returns a string.
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified
+    as a string, or sync or async callable that returns a string.
 
     ??? example "Specify with environment variable"
 
@@ -600,6 +635,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with a sync callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -611,6 +647,7 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
     ??? example "Specify with an async callable"
+
         ```python
         from langchain_openai import ChatOpenAI
 
@@ -623,7 +660,18 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     openai_api_base: str | None = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
+    """Base URL path for API requests, leave blank if not using a proxy or service emulator.
+
+    Resolution order (first match wins):
+
+    1. Explicit `base_url` (or `openai_api_base`) kwarg.
+    2. Env var `OPENAI_API_BASE` (read by LangChain at init).
+    3. Env var `OPENAI_BASE_URL` (read by the underlying `openai` SDK client).
+
+    `OPENAI_BASE_URL` is also inspected by LangChain only to decide whether to
+    default-enable `stream_usage` — when set, the default is left off because many
+    non-OpenAI endpoints do not support streaming token usage.
+    """  # noqa: E501
 
     openai_organization: str | None = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
@@ -636,16 +684,20 @@ class BaseChatOpenAI(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
-    `None`."""
+    """Timeout for requests to OpenAI completion API.
+
+    Can be float, `httpx.Timeout` or `None`.
+    """
 
     stream_usage: bool | None = None
-    """Whether to include usage metadata in streaming output. If enabled, an additional
-    message chunk will be generated during the stream including usage metadata.
+    """Whether to include usage metadata in streaming output.
+
+    If enabled, an additional message chunk will be generated during the stream
+    including usage metadata.
 
     This parameter is enabled unless `openai_api_base` is set or the model is
-    initialized with a custom client, as many chat completions APIs do not support
-    streaming token usage.
+    initialized with a custom client, as many chat completions APIs do not
+    support streaming token usage.
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
 
@@ -671,8 +723,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with an
-    associated log probability. `logprobs` must be set to true if this parameter is
-    used."""
+    associated log probability.
+
+    `logprobs` must be set to true if this parameter is used.
+    """
 
     logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
@@ -690,10 +744,9 @@ class BaseChatOpenAI(BaseChatModel):
     """Maximum number of tokens to generate."""
 
     reasoning_effort: str | None = None
-    """Constrains effort on reasoning for reasoning models. For use with the Chat
-    Completions API.
+    """Constrains effort on reasoning for reasoning models.
 
-    Reasoning models only.
+    For use with the Chat Completions API. Reasoning models only.
 
     Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
@@ -701,11 +754,13 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     reasoning: dict[str, Any] | None = None
-    """Reasoning parameters for reasoning models. For use with the Responses API.
+    """Reasoning parameters for reasoning models. None disables reasoning.
+
+    For use with the Responses API.
 
     ```python
     reasoning={
-        "effort": "medium",  # Can be "low", "medium", or "high"
+        "effort": None,  # Default None; can be "low", "medium", or "high"
         "summary": "auto",  # Can be "auto", "concise", or "detailed"
     }
     ```
@@ -714,8 +769,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     verbosity: str | None = None
-    """Controls the verbosity level of responses for reasoning models. For use with the
-    Responses API.
+    """Controls the verbosity level of responses for reasoning models.
+
+    For use with the Responses API.
 
     Currently supported values are `'low'`, `'medium'`, and `'high'`.
 
@@ -745,35 +801,143 @@ class BaseChatOpenAI(BaseChatModel):
     http_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.Client`.
 
-    Only used for sync invocations. Must specify `http_async_client` as well if you'd
-    like a custom client for async invocations.
+    Only used for sync invocations. Must specify `http_async_client` as well if
+    you'd like a custom client for async invocations.
     """
 
     http_async_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.AsyncClient`.
 
-    Only used for async invocations. Must specify `http_client` as well if you'd like a
-    custom client for sync invocations.
+    Only used for async invocations. Must specify `http_client` as well if you'd
+    like a custom client for sync invocations.
+    """
+
+    http_socket_options: Sequence[tuple[int, int, int]] | None = Field(
+        default=None, exclude=True
+    )
+    """TCP socket options applied to the httpx transports built by this instance.
+
+    Defaults to a conservative TCP-keepalive + `TCP_USER_TIMEOUT` profile that
+    targets a ~2-minute bound on silent connection hangs (silent mid-stream peer
+    loss, gVisor/NAT idle timeouts, silent TCP black holes) on platforms that
+    support the full option set. On platforms that only support a subset
+    (macOS without `TCP_USER_TIMEOUT`, Windows with only `SO_KEEPALIVE`,
+    minimal kernels), unsupported options are silently dropped and the bound
+    degrades to whatever the remaining options + OS defaults provide — still
+    better than indefinite hang.
+
+    Accepted values:
+
+    - `None` (default): use env-driven defaults. Matches the "unset" convention
+        used by `http_client` elsewhere on this class.
+    - `()` (empty): disable socket-option injection entirely. Inherits the OS
+        defaults and restores httpx's native env-proxy auto-detection.
+    - A non-empty sequence of `(level, option, value)` tuples: explicit
+        override; passed verbatim to the transport (not filtered). Unsupported
+        options raise `OSError` at connect time rather than being silently
+        dropped — the user chose them explicitly.
+
+    Environment variables (only consulted when this field is `None`):
+    `LANGCHAIN_OPENAI_TCP_KEEPALIVE` (set to `0` to disable entirely — the
+    kill-switch), `LANGCHAIN_OPENAI_TCP_KEEPIDLE`,
+    `LANGCHAIN_OPENAI_TCP_KEEPINTVL`, `LANGCHAIN_OPENAI_TCP_KEEPCNT`,
+    `LANGCHAIN_OPENAI_TCP_USER_TIMEOUT_MS`.
+
+    Applied per side: if `http_client` is supplied, the sync path uses
+    that user-owned client's socket options as-is; the async path still
+    gets `http_socket_options` applied to its default builder (and
+    vice-versa for `http_async_client`). Supply both to take full control.
+
+    !!! note "Interaction with env-proxy auto-detection"
+
+        When a custom `httpx` transport is active, `httpx` disables its
+        native env-proxy auto-detection (`HTTP_PROXY` / `HTTPS_PROXY` /
+        `ALL_PROXY` / `NO_PROXY` and macOS/Windows system proxy settings).
+
+        To keep the default shape safe, `ChatOpenAI` detects the
+        "proxy-env-shadow" pattern and **skips the custom transport
+        entirely** when **all** of the following hold:
+
+        - `http_socket_options` is left at its default (`None`)
+        - No `http_client` or `http_async_client` supplied
+        - No `openai_proxy` supplied
+        - A proxy env var or system proxy is visible to httpx
+
+        On that specific shape, the instance falls back to pre-PR behavior
+        and httpx's env-proxy auto-detection applies (a one-time `INFO` log
+        records the bypass for observability).
+
+        If you explicitly set `http_socket_options=[...]` while a proxy
+        env var is also set, no bypass — you opted into the transport, and
+        a one-time `WARNING` records the shadowing. Set
+        `http_socket_options=()` or `LANGCHAIN_OPENAI_TCP_KEEPALIVE=0` to
+        disable transport injection explicitly, or pass a fully-configured
+        `http_async_client` / `http_client` to take full control. The
+        `openai_proxy` constructor kwarg is unaffected — socket options
+        are applied cleanly through the proxied transport on that path.
+    """
+
+    stream_chunk_timeout: float | None = Field(
+        default_factory=lambda: _float_env(
+            "LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0
+        ),
+        exclude=True,
+    )
+    """Per-chunk wall-clock timeout (seconds) on async streaming responses.
+
+    Applies to async invocations only (`astream`, `ainvoke` with streaming,
+    etc.). Sync streaming (`stream`) is not affected.
+
+    Fires between content chunks yielded by the openai SDK's streaming iterator
+    (i.e., each call to `__anext__` on the response). Crucially, this is
+    **not** the same as httpx's `timeout.read`:
+
+    - httpx's read timeout is inter-byte and gets reset every time *any* bytes
+        arrive on the socket — including OpenAI's SSE keepalive comments
+        (`: keepalive`) that trickle down during long model generations. A
+        stream that's silent on *content* but still producing keepalives looks
+        alive forever to httpx.
+    - `stream_chunk_timeout` measures the gap between *parsed chunks*. The
+        openai SDK's SSE parser consumes keepalive comments internally and does
+        not emit them as chunks, so keepalives do *not* reset this timer. It
+        fires on genuine content silence.
+
+    When it fires, a `StreamChunkTimeoutError`
+    (subclass of `asyncio.TimeoutError`) is raised with a self-describing
+    message naming this knob, the env-var override, the model, and the
+    number of chunks received before the stall. A WARNING log with
+    `extra={"source": "stream_chunk_timeout", "timeout_s": <value>,
+    "model_name": <value>, "chunks_received": <value>}` also fires so
+    aggregate logging can distinguish app-layer timeouts from
+    transport-layer failures.
+
+    Defaults to 120s. Set to `None` or `0` to disable. Overridable via the
+    `LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S` env var. Negative values
+    (from either the env var or the constructor kwarg — e.g., hydrated
+    from YAML/JSON configs) fall back to the default with a `WARNING` log
+    rather than silently disabling the wrapper, so a misconfigured value
+    still boots safely and the fallback is visible.
     """
 
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
 
     extra_body: Mapping[str, Any] | None = None
-    """Optional additional JSON properties to include in the request parameters when
-    making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
-    providers.
+    """Optional additional JSON properties to include in the request parameters
+    when making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or
+    other providers.
 
     This is the recommended way to pass custom parameters that are specific to your
     OpenAI-compatible API provider but not part of the standard OpenAI API.
 
     Examples:
-        - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
-        - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
-            `extra_body={"use_beam_search": True}`
-        - Any other provider-specific parameters
+    - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
+    - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
+        `extra_body={"use_beam_search": True}`
+    - Any other provider-specific parameters
 
     !!! warning
+
         Do not use `model_kwargs` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
         `extra_body` instead.
@@ -918,6 +1082,27 @@ class BaseChatOpenAI(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @field_validator("stream_chunk_timeout", mode="after")
+    @classmethod
+    def _validate_stream_chunk_timeout(cls, value: float | None) -> float | None:
+        """Reject negative constructor values; fall back to the env-driven default.
+
+        Matches the env-var path in `_float_env`: a negative value is a typo,
+        not an opt-out (`None`/`0` are the documented off switches). Configs
+        hydrated from YAML/JSON would otherwise silently disable the wrapper
+        and reintroduce the indefinite-stream hang the feature prevents.
+        """
+        if value is not None and value < 0:
+            fallback = _float_env("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", 120.0)
+            logger.warning(
+                "Invalid `stream_chunk_timeout=%r` (negative); "
+                "falling back to %s. Pass `None` or `0` to disable.",
+                value,
+                fallback,
+            )
+            return fallback
+        return value
+
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
@@ -1020,6 +1205,23 @@ class BaseChatOpenAI(BaseChatModel):
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
             raise ValueError(msg)
+        if _should_bypass_socket_options_for_proxy_env(
+            http_socket_options=self.http_socket_options,
+            http_client=self.http_client,
+            http_async_client=self.http_async_client,
+            openai_proxy=self.openai_proxy,
+        ):
+            # Default-shape construction + proxy env var visible to httpx:
+            # skip the custom transport so httpx's env-proxy auto-detection
+            # still applies. Users who want kernel-level TCP tuning alongside
+            # an env proxy can opt in explicitly via `http_socket_options`.
+            resolved_socket_options: tuple[tuple[int, int, int], ...] = ()
+            _log_proxy_env_bypass_once()
+        else:
+            resolved_socket_options = _resolve_socket_options(self.http_socket_options)
+            _warn_if_proxy_env_shadowed(
+                resolved_socket_options, openai_proxy=self.openai_proxy
+            )
         if not self.client:
             if sync_api_key_value is None:
                 # No valid sync API key, leave client as None and raise informative
@@ -1028,21 +1230,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.root_client = None
             else:
                 if self.openai_proxy and not self.http_client:
-                    try:
-                        import httpx
-                    except ImportError as e:
-                        msg = (
-                            "Could not import httpx python package. "
-                            "Please install it with `pip install httpx`."
-                        )
-                        raise ImportError(msg) from e
-                    self.http_client = httpx.Client(
-                        proxy=self.openai_proxy, verify=global_ssl_context
+                    self.http_client = _build_proxied_sync_httpx_client(
+                        proxy=self.openai_proxy,
+                        verify=global_ssl_context,
+                        socket_options=resolved_socket_options,
                     )
                 sync_specific = {
                     "http_client": self.http_client
                     or _get_default_httpx_client(
-                        self.openai_api_base, self.request_timeout
+                        self.openai_api_base,
+                        self.request_timeout,
+                        resolved_socket_options,
                     ),
                     "api_key": sync_api_key_value,
                 }
@@ -1050,21 +1248,17 @@ class BaseChatOpenAI(BaseChatModel):
                 self.client = self.root_client.chat.completions
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
-                    )
-                    raise ImportError(msg) from e
-                self.http_async_client = httpx.AsyncClient(
-                    proxy=self.openai_proxy, verify=global_ssl_context
+                self.http_async_client = _build_proxied_async_httpx_client(
+                    proxy=self.openai_proxy,
+                    verify=global_ssl_context,
+                    socket_options=resolved_socket_options,
                 )
             async_specific = {
                 "http_client": self.http_async_client
                 or _get_default_async_httpx_client(
-                    self.openai_api_base, self.request_timeout
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
                 ),
                 "api_key": async_api_key_value,
             }
@@ -1075,12 +1269,8 @@ class BaseChatOpenAI(BaseChatModel):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     @property
     def _default_params(self) -> dict[str, Any]:
@@ -1302,7 +1492,11 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
-                async for chunk in response:
+                async for chunk in _astream_with_chunk_timeout(
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
+                ):
                     metadata = headers if is_first_chunk else {}
                     (
                         current_index,
@@ -1537,7 +1731,13 @@ class BaseChatOpenAI(BaseChatModel):
         generations = []
 
         response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
+            response
+            if isinstance(response, dict)
+            # `parsed` may hold arbitrary Pydantic models from structured output.
+            # Exclude it from this dump and copy it from the typed response below.
+            else response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         )
         # Sometimes the AI Model calling will get error, we should raise it (this is
         # typically followed by a null value for `choices`, which we raise for
@@ -1647,7 +1847,11 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
-                async for chunk in response:
+                async for chunk in _astream_with_chunk_timeout(
+                    response,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
+                ):
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
                     generation_chunk = self._convert_chunk_to_generation_chunk(
@@ -1967,6 +2171,14 @@ class BaseChatOpenAI(BaseChatModel):
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
+        for original, formatted in zip(tools, formatted_tools, strict=False):
+            if (
+                isinstance(original, BaseTool)
+                and hasattr(original, "extras")
+                and isinstance(original.extras, dict)
+                and "defer_loading" in original.extras
+            ):
+                formatted["defer_loading"] = original.extras["defer_loading"]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -2111,7 +2323,7 @@ class BaseChatOpenAI(BaseChatModel):
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    model = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-5.5")
 
                     structured_model = model.with_structured_output(
                         ResponseSchema,
@@ -2367,7 +2579,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         | `timeout`      | `float | Tuple[float, float] | Any | None` | Timeout for requests.                                                               |
         | `max_retries`  | `int | None`                               | Max number of retries.                                                              |
         | `api_key`      | `str | None`                               | OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.        |
-        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator.       |
+        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator. Falls back to env var `OPENAI_API_BASE`, then to `OPENAI_BASE_URL` (read by the underlying SDK client). |
         | `organization` | `str | None`                               | OpenAI organization ID. If not passed in will be read from env var `OPENAI_ORG_ID`. |
 
         See full list of supported init args and their descriptions below.
@@ -3260,7 +3472,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    model = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-5.5")
 
                     structured_model = model.with_structured_output(
                         ResponseSchema,
@@ -3609,28 +3821,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
         )
         return None
     if _is_url(image_source):
-        try:
-            import httpx
-        except ImportError:
-            logger.info(
-                "Unable to count image tokens. To count image tokens please install "
-                "`pip install -U httpx`."
-            )
-            return None
-
-        # Validate URL for SSRF protection
-        try:
-            from langchain_core._security._ssrf_protection import validate_safe_url
-
-            validate_safe_url(image_source, allow_private=False, allow_http=True)
-        except ImportError:
-            logger.warning(
-                "SSRF protection not available. "
-                "Update langchain-core to get SSRF protection."
-            )
-        except ValueError as e:
-            logger.warning("Image URL failed SSRF validation: %s", e)
-            return None
+        import httpx
 
         # Set reasonable limits to prevent resource exhaustion
         # Timeout prevents indefinite hangs on slow/malicious servers
@@ -3639,10 +3830,7 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
         max_size = 50 * 1024 * 1024  # 50 MB
 
         try:
-            response = httpx.get(
-                image_source,
-                timeout=timeout,
-            )
+            response = _get_ssrf_safe_client().get(image_source, timeout=timeout)
             response.raise_for_status()
 
             # Check response size before loading into memory
@@ -3660,8 +3848,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
                 )
                 return None
 
-            # close things (context managers)
-            width, height = Image.open(BytesIO(response.content)).size
+            with Image.open(BytesIO(response.content)) as img:
+                width, height = img.size
             return width, height
         except httpx.TimeoutException:
             logger.warning("Image URL request timed out after %s seconds", timeout)
@@ -3676,7 +3864,8 @@ def _url_to_size(image_source: str) -> tuple[int, int] | None:
     if _is_b64(image_source):
         _, encoded = image_source.split(",", 1)
         data = base64.b64decode(encoded)
-        width, height = Image.open(BytesIO(data)).size
+        with Image.open(BytesIO(data)) as img:
+            width, height = img.size
         return width, height
     return None
 
@@ -3807,9 +3996,12 @@ class OpenAIRefusalError(Exception):
 def _create_usage_metadata(
     oai_token_usage: dict, service_tier: str | None = None
 ) -> UsageMetadata:
-    input_tokens = oai_token_usage.get("prompt_tokens") or 0
-    output_tokens = oai_token_usage.get("completion_tokens") or 0
-    total_tokens = oai_token_usage.get("total_tokens") or input_tokens + output_tokens
+    _input = oai_token_usage.get("prompt_tokens")
+    input_tokens = _input if _input is not None else 0
+    _output = oai_token_usage.get("completion_tokens")
+    output_tokens = _output if _output is not None else 0
+    _total = oai_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""
@@ -3964,7 +4156,8 @@ def _construct_responses_api_payload(
             # chat api: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}, "strict": ...}}  # noqa: E501
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
-                new_tools.append({"type": "function", **tool["function"]})
+                extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
+                new_tools.append({"type": "function", **tool["function"], **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
@@ -4243,6 +4436,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         # Aggregate content blocks for a single message
                         if block_type in ("text", "output_text", "refusal"):
                             msg_id = block.get("id")
+                            phase = block.get("phase")
                             if block_type in ("text", "output_text"):
                                 # Defensive check: block may not have "text" key
                                 text = block.get("text")
@@ -4268,17 +4462,20 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                     if "content" not in item:
                                         item["content"] = []
                                     item["content"].append(new_block)
+                                    if phase is not None:
+                                        item["phase"] = phase
                                     break
                             else:
                                 # If no block with this ID, create a new one
-                                input_.append(
-                                    {
-                                        "type": "message",
-                                        "content": [new_block],
-                                        "role": "assistant",
-                                        "id": msg_id,
-                                    }
-                                )
+                                new_item: dict = {
+                                    "type": "message",
+                                    "content": [new_block],
+                                    "role": "assistant",
+                                    "id": msg_id,
+                                }
+                                if phase is not None:
+                                    new_item["phase"] = phase
+                                input_.append(new_item)
                         elif block_type in (
                             "reasoning",
                             "compaction",
@@ -4291,6 +4488,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_call",
                             "mcp_list_tools",
                             "mcp_approval_request",
+                            "tool_search_call",
+                            "tool_search_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4336,7 +4535,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response",)
+                non_message_item_types = ("mcp_approval_response", "tool_search_output")
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4350,8 +4549,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                         pass
                 msg["content"] = new_blocks
                 if msg["content"]:
+                    msg["type"] = "message"
                     input_.append(msg)
             else:
+                msg["type"] = "message"
                 input_.append(msg)
         else:
             input_.append(msg)
@@ -4428,6 +4629,7 @@ def _construct_lc_result_from_responses_api(
     additional_kwargs: dict = {}
     for output in response.output:
         if output.type == "message":
+            phase = getattr(output, "phase", None)
             for content in output.content:
                 if content.type == "output_text":
                     block = {
@@ -4441,13 +4643,20 @@ def _construct_lc_result_from_responses_api(
                         else [],
                         "id": output.id,
                     }
+                    if phase is not None:
+                        block["phase"] = phase
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
                 if content.type == "refusal":
-                    content_blocks.append(
-                        {"type": "refusal", "refusal": content.refusal, "id": output.id}
-                    )
+                    refusal_block = {
+                        "type": "refusal",
+                        "refusal": content.refusal,
+                        "id": output.id,
+                    }
+                    if phase is not None:
+                        refusal_block["phase"] = phase
+                    content_blocks.append(refusal_block)
         elif output.type == "function_call":
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
             try:
@@ -4493,6 +4702,8 @@ def _construct_lc_result_from_responses_api(
             "mcp_list_tools",
             "mcp_approval_request",
             "image_generation_call",
+            "tool_search_call",
+            "tool_search_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4544,6 +4755,36 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
 
     return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+def _coerce_chunk_response(resp: Any) -> Any:
+    # dict `response` items on stream events have been observed in the wild
+    if isinstance(resp, dict):
+        from openai.types.responses import Response
+
+        # Known mismatch: API emits `prompt_cache_retention="in_memory"` while
+        # older `openai` packages declare only `"in-memory"` in the Literal
+        # (openai-python#2883). Pre-normalize so validation succeeds on
+        # currently-released SDK versions.
+        if resp.get("prompt_cache_retention") == "in_memory":
+            resp = {**resp, "prompt_cache_retention": "in-memory"}
+
+        try:
+            return Response.model_validate(resp)
+        except ValidationError as e:
+            # API sometimes drifts ahead of the installed SDK's Literal
+            # declarations. Fall back to a non-validating construct so streams
+            # still complete, and surface the drift so operators can upgrade.
+            logger.warning(
+                "OpenAI Responses payload failed SDK validation "
+                "(response id=%s); falling back to non-validating construct. "
+                "This usually means the OpenAI API has drifted ahead of the "
+                "installed `openai` package. Details: %s",
+                resp.get("id"),
+                e,
+            )
+            return Response.model_construct(**resp)
+    return resp
 
 
 def _convert_responses_chunk_to_generation_chunk(
@@ -4643,14 +4884,16 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.created":
-        id = chunk.response.id
-        response_metadata["id"] = chunk.response.id  # Backwards compatibility
+        response = _coerce_chunk_response(chunk.response)
+        id = response.id
+        response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type in ("response.completed", "response.incomplete"):
+        response = _coerce_chunk_response(chunk.response)
         msg = cast(
             AIMessage,
             (
                 _construct_lc_result_from_responses_api(
-                    chunk.response, schema=schema, output_version=output_version
+                    response, schema=schema, output_version=output_version
                 )
                 .generations[0]
                 .message
@@ -4666,6 +4909,16 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
+        elif phase := getattr(chunk.item, "phase", None):
+            _advance(chunk.output_index, 0)
+            content.append(
+                {
+                    "type": "text",
+                    "text": "",
+                    "phase": phase,
+                    "index": current_index,
+                }
+            )
         else:
             pass
     elif (
@@ -4682,16 +4935,17 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
-        content.append(
-            {
-                "type": "function_call",
-                "name": chunk.item.name,
-                "arguments": chunk.item.arguments,
-                "call_id": chunk.item.call_id,
-                "id": chunk.item.id,
-                "index": current_index,
-            }
-        )
+        function_call_content: dict = {
+            "type": "function_call",
+            "name": chunk.item.name,
+            "arguments": chunk.item.arguments,
+            "call_id": chunk.item.call_id,
+            "id": chunk.item.id,
+            "index": current_index,
+        }
+        if getattr(chunk.item, "namespace", None) is not None:
+            function_call_content["namespace"] = chunk.item.namespace
+        content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
@@ -4702,6 +4956,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "mcp_list_tools",
         "mcp_approval_request",
         "image_generation_call",
+        "tool_search_call",
+        "tool_search_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
