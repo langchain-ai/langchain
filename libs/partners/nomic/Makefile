@@ -10,10 +10,13 @@ UV_FROZEN = true
 TEST_FILE ?= tests/unit_tests/
 PYTEST_EXTRA ?=
 
-integration_tests: TEST_FILE = tests/integration_tests/
+integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-test integration_tests:
+test:
 	uv run --group test --group test_integration pytest $(PYTEST_EXTRA) $(TEST_FILE)
+
+integration_test integration_tests:
+	uv run --group test --group test_integration pytest -v --tb=short -n auto $(PYTEST_EXTRA) $(TEST_FILE)
 
 tests:
 	uv run --group test pytest $(PYTEST_EXTRA) $(TEST_FILE)

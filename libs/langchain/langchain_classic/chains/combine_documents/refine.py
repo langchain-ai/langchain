@@ -23,11 +23,11 @@ def _get_default_document_prompt() -> PromptTemplate:
 
 @deprecated(
     since="0.3.1",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Please see the migration guide here for "
-        "a recommended replacement: "
-        "https://python.langchain.com/docs/versions/migrating_chains/refine_docs_chain/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class RefineDocumentsChain(BaseCombineDocumentsChain):
