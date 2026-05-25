@@ -14,7 +14,7 @@ from typing_extensions import override
 
 @deprecated(
     since="0.0.30",
-    removal="1.0",
+    removal="2.0.0",
     alternative_import="langchain_cohere.CohereRerank",
 )
 class CohereRerank(BaseDocumentCompressor):

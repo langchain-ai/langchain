@@ -166,14 +166,14 @@ class InMemoryCache(BaseCache):
         # Update cache
         cache.update(
             prompt="What is the capital of France?",
-            llm_string="model='gpt-3.5-turbo', temperature=0.1",
+            llm_string="model='gpt-5.4-mini',
             return_val=[Generation(text="Paris")],
         )
 
         # Lookup cache
         result = cache.lookup(
             prompt="What is the capital of France?",
-            llm_string="model='gpt-3.5-turbo', temperature=0.1",
+            llm_string="model='gpt-5.4-mini',
         )
         # result is [Generation(text="Paris")]
         ```
