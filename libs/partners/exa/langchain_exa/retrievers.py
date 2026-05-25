@@ -55,8 +55,8 @@ class ExaSearchRetriever(BaseRetriever):
     """The end date for when the document was published (in YYYY-MM-DD format)."""
     use_autoprompt: bool | None = None
     """Whether to use autoprompt for the search."""
-    type: str = "neural"
-    """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
+    type: str = "auto"
+    """The type of search, 'auto', 'deep', or 'fast'. Default: auto"""
     highlights: HighlightsContentsOptions | bool | None = None
     """Whether to set the page content to the highlights of the results."""
     text_contents_options: TextContentsOptions | dict[str, Any] | Literal[True] = True
