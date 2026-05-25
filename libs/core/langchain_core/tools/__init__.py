@@ -11,6 +11,13 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
+    from langchain_core.tools.mcp.trust import (
+        DominionObservatoryVerifier,
+        TrustFailureMode,
+        TrustScore,
+        TrustVerificationError,
+        TrustVerifier,
+    )
     from langchain_core.tools.base import (
         FILTERED_ARGS,
         ArgsSchema,
@@ -40,6 +47,7 @@ if TYPE_CHECKING:
     from langchain_core.tools.structured import StructuredTool
 
 __all__ = (
+    "DominionObservatoryVerifier",
     "FILTERED_ARGS",
     "ArgsSchema",
     "BaseTool",
@@ -52,6 +60,10 @@ __all__ = (
     "Tool",
     "ToolException",
     "ToolsRenderer",
+    "TrustFailureMode",
+    "TrustScore",
+    "TrustVerificationError",
+    "TrustVerifier",
     "_get_runnable_config_param",
     "convert_runnable_to_tool",
     "create_retriever_tool",
@@ -62,6 +74,11 @@ __all__ = (
 )
 
 _dynamic_imports = {
+    "DominionObservatoryVerifier": "mcp.trust",
+    "TrustFailureMode": "mcp.trust",
+    "TrustScore": "mcp.trust",
+    "TrustVerificationError": "mcp.trust",
+    "TrustVerifier": "mcp.trust",
     "FILTERED_ARGS": "base",
     "ArgsSchema": "base",
     "BaseTool": "base",
