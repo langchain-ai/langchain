@@ -1,0 +1,226 @@
+# Real-model evals for langchain agent middleware.
+#
+# Triggered manually via workflow_dispatch — these tests call live model APIs
+# and incur cost, so they are not run on every PR. Use this workflow when
+# making changes to middleware prompts (e.g., WRITE_TODOS_SYSTEM_PROMPT) or
+# other behavior-affecting middleware code to confirm the change works against
+# real models.
+#
+# Pass a comma-separated list of model ids to run the suite across providers
+# in parallel. Each model id is a separate matrix job.
+#
+# Required repository secrets (only set the ones for providers you actually
+# evaluate against — unset providers just can't be picked):
+#   LANGSMITH_API_KEY      — trace/experiment recording (always set this)
+#   ANTHROPIC_API_KEY      — `claude-*` ids or `anthropic:claude-*`
+#   OPENAI_API_KEY         — `gpt-*` ids or `openai:*`
+#   GOOGLE_API_KEY         — `google_genai:gemini-*`
+#   GROQ_API_KEY           — `groq:*`
+#   MISTRAL_API_KEY        — `mistralai:*`
+#   XAI_API_KEY            — `xai:grok-*`
+#   DEEPSEEK_API_KEY       — `deepseek:*`
+#   FIREWORKS_API_KEY      — `fireworks:*`
+#   NVIDIA_API_KEY         — `nvidia:*`
+#   OLLAMA_API_KEY         — `ollama:*` (Ollama Cloud)
+#   OPENROUTER_API_KEY     — `openrouter:*`
+#
+# OLLAMA_HOST is hardcoded to https://ollama.com below since it is not
+# sensitive.
+#
+# To add another provider:
+#   1. Add the provider SDK to the `--with` list in libs/langchain_v1/Makefile
+#      (under the `evals` target).
+#   2. Add the API key secret to the `env` block in the job below.
+#   3. Document the matching `--model` syntax above.
+
+name: "📊 Middleware Evals"
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: >-
+          Comma-separated model ids passed to --model. Each becomes a matrix job.
+          Examples: claude-sonnet-4-6,claude-haiku-4-5,openai:gpt-5,
+          google_genai:gemini-2.5-pro, groq:llama-3.3-70b-versatile,
+          mistralai:mistral-large-latest, xai:grok-4,
+          deepseek:deepseek-chat,
+          fireworks:accounts/fireworks/models/llama-v3p1-70b-instruct,
+          openrouter:anthropic/claude-sonnet-4-6
+        required: true
+        default: "claude-sonnet-4-6"
+        type: string
+      tier:
+        description: "Eval tier to run"
+        required: false
+        default: "baseline"
+        type: choice
+        options:
+          - baseline
+          - hillclimb
+          - all
+      eval_category:
+        description: >-
+          Optional eval_category to filter to (e.g., "middleware/todo").
+          Empty runs all categories.
+        required: false
+        default: ""
+        type: string
+      openai_reasoning_effort:
+        description: >-
+          Forwarded to ChatOpenAI when the model is OpenAI. Use `minimal` for
+          faster/cheaper GPT-5 runs. Ignored for non-OpenAI providers.
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - minimal
+          - low
+          - medium
+          - high
+      pytest_extra:
+        description: "Additional pytest args (e.g., '-k density' to filter)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "true"
+
+jobs:
+  parse:
+    name: "Parse model list"
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.set.outputs.models }}
+    steps:
+      - id: set
+        env:
+          MODELS_INPUT: ${{ inputs.models }}
+        run: |
+          MODELS_JSON=$(python3 -c '
+          import json, os
+          raw = os.environ.get("MODELS_INPUT", "")
+          out = [m.strip() for m in raw.split(",") if m.strip()]
+          print(json.dumps(out))
+          ')
+          echo "Parsed models: $MODELS_JSON"
+          echo "models=$MODELS_JSON" >> "$GITHUB_OUTPUT"
+
+  evals:
+    name: "📊 ${{ matrix.model }} (${{ inputs.tier }})"
+    needs: parse
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        model: ${{ fromJSON(needs.parse.outputs.models) }}
+    steps:
+      - name: "📋 Checkout"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: "🛠️ Set up uv"
+        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
+        with:
+          enable-cache: true
+
+      - name: "📊 Run evals"
+        working-directory: libs/langchain_v1
+        # SECURITY: every value derived from `inputs.*` / `matrix.*` is passed
+        # via `env:`, NOT interpolated into the `run:` script body. GitHub
+        # expands `${{ ... }}` textually before the shell runs, so splicing
+        # those expressions into a `run:` block lets a value containing `'`
+        # break out of the literal and execute arbitrary commands with API
+        # keys in scope. Passing them as env vars keeps the values out of the
+        # script source and lets bash quote them safely as `"$VAR"`. We also
+        # invoke `pytest` directly here instead of going through `make`,
+        # because Make's `$(VAR)` is textual expansion and would re-introduce
+        # the same class of injection at the Make layer.
+        env:
+          # Provider keys. Unset secrets resolve to empty strings; the SDK only
+          # complains if the matrix model id actually requires that provider.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          OLLAMA_HOST: "https://ollama.com"
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # LangSmith trace recording.
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_TRACING: "true"
+          LANGSMITH_PROJECT: "langchain-middleware-evals"
+          # User-controlled inputs surfaced as env vars (not script splices).
+          MODEL: ${{ matrix.model }}
+          TIER: ${{ inputs.tier }}
+          CATEGORY: ${{ inputs.eval_category }}
+          REASONING: ${{ inputs.openai_reasoning_effort }}
+          USER_EXTRA: ${{ inputs.pytest_extra }}
+        run: |
+          set -euo pipefail
+
+          # Build the pytest arg array from env-provided inputs. Each element
+          # is added as a discrete word in the array so word-splitting and
+          # quoting are handled by bash, not by the script source. Filter
+          # expressions for `-m` are constructed from a fixed template and
+          # concatenated with user-supplied values; the values themselves are
+          # never interpreted as shell.
+          PYTEST_ARGS=(-v --tb=short --model "$MODEL")
+
+          MARKER=""
+          if [ "$TIER" != "all" ]; then
+            MARKER="eval_tier(\"$TIER\")"
+          fi
+          if [ -n "$CATEGORY" ]; then
+            if [ -n "$MARKER" ]; then
+              MARKER="$MARKER and eval_category(\"$CATEGORY\")"
+            else
+              MARKER="eval_category(\"$CATEGORY\")"
+            fi
+          fi
+          if [ -n "$MARKER" ]; then
+            PYTEST_ARGS+=(-m "$MARKER")
+          fi
+          if [ -n "$REASONING" ]; then
+            PYTEST_ARGS+=("--openai-reasoning-effort=$REASONING")
+          fi
+          if [ -n "$USER_EXTRA" ]; then
+            # USER_EXTRA is split on whitespace into discrete args. Users with
+            # workflow_dispatch access who want spaces inside a single arg can
+            # escape with quotes inside the input, but the typical use is
+            # things like `-k density`.
+            # shellcheck disable=SC2086
+            read -r -a USER_ARGS <<< "$USER_EXTRA"
+            PYTEST_ARGS+=("${USER_ARGS[@]}")
+          fi
+
+          printf 'Model:        %s\n' "$MODEL"
+          printf 'Tier:         %s\n' "$TIER"
+          printf 'Category:     %s\n' "${CATEGORY:-(all)}"
+          printf 'Reasoning:    %s\n' "${REASONING:-(default)}"
+          printf 'Pytest args:  %s\n' "${PYTEST_ARGS[*]}"
+
+          uv run --group test \
+            --with langchain-anthropic \
+            --with langchain-deepseek \
+            --with langchain-fireworks \
+            --with langchain-google-genai \
+            --with langchain-groq \
+            --with langchain-mistralai \
+            --with langchain-nvidia-ai-endpoints \
+            --with langchain-ollama \
+            --with langchain-openai \
+            --with langchain-openrouter \
+            --with langchain-xai \
+            pytest tests/evals "${PYTEST_ARGS[@]}"

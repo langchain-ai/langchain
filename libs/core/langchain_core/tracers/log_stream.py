@@ -585,7 +585,7 @@ def _get_standardized_inputs(
         )
         raise NotImplementedError(msg)
 
-    inputs = load(run.inputs, allowed_objects="all")
+    inputs = load(run.inputs, allowed_objects="messages")
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
@@ -617,7 +617,7 @@ def _get_standardized_outputs(
     Returns:
         An output if returned, otherwise `None`.
     """
-    outputs = load(run.outputs, allowed_objects="all")
+    outputs = load(run.outputs, allowed_objects="messages")
     if schema_format == "original":
         if run.run_type == "prompt" and "output" in outputs:
             # These were previously dumped before the tracer.
