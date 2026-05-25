@@ -170,6 +170,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             if not matching:
                 return "No files found"
 
+            matching.sort(key=lambda item: item[1], reverse=True)
             file_paths = [p for p, _ in matching]
             return "\n".join(file_paths)
 
@@ -338,7 +339,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 continue
 
             try:
-                content = file_path.read_text()
+                content = file_path.read_text(encoding="utf-8")
             except (UnicodeDecodeError, PermissionError):
                 continue
 
