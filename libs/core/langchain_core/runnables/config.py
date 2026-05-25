@@ -138,6 +138,28 @@ COPIABLE_KEYS = [
     "configurable",
 ]
 
+
+# Users are expected to use the `context` API with a context object
+# (which does not get traced)
+CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
+
+
+def _get_langsmith_inheritable_metadata_from_config(
+    config: RunnableConfig,
+) -> dict[str, Any] | None:
+    """Get LangSmith-only inheritable metadata defaults derived from config."""
+    configurable = config.get("configurable") or {}
+    metadata = {
+        key: value
+        for key, value in configurable.items()
+        if not key.startswith("__")
+        and isinstance(value, (str, int, float, bool))
+        and key not in config.get("metadata", {})
+        and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
+    }
+    return metadata or None
+
+
 DEFAULT_RECURSION_LIMIT = 25
 
 
@@ -264,14 +286,17 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.get("configurable", {}).items():
+    for configurable_key in ("model", "checkpoint_ns"):
         if (
-            not key.startswith("__")
-            and isinstance(value, (str, int, float, bool))
-            and key not in empty["metadata"]
-            and key != "api_key"
+            isinstance(
+                configurable_value := empty.get("configurable", {}).get(
+                    configurable_key
+                ),
+                str,
+            )
+            and configurable_key not in empty["metadata"]
         ):
-            empty["metadata"][key] = value
+            empty["metadata"][configurable_key] = configurable_value
     return empty
 
 
@@ -508,6 +533,9 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 
@@ -526,6 +554,9 @@ def get_async_callback_manager_for_config(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 

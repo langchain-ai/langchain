@@ -108,13 +108,13 @@ class ModelCallLimitMiddleware(
 
     Example:
         ```python
-        from langchain.agents.middleware.call_tracking import ModelCallLimitMiddleware
+        from langchain.agents.middleware import ModelCallLimitMiddleware
         from langchain.agents import create_agent
 
         # Create middleware with limits
         call_tracker = ModelCallLimitMiddleware(thread_limit=10, run_limit=5, exit_behavior="end")
 
-        agent = create_agent("openai:gpt-4o", middleware=[call_tracker])
+        agent = create_agent("openai:gpt-5.5", middleware=[call_tracker])
 
         # Agent will automatically jump to end when limits are exceeded
         result = await agent.invoke({"messages": [HumanMessage("Help me with a task")]})

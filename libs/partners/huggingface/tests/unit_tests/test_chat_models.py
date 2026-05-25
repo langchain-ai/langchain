@@ -218,7 +218,9 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
             "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
             side_effect=lambda x: x,
         ),
-        patch("langchain_core.runnables.base.Runnable.bind") as mock_super_bind,
+        patch(
+            "langchain_core.language_models.chat_models.BaseChatModel.bind"
+        ) as mock_super_bind,
     ):
         chat_hugging_face.bind_tools(tools, tool_choice="auto")
         mock_super_bind.assert_called_once()

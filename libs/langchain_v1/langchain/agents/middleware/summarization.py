@@ -50,15 +50,19 @@ You want to ensure that you don't repeat any actions you've already completed, s
 You should structure your summary using the following sections. Each section acts as a checklist - you must populate it with relevant information or explicitly state "None" if there is nothing to report for that section:
 
 ## SESSION INTENT
+
 What is the user's primary goal or request? What overall task are you trying to accomplish? This should be concise but complete enough to understand the purpose of the entire session.
 
 ## SUMMARY
+
 Extract and record all of the most important context from the conversation history. Include important choices, conclusions, or strategies determined during this conversation. Include the reasoning behind key decisions. Document any rejected options and why they were not pursued.
 
 ## ARTIFACTS
+
 What artifacts, files, or resources were created, modified, or accessed during this conversation? For file modifications, list specific file paths and briefly describe the changes made to each. This section prevents silent loss of artifact information.
 
 ## NEXT STEPS
+
 What specific tasks remain to be completed to achieve the session intent? What should you do next?
 
 </instructions>
@@ -76,6 +80,23 @@ Messages to summarize:
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+
+# Some providers tag emitted messages with a `model_provider` string that differs from
+# their LangSmith `ls_provider`. The reported-token check below compares the two, so we
+# accept known aliases per `ls_provider`.
+_LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
+    "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+}
+
+
+def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
+    if model_ls_provider is None:
+        return False
+    if message_provider == model_ls_provider:
+        return True
+    aliases = _LS_PROVIDER_ALIASES.get(model_ls_provider)
+    return aliases is not None and message_provider in aliases
+
 
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
@@ -141,7 +162,7 @@ Example:
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
-    if model._llm_type == "anthropic-chat":  # noqa: SLF001
+    if model._llm_type.startswith("anthropic-chat"):  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
         return partial(
@@ -379,7 +400,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             and (reported_tokens := last_ai_message.usage_metadata.get("total_tokens", -1))
             and reported_tokens >= threshold
             and (message_provider := last_ai_message.response_metadata.get("model_provider"))
-            and message_provider == self.model._get_ls_params().get("ls_provider")  # noqa: SLF001
+            and _provider_matches(
+                message_provider,
+                self.model._get_ls_params().get("ls_provider"),  # noqa: SLF001
+            )
         ):
             return True
         return False
