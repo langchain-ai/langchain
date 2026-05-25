@@ -16,38 +16,13 @@ If a property is not present and is not required in the function parameters, do 
 
 @deprecated(
     since="0.1.14",
-    message=(
-        "LangChain has introduced a method called `with_structured_output` that"
-        "is available on ChatModels capable of tool calling."
-        "You can read more about the method here: "
-        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
-        "Please follow our extraction use case documentation for more guidelines"
-        "on how to do information extraction with LLMs."
-        "<https://python.langchain.com/docs/use_cases/extraction/>. "
-        "with_structured_output does not currently support a list of pydantic schemas. "
-        "If this is a blocker or if you notice other issues, please provide "
-        "feedback here:"
-        "<https://github.com/langchain-ai/langchain/discussions/18154>"
-    ),
-    removal="1.0",
-    alternative=(
-        """
-            from pydantic import BaseModel, Field
-            from langchain_anthropic import ChatAnthropic
-
-            class Joke(BaseModel):
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-
-            # Or any other chat model that supports tools.
-            # Please reference to the documentation of structured_output
-            # to see an up to date list of which models support
-            # with_structured_output.
-            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
-            structured_model = model.with_structured_output(Joke)
-            structured_model.invoke("Tell me a joke about cats.
-                Make sure to call the Joke function.")
-            """
+    removal="2.0.0",
+    alternative="ChatModel.with_structured_output(...)",
+    addendum=(
+        "Available on chat models capable of tool calling. Note: "
+        "`with_structured_output` does not currently support a list of pydantic "
+        "schemas. See "
+        "https://docs.langchain.com/oss/python/langchain/structured-output"
     ),
 )
 def create_extraction_chain_pydantic(

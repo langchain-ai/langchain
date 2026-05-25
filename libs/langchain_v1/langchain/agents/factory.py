@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import itertools
 from dataclasses import dataclass, field, fields
 from typing import (
@@ -21,7 +22,8 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
+from langgraph.prebuilt import ToolCallTransformer
+from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
@@ -79,6 +81,7 @@ if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
+    from langgraph.stream._mux import TransformerFactory
     from langgraph.types import Checkpointer
 
     from langchain.agents.middleware.types import ToolCallWrapper
@@ -153,8 +156,6 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     "gpt-4.1",
     "gpt-4o",
     "gpt-oss",
-    "o3-pro",
-    "o3-mini",
 ]
 
 
@@ -399,11 +400,36 @@ def _chain_async_model_call_handlers(
     return composed_handler
 
 
-def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
+@functools.lru_cache(maxsize=100)
+def _get_schema_type_hints(schema: type) -> dict[str, Any]:
+    """Return cached type hints for a schema."""
+    return get_type_hints(schema, include_extras=True)
+
+
+def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
+    """Resolve state, input, and output schemas for the given schemas.
+
+    Schemas are merged in list order; later entries override earlier ones when the
+    same field is declared by multiple schemas.  Duplicates are harmless — a type
+    that appears more than once is processed at its last position.
+    """
+    schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
+    return (
+        _resolve_schema(schema_hints, "StateSchema", None),
+        _resolve_schema(schema_hints, "InputSchema", "input"),
+        _resolve_schema(schema_hints, "OutputSchema", "output"),
+    )
+
+
+def _resolve_schema(
+    schema_hints: dict[type, dict[str, Any]],
+    schema_name: str,
+    omit_flag: str | None = None,
+) -> type:
     """Resolve schema by merging schemas and optionally respecting `OmitFromSchema` annotations.
 
     Args:
-        schemas: List of schema types to merge
+        schema_hints: Resolved schema annotations to merge
         schema_name: Name for the generated `TypedDict`
         omit_flag: If specified, omit fields with this flag set (`'input'` or
             `'output'`)
@@ -413,14 +439,11 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
     """
     all_annotations = {}
 
-    for schema in schemas:
-        hints = get_type_hints(schema, include_extras=True)
-
+    for hints in schema_hints.values():
         for field_name, field_type in hints.items():
             should_omit = False
 
             if omit_flag:
-                # Check for omission in the annotation metadata
                 metadata = _extract_metadata(field_type)
                 for meta in metadata:
                     if isinstance(meta, OmitFromSchema) and getattr(meta, omit_flag) is True:
@@ -686,6 +709,7 @@ def create_agent(
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -781,6 +805,13 @@ def create_agent(
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
         cache: An optional `BaseCache` instance to enable caching of graph execution.
+        transformers: Optional sequence of scope-aware `StreamTransformer`
+            factories to register on the compiled graph in addition to
+            the agent defaults. Each factory is invoked as `factory(scope)`
+            so every invocation receives a fresh instance. The final order
+            on the compiled graph is: `ToolCallTransformer`, then any
+            factories declared by middleware via
+            `AgentMiddleware.transformers`, then any factories supplied here.
 
     Returns:
         A compiled `StateGraph` that can be used for chat interactions.
@@ -839,11 +870,8 @@ def create_agent(
     initial_response_format: ToolStrategy[Any] | ProviderStrategy[Any] | AutoStrategy[Any] | None
     if response_format is None:
         initial_response_format = None
-    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        # Preserve explicitly requested strategies
-        initial_response_format = response_format
-    elif isinstance(response_format, AutoStrategy):
-        # AutoStrategy provided - preserve it for later auto-detection
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy, AutoStrategy)):
+        # Explicit Tool/Provider strategy, or AutoStrategy for later capability detection
         initial_response_format = response_format
     else:
         # Raw schema - wrap in AutoStrategy to enable auto-detection
@@ -1005,14 +1033,15 @@ def create_agent(
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas: set[type] = {m.state_schema for m in middleware}
-    # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
-    state_schemas.add(base_state)
+    # Build an ordered list: middleware schemas first (in registration order),
+    # base_state last so it wins any field conflict.  This lets the caller's
+    # explicit state_schema override middleware annotations — e.g. passing
+    # a DeltaChannel-annotated schema wins over BinaryOperatorAggregate from
+    # AgentState without requiring a post-compilation patch.
+    state_schemas: list[type] = [*(m.state_schema for m in middleware), base_state]
 
-    resolved_state_schema = _resolve_schema(state_schemas, "StateSchema", None)
-    input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
-    output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
+    resolved_state_schema, input_schema, output_schema = _resolve_schemas(state_schemas)
 
     # create graph, add nodes
     graph: StateGraph[
@@ -1629,10 +1658,14 @@ def create_agent(
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
-    config: RunnableConfig = {"recursion_limit": 10_000}
+    # Set recursion limit to 9_999
+    # https://github.com/langchain-ai/langgraph/issues/7313
+    config: RunnableConfig = {"recursion_limit": 9_999}
     config["metadata"] = {"ls_integration": "langchain_create_agent"}
     if name:
         config["metadata"]["lc_agent_name"] = name
+
+    middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
         checkpointer=checkpointer,
@@ -1642,6 +1675,11 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
+        transformers=[
+            ToolCallTransformer,
+            *middleware_transformers,
+            *(transformers or ()),
+        ],
     ).with_config(config)
 
 
@@ -1717,19 +1755,12 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 4. If there are pending tool calls, jump to the tool node
+        # 4. If there are pending tool calls, jump to the tool node.
+        # The tool node hydrates ToolRuntime.state from channels via
+        # CONFIG_KEY_READ at execution time, so we no longer inline the
+        # full state into each Send (previously O(N^2) in TASKS writes).
         if pending_tool_calls:
-            return [
-                Send(
-                    "tools",
-                    ToolCallWithContext(
-                        __type="tool_call_with_context",
-                        tool_call=tool_call,
-                        state=state,
-                    ),
-                )
-                for tool_call in pending_tool_calls
-            ]
+            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 5. If there is a structured response, exit the loop
         if "structured_response" in state:
