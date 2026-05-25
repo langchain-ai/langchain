@@ -1285,8 +1285,9 @@ class ChatAnthropic(BaseChatModel):
         # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
             warnings.warn(
-                "The 'output_format' parameter is deprecated and will be removed in a "
-                "future version. Use 'output_config={\"format\": ...}' instead.",
+                "The 'output_format' parameter is deprecated and will be removed in "
+                "langchain-anthropic 2.0.0. Use 'output_config={\"format\": ...}' "
+                "instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -1821,7 +1822,9 @@ class ChatAnthropic(BaseChatModel):
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            # Copy to avoid mutating the caller-provided dict when adding
+            # disable_parallel_tool_use or other fields.
+            kwargs["tool_choice"] = tool_choice.copy()
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):
