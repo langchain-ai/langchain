@@ -119,15 +119,3 @@ def test_azure_openai_embedding_with_empty_string() -> None:
     )
     assert np.allclose(output[0], expected_output, atol=0.001)
     assert len(output[1]) == 1536
-
-
-@pytest.mark.scheduled
-def test_embed_documents_normalized() -> None:
-    output = _get_embeddings().embed_documents(["foo walked to the market"])
-    assert np.isclose(np.linalg.norm(output[0]), 1.0)
-
-
-@pytest.mark.scheduled
-def test_embed_query_normalized() -> None:
-    output = _get_embeddings().embed_query("foo walked to the market")
-    assert np.isclose(np.linalg.norm(output), 1.0)

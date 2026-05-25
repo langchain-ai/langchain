@@ -20,11 +20,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.0.3"
+version = "1.0.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.2.19,<2.0.0",
-    "langchain-text-splitters>=1.1.1,<2.0.0",
+    "langchain-core>=1.3.3,<2.0.0",
+    "langchain-text-splitters>=1.1.2,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
@@ -34,11 +34,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-#community = ["langchain-community"]
+community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-#azure-ai = ["langchain-azure-ai"]
-#cohere = ["langchain-cohere"]
+azure-ai = ["langchain-azure-ai"]
+cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
@@ -58,17 +58,17 @@ Documentation = "https://reference.langchain.com/python/langchain_classic/"
 Repository = "https://github.com/langchain-ai/langchain"
 Issues = "https://github.com/langchain-ai/langchain/issues"
 Changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
-Twitter = "https://x.com/LangChain"
+Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest>=8.0.0,<10.0.0",
+    "pytest>=9.0.3,<10.0.0",
     "pytest-cov>=4.0.0,<8.0.0",
     "pytest-dotenv>=0.5.2,<1.0.0",
     "pytest-watcher>=0.2.6,<1.0.0",
-    "pytest-asyncio>=0.23.2,<2.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
@@ -80,13 +80,13 @@ test = [
     "responses>=0.22.0,<1.0.0",
     "lark>=1.1.5,<2.0.0",
     "pandas>=2.0.0,<3.0.0",
-    "syrupy>=4.0.2,<6.0.0",
+    "syrupy>=5.0.0,<6.0.0",
     "requests-mock>=1.11.0,<2.0.0",
     "toml>=0.10.2,<1.0.0",
     "packaging>=24.2.0,<27.0.0",
-    "langchain-tests",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-tests>=1.1.9,<2.0.0",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
     "langchain-openai",
 ]
 test_integration = [
@@ -94,9 +94,8 @@ test_integration = [
     "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
-    "langchainhub>=0.1.16,<1.0.0",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.16.0",
@@ -114,16 +113,16 @@ typing = [
     "types-chardet>=5.0.4.6,<6.0.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
     "fastapi<1.0.0,>=0.116.1",
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
     "setuptools>=67.6.1,<83.0.0",
-    "langchain-core",
-    "langchain-text-splitters",
+    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
 
 
@@ -134,7 +133,7 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.uv]
-constraint-dependencies = ["urllib3>=2.6.3"]
+constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.ruff]
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]

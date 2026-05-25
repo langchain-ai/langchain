@@ -35,7 +35,7 @@ from langchain_classic.tools.render import render_text_description_and_args
 HUMAN_MESSAGE_TEMPLATE = "{input}\n\n{agent_scratchpad}"
 
 
-@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="1.0")
+@deprecated("0.1.0", alternative="create_structured_chat_agent", removal="2.0.0")
 class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 

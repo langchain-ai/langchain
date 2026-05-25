@@ -1,0 +1,73 @@
+# See `.github/scripts/check_extras_sync.py` for the rationale.
+
+name: "🔍 Check Extras Sync"
+
+on:
+  pull_request:
+    paths:
+      - "libs/**/pyproject.toml"
+      - ".github/scripts/check_extras_sync.py"
+      - ".github/workflows/check_extras_sync.yml"
+  push:
+    branches: [master]
+    paths:
+      - "libs/**/pyproject.toml"
+      - ".github/scripts/check_extras_sync.py"
+      - ".github/workflows/check_extras_sync.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-extras-sync:
+    if: github.repository_owner == 'langchain-ai'
+    name: "Verify extras match required deps"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: "🐍 Set up Python and uv"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.13"
+          enable-cache: "false"
+
+      - name: "🔍 Check extras sync"
+        # Iterate every package pyproject.toml under libs/. The script
+        # no-ops on packages without [project.optional-dependencies], so
+        # this is harmless on packages without extras and automatically
+        # picks up new partners as they're added. No `-maxdepth` cap so
+        # deeper future restructures (e.g. `libs/partners/<group>/<pkg>/`)
+        # are picked up automatically.
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            find libs -name pyproject.toml \
+              -not -path "*/.venv/*" \
+              -not -path "*/node_modules/*" \
+              -not -path "*/build/*" \
+              -not -path "*/dist/*" \
+              -not -path "*/.tox/*" \
+              | sort
+          )
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No pyproject.toml files found under libs/"
+            exit 1
+          fi
+          failed=()
+          for f in "${files[@]}"; do
+            if ! python .github/scripts/check_extras_sync.py "$f"; then
+              failed+=("$f")
+            fi
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::Extras-sync check failed for ${#failed[@]} package(s):"
+            printf '::error::  %s\n' "${failed[@]}"
+            exit 1
+          fi
