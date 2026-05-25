@@ -13,6 +13,10 @@ import httpx
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -35,6 +39,7 @@ from typing_extensions import TypedDict, override
 
 from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
 if TYPE_CHECKING:
     from pytest_benchmark.fixture import (
@@ -847,8 +852,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
@@ -897,8 +905,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
 
         # Verify chunk_position signaling
         last_chunk = chunks[-1]
@@ -906,6 +917,70 @@ class ChatModelIntegrationTests(ChatModelTests):
             f"Final chunk must have chunk_position='last', "
             f"got {last_chunk.chunk_position!r}"
         )
+
+    def test_stream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `model.stream_events("Hello", version="v3")` works.
+
+        Exercises the content-block-centric streaming protocol. Passing this
+        test indicates the model participates in `stream_events(version="v3")` either
+        natively (via `_stream_chat_model_events`) or through the compat bridge that
+        converts `_stream` chunks into protocol events.
+
+        ??? question "Troubleshooting"
+
+            First, debug
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`
+            — `stream_events(version="v3")` falls back to the same
+            `_stream` path via the compat bridge when the model does not
+            implement
+            `_stream_chat_model_events`. If `test_stream` passes but this does
+            not, inspect the raised lifecycle violation: it identifies the
+            event index and the rule broken.
+        """
+        stream = model.stream_events("Hello", version="v3")
+        assert isinstance(stream, ChatModelStream)
+
+        events = list(stream)
+        assert len(events) > 0
+        assert_valid_event_stream(events)
+
+        message = stream.output
+        assert isinstance(message, AIMessage)
+        assert message.content
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
+        # `stream_events(version="v3")` always assembles content as v1 protocol blocks.
+        assert message.response_metadata.get("output_version") == "v1"
+
+    async def test_astream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `await model.astream_events("Hello", version="v3")` works.
+
+        Async counterpart to `test_stream_events_v3`. Exercises the
+        `AsyncChatModelStream` path end-to-end: the background producer task,
+        replay-buffer-backed event iteration, and the awaitable `output`
+        projection.
+
+        ??? question "Troubleshooting"
+
+            First, debug
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_astream`.
+            If `test_astream` passes but this does not, inspect the raised
+            lifecycle violation; it identifies the event index and the rule
+            broken.
+        """
+        stream = await model.astream_events("Hello", version="v3")
+        assert isinstance(stream, AsyncChatModelStream)
+
+        events = [event async for event in stream]
+        assert len(events) > 0
+        assert_valid_event_stream(events)
+
+        message = await stream.output
+        assert isinstance(message, AIMessage)
+        assert message.content
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
+        assert message.response_metadata.get("output_version") == "v1"
 
     def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
         """Test that model name can be overridden at invoke time via kwargs.

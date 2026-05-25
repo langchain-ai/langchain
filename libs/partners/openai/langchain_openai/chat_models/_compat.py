@@ -407,6 +407,8 @@ def _convert_from_v1_to_responses(
 ) -> list[dict[str, Any]]:
     new_content: list = []
     for block in content:
+        if "type" not in block:
+            continue
         if block["type"] == "text" and "annotations" in block:
             # Need a copy because we're changing the annotations list
             new_block = dict(block)
