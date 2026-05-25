@@ -5,8 +5,11 @@ import os
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import groq
+import httpx
 import langchain_core.load as lc_load
 import pytest
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -21,6 +24,7 @@ from pydantic import BaseModel
 
 from langchain_groq.chat_models import (
     ChatGroq,
+    GroqContextOverflowError,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _create_usage_metadata,
@@ -1104,3 +1108,144 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["versions"]
     assert "langchain-core" in versions
     assert "langchain-groq" in versions
+
+
+def _bad_request_error(body: dict[str, Any], status_code: int = 400) -> Exception:
+    """Build a `groq.BadRequestError` the way the SDK does for a 4xx response.
+
+    The Groq SDK formats the error message as ``Error code: <status> - <body>``,
+    so the JSON body (including its ``code`` field) ends up in ``str(e)``. This
+    mirrors `groq._base_client.BaseClient._make_status_error_from_response`.
+    """
+    request = httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions")
+    response = httpx.Response(status_code=status_code, request=request)
+    message = f"Error code: {status_code} - {body}"
+    return groq.BadRequestError(message, response=response, body=body.get("error"))
+
+
+# Verified shape of a real Groq context-overflow response. See
+# https://console.groq.com/docs/errors and letta-ai/letta#1963.
+_CONTEXT_OVERFLOW_BODY = {
+    "error": {
+        "message": "Please reduce the length of the messages or completion.",
+        "type": "invalid_request_error",
+        "param": "messages",
+        "code": "context_length_exceeded",
+    }
+}
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Context-length errors surface as `ContextOverflowError` on invoke."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+    llm.client = mock_client
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "context_length_exceeded" in str(exc_info.value)
+    assert isinstance(exc_info.value, GroqContextOverflowError)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Context-length errors surface as `ContextOverflowError` on ainvoke."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_async = MagicMock()
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        raise _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "context_length_exceeded" in str(exc_info.value)
+    assert isinstance(exc_info.value, GroqContextOverflowError)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Context-length errors surface as `ContextOverflowError` on stream."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+    llm.client = mock_client
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "context_length_exceeded" in str(exc_info.value)
+    assert isinstance(exc_info.value, GroqContextOverflowError)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Context-length errors surface as `ContextOverflowError` on astream."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_async = MagicMock()
+
+    async def _create(**_kwargs: Any) -> Any:
+        raise _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "context_length_exceeded" in str(exc_info.value)
+    assert isinstance(exc_info.value, GroqContextOverflowError)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """`ContextOverflowError` is also catchable as `groq.BadRequestError`."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+    llm.client = mock_client
+
+    with pytest.raises(groq.BadRequestError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, groq.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_unrelated_invalid_request_error_not_promoted() -> None:
+    """Unrelated `BadRequestError`s should stay a plain `BadRequestError`."""
+    llm = ChatGroq(model="foo", max_retries=0)
+    other_error = {
+        "error": {
+            "message": "Invalid value for 'temperature'.",
+            "type": "invalid_request_error",
+            "code": "invalid_value",
+        }
+    }
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _bad_request_error(other_error)
+    llm.client = mock_client
+
+    with pytest.raises(groq.BadRequestError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert not isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_context_overflow_error_carries_response_metadata() -> None:
+    """Promoted `GroqContextOverflowError` preserves `response`/`body`.
+
+    Downstream catchers that introspect `.response.status_code` rely on this.
+    """
+    llm = ChatGroq(model="foo", max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+    llm.client = mock_client
+
+    with pytest.raises(GroqContextOverflowError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.response.status_code == 400
+    assert exc_info.value.body == _CONTEXT_OVERFLOW_BODY["error"]
