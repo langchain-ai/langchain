@@ -37,7 +37,7 @@ extended_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/core --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/text-splitters --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
 lint_package: PYTHON_FILES=langchain_text_splitters
 lint_tests: PYTHON_FILES=tests/unit_tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
