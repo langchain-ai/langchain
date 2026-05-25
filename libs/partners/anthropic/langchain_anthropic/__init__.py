@@ -6,10 +6,24 @@ from langchain_anthropic.chat_models import (
     convert_to_anthropic_tool,
 )
 from langchain_anthropic.llms import AnthropicLLM
+from langchain_anthropic.mcp import (
+    DominionObservatoryVerifier,
+    MCPToolkit,
+    TrustFailureMode,
+    TrustScore,
+    TrustVerificationError,
+    TrustVerifier,
+)
 
 __all__ = [
     "AnthropicLLM",
     "ChatAnthropic",
+    "DominionObservatoryVerifier",
+    "MCPToolkit",
+    "TrustFailureMode",
+    "TrustScore",
+    "TrustVerificationError",
+    "TrustVerifier",
     "__version__",
     "convert_to_anthropic_tool",
 ]
