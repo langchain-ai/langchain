@@ -9,6 +9,7 @@ from typing import (
     Any,
 )
 
+from pydantic import field_serializer
 from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
@@ -22,6 +23,7 @@ from langchain_core.tools.base import (
     BaseTool,
     ToolException,
     _get_runnable_config_param,
+    _serialize_callable_to_name,
 )
 
 if TYPE_CHECKING:
@@ -38,6 +40,14 @@ class Tool(BaseTool):
 
     coroutine: Callable[..., Awaitable[str]] | None = None
     """The asynchronous version of the function."""
+
+    @field_serializer("func", "coroutine", when_used="json")
+    def _serialize_callables(self, func: Callable | None) -> str | None:
+        """Serialize callable fields to a name string for JSON dumps only.
+
+        Python-mode `model_dump()` is unaffected and still returns the callable.
+        """
+        return _serialize_callable_to_name(func)
 
     # --- Runnable ---
 

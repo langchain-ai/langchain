@@ -31,6 +31,7 @@ from pydantic import (
     PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
+    field_serializer,
     validate_arguments,
 )
 from pydantic.fields import FieldInfo
@@ -402,6 +403,28 @@ ArgsSchema = TypeBaseModel | dict[str, Any]
 _EMPTY_SET: frozenset[str] = frozenset()
 
 
+def _serialize_callable_to_name(func: Callable | None) -> str | None:
+    """Serialize a callable to a stable, JSON-safe identifier string.
+
+    Used by JSON-only `field_serializer` decorators so that tools holding a
+    `func` or `coroutine` can be dumped with `model_dump(mode="json")`.
+
+    Args:
+        func: The callable to serialize, or `None`.
+
+    Returns:
+        A `"<module>.<qualname>"` string when those attributes are available,
+        the callable's `repr` as a fallback, or `None` if `func` is `None`.
+    """
+    if func is None:
+        return None
+    module = getattr(func, "__module__", None)
+    qualname = getattr(func, "__qualname__", None)
+    if module is not None and qualname is not None:
+        return f"{module}.{qualname}"
+    return repr(func)
+
+
 class BaseTool(RunnableSerializable[str | dict | ToolCall, Any]):
     """Base class for all LangChain tools.
 
@@ -553,6 +576,24 @@ class ChildTool(BaseTool):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    @field_serializer("args_schema", when_used="json")
+    def _serialize_args_schema(
+        self, args_schema: ArgsSchema | None
+    ) -> dict[str, Any] | None:
+        """Serialize `args_schema` to a JSON schema dict for JSON dumps only.
+
+        This runs only for `model_dump(mode="json")` and `model_dump_json()`.
+        Python-mode `model_dump()` is unaffected and still returns the original
+        model class (or dict), preserving round-tripping and existing behavior.
+        """
+        if args_schema is None:
+            return None
+        if isinstance(args_schema, dict):
+            return args_schema
+        if issubclass(args_schema, BaseModelV1):
+            return args_schema.schema()
+        return args_schema.model_json_schema()
 
     @property
     def is_single_input(self) -> bool:

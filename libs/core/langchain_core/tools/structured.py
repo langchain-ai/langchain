@@ -13,7 +13,7 @@ from typing import (
     Literal,
 )
 
-from pydantic import Field, SkipValidation
+from pydantic import Field, SkipValidation, field_serializer
 from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
@@ -29,6 +29,7 @@ from langchain_core.tools.base import (
     BaseTool,
     _get_runnable_config_param,
     _is_injected_arg_type,
+    _serialize_callable_to_name,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -52,6 +53,14 @@ class StructuredTool(BaseTool):
 
     coroutine: Callable[..., Awaitable[Any]] | None = None
     """The asynchronous version of the function."""
+
+    @field_serializer("func", "coroutine", when_used="json")
+    def _serialize_callables(self, func: Callable | None) -> str | None:
+        """Serialize callable fields to a name string for JSON dumps only.
+
+        Python-mode `model_dump()` is unaffected and still returns the callable.
+        """
+        return _serialize_callable_to_name(func)
 
     # --- Runnable ---
 

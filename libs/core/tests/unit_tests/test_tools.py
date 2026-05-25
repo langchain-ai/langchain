@@ -3741,3 +3741,144 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+def test_structured_tool_model_dump_json_mode() -> None:
+    """The issue repro: dumping a StructuredTool in JSON mode must not raise."""
+
+    class _Input(BaseModel):
+        x: str
+
+    def my_func(x: str) -> str:
+        return x
+
+    structured_tool = StructuredTool.from_function(
+        func=my_func, name="test", description="test", args_schema=_Input
+    )
+
+    dumped = structured_tool.model_dump(mode="json", exclude_none=True)
+
+    # args_schema is serialized to its JSON schema dict.
+    assert isinstance(dumped["args_schema"], dict)
+    assert dumped["args_schema"]["properties"]["x"]["type"] == "string"
+    # func is serialized to a stable name string.
+    assert isinstance(dumped["func"], str)
+    assert dumped["func"].endswith("my_func")
+
+    # model_dump_json works end to end and produces valid JSON.
+    parsed = json.loads(structured_tool.model_dump_json())
+    assert parsed["name"] == "test"
+
+
+def test_tool_model_dump_json_mode_with_coroutine() -> None:
+    """A Tool with a coroutine serializes cleanly in JSON mode."""
+
+    def my_func(x: str) -> str:
+        return x
+
+    async def my_coroutine(x: str) -> str:
+        return x
+
+    simple_tool = Tool(
+        name="test",
+        func=my_func,
+        description="test",
+        coroutine=my_coroutine,
+    )
+
+    dumped = simple_tool.model_dump(mode="json", exclude_none=True)
+
+    assert isinstance(dumped["func"], str)
+    assert dumped["func"].endswith("my_func")
+    assert isinstance(dumped["coroutine"], str)
+    assert dumped["coroutine"].endswith("my_coroutine")
+
+    # Ends to end through model_dump_json.
+    assert json.loads(simple_tool.model_dump_json())["name"] == "test"
+
+
+def test_structured_tool_model_dump_json_mode_with_coroutine() -> None:
+    """A StructuredTool with only a coroutine serializes cleanly in JSON mode."""
+
+    class _Input(BaseModel):
+        x: str
+
+    async def my_coroutine(x: str) -> str:
+        return x
+
+    structured_tool = StructuredTool.from_function(
+        func=None,
+        coroutine=my_coroutine,
+        name="test",
+        description="test",
+        args_schema=_Input,
+    )
+
+    dumped = structured_tool.model_dump(mode="json", exclude_none=True)
+
+    assert isinstance(dumped["args_schema"], dict)
+    assert isinstance(dumped["coroutine"], str)
+    assert dumped["coroutine"].endswith("my_coroutine")
+
+
+def test_tool_model_dump_json_mode_args_schema_dict() -> None:
+    """A dict args_schema passes through unchanged in JSON mode."""
+
+    def my_func(x: str) -> str:
+        return x
+
+    args_schema: dict = {
+        "type": "object",
+        "properties": {"x": {"type": "string"}},
+    }
+    simple_tool = Tool(
+        name="test",
+        func=my_func,
+        description="test",
+        args_schema=args_schema,
+    )
+
+    dumped = simple_tool.model_dump(mode="json", exclude_none=True)
+    assert dumped["args_schema"] == args_schema
+
+
+def test_tool_model_dump_json_mode_pydantic_v1_args_schema() -> None:
+    """A pydantic v1 args_schema is serialized via .schema() in JSON mode."""
+
+    class _InputV1(BaseModelV1):
+        x: str
+
+    def my_func(x: str) -> str:
+        return x
+
+    structured_tool = StructuredTool.from_function(
+        func=my_func, name="test", description="test", args_schema=_InputV1
+    )
+
+    dumped = structured_tool.model_dump(mode="json", exclude_none=True)
+    assert isinstance(dumped["args_schema"], dict)
+    assert dumped["args_schema"]["properties"]["x"]["type"] == "string"
+
+
+def test_tool_model_dump_python_mode_preserved() -> None:
+    """Python-mode model_dump must keep the real class and callable.
+
+    Only JSON mode is affected by the field serializers, so default dumps
+    continue to return the original objects for round-tripping.
+    """
+
+    class _Input(BaseModel):
+        x: str
+
+    def my_func(x: str) -> str:
+        return x
+
+    structured_tool = StructuredTool.from_function(
+        func=my_func, name="test", description="test", args_schema=_Input
+    )
+
+    dumped = structured_tool.model_dump()
+
+    # args_schema is still the model class, func is still the callable.
+    assert dumped["args_schema"] is _Input
+    assert dumped["func"] is my_func
