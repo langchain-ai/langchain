@@ -112,6 +112,43 @@ The presence of any of these triggers auto-routing through Responses, since
 the Chat Completions endpoint would silently reject them.
 """
 
+_RESPONSES_PASSTHROUGH_KEYS = frozenset(
+    {
+        "model",
+        "models",
+        "tools",
+        "instructions",
+        "language_preference",
+        "max_steps",
+        "preset",
+        "reasoning",
+        "response_format",
+        "stream",
+        "extra_body",
+        "extra_headers",
+        "extra_query",
+        "timeout",
+    }
+)
+"""Keys the Perplexity Responses SDK accepts natively.
+
+Mirrors `perplexity.resources.responses.ResponsesResource.create`. Anything
+outside this set (other than known renames and drops) is routed through
+`extra_body` so the SDK forwards it without breaking strict typing.
+"""
+
+_RESPONSES_DROP_KEYS = frozenset(
+    {"temperature", "top_p", "top_k", "tool_choice", "stop", "metadata"}
+)
+"""Chat-Completions-only knobs the Responses (Agent) API does not accept.
+
+Forwarding them surfaces as a 400 from the API, so they're dropped at
+the boundary. Functional keys (`tool_choice`, `stop`, `metadata`) emit a
+one-shot warning so silent behavior changes are discoverable; the class-default
+`temperature` is dropped silently because it's injected on every call regardless
+of user intent.
+"""
+
 
 def _is_builtin_tool(tool: dict) -> bool:
     """Return True if `tool` is a Responses-API built-in (non-`function`) tool.
@@ -330,7 +367,12 @@ def _convert_responses_stream_event_to_chunk(
                 response_metadata=response_metadata,
             )
         )
-    if event_type == "response.error":
+    if event_type in ("response.failed", "response.error"):
+        # `response.failed` is the canonical SDK event name; `response.error`
+        # is kept as a fallback in case the API surfaces it during transport.
+        # Without this branch, a server-side failure mid-stream would yield
+        # zero chunks and surface as "No generation chunks were returned"
+        # from `BaseChatModel.stream`, obscuring the real error.
         error = _get_attr(event, "error", None)
         message = (
             _get_attr(error, "message", None)
@@ -497,6 +539,18 @@ class ChatPerplexity(BaseChatModel):
 
     Set explicitly to `True` to always use the Responses API, or `False` to always
     use Chat Completions.
+
+    !!! warning "Disabled parameters on the Responses (Agent) API"
+
+        The Perplexity Agent API does not accept Chat-Completions-only knobs.
+        When routing through Responses (whether explicitly or by inference),
+        the following are dropped at the boundary: `temperature`, `top_p`,
+        `top_k`, `tool_choice`, `stop`, and `metadata`. The class default
+        `temperature` is dropped silently; the rest emit a `WARNING` log so
+        the behavior change is discoverable. Use `use_responses_api=False` if
+        you need those parameters to take effect. Additionally, supplying a
+        `preset` causes `model` to be dropped because the Agent API rejects
+        bare Chat-Completions model names when `model` is provided.
     """
 
     search_mode: Literal["academic", "sec", "web"] | None = None
@@ -690,11 +744,19 @@ class ChatPerplexity(BaseChatModel):
     ) -> dict[str, Any]:
         """Translate a Chat Completions-style payload to the Responses API shape.
 
-        Renames `messages` to `input`, renames `max_tokens` to
-        `max_output_tokens`, and translates `stop` to `stop_sequences`.
-        `None`-valued params are dropped. Unknown or Perplexity-specific keys
-        are forwarded under `extra_body` so the SDK can pass them through to
-        the Agent API without breaking strict typing.
+        Renames `messages` to `input` and `max_tokens` to `max_output_tokens`.
+        `None`-valued params are dropped. Chat-Completions-only sampling and
+        control parameters that the Perplexity Responses (Agent) API does not
+        accept (`temperature`, `top_p`, `top_k`, `tool_choice`, `stop`,
+        `metadata`) are dropped at the boundary because the SDK would
+        otherwise reject them with a `TypeError`; functional drops emit a
+        `WARNING`-level log so the silent behavior change is discoverable.
+        When a `preset` is supplied, `model` is dropped — the Agent API
+        validates `model` strictly (it expects `provider/model` format), and
+        a preset selects routing/model behavior on its own. Unknown or
+        Perplexity-specific keys (including `previous_response_id` and
+        `include`, which are documented Perplexity features not yet exposed by
+        the typed SDK signature) are forwarded under `extra_body`.
 
         Raises:
             TypeError: If a caller supplied an `extra_body` that is not a
@@ -702,39 +764,26 @@ class ChatPerplexity(BaseChatModel):
                 user-set search/filter knobs.
         """
         payload: dict[str, Any] = {"input": message_dicts}
-        # Fields handled by the Responses API natively.
-        passthrough_keys = {
-            "model",
-            "temperature",
-            "top_p",
-            "top_k",
-            "tools",
-            "tool_choice",
-            "previous_response_id",
-            "instructions",
-            "include",
-            "stream",
-            "extra_body",
-            "extra_headers",
-            "extra_query",
-            "timeout",
-            "metadata",
-            "response_format",
-        }
+        user_set_temperature = "temperature" in self.model_fields_set
+        # Track values that were dropped despite being meaningful, so users can
+        # see what we discarded without diffing the source.
+        dropped_for_warning: dict[str, Any] = {}
         for key, value in params.items():
             if value is None:
                 continue
             if key == "messages":
                 continue
+            if key in _RESPONSES_DROP_KEYS:
+                # Suppress the warning for the class default `temperature`,
+                # which is injected on every call via `_default_params` and
+                # would otherwise spam users who never asked for it.
+                if key != "temperature" or user_set_temperature:
+                    dropped_for_warning[key] = value
+                continue
             if key == "max_tokens":
                 payload["max_output_tokens"] = value
                 continue
-            if key == "stop":
-                # Mirror the Chat Completions translation so explicit `stop`
-                # behaves consistently across both branches.
-                payload["stop_sequences"] = value
-                continue
-            if key in passthrough_keys:
+            if key in _RESPONSES_PASSTHROUGH_KEYS:
                 payload[key] = value
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
@@ -747,6 +796,19 @@ class ChatPerplexity(BaseChatModel):
                 )
                 raise TypeError(msg)
             extra_body[key] = value
+        # When the caller selected a preset, defer model selection to it: the
+        # Agent API rejects bare Chat-Completions model names like `sonar-pro`
+        # outright when `model` is set, even if a preset is also present.
+        if "preset" in payload:
+            payload.pop("model", None)
+        if dropped_for_warning:
+            logger.warning(
+                "Perplexity Responses (Agent) API does not accept %s; the "
+                "following values were dropped: %s. Use the Chat Completions "
+                "API (set `use_responses_api=False`) if you need them.",
+                sorted(dropped_for_warning),
+                dropped_for_warning,
+            )
         return payload
 
     def _convert_delta_to_message_chunk(

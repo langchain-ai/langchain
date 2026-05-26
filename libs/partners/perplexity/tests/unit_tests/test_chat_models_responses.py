@@ -125,6 +125,12 @@ def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
     assert isinstance(result, AIMessage)
     assert result.content == "hello"
     llm.client.responses.create.assert_called_once()
+    # Pin the original regression: the class-default `temperature=0.7` injected
+    # via `_default_params` must NOT reach the Responses SDK call, either at
+    # top level or inside `extra_body`.
+    call_kwargs = llm.client.responses.create.call_args.kwargs
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in call_kwargs.get("extra_body", {}) or {}
     chat_create.assert_not_called()
 
 
@@ -141,7 +147,13 @@ def test_invoke_routes_to_responses_when_previous_response_id_bound() -> None:
     assert result.content == "continuation"
     llm.client.responses.create.assert_called_once()
     call_kwargs = llm.client.responses.create.call_args.kwargs
-    assert call_kwargs["previous_response_id"] == "resp_abc"
+    # `previous_response_id` is forwarded via `extra_body` because the typed
+    # Perplexity SDK signature does not yet expose it.
+    assert call_kwargs["extra_body"]["previous_response_id"] == "resp_abc"
+    assert "previous_response_id" not in call_kwargs
+    # Class-default temperature must not leak through to the Responses call.
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
     chat_create.assert_not_called()
 
 
@@ -183,7 +195,31 @@ def test_invoke_use_responses_api_true_forces_responses_branch() -> None:
     assert isinstance(result, AIMessage)
     assert result.content == "forced"
     llm.client.responses.create.assert_called_once()
+    # Class-default temperature must not leak through to the Responses call —
+    # this is the exact scenario that produced the original `TypeError`.
+    call_kwargs = llm.client.responses.create.call_args.kwargs
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
     llm.client.chat.completions.create.assert_not_called()
+
+
+def test_invoke_drops_explicit_stop_on_responses_branch_and_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """`stop=` from the standard `BaseChatModel.invoke` path must be dropped."""
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    llm.client.responses.create.return_value = _stub_responses_response("ok")
+
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        llm.invoke("hi", stop=["END"])
+
+    call_kwargs = llm.client.responses.create.call_args.kwargs
+    assert "stop" not in call_kwargs
+    assert "stop_sequences" not in call_kwargs
+    assert "stop" not in (call_kwargs.get("extra_body") or {})
+    # Functional drop emits a discoverable warning so users see the no-op.
+    assert any("stop" in record.message for record in caplog.records)
 
 
 def test_invoke_use_responses_api_false_forces_chat_completions_branch() -> None:
@@ -420,6 +456,10 @@ def test_stream_yields_text_chunks_and_final_usage() -> None:
 
     chunks = list(llm.stream("greet me"))
 
+    # Class-default temperature must not leak into the streaming call.
+    call_kwargs = llm.client.responses.create.call_args.kwargs
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
     text_chunks = [c for c in chunks if c.content]
     assert "".join(c.content for c in text_chunks) == "Hello world"  # type: ignore[misc]
     usage_chunks = [
@@ -469,6 +509,11 @@ async def test_astream_yields_text_chunks_and_final_usage() -> None:
     async for chunk in llm.astream("greet me"):
         assert isinstance(chunk, AIMessageChunk)
         collected.append(chunk)
+
+    # Class-default temperature must not leak into the async streaming call.
+    call_kwargs = llm.async_client.responses.create.call_args.kwargs
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
 
     text = "".join(c.content for c in collected if c.content)  # type: ignore[misc]
     assert text == "foobar"
@@ -523,9 +568,12 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
         {
             "model": "sonar-pro",
             "max_tokens": 128,
-            "temperature": 0.4,
+            "temperature": 0.4,  # Chat-Completions-only → dropped.
             "stream": True,
             "top_p": None,  # None values are dropped.
+            "top_k": 5,  # Chat-Completions-only → dropped.
+            "tool_choice": "auto",  # Chat-Completions-only → dropped.
+            "metadata": {"trace": "x"},  # Chat-Completions-only → dropped.
             "search_mode": "academic",  # Perplexity-specific → extra_body.
             "return_images": True,
         },
@@ -535,25 +583,125 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
     assert payload["model"] == "sonar-pro"
     assert payload["max_output_tokens"] == 128
     assert "max_tokens" not in payload
-    assert payload["temperature"] == 0.4
     assert payload["stream"] is True
-    assert "top_p" not in payload
+    for dropped in ("temperature", "top_p", "top_k", "tool_choice", "metadata"):
+        assert dropped not in payload
     assert "messages" not in payload
-    assert payload["extra_body"] == {
+    extra_body = payload["extra_body"]
+    for dropped in ("temperature", "top_p", "top_k", "tool_choice", "metadata"):
+        assert dropped not in extra_body
+    assert extra_body == {
         "search_mode": "academic",
         "return_images": True,
     }
 
 
-def test_to_responses_payload_maps_stop_to_stop_sequences() -> None:
+def test_to_responses_payload_drops_stop() -> None:
     llm = ChatPerplexity(model="sonar-pro", api_key="test")
     payload = llm._to_responses_payload(
         [{"role": "user", "content": "hi"}],
         {"model": "sonar-pro", "stop": ["END"]},
     )
-    assert payload["stop_sequences"] == ["END"]
+    # Perplexity Responses API does not support stop sequences; dropped at the
+    # boundary rather than forwarded as `stop_sequences`.
     assert "stop" not in payload
+    assert "stop_sequences" not in payload
     assert "extra_body" not in payload
+
+
+def test_to_responses_payload_drops_model_when_preset_set() -> None:
+    """`model` must be dropped when a `preset` is supplied.
+
+    Perplexity's Agent API validates `model` strictly and rejects bare
+    Chat-Completions names like `sonar-pro` even when a preset is also set.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    payload = llm._to_responses_payload(
+        [{"role": "user", "content": "hi"}],
+        {"model": "sonar-pro", "preset": "sonar-pro"},
+    )
+    assert payload["preset"] == "sonar-pro"
+    assert "model" not in payload
+
+
+def test_to_responses_payload_silently_drops_class_default_temperature() -> None:
+    """The class default `temperature=0.7` must not warn — it's injected on
+    every call regardless of user intent, so warning would spam.
+    """
+    import logging
+
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    assert "temperature" not in llm.model_fields_set
+    logger = logging.getLogger("langchain_perplexity.chat_models")
+    records: list[logging.LogRecord] = []
+    handler = logging.Handler()
+    handler.emit = records.append  # type: ignore[method-assign]
+    logger.addHandler(handler)
+    try:
+        payload = llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "sonar-pro", "temperature": 0.7},
+        )
+    finally:
+        logger.removeHandler(handler)
+    assert "temperature" not in payload
+    assert "temperature" not in payload.get("extra_body", {})
+    assert not [r for r in records if r.levelno >= logging.WARNING]
+
+
+def test_to_responses_payload_warns_when_user_set_temperature_dropped(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Explicitly-set temperature must warn so the no-op is discoverable."""
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", temperature=0.2)
+    assert "temperature" in llm.model_fields_set
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        payload = llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "sonar-pro", "temperature": 0.2},
+        )
+    assert "temperature" not in payload
+    assert any("temperature" in record.message for record in caplog.records)
+
+
+def test_to_responses_payload_warns_on_functional_drops(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """`tool_choice`, `stop`, `metadata` are functional; their silent drop
+    would be a footgun, so we surface a warning.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {
+                "model": "sonar-pro",
+                "tool_choice": "auto",
+                "stop": ["END"],
+                "metadata": {"trace_id": "x"},
+            },
+        )
+    assert any(
+        all(k in record.message for k in ("tool_choice", "stop", "metadata"))
+        for record in caplog.records
+    )
+
+
+def test_to_responses_payload_routes_previous_response_id_via_extra_body() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    payload = llm._to_responses_payload(
+        [{"role": "user", "content": "continue"}],
+        {
+            "model": "sonar-pro",
+            "previous_response_id": "resp_abc",
+            "include": ["citations"],
+        },
+    )
+    assert payload["extra_body"] == {
+        "previous_response_id": "resp_abc",
+        "include": ["citations"],
+    }
+    assert "previous_response_id" not in {k for k in payload if k != "extra_body"}
 
 
 def test_to_responses_payload_raises_for_non_dict_extra_body() -> None:
@@ -711,4 +859,8 @@ async def test_ainvoke_routes_to_responses_when_builtin_tool_in_payload() -> Non
     assert isinstance(result, AIMessage)
     assert result.content == "async-ok"
     llm.async_client.responses.create.assert_awaited_once()
+    # Class-default temperature must not leak through the async invoke path.
+    call_kwargs = llm.async_client.responses.create.call_args.kwargs
+    assert "temperature" not in call_kwargs
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
     chat_create.assert_not_called()
