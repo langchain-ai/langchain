@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import deque
 from typing import Any, TypedDict
 
 from langchain_core.documents import Document
@@ -389,10 +390,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
         self.current_header_stack.clear()
 
-        raw_lines = text.splitlines(keepends=True)
+        raw_lines = deque(text.splitlines(keepends=True))
 
         while raw_lines:
-            raw_line = raw_lines.pop(0)
+            raw_line = raw_lines.popleft()
             header_match = self._match_header(raw_line)
             code_match = self._match_code(raw_line)
             horz_match = self._match_horz(raw_line)
@@ -439,10 +440,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 break
         self.current_header_stack.append((header_depth, header_text))
 
-    def _resolve_code_chunk(self, current_line: str, raw_lines: list[str]) -> str:
+    def _resolve_code_chunk(self, current_line: str, raw_lines: deque[str]) -> str:
         chunk = current_line
         while raw_lines:
-            raw_line = raw_lines.pop(0)
+            raw_line = raw_lines.popleft()
             chunk += raw_line
             if self._match_code(raw_line):
                 return chunk

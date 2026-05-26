@@ -1971,6 +1971,28 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_handles_large_input() -> None:
+    """Test experimental markdown syntax splitter on large inputs.
+
+    This guards against accidentally reintroducing quadratic line consumption.
+    """
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    document = "# Header\n" + "".join(
+        f"Line {i}: some content here\n" for i in range(10_000)
+    )
+
+    output = markdown_splitter.split_text(document)
+
+    assert output == [
+        Document(
+            page_content="".join(
+                f"Line {i}: some content here\n" for i in range(10_000)
+            ),
+            metadata={"Header 1": "Header"},
+        )
+    ]
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENTS = [
     (
         "# My Header 1 From Document 1\n"
