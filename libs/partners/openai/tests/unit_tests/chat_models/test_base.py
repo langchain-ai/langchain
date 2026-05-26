@@ -1384,6 +1384,14 @@ def test_output_version_compat() -> None:
     assert llm._use_responses_api({}) is True
 
 
+def test_responses_api_strips_stop_parameter() -> None:
+    """Responses API rejects the legacy ``stop`` parameter; ensure it's dropped."""
+    llm = ChatOpenAI(model="gpt-4o", stop=["END"], use_responses_api=True)
+    messages = [{"role": "user", "content": "hello"}]
+    payload = llm._get_request_payload(messages, stop=None)
+    assert "stop" not in payload
+
+
 def test_verbosity_parameter_payload() -> None:
     """Test verbosity parameter is included in request payload for Responses API."""
     llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
