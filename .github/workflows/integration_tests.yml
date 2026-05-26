@@ -28,6 +28,7 @@ on:
           - "model-profiles"
           - "anthropic"
           - "aws"
+          - "atlas"
           - "chroma"
           - "deepseek"
           - "exa"

@@ -43,6 +43,7 @@ jobs:
               "langchain-tests": "standard-tests",
               "langchain-text-splitters": "text-splitters",
               "langchain-chroma": "chroma",
+              "langchain-atlas": "atlas",
               "langchain-deepseek": "deepseek",
               "langchain-exa": "exa",
               "langchain-fireworks": "fireworks",

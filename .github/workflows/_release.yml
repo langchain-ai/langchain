@@ -53,6 +53,7 @@ on:
           - standard-tests
           - model-profiles
           - anthropic
+          - atlas
           - chroma
           - deepseek
           - exa

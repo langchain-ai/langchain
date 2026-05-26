@@ -50,7 +50,8 @@
     "xai": "xai",
     "deps": "dependencies",
     "docs": "documentation",
-    "infra": "infra"
+    "infra": "infra",
+    "atlas": "atlas"
   },
   "fileRules": [
     { "label": "core", "prefix": "libs/core/", "skipExcludedFiles": true },
@@ -61,6 +62,7 @@
     { "label": "text-splitters", "prefix": "libs/text-splitters/", "skipExcludedFiles": true },
     { "label": "integration", "prefix": "libs/partners/", "skipExcludedFiles": true },
     { "label": "anthropic", "prefix": "libs/partners/anthropic/", "skipExcludedFiles": true },
+    { "label": "atlas", "prefix": "libs/partners/atlas/", "skipExcludedFiles": true },
     { "label": "chroma", "prefix": "libs/partners/chroma/", "skipExcludedFiles": true },
     { "label": "deepseek", "prefix": "libs/partners/deepseek/", "skipExcludedFiles": true },
     { "label": "exa", "prefix": "libs/partners/exa/", "skipExcludedFiles": true },

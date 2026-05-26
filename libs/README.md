@@ -25,6 +25,7 @@ The `partners/` directory contains a small subset of third-party provider integr
 
 * [OpenAI](https://pypi.org/project/langchain-openai/)
 * [Anthropic](https://pypi.org/project/langchain-anthropic/)
+* [Atlas Cloud](https://pypi.org/project/langchain-atlas/)
 * [Ollama](https://pypi.org/project/langchain-ollama/)
 * [DeepSeek](https://pypi.org/project/langchain-deepseek/)
 * [xAI](https://pypi.org/project/langchain-xai/)

@@ -58,6 +58,7 @@ body:
         - label: langchain-tests
         - label: langchain-text-splitters
         - label: langchain-chroma
+        - label: langchain-atlas
         - label: langchain-deepseek
         - label: langchain-exa
         - label: langchain-fireworks

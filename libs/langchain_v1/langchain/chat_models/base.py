@@ -38,6 +38,7 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
     "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
+    "atlas": ("langchain_atlas", "ChatAtlas", _call),
     "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "baseten": ("langchain_baseten", "ChatBaseten", _call),
@@ -298,6 +299,7 @@ def init_chat_model(
             - `groq`                    -> [`langchain-groq`](https://docs.langchain.com/oss/python/integrations/providers/groq)
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
             - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `atlas`                   -> [`langchain-atlas`](https://www.atlascloud.ai/docs)
             - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
             - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)

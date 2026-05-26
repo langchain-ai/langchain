@@ -183,6 +183,7 @@ def init_chat_model(
             - `groq`                    -> [`langchain-groq`](https://docs.langchain.com/oss/python/integrations/providers/groq)
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
             - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `atlas`                   -> [`langchain-atlas`](https://www.atlascloud.ai/docs)
             - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
             - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/ibm)
             - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
@@ -506,6 +507,11 @@ def _init_chat_model_helper(
         from langchain_xai import ChatXAI
 
         return ChatXAI(model=model, **kwargs)
+    if model_provider == "atlas":
+        _check_pkg("langchain_atlas", "ChatAtlas")
+        from langchain_atlas import ChatAtlas
+
+        return ChatAtlas(model=model, **kwargs)
     if model_provider == "perplexity":
         _check_pkg("langchain_perplexity", "ChatPerplexity")
         from langchain_perplexity import ChatPerplexity
@@ -540,6 +546,7 @@ _SUPPORTED_PROVIDERS = {
     "bedrock",
     "bedrock_converse",
     "google_anthropic_vertex",
+    "atlas",
     "deepseek",
     "ibm",
     "xai",

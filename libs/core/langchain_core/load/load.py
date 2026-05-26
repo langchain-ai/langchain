@@ -127,6 +127,7 @@ DEFAULT_NAMESPACES = [
     "langchain_core",
     "langchain_community",
     "langchain_anthropic",
+    "langchain_atlas",
     "langchain_groq",
     "langchain_google_genai",
     "langchain_aws",

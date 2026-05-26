@@ -45,6 +45,7 @@ huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 baseten = ["langchain-baseten>=0.2.0"]
+atlas = ["langchain-atlas"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
@@ -99,6 +100,7 @@ constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
+langchain-atlas = { path = "../partners/atlas", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
 

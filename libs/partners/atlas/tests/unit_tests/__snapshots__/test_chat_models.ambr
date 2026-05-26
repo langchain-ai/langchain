@@ -1,0 +1,33 @@
+# serializer version: 1
+# name: TestChatAtlasUnit.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_atlas',
+      'chat_models',
+      'ChatAtlas',
+    ]),
+    'kwargs': dict({
+      'atlas_api_base': 'https://api.atlascloud.ai/v1',
+      'atlas_api_key': dict({
+        'id': list([
+          'ATLAS_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'deepseek-ai/DeepSeek-V3-0324',
+      'openai_proxy': None,
+      'output_version': None,
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'stream_usage': True,
+      'temperature': 0.0,
+    }),
+    'lc': 1,
+    'name': 'ChatAtlas',
+    'type': 'constructor',
+  })
+# ---

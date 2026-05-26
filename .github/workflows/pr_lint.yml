@@ -103,6 +103,7 @@ jobs:
             text-splitters
             docs
             anthropic
+            atlas
             chroma
             deepseek
             exa
