@@ -102,9 +102,7 @@ class TestChatPerplexityIntegration:
 
     def test_responses_api_with_web_search(self) -> None:
         """Hit the real Agent (Responses) API with a built-in tool."""
-        chat = ChatPerplexity(
-            model="sonar-pro", temperature=0, use_responses_api=True
-        )
+        chat = ChatPerplexity(model="sonar-pro", temperature=0, use_responses_api=True)
         response = chat.invoke(
             "What is the capital of France?",
             tools=[{"type": "web_search"}],
@@ -117,9 +115,7 @@ class TestChatPerplexityIntegration:
 
     async def test_responses_api_async_with_web_search(self) -> None:
         """Hit the real Agent API asynchronously to cover `ainvoke`."""
-        chat = ChatPerplexity(
-            model="sonar-pro", temperature=0, use_responses_api=True
-        )
+        chat = ChatPerplexity(model="sonar-pro", temperature=0, use_responses_api=True)
         response = await chat.ainvoke(
             "What is the capital of France?",
             tools=[{"type": "web_search"}],
@@ -129,9 +125,7 @@ class TestChatPerplexityIntegration:
 
     def test_responses_api_streaming_surfaces_citations(self) -> None:
         """Stream the real Agent API and verify citations surface on chunks."""
-        chat = ChatPerplexity(
-            model="sonar-pro", temperature=0, use_responses_api=True
-        )
+        chat = ChatPerplexity(model="sonar-pro", temperature=0, use_responses_api=True)
         chunks = list(
             chat.stream(
                 "Who is the CEO of OpenAI?",
