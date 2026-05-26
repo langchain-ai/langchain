@@ -159,3 +159,22 @@ def test_stream_usage_metadata() -> None:
 
     model = ChatXAI(model=MODEL_NAME, stream_usage=False)
     assert model.stream_usage is False
+
+
+def test_chat_xai_grok_3_strips_stop_from_payload() -> None:
+    """grok-3 family rejects the `stop` param; ensure it's stripped from payload."""
+    llm = ChatXAI(model="grok-3", api_key=SecretStr("test-api-key"), stop=["END"])
+    payload = llm._get_request_payload([HumanMessage(content="hi")])
+    assert "stop" not in payload
+
+    # Also covers forward-compat variants like `grok-3-mini`, `grok-3-fast`, etc.
+    llm_variant = ChatXAI(
+        model="grok-3-mini", api_key=SecretStr("test-api-key"), stop=["END"]
+    )
+    payload_variant = llm_variant._get_request_payload([HumanMessage(content="hi")])
+    assert "stop" not in payload_variant
+
+    # Sanity check: other models still forward `stop`.
+    llm_other = ChatXAI(model="grok-4", api_key=SecretStr("test-api-key"), stop=["END"])
+    payload_other = llm_other._get_request_payload([HumanMessage(content="hi")])
+    assert payload_other.get("stop") == ["END"]
