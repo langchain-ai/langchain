@@ -506,7 +506,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = [
                     create_tool_call_chunk(
                         name=tc["name"],
-                        args=json.dumps(tc["args"]),
+                        args=json.dumps(tc["args"], ensure_ascii=False),
                         id=tc["id"],
                         index=None,
                     )
