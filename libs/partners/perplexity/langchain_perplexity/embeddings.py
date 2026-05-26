@@ -12,6 +12,8 @@ from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity._utils import get_integration_headers
+
 
 def _decode_int8_embedding(b64: str) -> list[float]:
     """Decode a `base64_int8`-encoded Perplexity embedding into a list of floats."""
@@ -117,6 +119,7 @@ class PerplexityEmbeddings(BaseModel, Embeddings):
         api_key = self.pplx_api_key.get_secret_value()
         client_params: dict[str, Any] = {
             "api_key": api_key,
+            "default_headers": get_integration_headers(),
             "max_retries": self.max_retries,
         }
         if self.request_timeout is not None:

@@ -1,8 +1,19 @@
 import os
+from importlib import metadata
 from typing import Any
 
 from langchain_core.utils import convert_to_secret_str
 from perplexity import Perplexity
+
+_INTEGRATION_HEADER = "X-Pplx-Integration"
+_INTEGRATION_NAME = "langchain"
+_PACKAGE_NAME = "langchain-perplexity"
+
+
+def get_integration_headers() -> dict[str, str]:
+    """Return the Perplexity attribution headers for this integration."""
+    package_version = metadata.version(_PACKAGE_NAME)
+    return {_INTEGRATION_HEADER: f"{_INTEGRATION_NAME}/{package_version}"}
 
 
 def initialize_client(values: dict[str, Any]) -> dict[str, Any]:
@@ -20,6 +31,8 @@ def initialize_client(values: dict[str, Any]) -> dict[str, Any]:
     )
 
     if not values.get("client"):
-        values["client"] = Perplexity(api_key=api_key)
+        values["client"] = Perplexity(
+            api_key=api_key, default_headers=get_integration_headers()
+        )
 
     return values

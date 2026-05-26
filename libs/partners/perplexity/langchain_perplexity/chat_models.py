@@ -49,6 +49,7 @@ from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_perplexity._utils import get_integration_headers
 from langchain_perplexity.data._profiles import _PROFILES
 from langchain_perplexity.output_parsers import (
     ReasoningJsonOutputParser,
@@ -299,6 +300,7 @@ class ChatPerplexity(BaseChatModel):
 
         client_params: dict[str, Any] = {
             "api_key": pplx_api_key,
+            "default_headers": get_integration_headers(),
             "max_retries": self.max_retries,
         }
         if self.request_timeout is not None:
