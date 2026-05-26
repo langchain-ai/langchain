@@ -209,7 +209,7 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
-        """Create a IsFunctionArgDict visitor."""
+        """Create an `IsFunctionArgDict` visitor."""
         self.keys: set[str] = set()
 
     @override
