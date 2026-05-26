@@ -12,6 +12,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -1473,6 +1474,81 @@ def _convert_chunk_to_message_chunk(
     return default_class(content=content)  # type: ignore[call-arg]
 
 
+def _parse_legacy_function_tool_calls(
+    text: str,
+    allowed_tool_names: set[str] | None = None,
+) -> list[dict]:
+    """Parse legacy ``<function=NAME{...args...}>...</function>`` tool-call tags.
+
+    The tool name is taken as everything after ``<function=`` up to (but
+    not including) the first ``{`` or whitespace -- never the full
+    ``NAME{...args...}`` blob. Whatever follows (up to the closing ``>``)
+    is parsed as JSON arguments.
+    """
+    if not text or "<function=" not in text:
+        return []
+    tool_calls: list[dict] = []
+    cursor = 0
+    while True:
+        start = text.find("<function=", cursor)
+        if start == -1:
+            break
+        header_start = start + len("<function=")
+        header_end = text.find(">", header_start)
+        if header_end == -1:
+            break
+        header = text[header_start:header_end]
+        brace_idx = header.find("{")
+        ws_idx = -1
+        for i, ch in enumerate(header):
+            if ch.isspace():
+                ws_idx = i
+                break
+        split_candidates = [i for i in (brace_idx, ws_idx) if i != -1]
+        if split_candidates:
+            split_idx = min(split_candidates)
+            name = header[:split_idx].strip()
+            args_blob = header[split_idx:].strip()
+        else:
+            name = header.strip()
+            args_blob = ""
+        if not name:
+            cursor = header_end + 1
+            continue
+        if allowed_tool_names is not None and name not in allowed_tool_names:
+            msg = (
+                f"Model emitted legacy <function=...> tool call for "
+                f"'{name}', which is not in the configured tools "
+                f"({sorted(allowed_tool_names)})."
+            )
+            raise OutputParserException(msg)
+        if args_blob:
+            try:
+                args = json.loads(args_blob)
+            except json.JSONDecodeError as e:
+                msg = (
+                    f"Failed to JSON-decode arguments for legacy "
+                    f"<function={name}...> tool call: {e}. "
+                    f"Arguments blob was: {args_blob!r}"
+                )
+                raise OutputParserException(msg) from e
+        else:
+            args = {}
+        tool_calls.append(
+            {
+                "type": "function",
+                "id": None,
+                "function": {
+                    "name": name,
+                    "arguments": json.dumps(args, ensure_ascii=False),
+                },
+            }
+        )
+        close = text.find("</function>", header_end)
+        cursor = (close + len("</function>")) if close != -1 else (header_end + 1)
+    return tool_calls
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
 
@@ -1515,6 +1591,23 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+        elif isinstance(content, str) and "<function=" in content:
+            # Some Groq models emit tool calls in the legacy
+            # ``<function=NAME{...args...}>...</function>`` text format
+            # rather than as structured ``tool_calls``. Extract them so the
+            # bare tool name (not ``NAME{...args...}``) is forwarded.
+            legacy_raw_tool_calls = _parse_legacy_function_tool_calls(content)
+            if legacy_raw_tool_calls:
+                additional_kwargs["tool_calls"] = legacy_raw_tool_calls
+                for raw_tool_call in legacy_raw_tool_calls:
+                    try:
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
+                    except Exception as e:  # pylint: disable=broad-except
+                        invalid_tool_calls.append(
+                            make_invalid_tool_call(raw_tool_call, str(e))
+                        )
         return AIMessage(
             content=content,
             id=id_,

@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import langchain_core.load as lc_load
 import pytest
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -25,6 +26,7 @@ from langchain_groq.chat_models import (
     _convert_dict_to_message,
     _create_usage_metadata,
     _format_message_content,
+    _parse_legacy_function_tool_calls,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -141,6 +143,45 @@ def test__convert_dict_to_message_tool_call() -> None:
         response_metadata={"model_provider": "groq"},
     )
     assert result == expected_output
+
+
+def test__parse_legacy_function_tool_calls_strips_args_from_name() -> None:
+    text = '<function=my_tool {"x": 1}></function>'
+    result = _parse_legacy_function_tool_calls(text)
+    assert len(result) == 1
+    assert result[0]["function"]["name"] == "my_tool"
+    assert json.loads(result[0]["function"]["arguments"]) == {"x": 1}
+
+
+def test__parse_legacy_function_tool_calls_no_whitespace() -> None:
+    result = _parse_legacy_function_tool_calls(
+        '<function=generator_function{"type": "greeting", "style": "Pirate"}>'
+        "</function>"
+    )
+    assert len(result) == 1
+    assert result[0]["function"]["name"] == "generator_function"
+    assert json.loads(result[0]["function"]["arguments"]) == {
+        "type": "greeting",
+        "style": "Pirate",
+    }
+
+
+def test__parse_legacy_function_tool_calls_unknown_tool_raises() -> None:
+    text = '<function=bogus_tool {"x": 1}></function>'
+    with pytest.raises(OutputParserException, match="bogus_tool"):
+        _parse_legacy_function_tool_calls(text, allowed_tool_names={"my_tool"})
+
+
+def test__convert_dict_to_message_legacy_function_tag() -> None:
+    message = {
+        "role": "assistant",
+        "content": '<function=my_tool {"x": 1}></function>',
+    }
+    result = _convert_dict_to_message(message)
+    assert isinstance(result, AIMessage)
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0]["name"] == "my_tool"
+    assert result.tool_calls[0]["args"] == {"x": 1}
 
 
 def test__convert_dict_to_message_system() -> None:
