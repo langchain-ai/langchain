@@ -284,7 +284,7 @@ When adding a new partner package, update these files:
 
 ## GitHub Actions & Workflows
 
-This repository require actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
+This repository requires actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
 
 ## Additional resources
 
