@@ -3911,6 +3911,70 @@ def _resize(width: int, height: int) -> tuple[int, int]:
     return width, height
 
 
+def _make_nullable(prop_schema: dict) -> None:
+    """Rewrite a property schema so it permits ``null`` in addition to its type."""
+    if "type" in prop_schema:
+        existing = prop_schema["type"]
+        if isinstance(existing, list):
+            if "null" not in existing:
+                prop_schema["type"] = [*existing, "null"]
+        elif isinstance(existing, str):
+            if existing != "null":
+                prop_schema["type"] = [existing, "null"]
+        return
+    if isinstance(prop_schema.get("anyOf"), list):
+        if not any(
+            isinstance(opt, dict) and opt.get("type") == "null"
+            for opt in prop_schema["anyOf"]
+        ):
+            prop_schema["anyOf"].append({"type": "null"})
+        return
+    if "$ref" in prop_schema:
+        ref = prop_schema.pop("$ref")
+        prop_schema["anyOf"] = [{"$ref": ref}, {"type": "null"}]
+
+
+def _ensure_strict_json_schema(schema: Any) -> None:
+    """Normalize a JSON schema for OpenAI's strict structured-output mode.
+
+    OpenAI's strict mode requires that every key in ``properties`` also appear
+    in ``required``. Pydantic's ``Optional[T]`` fields are emitted without being
+    listed in ``required``, which the API now rejects. Walk the schema and, for
+    every object schema, set ``required`` to all property keys. For properties
+    that were previously not required, rewrite their type to allow ``null`` so
+    the model can still omit a value semantically.
+    """
+    if isinstance(schema, list):
+        for item in schema:
+            _ensure_strict_json_schema(item)
+        return
+    if not isinstance(schema, dict):
+        return
+
+    if schema.get("type") == "object" and isinstance(schema.get("properties"), dict):
+        properties = schema["properties"]
+        existing_required = schema.get("required") or []
+        new_required = list(properties.keys())
+        for prop_name, prop_schema in properties.items():
+            if prop_name not in existing_required and isinstance(prop_schema, dict):
+                _make_nullable(prop_schema)
+        schema["required"] = new_required
+
+    for key in ("properties", "$defs", "definitions"):
+        nested = schema.get(key)
+        if isinstance(nested, dict):
+            for value in nested.values():
+                _ensure_strict_json_schema(value)
+
+    for key in ("items", "additionalProperties"):
+        if isinstance(schema.get(key), (dict, list)):
+            _ensure_strict_json_schema(schema[key])
+
+    for key in ("anyOf", "oneOf", "allOf"):
+        if isinstance(schema.get(key), list):
+            _ensure_strict_json_schema(schema[key])
+
+
 def _convert_to_openai_response_format(
     schema: dict[str, Any] | type, *, strict: bool | None = None
 ) -> dict | TypeBaseModel:
@@ -3934,6 +3998,13 @@ def _convert_to_openai_response_format(
         function = convert_to_openai_function(schema, strict=strict)
         function["schema"] = function.pop("parameters")
         response_format = {"type": "json_schema", "json_schema": function}
+        if strict and isinstance(response_format["json_schema"].get("schema"), dict):
+            # OpenAI strict mode requires every property to appear in `required`.
+            # `convert_to_openai_function` leaves Pydantic `Optional[...]` fields
+            # out of `required`, which now triggers a 400 from the API. Normalize
+            # the schema so all properties are required and previously-optional
+            # ones are made nullable.
+            _ensure_strict_json_schema(response_format["json_schema"]["schema"])
 
     if (
         strict is not None

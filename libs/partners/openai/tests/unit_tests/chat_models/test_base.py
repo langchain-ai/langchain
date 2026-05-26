@@ -1190,6 +1190,32 @@ def test__convert_to_openai_response_format() -> None:
         _convert_to_openai_response_format(response_format, strict=False)
 
 
+def test__convert_to_openai_response_format_strict_optional_fields() -> None:
+    """All properties must appear in ``required`` when ``strict=True``."""
+    from typing import Optional
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: Optional[str] = Field(
+            default=None, description="answer to resolve the joke"
+        )
+
+    result = _convert_to_openai_response_format(Joke, strict=True)
+    assert isinstance(result, dict)
+    schema = result["json_schema"]["schema"]
+    assert set(schema["required"]) == {"setup", "punchline"}
+    punchline_type = schema["properties"]["punchline"].get("type")
+    if isinstance(punchline_type, list):
+        assert "null" in punchline_type
+    else:
+        any_of = schema["properties"]["punchline"].get("anyOf", [])
+        assert any(
+            isinstance(opt, dict) and opt.get("type") == "null" for opt in any_of
+        )
+
+
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
 @pytest.mark.parametrize("strict", [True, None])
 def test_structured_output_strict(
