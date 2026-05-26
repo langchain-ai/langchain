@@ -21,7 +21,7 @@
 
 <br>
 
-LangChain is a framework for building agents and LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development — all while future-proofing decisions as the underlying technology evolves.
+LangChain is a framework for building LLM-powered applications and AI agents. It provides composable components and third-party integrations that make it easier to develop, connect, and scale AI applications. while staying flexible as underlying models and technologies evolve.
 
 > [!TIP]
 > Just getting started? Check out **[Deep Agents](http://docs.langchain.com/oss/python/deepagents/)** — a higher-level package built on LangChain for agents that have built-in capabilites for common usage patterns such as planning, subagents, file system usage, and more.
