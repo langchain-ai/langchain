@@ -45,7 +45,7 @@ test = [
     "pytest-watcher>=0.6.3,<1.0.0",
     "pytest-timeout>=2.4.0,<3.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]

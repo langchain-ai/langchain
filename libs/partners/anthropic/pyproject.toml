@@ -55,7 +55,7 @@ test = [
     "vcrpy>=8.0.0,<9.0.0",
     "langgraph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
     "langchain-core>=1.4.0,<2.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain>=1.0.0,<2.0.0",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
@@ -124,6 +124,7 @@ addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5
 markers = [
     "requires: mark tests as requiring a specific library",
     "compile: mark placeholder test used to compile integration tests without running them",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 

@@ -45,7 +45,7 @@ test = [
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-timeout>=2.3.1,<3.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
 ]
 test_integration = []
