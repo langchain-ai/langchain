@@ -103,46 +103,90 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     )
 
 
+_RESPONSES_ONLY_ARGS = frozenset(
+    {"include", "input", "instructions", "previous_response_id"}
+)
+"""Top-level keys that exist only on Perplexity's Agent (Responses) API.
+
+The presence of any of these triggers auto-routing through Responses, since
+the Chat Completions endpoint would silently reject them.
+"""
+
+
 def _is_builtin_tool(tool: dict) -> bool:
+    """Return True if `tool` is a Responses-API built-in (non-`function`) tool.
+
+    Perplexity's Agent API ships built-in tools (e.g. `web_search`,
+    `code_interpreter`) that are identified by a `type` value other than
+    `"function"`. Chat Completions only accepts function tools, so any tool
+    failing this check forces the Responses route.
+    """
     return "type" in tool and tool["type"] != "function"
 
 
 def _use_responses_api(payload: dict) -> bool:
     """Determine whether to route a payload through the Responses API.
 
+    The Agent (Responses) API is required for built-in tools and accepts
+    fields that Chat Completions would reject — so callers must be routed
+    there transparently when those signals appear.
+
     Returns True if the payload contains a built-in tool (any element of
-    `tools` whose `type` is not `"function"`) or any Responses-only field.
+    `tools` whose `type` is not `"function"`) or any Responses-only field
+    (`input`, `include`, `instructions`, `previous_response_id`).
     """
     uses_builtin_tools = "tools" in payload and any(
         _is_builtin_tool(tool) for tool in payload["tools"]
     )
-    responses_only_args = {
-        "include",
-        "input",
-        "instructions",
-        "previous_response_id",
-    }
-    return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+    matched_fields = _RESPONSES_ONLY_ARGS.intersection(payload)
+    if uses_builtin_tools or matched_fields:
+        reason = (
+            "payload contains a built-in tool (Chat Completions accepts only "
+            "function tools)"
+            if uses_builtin_tools
+            else (
+                f"payload sets Responses-only field(s) {sorted(matched_fields)} "
+                "(Chat Completions would reject these)"
+            )
+        )
+        logger.debug(
+            "Routing through Perplexity Responses API: %s. "
+            "Set use_responses_api=False to force Chat Completions.",
+            reason,
+        )
+        return True
+    return False
 
 
 def _get_attr(obj: Any, name: str, default: Any = None) -> Any:
-    """Safely fetch an attribute from an SDK object or a dict."""
+    """Safely fetch an attribute from an SDK object or a dict.
+
+    Responses SDK payloads arrive either as Pydantic-like SDK objects (server
+    responses) or as plain dicts (when callers pass payloads pre-serialized or
+    in tests). This helper normalizes both shapes so the rest of the module
+    does not have to special-case them.
+    """
     if isinstance(obj, dict):
         return obj.get(name, default)
     return getattr(obj, name, default)
 
 
 def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
-    """Build `UsageMetadata` from a Responses API usage payload."""
+    """Build `UsageMetadata` from a Responses API usage payload.
+
+    Returns `None` if `usage` itself is missing or if either token field is
+    absent — emitting zeroed `UsageMetadata` would silently undercount usage
+    in downstream cost dashboards.
+    """
     if usage is None:
         return None
-    input_tokens = _get_attr(usage, "input_tokens", 0) or 0
-    output_tokens = _get_attr(usage, "output_tokens", 0) or 0
-    total_tokens = (
-        _get_attr(usage, "total_tokens", None)
-        if _get_attr(usage, "total_tokens", None) is not None
-        else input_tokens + output_tokens
-    )
+    input_tokens = _get_attr(usage, "input_tokens", None)
+    output_tokens = _get_attr(usage, "output_tokens", None)
+    if input_tokens is None or output_tokens is None:
+        return None
+    total_tokens = _get_attr(usage, "total_tokens", None)
+    if total_tokens is None:
+        total_tokens = input_tokens + output_tokens
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -175,23 +219,30 @@ def _extract_responses_text(response: Any) -> str:
 def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     """Convert a Responses API response object to a `ChatResult`.
 
-    Maps `output_text`/`output[*].content[*].text` to `AIMessage.content`,
-    surfaces `function_call` items as `tool_calls`, populates `usage_metadata`,
-    and preserves response metadata (`id`, `model`, `status`, `object`) along
-    with any `citations`, `images`, `related_questions`, or `search_results`
-    fields surfaced by the Agent API.
+    Maps `output_text`/`output[*].content[*].text` to `AIMessage.content` and
+    surfaces `function_call` items as `tool_calls`. Perplexity-specific fields
+    (`citations`, `images`, `related_questions`, `search_results`, `videos`,
+    `reasoning_steps`) are placed on `additional_kwargs` to match the shape
+    produced by the Chat Completions branch, while transport-level fields
+    (`id`, `model`, `status`, `object`) land on `response_metadata`.
     """
     content = _extract_responses_text(response)
 
     tool_calls: list[dict[str, Any]] = []
     output = _get_attr(response, "output", None) or []
-    additional_kwargs: dict[str, Any] = {}
     for item in output:
-        if _get_attr(item, "type", None) == "function_call":
+        item_type = _get_attr(item, "type", None)
+        if item_type == "function_call":
             raw_args = _get_attr(item, "arguments", "") or ""
             try:
                 parsed_args = json.loads(raw_args) if raw_args else {}
             except (TypeError, ValueError):
+                logger.warning(
+                    "Failed to parse Perplexity function_call arguments as JSON "
+                    "for tool %r; preserving raw payload under __raw_arguments__.",
+                    _get_attr(item, "name", ""),
+                    exc_info=True,
+                )
                 parsed_args = {"__raw_arguments__": raw_args}
             tool_calls.append(
                 {
@@ -202,17 +253,28 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
                     "type": "tool_call",
                 }
             )
+        elif item_type and item_type != "message":
+            logger.debug("Ignoring unhandled Responses output item type: %s", item_type)
 
     usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
+
+    additional_kwargs: dict[str, Any] = {}
+    for key in (
+        "citations",
+        "images",
+        "related_questions",
+        "search_results",
+        "videos",
+        "reasoning_steps",
+    ):
+        value = _get_attr(response, key, None)
+        if value:
+            additional_kwargs[key] = value
 
     response_metadata: dict[str, Any] = {}
     for key in ("id", "model", "status", "object"):
         value = _get_attr(response, key, None)
         if value is not None:
-            response_metadata[key] = value
-    for key in ("citations", "images", "related_questions", "search_results"):
-        value = _get_attr(response, key, None)
-        if value:
             response_metadata[key] = value
 
     message = AIMessage(
@@ -230,8 +292,10 @@ def _convert_responses_stream_event_to_chunk(
 ) -> ChatGenerationChunk | None:
     """Convert a Responses API streaming event to a `ChatGenerationChunk`.
 
-    Returns `None` for events that do not produce a chunk. Raises
-    `RuntimeError` on `response.error` events.
+    Handles `response.output_text.delta` (text chunk), `response.completed`
+    (final usage + metadata) and `response.error` (raises). Returns `None`
+    for any other event type — including function-call streaming events,
+    which are intentionally not surfaced as chunks today.
     """
     event_type = _get_attr(event, "type", None)
     if event_type == "response.output_text.delta":
@@ -241,14 +305,27 @@ def _convert_responses_stream_event_to_chunk(
         response = _get_attr(event, "response", None)
         usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
         response_metadata: dict[str, Any] = {}
+        additional_kwargs: dict[str, Any] = {}
         if response is not None:
             for key in ("id", "model", "status", "object"):
                 value = _get_attr(response, key, None)
                 if value is not None:
                     response_metadata[key] = value
+            for key in (
+                "citations",
+                "images",
+                "related_questions",
+                "search_results",
+                "videos",
+                "reasoning_steps",
+            ):
+                value = _get_attr(response, key, None)
+                if value:
+                    additional_kwargs[key] = value
         return ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
+                additional_kwargs=additional_kwargs,
                 usage_metadata=usage_metadata,
                 response_metadata=response_metadata,
             )
@@ -260,6 +337,17 @@ def _convert_responses_stream_event_to_chunk(
             if error is not None
             else _get_attr(event, "message", None)
         ) or "Perplexity Responses API stream error"
+        details: list[str] = []
+        if error is not None:
+            for key in ("code", "type", "param"):
+                value = _get_attr(error, key, None)
+                if value is not None:
+                    details.append(f"{key}={value}")
+        request_id = _get_attr(event, "request_id", None)
+        if request_id is not None:
+            details.append(f"request_id={request_id}")
+        if details:
+            message = f"{message} ({', '.join(details)})"
         raise RuntimeError(message)
     return None
 
@@ -355,14 +443,14 @@ class ChatPerplexity(BaseChatModel):
         ```python
         from langchain_perplexity import ChatPerplexity
 
-        model = ChatPerplexity(model="openai/gpt-5.4", use_responses_api=True)
+        model = ChatPerplexity(model="sonar-pro", use_responses_api=True)
         model.invoke("What is the capital of France?")
         ```
 
         Auto-detection example:
 
         ```python
-        model = ChatPerplexity(model="openai/gpt-5.4")
+        model = ChatPerplexity(model="sonar-pro")
         model.invoke(
             "Find recent news about AI.",
             tools=[{"type": "web_search"}],
@@ -589,7 +677,7 @@ class ChatPerplexity(BaseChatModel):
         """Return True if `payload` should be routed through the Responses API.
 
         Honors `self.use_responses_api` when set explicitly; otherwise delegates
-        to the module-level :func:`_use_responses_api` heuristic.
+        to the module-level `_use_responses_api` heuristic.
         """
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
@@ -602,8 +690,16 @@ class ChatPerplexity(BaseChatModel):
     ) -> dict[str, Any]:
         """Translate a Chat Completions-style payload to the Responses API shape.
 
-        Renames `messages` to `input`, drops fields that the Responses API does
-        not accept, and renames `max_tokens` to `max_output_tokens`.
+        Renames `messages` to `input`, renames `max_tokens` to
+        `max_output_tokens`, and translates `stop` to `stop_sequences`.
+        `None`-valued params are dropped. Unknown or Perplexity-specific keys
+        are forwarded under `extra_body` so the SDK can pass them through to
+        the Agent API without breaking strict typing.
+
+        Raises:
+            TypeError: If a caller supplied an `extra_body` that is not a
+                `dict` — silently dropping subsequent params would mask
+                user-set search/filter knobs.
         """
         payload: dict[str, Any] = {"input": message_dicts}
         # Fields handled by the Responses API natively.
@@ -633,6 +729,11 @@ class ChatPerplexity(BaseChatModel):
             if key == "max_tokens":
                 payload["max_output_tokens"] = value
                 continue
+            if key == "stop":
+                # Mirror the Chat Completions translation so explicit `stop`
+                # behaves consistently across both branches.
+                payload["stop_sequences"] = value
+                continue
             if key in passthrough_keys:
                 payload[key] = value
                 continue
@@ -640,7 +741,11 @@ class ChatPerplexity(BaseChatModel):
             # SDK forwards them to the Agent API without breaking strict typing.
             extra_body = payload.setdefault("extra_body", {})
             if not isinstance(extra_body, dict):
-                continue
+                msg = (
+                    "`extra_body` must be a dict to forward Perplexity-specific "
+                    f"parameters to the Responses API, got {type(extra_body).__name__}."
+                )
+                raise TypeError(msg)
             extra_body[key] = value
         return payload
 

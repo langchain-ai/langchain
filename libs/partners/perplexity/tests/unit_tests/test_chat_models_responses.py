@@ -13,6 +13,7 @@ from langchain_perplexity import ChatPerplexity
 from langchain_perplexity.chat_models import (
     _convert_responses_stream_event_to_chunk,
     _convert_responses_to_chat_result,
+    _convert_responses_usage,
     _use_responses_api,
 )
 
@@ -69,7 +70,7 @@ def test_module_use_responses_api_returns_false_for_plain_payload() -> None:
 
 
 def test_instance_auto_detect_routes_to_responses_for_builtin_tool() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test")
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
     assert llm._use_responses_api({"tools": [{"type": "web_search"}]}) is True
 
 
@@ -82,14 +83,12 @@ def test_instance_auto_detect_routes_to_chat_completions_for_plain_text() -> Non
 
 
 def test_instance_explicit_true_overrides_auto_detect() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
     assert llm._use_responses_api({"messages": []}) is True
 
 
 def test_instance_explicit_false_overrides_auto_detect() -> None:
-    llm = ChatPerplexity(
-        model="openai/gpt-5.4", api_key="test", use_responses_api=False
-    )
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=False)
     assert llm._use_responses_api({"tools": [{"type": "web_search"}]}) is False
 
 
@@ -102,7 +101,7 @@ def _stub_responses_response(text: str = "ok") -> MagicMock:
     usage = _make_response_obj(input_tokens=11, output_tokens=22, total_tokens=33)
     return _make_response_obj(
         id="resp_123",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         output_text=text,
@@ -116,7 +115,7 @@ def _stub_responses_response(text: str = "ok") -> MagicMock:
 
 
 def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test")
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
     llm.client = MagicMock()
     llm.client.responses.create.return_value = _stub_responses_response("hello")
     chat_create = llm.client.chat.completions.create
@@ -130,7 +129,7 @@ def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
 
 
 def test_invoke_routes_to_responses_when_previous_response_id_bound() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test")
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
     llm.client = MagicMock()
     llm.client.responses.create.return_value = _stub_responses_response("continuation")
     chat_create = llm.client.chat.completions.create
@@ -175,7 +174,7 @@ def test_invoke_routes_to_chat_completions_for_plain_text() -> None:
 
 
 def test_invoke_use_responses_api_true_forces_responses_branch() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
     llm.client = MagicMock()
     llm.client.responses.create.return_value = _stub_responses_response("forced")
 
@@ -188,15 +187,13 @@ def test_invoke_use_responses_api_true_forces_responses_branch() -> None:
 
 
 def test_invoke_use_responses_api_false_forces_chat_completions_branch() -> None:
-    llm = ChatPerplexity(
-        model="openai/gpt-5.4", api_key="test", use_responses_api=False
-    )
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=False)
     llm.client = MagicMock()
     mock_response = MagicMock()
     mock_response.choices = [
         MagicMock(message=MagicMock(content="from chat completions", tool_calls=None))
     ]
-    mock_response.model = "openai/gpt-5.4"
+    mock_response.model = "sonar-pro"
     mock_response.usage = None
     for attr in (
         "videos",
@@ -239,7 +236,7 @@ def test_convert_responses_to_chat_result_basic_fields() -> None:
     usage = _make_response_obj(input_tokens=12, output_tokens=34, total_tokens=46)
     response = _make_response_obj(
         id="resp_xyz",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         output_text="Hello world",
@@ -261,9 +258,11 @@ def test_convert_responses_to_chat_result_basic_fields() -> None:
     assert message.usage_metadata["output_tokens"] == 34
     assert message.usage_metadata["total_tokens"] == 46
     assert message.response_metadata["id"] == "resp_xyz"
-    assert message.response_metadata["model"] == "openai/gpt-5.4"
+    assert message.response_metadata["model"] == "sonar-pro"
     assert message.response_metadata["status"] == "completed"
-    assert message.response_metadata["citations"] == ["https://example.com"]
+    assert message.additional_kwargs["citations"] == ["https://example.com"]
+    assert "citations" not in message.response_metadata
+    assert "images" not in message.additional_kwargs
 
 
 def test_convert_responses_to_chat_result_function_call_to_tool_calls() -> None:
@@ -275,7 +274,7 @@ def test_convert_responses_to_chat_result_function_call_to_tool_calls() -> None:
     )
     response = _make_response_obj(
         id="resp_abc",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         output_text="",
@@ -305,7 +304,7 @@ def test_convert_responses_to_chat_result_falls_back_to_output_content() -> None
     )
     response = _make_response_obj(
         id="resp_fb",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         output_text="",
@@ -338,7 +337,7 @@ def test_stream_event_conversion_for_completed_includes_usage() -> None:
     usage = _make_response_obj(input_tokens=4, output_tokens=8, total_tokens=12)
     response = _make_response_obj(
         id="resp_done",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         usage=usage,
@@ -351,6 +350,36 @@ def test_stream_event_conversion_for_completed_includes_usage() -> None:
     assert chunk.message.usage_metadata["input_tokens"] == 4
     assert chunk.message.usage_metadata["output_tokens"] == 8
     assert chunk.message.usage_metadata["total_tokens"] == 12
+
+
+def test_stream_event_conversion_completed_surfaces_perplexity_extras() -> None:
+    response = _make_response_obj(
+        id="resp_extras_stream",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        usage=None,
+        citations=["https://example.com"],
+        images=[{"url": "https://example.com/img.png"}],
+        related_questions=["What about X?"],
+        search_results=[{"title": "T"}],
+        videos=[{"url": "https://example.com/v.mp4"}],
+        reasoning_steps=[{"step": "thinking"}],
+    )
+    event = _make_event("response.completed", response=response)
+    chunk = _convert_responses_stream_event_to_chunk(event)
+    assert chunk is not None
+    assert isinstance(chunk.message, AIMessageChunk)
+    for key in (
+        "citations",
+        "images",
+        "related_questions",
+        "search_results",
+        "videos",
+        "reasoning_steps",
+    ):
+        assert key in chunk.message.additional_kwargs
+        assert key not in chunk.message.response_metadata
 
 
 def test_stream_event_conversion_returns_none_for_unknown_event() -> None:
@@ -371,13 +400,13 @@ def test_stream_event_conversion_raises_on_error_event() -> None:
 
 
 def test_stream_yields_text_chunks_and_final_usage() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
     llm.client = MagicMock()
 
     usage = _make_response_obj(input_tokens=2, output_tokens=6, total_tokens=8)
     completed_response = _make_response_obj(
         id="resp_stream",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         usage=usage,
@@ -405,12 +434,12 @@ def test_stream_yields_text_chunks_and_final_usage() -> None:
 
 @pytest.mark.asyncio
 async def test_astream_yields_text_chunks_and_final_usage() -> None:
-    llm = ChatPerplexity(model="openai/gpt-5.4", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
 
     usage = _make_response_obj(input_tokens=3, output_tokens=9, total_tokens=12)
     completed_response = _make_response_obj(
         id="resp_async",
-        model="openai/gpt-5.4",
+        model="sonar-pro",
         status="completed",
         object="response",
         usage=usage,
@@ -449,3 +478,237 @@ async def test_astream_yields_text_chunks_and_final_usage() -> None:
     assert final_usage is not None
     assert final_usage["input_tokens"] == 3
     assert final_usage["output_tokens"] == 9
+
+
+# ---------------------------------------------------------------------------
+# Auto-detection: input/include/instructions/previous_response_id + mixed tools
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["input", "include", "instructions", "previous_response_id"],
+)
+def test_module_use_responses_api_detects_each_responses_only_field(key: str) -> None:
+    assert _use_responses_api({key: "value"}) is True
+
+
+def test_module_use_responses_api_detects_mixed_function_and_builtin_tools() -> None:
+    assert (
+        _use_responses_api(
+            {
+                "tools": [
+                    {"type": "function", "function": {"name": "foo"}},
+                    {"type": "web_search"},
+                ]
+            }
+        )
+        is True
+    )
+
+
+def test_module_use_responses_api_empty_tools_list_is_false() -> None:
+    assert _use_responses_api({"tools": []}) is False
+
+
+# ---------------------------------------------------------------------------
+# _to_responses_payload translation
+# ---------------------------------------------------------------------------
+
+
+def test_to_responses_payload_renames_and_drops_keys() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    payload = llm._to_responses_payload(
+        [{"role": "user", "content": "hi"}],
+        {
+            "model": "sonar-pro",
+            "max_tokens": 128,
+            "temperature": 0.4,
+            "stream": True,
+            "top_p": None,  # None values are dropped.
+            "search_mode": "academic",  # Perplexity-specific → extra_body.
+            "return_images": True,
+        },
+    )
+
+    assert payload["input"] == [{"role": "user", "content": "hi"}]
+    assert payload["model"] == "sonar-pro"
+    assert payload["max_output_tokens"] == 128
+    assert "max_tokens" not in payload
+    assert payload["temperature"] == 0.4
+    assert payload["stream"] is True
+    assert "top_p" not in payload
+    assert "messages" not in payload
+    assert payload["extra_body"] == {
+        "search_mode": "academic",
+        "return_images": True,
+    }
+
+
+def test_to_responses_payload_maps_stop_to_stop_sequences() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    payload = llm._to_responses_payload(
+        [{"role": "user", "content": "hi"}],
+        {"model": "sonar-pro", "stop": ["END"]},
+    )
+    assert payload["stop_sequences"] == ["END"]
+    assert "stop" not in payload
+    assert "extra_body" not in payload
+
+
+def test_to_responses_payload_raises_for_non_dict_extra_body() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    with pytest.raises(TypeError, match="extra_body"):
+        llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {
+                "model": "sonar-pro",
+                "extra_body": "not-a-dict",
+                "search_mode": "academic",
+            },
+        )
+
+
+def test_to_responses_payload_preserves_existing_extra_body() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    payload = llm._to_responses_payload(
+        [{"role": "user", "content": "hi"}],
+        {
+            "model": "sonar-pro",
+            "extra_body": {"caller_set": True},
+            "search_mode": "academic",
+        },
+    )
+    assert payload["extra_body"] == {"caller_set": True, "search_mode": "academic"}
+
+
+# ---------------------------------------------------------------------------
+# Usage conversion edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_convert_responses_usage_returns_none_when_usage_missing() -> None:
+    assert _convert_responses_usage(None) is None
+
+
+def test_convert_responses_usage_returns_none_when_tokens_missing() -> None:
+    usage = _make_response_obj(input_tokens=None, output_tokens=None, total_tokens=None)
+    assert _convert_responses_usage(usage) is None
+
+
+def test_convert_responses_usage_derives_total_when_absent() -> None:
+    usage = _make_response_obj(input_tokens=5, output_tokens=7, total_tokens=None)
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_tokens"] == 5
+    assert result["output_tokens"] == 7
+    assert result["total_tokens"] == 12
+
+
+# ---------------------------------------------------------------------------
+# Error and edge cases in conversion / streaming
+# ---------------------------------------------------------------------------
+
+
+def test_convert_responses_to_chat_result_malformed_json_arguments() -> None:
+    function_call_item = _make_response_obj(
+        type="function_call",
+        name="get_weather",
+        arguments="{not valid json",
+        call_id="call_99",
+    )
+    response = _make_response_obj(
+        id="resp_bad_json",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="",
+        output=[function_call_item],
+        usage=None,
+        citations=None,
+        images=None,
+        related_questions=None,
+        search_results=None,
+    )
+
+    result = _convert_responses_to_chat_result(response)
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    assert len(message.tool_calls) == 1
+    assert message.tool_calls[0]["args"] == {"__raw_arguments__": "{not valid json"}
+
+
+def test_responses_extras_land_on_additional_kwargs() -> None:
+    response = _make_response_obj(
+        id="resp_extras",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="hi",
+        output=[],
+        usage=None,
+        citations=["https://example.com"],
+        images=[{"url": "https://example.com/img.png"}],
+        related_questions=["What about X?"],
+        search_results=[{"title": "T"}],
+        videos=[{"url": "https://example.com/v.mp4"}],
+        reasoning_steps=[{"step": "thinking"}],
+    )
+    message = _convert_responses_to_chat_result(response).generations[0].message
+    assert isinstance(message, AIMessage)
+    for key in (
+        "citations",
+        "images",
+        "related_questions",
+        "search_results",
+        "videos",
+        "reasoning_steps",
+    ):
+        assert key in message.additional_kwargs
+        assert key not in message.response_metadata
+
+
+def test_stream_event_conversion_error_surfaces_structured_fields() -> None:
+    error = _make_response_obj(
+        message="rate limited",
+        code="rate_limit_exceeded",
+        type="rate_limit",
+        param=None,
+    )
+    event = _make_event("response.error", error=error, request_id="req_abc")
+    with pytest.raises(RuntimeError) as exc_info:
+        _convert_responses_stream_event_to_chunk(event)
+    message = str(exc_info.value)
+    assert "rate limited" in message
+    assert "code=rate_limit_exceeded" in message
+    assert "type=rate_limit" in message
+    assert "request_id=req_abc" in message
+
+
+def test_stream_event_conversion_error_uses_default_message_when_missing() -> None:
+    event = MagicMock(spec_set=["type"])
+    event.type = "response.error"
+    with pytest.raises(RuntimeError, match="Perplexity Responses API stream error"):
+        _convert_responses_stream_event_to_chunk(event)
+
+
+# ---------------------------------------------------------------------------
+# Async non-streaming Responses path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    llm.async_client = MagicMock()
+    llm.async_client.responses.create = AsyncMock(
+        return_value=_stub_responses_response("async-ok")
+    )
+    chat_create = llm.async_client.chat.completions.create
+
+    result = await llm.ainvoke("Find recent news", tools=[{"type": "web_search"}])
+
+    assert isinstance(result, AIMessage)
+    assert result.content == "async-ok"
+    llm.async_client.responses.create.assert_awaited_once()
+    chat_create.assert_not_called()

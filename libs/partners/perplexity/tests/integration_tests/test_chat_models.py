@@ -100,6 +100,52 @@ class TestChatPerplexityIntegration:
         if citations := response.additional_kwargs.get("citations"):
             assert any("wikipedia.org" in c for c in citations)
 
+    def test_responses_api_with_web_search(self) -> None:
+        """Hit the real Agent (Responses) API with a built-in tool."""
+        chat = ChatPerplexity(
+            model="sonar-pro", temperature=0, use_responses_api=True
+        )
+        response = chat.invoke(
+            "What is the capital of France?",
+            tools=[{"type": "web_search"}],
+        )
+        assert isinstance(response.content, str)
+        assert response.content
+        if response.usage_metadata is not None:
+            assert response.usage_metadata["input_tokens"] >= 0
+            assert response.usage_metadata["output_tokens"] >= 0
+
+    async def test_responses_api_async_with_web_search(self) -> None:
+        """Hit the real Agent API asynchronously to cover `ainvoke`."""
+        chat = ChatPerplexity(
+            model="sonar-pro", temperature=0, use_responses_api=True
+        )
+        response = await chat.ainvoke(
+            "What is the capital of France?",
+            tools=[{"type": "web_search"}],
+        )
+        assert isinstance(response.content, str)
+        assert response.content
+
+    def test_responses_api_streaming_surfaces_citations(self) -> None:
+        """Stream the real Agent API and verify citations surface on chunks."""
+        chat = ChatPerplexity(
+            model="sonar-pro", temperature=0, use_responses_api=True
+        )
+        chunks = list(
+            chat.stream(
+                "Who is the CEO of OpenAI?",
+                tools=[{"type": "web_search"}],
+            )
+        )
+        assert chunks
+        full_content = "".join(c.content for c in chunks if isinstance(c.content, str))
+        assert full_content
+        # Citations, when returned, must land on additional_kwargs (not
+        # response_metadata) to match the Chat Completions path.
+        for chunk in chunks:
+            assert "citations" not in chunk.response_metadata
+
     def test_media_and_metadata(self) -> None:
         """Test related questions and images."""
         chat = ChatPerplexity(
