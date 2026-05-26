@@ -124,6 +124,7 @@ addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5
 markers = [
     "requires: mark tests as requiring a specific library",
     "compile: mark placeholder test used to compile integration tests without running them",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 
