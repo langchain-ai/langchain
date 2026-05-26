@@ -3803,3 +3803,31 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_async_callable_api_key_warns_at_construction() -> None:
+    """An async callable api_key should warn at construction time."""
+
+    async def async_api_key() -> str:
+        return "sk-test"
+
+    with pytest.warns(UserWarning, match="async callable"):
+        llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=async_api_key)
+
+    assert llm.client is None
+    assert llm.root_client is None
+    assert llm.async_client is not None
+
+    with pytest.raises(ValueError, match="Sync client is not available"):
+        llm.invoke("hello")
+
+
+def test_sync_callable_api_key_does_not_warn() -> None:
+    """A sync callable api_key must not trigger the async-callable warning."""
+
+    def sync_api_key() -> str:
+        return "sk-test"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        ChatOpenAI(model="gpt-4o-mini", openai_api_key=sync_api_key)

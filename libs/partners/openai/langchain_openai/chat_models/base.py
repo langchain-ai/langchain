@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import base64
+import inspect
 import json
 import logging
 import os
@@ -1184,6 +1185,20 @@ class BaseChatOpenAI(BaseChatModel):
             sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
                 self.openai_api_key
             )
+            # Surface the sync/async constraint at construction time so callers
+            # don't first discover it on a runtime invocation. An async-callable
+            # api_key means the sync client cannot be built, and sync entry
+            # points (invoke/stream) will fail with a clearer ValueError later.
+            if inspect.iscoroutinefunction(self.openai_api_key):
+                warnings.warn(
+                    "An async callable was provided for `openai_api_key`. "
+                    "The sync client will not be available; only async entry "
+                    "points (`ainvoke`, `astream`, ...) will work. To use sync "
+                    "methods, provide a string or a sync callable for the API "
+                    "key.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         client_params: dict = {
             "organization": self.openai_organization,
