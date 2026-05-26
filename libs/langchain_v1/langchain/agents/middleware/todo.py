@@ -149,9 +149,7 @@ def _write_todos(
     return Command(
         update={
             "todos": todos,
-            "messages": [
-                ToolMessage("Todo list updated.", tool_call_id=runtime.tool_call_id)
-            ],
+            "messages": [ToolMessage("Todo list updated.", tool_call_id=runtime.tool_call_id)],
         }
     )
 
