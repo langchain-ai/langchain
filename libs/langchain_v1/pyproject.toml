@@ -190,9 +190,6 @@ markers = [
     "scheduled: mark tests to run in scheduled testing",
     "compile: mark placeholder test used to compile integration tests without running them",
     "benchmark: mark benchmark tests",
-    "eval_category(name): tag an eval with a category for filtering/reporting",
-    "eval_tier(name): tag an eval as 'baseline' (regression gate) or 'hillclimb' (progress tracking)",
-    "langsmith: opt into LangSmith experiment integration for this eval",
 ]
 asyncio_mode = "auto"
 filterwarnings = [

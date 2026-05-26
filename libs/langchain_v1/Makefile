@@ -1,4 +1,4 @@
-.PHONY: all start_services stop_services coverage coverage_agents test test_fast benchmark evals extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format type lint_diff format_diff lint_package lint_tests help
+.PHONY: all start_services stop_services coverage coverage_agents test test_fast benchmark extended_tests test_watch test_watch_extended integration_tests check_imports check_version lint format type lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -48,29 +48,6 @@ test_fast:
 
 benchmark:
 	uv run --group test pytest tests/benchmarks/test_create_agent.py -m benchmark
-
-# Real-model middleware evals. Requires API key for the chosen provider
-# (e.g., ANTHROPIC_API_KEY) and optionally LANGSMITH_TRACING=true for LangSmith
-# experiment integration. These are NOT run as part of the default unit-test
-# suite because they call live model APIs.
-evals: ## Run real-model evals (set MODEL=<id>; required)
-	@if [ -z "$(MODEL)" ]; then \
-		echo "ERROR: MODEL is required. Example: make evals MODEL=claude-sonnet-4-6" >&2; \
-		exit 1; \
-	fi
-	uv run --group test \
-		--with langchain-anthropic \
-		--with langchain-deepseek \
-		--with langchain-fireworks \
-		--with langchain-google-genai \
-		--with langchain-groq \
-		--with langchain-mistralai \
-		--with langchain-nvidia-ai-endpoints \
-		--with langchain-ollama \
-		--with langchain-openai \
-		--with langchain-openrouter \
-		--with langchain-xai \
-		pytest tests/evals -v --tb=short --model $(MODEL) $(PYTEST_EXTRA)
 
 extended_tests:
 	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests; \
