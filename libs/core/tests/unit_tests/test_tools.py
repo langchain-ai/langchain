@@ -3780,3 +3780,36 @@ def test_basetool_subagent_name_accepts_callable() -> None:
     }
     assert callable(tool.subagent_name)
     assert tool.subagent_name(fake_call) == "researcher"
+
+
+# --- @tool decorator subagent_name passthrough tests ---
+
+
+def test_tool_decorator_passes_subagent_name_static() -> None:
+    @tool("call_weather", subagent_name="weather_agent")
+    def call_weather(city: str) -> str:
+        """Call the weather agent."""
+        return f"weather in {city}"
+
+    assert call_weather.subagent_name == "weather_agent"
+
+
+def test_tool_decorator_passes_subagent_name_callable() -> None:
+    def resolver(call: ToolCall) -> str:
+        return str(call["args"]["target"])
+
+    @tool("dispatch", subagent_name=resolver)
+    def dispatch(target: str, query: str) -> str:
+        """Dispatch to a target."""
+        return f"dispatched to {target}: {query}"
+
+    assert dispatch.subagent_name is resolver
+
+
+def test_tool_decorator_subagent_name_defaults_to_none() -> None:
+    @tool("plain")
+    def plain(x: int) -> str:
+        """A tool with no subagent_name declared."""
+        return str(x)
+
+    assert plain.subagent_name is None

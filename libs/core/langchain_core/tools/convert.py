@@ -2,7 +2,7 @@
 
 import inspect
 from collections.abc import Callable
-from typing import Any, Literal, cast, get_type_hints, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -11,6 +11,9 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+
+if TYPE_CHECKING:
+    from langchain_core.messages.tool import ToolCall
 
 
 @overload
@@ -24,6 +27,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    subagent_name: str | Callable[["ToolCall"], str] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -40,6 +44,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    subagent_name: str | Callable[["ToolCall"], str] | None = None,
 ) -> BaseTool: ...
 
 
@@ -55,6 +60,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    subagent_name: str | Callable[["ToolCall"], str] | None = None,
 ) -> BaseTool: ...
 
 
@@ -70,6 +76,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    subagent_name: str | Callable[["ToolCall"], str] | None = None,
 ) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
@@ -85,6 +92,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
+    subagent_name: str | Callable[["ToolCall"], str] | None = None,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
@@ -150,6 +158,9 @@ def tool(
 
                 For example, Anthropic-specific fields like `cache_control`,
                 `defer_loading`, or `input_examples`.
+        subagent_name: Optional name of the subagent that should handle this tool call
+            (a static string), or a callable that resolves the subagent name from the
+            parsed `ToolCall` at dispatch time.
 
     Raises:
         ValueError: If too many positional arguments are provided (e.g. violating the
@@ -313,6 +324,7 @@ def tool(
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
                     extras=extras,
+                    subagent_name=subagent_name,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -322,7 +334,7 @@ def tool(
                     "description not provided and infer_schema is False."
                 )
                 raise ValueError(msg)
-            return Tool(
+            result = Tool(
                 name=tool_name,
                 func=func,
                 description=f"{tool_name} tool",
@@ -331,6 +343,8 @@ def tool(
                 response_format=response_format,
                 extras=extras,
             )
+            result.subagent_name = subagent_name
+            return result
 
         return _tool_factory
 
