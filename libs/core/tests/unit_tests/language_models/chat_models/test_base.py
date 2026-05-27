@@ -1622,7 +1622,7 @@ async def test_base_aclose_default_dispatches_to_close() -> None:
     closed: list[bool] = []
 
     class _SyncOnly(FakeListChatModel):
-        def close(self) -> None:  # type: ignore[override]
+        def close(self) -> None:
             closed.append(True)
 
     model = _SyncOnly(responses=["x"])
@@ -1634,7 +1634,7 @@ def test_base_context_manager_calls_close() -> None:
     closed = []
 
     class _Closeable(FakeListChatModel):
-        def close(self) -> None:  # type: ignore[override]
+        def close(self) -> None:
             closed.append(True)
 
     with _Closeable(responses=["x"]) as model:
@@ -1646,7 +1646,7 @@ async def test_base_async_context_manager_calls_aclose() -> None:
     closed = []
 
     class _AsyncCloseable(FakeListChatModel):
-        async def aclose(self) -> None:  # type: ignore[override]
+        async def aclose(self) -> None:
             closed.append("async")
 
     async with _AsyncCloseable(responses=["x"]) as model:
