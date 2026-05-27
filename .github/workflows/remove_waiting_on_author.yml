@@ -4,8 +4,9 @@
 # original author (and not a bot).
 #
 # Uses the default GITHUB_TOKEN so the label-removal event does NOT re-trigger
-# other workflows. GitHub suppresses events created by the default GITHUB_TOKEN
-# within workflow runs to prevent infinite loops.
+# other workflows: GitHub does not trigger new workflow runs from actions
+# performed by the default GITHUB_TOKEN (with narrow exceptions like
+# workflow_dispatch), which prevents infinite loops.
 
 name: Remove waiting-on-author on Author Reply
 
@@ -26,7 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: write
 
     steps:
       - name: Remove waiting-on-author label
@@ -49,9 +49,11 @@ jobs:
                 name: 'waiting-on-author',
               });
             } catch (e) {
-              // 404: label not present (already removed or never applied).
+              // 404: typically label not present (already removed or never
+              // applied). Could also indicate issue/repo not found — include
+              // e.message to disambiguate.
               if (e.status === 404) {
-                console.log('Label already absent — nothing to do');
+                console.log(`Label already absent (404) — nothing to do: ${e.message}`);
                 return;
               }
               throw e;
