@@ -172,22 +172,78 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
-def _sanitize_chat_completions_content(content: Any) -> Any:
-    """Strip non-wire keys from text content blocks.
+def _allowed_content_part_keys() -> frozenset[str]:
+    """Allowlist of wire-valid keys on a Fireworks content part.
 
-    Fireworks's chat completions endpoint rejects unknown fields on tool
-    message content blocks (e.g. the `id` that LangChain auto-generates on
-    `TextContentBlock`). For list content, keep only `type` and `text` on
-    text blocks; pass other blocks and non-list content through unchanged.
+    Derived at import time from the stainless-generated TypedDict so the
+    allowlist tracks the upstream OpenAPI spec as `fireworks-ai` is bumped:
+    new fields widen the allowlist for free, removed/renamed fields shrink it
+    in lockstep. If the SDK reshuffles its module layout the import falls back
+    to a conservative hand-coded set and emits a warning, and the layout test
+    (`test_fireworks_sdk_request_layout_stable`) fails to surface the drift.
+    """
+    try:
+        from typing import get_type_hints
+
+        from fireworks.types.shared_params.chat_message import (
+            ContentUnionMember1,
+        )
+
+        return frozenset(get_type_hints(ContentUnionMember1))
+    except ImportError:
+        logger.warning(
+            "Could not import `fireworks.types.shared_params.chat_message."
+            "ContentUnionMember1`; falling back to a conservative content-part "
+            "key allowlist. Bump `fireworks-ai` or update "
+            "`_allowed_content_part_keys` if the SDK has moved this type.",
+        )
+        return frozenset({"type", "text", "image_url", "video_url"})
+
+
+_ALLOWED_CONTENT_PART_KEYS: frozenset[str] = _allowed_content_part_keys()
+
+
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from content blocks before serializing to Fireworks.
+
+    Fireworks's chat completions endpoint rejects unknown fields on message
+    content parts with `Extra inputs are not permitted, field: 'messages[N]
+    .content.list[ChatMessageContent][i].<key>'`. This surfaces when a
+    conversation accumulates AIMessages from a different provider (e.g.
+    Anthropic's v1 streaming-reassembly `index` marker on text blocks, or the
+    LangChain-internal `caller` key on `tool_use` blocks) and that history is
+    later forwarded to a Fireworks-hosted model.
+
+    For list content:
+        - each block dict is filtered down to keys in
+            `_ALLOWED_CONTENT_PART_KEYS` (sourced from the SDK TypedDict, so it
+            stays in sync with the upstream spec).
+        - if the result is a list of exactly one block that, post-strip, is
+            `{"type": "text", "text": <str>}` and nothing else, it is coerced to
+            a plain string. Fireworks's `content` union lists `str` first
+            (`Input should be a valid string, field: 'messages[N].content.str'`),
+            and the stricter shape avoids the union-validation noise on the
+            server side.
+    Non-list content (strings, None) passes through unchanged.
     """
     if not isinstance(content, list):
         return content
     sanitized: list[Any] = []
     for block in content:
-        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
-            sanitized.append({"type": "text", "text": block["text"]})
+        if isinstance(block, dict):
+            sanitized.append(
+                {k: v for k, v in block.items() if k in _ALLOWED_CONTENT_PART_KEYS}
+            )
         else:
             sanitized.append(block)
+    if (
+        len(sanitized) == 1
+        and isinstance(sanitized[0], dict)
+        and set(sanitized[0]) == {"type", "text"}
+        and sanitized[0]["type"] == "text"
+        and isinstance(sanitized[0]["text"], str)
+    ):
+        return sanitized[0]["text"]
     return sanitized
 
 
@@ -269,12 +325,16 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     if isinstance(message, ChatMessage):
         message_dict = {
             "role": message.role,
-            "content": _format_message_content(message.content),
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
         }
     elif isinstance(message, HumanMessage):
         message_dict = {
             "role": "user",
-            "content": _format_message_content(message.content),
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
         }
     elif isinstance(message, AIMessage):
         # Translate v1 content
@@ -282,7 +342,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             message = _convert_from_v1_to_chat_completions(message)
         message_dict = {
             "role": "assistant",
-            "content": _format_message_content(message.content),
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
         }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
@@ -306,7 +368,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, SystemMessage):
         message_dict = {
             "role": "system",
-            "content": _format_message_content(message.content),
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
         }
     elif isinstance(message, FunctionMessage):
         message_dict = {

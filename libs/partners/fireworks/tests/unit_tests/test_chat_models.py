@@ -26,6 +26,7 @@ from langchain_core.messages import (
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
+    _ALLOWED_CONTENT_PART_KEYS,
     FireworksContextOverflowError,
     _acompletion_with_retry,
     _completion_with_retry,
@@ -124,7 +125,9 @@ def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
     """LangChain auto-generated `id` on text blocks must not reach the wire.
 
     Fireworks's chat completions schema rejects unknown keys on tool message
-    content blocks (`Extra inputs are not permitted, ... [0].id`).
+    content blocks (`Extra inputs are not permitted, ... [0].id`). A single
+    text-only block also collapses to a plain string, since the Fireworks
+    `content` union lists `str` first.
     """
     message = ToolMessage(
         content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
@@ -132,7 +135,7 @@ def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
     )
     assert _convert_message_to_dict(message) == {
         "role": "tool",
-        "content": [{"type": "text", "text": "foo"}],
+        "content": "foo",
         "tool_call_id": "def456",
     }
 
@@ -144,6 +147,153 @@ def test_sanitize_chat_completions_content_passthrough_string() -> None:
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
     blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
     assert _sanitize_chat_completions_content(blocks) == blocks
+
+
+def test_sanitize_chat_completions_content_strips_anthropic_v1_index() -> None:
+    """Reproduction for the Kimi-via-Fireworks 400 from cross-provider history.
+
+    Anthropic-shaped AIMessage text blocks carry an `index` streaming-reassembly
+    marker that Fireworks rejects as `Extra inputs are not permitted, field:
+    'messages[N].content.list[ChatMessageContent][0].index'`. After sanitization
+    the single text block collapses to a plain string, matching the first branch
+    of Fireworks's `content` union.
+    """
+    blocks = [{"text": "hello", "type": "text", "index": 0}]
+
+    assert _sanitize_chat_completions_content(blocks) == "hello"
+
+
+def test_sanitize_chat_completions_content_strips_tool_use_extras() -> None:
+    """Unknown keys on a `tool_use` block are stripped down to allowlisted keys.
+
+    `_format_message_content` is the real guard against `tool_use` blocks on
+    outbound messages — it drops them entirely. The sanitizer only enforces
+    the per-block key allowlist; it does not validate `type` against
+    Fireworks's content union, so the surviving `{"type": "tool_use"}` is not
+    itself wire-valid. This test pins the key-stripping contract; wire
+    validity of `tool_use` blocks is `_format_message_content`'s job.
+    """
+    blocks = [
+        {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "name": "foo",
+            "input": {},
+            "caller": {"type": "direct"},
+            "index": 0,
+        }
+    ]
+
+    sanitized = _sanitize_chat_completions_content(blocks)
+
+    assert sanitized == [{"type": "tool_use"}]
+
+
+def test_sanitize_chat_completions_content_keeps_multi_block_list() -> None:
+    """A multi-block list is not coerced to a string."""
+    blocks = [
+        {"type": "text", "text": "a", "index": 0},
+        {"type": "text", "text": "b", "index": 1},
+    ]
+
+    assert _sanitize_chat_completions_content(blocks) == [
+        {"type": "text", "text": "a"},
+        {"type": "text", "text": "b"},
+    ]
+
+
+def test_sanitize_chat_completions_content_does_not_coerce_image_only() -> None:
+    """Coercion to string is gated on a single `{type:text,text:str}` block."""
+    blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
+
+    assert _sanitize_chat_completions_content(blocks) == blocks
+
+
+def test_sanitize_does_not_coerce_when_text_is_non_string() -> None:
+    """Coercion is gated on `text` being a `str` — non-string `text` stays a list.
+
+    Without the `isinstance(..., str)` guard the gate would send a malformed
+    payload (e.g. `content=123`) downstream, which is worse than letting
+    Fireworks reject the list.
+    """
+    blocks = [{"type": "text", "text": 123}]
+
+    assert _sanitize_chat_completions_content(blocks) == [{"type": "text", "text": 123}]
+
+
+def test_sanitize_does_not_coerce_when_text_key_missing_after_strip() -> None:
+    """After stripping, a `{"type":"text"}` block with no `text` is not coerced."""
+    blocks = [{"type": "text", "index": 0}]
+
+    assert _sanitize_chat_completions_content(blocks) == [{"type": "text"}]
+
+
+def test_convert_human_message_with_anthropic_v1_blocks_is_wire_clean() -> None:
+    """`HumanMessage` content also routes through the sanitizer end-to-end."""
+    message = HumanMessage(
+        content=[{"type": "text", "text": "hi", "index": 0}],
+    )
+
+    assert _convert_message_to_dict(message) == {"role": "user", "content": "hi"}
+
+
+def test_convert_ai_message_with_anthropic_v1_blocks_is_wire_clean() -> None:
+    """End-to-end: an AIMessage carrying Anthropic v1 markers serializes clean.
+
+    Mirrors the actual payload that triggered the 400 in production (Fleet ran
+    a Sonnet-started conversation through ChatFireworks/Kimi).
+    """
+    message = AIMessage(
+        content=[
+            {
+                "text": (
+                    "I don't have a direct Hex API integration available "
+                    "as a built-in tool."
+                ),
+                "type": "text",
+                "index": 0,
+            }
+        ],
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": (
+            "I don't have a direct Hex API integration available as a built-in tool."
+        ),
+    }
+
+
+def test_fireworks_sdk_request_layout_stable() -> None:
+    """Fail loudly if `fireworks-ai` reshuffles its request TypedDict layout.
+
+    The content-part allowlist (`_ALLOWED_CONTENT_PART_KEYS`) is derived from
+    the SDK's stainless-generated TypedDict at import time. If a future SDK
+    version renames the module, renames the class, or drops a key the
+    sanitizer assumes is present, this test fails so the strip logic gets
+    updated in the same PR as the `fireworks-ai` bump.
+    """
+    from typing import get_type_hints
+
+    from fireworks.types.shared_params.chat_message import (
+        ChatMessage as SDKChatMessage,
+    )
+    from fireworks.types.shared_params.chat_message import (
+        ContentUnionMember1,
+    )
+
+    content_keys = set(get_type_hints(ContentUnionMember1))
+    message_keys = set(get_type_hints(SDKChatMessage))
+
+    assert "type" in content_keys, (
+        "Fireworks SDK no longer exposes `type` on ContentUnionMember1; "
+        "update `_allowed_content_part_keys` / the sanitizer."
+    )
+    assert "text" in content_keys
+    assert {"role", "content"} <= message_keys
+    # The sanitizer's allowlist must equal the SDK TypedDict's keys; this is
+    # the actual production contract, not just the `type`/`text` spot-checks.
+    assert frozenset(content_keys) == _ALLOWED_CONTENT_PART_KEYS
 
 
 def test_format_message_content_translates_v1_image_block() -> None:
@@ -413,9 +563,12 @@ def test_convert_message_to_dict_translates_system_list_content() -> None:
 
     result = _convert_message_to_dict(system_message)
 
+    # `thinking` is dropped by `_format_message_content`; the lone text block
+    # is coerced to a plain string by `_sanitize_chat_completions_content`
+    # since Fireworks's `content` union lists `str` as its first branch.
     assert result == {
         "role": "system",
-        "content": [{"type": "text", "text": "rules"}],
+        "content": "rules",
     }
 
 
