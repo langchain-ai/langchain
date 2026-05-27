@@ -1166,6 +1166,50 @@ class ChatAnthropic(BaseChatModel):
         }
         return anthropic.AsyncClient(**params)
 
+    def close(self) -> None:
+        """Release the underlying anthropic SDK clients + their httpx pools.
+
+        `_client` and `_async_client` are `cached_property` slots that
+        lazily allocate an `anthropic.Client` / `anthropic.AsyncClient`
+        the first time the model issues a request — each backed by its
+        own httpx connection pool. The SDK only closes those pools
+        best-effort from `__del__` (`create_task(aclose)` swallowed on
+        any failure), so in long-lived workers that construct chat
+        models per request the pools accumulate.
+
+        This method closes the sync client only. Use [`aclose`][] when
+        an event loop is available so the async client's pool is
+        released cleanly too. Idempotent. Reads from `__dict__` so we
+        don't materialize an uninstantiated `cached_property` just to
+        close it.
+        """
+        sync_client = self.__dict__.get("_client")
+        if sync_client is not None:
+            sync_client.close()
+            del self.__dict__["_client"]
+        async_client = self.__dict__.get("_async_client")
+        if async_client is not None:
+            # Caller chose the sync path; best we can do without a loop is
+            # let the SDK's `__del__` schedule `aclose`. Drop the cache so
+            # the model can be reused after `close()` without sharing a
+            # half-released client.
+            del self.__dict__["_async_client"]
+
+    async def aclose(self) -> None:
+        """Release the underlying anthropic SDK clients + their httpx pools.
+
+        See [`close`][] for context. Awaits `AsyncClient.close()` so the
+        anyio task group + httpx async pool tear down cleanly. Idempotent.
+        """
+        sync_client = self.__dict__.get("_client")
+        if sync_client is not None:
+            sync_client.close()
+            del self.__dict__["_client"]
+        async_client = self.__dict__.get("_async_client")
+        if async_client is not None:
+            await async_client.close()
+            del self.__dict__["_async_client"]
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,

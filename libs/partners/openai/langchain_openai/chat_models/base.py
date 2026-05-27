@@ -1269,6 +1269,52 @@ class BaseChatOpenAI(BaseChatModel):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    def close(self) -> None:
+        """Release the underlying OpenAI SDK clients + their httpx pools.
+
+        `validate_environment` eagerly constructs both `openai.OpenAI`
+        (sync) and `openai.AsyncOpenAI` (async) — each backed by its own
+        httpx connection pool — so a single chat model holds *two* pools
+        even when the caller only uses the async path. The SDK only
+        closes those pools best-effort from `__del__`, which in
+        long-lived workers that construct chat models per request means
+        the pools accumulate. Call this when done to release them.
+
+        Closes the sync client and drops cached references to the async
+        client (use [`aclose`][] when a loop is available). Idempotent.
+        Tolerates the API-key-missing case where `root_client` is `None`.
+        """
+        sync_client = self.root_client
+        if sync_client is not None:
+            sync_client.close()
+            self.root_client = None
+            self.client = None
+        if self.root_async_client is not None:
+            # Sync path can't await; drop the cache so users who later
+            # call `aclose()` aren't stuck with a half-released client,
+            # and so `__del__` can finalize. We don't attempt to close
+            # via `create_task` because nothing pins the task.
+            self.root_async_client = None
+            self.async_client = None
+
+    async def aclose(self) -> None:
+        """Release the underlying OpenAI SDK clients + their httpx pools.
+
+        See [`close`][] for context. Awaits `AsyncOpenAI.close()` so the
+        async httpx pool tears down cleanly. Idempotent. Tolerates the
+        API-key-missing case where one client may be `None`.
+        """
+        sync_client = self.root_client
+        if sync_client is not None:
+            sync_client.close()
+            self.root_client = None
+            self.client = None
+        async_client = self.root_async_client
+        if async_client is not None:
+            await async_client.close()
+            self.root_async_client = None
+            self.async_client = None
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 

@@ -42,7 +42,10 @@ if TYPE_CHECKING:
         patch_config,
         run_in_executor,
     )
-    from langchain_core.runnables.fallbacks import RunnableWithFallbacks
+    from langchain_core.runnables.fallbacks import (
+        FallbackLatch,
+        RunnableWithFallbacks,
+    )
     from langchain_core.runnables.history import RunnableWithMessageHistory
     from langchain_core.runnables.passthrough import (
         RunnableAssign,
@@ -66,6 +69,7 @@ __all__ = (
     "ConfigurableFieldMultiOption",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldSpec",
+    "FallbackLatch",
     "RouterInput",
     "RouterRunnable",
     "Runnable",
@@ -108,6 +112,7 @@ _dynamic_imports = {
     "get_config_list": "config",
     "patch_config": "config",
     "run_in_executor": "config",
+    "FallbackLatch": "fallbacks",
     "RunnableWithFallbacks": "fallbacks",
     "RunnableWithMessageHistory": "history",
     "RunnableAssign": "passthrough",

@@ -1602,3 +1602,53 @@ async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -
     assert metadata["_type"] == "fake-chat-model-with-invocation-params"
     assert metadata["stop"] == ["done"]
     assert metadata["temperature"] == 0.7
+
+
+# -- Resource lifecycle (close / aclose) -------------------------------------
+
+
+def test_base_close_aclose_default_noop() -> None:
+    """Default `close` / `aclose` are no-ops on subclasses that don't override.
+
+    Ensures existing fake/test models continue to work unchanged.
+    """
+    model = FakeListChatModel(responses=["x"])
+    # Should not raise — default close/aclose are no-ops.
+    model.close()
+
+
+async def test_base_aclose_default_dispatches_to_close() -> None:
+    """When a subclass overrides only `close()`, async teardown still works."""
+    closed: list[bool] = []
+
+    class _SyncOnly(FakeListChatModel):
+        def close(self) -> None:  # type: ignore[override]
+            closed.append(True)
+
+    model = _SyncOnly(responses=["x"])
+    await model.aclose()
+    assert closed == [True]
+
+
+def test_base_context_manager_calls_close() -> None:
+    closed = []
+
+    class _Closeable(FakeListChatModel):
+        def close(self) -> None:  # type: ignore[override]
+            closed.append(True)
+
+    with _Closeable(responses=["x"]) as model:
+        assert model is not None
+    assert closed == [True]
+
+
+async def test_base_async_context_manager_calls_aclose() -> None:
+    closed = []
+
+    class _AsyncCloseable(FakeListChatModel):
+        async def aclose(self) -> None:  # type: ignore[override]
+            closed.append("async")
+
+    async with _AsyncCloseable(responses=["x"]) as model:
+        assert model is not None
+    assert closed == ["async"]

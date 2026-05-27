@@ -3803,3 +3803,109 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+# -- close / aclose ----------------------------------------------------------
+
+
+class _FakeOpenAISyncClient:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeOpenAIAsyncClient:
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+def _swap_root_clients(
+    llm: ChatOpenAI,
+    *,
+    sync: _FakeOpenAISyncClient | None = None,
+    async_: _FakeOpenAIAsyncClient | None = None,
+) -> None:
+    """Replace the eagerly-constructed OpenAI SDK clients with stand-ins.
+
+    `validate_environment` runs at construction time and builds real
+    `openai.OpenAI` / `openai.AsyncOpenAI` instances. Replace them with
+    fakes so the lifecycle tests don't depend on the real SDK's close
+    behavior (and don't spin up real httpx pools).
+    """
+    if sync is not None:
+        llm.root_client = sync
+        llm.client = sync  # surrogate "chat.completions" handle
+    if async_ is not None:
+        llm.root_async_client = async_
+        llm.async_client = async_
+
+
+def test_close_releases_sync_client() -> None:
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    fake_sync = _FakeOpenAISyncClient()
+    fake_async = _FakeOpenAIAsyncClient()
+    _swap_root_clients(llm, sync=fake_sync, async_=fake_async)
+
+    llm.close()
+
+    assert fake_sync.closed is True
+    assert llm.root_client is None
+    assert llm.client is None
+    # Sync path drops the async cache without awaiting — see docstring
+    # on `close()` for why.
+    assert llm.root_async_client is None
+    assert llm.async_client is None
+    assert fake_async.closed is False
+
+
+async def test_aclose_releases_both_clients() -> None:
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    fake_sync = _FakeOpenAISyncClient()
+    fake_async = _FakeOpenAIAsyncClient()
+    _swap_root_clients(llm, sync=fake_sync, async_=fake_async)
+
+    await llm.aclose()
+
+    assert fake_sync.closed is True
+    assert fake_async.closed is True
+    assert llm.root_client is None
+    assert llm.root_async_client is None
+
+
+async def test_aclose_idempotent() -> None:
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    fake_async = _FakeOpenAIAsyncClient()
+    _swap_root_clients(llm, async_=fake_async)
+    # Drop the sync client to simulate the missing-sync-key case.
+    llm.root_client = None
+    llm.client = None
+
+    await llm.aclose()
+    await llm.aclose()  # second call must not raise on missing clients
+
+
+def test_close_tolerates_missing_sync_client() -> None:
+    """When the API key is async-only, `root_client` ends up `None` —
+    `close()` must skip it instead of crashing on `None.close()`."""
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    llm.root_client = None
+    llm.client = None
+    fake_async = _FakeOpenAIAsyncClient()
+    _swap_root_clients(llm, async_=fake_async)
+
+    llm.close()  # should not raise
+    assert llm.root_async_client is None
+
+
+async def test_async_context_manager() -> None:
+    fake_async = _FakeOpenAIAsyncClient()
+
+    async with ChatOpenAI(model="foo", api_key="dummy") as llm:  # type: ignore[arg-type]
+        _swap_root_clients(llm, async_=fake_async)
+
+    assert fake_async.closed is True

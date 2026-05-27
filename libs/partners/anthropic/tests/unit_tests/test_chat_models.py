@@ -3209,3 +3209,95 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+# -- close / aclose ----------------------------------------------------------
+
+
+class _FakeAnthropicSyncClient:
+    """Stand-in for `anthropic.Client` that records `close()` calls."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeAnthropicAsyncClient:
+    """Stand-in for `anthropic.AsyncClient` that records `close()` awaits."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+def test_close_releases_only_instantiated_clients() -> None:
+    """`close()` must not materialize a `cached_property` client just to
+    close it — touching `_async_client` unconditionally would construct
+    a fresh `anthropic.AsyncClient` on teardown, exactly the per-run
+    allocation we're trying to avoid.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="dummy")  # type: ignore[arg-type]
+    # No client touched yet → cached_property slots empty.
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+
+    llm.close()  # should be a no-op
+
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+
+
+def test_close_closes_sync_client_when_instantiated() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="dummy")  # type: ignore[arg-type]
+    fake_sync = _FakeAnthropicSyncClient()
+    fake_async = _FakeAnthropicAsyncClient()
+    # Seed both cached_property slots so we can verify sync gets closed
+    # and the async cache is dropped (but not awaited) on the sync path.
+    llm.__dict__["_client"] = fake_sync
+    llm.__dict__["_async_client"] = fake_async
+
+    llm.close()
+
+    assert fake_sync.closed is True
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+    # `close()` on the sync path cannot await; the async client's pool
+    # falls back to the SDK's `__del__` path.
+    assert fake_async.closed is False
+
+
+async def test_aclose_closes_both_when_instantiated() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="dummy")  # type: ignore[arg-type]
+    fake_sync = _FakeAnthropicSyncClient()
+    fake_async = _FakeAnthropicAsyncClient()
+    llm.__dict__["_client"] = fake_sync
+    llm.__dict__["_async_client"] = fake_async
+
+    await llm.aclose()
+
+    assert fake_sync.closed is True
+    assert fake_async.closed is True
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+
+
+async def test_aclose_idempotent() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="dummy")  # type: ignore[arg-type]
+    fake_async = _FakeAnthropicAsyncClient()
+    llm.__dict__["_async_client"] = fake_async
+
+    await llm.aclose()
+    await llm.aclose()  # second call should not raise
+
+
+async def test_async_context_manager() -> None:
+    fake_async = _FakeAnthropicAsyncClient()
+
+    async with ChatAnthropic(model=MODEL_NAME, api_key="dummy") as llm:  # type: ignore[arg-type]
+        llm.__dict__["_async_client"] = fake_async
+
+    assert fake_async.closed is True
