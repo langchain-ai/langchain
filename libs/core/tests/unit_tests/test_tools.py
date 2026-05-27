@@ -3741,3 +3741,42 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+# --- subagent_name attribute tests ---
+
+
+class _SubagentNameDummyTool(BaseTool):
+    """Minimal BaseTool subclass for subagent_name attribute tests."""
+
+    name: str = "dummy"
+    description: str = "A dummy tool used in subagent_name tests."
+
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        return "dummy result"
+
+
+def test_basetool_subagent_name_default_none() -> None:
+    tool = _SubagentNameDummyTool()
+    assert tool.subagent_name is None
+
+
+def test_basetool_subagent_name_accepts_static_string() -> None:
+    tool = _SubagentNameDummyTool(subagent_name="weather_agent")
+    assert tool.subagent_name == "weather_agent"
+
+
+def test_basetool_subagent_name_accepts_callable() -> None:
+    def resolver(call: ToolCall) -> str:
+        return str(call["args"]["subagent_type"])
+
+    tool = _SubagentNameDummyTool(subagent_name=resolver)
+    assert tool.subagent_name is resolver
+    fake_call: ToolCall = {
+        "name": "task",
+        "args": {"subagent_type": "researcher"},
+        "id": "id-1",
+        "type": "tool_call",
+    }
+    assert callable(tool.subagent_name)
+    assert tool.subagent_name(fake_call) == "researcher"

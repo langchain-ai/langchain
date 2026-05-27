@@ -530,6 +530,20 @@ class ChildTool(BaseTool):
         ```
     """
 
+    subagent_name: str | Callable[[ToolCall], str] | None = None
+    """Declared name of the subagent this tool dispatches to, if any.
+
+    A static string declares a fixed dispatch target (one tool -> one subagent).
+    A callable resolves the name from the parsed `ToolCall` at dispatch time,
+    enabling registry-style dispatching (one tool -> many subagents based on
+    LLM-supplied args).
+
+    Read by `ToolNode` at dispatch time and surfaced on the wire as
+    `LifecyclePayload.graphName`. Purely declarative: the framework stamps the
+    resolved value into runtime config metadata; consumers project it onto
+    typed surfaces. Setting this does not change tool execution behavior.
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the tool.
 
