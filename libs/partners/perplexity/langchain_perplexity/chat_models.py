@@ -971,6 +971,9 @@ class ChatPerplexity(BaseChatModel):
             )
             responses_payload["stream"] = True
             stream_events = self.client.responses.create(**responses_payload)
+            # Trusts SDK SSE decoding (perplexityai>=0.34.1, upstream issue
+            # perplexityai-python#53). `_convert_responses_stream_event_to_chunk`
+            # already handles both SDK objects and dicts via `_get_attr`.
             for event in stream_events:
                 response_chunk = _convert_responses_stream_event_to_chunk(event)
                 if response_chunk is None:
@@ -1087,6 +1090,7 @@ class ChatPerplexity(BaseChatModel):
             stream_events = await self.async_client.responses.create(
                 **responses_payload
             )
+            # See sync `_stream` for SDK trust rationale (perplexityai>=0.34.1).
             async for event in stream_events:
                 response_chunk = _convert_responses_stream_event_to_chunk(event)
                 if response_chunk is None:
