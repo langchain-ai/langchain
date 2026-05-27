@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 
 from langchain_perplexity import ChatPerplexity
 from langchain_perplexity.chat_models import (
+    PerplexityResponsesStreamError,
     _convert_responses_stream_event_to_chunk,
     _convert_responses_to_chat_result,
     _convert_responses_usage,
@@ -125,12 +126,12 @@ def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
     assert isinstance(result, AIMessage)
     assert result.content == "hello"
     llm.client.responses.create.assert_called_once()
-    # Pin the original regression: the class-default `temperature=0.7` injected
-    # via `_default_params` must NOT reach the Responses SDK call, either at
-    # top level or inside `extra_body`.
+    # Regression guard: the class-default `temperature=0.7` from `_default_params`
+    # must not leak into the Responses SDK call (top-level or `extra_body`), because
+    # the typed SDK signature would raise `TypeError` on `temperature=...`.
     call_kwargs = llm.client.responses.create.call_args.kwargs
     assert "temperature" not in call_kwargs
-    assert "temperature" not in call_kwargs.get("extra_body", {}) or {}
+    assert "temperature" not in (call_kwargs.get("extra_body") or {})
     chat_create.assert_not_called()
 
 
@@ -195,8 +196,9 @@ def test_invoke_use_responses_api_true_forces_responses_branch() -> None:
     assert isinstance(result, AIMessage)
     assert result.content == "forced"
     llm.client.responses.create.assert_called_once()
-    # Class-default temperature must not leak through to the Responses call —
-    # this is the exact scenario that produced the original `TypeError`.
+    # Regression guard: when the user forces `use_responses_api=True`, the
+    # class-default `temperature` from `_default_params` must not leak into the
+    # Responses SDK call — the typed SDK signature has no `temperature` kwarg.
     call_kwargs = llm.client.responses.create.call_args.kwargs
     assert "temperature" not in call_kwargs
     assert "temperature" not in (call_kwargs.get("extra_body") or {})
@@ -426,8 +428,28 @@ def test_stream_event_conversion_returns_none_for_unknown_event() -> None:
 def test_stream_event_conversion_raises_on_error_event() -> None:
     error = _make_response_obj(message="boom")
     event = _make_event("response.error", error=error)
-    with pytest.raises(RuntimeError, match="boom"):
+    with pytest.raises(PerplexityResponsesStreamError, match="boom"):
         _convert_responses_stream_event_to_chunk(event)
+
+
+def test_stream_event_conversion_raises_on_failed_event() -> None:
+    """`response.failed` is the canonical SDK event name and must raise the
+    same structured exception as `response.error`.
+    """
+    error = _make_response_obj(
+        message="server failure",
+        code="internal_error",
+        type="server_error",
+        param=None,
+    )
+    event = _make_event("response.failed", error=error, request_id="req_xyz")
+    with pytest.raises(PerplexityResponsesStreamError) as exc_info:
+        _convert_responses_stream_event_to_chunk(event)
+    err = exc_info.value
+    assert err.code == "internal_error"
+    assert err.error_type == "server_error"
+    assert err.request_id == "req_xyz"
+    assert err.raw_event is event
 
 
 # ---------------------------------------------------------------------------
@@ -572,7 +594,6 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
             "stream": True,
             "top_p": None,  # None values are dropped.
             "top_k": 5,  # Chat-Completions-only → dropped.
-            "tool_choice": "auto",  # Chat-Completions-only → dropped.
             "metadata": {"trace": "x"},  # Chat-Completions-only → dropped.
             "search_mode": "academic",  # Perplexity-specific → extra_body.
             "return_images": True,
@@ -584,16 +605,36 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
     assert payload["max_output_tokens"] == 128
     assert "max_tokens" not in payload
     assert payload["stream"] is True
-    for dropped in ("temperature", "top_p", "top_k", "tool_choice", "metadata"):
+    for dropped in ("temperature", "top_p", "top_k", "metadata"):
         assert dropped not in payload
     assert "messages" not in payload
     extra_body = payload["extra_body"]
-    for dropped in ("temperature", "top_p", "top_k", "tool_choice", "metadata"):
+    for dropped in ("temperature", "top_p", "top_k", "metadata"):
         assert dropped not in extra_body
     assert extra_body == {
         "search_mode": "academic",
         "return_images": True,
     }
+
+
+def test_to_responses_payload_raises_on_tool_choice() -> None:
+    """`tool_choice` is a control-flow primitive; silently dropping it would
+    break agent loops, so the Responses path must reject it explicitly.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    with pytest.raises(ValueError, match="tool_choice"):
+        llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "sonar-pro", "tool_choice": "required"},
+        )
+
+
+def test_invoke_raises_when_tool_choice_supplied_on_responses_branch() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    with pytest.raises(ValueError, match="tool_choice"):
+        llm.invoke("hi", tool_choice="required")
+    llm.client.responses.create.assert_not_called()
 
 
 def test_to_responses_payload_drops_stop() -> None:
@@ -624,29 +665,83 @@ def test_to_responses_payload_drops_model_when_preset_set() -> None:
     assert "model" not in payload
 
 
-def test_to_responses_payload_silently_drops_class_default_temperature() -> None:
-    """The class default `temperature=0.7` must not warn — it's injected on
-    every call regardless of user intent, so warning would spam.
+def test_to_responses_payload_warns_when_user_set_model_dropped_under_preset(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """When the user explicitly set `model` (init or per-call) AND supplied a
+    `preset`, the `model` drop must surface so the override is discoverable.
     """
-    import logging
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    assert "model" in llm.model_fields_set
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        payload = llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "perplexity/sonar-pro", "preset": "pro-search"},
+        )
+    assert "model" not in payload
+    assert payload["preset"] == "pro-search"
+    assert any(
+        "model" in record.message and "preset" in record.message
+        for record in caplog.records
+    )
 
+
+def test_to_responses_payload_per_call_temperature_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A temperature passed per-call (via `kwargs`) must warn even if the user
+    did not set `temperature` at init — `model_fields_set` alone misses
+    `invoke(temperature=...)` and `.bind(temperature=...)`.
+    """
     llm = ChatPerplexity(model="sonar-pro", api_key="test")
     assert "temperature" not in llm.model_fields_set
-    logger = logging.getLogger("langchain_perplexity.chat_models")
-    records: list[logging.LogRecord] = []
-    handler = logging.Handler()
-    handler.emit = records.append  # type: ignore[method-assign]
-    logger.addHandler(handler)
-    try:
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        payload = llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "sonar-pro", "temperature": 0.9},
+            user_set_keys={"temperature"},
+        )
+    assert "temperature" not in payload
+    assert any("temperature" in record.message for record in caplog.records)
+
+
+def test_to_responses_payload_warns_for_user_set_default_temperature_value(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Discrimination must be on `model_fields_set` membership, not value
+    equality — a user explicitly passing the class-default value still warns.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", temperature=0.7)
+    assert "temperature" in llm.model_fields_set
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
         payload = llm._to_responses_payload(
             [{"role": "user", "content": "hi"}],
             {"model": "sonar-pro", "temperature": 0.7},
         )
-    finally:
-        logger.removeHandler(handler)
+    assert "temperature" not in payload
+    assert any("temperature" in record.message for record in caplog.records)
+
+
+def test_to_responses_payload_silently_drops_class_default_temperature(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The class default `temperature=0.7` must not warn — it's injected on
+    every call regardless of user intent, so warning would spam.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    assert "temperature" not in llm.model_fields_set
+    with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
+        payload = llm._to_responses_payload(
+            [{"role": "user", "content": "hi"}],
+            {"model": "sonar-pro", "temperature": 0.7},
+        )
     assert "temperature" not in payload
     assert "temperature" not in payload.get("extra_body", {})
-    assert not [r for r in records if r.levelno >= logging.WARNING]
+    assert not [
+        r
+        for r in caplog.records
+        if r.name == "langchain_perplexity.chat_models" and "temperature" in r.message
+    ]
 
 
 def test_to_responses_payload_warns_when_user_set_temperature_dropped(
@@ -667,8 +762,9 @@ def test_to_responses_payload_warns_when_user_set_temperature_dropped(
 def test_to_responses_payload_warns_on_functional_drops(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """`tool_choice`, `stop`, `metadata` are functional; their silent drop
-    would be a footgun, so we surface a warning.
+    """`stop` and `metadata` are functional; their silent drop would be a
+    footgun, so we surface a warning. (`tool_choice` is handled separately:
+    it raises rather than warning — see the dedicated test.)
     """
     llm = ChatPerplexity(model="sonar-pro", api_key="test")
     with caplog.at_level("WARNING", logger="langchain_perplexity.chat_models"):
@@ -676,13 +772,12 @@ def test_to_responses_payload_warns_on_functional_drops(
             [{"role": "user", "content": "hi"}],
             {
                 "model": "sonar-pro",
-                "tool_choice": "auto",
                 "stop": ["END"],
                 "metadata": {"trace_id": "x"},
             },
         )
     assert any(
-        all(k in record.message for k in ("tool_choice", "stop", "metadata"))
+        all(k in record.message for k in ("stop", "metadata"))
         for record in caplog.records
     )
 
@@ -824,20 +919,81 @@ def test_stream_event_conversion_error_surfaces_structured_fields() -> None:
         param=None,
     )
     event = _make_event("response.error", error=error, request_id="req_abc")
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(PerplexityResponsesStreamError) as exc_info:
         _convert_responses_stream_event_to_chunk(event)
-    message = str(exc_info.value)
+    err = exc_info.value
+    message = str(err)
     assert "rate limited" in message
     assert "code=rate_limit_exceeded" in message
     assert "type=rate_limit" in message
     assert "request_id=req_abc" in message
+    # Structured attributes are also available for programmatic handling
+    # (observability pipelines, retry logic) without regex-parsing the message.
+    assert err.code == "rate_limit_exceeded"
+    assert err.error_type == "rate_limit"
+    assert err.param is None
+    assert err.request_id == "req_abc"
 
 
 def test_stream_event_conversion_error_uses_default_message_when_missing() -> None:
     event = MagicMock(spec_set=["type"])
     event.type = "response.error"
-    with pytest.raises(RuntimeError, match="Perplexity Responses API stream error"):
+    with pytest.raises(
+        PerplexityResponsesStreamError, match="Perplexity Responses API stream error"
+    ):
         _convert_responses_stream_event_to_chunk(event)
+
+
+def test_stream_raises_when_response_failed_mid_stream() -> None:
+    """End-to-end: a `response.failed` event mid-stream must surface through
+    `stream()` rather than truncating silently and producing the misleading
+    "No generation chunks were returned" error from `BaseChatModel.stream`.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    error = _make_response_obj(message="boom mid-stream", code="server_error")
+    events = [
+        _make_event("response.output_text.delta", delta="partial "),
+        _make_event("response.failed", error=error, request_id="req_fail"),
+    ]
+    llm.client.responses.create.return_value = iter(events)
+
+    with pytest.raises(
+        PerplexityResponsesStreamError, match="boom mid-stream"
+    ) as exc_info:
+        list(llm.stream("greet me"))
+    assert exc_info.value.code == "server_error"
+    assert exc_info.value.request_id == "req_fail"
+
+
+@pytest.mark.asyncio
+async def test_astream_raises_when_response_failed_mid_stream() -> None:
+    """Async counterpart: `response.failed` propagates through `astream()`."""
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    error = _make_response_obj(message="async boom", code="server_error")
+    events = [
+        _make_event("response.output_text.delta", delta="partial"),
+        _make_event("response.failed", error=error, request_id="req_async_fail"),
+    ]
+
+    class _AsyncIter:
+        def __init__(self, items: list[Any]) -> None:
+            self._items = list(items)
+
+        def __aiter__(self) -> _AsyncIter:
+            return self
+
+        async def __anext__(self) -> Any:
+            if not self._items:
+                raise StopAsyncIteration
+            return self._items.pop(0)
+
+    llm.async_client = MagicMock()
+    llm.async_client.responses.create = AsyncMock(return_value=_AsyncIter(events))
+
+    with pytest.raises(PerplexityResponsesStreamError, match="async boom"):
+        async for _ in llm.astream("hi"):
+            pass
 
 
 # ---------------------------------------------------------------------------
