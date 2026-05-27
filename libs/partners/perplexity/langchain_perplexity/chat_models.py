@@ -324,6 +324,97 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
+def _normalize_perplexity_sse(sse: Any) -> dict[str, Any] | None:
+    """Decode a Perplexity SSE frame to a typed-payload dict, or skip it.
+
+    Returns `None` for frames that should be skipped without breaking the
+    stream (empty data, non-dict JSON, decode errors). Uses the SSE
+    `event:` field as the authoritative event-type discriminator — payloads
+    that disagree with the SSE frame name are realigned, because the SSE
+    name is the only source the API guarantees.
+    """
+    data = getattr(sse, "data", None)
+    if not data:
+        return None
+    try:
+        payload = sse.json()
+    except (TypeError, ValueError):
+        logger.warning(
+            "Discarding Perplexity SSE event with non-JSON data; event=%r data=%r",
+            getattr(sse, "event", None),
+            data[:200],
+        )
+        return None
+    if not isinstance(payload, dict):
+        logger.debug(
+            "Discarding Perplexity SSE event with non-dict payload; event=%r type=%s",
+            getattr(sse, "event", None),
+            type(payload).__name__,
+        )
+        return None
+    sse_event = getattr(sse, "event", None)
+    if sse_event:
+        # The SSE frame name is authoritative — never let a mismatched
+        # `type` in the JSON body silently reclassify the event (e.g. a
+        # `response.failed` mis-tagged as `response.completed`).
+        payload["type"] = sse_event
+    return payload
+
+
+def _iter_perplexity_sse_events(stream: Any) -> Iterator[Any]:
+    """Yield Perplexity Responses streaming events.
+
+    Workaround for an upstream Perplexity Python SDK bug:
+    `Stream.__stream__` only yields events whose SSE `event:` field is
+    `None`, but the Agent API tags every event (e.g.
+    `event: response.completed`). The result is that
+    `list(client.responses.create(..., stream=True))` returns zero events.
+    Tracked upstream at:
+
+        https://github.com/perplexityai/perplexity-py/issues/53
+
+    Real `perplexity.Stream` instances always expose the lower-level
+    `_iter_events()` SSE iterator; we drop down to it and synthesize event
+    dicts (`type` taken from the SSE frame name) so they flow through
+    `_convert_responses_stream_event_to_chunk` — which already handles both
+    SDK objects and dicts via `_get_attr`. When `_iter_events` is missing
+    (test fakes that already yield decoded event objects), pass through.
+    """
+    if not hasattr(stream, "_iter_events"):
+        yield from stream
+        return
+    for sse in stream._iter_events():
+        sse_data = getattr(sse, "data", None)
+        # Guard the `[DONE]` sentinel against frames with `data=None`
+        # (keepalive / comment SSE frames) — `None.startswith` would crash.
+        if sse_data and sse_data.startswith("[DONE]"):
+            break
+        payload = _normalize_perplexity_sse(sse)
+        if payload is None:
+            continue
+        yield payload
+
+
+async def _aiter_perplexity_sse_events(stream: Any) -> AsyncIterator[Any]:
+    """Async counterpart of `_iter_perplexity_sse_events`.
+
+    See the sync helper for rationale, removal criteria, and the upstream
+    bug tracking URL.
+    """
+    if not hasattr(stream, "_iter_events"):
+        async for event in stream:
+            yield event
+        return
+    async for sse in stream._iter_events():
+        sse_data = getattr(sse, "data", None)
+        if sse_data and sse_data.startswith("[DONE]"):
+            break
+        payload = _normalize_perplexity_sse(sse)
+        if payload is None:
+            continue
+        yield payload
+
+
 def _convert_responses_stream_event_to_chunk(
     event: Any,
 ) -> ChatGenerationChunk | None:
@@ -855,7 +946,7 @@ class ChatPerplexity(BaseChatModel):
             responses_payload = self._to_responses_payload(message_dicts, params)
             responses_payload["stream"] = True
             stream_events = self.client.responses.create(**responses_payload)
-            for event in stream_events:
+            for event in _iter_perplexity_sse_events(stream_events):
                 response_chunk = _convert_responses_stream_event_to_chunk(event)
                 if response_chunk is None:
                     continue
@@ -966,7 +1057,7 @@ class ChatPerplexity(BaseChatModel):
             stream_events = await self.async_client.responses.create(
                 **responses_payload
             )
-            async for event in stream_events:
+            async for event in _aiter_perplexity_sse_events(stream_events):
                 response_chunk = _convert_responses_stream_event_to_chunk(event)
                 if response_chunk is None:
                     continue
