@@ -143,6 +143,7 @@ class StructuredTool(BaseTool):
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
+        subagent_name: str | Callable[[ToolCall], str] | None = None,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -171,6 +172,8 @@ class StructuredTool(BaseTool):
                 to parse parameter descriptions from Google Style function docstrings.
             error_on_invalid_docstring: if `parse_docstring` is provided, configure
                 whether to raise `ValueError` on invalid Google Style docstrings.
+            subagent_name: Name of the subagent this tool should route to (static
+                string or callable that resolves the name from the `ToolCall`).
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -248,6 +251,7 @@ class StructuredTool(BaseTool):
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
+            subagent_name=subagent_name,
             **kwargs,
         )
 

@@ -3813,3 +3813,47 @@ def test_tool_decorator_subagent_name_defaults_to_none() -> None:
         return str(x)
 
     assert plain.subagent_name is None
+
+
+# --- StructuredTool.from_function subagent_name passthrough tests ---
+
+
+def test_structured_tool_from_function_passes_subagent_name_static() -> None:
+    def my_func(x: int) -> str:
+        return f"x={x}"
+
+    t = StructuredTool.from_function(
+        func=my_func,
+        name="my_func",
+        description="Test tool for subagent_name passthrough.",
+        subagent_name="x_agent",
+    )
+    assert t.subagent_name == "x_agent"
+
+
+def test_structured_tool_from_function_passes_subagent_name_callable() -> None:
+    def my_func(target: str) -> str:
+        return f"target={target}"
+
+    def resolver(call: ToolCall) -> str:
+        return str(call["args"]["target"])
+
+    t = StructuredTool.from_function(
+        func=my_func,
+        name="my_func",
+        description="Test tool for callable subagent_name.",
+        subagent_name=resolver,
+    )
+    assert t.subagent_name is resolver
+
+
+def test_structured_tool_from_function_subagent_name_defaults_to_none() -> None:
+    def my_func(x: int) -> str:
+        return str(x)
+
+    t = StructuredTool.from_function(
+        func=my_func,
+        name="my_func",
+        description="Plain tool.",
+    )
+    assert t.subagent_name is None
