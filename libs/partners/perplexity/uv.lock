@@ -537,7 +537,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "perplexityai", specifier = ">=0.32.0,<1.0.0" },
+    { name = "perplexityai", specifier = ">=0.34.1,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -973,7 +973,7 @@ wheels = [
 
 [[package]]
 name = "perplexityai"
-version = "0.32.1"
+version = "0.34.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -983,9 +983,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/09/02/73f460c85a5ec533a97fd1ff34fa729a009b4a217a4a87d8da946b6e1c52/perplexityai-0.32.1.tar.gz", hash = "sha256:b03503498591d06c4d50b666f7f7469875d3586f664c29416aae9012ae7a64d1", size = 135741, upload-time = "2026-04-21T04:35:40.345Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/9e/253b60c5a51913a0a1e4eddccb02078e4cdb496cab994ad4bdd1e83a8f65/perplexityai-0.34.1.tar.gz", hash = "sha256:8e4b47d52c1d2c0d259eead6941dc60896045070bf0794bcbab8a96e428e06ef", size = 138767, upload-time = "2026-05-27T02:55:02.096Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/11/5c164f114311bc2e2350202393e7c5bd25bb156b5230a1edf5a2b2f4ba04/perplexityai-0.32.1-py3-none-any.whl", hash = "sha256:e5017d245fd8966cf79657edc03a93078d867708542b491b38152618f91e369b", size = 130223, upload-time = "2026-04-21T04:35:38.786Z" },
+    { url = "https://files.pythonhosted.org/packages/05/47/246e7e7463df53a9e37cc7427296c8ee5c18183c5217fb3df3a088dfb652/perplexityai-0.34.1-py3-none-any.whl", hash = "sha256:6dcf94e73ec22bc8c98724e6999aa8a371eb441cc7ddd7e44c13e326e06d37b8", size = 131948, upload-time = "2026-05-27T02:55:01.024Z" },
 ]
 
 [[package]]
