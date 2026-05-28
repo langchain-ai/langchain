@@ -73,6 +73,10 @@ class VectorStore(ABC):
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
+            # Materialise the iterable once so that generator inputs are not
+            # exhausted by the length check and then silently produce an empty
+            # document list when iterated again.
+            # See https://github.com/langchain-ai/langchain/issues/37673
             texts_: Sequence[str] = (
                 texts if isinstance(texts, (list, tuple)) else list(texts)
             )
@@ -86,7 +90,9 @@ class VectorStore(ABC):
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                # Use texts_ (the materialised sequence) rather than the original
+                # texts iterable which may already be exhausted at this point.
+                for text, metadata_, id_ in zip(texts_, metadatas_, ids_, strict=False)
             ]
             if ids is not None:
                 # For backward compatibility
@@ -211,7 +217,8 @@ class VectorStore(ABC):
         if type(self).aadd_documents != VectorStore.aadd_documents:
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
-            # The existing add_texts
+            # Materialise the iterable once; see the same comment in add_texts.
+            # See https://github.com/langchain-ai/langchain/issues/37673
             texts_: Sequence[str] = (
                 texts if isinstance(texts, (list, tuple)) else list(texts)
             )
@@ -226,7 +233,8 @@ class VectorStore(ABC):
 
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                # Use texts_ (materialised) instead of the potentially-exhausted texts.
+                for text, metadata_, id_ in zip(texts_, metadatas_, ids_, strict=False)
             ]
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
