@@ -24,11 +24,13 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
     _format_image,
     _format_messages,
     _is_builtin_tool,
     _merge_messages,
+    _normalize_tool_call_id,
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
@@ -765,6 +767,153 @@ def test__format_messages_with_tool_calls() -> None:
             "user",
             "user",
         ]
+
+
+def test__normalize_tool_call_id() -> None:
+    # Already-valid IDs (including native Anthropic and OpenAI styles) pass
+    # through unchanged.
+    for valid in ("1", "toolu_01abcDEF-_", "call_Ao02pnFYXD6GN1yzc0uXPsvF"):
+        assert _normalize_tool_call_id(valid) == valid
+
+    # Empty and None IDs pass through so a malformed request surfaces a clear
+    # error from Anthropic rather than a synthesized ID.
+    assert _normalize_tool_call_id("") == ""
+    assert _normalize_tool_call_id(None) is None
+
+    # Foreign IDs with characters Anthropic rejects (e.g. Fireworks/Kimi's
+    # `functions.write_todos:0`) are rewritten to a compatible form.
+    invalid = "functions.write_todos:0"
+    normalized = _normalize_tool_call_id(invalid)
+    assert normalized is not None
+    assert normalized != invalid
+    assert _TOOL_CALL_ID_PATTERN.match(normalized)
+
+    # Deterministic + idempotent: same input always maps to the same output.
+    assert _normalize_tool_call_id(invalid) == normalized
+    assert _normalize_tool_call_id(normalized) == normalized
+
+    # Distinct invalid IDs map to distinct replacements (no collision that
+    # would break multi-tool turns).
+    other = _normalize_tool_call_id("functions.read_file:1")
+    assert other != normalized
+
+
+def test__format_messages_normalizes_cross_provider_tool_call_ids() -> None:
+    """A `tool_use.id` and its paired `tool_use_id` must normalize identically.
+
+    Reproduces the Fireworks/Kimi -> Anthropic 400 from replaying a thread whose
+    tool-call IDs were minted by another provider.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage("done", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["type"] == "tool_use"
+    assert tool_result["type"] == "tool_result"
+
+    # The rewritten IDs are valid and still reference each other.
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_prestructured_tool_result_id() -> None:
+    """A `ToolMessage` whose content is already `tool_result` blocks is covered.
+
+    This shape bypasses the `tool_call_id` normalization in `_merge_messages` and
+    flows through the `tool_result` content branch, so its `tool_use_id` must
+    still be normalized to match the paired `tool_use.id`.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage(
+        [{"type": "tool_result", "tool_use_id": bad_id, "content": "done"}],
+        tool_call_id=bad_id,
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_inline_tool_use_block() -> None:
+    """An invalid ID on an inline `tool_use` content block is normalized.
+
+    Covers the v1-compat destination where tool calls are stored as content
+    blocks rather than the `tool_calls` attribute, paired with a `ToolMessage`.
+    """
+    bad_id = "functions.search:2"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "search", "id": bad_id, "input": {"q": "x"}}],
+    )
+    tool = ToolMessage("result", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+
+
+def test__format_messages_dedupes_overlapping_normalized_tool_use() -> None:
+    """An invalid ID shared by a `tool_use` block and `tool_calls` yields one block.
+
+    Guards the dedup branch: `tool_use_ids` are normalized, so the comparison
+    against the (also normalized) tool-call ID must not re-emit a duplicate block.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "write_todos", "id": bad_id, "input": {"a": 1}}],
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"a": 1}}],
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai])
+
+    tool_use_blocks = [b for b in formatted[1]["content"] if b["type"] == "tool_use"]
+    assert len(tool_use_blocks) == 1
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use_blocks[0]["id"])
+
+
+def test__format_messages_normalizes_distinct_ids_independently() -> None:
+    """Multiple distinct invalid IDs in one turn stay distinct and correctly paired."""
+    id_a = "functions.write_todos:0"
+    id_b = "functions.read_file:1"
+    ai = AIMessage(
+        "",
+        tool_calls=[
+            {"name": "write_todos", "id": id_a, "args": {}},
+            {"name": "read_file", "id": id_b, "args": {}},
+        ],
+    )
+    tool_a = ToolMessage("a", tool_call_id=id_a)
+    tool_b = ToolMessage("b", tool_call_id=id_b)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool_a, tool_b])
+
+    tool_uses = formatted[1]["content"]
+    results = formatted[2]["content"]
+    assert tool_uses[0]["id"] == _normalize_tool_call_id(id_a)
+    assert tool_uses[1]["id"] == _normalize_tool_call_id(id_b)
+    assert tool_uses[0]["id"] != tool_uses[1]["id"]
+    # Each result still pairs with its own tool_use.
+    assert {r["tool_use_id"] for r in results} == {
+        tool_uses[0]["id"],
+        tool_uses[1]["id"],
+    }
 
 
 def test__format_tool_use_block() -> None:
