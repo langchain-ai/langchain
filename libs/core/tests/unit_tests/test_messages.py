@@ -1427,3 +1427,39 @@ def test_text_accessor() -> None:
     assert empty_msg.text == ""
     assert empty_msg.text == ""
     assert str(empty_msg.text) == str(empty_msg.text)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for https://github.com/langchain-ai/langchain/issues/37686
+# AIMessageChunk.tool_call_chunks must preserve non-ASCII characters in args.
+# ---------------------------------------------------------------------------
+
+
+def test_ai_message_chunk_tool_call_chunks_preserve_non_ascii() -> None:
+    """tool_call_chunks[].args must preserve non-ASCII characters verbatim.
+
+    The validator that populates tool_call_chunks from tool_calls previously
+    used json.dumps(tc["args"]) which defaults to ensure_ascii=True.  That
+    caused CJK and emoji characters to be escaped to \\uXXXX sequences,
+    making chunk.tool_call_chunks[0]["args"] != json.dumps(chunk.tool_calls[0]["args"]).
+    """
+    chunk = AIMessageChunk(
+        content="",
+        tool_calls=[
+            {
+                "name": "echo",
+                "args": {"text": "你好", "emoji": "🚀"},
+                "id": "call_1",
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    args_str = chunk.tool_call_chunks[0]["args"]
+    assert args_str is not None
+    assert "你好" in args_str, (
+        f"Non-ASCII text '你好' was escaped in tool_call_chunks args: {args_str!r}"
+    )
+    assert "🚀" in args_str, (
+        f"Emoji '🚀' was escaped in tool_call_chunks args: {args_str!r}"
+    )
