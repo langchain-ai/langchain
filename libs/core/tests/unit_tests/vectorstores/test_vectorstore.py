@@ -292,3 +292,66 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for https://github.com/langchain-ai/langchain/issues/37673
+# VectorStore.add_texts / aadd_texts must work correctly with generator inputs.
+# ---------------------------------------------------------------------------
+
+
+class _RecordingVectorStore(VectorStore):
+    """Minimal VectorStore that records documents added via add_documents."""
+
+    def __init__(self) -> None:
+        self.documents: list[Document] = []
+
+    @override
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
+        self.documents.extend(documents)
+        return [str(i) for i in range(len(documents))]
+
+    @override
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        return []
+
+    @classmethod
+    def from_texts(  # type: ignore[override]
+        cls, texts: list[str], embedding: Embeddings, **kwargs: Any
+    ) -> "_RecordingVectorStore":
+        store = cls()
+        store.add_texts(texts)
+        return store
+
+
+def test_add_texts_with_generator_input() -> None:
+    """add_texts must not silently drop texts when passed a generator.
+
+    Before the fix, the generator was materialised once into texts_ for the
+    length check, and then the original (now-exhausted) generator was used
+    in the zip() that builds Document objects — producing an empty list.
+    """
+    store = _RecordingVectorStore()
+    store.add_texts(text for text in ["alpha", "beta"])
+    assert [doc.page_content for doc in store.documents] == ["alpha", "beta"], (
+        "Generator inputs must produce the same documents as list inputs"
+    )
+
+
+@pytest.mark.asyncio
+async def test_aadd_texts_with_generator_input() -> None:
+    """aadd_texts must not silently drop texts when passed a generator."""
+
+    class _AsyncRecordingVectorStore(_RecordingVectorStore):
+        async def aadd_documents(  # type: ignore[override]
+            self, documents: list[Document], **kwargs: Any
+        ) -> list[str]:
+            return self.add_documents(documents, **kwargs)
+
+    store = _AsyncRecordingVectorStore()
+    await store.aadd_texts(text for text in ["alpha", "beta"])
+    assert [doc.page_content for doc in store.documents] == ["alpha", "beta"], (
+        "Generator inputs must produce the same documents as list inputs (async path)"
+    )
