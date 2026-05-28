@@ -217,6 +217,37 @@ def test_summarization_middleware_summary_creation() -> None:
     summary = middleware_error._create_summary(messages)
     assert "Error generating summary: Model error" in summary
 
+    class BugModel(BaseChatModel):
+        @override
+        def invoke(
+            self,
+            input: LanguageModelInput,
+            config: RunnableConfig | None = None,
+            *,
+            stop: list[str] | None = None,
+            **kwargs: Any,
+        ) -> AIMessage:
+            msg = "Programming error"
+            raise TypeError(msg)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware_bug = SummarizationMiddleware(model=BugModel(), trigger=("tokens", 1000))
+    with pytest.raises(TypeError, match="Programming error"):
+        middleware_bug._create_summary(messages)
+
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), max_tokens_before_summary=500)
@@ -914,6 +945,40 @@ async def test_summarization_middleware_async_error_handling() -> None:
     assert "Error generating summary: Async model error" in summary
 
 
+async def test_summarization_middleware_async_reraises_non_recoverable_errors() -> None:
+    """Test async summary creation does not hide programming errors."""
+
+    class BugAsyncModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "Async programming error"
+            raise TypeError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware = SummarizationMiddleware(model=BugAsyncModel(), trigger=("messages", 5))
+    with pytest.raises(TypeError, match="Async programming error"):
+        await middleware._acreate_summary([HumanMessage(content="test")])
+
+
 def test_summarization_middleware_cutoff_at_boundary() -> None:
     """Test cutoff index determination at exact message boundaries."""
     middleware = SummarizationMiddleware(
@@ -945,6 +1010,27 @@ def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
             model=MockChatModel(), keep=("messages", 5), messages_to_keep=10
         )
     assert middleware.keep == ("messages", 5)
+
+
+def test_summarization_middleware_rejects_unknown_kwargs() -> None:
+    """Test that unexpected kwargs raise instead of being silently ignored."""
+    with pytest.raises(TypeError, match=r"Unexpected keyword argument\(s\): 'triger'"):
+        SummarizationMiddleware(model=MockChatModel(), triger=("tokens", 1000))
+
+
+def test_summarization_middleware_trim_reraises_non_recoverable_errors() -> None:
+    """Test that trim logic does not swallow programming errors."""
+    middleware = SummarizationMiddleware(model=MockChatModel(), trigger=("messages", 5))
+
+    def broken_token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
+        msg = "counter wiring bug"
+        raise AttributeError(msg)
+
+    middleware.token_counter = broken_token_counter
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(20)]
+
+    with pytest.raises(AttributeError, match="counter wiring bug"):
+        middleware._trim_messages_for_summary(messages)
 
 
 def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:

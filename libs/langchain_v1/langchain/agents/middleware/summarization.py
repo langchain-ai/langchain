@@ -80,6 +80,8 @@ Messages to summarize:
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+_SUMMARY_RECOVERABLE_EXCEPTIONS = (ValueError, RuntimeError)
+_TRIM_RECOVERABLE_EXCEPTIONS = (TypeError, ValueError)
 
 # Some providers tag emitted messages with a `model_provider` string that differs from
 # their LangSmith `ls_provider`. The reported-token check below compares the two, so we
@@ -245,9 +247,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
                 Pass `None` to skip trimming entirely.
         """
-        # Handle deprecated parameters
-        if "max_tokens_before_summary" in deprecated_kwargs:
-            value = deprecated_kwargs["max_tokens_before_summary"]
+        # Handle deprecated parameters.
+        remaining_kwargs = dict(deprecated_kwargs)
+        if "max_tokens_before_summary" in remaining_kwargs:
+            value = remaining_kwargs.pop("max_tokens_before_summary")
             warnings.warn(
                 "max_tokens_before_summary is deprecated. Use trigger=('tokens', value) instead.",
                 DeprecationWarning,
@@ -256,8 +259,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             if trigger is None and value is not None:
                 trigger = ("tokens", value)
 
-        if "messages_to_keep" in deprecated_kwargs:
-            value = deprecated_kwargs["messages_to_keep"]
+        if "messages_to_keep" in remaining_kwargs:
+            value = remaining_kwargs.pop("messages_to_keep")
             warnings.warn(
                 "messages_to_keep is deprecated. Use keep=('messages', value) instead.",
                 DeprecationWarning,
@@ -265,6 +268,11 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             if keep == ("messages", _DEFAULT_MESSAGES_TO_KEEP):
                 keep = ("messages", value)
+
+        if remaining_kwargs:
+            unknown_kwargs = ", ".join(f"{key!r}" for key in sorted(remaining_kwargs))
+            msg = f"Unexpected keyword argument(s): {unknown_kwargs}"
+            raise TypeError(msg)
 
         super().__init__()
 
@@ -632,7 +640,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
-        except Exception as e:
+        except _SUMMARY_RECOVERABLE_EXCEPTIONS as e:
             return f"Error generating summary: {e!s}"
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
@@ -658,7 +666,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
-        except Exception as e:
+        except _SUMMARY_RECOVERABLE_EXCEPTIONS as e:
             return f"Error generating summary: {e!s}"
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
@@ -678,5 +686,5 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     include_system=True,
                 ),
             )
-        except Exception:
+        except _TRIM_RECOVERABLE_EXCEPTIONS:
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]
