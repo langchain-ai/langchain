@@ -573,6 +573,25 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
+    # Image / file ID
+    block = {
+        "type": "image",
+        "file_id": "file-abc123",
+    }
+    expected = {"type": "input_image", "file_id": "file-abc123"}
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Image / legacy ID
+    block = {
+        "type": "image",
+        "source_type": "id",
+        "id": "file-abc123",
+    }
+    expected = {"type": "input_image", "file_id": "file-abc123"}
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
     # File / url
     block = {
         "type": "file",
@@ -603,3 +622,22 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_openai_data_block_image_file_id_uses_file_id() -> None:
+    block = types.create_image_block(file_id="file-abc123")
+
+    assert block["id"] != "file-abc123"
+    result = convert_to_openai_data_block(block, api="responses")
+
+    assert result == {"type": "input_image", "file_id": "file-abc123"}
+
+
+def test_convert_to_openai_data_block_image_file_id_chat_completions() -> None:
+    block = {
+        "type": "image",
+        "file_id": "file-abc123",
+    }
+
+    with pytest.raises(ValueError, match="Unsupported source type"):
+        convert_to_openai_data_block(block)

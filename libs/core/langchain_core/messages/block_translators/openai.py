@@ -76,18 +76,26 @@ def convert_to_openai_data_block(
         The formatted content block.
     """
     if block["type"] == "image":
-        chat_completions_block = convert_to_openai_image_block(block)
-        if api == "responses":
-            formatted_block = {
-                "type": "input_image",
-                "image_url": chat_completions_block["image_url"]["url"],
-            }
-            if chat_completions_block["image_url"].get("detail"):
-                formatted_block["detail"] = chat_completions_block["image_url"][
-                    "detail"
-                ]
+        if api == "responses" and (
+            block.get("source_type") == "id" or "file_id" in block
+        ):
+            file_id = (
+                block["id"] if block.get("source_type") == "id" else block["file_id"]
+            )
+            formatted_block = {"type": "input_image", "file_id": file_id}
         else:
-            formatted_block = chat_completions_block
+            chat_completions_block = convert_to_openai_image_block(block)
+            if api == "responses":
+                formatted_block = {
+                    "type": "input_image",
+                    "image_url": chat_completions_block["image_url"]["url"],
+                }
+                if chat_completions_block["image_url"].get("detail"):
+                    formatted_block["detail"] = chat_completions_block["image_url"][
+                        "detail"
+                    ]
+            else:
+                formatted_block = chat_completions_block
 
     elif block["type"] == "file":
         if block.get("source_type") == "base64" or "base64" in block:

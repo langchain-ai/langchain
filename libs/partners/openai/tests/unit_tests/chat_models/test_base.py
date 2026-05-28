@@ -3640,6 +3640,21 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     assert isinstance(exc_info.value, ContextOverflowError)
 
 
+def test_get_request_payload_responses_api_input_image_file_id() -> None:
+    llm = ChatOpenAI(model="gpt-5", api_key="test", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [HumanMessage(content=[types.create_image_block(file_id="file-abc123")])]
+    )
+
+    assert payload["input"] == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_image", "file_id": "file-abc123"}],
+        }
+    ]
+
+
 def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> None:
     llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
     payload = llm._get_request_payload(
