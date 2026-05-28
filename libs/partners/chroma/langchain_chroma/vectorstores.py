@@ -1239,34 +1239,62 @@ class Chroma(VectorStore):
             )
         embeddings = self._embedding_function.embed_documents(text)
 
-        if hasattr(
-            self._client,
-            "get_max_batch_size",
-        ) or hasattr(  # for Chroma 0.5.1 and above
-            self._client,
-            "max_batch_size",
-        ):  # for Chroma 0.4.10 and above
-            from chromadb.utils.batch_utils import create_batches
+        # Separate documents with non-empty metadata from those without.
+        # Chroma rejects empty dicts in the metadatas argument, so documents
+        # that have no metadata must be updated without the metadatas kwarg.
+        empty_ids = [idx for idx, m in enumerate(metadata) if not m]
+        non_empty_ids = [idx for idx, m in enumerate(metadata) if m]
 
-            for batch in create_batches(
-                api=self._client,
-                ids=ids,
-                metadatas=metadata,  # type: ignore[arg-type]
-                documents=text,
-                embeddings=embeddings,  # type: ignore[arg-type]
-            ):
-                self._collection.update(
-                    ids=batch[0],
-                    embeddings=batch[1],
-                    documents=batch[3],
-                    metadatas=batch[2],
-                )
-        else:
-            self._collection.update(
-                ids=ids,
-                embeddings=embeddings,  # type: ignore[arg-type]
-                documents=text,
-                metadatas=metadata,  # type: ignore[arg-type]
+        def _do_update(
+            batch_ids: list[str],
+            batch_text: list[str],
+            batch_embeddings: list,
+            batch_metadata: list[dict] | None,
+        ) -> None:
+            use_batches = hasattr(self._client, "get_max_batch_size") or hasattr(
+                self._client, "max_batch_size"
+            )
+            if use_batches:
+                from chromadb.utils.batch_utils import create_batches
+
+                for batch in create_batches(
+                    api=self._client,
+                    ids=batch_ids,
+                    metadatas=batch_metadata,  # type: ignore[arg-type]
+                    documents=batch_text,
+                    embeddings=batch_embeddings,  # type: ignore[arg-type]
+                ):
+                    update_kwargs: dict = {
+                        "ids": batch[0],
+                        "embeddings": batch[1],
+                        "documents": batch[3],
+                    }
+                    if batch[2] is not None:
+                        update_kwargs["metadatas"] = batch[2]
+                    self._collection.update(**update_kwargs)
+            else:
+                update_kwargs = {
+                    "ids": batch_ids,
+                    "embeddings": batch_embeddings,  # type: ignore[arg-type]
+                    "documents": batch_text,
+                }
+                if batch_metadata is not None:
+                    update_kwargs["metadatas"] = batch_metadata  # type: ignore[assignment]
+                self._collection.update(**update_kwargs)
+
+        if non_empty_ids:
+            _do_update(
+                batch_ids=[ids[i] for i in non_empty_ids],
+                batch_text=[text[i] for i in non_empty_ids],
+                batch_embeddings=[embeddings[i] for i in non_empty_ids],
+                batch_metadata=[metadata[i] for i in non_empty_ids],
+            )
+        if empty_ids:
+            _do_update(
+                batch_ids=[ids[i] for i in empty_ids],
+                batch_text=[text[i] for i in empty_ids],
+                batch_embeddings=[embeddings[i] for i in empty_ids],
+                batch_metadata=None,
             )
 
     @classmethod
