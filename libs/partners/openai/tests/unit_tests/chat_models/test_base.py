@@ -6,7 +6,7 @@ import json
 import warnings
 from functools import partial
 from types import TracebackType
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -1432,7 +1432,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     class MockParsedMessage(openai.BaseModel):
         role: Literal["assistant"] = "assistant"
         content: str = '{"output": "Paris"}'
-        parsed: None = None
+        parsed: Optional[None] = None
         refusal: str | None = None
 
     class MockChoice(openai.BaseModel):
