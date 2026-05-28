@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
 )
 
 import chromadb
@@ -483,10 +484,46 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
+    _SUPPORTED_IMAGE_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
+        {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tiff", ".tif", ".svg"}
+    )
+
     @staticmethod
     def encode_image(uri: str) -> str:
-        """Get base64 string from image URI."""
-        with Path(uri).open("rb") as image_file:
+        """Get base64 string from image URI.
+
+        Args:
+            uri: File path to the image.
+
+        Returns:
+            Base64-encoded string of the image contents.
+
+        Raises:
+            ValueError: If the URI contains path traversal sequences or
+                points to a non-image file.
+        """
+        raw_path = Path(uri)
+
+        # Block path traversal
+        if ".." in raw_path.parts:
+            msg = (
+                f"Path traversal detected in image URI: {uri!r}. "
+                "URIs must not contain '..' components."
+            )
+            raise ValueError(msg)
+
+        resolved = raw_path.resolve()
+
+        # Validate file extension
+        if resolved.suffix.lower() not in Chroma._SUPPORTED_IMAGE_EXTENSIONS:
+            msg = (
+                f"Unsupported image file extension {resolved.suffix!r} in URI: "
+                f"{uri!r}. Supported extensions: "
+                f"{', '.join(sorted(Chroma._SUPPORTED_IMAGE_EXTENSIONS))}"
+            )
+            raise ValueError(msg)
+
+        with resolved.open("rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
     def fork(self, new_name: str) -> Chroma:
@@ -616,13 +653,15 @@ class Chroma(VectorStore):
         Raises:
             ValueError: When metadata is incorrect.
         """
+        # Materialize generators/iterables early to prevent exhaustion during
+        # ID generation below.
+        texts = list(texts)
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
             ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
 
         embeddings = None
-        texts = list(texts)
         if self._embedding_function is not None:
             embeddings = self._embedding_function.embed_documents(texts)
         if metadatas:
