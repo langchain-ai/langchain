@@ -251,6 +251,14 @@ def _load_prompt_from_file(
     """Load prompt from file."""
     # Convert file to a Path object.
     file_path = Path(file)
+    if not allow_dangerous_paths and ".." in file_path.parts:
+        msg = (
+            f"Path '{file_path}' contains '..' components. Directory traversal "
+            f"sequences are not allowed when loading prompt configurations. "
+            f"Use direct paths instead, or pass "
+            f"`allow_dangerous_paths=True` if you trust the input."
+        )
+        raise ValueError(msg)
     # Load from either json or yaml.
     if file_path.suffix == ".json":
         with file_path.open(encoding=encoding) as f:

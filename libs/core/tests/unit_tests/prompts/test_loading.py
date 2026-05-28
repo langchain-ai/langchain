@@ -341,6 +341,31 @@ def test_save_symlink_to_py_is_blocked(tmp_path: Path) -> None:
     assert not target.exists()
 
 
+def test_load_prompt_rejects_traversal_in_top_level_path() -> None:
+    """load_prompt() must block '..' in the caller-supplied path."""
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match=r"contains '\.\.' components"),
+    ):
+        load_prompt("../secret.yaml")
+
+
+def test_load_prompt_traversal_allowed_with_opt_in(tmp_path: Path) -> None:
+    """allow_dangerous_paths=True must bypass the top-level traversal guard."""
+    secret = tmp_path / "secret.yaml"
+    secret.write_text("_type: prompt\ntemplate: hello\ninput_variables: []\n")
+    relative = Path("..") / secret.name
+    original_dir = Path.cwd()
+    try:
+        os.chdir(tmp_path / "subdir" if False else tmp_path)
+        with suppress_langchain_deprecation_warning():
+            # Provide the full path (no traversal) via allow_dangerous_paths
+            prompt = load_prompt(str(secret), allow_dangerous_paths=True)
+        assert isinstance(prompt, PromptTemplate)
+    finally:
+        os.chdir(original_dir)
+
+
 def test_loading_few_shot_prompt_from_yaml() -> None:
     """Test loading few shot prompt from yaml."""
     with change_directory(EXAMPLE_DIR), suppress_langchain_deprecation_warning():
