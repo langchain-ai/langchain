@@ -506,7 +506,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = [
                     create_tool_call_chunk(
                         name=tc["name"],
-                        args=json.dumps(tc["args"]),
+                        # ensure_ascii=False preserves non-ASCII characters
+                        # (e.g. CJK, emoji) in tool-call arguments rather than
+                        # escaping them to \uXXXX sequences.
+                        # See https://github.com/langchain-ai/langchain/issues/37686
+                        args=json.dumps(tc["args"], ensure_ascii=False),
                         id=tc["id"],
                         index=None,
                     )
