@@ -490,6 +490,14 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
+    # Image / file ID
+    block = {
+        "type": "image",
+        "file_id": "file-abc123",
+    }
+    with pytest.raises(ValueError, match="Unsupported source type"):
+        convert_to_openai_data_block(block)
+
     # Image / base64
     block = {
         "type": "image",
@@ -557,6 +565,25 @@ def test_convert_to_openai_data_block() -> None:
         "url": "https://example.com/test.png",
     }
     expected = {"type": "input_image", "image_url": "https://example.com/test.png"}
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Image / file ID
+    block = {
+        "type": "image",
+        "file_id": "file-abc123",
+    }
+    expected = {"type": "input_image", "file_id": "file-abc123"}
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Image / legacy source_type=id
+    block = {
+        "type": "image",
+        "source_type": "id",
+        "id": "file-legacy123",
+    }
+    expected = {"type": "input_image", "file_id": "file-legacy123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
