@@ -3,12 +3,12 @@
 Generalizes deepagents' SubagentTransformer to work with any tool that uses
 the `subagent_name=` parameter on `@tool` / `StructuredTool.from_function`.
 
-Reads the resolved name from `TaskPayload.metadata['subagent_name']` (stamped
-by langgraph's `ToolNode` at dispatch time). The base class
-`_TasksLifecycleBase._handle_task_start` already extracts `subagent_name` from
-metadata and populates `graph_name` and `cause` accordingly, so this
-transformer only needs to act on `_on_started` calls where `cause` is non-None
-(the discriminator for "this task was a subagent dispatch").
+Reads the resolved name from `TaskPayload.metadata['subagent_name']`, which
+langgraph's `ToolNode` derives from `BaseTool.subagent_name` via the
+`pregel_dynamic_metadata` hook at task scheduling time. The metadata is
+projected onto the parent-scope `tasks` event for the tool dispatch; this
+transformer correlates that event to the child-scope `tasks` events emitted
+by the nested run that the tool spawns.
 """
 
 from __future__ import annotations
@@ -81,18 +81,24 @@ class AsyncSubagentRunStream(AsyncSubgraphRunStream):
 class SubagentTransformer(_TasksLifecycleBase):
     """Promote declared subagents into typed handles on `run.subagents`.
 
-    Watches `tasks` events at the configured scope. For each child task
-    whose `TaskPayload.metadata` contains a `subagent_name` (stamped by
-    `ToolNode` from `BaseTool.subagent_name`), builds a typed
-    `SubagentRunStream` handle and pushes it onto the `subagents` log.
+    The Pregel scheduler emits a `tasks` event at the *parent* namespace
+    when a node is scheduled, carrying the task's `id` and any metadata
+    set on its config. ToolNode's `pregel_dynamic_metadata` hook stamps
+    `subagent_name` and `tool_call_id` into that metadata when the
+    dispatched tool declares `BaseTool.subagent_name`.
 
-    The base class extracts `subagent_name` from metadata and passes it as
-    `graph_name` to `_on_started`. It also builds `cause` only when
-    `subagent_name` is present, so `cause is not None` is the discriminator
-    for subagent tasks vs. ordinary nested-graph dispatches.
+    Nested runs spawned inside the tool (e.g., a subagent's Pregel
+    invocation) emit their own `tasks` events at a child namespace
+    that shares the parent task's id (segment shape `"<node>:<id>"`).
+
+    This transformer correlates the two: it stashes
+    `task_id -> (subagent_name, tool_call_id)` from parent-scope events,
+    and on the first matching child-scope event emits a typed handle on
+    `run.subagents`.
 
     Optionally filters to a declared set of subagent names via
-    `subagent_names`; when `None` (default), all dispatched subagents surface.
+    `subagent_names`; when `None` (default), all dispatched subagents
+    surface.
     """
 
     _native: ClassVar[bool] = True
@@ -108,6 +114,10 @@ class SubagentTransformer(_TasksLifecycleBase):
         self._log: StreamChannel[SubagentRunStream | AsyncSubagentRunStream] = StreamChannel()
         self._handles: dict[tuple[str, ...], SubagentRunStream | AsyncSubagentRunStream] = {}
         self._mux: StreamMux | None = None
+        # task_id -> {"subagent_name": ..., "tool_call_id": ...}, populated
+        # from parent-scope `tasks` events and consumed on the first matching
+        # child-scope task start.
+        self._pending: dict[str, dict[str, str]] = {}
 
     def init(self) -> dict[str, Any]:
         return {"subagents": self._log}
@@ -119,22 +129,49 @@ class SubagentTransformer(_TasksLifecycleBase):
         depth = len(self.scope)
         return len(ns) == depth + 1 and ns[:depth] == self.scope
 
+    def _capture_pending_from_parent(self, event: ProtocolEvent) -> None:
+        """Stash subagent metadata from a parent-scope task start.
+
+        Pregel emits a `tasks` event at this transformer's scope when a child
+        node is scheduled. The event's `data` carries the task `id` and the
+        `metadata` projected from the task config (which `ToolNode.pregel_dynamic_metadata`
+        populated with `subagent_name` and `tool_call_id`). Stash by id so the
+        corresponding child-scope event can pop it.
+        """
+        ns = tuple(event["params"]["namespace"])
+        if ns != self.scope:
+            return
+        data = event["params"]["data"]
+        if not isinstance(data, dict) or "result" in data:
+            return
+        task_id = data.get("id")
+        metadata = data.get("metadata") or {}
+        if not isinstance(task_id, str) or not isinstance(metadata, dict):
+            return
+        subagent_name = metadata.get("subagent_name")
+        if not isinstance(subagent_name, str) or not subagent_name:
+            return
+        tool_call_id = metadata.get("tool_call_id")
+        self._pending[task_id] = {
+            "subagent_name": subagent_name,
+            "tool_call_id": tool_call_id if isinstance(tool_call_id, str) else "",
+        }
+
     def _on_started(
         self,
         ns: tuple[str, ...],
-        graph_name: str | None,
-        trigger_call_id: str | None,  # noqa: ARG002
+        graph_name: str | None,  # noqa: ARG002
+        trigger_call_id: str | None,
         *,
-        cause: LifecycleCause | None = None,
+        cause: LifecycleCause | None = None,  # noqa: ARG002
     ) -> None:
-        # cause is only set by the base class when metadata.subagent_name was
-        # present — it is the discriminator for "this is a subagent dispatch."
-        if cause is None:
+        if trigger_call_id is None:
             return
-        # graph_name carries the subagent_name extracted from metadata.
-        if not isinstance(graph_name, str) or not graph_name:
+        info = self._pending.pop(trigger_call_id, None)
+        if info is None:
             return
-        if self._names is not None and graph_name not in self._names:
+        subagent_name = info["subagent_name"]
+        if self._names is not None and subagent_name not in self._names:
             return
         if self._mux is None or ns in self._handles:
             return
@@ -144,19 +181,12 @@ class SubagentTransformer(_TasksLifecycleBase):
             logger.debug("SubagentTransformer: could not create child mux for %s", ns)
             return
 
-        # Extract tool_call_id from cause for the SubagentRunStream.cause property.
-        # cause is LifecycleCauseToolCall = {"type": "toolCall", "toolCallId": "..."}
-        tool_call_id: str | None = None
-        if isinstance(cause, dict):
-            raw = cause.get("toolCallId")
-            if isinstance(raw, str):
-                tool_call_id = raw
-
+        tool_call_id = info["tool_call_id"] or None
         handle_cls = AsyncSubagentRunStream if child_mux.is_async else SubagentRunStream
         handle = handle_cls(
             mux=child_mux,
             path=ns,
-            graph_name=graph_name,
+            graph_name=subagent_name,
             trigger_call_id=tool_call_id,
         )
         self._handles[ns] = handle
@@ -195,6 +225,8 @@ class SubagentTransformer(_TasksLifecycleBase):
         return handle
 
     def process(self, event: ProtocolEvent) -> bool:
+        if event.get("method") == "tasks":
+            self._capture_pending_from_parent(event)
         keep = super().process(event)
         handle = self._handle_for_event(event)
         if handle is not None:
