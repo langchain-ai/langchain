@@ -65,11 +65,13 @@ def validate_safe_url(
     parsed = urlparse(url_str)
     hostname = parsed.hostname or ""
 
-    # Test-environment bypass (preserved from original implementation)
+    # Test-environment bypass — strict hostname allowlist only.
+    # SECURITY: never use prefix/substring matching here; only exact matches
+    # to prevent attacker-controlled hostnames from bypassing validation.
+    _TEST_HOSTNAMES = frozenset({"testserver", "testserver.local"})
     if (
         os.environ.get("LANGCHAIN_ENV") == "local_test"
-        and hostname.startswith("test")
-        and "server" in hostname
+        and hostname.lower() in _TEST_HOSTNAMES
     ):
         return url_str
 

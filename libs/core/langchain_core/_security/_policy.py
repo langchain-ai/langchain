@@ -228,7 +228,10 @@ def validate_hostname(hostname: str, policy: SSRFPolicy) -> None:
 def _effective_allowed_hosts(policy: SSRFPolicy) -> frozenset[str]:
     """Return allowed_hosts, augmented for local environments."""
     extra: set[str] = set()
-    if os.environ.get("LANGCHAIN_ENV", "").startswith("local"):
+    # SECURITY: use exact match — startswith("local") was too broad and
+    # matched unintended values like "local_staging".
+    _LOCAL_ENVS = frozenset({"local", "local_test"})
+    if os.environ.get("LANGCHAIN_ENV", "") in _LOCAL_ENVS:
         extra.update({"localhost", "testserver"})
     if extra:
         return policy.allowed_hosts | frozenset(extra)
