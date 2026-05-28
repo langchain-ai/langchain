@@ -95,7 +95,13 @@ class RecursiveJsonSplitter:
             for key, value in data.items():
                 new_path = [*current_path, key]
                 chunk_size = self._json_size(chunks[-1])
-                size = self._json_size({key: value})
+                # Measure the actual size contribution including the full nesting
+                # path overhead — _json_size({key: value}) alone underestimates
+                # the insertion cost for deeply nested paths, causing chunks to
+                # silently exceed max_chunk_size.
+                _probe: dict = {}
+                self._set_nested_dict(_probe, new_path, value)
+                size = self._json_size(_probe)
                 remaining = self.max_chunk_size - chunk_size
 
                 if size < remaining:

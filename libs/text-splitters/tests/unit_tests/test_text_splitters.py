@@ -3374,6 +3374,50 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
     assert found_empty, "Empty dict value was lost during splitting"
 
 
+def test_split_json_nested_respects_max_chunk_size() -> None:
+    """max_chunk_size must be respected for nested JSON, not just flat JSON.
+
+    Previously, _json_split() estimated item size as _json_size({key: value})
+    in isolation, ignoring the nesting-path overhead. A 3-level nested object
+    would pass the size check but produce a chunk exceeding max_chunk_size.
+    """
+    max_chunk = 50
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    data: dict[str, Any] = {
+        "level1": {
+            "level2": {
+                "level3": "this is a test string"
+            }
+        }
+    }
+    chunks = splitter.split_json(data)
+
+    for i, chunk in enumerate(chunks):
+        size = len(json.dumps(chunk))
+        assert size <= max_chunk, (
+            f"Chunk {i} has {size} bytes but max_chunk_size={max_chunk}. "
+            f"Path overhead was not accounted for in size estimation."
+        )
+
+
+def test_split_json_deeply_nested_respects_max_chunk_size() -> None:
+    """Chunk size limit must hold regardless of nesting depth."""
+    max_chunk = 80
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    data: dict[str, Any] = {
+        "a": {"b": {"c": {"d": {"e": "value that fits at leaf but not with full path"}}}}
+    }
+    chunks = splitter.split_json(data)
+
+    for i, chunk in enumerate(chunks):
+        size = len(json.dumps(chunk))
+        assert size <= max_chunk, (
+            f"Chunk {i} has {size} bytes > max_chunk_size={max_chunk}"
+        )
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
