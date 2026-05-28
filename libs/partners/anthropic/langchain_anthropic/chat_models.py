@@ -1822,7 +1822,10 @@ class ChatAnthropic(BaseChatModel):
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            # Copy the dict so that subsequent mutations (e.g. injecting
+            # "disable_parallel_tool_use") do not modify the caller's object.
+            # See https://github.com/langchain-ai/langchain/issues/37596
+            kwargs["tool_choice"] = dict(tool_choice)
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):
