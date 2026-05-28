@@ -28,6 +28,7 @@ from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict
 
+from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -1677,6 +1678,7 @@ def create_agent(
         cache=cache,
         transformers=[
             ToolCallTransformer,
+            SubagentTransformer,
             *middleware_transformers,
             *(transformers or ()),
         ],
