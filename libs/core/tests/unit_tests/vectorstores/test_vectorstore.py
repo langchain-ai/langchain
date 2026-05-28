@@ -178,6 +178,23 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
     ]
 
 
+def test_default_add_texts_accepts_generator_input() -> None:
+    """Test that the default implementation materializes one-shot iterables once."""
+    store = CustomAddDocumentsVectorstore()
+
+    ids = store.add_texts(
+        (text for text in ["alpha", "beta"]),
+        metadatas=[{"rank": 1}, {"rank": 2}],
+        ids=["10", "11"],
+    )
+
+    assert ids == ["10", "11"]
+    assert store.get_by_ids(ids) == [
+        Document(id="10", page_content="alpha", metadata={"rank": 1}),
+        Document(id="11", page_content="beta", metadata={"rank": 2}),
+    ]
+
+
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
@@ -233,6 +250,23 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
     assert await store.aget_by_ids(ids_2) == [
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
+    ]
+
+
+async def test_default_aadd_texts_accepts_generator_input() -> None:
+    """Test that the async default implementation preserves generator contents."""
+    store = CustomAddDocumentsVectorstore()
+
+    ids = await store.aadd_texts(
+        (text for text in ["alpha", "beta"]),
+        metadatas=[{"rank": 1}, {"rank": 2}],
+        ids=["10", "11"],
+    )
+
+    assert ids == ["10", "11"]
+    assert await store.aget_by_ids(ids) == [
+        Document(id="10", page_content="alpha", metadata={"rank": 1}),
+        Document(id="11", page_content="beta", metadata={"rank": 2}),
     ]
 
 
