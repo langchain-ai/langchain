@@ -1520,6 +1520,115 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_service_tier_and_inference_geo() -> None:
+    """`service_tier` and `inference_geo` should drive token-detail breakdowns
+    so downstream pricing can apply Anthropic's priority and US-only multipliers.
+    """
+
+    class UsageStandard(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 3
+        service_tier: str = "standard"
+        inference_geo: str = "global"
+
+    # standard tier + global geo: no extra keys, behaves like a vanilla response.
+    result = _create_usage_metadata(UsageStandard())
+    details = dict(result.get("input_token_details") or {})
+    assert details == {"cache_read": 5, "cache_creation": 3}
+    assert not result.get("output_token_details")
+
+    # priority tier: cache keys get prefixed, bare `priority` = non-cache input.
+    class UsagePriority(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 3
+        service_tier: str = "priority"
+        inference_geo: str = "global"
+
+    result = _create_usage_metadata(UsagePriority())
+    details = dict(result.get("input_token_details") or {})
+    assert details["priority_cache_read"] == 5
+    assert details["priority_cache_creation"] == 3
+    assert details["priority"] == 80  # non-cache input
+    assert "cache_read" not in details
+    assert "cache_creation" not in details
+    assert dict(result.get("output_token_details") or {}) == {"priority": 20}
+    assert result["input_tokens"] == 88  # 80 + 5 + 3
+
+    # batch tier behaves the same as priority (different multiplier downstream).
+    class UsageBatch(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+        service_tier: str = "batch"
+
+    result = _create_usage_metadata(UsageBatch())
+    details = dict(result.get("input_token_details") or {})
+    assert details["batch"] == 80
+    assert dict(result.get("output_token_details") or {}) == {"batch": 20}
+
+    # inference_geo='us': 1.1x applies to all categories, so the bare `us` key
+    # carries the full input/output totals.
+    class UsageUS(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 3
+        service_tier: str = "standard"
+        inference_geo: str = "us"
+
+    result = _create_usage_metadata(UsageUS())
+    details = dict(result.get("input_token_details") or {})
+    assert details["us"] == 88  # full input total incl. cache
+    assert details["cache_read"] == 5
+    assert details["cache_creation"] == 3
+    assert dict(result.get("output_token_details") or {}) == {"us": 20}
+
+    # Priority + US: both keys present, tier-prefixed cache keys + `us` total.
+    class UsagePriorityUS(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 3
+        service_tier: str = "priority"
+        inference_geo: str = "us"
+
+    result = _create_usage_metadata(UsagePriorityUS())
+    details = dict(result.get("input_token_details") or {})
+    assert details["priority_cache_read"] == 5
+    assert details["priority_cache_creation"] == 3
+    assert details["priority"] == 80
+    assert details["us"] == 88
+    out_details = dict(result.get("output_token_details") or {})
+    assert out_details == {"priority": 20, "us": 20}
+
+    # 'not_available' inference_geo (older models) is a no-op.
+    class UsageGeoUnavailable(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+        service_tier: str = "standard"
+        inference_geo: str = "not_available"
+
+    result = _create_usage_metadata(UsageGeoUnavailable())
+    assert not result.get("output_token_details")
+    assert "us" not in dict(result.get("input_token_details") or {})
+
+    # Explicit overrides win over the values on the usage object — used by the
+    # streaming path to inject service_tier/inference_geo from message_start.
+    class UsageBareDelta(BaseModel):
+        input_tokens: int = 80
+        output_tokens: int = 20
+
+    result = _create_usage_metadata(
+        UsageBareDelta(), service_tier="priority", inference_geo="us"
+    )
+    details = dict(result.get("input_token_details") or {})
+    assert details["priority"] == 80
+    assert details["us"] == 80
+
+
 def test_usage_metadata_cache_creation_ttl() -> None:
     """Test _create_usage_metadata with granular cache_creation TTL fields."""
 
@@ -2041,6 +2150,83 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def test_streaming_service_tier_and_inference_geo_propagation() -> None:
+    """`service_tier` and `inference_geo` only ship on the `message_start` Usage
+    object, so the stream loop must stash them for the final `message_delta`
+    chunk.
+    """
+    from unittest.mock import MagicMock
+
+    from anthropic.types import MessageDeltaUsage
+
+    mock_message = MagicMock()
+    mock_message.model = MODEL_NAME
+    mock_message.usage.input_tokens = 100
+    mock_message.usage.output_tokens = 0
+    mock_message.usage.cache_read_input_tokens = 25
+    mock_message.usage.cache_creation_input_tokens = 0
+    mock_message.usage.cache_creation = None
+    mock_message.usage.service_tier = "priority"
+    mock_message.usage.inference_geo = "us"
+
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    mock_delta_usage = MessageDeltaUsage(
+        output_tokens=50,
+        input_tokens=100,
+        cache_read_input_tokens=25,
+        cache_creation_input_tokens=0,
+    )
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+    mock_delta.stop_sequence = None
+    mock_delta.container = None
+
+    message_delta_event = MagicMock()
+    message_delta_event.type = "message_delta"
+    message_delta_event.usage = mock_delta_usage
+    message_delta_event.delta = mock_delta
+    message_delta_event.context_management = None
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    stream_state: dict = {}
+
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+        stream_state=stream_state,
+    )
+    assert start_chunk is not None
+    # message_start stashes on stream_state but doesn't emit on response_metadata,
+    # because string response_metadata fields concatenate during chunk merging.
+    assert "service_tier" not in start_chunk.response_metadata
+    assert "inference_geo" not in start_chunk.response_metadata
+    assert stream_state == {"service_tier": "priority", "inference_geo": "us"}
+
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        message_delta_event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+        stream_state=stream_state,
+    )
+    assert delta_chunk is not None
+    assert delta_chunk.usage_metadata is not None
+    input_details = delta_chunk.usage_metadata["input_token_details"]
+    assert input_details["priority_cache_read"] == 25
+    assert input_details["priority"] == 100  # non-cache input
+    assert input_details["us"] == 125  # total input subject to 1.1x
+    output_details = delta_chunk.usage_metadata.get("output_token_details") or {}
+    assert output_details["priority"] == 50
+    assert output_details["us"] == 50
+    assert delta_chunk.response_metadata["service_tier"] == "priority"
+    assert delta_chunk.response_metadata["inference_geo"] == "us"
 
 
 def test_strict_tool_use() -> None:
