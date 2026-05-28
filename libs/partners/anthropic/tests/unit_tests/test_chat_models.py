@@ -3209,3 +3209,38 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for https://github.com/langchain-ai/langchain/issues/37596
+# ChatAnthropic.bind_tools must not mutate a caller-provided tool_choice dict.
+# ---------------------------------------------------------------------------
+
+
+def test_bind_tools_does_not_mutate_tool_choice_dict() -> None:
+    """bind_tools with parallel_tool_calls=False must not modify the caller's dict.
+
+    When parallel_tool_calls is False, the old code did:
+        kwargs["tool_choice"]["disable_parallel_tool_use"] = True
+    where kwargs["tool_choice"] was the exact same object as the caller's
+    tool_choice dict — mutating it in place.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    original_tool_choice = {"type": "tool", "name": "GetWeather"}
+    # Keep a copy to compare against after the call
+    expected = dict(original_tool_choice)
+
+    chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=original_tool_choice,
+        parallel_tool_calls=False,
+    )
+
+    assert original_tool_choice == expected, (
+        "bind_tools must not mutate the caller-provided tool_choice dict; "
+        f"expected {expected!r}, got {original_tool_choice!r}"
+    )
