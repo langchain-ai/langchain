@@ -2324,18 +2324,32 @@ def _create_usage_metadata(
     if inference_geo is None:
         inference_geo = getattr(anthropic_usage, "inference_geo", None)
 
-    # Only break tokens out by tier when the tier carries a non-default pricing
-    # multiplier. `standard` is the default rate; `priority` is ~1.5x; `batch`
-    # is half-price.
+    # Only break tokens out when the value carries a non-default pricing
+    # multiplier. `standard`/`global` are default rates; `priority` is ~1.5x;
+    # `batch` is half-price; `us` is 1.1x on every category.
     if service_tier not in {"priority", "batch"}:
         service_tier = None
-    tier_prefix = f"{service_tier}_" if service_tier else ""
+    if inference_geo != "us":
+        inference_geo = None
+
+    # Build a combined prefix that encodes geo and tier together. When set, every
+    # bucket in input_token_details / output_token_details is renamed with this
+    # prefix so the cost engine can read the multiplier off the key while the
+    # buckets stay mutually exclusive (their values sum to input_tokens /
+    # output_tokens).
+    prefix_parts: list[str] = []
+    if inference_geo:
+        prefix_parts.append(f"inference_geo_{inference_geo}")
+    if service_tier:
+        prefix_parts.append(service_tier)
+    bare_prefix = "_".join(prefix_parts)
+    key_prefix = f"{bare_prefix}_" if bare_prefix else ""
 
     input_token_details: dict = {
-        f"{tier_prefix}cache_read": getattr(
+        f"{key_prefix}cache_read": getattr(
             anthropic_usage, "cache_read_input_tokens", None
         ),
-        f"{tier_prefix}cache_creation": getattr(
+        f"{key_prefix}cache_creation": getattr(
             anthropic_usage, "cache_creation_input_tokens", None
         ),
     }
@@ -2352,19 +2366,19 @@ def _create_usage_metadata(
             cache_creation = cache_creation.model_dump()
         for k in cache_creation_keys:
             specific_cache_creation_tokens += cache_creation.get(k, 0)
-            input_token_details[f"{tier_prefix}{k}"] = cache_creation.get(k)
+            input_token_details[f"{key_prefix}{k}"] = cache_creation.get(k)
         if not isinstance(specific_cache_creation_tokens, int):
             specific_cache_creation_tokens = 0
         if specific_cache_creation_tokens > 0:
             # Remove generic key to avoid double counting cache creation tokens
-            input_token_details[f"{tier_prefix}cache_creation"] = 0
+            input_token_details[f"{key_prefix}cache_creation"] = 0
 
     # Calculate total input tokens: Anthropic's `input_tokens` excludes cached tokens,
     # so we need to add them back to get the true total input token count
-    cache_read_total = input_token_details[f"{tier_prefix}cache_read"] or 0
+    cache_read_total = input_token_details[f"{key_prefix}cache_read"] or 0
     cache_creation_total = (
         specific_cache_creation_tokens
-        or input_token_details[f"{tier_prefix}cache_creation"]
+        or input_token_details[f"{key_prefix}cache_creation"]
         or 0
     )
     input_tokens = base_non_cache_input + cache_read_total + cache_creation_total
@@ -2372,17 +2386,13 @@ def _create_usage_metadata(
 
     output_token_details: dict = {}
 
-    if service_tier is not None:
-        # Mirror OpenAI: the bare tier key tracks tokens billed at tier rates that
-        # aren't already covered by a cache breakdown.
-        input_token_details[service_tier] = base_non_cache_input
-        output_token_details[service_tier] = output_tokens
-
-    # US-only inference applies a 1.1x multiplier to every token category, so the
-    # full input/output totals are the count subject to the multiplier.
-    if inference_geo == "us":
-        input_token_details["us"] = input_tokens
-        output_token_details["us"] = output_tokens
+    if bare_prefix:
+        # Non-cache base input gets a bare bucket so all input_token_details keys
+        # together partition input_tokens. Same for output_tokens — Anthropic
+        # doesn't currently split output further (no reasoning sub-bucket), so
+        # the bare bucket equals output_tokens.
+        input_token_details[bare_prefix] = base_non_cache_input
+        output_token_details[bare_prefix] = output_tokens
 
     output_details_filtered = {
         k: v for k, v in output_token_details.items() if v is not None

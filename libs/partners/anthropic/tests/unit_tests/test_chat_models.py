@@ -1523,6 +1523,10 @@ def test_usage_metadata_standardization() -> None:
 def test_usage_metadata_service_tier_and_inference_geo() -> None:
     """`service_tier` and `inference_geo` should drive token-detail breakdowns
     so downstream pricing can apply Anthropic's priority and US-only multipliers.
+
+    `input_token_details` keys must stay mutually exclusive: their values sum
+    to `input_tokens`, with the cost engine reading the multiplier off the key
+    prefix (`inference_geo_us_`, `priority_`, `batch_`, or a combination).
     """
 
     class UsageStandard(BaseModel):
@@ -1534,12 +1538,15 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
         inference_geo: str = "global"
 
     # standard tier + global geo: no extra keys, behaves like a vanilla response.
+    # No bare non-cache key (the non-cache portion stays implicit, matching legacy
+    # behavior on default-priced requests).
     result = _create_usage_metadata(UsageStandard())
     details = dict(result.get("input_token_details") or {})
     assert details == {"cache_read": 5, "cache_creation": 3}
     assert not result.get("output_token_details")
 
-    # priority tier: cache keys get prefixed, bare `priority` = non-cache input.
+    # priority tier alone: keys are prefixed with `priority_`, bare `priority`
+    # holds non-cache input. Mutually exclusive: keys sum to input_tokens.
     class UsagePriority(BaseModel):
         input_tokens: int = 80
         output_tokens: int = 20
@@ -1550,15 +1557,16 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
 
     result = _create_usage_metadata(UsagePriority())
     details = dict(result.get("input_token_details") or {})
-    assert details["priority_cache_read"] == 5
-    assert details["priority_cache_creation"] == 3
-    assert details["priority"] == 80  # non-cache input
-    assert "cache_read" not in details
-    assert "cache_creation" not in details
+    assert details == {
+        "priority_cache_read": 5,
+        "priority_cache_creation": 3,
+        "priority": 80,
+    }
+    assert sum(details.values()) == result["input_tokens"]
     assert dict(result.get("output_token_details") or {}) == {"priority": 20}
-    assert result["input_tokens"] == 88  # 80 + 5 + 3
 
-    # batch tier behaves the same as priority (different multiplier downstream).
+    # batch tier alone: prefixed with `batch_`, bare `batch` = non-cache input.
+    # cache fields absent on the usage object (None) are filtered out of details.
     class UsageBatch(BaseModel):
         input_tokens: int = 80
         output_tokens: int = 20
@@ -1566,11 +1574,11 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
 
     result = _create_usage_metadata(UsageBatch())
     details = dict(result.get("input_token_details") or {})
-    assert details["batch"] == 80
+    assert details == {"batch": 80}
     assert dict(result.get("output_token_details") or {}) == {"batch": 20}
 
-    # inference_geo='us': 1.1x applies to all categories, so the bare `us` key
-    # carries the full input/output totals.
+    # inference_geo='us' alone (standard tier): every key prefixed with
+    # `inference_geo_us_`, bare `inference_geo_us` for non-cache input.
     class UsageUS(BaseModel):
         input_tokens: int = 80
         output_tokens: int = 20
@@ -1581,12 +1589,15 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
 
     result = _create_usage_metadata(UsageUS())
     details = dict(result.get("input_token_details") or {})
-    assert details["us"] == 88  # full input total incl. cache
-    assert details["cache_read"] == 5
-    assert details["cache_creation"] == 3
-    assert dict(result.get("output_token_details") or {}) == {"us": 20}
+    assert details == {
+        "inference_geo_us_cache_read": 5,
+        "inference_geo_us_cache_creation": 3,
+        "inference_geo_us": 80,
+    }
+    assert sum(details.values()) == result["input_tokens"]
+    assert dict(result.get("output_token_details") or {}) == {"inference_geo_us": 20}
 
-    # Priority + US: both keys present, tier-prefixed cache keys + `us` total.
+    # priority + us: both multipliers encoded in the prefix.
     class UsagePriorityUS(BaseModel):
         input_tokens: int = 80
         output_tokens: int = 20
@@ -1597,23 +1608,28 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
 
     result = _create_usage_metadata(UsagePriorityUS())
     details = dict(result.get("input_token_details") or {})
-    assert details["priority_cache_read"] == 5
-    assert details["priority_cache_creation"] == 3
-    assert details["priority"] == 80
-    assert details["us"] == 88
-    out_details = dict(result.get("output_token_details") or {})
-    assert out_details == {"priority": 20, "us": 20}
+    assert details == {
+        "inference_geo_us_priority_cache_read": 5,
+        "inference_geo_us_priority_cache_creation": 3,
+        "inference_geo_us_priority": 80,
+    }
+    assert sum(details.values()) == result["input_tokens"]
+    assert dict(result.get("output_token_details") or {}) == {
+        "inference_geo_us_priority": 20
+    }
 
-    # 'not_available' inference_geo (older models) is a no-op.
+    # 'not_available' inference_geo (older models) is a no-op; same for `global`.
     class UsageGeoUnavailable(BaseModel):
         input_tokens: int = 10
         output_tokens: int = 5
+        cache_read_input_tokens: int = 2
         service_tier: str = "standard"
         inference_geo: str = "not_available"
 
     result = _create_usage_metadata(UsageGeoUnavailable())
+    details = dict(result.get("input_token_details") or {})
+    assert details == {"cache_read": 2}
     assert not result.get("output_token_details")
-    assert "us" not in dict(result.get("input_token_details") or {})
 
     # Explicit overrides win over the values on the usage object — used by the
     # streaming path to inject service_tier/inference_geo from message_start.
@@ -1625,8 +1641,8 @@ def test_usage_metadata_service_tier_and_inference_geo() -> None:
         UsageBareDelta(), service_tier="priority", inference_geo="us"
     )
     details = dict(result.get("input_token_details") or {})
-    assert details["priority"] == 80
-    assert details["us"] == 80
+    assert details == {"inference_geo_us_priority": 80}
+    assert sum(details.values()) == result["input_tokens"]
 
 
 def test_usage_metadata_cache_creation_ttl() -> None:
@@ -2219,12 +2235,15 @@ def test_streaming_service_tier_and_inference_geo_propagation() -> None:
     assert delta_chunk is not None
     assert delta_chunk.usage_metadata is not None
     input_details = delta_chunk.usage_metadata["input_token_details"]
-    assert input_details["priority_cache_read"] == 25
-    assert input_details["priority"] == 100  # non-cache input
-    assert input_details["us"] == 125  # total input subject to 1.1x
+    assert input_details == {
+        "inference_geo_us_priority_cache_read": 25,
+        "inference_geo_us_priority_cache_creation": 0,
+        "inference_geo_us_priority": 100,
+    }
+    # Buckets stay mutually exclusive: they sum to input_tokens.
+    assert sum(input_details.values()) == delta_chunk.usage_metadata["input_tokens"]
     output_details = delta_chunk.usage_metadata.get("output_token_details") or {}
-    assert output_details["priority"] == 50
-    assert output_details["us"] == 50
+    assert output_details == {"inference_geo_us_priority": 50}
     assert delta_chunk.response_metadata["service_tier"] == "priority"
     assert delta_chunk.response_metadata["inference_geo"] == "us"
 
