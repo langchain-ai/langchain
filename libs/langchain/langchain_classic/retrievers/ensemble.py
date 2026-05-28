@@ -291,10 +291,16 @@ class EnsembleRetriever(BaseRetriever):
             ],
         )
 
-        # Enforce that retrieved docs are Documents for each list in retriever_docs
+        # Enforce that retrieved docs are Documents for each list in retriever_docs.
+        # Use the same normalization as rank_fusion (sync): only wrap bare strings;
+        # non-string, non-Document items are passed through unchanged so that the
+        # behaviour is identical regardless of which code path is used.
+        # Wrapping arbitrary objects unconditionally (the old behaviour) caused a
+        # pydantic ValidationError when page_content was not a str (e.g. int).
+        # See https://github.com/langchain-ai/langchain/issues/37736
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc  # type: ignore[unreachable]
                 for doc in retriever_docs[i]
             ]
 
