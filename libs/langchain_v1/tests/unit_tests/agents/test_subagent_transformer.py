@@ -59,6 +59,42 @@ def test_subagents_surfaces_named_subagent() -> None:
     assert handles[0].cause == {"type": "toolCall", "tool_call_id": "call_w"}
 
 
+async def test_subagents_surfaces_named_subagent_async() -> None:
+    """Async counterpart: the handle surfaces and reaches a terminal state.
+
+    Drives the run through `astream_events`, so events flow via the async
+    `aprocess`/`apush` lane and the child mini-mux is closed via `aclose`.
+    """
+    weather_agent = create_agent(model=FakeToolCallingModel(tool_calls=[[]]), name="weather_agent")
+
+    @tool("call_weather")
+    async def call_weather(city: str) -> str:
+        """Call the weather agent."""
+        result = await weather_agent.ainvoke({"messages": [HumanMessage(f"weather in {city}")]})
+        return result["messages"][-1].text
+
+    supervisor = create_agent(
+        model=_supervisor_model(),
+        tools=[call_weather],
+        name="supervisor",
+    )
+
+    run = await supervisor.astream_events({"messages": [HumanMessage("weather?")]}, version="v3")
+
+    handles = []
+    async for handle in run.subagents:
+        handles.append(handle)
+        # Drain the nested run so it completes.
+        async for _ in handle:
+            pass
+
+    assert len(handles) == 1
+    assert handles[0].name == "weather_agent"
+    assert handles[0].cause == {"type": "toolCall", "tool_call_id": "call_w"}
+    assert handles[0]._seen_terminal is True
+    assert handles[0].status == "completed"
+
+
 def test_plain_tool_not_surfaced() -> None:
     """A tool that returns a string (spawns no nested run) surfaces nothing."""
 

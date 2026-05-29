@@ -134,6 +134,9 @@ class SubagentTransformer(_TasksLifecycleBase):
     """
 
     _native: ClassVar[bool] = True
+    # Overrides `aprocess` but also runs unchanged on the sync lane via
+    # `process`, so it must not be forced into an async-only run.
+    supports_sync: ClassVar[bool] = True
 
     def __init__(self, scope: tuple[str, ...] = ()) -> None:
         super().__init__(scope)
@@ -192,18 +195,61 @@ class SubagentTransformer(_TasksLifecycleBase):
         error: str | None,
     ) -> None:
         handle = self._handles.get(ns)
-        if handle is None or handle._seen_terminal:  # noqa: SLF001
+        if handle is None or not self._mark_terminal(handle, status, error):
             return
+        self._close_or_fail_handle(handle, status, error)
+
+    async def _aon_terminal(
+        self,
+        ns: tuple[str, ...],
+        status: SubgraphStatus,
+        error: str | None,
+    ) -> None:
+        handle = self._handles.get(ns)
+        if handle is None or not self._mark_terminal(handle, status, error):
+            return
+        await self._aclose_or_fail_handle(handle, status, error)
+
+    def _mark_terminal(
+        self,
+        handle: SubagentRunStream | AsyncSubagentRunStream,
+        status: SubgraphStatus,
+        error: str | None,
+    ) -> bool:
+        """Mark a handle terminal once. Returns True on the first transition."""
+        if handle._seen_terminal:  # noqa: SLF001
+            return False
         handle.status = status
         if error is not None and handle.error is None:
             handle.error = error
         handle._seen_terminal = True  # noqa: SLF001
+        return True
+
+    def _close_or_fail_handle(
+        self,
+        handle: SubagentRunStream | AsyncSubagentRunStream,
+        status: SubgraphStatus,
+        error: str | None,
+    ) -> None:
         if handle._mux is None or handle._mux._events._closed:  # noqa: SLF001
             return
         if status == "failed":
             handle._mux.fail(RuntimeError(error or "Subagent failed"))  # noqa: SLF001
         else:
             handle._mux.close()  # noqa: SLF001
+
+    async def _aclose_or_fail_handle(
+        self,
+        handle: SubagentRunStream | AsyncSubagentRunStream,
+        status: SubgraphStatus,
+        error: str | None,
+    ) -> None:
+        if handle._mux is None or handle._mux._events._closed:  # noqa: SLF001
+            return
+        if status == "failed":
+            await handle._mux.afail(RuntimeError(error or "Subagent failed"))  # noqa: SLF001
+        else:
+            await handle._mux.aclose()  # noqa: SLF001
 
     def _handle_for_event(
         self, event: ProtocolEvent
@@ -218,9 +264,38 @@ class SubagentTransformer(_TasksLifecycleBase):
         return handle
 
     def process(self, event: ProtocolEvent) -> bool:
+        # Run tasks bookkeeping first so a `started` handle exists by the
+        # time we forward the event into the child mini-mux.
         keep = super().process(event)
         handle = self._handle_for_event(event)
         if handle is not None:
             handle._observe_event(event)  # noqa: SLF001
             handle._mux.push(event)  # noqa: SLF001
+        return keep
+
+    async def aprocess(self, event: ProtocolEvent) -> bool:
+        # Async counterpart: repeat the tasks bookkeeping here and forward into
+        # the child mini-mux through its async lane so the subagent's own
+        # transformers are driven on the correct (async) lane instead of being
+        # double-driven via the sync `process`/`push` path.
+        if event["method"] == "tasks":
+            ns = tuple(event["params"]["namespace"])
+            data = event["params"]["data"]
+            if "result" in data:
+                for child_ns, status, error in self._pop_terminal_transitions(ns, data):
+                    await self._aon_terminal(child_ns, status, error)
+            else:
+                # Mirror the sync bookkeeping so the async lane observes parent
+                # identity / pending tool calls before discriminating a
+                # subagent boundary in `_handle_task_start` -> `_on_started`.
+                self._record_identity(ns, data)
+                self._record_pending_tool_calls(data)
+                self._handle_task_start(ns, data)
+            keep = False
+        else:
+            keep = True
+        handle = self._handle_for_event(event)
+        if handle is not None:
+            handle._observe_event(event)  # noqa: SLF001
+            await handle._mux.apush(event)  # noqa: SLF001
         return keep
