@@ -19,7 +19,9 @@ class BochaSearchRun(BaseTool):
     """
 
     name: str = "bocha_search"
-    description: str = "Search the web using Bocha AI. Input should be a search query string."
+    description: str = (
+        "Search the web using Bocha AI. Input should be a search query string."
+    )
     api_key: Optional[str] = None
 
     def _run(self, query: str, **kwargs: Any) -> str:
@@ -29,9 +31,7 @@ class BochaSearchRun(BaseTool):
         resp = requests.get(BOCHA_SEARCH_URL, headers=headers, params=params)
         resp.raise_for_status()
         results = resp.json().get("webPages", {}).get("value", [])
-        return "\n\n".join(
-            f"{r['name']}: {r['snippet']}" for r in results
-        )
+        return "\n\n".join(f"{r['name']}: {r['snippet']}" for r in results)
 
 
 class BochaSearchResults(BaseTool):
