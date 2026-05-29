@@ -81,6 +81,47 @@ _STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
         "openai/gpt-oss-120b",
     }
 )
+_TOOL_CHOICE_NOT_HONORED_MARKER = (
+    "Tool choice is required, but model did not call a tool"
+)
+
+
+class ToolChoiceNotHonoredError(Exception):
+    """Raised when Groq rejects a forced tool_choice the model declined to honor."""
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        tool_choice: Any,
+        provider_message: str,
+    ) -> None:
+        """Build the error with model id, tool_choice, and original provider message."""
+        self.model_name = model_name
+        self.tool_choice = tool_choice
+        self.provider_message = provider_message
+        super().__init__(
+            f"Model {model_name!r} did not emit a tool call for the forced "
+            f"tool_choice={tool_choice!r}. Provider message: {provider_message}"
+        )
+
+
+def _maybe_raise_tool_choice_not_honored(
+    exc: BaseException, *, model_name: str, params: dict
+) -> None:
+    """Re-raise forced tool_choice noncompliance as ToolChoiceNotHonoredError."""
+    import groq  # noqa: PLC0415
+
+    if not isinstance(exc, groq.APIError):
+        return
+    message = str(getattr(exc, "message", "") or "") or str(exc)
+    if _TOOL_CHOICE_NOT_HONORED_MARKER not in message:
+        return
+    raise ToolChoiceNotHonoredError(
+        model_name=model_name,
+        tool_choice=params.get("tool_choice"),
+        provider_message=message,
+    ) from exc
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -624,7 +665,13 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        try:
+            response = self.client.create(messages=message_dicts, **params)
+        except Exception as exc:
+            _maybe_raise_tool_choice_not_honored(
+                exc, model_name=self.model_name, params=params
+            )
+            raise
         return self._create_chat_result(response, params)
 
     async def _agenerate(
@@ -645,7 +692,13 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        try:
+            response = await self.async_client.create(messages=message_dicts, **params)
+        except Exception as exc:
+            _maybe_raise_tool_choice_not_honored(
+                exc, model_name=self.model_name, params=params
+            )
+            raise
         return self._create_chat_result(response, params)
 
     def _stream(
@@ -660,7 +713,24 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        try:
+            stream = self.client.create(messages=message_dicts, **params)
+        except Exception as exc:
+            _maybe_raise_tool_choice_not_honored(
+                exc, model_name=self.model_name, params=params
+            )
+            raise
+
+        def _iter_stream() -> Iterator[Any]:
+            try:
+                yield from stream
+            except Exception as exc:
+                _maybe_raise_tool_choice_not_honored(
+                    exc, model_name=self.model_name, params=params
+                )
+                raise
+
+        for chunk in _iter_stream():
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -712,9 +782,25 @@ class ChatGroq(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        try:
+            stream = await self.async_client.create(messages=message_dicts, **params)
+        except Exception as exc:
+            _maybe_raise_tool_choice_not_honored(
+                exc, model_name=self.model_name, params=params
+            )
+            raise
+
+        async def _aiter_stream() -> AsyncIterator[Any]:
+            try:
+                async for item in stream:
+                    yield item
+            except Exception as exc:
+                _maybe_raise_tool_choice_not_honored(
+                    exc, model_name=self.model_name, params=params
+                )
+                raise
+
+        async for chunk in _aiter_stream():
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:

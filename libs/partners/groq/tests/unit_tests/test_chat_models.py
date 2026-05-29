@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from langchain_groq.chat_models import (
     ChatGroq,
+    ToolChoiceNotHonoredError,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _create_usage_metadata,
@@ -1095,3 +1096,75 @@ def test_format_message_content_mixed() -> None:
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
     ]
     assert expected == _format_message_content(content)
+
+
+def _make_tool_choice_api_error() -> Exception:
+    """Construct the Groq APIError raised on forced tool_choice noncompliance."""
+    import groq  # noqa: PLC0415
+
+    return groq.APIError(
+        "Tool choice is required, but model did not call a tool",
+        request=MagicMock(),
+        body=None,
+    )
+
+
+def test_invoke_raises_tool_choice_not_honored_error() -> None:
+    """ChatGroq.invoke wraps forced tool_choice noncompliance APIErrors."""
+    llm = ChatGroq(model="openai/gpt-oss-20b")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Any:
+        raise _make_tool_choice_api_error()
+
+    mock_client.create = mock_create
+    with (
+        patch.object(llm, "client", mock_client),
+        pytest.raises(ToolChoiceNotHonoredError) as exc_info,
+    ):
+        llm.invoke(
+            "hi",
+            tool_choice={"type": "function", "function": {"name": "MyTool"}},
+        )
+    assert "openai/gpt-oss-20b" in str(exc_info.value)
+    assert exc_info.value.model_name == "openai/gpt-oss-20b"
+
+
+def test_stream_raises_tool_choice_not_honored_error() -> None:
+    """ChatGroq.stream wraps forced tool_choice noncompliance APIErrors."""
+    llm = ChatGroq(model="openai/gpt-oss-20b")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> Any:
+        raise _make_tool_choice_api_error()
+
+    mock_client.create = mock_create
+    with (
+        patch.object(llm, "client", mock_client),
+        pytest.raises(ToolChoiceNotHonoredError) as exc_info,
+    ):
+        list(
+            llm.stream(
+                "hi",
+                tool_choice={"type": "function", "function": {"name": "MyTool"}},
+            )
+        )
+    assert "openai/gpt-oss-20b" in str(exc_info.value)
+    assert exc_info.value.model_name == "openai/gpt-oss-20b"
+
+
+def test_invoke_passes_through_unrelated_api_errors() -> None:
+    """Unrelated Groq APIErrors are not rewrapped."""
+    import groq  # noqa: PLC0415
+
+    llm = ChatGroq(model="openai/gpt-oss-20b")
+    mock_client = MagicMock()
+
+    msg = "some other failure"
+
+    def mock_create(*args: Any, **kwargs: Any) -> Any:
+        raise groq.APIError(msg, request=MagicMock(), body=None)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client), pytest.raises(groq.APIError):
+        llm.invoke("hi")
