@@ -29,7 +29,7 @@
 #
 # Allowed Scope(s) (optional):
 #   core, langchain, langchain-classic, model-profiles,
-#   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
+#   standard-tests, text-splitters, docs, anthropic, bocha, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
 #   perplexity, qdrant, xai, infra, deps, partners
 #
@@ -103,6 +103,7 @@ jobs:
             text-splitters
             docs
             anthropic
+            bocha
             chroma
             deepseek
             exa

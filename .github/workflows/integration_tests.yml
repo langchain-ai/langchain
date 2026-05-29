@@ -28,6 +28,7 @@ on:
           - "model-profiles"
           - "anthropic"
           - "aws"
+          - "bocha"
           - "chroma"
           - "deepseek"
           - "exa"
@@ -276,6 +277,7 @@ jobs:
           AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
           AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
           AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          BOCHA_API_KEY: ${{ secrets.BOCHA_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           ES_URL: ${{ secrets.ES_URL }}

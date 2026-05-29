@@ -53,6 +53,7 @@ on:
           - standard-tests
           - model-profiles
           - anthropic
+          - bocha
           - chroma
           - deepseek
           - exa

@@ -53,6 +53,7 @@ updates:
   - package-ecosystem: "uv"
     directories:
       - "/libs/partners/anthropic/"
+      - "/libs/partners/bocha/"
       - "/libs/partners/chroma/"
       - "/libs/partners/deepseek/"
       - "/libs/partners/exa/"

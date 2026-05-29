@@ -42,6 +42,7 @@ jobs:
               "langchain-model-profiles": "model-profiles",
               "langchain-tests": "standard-tests",
               "langchain-text-splitters": "text-splitters",
+              "langchain-bocha": "bocha",
               "langchain-chroma": "chroma",
               "langchain-deepseek": "deepseek",
               "langchain-exa": "exa",
