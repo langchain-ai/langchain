@@ -8,6 +8,9 @@ dispatches a nested `create_agent` from a tool, giving true end-to-end coverage.
 
 from __future__ import annotations
 
+import sys
+
+import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolCallTransformer
@@ -57,6 +60,19 @@ def test_subagents_surfaces_named_subagent() -> None:
     assert handles[0].cause == {"type": "toolCall", "tool_call_id": "call_w"}
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason=(
+        "On Python <= 3.10, langchain-core does not automatically propagate "
+        "RunnableConfig into an async tool body (contextvar propagation across "
+        "`await` in tool execution requires 3.11+). Without it the nested "
+        "`ainvoke` is disconnected from the parent stream and never surfaces; "
+        "forwarding the parent config explicitly would instead overwrite the "
+        "subagent's bound `lc_agent_name` with the parent's. The async-lane "
+        "logic this test exercises is version-agnostic; the sync test covers "
+        "3.10."
+    ),
+)
 async def test_subagents_surfaces_named_subagent_async() -> None:
     """Async counterpart: the handle surfaces and reaches a terminal state.
 
