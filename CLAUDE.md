@@ -97,6 +97,22 @@ feat(langchain): `ls_agent_type` tag on `create_agent` calls
 fix(openai): infer Azure chat profiles from model name
 ```
 
+#### Branch naming
+
+Branches should be prefixed `<github-username>/<scope>/<short-description>`:
+
+- `<github-username>` — the author's GitHub login (e.g. `mdrxy`).
+- `<scope>` — the same scope used in the Conventional Commit title (`core`, `langchain`, partner name, `infra`, `docs`, etc.).
+- `<short-description>` — kebab-case, brief, no trailing slash.
+
+Examples:
+
+```txt
+mdrxy/anthropic/normalize-tool-call-ids
+mdrxy/core/vector-store-type-hints
+mdrxy/infra/agents-md-branch
+```
+
 #### PR descriptions
 
 The description *is* the summary — do not add a `# Summary` header.
