@@ -49,8 +49,8 @@ def get_from_dict_or_env(
             if value := data.get(k):
                 return str(value)
 
-    if isinstance(key, str) and key in data and data[key]:
-        return str(data[key])
+    if isinstance(key, str) and env_var_is_set(env_key):
+        return os.getenv(env_key)
 
     key_for_err = key[0] if isinstance(key, (list, tuple)) else key
 
