@@ -500,6 +500,11 @@ def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
     for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
         if key in usage:
             result[key] = usage[key]
+    # Include token detail breakdowns (cache_read, cache_creation, etc.)
+    # These come from providers like Bedrock that support prompt caching.
+    for detail_key in ("input_token_details", "output_token_details"):
+        if detail_key in usage and isinstance(usage[detail_key], dict):
+            result[detail_key] = usage[detail_key]
     return cast("UsageInfo", result) if result else None
 
 

@@ -166,3 +166,9 @@ virtualenv/
 scratch/
 
 .langgraph_api/
+
+# Issue 37761 local files
+fix-langchain-37761.md
+comp_report_37761.md
+test_issue_37761.py
+requirements.txt

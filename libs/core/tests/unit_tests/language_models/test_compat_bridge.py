@@ -120,6 +120,31 @@ def test_to_protocol_usage_none() -> None:
     assert _to_protocol_usage(None) is None
 
 
+def test_to_protocol_usage_with_token_details() -> None:
+    """Verify input_token_details and output_token_details are preserved."""
+    usage = {
+        "input_tokens": 100,
+        "output_tokens": 20,
+        "total_tokens": 120,
+        "input_token_details": {
+            "cache_read": 80,
+            "cache_creation": 20,
+        },
+        "output_token_details": {
+            "reasoning_tokens": 10,
+        },
+    }
+    result = _to_protocol_usage(usage)
+    assert result is not None
+    # Verify standard counts are preserved
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 20
+    assert result["total_tokens"] == 120
+    # Verify token details are preserved
+    assert result.get("input_token_details") == {"cache_read": 80, "cache_creation": 20}
+    assert result.get("output_token_details") == {"reasoning_tokens": 10}
+
+
 # ---------------------------------------------------------------------------
 # chunks_to_events: streaming lifecycle
 # ---------------------------------------------------------------------------
