@@ -120,6 +120,109 @@ def test_to_protocol_usage_none() -> None:
     assert _to_protocol_usage(None) is None
 
 
+def test_to_protocol_usage_forwards_input_token_details() -> None:
+    usage = {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+        "input_token_details": {"cache_read": 90, "cache_creation": 5},
+    }
+    result = _to_protocol_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 90, "cache_creation": 5}
+
+
+def test_to_protocol_usage_forwards_output_token_details() -> None:
+    usage = {
+        "input_tokens": 50,
+        "output_tokens": 20,
+        "total_tokens": 70,
+        "output_token_details": {"reasoning": 15},
+    }
+    result = _to_protocol_usage(usage)
+    assert result is not None
+    assert result["output_token_details"] == {"reasoning": 15}
+
+
+def test_to_protocol_usage_ignores_non_dict_token_details() -> None:
+    """Non-dict values for token detail keys are silently skipped."""
+    usage = {
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "total_tokens": 15,
+        "input_token_details": "not-a-dict",
+    }
+    result = _to_protocol_usage(usage)
+    assert result is not None
+    assert "input_token_details" not in result
+
+
+def test_chunks_to_events_propagates_token_details_in_finish() -> None:
+    """Token detail dicts survive the streaming path to message-finish."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(content="Hello", id="msg-cache"),
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-cache",
+                usage_metadata={
+                    "input_tokens": 100,
+                    "output_tokens": 10,
+                    "total_tokens": 110,
+                    "input_token_details": {
+                        "cache_read": 90,
+                        "cache_creation": 5,
+                    },
+                    "output_token_details": {"reasoning": 8},
+                },
+            ),
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-cache"))
+    finish = next(e for e in events if e["event"] == "message-finish")
+    usage: dict[str, Any] = finish["usage"]
+    assert usage["input_tokens"] == 100
+    assert usage["output_tokens"] == 10
+    assert usage["input_token_details"] == {"cache_read": 90, "cache_creation": 5}
+    assert usage["output_token_details"] == {"reasoning": 8}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_propagates_token_details_in_finish() -> None:
+    """Async twin: token detail dicts survive to message-finish."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(content="Hi", id="msg-async-cache"),
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                id="msg-async-cache",
+                usage_metadata={
+                    "input_tokens": 200,
+                    "output_tokens": 25,
+                    "total_tokens": 225,
+                    "input_token_details": {"cache_read": 180},
+                },
+            ),
+        ),
+    ]
+
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(chunks), message_id="msg-async-cache"
+        )
+    ]
+    finish = next(e for e in events if e["event"] == "message-finish")
+    usage: dict[str, Any] = finish["usage"]
+    assert usage["input_tokens"] == 200
+    assert usage["input_token_details"] == {"cache_read": 180}
+
+
 # ---------------------------------------------------------------------------
 # chunks_to_events: streaming lifecycle
 # ---------------------------------------------------------------------------
