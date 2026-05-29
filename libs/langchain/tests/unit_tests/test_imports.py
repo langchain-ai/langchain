@@ -102,7 +102,7 @@ def test_no_more_changes_to_proxy_community() -> None:
     assert hash_ == evil_magic_number, (
         "If you're triggering this test, you're likely adding a new import "
         "to the langchain package that is importing something from "
-        "langchain_community. This test is meant to catch such such imports "
+        "langchain_community. This test is meant to catch such imports "
         "as they are officially DEPRECATED. Please do not add any new imports "
         "from langchain_community to the langchain package. "
     )

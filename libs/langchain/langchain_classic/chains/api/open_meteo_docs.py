@@ -9,7 +9,7 @@ hourly	String array	No		A list of weather variables which should be returned. Va
 daily	String array	No		A list of daily weather variable aggregations which should be returned. Values can be comma separated, or multiple &daily= parameter in the URL can be used. If daily weather variables are specified, parameter timezone is required.
 current_weather	Bool	No	false	Include current weather conditions in the JSON output.
 temperature_unit	String	No	celsius	If fahrenheit is set, all temperature values are converted to Fahrenheit.
-windspeed_unit	String	No	kmh	Other wind speed speed units: ms, mph and kn
+windspeed_unit	String	No	kmh	Other wind speed units: ms, mph and kn
 precipitation_unit	String	No	mm	Other precipitation amount units: inch
 timeformat	String	No	iso8601	If format unixtime is selected, all time values are returned in UNIX epoch time in seconds. Please note that all timestamp are in GMT+0! For daily values with unix timestamps, please apply utc_offset_seconds again to get the correct date.
 timezone	String	No	GMT	If timezone is set, all timestamps are returned as local-time and data is returned starting at 00:00 local-time. Any time zone name from the time zone database is supported. If auto is set as a time zone, the coordinates will be automatically resolved to the local time zone.
