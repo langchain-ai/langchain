@@ -2025,7 +2025,7 @@ requires-dist = [
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
-    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=nh%2Fsubagent-name-langgraph" },
+    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&rev=577ee12cc90d4c1cdaed0eca1121b060153698f9" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity"]
@@ -2435,7 +2435,7 @@ wheels = [
 [[package]]
 name = "langgraph"
 version = "1.2.2"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=nh%2Fsubagent-name-langgraph#e3265ece45c868fb885bc11c97fed037b2761f01" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&rev=577ee12cc90d4c1cdaed0eca1121b060153698f9#577ee12cc90d4c1cdaed0eca1121b060153698f9" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2448,7 +2448,7 @@ dependencies = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.1.1"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&branch=nh%2Fsubagent-name-langgraph#e3265ece45c868fb885bc11c97fed037b2761f01" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&rev=577ee12cc90d4c1cdaed0eca1121b060153698f9#577ee12cc90d4c1cdaed0eca1121b060153698f9" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -2457,7 +2457,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&branch=nh%2Fsubagent-name-langgraph#e3265ece45c868fb885bc11c97fed037b2761f01" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&rev=577ee12cc90d4c1cdaed0eca1121b060153698f9#577ee12cc90d4c1cdaed0eca1121b060153698f9" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2466,7 +2466,7 @@ dependencies = [
 [[package]]
 name = "langgraph-sdk"
 version = "0.4.0"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&branch=nh%2Fsubagent-name-langgraph#e3265ece45c868fb885bc11c97fed037b2761f01" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&rev=577ee12cc90d4c1cdaed0eca1121b060153698f9#577ee12cc90d4c1cdaed0eca1121b060153698f9" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },

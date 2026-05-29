@@ -124,9 +124,10 @@ class SubagentTransformer(_TasksLifecycleBase):
     (set by `create_agent(name=...)`) and, on every task start, fires
     `_on_started` with the resolved `graph_name` and a `cause` for genuine
     subagent boundaries. This transformer gates on that boundary using the
-    inherited `_lc_by_ns` map: a nested run is a subagent when its
-    `lc_agent_name` is set and differs from its parent's. Plain subgraphs
-    (which inherit the parent's name) and unnamed agents (`None`) are excluded.
+    inherited `_lc_by_ns` map: a nested run is a subagent when it carries an
+    `lc_agent_name`. Same-named nested agents (e.g. a subagent that invokes
+    itself) are surfaced; unnamed agents (`None`) are excluded. Trade-off: a
+    non-agent subgraph that inherited the parent's name will also surface.
 
     On the first matching task start it builds a child mux and emits a typed
     handle on `run.subagents`, then forwards subsequent child-scope events into
@@ -163,11 +164,13 @@ class SubagentTransformer(_TasksLifecycleBase):
         cause: LifecycleCause | None = None,
     ) -> None:
         child_lc = self._lc_by_ns.get(ns)
-        parent_lc = self._lc_by_ns.get(ns[:-1])
-        # Surface only genuine subagents: a nested run whose lc_agent_name
-        # is set and differs from its parent's. Plain subgraphs inherit the
-        # parent's name (== parent); unnamed agents have None. Both excluded.
-        if child_lc is None or child_lc == parent_lc:
+        # Surface any nested run carrying an lc_agent_name (set by create_agent).
+        # A same-named nested agent — e.g. a subagent that invokes itself —
+        # re-asserts its own name and is surfaced. Unnamed runs (None) are
+        # excluded. Trade-off: a non-agent subgraph that inherited the parent's
+        # name also surfaces; null lc_agent_name when invoking such a graph to
+        # exclude it.
+        if child_lc is None:
             return
         if self._mux is None or ns in self._handles:
             return

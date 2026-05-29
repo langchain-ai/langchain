@@ -1,11 +1,9 @@
 """Tests for langchain.agents._subagent_transformer.
 
-The transformer detects subagents via the `lc_agent_name` transition computed
-by langgraph's base `_TasksLifecycleBase`: a nested run whose `lc_agent_name`
-(set by `create_agent(name=...)`) differs from its parent's is surfaced as a
-typed `SubagentRunStream` handle on `run.subagents`. These tests drive a real
-supervisor `create_agent` that dispatches a nested `create_agent` from a tool,
-giving true end-to-end coverage.
+The transformer surfaces, on `run.subagents`, any nested run that carries an
+`lc_agent_name` (set by `create_agent(name=...)`), tracked via langgraph's base
+`_TasksLifecycleBase`. These tests drive a real supervisor `create_agent` that
+dispatches a nested `create_agent` from a tool, giving true end-to-end coverage.
 """
 
 from __future__ import annotations
@@ -119,8 +117,15 @@ def test_plain_tool_not_surfaced() -> None:
     assert handles == []
 
 
-def test_unnamed_inner_agent_not_surfaced() -> None:
-    """An inner `create_agent` without `name=` inherits the parent name, so excluded."""
+def test_unnamed_inner_agent_surfaces_with_inherited_name() -> None:
+    """An unnamed inner `create_agent` inherits the parent's name and surfaces.
+
+    This is the accepted trade-off of detecting subagents by "carries an
+    lc_agent_name": a nested run that didn't set its own name (an unnamed
+    `create_agent`, or a plain `StateGraph`) inherits the parent's name and is
+    surfaced under it. A caller can null `lc_agent_name` in the config it
+    invokes such a graph with to exclude it.
+    """
     inner_agent = create_agent(model=FakeToolCallingModel(tool_calls=[[]]))
 
     @tool("call_weather")
@@ -137,11 +142,51 @@ def test_unnamed_inner_agent_not_surfaced() -> None:
 
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
-    handles = list(run.subagents)
-    for _ in run:
-        pass
+    handles = []
+    for handle in run.subagents:
+        handles.append(handle)
+        for _ in handle:
+            pass
 
-    assert handles == []
+    assert len(handles) == 1
+    # Inherited the parent's name (the trade-off).
+    assert handles[0].name == "supervisor"
+
+
+def test_same_name_nested_agent_surfaced() -> None:
+    """A nested agent with the SAME name as its parent is still surfaced.
+
+    A subagent that dispatches a same-named agent (or invokes itself) re-asserts
+    its own `lc_agent_name`, so child lc == parent lc. The discriminator surfaces
+    any nested run that carries a name, so the same-named run is reported instead
+    of being folded into the parent (which the old `!= parent` rule did).
+    """
+    inner_agent = create_agent(model=FakeToolCallingModel(tool_calls=[[]]), name="weather_agent")
+
+    @tool("call_weather")
+    def call_weather(city: str) -> str:
+        """Call a same-named inner agent."""
+        result = inner_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
+        return result["messages"][-1].text
+
+    # The parent agent shares the inner agent's name.
+    supervisor = create_agent(
+        model=_supervisor_model(),
+        tools=[call_weather],
+        name="weather_agent",
+    )
+
+    run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
+
+    handles = []
+    for handle in run.subagents:
+        handles.append(handle)
+        for _ in handle:
+            pass
+
+    assert len(handles) == 1
+    assert handles[0].name == "weather_agent"
+    assert handles[0].cause == {"type": "toolCall", "tool_call_id": "call_w"}
 
 
 def test_transformer_init_exposes_subagents_channel() -> None:

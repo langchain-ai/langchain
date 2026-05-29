@@ -96,7 +96,7 @@ test_integration = [
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.uv.sources]
-langgraph = { git = "https://github.com/langchain-ai/langgraph", branch = "nh/subagent-name-langgraph", subdirectory = "libs/langgraph" }
+langgraph = { git = "https://github.com/langchain-ai/langgraph", rev = "577ee12cc90d4c1cdaed0eca1121b060153698f9", subdirectory = "libs/langgraph" }
 
 [tool.ruff]
 line-length = 100
