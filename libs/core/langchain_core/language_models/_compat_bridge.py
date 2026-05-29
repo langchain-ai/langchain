@@ -497,7 +497,14 @@ def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
     if usage is None:
         return None
     result: dict[str, Any] = {}
-    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
+    for key in (
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "cached_tokens",
+        "input_token_details",
+        "output_token_details",
+    ):
         if key in usage:
             result[key] = usage[key]
     return cast("UsageInfo", result) if result else None
