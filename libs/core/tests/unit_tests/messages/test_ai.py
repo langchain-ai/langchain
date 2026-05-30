@@ -502,3 +502,19 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_aimessagechunk_tool_call_chunks_non_ascii_roundtrip() -> None:
+    """Non-ASCII characters in tool args must round-trip through tool_call_chunks.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/37686
+    """
+    chunk = AIMessageChunk(
+        content="",
+        tool_calls=[
+            create_tool_call(name="echo", args={"text": "你好", "emoji": "🚀"}, id="call_1")
+        ],
+    )
+    assert chunk.tool_call_chunks
+    assert "你好" in chunk.tool_call_chunks[0]["args"]
+    assert "🚀" in chunk.tool_call_chunks[0]["args"]
