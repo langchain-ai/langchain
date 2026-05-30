@@ -1,7 +1,7 @@
 # Makefile for libs/partners/ directory
 # Contains targets that operate across all partner packages
 
-PARTNER_DIRS = anthropic chroma deepseek exa fireworks groq huggingface mistralai nomic ollama openai openrouter perplexity qdrant xai
+PARTNER_DIRS = anthropic chroma deepseek exa fireworks groq huggingface mistralai nomic ollama openai openrouter perplexity qdrant torchagentic xai
 
 .PHONY: lock check-lock
 

@@ -48,6 +48,7 @@ baseten = ["langchain-baseten>=0.2.0"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
+torchagentic = ["langchain-torchagentic"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
