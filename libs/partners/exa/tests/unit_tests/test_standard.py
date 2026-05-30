@@ -28,3 +28,10 @@ def test_exa_clients_include_integration_header() -> None:
 
     for client in clients:
         assert client.headers[EXA_INTEGRATION_HEADER] == EXA_INTEGRATION_NAME
+
+
+def test_exa_retriever_search_type_values() -> None:
+    """Test ExaSearchRetriever supports current search type values."""
+    for search_type in ("auto", "deep", "fast"):
+        retriever = ExaSearchRetriever(type=search_type)
+        assert retriever.type == search_type
