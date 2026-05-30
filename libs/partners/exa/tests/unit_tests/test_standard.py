@@ -3,7 +3,8 @@
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 
-from langchain_exa import ExaSearchRetriever
+from langchain_exa import ExaFindSimilarResults, ExaSearchResults, ExaSearchRetriever
+from langchain_exa._utilities import EXA_INTEGRATION_HEADER, EXA_INTEGRATION_NAME
 
 
 @pytest.mark.benchmark
@@ -15,3 +16,15 @@ def test_exa_retriever_init_time(benchmark: BenchmarkFixture) -> None:
             ExaSearchRetriever()
 
     benchmark(_init_exa_retriever)
+
+
+def test_exa_clients_include_integration_header() -> None:
+    """Test Exa clients include the LangChain integration header."""
+    clients = [
+        ExaSearchRetriever().client,
+        ExaSearchResults().client,
+        ExaFindSimilarResults().client,
+    ]
+
+    for client in clients:
+        assert client.headers[EXA_INTEGRATION_HEADER] == EXA_INTEGRATION_NAME

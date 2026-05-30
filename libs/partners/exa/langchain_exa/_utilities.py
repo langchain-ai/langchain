@@ -3,6 +3,9 @@ import os  # type: ignore[import-not-found]
 from exa_py import Exa
 from langchain_core.utils import convert_to_secret_str
 
+EXA_INTEGRATION_HEADER = "x-exa-integration"
+EXA_INTEGRATION_NAME = "langchain-integration"
+
 
 def initialize_client(values: dict) -> dict:
     """Initialize the client."""
@@ -14,4 +17,5 @@ def initialize_client(values: dict) -> dict:
     if values.get("exa_base_url"):
         args["base_url"] = values["exa_base_url"]
     values["client"] = Exa(**args)
+    values["client"].headers[EXA_INTEGRATION_HEADER] = EXA_INTEGRATION_NAME
     return values
