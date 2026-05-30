@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
-from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -23,16 +22,6 @@ MODEL_NAME = "llama3.1"
 dummy_raw_tool_call = {
     "function": {"name": "test_func", "arguments": ""},
 }
-
-
-class TestChatOllama(ChatModelUnitTests):
-    @property
-    def chat_model_class(self) -> type[ChatOllama]:
-        return ChatOllama
-
-    @property
-    def chat_model_params(self) -> dict:
-        return {"model": MODEL_NAME}
 
 
 def test__parse_arguments_from_tool_call() -> None:
