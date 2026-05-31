@@ -145,6 +145,26 @@ def convert_to_openai_data_block(
         else:
             error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
+    elif block["type"] == "video":
+        if "url" in block:
+            if api == "chat/completions":
+                formatted_block = {
+                    "type": "video_url",
+                    "video_url": {"url": block["url"]},
+                }
+            else:
+                formatted_block = {
+                    "type": "input_video",
+                    "video_url": block["url"],
+                }
+        elif "file_id" in block or block.get("source_type") == "id":
+            file_id = block["id"] if "source_type" in block else block["file_id"]
+            formatted_block = {"type": "file", "file": {"file_id": file_id}}
+            if api == "responses":
+                formatted_block = {"type": "input_file", **formatted_block["file"]}
+        else:
+            error_msg = "Key url or file_id is required for video blocks."
+            raise ValueError(error_msg)
     else:
         error_msg = f"Block of type {block['type']} is not supported."
         raise ValueError(error_msg)
@@ -207,6 +227,7 @@ def _convert_to_v1_from_chat_completions_input(
             "image_url",
             "input_audio",
             "file",
+            "video_url",
         } and is_openai_data_block(block):
             converted_block = _convert_openai_format_to_data_block(block)
             # If conversion succeeded, use it; otherwise keep as non_standard
@@ -547,6 +568,25 @@ def _convert_openai_format_to_data_block(
             base64=parsed["data"],
             mime_type="application/pdf",
             filename=filename,
+            **all_extras,
+        )
+
+    # url-style video block
+    if (block["type"] == "video_url") and isinstance(
+        block.get("video_url", {}).get("url"), str
+    ):
+        known_keys = {"type", "video_url"}
+        extras = _extract_extras(block, known_keys)
+
+        video_url_known_keys = {"url"}
+        video_url_extras = _extract_extras(block["video_url"], video_url_known_keys)
+
+        all_extras = {**extras}
+        for key, value in video_url_extras.items():
+            all_extras[f"video_url_{key}"] = value
+
+        return types.create_video_block(
+            url=block["video_url"]["url"],
             **all_extras,
         )
 
