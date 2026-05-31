@@ -401,6 +401,50 @@ class TestPIIMiddlewareIntegration:
         assert result is not None
         assert "[REDACTED_EMAIL]" in result["messages"][0].content
 
+    def test_apply_to_input_preserves_structured_content(self) -> None:
+        """State hook redacts structured message content without stringifying it."""
+        middleware = PIIMiddleware("email", strategy="redact", apply_to_input=True)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage(content=[{"type": "text", "text": "Reach me at alice@example.com"}])
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert isinstance(content, list)
+        assert content == [{"type": "text", "text": "Reach me at [REDACTED_EMAIL]"}]
+
+    def test_apply_to_output_redacts_tool_call_args_without_content(self) -> None:
+        """State hook redacts tool-call args even when AI message content is empty."""
+        middleware = PIIMiddleware("email", strategy="redact", apply_to_output=True)
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("hi"),
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        ToolCall(
+                            name="send_email",
+                            args={"to": "alice@example.com"},
+                            id="call_123",
+                            type="tool_call",
+                        )
+                    ],
+                ),
+            ]
+        )
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        ai_msg = result["messages"][1]
+        assert isinstance(ai_msg, AIMessage)
+        assert ai_msg.content == ""
+        assert ai_msg.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+
     def test_apply_to_both(self) -> None:
         """Test that middleware processes both input and output."""
         middleware = PIIMiddleware(
