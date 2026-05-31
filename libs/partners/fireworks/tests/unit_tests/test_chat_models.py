@@ -1056,6 +1056,47 @@ class TestUsageToMetadata:
         assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
 
 
+_ISSUE_37754_CORRUPT_USAGE = {
+    "prompt_tokens": 125657,
+    "completion_tokens": 1229292929,
+    "total_tokens": 1229418586,
+}
+
+
+class TestIssue37754CorruptUsageReproduction:
+    """Reproduce #37754: LangChain passthrough of reported corrupt Fireworks usage."""
+
+    def test_create_chat_result_propagates_corrupt_usage_unchanged(self) -> None:
+        """`_create_chat_result` copies provider usage without validation."""
+        model = _make_model(model="accounts/fireworks/models/qwen3p6-plus")
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "hi"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": _ISSUE_37754_CORRUPT_USAGE,
+            }
+        )
+        message = chat_result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["output_tokens"] == 1229292929
+        assert chat_result.llm_output is not None
+        assert chat_result.llm_output["token_usage"]["completion_tokens"] == 1229292929
+
+    def test_usage_to_metadata_propagates_corrupt_usage_unchanged(self) -> None:
+        """`_usage_to_metadata` maps Fireworks fields without transformation."""
+        result = _usage_to_metadata(_ISSUE_37754_CORRUPT_USAGE)
+        assert result == {
+            "input_tokens": 125657,
+            "output_tokens": 1229292929,
+            "total_tokens": 1229418586,
+        }
+
+
 class TestConvertChunkToMessageChunk:
     """Tests for `_convert_chunk_to_message_chunk` empty-choices handling."""
 
