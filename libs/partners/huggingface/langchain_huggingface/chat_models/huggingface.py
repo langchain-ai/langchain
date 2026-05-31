@@ -345,11 +345,11 @@ class ChatHuggingFace(BaseChatModel):
         login()  # You will be prompted for your HF key, which will then be saved locally
         ```
 
-    Key init args — completion params:
+    Key init args â completion params:
         llm:
             LLM to be used.
 
-    Key init args — client params:
+    Key init args â client params:
         custom_get_token_ids:
             Optional encoder to use for counting tokens.
         metadata:
@@ -429,8 +429,8 @@ class ChatHuggingFace(BaseChatModel):
         ```
 
         ```python
-        AIMessage(content='Je déaime le programming.\n\nLittérale : Je
-        (j\'aime) déaime (le) programming.\n\nNote: "Programming" in
+        AIMessage(content='Je dÃ©aime le programming.\n\nLittÃ©rale : Je
+        (j\'aime) dÃ©aime (le) programming.\n\nNote: "Programming" in
         French is "programmation". But here, I used "programming" instead
         of "programmation" because the user said "I love programming"
         instead of "I love programming (in French)", which would be
@@ -717,6 +717,20 @@ class ChatHuggingFace(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
+
+    def _get_ls_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Return params for LangSmith tracing.
+
+        Includes ``ls_model_name`` sourced from ``model_id``.
+        """
+        ls_params = super()._get_ls_params(stop=stop, **kwargs)
+        if self.model_id:
+            ls_params["ls_model_name"] = self.model_id
+        return ls_params
 
     def _generate(
         self,
