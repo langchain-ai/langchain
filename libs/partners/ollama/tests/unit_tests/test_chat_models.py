@@ -1164,3 +1164,51 @@ def test_multimodal_message_content_has_no_leading_newline() -> None:
     ollama_messages = model._convert_messages_to_ollama_messages([message])
 
     assert ollama_messages[0]["content"] == "Extract all text from this image."
+
+def test_parse_arguments_preserves_int_from_string():
+    """
+    Regression test: llama3.2:1b returns numeric args as strings.
+    Fixes https://github.com/langchain-ai/langchain/issues/30145
+    """
+    from langchain_ollama.chat_models import _parse_arguments_from_tool_call
+
+    raw_tool_call = {
+        "function": {
+            "name": "multiply",
+            "arguments": {"a": "12", "b": "8"}
+        }
+    }
+    result = _parse_arguments_from_tool_call(raw_tool_call)
+    assert result["a"] == 12
+    assert result["b"] == 8
+    assert isinstance(result["a"], int)
+    assert isinstance(result["b"], int)
+
+
+def test_parse_arguments_preserves_float_from_string():
+    from langchain_ollama.chat_models import _parse_arguments_from_tool_call
+
+    raw_tool_call = {
+        "function": {
+            "name": "calculate",
+            "arguments": {"price": "9.99"}
+        }
+    }
+    result = _parse_arguments_from_tool_call(raw_tool_call)
+    assert isinstance(result["price"], float)
+    assert result["price"] == 9.99
+
+
+def test_parse_arguments_preserves_genuine_string():
+    """Non-numeric strings must stay as strings."""
+    from langchain_ollama.chat_models import _parse_arguments_from_tool_call
+
+    raw_tool_call = {
+        "function": {
+            "name": "search",
+            "arguments": {"query": "hello world"}
+        }
+    }
+    result = _parse_arguments_from_tool_call(raw_tool_call)
+    assert isinstance(result["query"], str)
+    assert result["query"] == "hello world"
