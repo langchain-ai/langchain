@@ -227,6 +227,10 @@ class AgentExecutorIterator:
                 # if final output reached, stop iteration
                 if is_final:
                     return
+                # _should_continue only tracks count and time, not content-level stalling
+                if self.agent_executor._is_stuck_in_loop(self.intermediate_steps):  # noqa: SLF001
+                    yield self._stop(run_manager)
+                    return
         except BaseException as e:
             run_manager.on_chain_error(e)
             raise
@@ -304,6 +308,10 @@ class AgentExecutorIterator:
                         yield output
                     # if final output reached, stop iteration
                     if is_final:
+                        return
+                    # _should_continue only tracks count and time, not content-level stalling
+                    if self.agent_executor._is_stuck_in_loop(self.intermediate_steps):  # noqa: SLF001
+                        yield await self._astop(run_manager)
                         return
         except (TimeoutError, asyncio.TimeoutError):
             yield await self._astop(run_manager)

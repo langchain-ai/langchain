@@ -1327,3 +1327,140 @@ async def test_openai_agent_tools_agent() -> None:
             " ",
             "bed.",
         ]
+
+
+def _make_stuck_agent(max_stalled_iterations: int | None, **kwargs: Any) -> AgentExecutor:
+    """Return an AgentExecutor whose LLM always requests the same Search call.
+
+    Args:
+        max_stalled_iterations: Passed directly to `AgentExecutor`.
+        **kwargs: Additional keyword arguments forwarded to `initialize_agent`.
+    """
+    repeated_action = "I'm stuck\nAction: Search\nAction Input: bad_query"
+    fake_llm = FakeListLLM(
+        cache=False,
+        responses=[repeated_action] * 20,
+    )
+    tools = [
+        Tool(
+            name="Search",
+            func=lambda x: "Error: invalid input",
+            description="Useful for searching",
+        ),
+    ]
+    return initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=False,
+        max_stalled_iterations=max_stalled_iterations,
+        **kwargs,
+    )
+
+
+def test_is_stuck_in_loop_disabled_when_none() -> None:
+    """Guard is off by default (max_stalled_iterations=None)."""
+    agent = _make_stuck_agent(max_stalled_iterations=None, max_iterations=5)
+    assert not agent._is_stuck_in_loop([])
+
+
+def test_is_stuck_in_loop_disabled_for_low_values() -> None:
+    """Values below 2 are treated as disabled."""
+    agent = _make_stuck_agent(max_stalled_iterations=1)
+    action = AgentAction(tool="Search", tool_input="bad_query", log="")
+    steps = [(action, "Error: invalid input")]
+    assert not agent._is_stuck_in_loop(steps)
+
+
+def test_is_stuck_in_loop_not_enough_steps() -> None:
+    """Returns False when fewer steps than threshold have been taken."""
+    agent = _make_stuck_agent(max_stalled_iterations=3)
+    action = AgentAction(tool="Search", tool_input="bad_query", log="")
+    steps = [(action, "Error: invalid input"), (action, "Error: invalid input")]
+    assert not agent._is_stuck_in_loop(steps)
+
+
+def test_is_stuck_in_loop_detected() -> None:
+    """Returns True when the last N steps are all identical."""
+    agent = _make_stuck_agent(max_stalled_iterations=3)
+    action = AgentAction(tool="Search", tool_input="bad_query", log="")
+    steps = [(action, "Error: invalid input")] * 3
+    assert agent._is_stuck_in_loop(steps)
+
+
+def test_is_stuck_in_loop_different_observations() -> None:
+    """Returns False when observations differ across steps."""
+    agent = _make_stuck_agent(max_stalled_iterations=3)
+    action = AgentAction(tool="Search", tool_input="bad_query", log="")
+    steps = [
+        (action, "Error: invalid input"),
+        (action, "Error: different message"),
+        (action, "Error: invalid input"),
+    ]
+    assert not agent._is_stuck_in_loop(steps)
+
+
+def test_is_stuck_in_loop_different_inputs() -> None:
+    """Returns False when tool inputs differ across steps."""
+    agent = _make_stuck_agent(max_stalled_iterations=3)
+    steps = [
+        (AgentAction(tool="Search", tool_input="query_a", log=""), "Error"),
+        (AgentAction(tool="Search", tool_input="query_b", log=""), "Error"),
+        (AgentAction(tool="Search", tool_input="query_a", log=""), "Error"),
+    ]
+    assert not agent._is_stuck_in_loop(steps)
+
+
+def test_agent_stops_on_stalled_loop() -> None:
+    """Agent terminates early when max_stalled_iterations is reached."""
+    agent = _make_stuck_agent(max_stalled_iterations=3, max_iterations=20)
+    output = agent.run("do something")
+    assert output == "Agent stopped due to iteration limit or time limit."
+
+
+def test_agent_stalled_loop_returns_intermediate_steps() -> None:
+    """Intermediate steps are returned when the stalled-loop guard fires."""
+    agent = _make_stuck_agent(
+        max_stalled_iterations=3,
+        max_iterations=20,
+        return_intermediate_steps=True,
+    )
+    result = agent({"input": "do something"})
+    assert "intermediate_steps" in result
+    assert len(result["intermediate_steps"]) == 3
+
+
+def test_agent_no_false_positive_on_different_steps() -> None:
+    """Guard does not fire when each step is different."""
+    responses = [
+        "Thinking\nAction: Search\nAction Input: query_1",
+        "Thinking\nAction: Search\nAction Input: query_2",
+        "Thinking\nAction: Search\nAction Input: query_3",
+        "Oh well\nFinal Answer: done",
+    ]
+    fake_llm = FakeListLLM(cache=False, responses=responses)
+    tools = [
+        Tool(name="Search", func=lambda x: f"Result for {x}", description="Search")
+    ]
+    agent = initialize_agent(
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=False,
+        max_stalled_iterations=3,
+    )
+    output = agent.run("find something")
+    assert output == "done"
+
+
+async def _run_async_stuck_agent(max_stalled_iterations: int) -> str:
+    agent = _make_stuck_agent(
+        max_stalled_iterations=max_stalled_iterations, max_iterations=20
+    )
+    return await agent.arun("do something")
+
+
+def test_agent_async_stops_on_stalled_loop() -> None:
+    """Async path also terminates early when max_stalled_iterations is reached."""
+    output = asyncio.run(_run_async_stuck_agent(max_stalled_iterations=3))
+    assert output == "Agent stopped due to iteration limit or time limit."

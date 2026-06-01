@@ -1054,6 +1054,15 @@ class AgentExecutor(Chain):
     """How to trim the intermediate steps before returning them.
     Defaults to -1, which means no trimming.
     """
+    max_stalled_iterations: int | None = None
+    """Maximum number of consecutive steps that share the same tool name,
+    tool input, and observation before the loop is considered stuck and
+    terminated early via `early_stopping_method`.
+
+    A value of `None` (the default) disables the check entirely.
+    The minimum meaningful value is 2; lower positive values are treated as
+    disabled.
+    """
 
     @classmethod
     def from_agent_and_tools(
@@ -1236,6 +1245,36 @@ class AgentExecutor(Chain):
         if self.max_iterations is not None and iterations >= self.max_iterations:
             return False
         return self.max_execution_time is None or time_elapsed < self.max_execution_time
+
+    def _is_stuck_in_loop(
+        self, intermediate_steps: list[tuple[AgentAction, str]]
+    ) -> bool:
+        """Detect whether the agent is stuck repeating the same action with no progress.
+
+        Returns `True` when the last `max_stalled_iterations` steps all share
+        the same tool name, tool input, and observation, indicating the agent is
+        not making progress.
+
+        Args:
+            intermediate_steps: The history of `(AgentAction, observation)`
+                pairs accumulated so far.
+
+        Returns:
+            `True` when a no-progress loop is detected, `False` otherwise.
+        """
+        if not self.max_stalled_iterations or self.max_stalled_iterations < 2:
+            return False
+        n = self.max_stalled_iterations
+        if len(intermediate_steps) < n:
+            return False
+        last_n = intermediate_steps[-n:]
+        first_action, first_obs = last_n[0]
+        return all(
+            action.tool == first_action.tool
+            and action.tool_input == first_action.tool_input
+            and obs == first_obs
+            for action, obs in last_n[1:]
+        )
 
     def _return(
         self,
@@ -1612,6 +1651,8 @@ class AgentExecutor(Chain):
                         intermediate_steps,
                         run_manager=run_manager,
                     )
+            if self._is_stuck_in_loop(intermediate_steps):
+                break
             iterations += 1
             time_elapsed = time.time() - start_time
         output = self._action_agent.return_stopped_response(
@@ -1669,6 +1710,8 @@ class AgentExecutor(Chain):
                                 run_manager=run_manager,
                             )
 
+                    if self._is_stuck_in_loop(intermediate_steps):
+                        break
                     iterations += 1
                     time_elapsed = time.time() - start_time
                 output = self._action_agent.return_stopped_response(
