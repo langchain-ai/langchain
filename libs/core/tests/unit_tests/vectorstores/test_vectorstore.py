@@ -236,6 +236,29 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
     ]
 
 
+
+def test_default_add_texts_accepts_generator() -> None:
+    store = CustomAddDocumentsVectorstore()
+
+    ids_ = store.add_texts((text for text in ["alpha", "beta"]))
+
+    assert len(ids_) == 2
+    assert store.get_by_ids(ids_) == [
+        Document(id=ids_[0], page_content="alpha"),
+        Document(id=ids_[1], page_content="beta"),
+    ]
+
+
+async def test_default_aadd_texts_accepts_generator() -> None:
+    store = CustomAddDocumentsVectorstore()
+
+    ids_ = await store.aadd_texts((text for text in ["alpha", "beta"]))
+
+    assert len(ids_) == 2
+    assert await store.aget_by_ids(ids_) == [
+        Document(id=ids_[0], page_content="alpha"),
+        Document(id=ids_[1], page_content="beta"),
+    ]
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
