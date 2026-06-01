@@ -55,6 +55,45 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     raise ValueError(error_message)
 
 
+def convert_to_openai_video_block(block: dict[str, Any]) -> dict:
+    """Convert `VideoContentBlock` to format expected by OpenAI Chat Completions.
+
+    Args:
+        block: The video content block to convert.
+
+    Raises:
+        ValueError: If required keys are missing.
+        ValueError: If source type is unsupported.
+
+    Returns:
+        The formatted image content block.
+    """
+    if "url" in block:
+        return {
+            "type": "video_url",
+            "video_url": {
+                "url": block["url"],
+            },
+        }
+    if "base64" in block or block.get("source_type") == "base64":
+        if "mime_type" not in block:
+            error_message = "mime_type key is required for base64 data."
+            raise ValueError(error_message)
+        mime_type = block["mime_type"]
+        base64_data = block["data"] if "data" in block else block["base64"]
+        return {
+            "type": "video_url",
+            "video_url": {
+                "url": f"data:{mime_type};base64,{base64_data}",
+            },
+        }
+    if "file_id" in block or block.get("source_type") == "id":
+        file_id = block["id"] if "source_type" in block else block["file_id"]
+        return {"type": "video", "video": file_id}
+    error_message = "Unsupported source type. Only 'url' and 'base64' and 'file_id' are supported."
+    raise ValueError(error_message)
+
+
 def convert_to_openai_data_block(
     block: dict, api: Literal["chat/completions", "responses"] = "chat/completions"
 ) -> dict:
@@ -88,6 +127,21 @@ def convert_to_openai_data_block(
                 ]
         else:
             formatted_block = chat_completions_block
+
+    elif block["type"] == "video":
+        chat_completions_block = convert_to_openai_video_block(block)
+        print(chat_completions_block)
+        if api == "responses" and chat_completions_block.get("video_url"):
+            formatted_block = {
+                "type": "input_video",
+                "video_url": chat_completions_block["video_url"]["url"],
+            }
+            if chat_completions_block["video_url"].get("detail"):
+                formatted_block["detail"] = chat_completions_block["video_url"]["detail"]
+        else:
+            formatted_block = chat_completions_block
+        if extras := block.get("extras"):
+            formatted_block.update(extras)
 
     elif block["type"] == "file":
         if block.get("source_type") == "base64" or "base64" in block:

@@ -503,6 +503,55 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
+    # Video / url
+    block = {
+        "type": "video",
+        "url": "https://example.com/test.mp4",
+        "extras":{
+            "fps":2
+        }
+    }
+    expected = {
+        "type": "video_url",
+        "video_url": {"url": "https://example.com/test.mp4"},
+        "fps": 2
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Video / file_id
+    block = {
+        "type": "video",
+        "file_id": "/test.mp4",
+        "extras": {
+            "fps": 2
+        }
+    }
+    expected = {
+        "type": "video",
+        "video": "/test.mp4",
+        "fps": 2
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Image / base64
+    block = {
+        "type": "video",
+        "base64": "<base64 string>",
+        "mime_type": "video/mp4",
+        "extras": {
+            "fps": 2
+        }
+    }
+    expected = {
+        "type": "video_url",
+        "video_url": {"url": "data:video/mp4;base64,<base64 string>"},
+        "fps": 2
+    }
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
     # File / url
     block = {
         "type": "file",
@@ -569,6 +618,55 @@ def test_convert_to_openai_data_block() -> None:
     expected = {
         "type": "input_image",
         "image_url": "data:image/png;base64,<base64 string>",
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Video / url
+    block = {
+        "type": "video",
+        "url": "https://example.com/test.mp4",
+        "extras": {
+            "fps": 2
+        }
+    }
+    expected = {
+        "type": "input_video",
+        "video_url": "https://example.com/test.mp4",
+        "fps": 2
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Video / file_id
+    block = {
+        "type": "video",
+        "file_id": "/test.mp4",
+        "extras": {
+            "fps": 2
+        }
+    }
+    expected = {
+        "type": "video",
+        "video": "/test.mp4",
+        "fps": 2
+    }
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Image / base64
+    block = {
+        "type": "video",
+        "base64": "<base64 string>",
+        "mime_type": "video/mp4",
+        "extras": {
+            "fps": 2
+        }
+    }
+    expected = {
+        "type": "input_video",
+        "video_url": "data:video/mp4;base64,<base64 string>",
+        "fps": 2
     }
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
