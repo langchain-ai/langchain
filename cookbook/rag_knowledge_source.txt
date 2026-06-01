@@ -1,0 +1,40 @@
+========================================================================
+TECHNICAL MANUAL: QUANTUM NEBULA COFFEE BREWING STATION (MODEL QN-100)
+========================================================================
+
+1. PRODUCT SPECIFICATIONS & PARAMETERS
+-------------------------------------
+* Model Name: Quantum Nebula Coffee Brewing Station QN-100
+* Pump Pressure: 19.5 Bars of maximum pressure (optimized for cold-press extraction).
+* Operating Temperature: 92.5 degrees Celsius (198.5 degrees Fahrenheit).
+* Water Tank Capacity: 2.4 Liters (81.1 fluid ounces).
+* Bean Hopper Capacity: 350 grams of whole coffee beans.
+* Grinder Settings: 18 distinct grind size adjustment levels (Level 1 is extra fine, Level 18 is extra coarse).
+
+2. SYSTEM PREHEAT & INITIATION SEQUENCE
+---------------------------------------
+To start the brewing station, follow these exact steps:
+1. Press and hold the "Initiate" button for exactly 3 seconds. The LED light strip will pulse blue.
+2. The display screen will show "Preheating System..." as the internal thermal block heats to 92.5 degrees Celsius. This process takes 45 seconds.
+3. Once ready, the LED light strip will turn solid amber, and the screen will display "Ready to Brew".
+
+3. BREWING THE PERFECT ESPRESSO
+-------------------------------
+The QN-100 features a patented "Nebula Infusion" technology.
+1. Insert the double-wall portafilter with 18 grams of finely ground coffee.
+2. Select "Nebula Shot" on the touch interface.
+3. The machine will first perform a pre-infusion step at low pressure (3.0 bars) for 6 seconds.
+4. It will then ramp up to full 19.5 bars of pressure for 24 seconds, yielding 36 grams of liquid espresso.
+
+4. MAINTENANCE, CLEANING, & DECALCIFICATION
+--------------------------------------------
+* Daily Rinse: The machine automatically performs a high-pressure rinse of the brewing group every 12 hours of standby time.
+* Decalcification (Descaling): When the "Service" indicator turns red, the machine requires descaling. Use only food-grade citric-acid based descaling solutions.
+* Warning: Do not use vinegar for descaling; vinegar can corrode the copper boiler pipes.
+
+5. ERROR CODES & TROUBLESHOOTING
+--------------------------------
+* Err-01: Water level sensor failure. Ensure the water tank is filled above the minimum 200ml threshold and is seated correctly.
+* Err-02: Grinder motor jam. Switch off the machine, empty the bean hopper, and check for pebbles or foreign objects.
+* Err-04: Thermoblock overheat. The internal temperature has exceeded 105 degrees Celsius. Turn off the machine, unplug it, and let it cool for 30 minutes.
+* Err-09: Pressure release valve malfunction. Contact authorized Quantum Nebula support.

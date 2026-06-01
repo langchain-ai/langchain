@@ -1,0 +1,21 @@
+# Core LangChain package
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+
+# HuggingFace & ML dependencies
+langchain-huggingface>=0.1.0
+transformers>=4.40.0
+sentence-transformers>=2.7.0
+torch>=2.0.0; sys_platform != 'darwin'
+
+# Vector store and Document loaders
+chromadb>=0.5.0
+pypdf>=4.2.0
+
+# Notebook execution support
+ipykernel
+jupyter
+notebook
+pandas
+tabulate
