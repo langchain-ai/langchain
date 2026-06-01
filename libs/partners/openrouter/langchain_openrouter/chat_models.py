@@ -1246,6 +1246,33 @@ def _merge_reasoning_details(
     return merged
 
 
+def _strip_rs_reasoning_ids(
+    details: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Strip opaque `rs_*` reasoning item IDs from outbound messages.
+
+    OpenRouter's `/responses` beta does not propagate `store=true` /
+    `previous_response_id` across upstreams, so replayed `rs_*` IDs 404
+    regardless of which upstream OpenRouter selects. We preserve textual
+    reasoning content but drop the opaque IDs that the upstream cannot
+    resolve.
+
+    See: https://github.com/langchain-ai/langchain/issues/37777
+    """
+    cleaned: list[dict[str, Any]] = []
+    for entry in details:
+        if not isinstance(entry, dict):
+            cleaned.append(entry)
+            continue
+        # Drop entries whose only purpose is to carry an rs_* ID
+        if entry.get("id", "").startswith("rs_") and not entry.get("text"):
+            continue
+        # Otherwise strip the id field but keep everything else
+        cleaned_entry = {k: v for k, v in entry.items() if k != "id"}
+        cleaned.append(cleaned_entry)
+    return cleaned
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Convert a LangChain message to an OpenRouter-compatible dict payload.
 
@@ -1303,9 +1330,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = _merge_reasoning_details(
+            merged_details = _merge_reasoning_details(
                 message.additional_kwargs["reasoning_details"]
             )
+            message_dict["reasoning_details"] = _strip_rs_reasoning_ids(merged_details)
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):

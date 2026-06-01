@@ -1411,6 +1411,40 @@ class TestMessageConversion:
         assert result["reasoning"] == "My thinking process"
         assert result["reasoning_details"] == original_dict["reasoning_details"]
 
+    def test_rs_reasoning_ids_stripped_from_outbound(self) -> None:
+        """Test that opaque rs_* reasoning IDs are stripped from outbound messages.
+
+        Regression test for https://github.com/langchain-ai/langchain/issues/37777.
+        OpenRouter's /responses beta does not propagate store=true across
+        upstreams, so replayed rs_* IDs 404. We preserve textual reasoning
+        content but drop the opaque IDs.
+        """
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={
+                "reasoning_details": [
+                    {
+                        "type": "reasoning.text",
+                        "text": "Let me think...",
+                        "id": "rs_abc123",
+                    },
+                    {
+                        "type": "reasoning.text",
+                        "id": "rs_def456",
+                    },
+                    {
+                        "type": "reasoning.text",
+                        "text": "Final answer",
+                    },
+                ]
+            },
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {"type": "reasoning.text", "text": "Let me think..."},
+            {"type": "reasoning.text", "text": "Final answer"},
+        ]
+
     def test_tool_message_to_dict(self) -> None:
         """Test converting ToolMessage to dict."""
         msg = ToolMessage(content="result", tool_call_id="call_123")
