@@ -3975,6 +3975,42 @@ def test_html_splitter_with_media_preservation() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_html_splitter_with_nested_media_sources() -> None:
+    """Test HTML splitter preserves media URLs from nested source tags."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is a video:</p>
+    <video controls>
+        <source src="http://example.com/video.mp4" type="video/mp4" />
+    </video>
+    <p>This is audio:</p>
+    <audio controls>
+        <source src="http://example.com/audio.mp3" type="audio/mpeg" />
+    </audio>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_videos=True,
+            preserve_audio=True,
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is a video: ![video:http://example.com/video.mp4]"
+            "(http://example.com/video.mp4) "
+            "This is audio: ![audio:http://example.com/audio.mp3]"
+            "(http://example.com/audio.mp3)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_keep_separator_true() -> None:
     """Test HTML splitting with keep_separator=True."""
     html_content = """
