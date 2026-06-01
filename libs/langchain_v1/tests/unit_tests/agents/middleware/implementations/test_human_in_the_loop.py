@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware import InterruptOnConfig
@@ -11,7 +12,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.types import AgentState
+from langchain.agents.middleware.types import AgentState, ToolCallRequest
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -883,3 +884,107 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+
+
+# ---------------------------------------------------------------------------
+# when predicate
+# ---------------------------------------------------------------------------
+
+
+def test_when_predicate_batch_skips_interrupt_when_false() -> None:
+    """`when` returning False prevents the tool call from joining the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda req: req.tool_call["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": False}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt,
+    ):
+        result = middleware.after_model(state, Runtime())
+        mock_interrupt.assert_not_called()
+
+    assert result is None
+
+
+def test_when_predicate_batch_fires_interrupt_when_true() -> None:
+    """`when` returning True allows the tool call to trigger the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda req: req.tool_call["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": True}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "approve"}]},
+        ),
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+
+
+def test_when_predicate_receives_correct_args() -> None:
+    """The when predicate receives a ToolCallRequest with correct values and a ToolRuntime."""
+    captured: list[Any] = []
+
+    def capture_when(req: ToolCallRequest) -> bool:
+        captured.append(req)
+        return True
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=capture_when,
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"val": 42}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+    runtime = Runtime()
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "approve"}]},
+        ),
+    ):
+        middleware.after_model(state, runtime)
+
+    assert len(captured) == 1
+    req = captured[0]
+    assert req.tool_call["name"] == "test_tool"
+    assert req.tool_call["args"] == {"val": 42}
+    assert req.tool is None
+    assert req.state is state
+    assert isinstance(req.runtime, ToolRuntime)
+    assert req.runtime.tool_call_id == "tc-1"
+    assert req.runtime.state is state
+    assert req.runtime.context is runtime.context
+    assert req.runtime.store is runtime.store
