@@ -2007,12 +2007,12 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
+    { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-baseten", marker = "extra == 'baseten'", specifier = ">=0.2.0" },
     { name = "langchain-community", marker = "extra == 'community'" },
-    { name = "langchain-core", specifier = ">=1.4.0,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
     { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
@@ -2021,7 +2021,7 @@ requires-dist = [
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
-    { name = "langchain-openai", marker = "extra == 'openai'" },
+    { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
@@ -2034,8 +2034,8 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
-    { name = "langchain-openai" },
-    { name = "langchain-tests", specifier = ">=1.1.9,<2.0.0" },
+    { name = "langchain-openai", editable = "../partners/openai" },
+    { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
     { name = "pytest-benchmark", specifier = ">=5.1.0,<6.0.0" },
@@ -2048,8 +2048,8 @@ test = [
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
-    { name = "langchain-core", specifier = ">=1.4.0,<2.0.0" },
-    { name = "langchain-text-splitters", specifier = ">=1.0.0,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
@@ -2062,16 +2062,51 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.3"
-source = { registry = "https://pypi.org/simple" }
+version = "1.4.4"
+source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
     { name = "langchain-core" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/e3/d2f9dec95602524b1cfb4be2747ba5bc38d32501b2a56cb4bcb76e80bb45/langchain_anthropic-1.4.3.tar.gz", hash = "sha256:f8a2442463c0629b1b3110eaeaa56fdbdc87df2a802f8c7f5ecf611eb4874ec8", size = 685219, upload-time = "2026-05-03T17:33:27.118Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/55/482a1968c95275e8be6d8c1e53b54f0f7be0b8b155ce1608c947a95cf543/langchain_anthropic-1.4.3-py3-none-any.whl", hash = "sha256:65466e0f2f95909a009708f2958e917dfdbfab79c612b4484a30866a85e1f291", size = 50389, upload-time = "2026-05-03T17:33:25.671Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", specifier = ">=0.96.0,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "blockbuster", specifier = ">=1.5.5,<1.6" },
+    { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain", editable = "." },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "langgraph-prebuilt", specifier = ">=0.7.0a2" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-timeout", specifier = ">=2.3.1,<3.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0,<4.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+]
+test-integration = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "requests", specifier = ">=2.32.3,<3.0.0" },
+]
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.17.1,<2.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
 ]
 
 [[package]]
@@ -2174,7 +2209,7 @@ wheels = [
 [[package]]
 name = "langchain-core"
 version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
@@ -2186,9 +2221,51 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "uuid-utils" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/59/de/679a53472c25860837e32c0442c962fa86e95317a36460e2c9d5c91b17c2/langchain_core-1.4.0.tar.gz", hash = "sha256:1dc341eed802ed9c117c0df3923c991e5e9e226571e5725c194eeb5bd93d1a7f", size = 920260, upload-time = "2026-05-11T18:42:35.919Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0f/1a/86c38c27b81913a1c6c12448cab55defb5a1097c7dc9a4cea83f55477a2d/langchain_core-1.4.0-py3-none-any.whl", hash = "sha256:23cbbdb46e38ddd1dd5247e6167e96013eae74bea4c5949c550809970a9e565c", size = 548120, upload-time = "2026-05-11T18:42:33.992Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
+    { name = "langchain-protocol", specifier = ">=0.0.14" },
+    { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
+    { name = "packaging", specifier = ">=23.2.0" },
+    { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
+    { name = "pyyaml", specifier = ">=5.3.0,<7.0.0" },
+    { name = "tenacity", specifier = ">=8.1.0,!=8.4.0,<10.0.0" },
+    { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
+    { name = "uuid-utils", specifier = ">=0.12.0,<1.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
+    { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
+]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
+test = [
+    { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
+    { name = "langchain-tests", directory = "../standard-tests" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
+    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "responses", specifier = ">=0.25.0,<1.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+]
+test-integration = []
+typing = [
+    { name = "langchain-text-splitters", directory = "../text-splitters" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
+    { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
 
 [[package]]
@@ -2317,15 +2394,51 @@ wheels = [
 [[package]]
 name = "langchain-openai"
 version = "1.2.2"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
     { name = "openai" },
     { name = "tiktoken" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/1b/c506c7f41156d3a6b4582b4c487f480001b8741deecc6e2d4931fdf4cf2c/langchain_openai-1.2.2.tar.gz", hash = "sha256:8698ffcee9a086e91ab6d207f0026181a03effcbf86bf9aee1808ee35af69dcc", size = 1147539, upload-time = "2026-05-21T22:08:31.123Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/8e/7406c99afacafc8c2ce0fa4152f9f8b9598c93ceb291959821abd053b982/langchain_openai-1.2.2-py3-none-any.whl", hash = "sha256:7da39a3c70cbafa93853456199e39a264dc70651be79b12ac49b4f6a448bce2d", size = 99631, upload-time = "2026-05-21T22:08:29.527Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "openai", specifier = ">=2.26.0,<3.0.0" },
+    { name = "tiktoken", specifier = ">=0.7.0,<1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain", editable = "." },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
+    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
+    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+]
+test-integration = [
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
+    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
+    { name = "pillow", specifier = ">=12.1.1,<13.0.0" },
+]
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.17.1,<2.0.0" },
+    { name = "types-tqdm", specifier = ">=4.66.0.5,<5.0.0.0" },
 ]
 
 [[package]]
@@ -2356,7 +2469,7 @@ wheels = [
 [[package]]
 name = "langchain-tests"
 version = "1.1.9"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },
@@ -2371,21 +2484,77 @@ dependencies = [
     { name = "syrupy" },
     { name = "vcrpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/94/0e/6eef4ddcc3503d40de4486abc923a48d5853a310d2b2752123e7a3c713b1/langchain_tests-1.1.9.tar.gz", hash = "sha256:a977a0c8f9a42ba2021a5ae59d468e4023f98a83818a3cb30e12c1dfab830203", size = 184443, upload-time = "2026-05-21T18:24:15.946Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/bb/ef5ccff7c22938e28716ecf3c4cc468082843df7f3b2214a931cfcaae98a/langchain_tests-1.1.9-py3-none-any.whl", hash = "sha256:f33e36e2015da437df2001ec6949b443de09dd37d021dea6160cf85912ccf05f", size = 66312, upload-time = "2026-05-21T18:24:14.387Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.2" },
+    { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-codspeed" },
+    { name = "pytest-recording" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+]
+
+[package.metadata.requires-dev]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
+test = [{ name = "langchain-core", editable = "../core" }]
+test-integration = []
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-text-splitters"
 version = "1.1.2"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/9f/6c545900fefb7b00ddfa3f16b80d61338a0ec68c31c5451eeeab99082760/langchain_text_splitters-1.1.2.tar.gz", hash = "sha256:782a723db0a4746ac91e251c7c1d57fd23636e4f38ed733074e28d7a86f41627", size = 293580, upload-time = "2026-04-16T14:20:39.162Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/26/1ef06f56198d631296d646a6223de35bcc6cf9795ceb2442816bc963b84c/langchain_text_splitters-1.1.2-py3-none-any.whl", hash = "sha256:a2de0d799ff31886429fd6e2e0032df275b60ec817c19059a7b46181cc1c2f10", size = 35903, upload-time = "2026-04-16T14:20:38.243Z" },
+
+[package.metadata]
+requires-dist = [{ name = "langchain-core", editable = "../core" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
+]
+lint = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "ruff", specifier = ">=0.15.0,<0.16.0" },
+]
+test = [
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+]
+test-integration = [
+    { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
+    { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
+    { name = "sentence-transformers", specifier = ">=5.3.0,<6.0.0" },
+    { name = "spacy", specifier = ">=3.8.13,!=3.8.14,<4.0.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
+    { name = "transformers", specifier = ">=4.51.3,<6.0.0" },
+]
+typing = [
+    { name = "beautifulsoup4", specifier = ">=4.13.5,<5.0.0" },
+    { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
+    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
 ]
 
 [[package]]
