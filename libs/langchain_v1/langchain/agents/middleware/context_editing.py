@@ -9,10 +9,11 @@ chat model.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from copy import deepcopy
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import dataclass, replace
+from typing import Annotated, Any, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -21,16 +22,21 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
-from typing_extensions import Protocol
+from langgraph.types import Command
+from typing_extensions import NotRequired, Protocol
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
+    PrivateStateAttr,
     ResponseT,
 )
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -184,7 +190,51 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class ContextEditingState(AgentState[ResponseT]):
+    """State schema for `ContextEditingMiddleware`.
+
+    Extends `AgentState` with a persisted measure of the post-edit effective token
+    count.
+
+    Edits run on a throwaway copy of the messages and are never written back to the
+    checkpoint, so under a persistent checkpointer every turn reloads the full,
+    uncleared history. `_last_effective_count` records how many tokens the
+    conversation occupied *after* the most recent edit, giving downstream logic a
+    stable, checkpoint-backed signal it can read to drive escalation (e.g.
+    summarization) when clearing alone cannot keep the conversation under budget.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
+
+    _last_effective_count: NotRequired[Annotated[int, PrivateStateAttr]]
+
+
+def _merge_update(command: Command[Any] | None, update: dict[str, Any]) -> Command[Any]:
+    """Merge `update` into an existing command's update mapping.
+
+    Args:
+        command: An existing command returned by the handler, or `None`.
+        update: The state update to merge in.
+
+    Returns:
+        A command whose `update` mapping includes `update`. If the existing command
+        carries a non-mapping update (which the `wrap_model_call` command contract does
+        not produce), it is returned untouched to avoid clobbering it.
+    """
+    if command is None:
+        return Command(update=update)
+    existing = command.update
+    if existing is None:
+        return replace(command, update=update)
+    if isinstance(existing, dict):
+        return replace(command, update={**existing, **update})
+    return command
+
+
+class ContextEditingMiddleware(
+    AgentMiddleware[ContextEditingState[ResponseT], ContextT, ResponseT]
+):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
@@ -192,7 +242,16 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
     Currently the `ClearToolUsesEdit` strategy is supported, aligning with Anthropic's
     `clear_tool_uses_20250919` behavior [(read more)](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool).
+
+    Edits are applied to a throwaway copy of the messages on every model call, so the
+    cleared placeholders are never written back to the checkpoint. To keep eviction
+    decisions stable across turns when a persistent checkpointer reloads the full
+    history, the middleware persists the post-edit effective token count to
+    `ContextEditingState._last_effective_count` via a `Command` returned alongside the
+    model response.
     """
+
+    state_schema = ContextEditingState  # type: ignore[assignment]
 
     edits: list[ContextEdit]
     token_count_method: Literal["approximate", "model"]
@@ -221,44 +280,30 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Apply context edits before invoking the model via handler.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
+            handler: Callback that executes the model request and returns
                 `ModelResponse`.
 
         Returns:
-            The result of invoking the handler with potentially edited messages.
+            The handler result wrapped in an `ExtendedModelResponse` whose command
+            persists the post-edit effective token count.
         """
         if not request.messages:
             return handler(request)
 
-        if self.token_count_method == "approximate":  # noqa: S105
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
-
-        else:
-            system_msg = [request.system_message] if request.system_message else []
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(
-                    system_msg + list(messages), request.tools
-                )
-
-        edited_messages = deepcopy(list(request.messages))
-        for edit in self.edits:
-            edit.apply(edited_messages, count_tokens=count_tokens)
-
-        return handler(request.override(messages=edited_messages))
+        edited_messages, effective_count = self._apply_edits(request)
+        result = handler(request.override(messages=edited_messages))
+        return self._persist_effective_count(result, effective_count)
 
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Apply context edits before invoking the model via handler.
 
         Args:
@@ -267,11 +312,18 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
                 `ModelResponse`.
 
         Returns:
-            The result of invoking the handler with potentially edited messages.
+            The handler result wrapped in an `ExtendedModelResponse` whose command
+            persists the post-edit effective token count.
         """
         if not request.messages:
             return await handler(request)
 
+        edited_messages, effective_count = self._apply_edits(request)
+        result = await handler(request.override(messages=edited_messages))
+        return self._persist_effective_count(result, effective_count)
+
+    def _resolve_token_counter(self, request: ModelRequest[ContextT]) -> TokenCounter:
+        """Build the token counter for the configured counting method."""
         if self.token_count_method == "approximate":  # noqa: S105
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
@@ -285,11 +337,81 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
                     system_msg + list(messages), request.tools
                 )
 
+        return count_tokens
+
+    def _apply_edits(self, request: ModelRequest[ContextT]) -> tuple[list[AnyMessage], int]:
+        """Apply edits to a copy of the messages and measure the post-edit token count.
+
+        Edits run on a deep copy so the original (checkpointed) messages are never
+        mutated. The returned count is the effective token footprint the model will
+        actually see.
+
+        Args:
+            request: Model request whose messages should be edited.
+
+        Returns:
+            A tuple of the edited messages and their effective token count.
+        """
+        count_tokens = self._resolve_token_counter(request)
+
         edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
             edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return await handler(request.override(messages=edited_messages))
+        effective_count = count_tokens(edited_messages)
+        self._warn_if_over_budget(effective_count)
+        return edited_messages, effective_count
+
+    def _warn_if_over_budget(self, effective_count: int) -> None:
+        """Warn when edits could not bring the conversation under the tightest trigger.
+
+        Args:
+            effective_count: Post-edit effective token count.
+        """
+        triggers = [
+            trigger
+            for edit in self.edits
+            if (trigger := getattr(edit, "trigger", None)) is not None
+        ]
+        if not triggers:
+            return
+
+        tightest = min(triggers)
+        if effective_count > tightest:
+            logger.warning(
+                "Context editing left %d tokens, which still exceeds the configured "
+                "trigger of %d. Clearing tool results was insufficient; consider "
+                "escalating (e.g. summarization) to keep the conversation under budget.",
+                effective_count,
+                tightest,
+            )
+
+    def _persist_effective_count(
+        self,
+        result: ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT],
+        effective_count: int,
+    ) -> ExtendedModelResponse[ResponseT]:
+        """Attach a command persisting the effective token count to the handler result.
+
+        Args:
+            result: The value returned by the handler.
+            effective_count: Post-edit effective token count to persist.
+
+        Returns:
+            An `ExtendedModelResponse` whose command updates `_last_effective_count`.
+        """
+        update: dict[str, Any] = {"_last_effective_count": effective_count}
+        if isinstance(result, ExtendedModelResponse):
+            model_response = result.model_response
+            command = _merge_update(result.command, update)
+        elif isinstance(result, AIMessage):
+            model_response = ModelResponse(result=[result])
+            command = Command(update=update)
+        else:
+            model_response = result
+            command = Command(update=update)
+
+        return ExtendedModelResponse(model_response=model_response, command=command)
 
 
 __all__ = [

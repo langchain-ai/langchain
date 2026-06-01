@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
@@ -20,6 +21,7 @@ from langchain.agents.middleware.context_editing import (
 )
 from langchain.agents.middleware.types import (
     AgentState,
+    ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
 )
@@ -27,6 +29,7 @@ from langchain.agents.middleware.types import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    import pytest
     from langgraph.runtime import Runtime
 
 
@@ -468,3 +471,138 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+def _conversation_with_tool_results(
+    call_ids: tuple[str, ...],
+    *,
+    content_length: int,
+) -> list[AIMessage | ToolMessage]:
+    conversation: list[AIMessage | ToolMessage] = []
+    for call_id in call_ids:
+        conversation.extend(
+            (
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": call_id, "name": "tool", "args": {}}],
+                ),
+                ToolMessage(content="x" * content_length, tool_call_id=call_id),
+            )
+        )
+    return conversation
+
+
+def test_persists_last_effective_count_after_edit_sync() -> None:
+    """When the edit fires, the post-edit effective token count is persisted."""
+    conversation = _conversation_with_tool_results(
+        ("call-a", "call-b", "call-c"), content_length=100
+    )
+    _state, request = _make_state_and_request(conversation)
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=150, keep=1, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
+    )
+
+    captured: dict[str, ModelRequest] = {}
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        captured["req"] = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ExtendedModelResponse)
+    assert response.command is not None
+    model = _TokenCountingChatModel()
+    edited_count = model.get_num_tokens_from_messages(list(captured["req"].messages))
+    raw_count = model.get_num_tokens_from_messages(list(request.messages))
+    # The edit cleared tool outputs, so the persisted count is below the raw count.
+    assert edited_count < raw_count
+    assert response.command.update["_last_effective_count"] == edited_count
+
+
+async def test_persists_last_effective_count_after_edit_async() -> None:
+    """Async: when the edit fires, the post-edit effective token count is persisted."""
+    conversation = _conversation_with_tool_results(
+        ("call-a", "call-b", "call-c"), content_length=100
+    )
+    _state, request = _make_state_and_request(conversation)
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=150, keep=1, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
+    )
+
+    captured: dict[str, ModelRequest] = {}
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        captured["req"] = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ExtendedModelResponse)
+    assert response.command is not None
+    model = _TokenCountingChatModel()
+    edited_count = model.get_num_tokens_from_messages(list(captured["req"].messages))
+    raw_count = model.get_num_tokens_from_messages(list(request.messages))
+    assert edited_count < raw_count
+    assert response.command.update["_last_effective_count"] == edited_count
+
+
+def test_below_trigger_writes_raw_count() -> None:
+    """When no edit fires, the raw token count is still persisted as a baseline."""
+    tool_call_id = "call-1"
+    conversation: list[AIMessage | ToolMessage] = [
+        AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}]),
+        ToolMessage(content="12345", tool_call_id=tool_call_id),
+    ]
+    _state, request = _make_state_and_request(conversation)
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=1000, keep=3, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
+    )
+
+    captured: dict[str, ModelRequest] = {}
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        captured["req"] = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ExtendedModelResponse)
+    assert response.command is not None
+    # Nothing was cleared, so the handler still sees the original content.
+    assert captured["req"].messages[1].content == "12345"
+    model = _TokenCountingChatModel()
+    raw_count = model.get_num_tokens_from_messages(list(request.messages))
+    assert response.command.update["_last_effective_count"] == raw_count
+
+
+def test_warns_when_effective_count_exceeds_trigger(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """When clearing cannot bring the conversation under budget, warn the caller."""
+    tool_call_id = "call-1"
+    conversation: list[AIMessage | ToolMessage] = [
+        AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}]),
+        ToolMessage(content="x" * 100, tool_call_id=tool_call_id),
+    ]
+    _state, request = _make_state_and_request(conversation)
+    # ``keep`` exceeds the number of clearable tool results, so nothing is cleared
+    # and the effective count stays above the trigger.
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=3, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
+    )
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    with caplog.at_level(logging.WARNING, logger="langchain.agents.middleware.context_editing"):
+        response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ExtendedModelResponse)
+    assert response.command is not None
+    assert response.command.update["_last_effective_count"] == 100
+    assert any("exceed" in record.getMessage().lower() for record in caplog.records)
