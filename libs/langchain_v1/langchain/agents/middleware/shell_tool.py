@@ -265,8 +265,11 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                marker_idx = data.index(marker)
+                if marker_idx > 0:
+                    collected.append(data[:marker_idx])
+                _, _, status = data[marker_idx + len(marker) :].partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might
