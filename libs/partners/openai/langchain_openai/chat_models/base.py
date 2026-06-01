@@ -4381,6 +4381,28 @@ def _pop_index_and_sub_index(block: dict) -> dict:
     return new_block
 
 
+def _dump_for_content_block(obj: BaseModel) -> dict:
+    """Dump an OpenAI Responses API output item to a dict suitable for use as
+    a LangChain content block.
+
+    Honors the OpenAI SDK's ``__api_exclude__`` class attribute (e.g. set on
+    ``ParsedResponseFunctionToolCall`` for ``parsed_arguments``) so that
+    client-side-only fields do not leak into ``AIMessage.content`` and, on the
+    next turn, into the request body sent back to the Responses API. Without
+    this, the endpoint rejects follow-up requests with
+    ``BadRequestError: Unknown parameter: 'input[N].parsed_arguments'``.
+
+    The OpenAI Python SDK applies the same convention when serializing models
+    for transport (see ``openai/_utils/_transform.py``); this helper mirrors it
+    for the content-block dump path.
+    """
+    return obj.model_dump(
+        exclude_none=True,
+        mode="json",
+        exclude=getattr(obj, "__api_exclude__", None),
+    )
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
@@ -4658,7 +4680,7 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -4683,7 +4705,7 @@ def _construct_lc_result_from_responses_api(
                 }
                 invalid_tool_calls.append(tool_call)
         elif output.type == "custom_tool_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
             tool_call = {
                 "type": "tool_call",
                 "name": output.name,
@@ -4705,7 +4727,7 @@ def _construct_lc_result_from_responses_api(
             "tool_search_call",
             "tool_search_output",
         ):
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
 
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI

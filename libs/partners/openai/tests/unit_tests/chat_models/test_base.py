@@ -37,6 +37,7 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response
+from openai.types.responses.parsed_response import ParsedResponseFunctionToolCall
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -1766,6 +1767,64 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
             "call_id": "call_123",
         }
     ]
+
+
+def test__construct_lc_result_from_responses_api_function_call_strips_parsed_arguments() -> None:
+    """``ParsedResponseFunctionToolCall.parsed_arguments`` must not leak into
+    ``AIMessage.content`` content blocks.
+
+    The OpenAI SDK marks ``parsed_arguments`` as a client-side-only field via
+    ``__api_exclude__ = {"parsed_arguments"}``. If the field reaches
+    ``AIMessage.content`` it will be re-sent on the next turn via
+    ``_construct_responses_api_input`` and the Responses endpoint rejects the
+    request with::
+
+        BadRequestError: Unknown parameter: 'input[N].parsed_arguments'.
+
+    Regression test for that round-trip break.
+    """
+    response = Response(
+        id="resp_parsed",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ParsedResponseFunctionToolCall(
+                type="function_call",
+                id="func_parsed",
+                call_id="call_parsed",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"}',
+                parsed_arguments={"location": "New York", "unit": "celsius"},
+            )
+        ],
+    )
+
+    # responses/v1 — content blocks must not carry ``parsed_arguments``.
+    result = _construct_lc_result_from_responses_api(response)
+    msg = cast(AIMessage, result.generations[0].message)
+    assert isinstance(msg.content, list)
+    assert len(msg.content) == 1
+    block = msg.content[0]
+    assert isinstance(block, dict)
+    assert block["type"] == "function_call"
+    assert block["call_id"] == "call_parsed"
+    assert block["name"] == "get_weather"
+    assert block["arguments"] == '{"location": "New York", "unit": "celsius"}'
+    assert "parsed_arguments" not in block, (
+        "parsed_arguments leaked into the content block; it would be rejected by "
+        "the Responses API on the next turn (`Unknown parameter: 'input[N]."
+        "parsed_arguments'`)."
+    )
+
+    # The standardized ``tool_calls`` field is still populated.
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["name"] == "get_weather"
+    assert msg.tool_calls[0]["id"] == "call_parsed"
+    assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
