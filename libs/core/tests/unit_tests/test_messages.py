@@ -30,6 +30,7 @@ from langchain_core.messages import (
     messages_to_dict,
 )
 from langchain_core.messages.content import KNOWN_BLOCK_TYPES, ContentBlock
+from langchain_core.messages.tool import default_tool_chunk_parser, default_tool_parser
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
@@ -487,6 +488,51 @@ def test_message_chunk_to_message() -> None:
     assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
+def test_default_tool_parser_keeps_valid_calls_with_malformed_function() -> None:
+    tool_calls, invalid_tool_calls = default_tool_parser(
+        [
+            {"id": "bad-function", "function": None},
+            {
+                "id": "valid",
+                "function": {"name": "search", "arguments": '{"query": "docs"}'},
+            },
+            {"id": "missing-arguments", "function": {"name": "search"}},
+            {"id": "bad-json", "function": {"name": "search", "arguments": "{"}},
+        ]
+    )
+
+    assert tool_calls == [
+        create_tool_call(name="search", args={"query": "docs"}, id="valid")
+    ]
+    assert invalid_tool_calls == [
+        create_invalid_tool_call(name=None, args=None, id="bad-function", error=None),
+        create_invalid_tool_call(
+            name="search", args=None, id="missing-arguments", error=None
+        ),
+        create_invalid_tool_call(name="search", args="{", id="bad-json", error=None),
+    ]
+
+
+def test_default_tool_chunk_parser_handles_malformed_function() -> None:
+    assert default_tool_chunk_parser(
+        [
+            {"id": "bad-function", "index": 0, "function": None},
+            {
+                "id": "valid",
+                "index": 1,
+                "function": {"name": "search", "arguments": "{}"},
+            },
+            {
+                "id": "bad-arguments",
+                "index": 2,
+                "function": {"name": "search", "arguments": {"query": "docs"}},
+            },
+        ]
+    ) == [
+        create_tool_call_chunk(name=None, args=None, id="bad-function", index=0),
+        create_tool_call_chunk(name="search", args="{}", id="valid", index=1),
+        create_tool_call_chunk(name="search", args=None, id="bad-arguments", index=2),
+    ]
 def test_tool_calls_merge() -> None:
     chunks: list[dict] = [
         {"content": ""},
