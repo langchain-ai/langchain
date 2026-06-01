@@ -25,7 +25,7 @@ version = "1.3.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.0,<2.0.0",
-    "langgraph>=1.2.2,<1.3.0",
+    "langgraph>=1.2.3,<1.3.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -94,9 +94,6 @@ test_integration = [
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
-
-[tool.uv.sources]
-langgraph = { git = "https://github.com/langchain-ai/langgraph", rev = "577ee12cc90d4c1cdaed0eca1121b060153698f9", subdirectory = "libs/langgraph" }
 
 [tool.ruff]
 line-length = 100
