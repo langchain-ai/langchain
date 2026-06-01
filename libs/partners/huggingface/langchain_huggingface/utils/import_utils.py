@@ -36,8 +36,6 @@ if _optimum_intel_available:
         _optimum_intel_available = False
 
 
-_ipex_available = importlib.util.find_spec("intel_extension_for_pytorch") is not None
-
 _openvino_available = importlib.util.find_spec("openvino") is not None
 
 
@@ -79,10 +77,6 @@ def is_optimum_available() -> bool:
 
 def is_optimum_intel_available() -> bool:
     return _optimum_intel_available
-
-
-def is_ipex_available() -> bool:
-    return _ipex_available
 
 
 def is_openvino_available() -> bool:
