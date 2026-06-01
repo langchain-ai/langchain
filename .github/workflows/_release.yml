@@ -5,7 +5,20 @@
 # Handles version bumping, building, and publishing to PyPI with authentication.
 
 name: "🚀 Package Release"
-run-name: "Release ${{ inputs.working-directory-override || inputs.working-directory }} ${{ inputs.release-version }}"
+# Run title resolves dropdown values to the published package name (e.g.
+# `core` -> `langchain-core`, `openai` -> `langchain-openai`). Falls back to
+# the raw input for override and `workflow_call` cases, which already pass
+# a full path. Three dropdown values don't follow `langchain-{name}`:
+# `langchain` -> `langchain-classic`, `langchain_v1` -> `langchain`,
+# `standard-tests` -> `langchain-tests`.
+run-name: >-
+  Release ${{ inputs.working-directory-override ||
+  (startsWith(inputs.working-directory, 'libs/') && inputs.working-directory) ||
+  (inputs.working-directory == 'langchain' && 'langchain-classic') ||
+  (inputs.working-directory == 'langchain_v1' && 'langchain') ||
+  (inputs.working-directory == 'standard-tests' && 'langchain-tests') ||
+  format('langchain-{0}', inputs.working-directory) }} ${{
+  inputs.release-version }}
 on:
   workflow_call:
     inputs:
@@ -13,39 +26,52 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      allow-prereleases:
+        required: false
+        type: boolean
+        default: false
+        description: "Pass `--prerelease=allow` to wheel-install steps so
+          transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
+          in by an alpha langgraph) resolve. Use only when the release itself
+          is a prerelease and at least one dep is also a prerelease."
   workflow_dispatch:
     inputs:
       working-directory:
         required: true
         type: choice
         description: "From which folder this pipeline executes"
-        default: "libs/langchain_v1"
+        default: "langchain_v1"
+        # Short names only — `EFFECTIVE_WORKING_DIR` below re-adds the `libs/`
+        # or `libs/partners/` prefix. When adding a new option, also update the
+        # non-partner allowlist in `EFFECTIVE_WORKING_DIR` if it isn't a partner
+        # package (partners are the default branch).
         options:
-          - libs/core
-          - libs/langchain
-          - libs/langchain_v1
-          - libs/text-splitters
-          - libs/standard-tests
-          - libs/model-profiles
-          - libs/partners/anthropic
-          - libs/partners/chroma
-          - libs/partners/deepseek
-          - libs/partners/exa
-          - libs/partners/fireworks
-          - libs/partners/groq
-          - libs/partners/huggingface
-          - libs/partners/mistralai
-          - libs/partners/nomic
-          - libs/partners/ollama
-          - libs/partners/openai
-          - libs/partners/openrouter
-          - libs/partners/perplexity
-          - libs/partners/qdrant
-          - libs/partners/xai
+          - core
+          - langchain
+          - langchain_v1
+          - text-splitters
+          - standard-tests
+          - model-profiles
+          - anthropic
+          - chroma
+          - deepseek
+          - exa
+          - fireworks
+          - groq
+          - huggingface
+          - mistralai
+          - nomic
+          - ollama
+          - openai
+          - openrouter
+          - perplexity
+          - qdrant
+          - xai
       working-directory-override:
         required: false
         type: string
-        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+        description: "Manual override — takes precedence over dropdown (e.g.
+          libs/partners/partner-xyz)"
       release-version:
         required: true
         type: string
@@ -56,12 +82,30 @@ on:
         type: boolean
         default: false
         description: "Release from a non-master branch (danger!) - Only use for hotfixes"
+      allow-prereleases:
+        required: false
+        type: boolean
+        default: false
+        description: "Pass `--prerelease=allow` to wheel-install steps so
+          transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
+          in by an alpha langgraph) resolve. Use only when the release itself
+          is a prerelease and at least one dep is also a prerelease."
 
 env:
   PYTHON_VERSION: "3.11"
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
-  EFFECTIVE_WORKING_DIR: ${{ inputs.working-directory-override || inputs.working-directory }}
+  # Resolves to a full path. Accepts either:
+  #   - `working-directory-override` as a full path (e.g. `libs/partners/partner-xyz`)
+  #   - `working-directory` as a full path (from `workflow_call` callers)
+  #   - `working-directory` as a short dropdown name (from `workflow_dispatch`)
+  EFFECTIVE_WORKING_DIR: >-
+    ${{
+      inputs.working-directory-override
+      || (startsWith(inputs.working-directory, 'libs/') && inputs.working-directory)
+      || (contains(fromJSON('["core","langchain","langchain_v1","text-splitters","standard-tests","model-profiles"]'), inputs.working-directory) && format('libs/{0}', inputs.working-directory))
+      || format('libs/partners/{0}', inputs.working-directory)
+    }}
 
 permissions:
   contents: read # Job-level overrides grant write only where needed (mark-release)
@@ -70,8 +114,9 @@ jobs:
   # Build the distribution package and extract version info
   # Runs in isolated environment with minimal permissions for security
   build:
+    name: 📦 Build distribution
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
-    environment: Scheduled testing
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -87,6 +132,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: "false"
 
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
@@ -105,7 +151,7 @@ jobs:
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Upload build
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -125,6 +171,7 @@ jobs:
               f.write(f"pkg-name={pkg_name}\n")
               f.write(f"version={version}\n")
   release-notes:
+    name: 📝 Generate release notes
     # release-notes must run before publishing because its check-tags step
     # validates version/tag state — do not remove this dependency.
     needs:
@@ -222,48 +269,12 @@ jobs:
             echo EOF
           } >> "$GITHUB_OUTPUT"
 
-  test-pypi-publish:
-    # release-notes must run before publishing because its check-tags step
-    # validates version/tag state — do not remove this dependency.
-    needs:
-      - build
-      - release-notes
-    runs-on: ubuntu-latest
-    permissions:
-      # This permission is used for trusted publishing:
-      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
-      #
-      # Trusted publishing has to also be configured on PyPI for each package:
-      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: dist
-          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
-
-      - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
-        with:
-          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
-          verbose: true
-          print-hash: true
-          repository-url: https://test.pypi.org/legacy/
-          # We overwrite any existing distributions with the same name and version.
-          # This is *only for CI use* and is *extremely dangerous* otherwise!
-          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
-          skip-existing: true
-          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
-          attestations: false
-
   pre-release-checks:
+    name: ✅ Pre-release checks
     needs:
       - build
       - release-notes
-      - test-pypi-publish
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -289,6 +300,7 @@ jobs:
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -301,10 +313,15 @@ jobs:
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
-        # Install directly from the locally-built wheel (no index resolution needed)
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
+        # Install directly from the locally-built wheel (no index resolution needed).
+        # `PRERELEASE_FLAG` is empty by default; opt-in via the `allow-prereleases`
+        # workflow input lets transitive prerelease deps resolve during alpha
+        # release cycles. Stable-release safety is still enforced by the
+        # `Check for prerelease versions` step below.
         run: |
           uv venv
-          VIRTUAL_ENV=.venv uv pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG dist/*.whl
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
@@ -324,8 +341,9 @@ jobs:
         env:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install dist/*.whl
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG dist/*.whl
 
       - name: Check for prerelease versions
         # Block release if any dependencies allow prerelease versions
@@ -353,10 +371,11 @@ jobs:
         if: ${{ steps.min-version.outputs.min-versions != '' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
-          make tests
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS
+          make tests PYTEST_EXTRA="-q -k 'not test_serdes'"
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Import integration test dependencies
@@ -407,9 +426,50 @@ jobs:
         run: make integration_tests
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
+  test-pypi-publish:
+    name: 🧪 Publish to TestPyPI
+    # release-notes must run before publishing because its check-tags step
+    # validates version/tag state — do not remove this dependency.
+    needs:
+      - build
+      - release-notes
+      - pre-release-checks
+    environment: Release
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
+
   # Test select published packages against new core
   # Done when code changes are made to langchain-core
   test-prior-published-packages-against-new-core:
+    name: 🔄 Test prior partners against new core
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
     needs:
@@ -417,13 +477,13 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: false # temporarily skip
     strategy:
       matrix:
-        partner: [anthropic]
+        partner: [ anthropic ]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -456,6 +516,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
@@ -465,6 +526,8 @@ jobs:
 
       - name: Test against ${{ matrix.partner }}
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
+        env:
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           # Identify latest tag, excluding pre-releases
           LATEST_PACKAGE_TAG="$(
@@ -494,13 +557,14 @@ jobs:
 
           # Run tests
           uv sync --group test --group test_integration
-          uv pip install ../../core/dist/*.whl
+          uv pip install $PRERELEASE_FLAG ../../core/dist/*.whl
           make integration_tests
 
   # Test external packages that depend on langchain-core/langchain against the new release
   # Only runs for core and langchain_v1 releases to catch breaking changes before publish
   test-dependents:
-    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.package.path }}"
+    name: "🐍 Test dependent: ${{ matrix.package.path }} (Python ${{
+      matrix.python-version }})"
     needs:
       - build
       - release-notes
@@ -512,12 +576,13 @@ jobs:
     # Only run for core or langchain_v1 releases.
     # Job-level 'if' does not support env context; must use inputs directly.
     if: >-
-      startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/core')
-      || startsWith(inputs.working-directory-override || inputs.working-directory, 'libs/langchain_v1')
+      startsWith(inputs.working-directory-override || inputs.working-directory,
+      'libs/core') || startsWith(inputs.working-directory-override ||
+      inputs.working-directory, 'libs/langchain_v1')
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.13"]
+        python-version: [ "3.11", "3.13" ]
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
@@ -538,6 +603,7 @@ jobs:
         uses: "./langchain/.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -547,6 +613,8 @@ jobs:
       - name: Install ${{ matrix.package.name }} with local packages
         # External dependents don't have [tool.uv.sources] pointing to this repo,
         # so we install the package normally then override with the built wheel.
+        env:
+          PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           cd ${{ matrix.package.name }}/${{ matrix.package.path }}
 
@@ -554,7 +622,7 @@ jobs:
           uv sync --group test
 
           # Override with the built wheel from this release
-          uv pip install $GITHUB_WORKSPACE/dist/*.whl
+          uv pip install $PRERELEASE_FLAG $GITHUB_WORKSPACE/dist/*.whl
 
       - name: Run ${{ matrix.package.name }} tests
         run: |
@@ -562,6 +630,7 @@ jobs:
           make test
 
   publish:
+    name: 🚀 Publish to PyPI
     # Publishes the package to PyPI
     needs:
       - build
@@ -570,8 +639,9 @@ jobs:
       - pre-release-checks
       - test-dependents
       # - test-prior-published-packages-against-new-core
-    # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+      # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -592,6 +662,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -599,7 +670,7 @@ jobs:
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -608,6 +679,7 @@ jobs:
           attestations: false
 
   mark-release:
+    name: 🏷️ Tag GitHub release
     # Marks the GitHub release with the new version tag
     needs:
       - build
@@ -617,6 +689,7 @@ jobs:
       - publish
     # Run if all needed jobs succeeded or were skipped
     if: ${{ !cancelled() && !failure() }}
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to
@@ -634,6 +707,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: "false"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:

@@ -605,16 +605,16 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_openai import ChatOpenAI
             from langchain_anthropic import ChatAnthropic
 
-            gpt_4o = ChatOpenAI(model="gpt-4o")
+            gpt_55 = ChatOpenAI(model="openai:gpt-5.5")
             claude_3_sonnet = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model = gpt_4o.with_fallbacks([claude_3_sonnet])
+            model = gpt_55.with_fallbacks([claude_3_sonnet])
 
             model.model_name
-            # -> "gpt-4o"
+            # -> "gpt-5.5"
 
             # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
             # Equivalent to:
-            # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+            # gpt_55.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
             model.bind_tools([...])
             # -> RunnableWithFallbacks(
                 runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),

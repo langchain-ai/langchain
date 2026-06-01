@@ -410,7 +410,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "moonshotai/kimi-k2-instruct-0905": {
         "name": "Kimi K2 Instruct 0905",
         "release_date": "2025-09-05",
-        "last_updated": "2025-09-05",
+        "last_updated": "2026-05-27",
         "open_weights": True,
         "max_input_tokens": 262144,
         "max_output_tokens": 16384,
@@ -431,7 +431,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "openai/gpt-oss-120b": {
         "name": "GPT OSS 120B",
         "release_date": "2025-08-05",
-        "last_updated": "2025-08-05",
+        "last_updated": "2026-05-27",
         "open_weights": True,
         "max_input_tokens": 131072,
         "max_output_tokens": 65536,
@@ -452,7 +452,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "openai/gpt-oss-20b": {
         "name": "GPT OSS 20B",
         "release_date": "2025-08-05",
-        "last_updated": "2025-08-05",
+        "last_updated": "2026-05-27",
         "open_weights": True,
         "max_input_tokens": 131072,
         "max_output_tokens": 65536,

@@ -807,6 +807,28 @@ class TestPatchMissingMetadata:
         assert run.metadata["env"] == "staging"
         assert run.metadata["extra"] == "from_tracer"
 
+    def test_allowlisted_key_overrides_existing_run_metadata(self) -> None:
+        """Allowlisted LangSmith keys override existing run metadata."""
+        tracer = self._make_tracer(metadata={"ls_agent_type": "subagent"})
+        run = self._make_run(metadata={"ls_agent_type": "root", "other": "keep"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["ls_agent_type"] == "subagent"
+        assert run.metadata["other"] == "keep"
+
+    def test_allowlisted_key_noop_when_values_match(self) -> None:
+        """Allowlisted keys do not clone run metadata when the value is unchanged."""
+        original = {"ls_agent_type": "root"}
+        tracer = self._make_tracer(metadata={"ls_agent_type": "root"})
+        run = self._make_run(metadata=original)
+
+        _patch_missing_metadata(tracer, run)
+
+        # No-op: the shared dict should not be replaced with a copy.
+        assert run.extra["metadata"] is original
+        assert run.metadata == {"ls_agent_type": "root"}
+
 
 class TestTracerMetadataCloning:
     """Tests for LangChainTracer metadata cloning helpers."""
@@ -901,3 +923,29 @@ class TestTracerMetadataCloning:
             if copied.tracing_metadata is not None
         }
         assert copied_services == {"api", "worker"}
+
+    def test_copy_with_metadata_defaults_regular_keys_first_wins(self) -> None:
+        """Regular (non-allowlisted) metadata keys keep "first wins" semantics."""
+        tracer = self._make_tracer(metadata={"env": "staging", "service": "orig"})
+
+        copied = tracer.copy_with_metadata_defaults(
+            metadata={"env": "prod", "service": "new"},
+        )
+
+        assert copied.tracing_metadata == {"env": "staging", "service": "orig"}
+
+    def test_copy_with_metadata_defaults_allowlisted_key_overrides(self) -> None:
+        """Allowlisted LangSmith keys are overridden by nested caller metadata."""
+        tracer = self._make_tracer(
+            metadata={"ls_agent_type": "root", "env": "staging"},
+        )
+
+        copied = tracer.copy_with_metadata_defaults(
+            metadata={"ls_agent_type": "subagent", "env": "prod"},
+        )
+
+        # Allowlisted key is overridden, non-allowlisted keeps first-wins.
+        assert copied.tracing_metadata == {
+            "ls_agent_type": "subagent",
+            "env": "staging",
+        }

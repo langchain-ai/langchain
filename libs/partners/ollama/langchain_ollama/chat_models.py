@@ -1024,9 +1024,13 @@ class ChatOllama(BaseChatModel):
             else:  # List
                 for content_part in message.content:
                     if isinstance(content_part, str):
-                        content += f"\n{content_part}"
+                        if content:
+                            content += "\n"
+                        content += content_part
                     elif content_part.get("type") == "text":
-                        content += f"\n{content_part['text']}"
+                        if content:
+                            content += "\n"
+                        content += content_part["text"]
                     elif content_part.get("type") == "tool_use":
                         continue
                     elif content_part.get("type") == "image_url":
@@ -1182,7 +1186,7 @@ class ChatOllama(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="ollama",
-            ls_model_name=self.model,
+            ls_model_name=params.get("model", self.model),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Coroutine, Generator, Sequence
     from uuid import UUID
 
+    from langchain_protocol.protocol import MessagesData
     from tenacity import RetryCallState
 
     from langchain_core.agents import AgentAction, AgentFinish
@@ -747,6 +748,26 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
+    def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        """Run on each protocol event from `stream_events(version="v3")`.
+
+        Args:
+            event: The protocol event.
+            **kwargs: Additional keyword arguments.
+        """
+        if not self.handlers:
+            return
+        handle_event(
+            self.handlers,
+            "on_stream_event",
+            "ignore_llm",
+            event,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
 
 class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
     """Async callback manager for LLM run."""
@@ -843,6 +864,26 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             "on_llm_error",
             "ignore_llm",
             error,
+            run_id=self.run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            **kwargs,
+        )
+
+    async def on_stream_event(self, event: MessagesData, **kwargs: Any) -> None:
+        """Run on each protocol event from `astream_events(version="v3")`.
+
+        Args:
+            event: The protocol event.
+            **kwargs: Additional keyword arguments.
+        """
+        if not self.handlers:
+            return
+        await ahandle_event(
+            self.handlers,
+            "on_stream_event",
+            "ignore_llm",
+            event,
             run_id=self.run_id,
             parent_run_id=self.parent_run_id,
             tags=self.tags,
@@ -2480,7 +2521,12 @@ def _configure(
                         run_tree.trace_id,
                         run_tree.dotted_order,
                     )
-                    handler.run_map[str(run_tree.id)] = run_tree
+                    run_id_str = str(run_tree.id)
+                    if run_id_str not in handler.run_map:
+                        handler.run_map[run_id_str] = run_tree
+                        handler._external_run_ids.setdefault(  # noqa: SLF001
+                            run_id_str, 0
+                        )
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None
