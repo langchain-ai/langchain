@@ -362,9 +362,35 @@ def default_tool_parser(
     for raw_tool_call in raw_tool_calls:
         if "function" not in raw_tool_call:
             continue
-        function_name = raw_tool_call["function"]["name"]
+        function = raw_tool_call["function"]
+        if not isinstance(function, dict):
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=None,
+                    args=None,
+                    id=raw_tool_call.get("id"),
+                    error=None,
+                )
+            )
+            continue
+
+        function_name = function.get("name")
+        if not isinstance(function_name, str):
+            function_name = None
+        function_arguments = function.get("arguments")
+        if not isinstance(function_arguments, str):
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=function_name,
+                    args=None,
+                    id=raw_tool_call.get("id"),
+                    error=None,
+                )
+            )
+            continue
+
         try:
-            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            function_args = json.loads(function_arguments)
             parsed = tool_call(
                 name=function_name or "",
                 args=function_args or {},
@@ -375,7 +401,7 @@ def default_tool_parser(
             invalid_tool_calls.append(
                 invalid_tool_call(
                     name=function_name,
-                    args=raw_tool_call["function"]["arguments"],
+                    args=function_arguments,
                     id=raw_tool_call.get("id"),
                     error=None,
                 )
@@ -394,12 +420,17 @@ def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]
     """
     tool_call_chunks = []
     for tool_call in raw_tool_calls:
-        if "function" not in tool_call:
+        function = tool_call.get("function")
+        if isinstance(function, dict):
+            function_args = function.get("arguments")
+            function_name = function.get("name")
+        else:
             function_args = None
             function_name = None
-        else:
-            function_args = tool_call["function"]["arguments"]
-            function_name = tool_call["function"]["name"]
+        if not isinstance(function_args, str):
+            function_args = None
+        if not isinstance(function_name, str):
+            function_name = None
         parsed = tool_call_chunk(
             name=function_name,
             args=function_args,
