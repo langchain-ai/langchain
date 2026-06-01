@@ -145,6 +145,23 @@ def convert_to_openai_data_block(
         else:
             error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
+
+    elif block["type"] == "video":
+        if "url" in block:
+            formatted_block = {
+                "type": "video_url",
+                "video_url": {"url": block["url"]},
+            }
+        elif "base64" in block or block.get("source_type") == "base64":
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            mime_type = block.get("mime_type", "video/mp4")
+            formatted_block = {
+                "type": "video_url",
+                "video_url": {"url": f"data:{mime_type};base64,{base64_data}"},
+            }
+        else:
+            error_msg = "Keys url or base64 are required for video blocks."
+            raise ValueError(error_msg)
     else:
         error_msg = f"Block of type {block['type']} is not supported."
         raise ValueError(error_msg)
