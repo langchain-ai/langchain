@@ -44,11 +44,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Then install `langchain-openai` and set environment variables
         `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT`:
 
-        ```bash
+```bash
         pip install -U langchain-openai
 
         export AZURE_OPENAI_API_KEY="your-api-key"
-        export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+        export AZURE_OPENAI_ENDPOINT="[https://your-endpoint.openai.azure.com/](https://your-endpoint.openai.azure.com/)"
         ```
 
     Key init args — completion params:
@@ -82,7 +82,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        ```python
+```python
         from langchain_openai import AzureChatOpenAI
 
         model = AzureChatOpenAI(
@@ -106,7 +106,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         For example:
 
-        ```python
+```python
         from langchain_openai import AzureChatOpenAI
         import openai
 
@@ -122,7 +122,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
     Invoke:
-        ```python
+```python
         messages = [
             (
                 "system",
@@ -133,7 +133,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         model.invoke(messages)
         ```
 
-        ```python
+```python
         AIMessage(
             content="J'adore programmer.",
             usage_metadata={
@@ -173,13 +173,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
         )
         ```
 
-    Stream:
-        ```python
+Stream:
+```python
         for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
-        ```python
+```python
         AIMessageChunk(content="", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
         AIMessageChunk(content="J", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
         AIMessageChunk(content="'", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
@@ -190,7 +190,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
         )
         AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-        AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content(".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
         AIMessageChunk(
             content="",
             response_metadata={
@@ -202,7 +202,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         )
         ```
 
-        ```python
+```python
         stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
@@ -210,7 +210,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         full
         ```
 
-        ```python
+```python
         AIMessageChunk(
             content="J'adore la programmation.",
             response_metadata={
@@ -222,8 +222,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         )
         ```
 
-    Async:
-        ```python
+Async:
+```python
         await model.ainvoke(messages)
 
         # stream:
@@ -234,7 +234,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
     Tool calling:
-        ```python
+```python
         from pydantic import BaseModel, Field
 
 
@@ -261,7 +261,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ai_msg.tool_calls
         ```
 
-        ```python
+```python
         [
             {
                 "name": "GetWeather",
@@ -286,8 +286,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ]
         ```
 
-    Structured output:
-        ```python
+Structured output:
+```python
         from typing import Optional
 
         from pydantic import BaseModel, Field
@@ -307,7 +307,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         structured_model.invoke("Tell me a joke about cats")
         ```
 
-        ```python
+```python
         Joke(
             setup="Why was the cat sitting on the computer?",
             punchline="To keep an eye on the mouse!",
@@ -318,7 +318,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         See `AzureChatOpenAI.with_structured_output()` for more.
 
     JSON mode:
-        ```python
+```python
         json_model = model.bind(response_format={"type": "json_object"})
         ai_msg = json_model.invoke(
             "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
@@ -326,17 +326,17 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ai_msg.content
         ```
 
-        ```python
-        '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
+```python
+        '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
         ```
 
     Image input:
-        ```python
+```python
         import base64
         import httpx
         from langchain_core.messages import HumanMessage
 
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_url = "[https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg)"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
         message = HumanMessage(
             content=[
@@ -351,27 +351,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ai_msg.content
         ```
 
-        ```python
+```python
         "The weather in the image appears to be quite pleasant. The sky is mostly clear"
         ```
 
     Token usage:
-        ```python
+```python
         ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
 
-        ```python
+```python
         {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
         ```
-    Logprobs:
-        ```python
+Logprobs:
+```python
         logprobs_model = model.bind(logprobs=True)
         ai_msg = logprobs_model.invoke(messages)
         ai_msg.response_metadata["logprobs"]
         ```
 
-        ```python
+```python
         {
             "content": [
                 {
@@ -424,12 +424,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
     Response metadata
-        ```python
+```python
         ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
-        ```python
+```python
         {
             "token_usage": {
                 "completion_tokens": 6,
@@ -568,7 +568,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     invocation.
 
     By default, unless `model_name="gpt-4o"` is specified, then
-    `'parallel_tools_calls'` will be disabled.
+    #'parallel_tools_calls' will be disabled.
     """
 
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")  # type: ignore[assignment]
@@ -771,7 +771,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         chat_result = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, dict):
-            response = response.model_dump()
+            # Mirror the base class fix to avoid PydanticSerializationUnexpectedValue warnings
+            response = response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 msg = (
@@ -951,7 +954,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             See all constraints [here](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
 
-            ```python
+```python
             from typing import Optional
 
             from langchain_openai import AzureChatOpenAI
@@ -984,7 +987,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
-            ```python
+```python
             from typing import Optional
 
             from langchain_openai import AzureChatOpenAI
@@ -1019,7 +1022,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
-            ```python
+```python
             from langchain_openai import AzureChatOpenAI
             from pydantic import BaseModel
 
@@ -1050,7 +1053,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
-            ```python
+```python
             from typing_extensions import Annotated, TypedDict
 
             from langchain_openai import AzureChatOpenAI
@@ -1081,7 +1084,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
-            ```python
+```python
             from langchain_openai import AzureChatOpenAI
 
             oai_schema = {
@@ -1114,7 +1117,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
-            ```python
+```python
             from langchain_openai import AzureChatOpenAI
             from pydantic import BaseModel
 
@@ -1135,11 +1138,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             structured_model.invoke(
                 "Answer the following question. "
-                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
             )
             # -> {
-            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
             #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
             #     'parsing_error': None
             # }
@@ -1147,18 +1150,18 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
-            ```python
+```python
             structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
             structured_model.invoke(
                 "Answer the following question. "
-                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
             )
             # -> {
-            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
             #     'parsed': {
             #         'answer': 'They are both the same weight.',
             #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
@@ -1171,3 +1174,61 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
+    
+
+
+import warnings
+from typing import Literal
+from pydantic import BaseModel, SecretStr
+from langchain_openai import AzureChatOpenAI
+
+def test_azure_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """Test that AzureChatOpenAI._create_chat_result excludes the 'parsed' field 
+    during model_dump to prevent PydanticSerializationUnexpectedValue warnings.
+    """
+    import openai
+
+    class ModelOutput(BaseModel):
+        output: str
+
+    class MockParsedMessage(openai.BaseModel):
+        role: Literal["assistant"] = "assistant"
+        content: str = '{"output": "Paris"}'
+        parsed: Any = None
+        refusal: str | None = None
+
+    class MockChoice(openai.BaseModel):
+        index: int = 0
+        finish_reason: Literal["stop"] = "stop"
+        message: MockParsedMessage
+
+    class MockChatCompletion(openai.BaseModel):
+        id: str = "chatcmpl-1"
+        object: str = "chat.completion"
+        created: int = 0
+        model: str = "gpt-4o-mini"
+        choices: list[MockChoice]
+        usage: dict[str, int] | None = None
+
+    parsed_response = ModelOutput(output="Paris")
+    response = MockChatCompletion.model_construct(
+        choices=[
+            MockChoice.model_construct(
+                message=MockParsedMessage.model_construct(parsed=parsed_response)
+            )
+        ],
+        usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    )
+
+    llm = AzureChatOpenAI(
+        azure_deployment="gpt-4o-mini",
+        api_version="2024-10-01-preview",
+        azure_endpoint="https://example.openai.azure.com",
+        api_key=SecretStr("test"),
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        llm._create_chat_result(response)
+        
+    assert len(caught) == 0, f"Caught unexpected warnings: {[w.message for w in caught]}"
