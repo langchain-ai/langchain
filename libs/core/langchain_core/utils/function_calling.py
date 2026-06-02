@@ -207,7 +207,14 @@ def _convert_pydantic_to_openai_function(
 
 
 def _get_python_function_name(function: Callable) -> str:
-    """Get the name of a Python function."""
+    """Get the name of a Python function.
+
+    Args:
+        function: The callable whose name to retrieve.
+
+    Returns:
+        The ``__name__`` attribute of the function.
+    """
     return function.__name__
 
 
@@ -243,6 +250,14 @@ def _convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
+    """Convert a TypedDict class to an OpenAI function description.
+
+    Args:
+        typed_dict: The TypedDict class to convert.
+
+    Returns:
+        The OpenAI function description.
+    """
     visited: dict = {}
 
     model = cast(
@@ -261,6 +276,18 @@ def _convert_any_typed_dicts_to_pydantic(
     visited: dict[type, type],
     depth: int = 0,
 ) -> type:
+    """Recursively convert TypedDict types to Pydantic models.
+
+    Args:
+        type_: The type to convert.
+        visited: A dictionary tracking already-converted types to avoid
+            infinite recursion.
+        depth: The current recursion depth.
+
+    Returns:
+        The converted Pydantic model type, or the original type if conversion
+        is not applicable.
+    """
     if type_ in visited:
         return visited[type_]
     if depth >= _MAX_TYPED_DICT_RECURSION:
@@ -796,12 +823,32 @@ def _parse_google_docstring(
 
 
 def _py_38_safe_origin(origin: type) -> type:
-    return cast("type", _ORIGIN_MAP.get(origin, origin))
+    """Return a Python 3.8-compatible generic origin type.
 
+    Args:
+        origin: The generic origin type to look up.
+
+    Returns:
+        The mapped origin type if found in ``_ORIGIN_MAP``, otherwise
+        the original type unchanged.
+    """
+    return cast("type", _ORIGIN_MAP.get(origin, origin))
 
 def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
+    """Recursively set ``additionalProperties`` to ``False`` in a JSON schema.
+
+    Required for OpenAI strict mode, which mandates that all schema levels
+    explicitly disallow additional properties.
+
+    Args:
+        schema: The JSON schema dictionary to modify in place.
+
+    Returns:
+        The modified schema with ``additionalProperties`` set to ``False``
+        at all applicable levels.
+    """
     if isinstance(schema, dict):
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
