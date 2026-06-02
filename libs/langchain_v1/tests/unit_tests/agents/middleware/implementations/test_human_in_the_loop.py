@@ -151,6 +151,39 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert result["messages"][1].tool_call_id == "1"
 
 
+def test_human_in_the_loop_middleware_default_rejection_message() -> None:
+    """Test reject decision default message discourages retries."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_response(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "reject"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
+    ):
+        result = middleware.after_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 2
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == (
+            "User rejected the tool call for `test_tool` with id 1. "
+            "The tool was not executed. Do not retry this tool call unless the user "
+            "explicitly requests it."
+        )
+        assert tool_message.status == "error"
+        assert tool_message.name == "test_tool"
+        assert tool_message.tool_call_id == "1"
+
+
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
     """Test HumanInTheLoopMiddleware with `respond` decision producing a success ToolMessage."""
     middleware = HumanInTheLoopMiddleware(
