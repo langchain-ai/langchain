@@ -1262,18 +1262,18 @@ class AgentExecutor(Chain):
         Returns:
             `True` when a no-progress loop is detected, `False` otherwise.
         """
-        if not self.max_stalled_iterations or self.max_stalled_iterations < 2:
+        if not self.max_stalled_iterations or self.max_stalled_iterations < 2:  # noqa: PLR2004
             return False
-        n = self.max_stalled_iterations
-        if len(intermediate_steps) < n:
+        window = self.max_stalled_iterations
+        if len(intermediate_steps) < window:
             return False
-        last_n = intermediate_steps[-n:]
-        first_action, first_obs = last_n[0]
+        recent_steps = intermediate_steps[-window:]
+        first_action, first_obs = recent_steps[0]
         return all(
             action.tool == first_action.tool
             and action.tool_input == first_action.tool_input
             and obs == first_obs
-            for action, obs in last_n[1:]
+            for action, obs in recent_steps[1:]
         )
 
     def _return(
