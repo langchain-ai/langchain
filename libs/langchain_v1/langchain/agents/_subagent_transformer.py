@@ -9,9 +9,9 @@ A subagent boundary is a nested run whose `lc_agent_name` is set *and* differs
 from its parent namespace's `lc_agent_name`. Plain subgraphs inherit the
 parent's name (so they compare equal and are excluded); unnamed agents have
 `lc_agent_name == None` (also excluded). For genuine subagents the base also
-recovers the originating tool call and passes it through as a `cause`
-(`{"type": "toolCall", "tool_call_id": ...}`), joined from the parent task's
-pending tool calls.
+recovers the originating tool call and exposes it as a `cause`
+(`{"type": "toolCall", "tool_call_id": ...}`) via `self._pending_cause`, joined
+from the parent task's pending tool calls.
 
 This transformer gates on that boundary and surfaces a typed handle on
 `run.subagents`, then forwards child-scope events into the handle's mux so the
@@ -160,9 +160,12 @@ class SubagentTransformer(_TasksLifecycleBase):
         ns: tuple[str, ...],
         graph_name: str | None,
         trigger_call_id: str | None,
-        *,
-        cause: LifecycleCause | None = None,
     ) -> None:
+        # langgraph >=1.2.4 delivers the triggering `cause` via the base's
+        # `self._pending_cause` instance state rather than an `_on_started`
+        # keyword argument, so overrides predating `cause` keep working. Read it
+        # here to surface the originating tool call on the handle.
+        cause = self._pending_cause
         child_lc = self._lc_by_ns.get(ns)
         # Surface any nested run carrying an lc_agent_name (set by create_agent).
         # A same-named nested agent — e.g. a subagent that invokes itself —
