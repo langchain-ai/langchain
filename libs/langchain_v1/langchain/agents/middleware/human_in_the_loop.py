@@ -101,7 +101,11 @@ class RejectDecision(TypedDict):
     """The type of response when a human rejects the action."""
 
     message: NotRequired[str]
-    """The message sent to the model explaining why the action was rejected."""
+    """The message sent to the model explaining why the action was rejected.
+
+    If omitted, the model is told that the tool was not executed and should not
+    retry the same tool call unless the user asks for it.
+    """
 
 
 class RespondDecision(TypedDict):
@@ -315,9 +319,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 None,
             )
         if decision["type"] == "reject" and "reject" in allowed_decisions:
-            # Create a tool message with the human's text response
             content = decision.get("message") or (
-                f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}"
+                f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}. "
+                "The tool was not executed. Do not retry this tool call unless the user "
+                "explicitly requests it."
             )
             tool_message = ToolMessage(
                 content=content,
