@@ -303,14 +303,35 @@ _MAX_TOKENS_ERROR = (
 )
 
 
+def _build_partial_pydantic(
+    tool: TypeBaseModel,
+    args: dict[str, Any],
+) -> Any:
+    """Build a partial Pydantic model instance, bypassing validation.
+
+    Args:
+        tool: The Pydantic model class to construct.
+        args: The (possibly incomplete) field dict parsed so far.
+
+    Returns:
+        A partially-constructed model instance, or `None` if no known
+        fields are present yet.
+    """
+    if is_pydantic_v2_subclass(tool):
+        known_fields = {k: v for k, v in args.items() if k in tool.model_fields}
+        return tool.model_construct(**known_fields) if known_fields else None
+    if is_pydantic_v1_subclass(tool):
+        known_fields = {k: v for k, v in args.items() if k in tool.__fields__}
+        return tool.construct(**known_fields) if known_fields else None
+    return None
+
+
 class PydanticToolsParser(JsonOutputToolsParser):
     """Parse tools from OpenAI response."""
 
     tools: Annotated[list[TypeBaseModel], SkipValidation()]
     """The tools to parse."""
 
-    # TODO: Support more granular streaming of objects.
-    # Currently only streams once all Pydantic object fields are present.
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a list of Pydantic objects.
 
@@ -318,10 +339,14 @@ class PydanticToolsParser(JsonOutputToolsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
 
-                If `True`, the output will be a JSON object containing all the keys that
-                have been returned so far.
+                If `True`, partial Pydantic objects are emitted using
+                `model_construct` (Pydantic v2) or `construct` (Pydantic v1),
+                bypassing validation. Nested model fields are stored as plain
+                dicts until the complete payload arrives and full construction
+                succeeds.
 
-                If `False`, the output will be the full JSON object.
+                If `False`, the output will be the full, validated Pydantic
+                objects.
 
         Returns:
             The parsed Pydantic objects.
@@ -369,6 +394,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
                 pydantic_objects.append(tool(**res["args"]))
             except (ValidationError, ValueError):
                 if partial:
+                    partial_obj = _build_partial_pydantic(tool, res["args"])
+                    if partial_obj is not None:
+                        pydantic_objects.append(partial_obj)
                     continue
                 has_max_tokens_stop_reason = any(
                     generation.message.response_metadata.get("stop_reason")

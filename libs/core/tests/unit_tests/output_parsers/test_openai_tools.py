@@ -767,21 +767,43 @@ class NameCollector(BaseModel):
     person: Person = Field(..., description="info about the main subject")
 
 
-# Expected to change when we support more granular pydantic streaming.
+_NC_NAMES = ["suzy", "jermaine", "alex"]
+
+# Granular incremental stream: 10 partial (model_construct, no validation),
+# then 3 fully-validated objects once all required fields are present.
 EXPECTED_STREAMED_PYDANTIC = [
+    # partial — only `names` known so far
+    NameCollector.model_construct(names=["suz"]),
+    NameCollector.model_construct(names=["suzy"]),
+    NameCollector.model_construct(names=["suzy", "jerm"]),
+    NameCollector.model_construct(names=["suzy", "jermaine"]),
+    NameCollector.model_construct(names=["suzy", "jermaine", "al"]),
+    NameCollector.model_construct(names=_NC_NAMES),
+    # partial — `person` present but still an incomplete dict
+    NameCollector.model_construct(names=_NC_NAMES, person={}),
+    NameCollector.model_construct(names=_NC_NAMES, person={"age": 39}),
+    NameCollector.model_construct(
+        names=_NC_NAMES, person={"age": 39, "hair_color": "br"}
+    ),
+    NameCollector.model_construct(
+        names=_NC_NAMES, person={"age": 39, "hair_color": "brown"}
+    ),
+    # fully validated — all required fields present, Pydantic coerces nested dict
     NameCollector(
-        names=["suzy", "jermaine", "alex"],
+        names=_NC_NAMES,
         person=Person(age=39, hair_color="brown", job="c"),
     ),
     NameCollector(
-        names=["suzy", "jermaine", "alex"],
+        names=_NC_NAMES,
         person=Person(age=39, hair_color="brown", job="concie"),
     ),
     NameCollector(
-        names=["suzy", "jermaine", "alex"],
+        names=_NC_NAMES,
         person=Person(age=39, hair_color="brown", job="concierge"),
     ),
 ]
+
+EXPECTED_PYDANTIC_STREAM = [[], *[[item] for item in EXPECTED_STREAMED_PYDANTIC]]
 
 
 def test_partial_pydantic_output_parser() -> None:
@@ -806,6 +828,65 @@ async def test_partial_pydantic_output_parser_async() -> None:
 
         actual = [p async for p in chain.astream(None)]
         assert actual == EXPECTED_STREAMED_PYDANTIC
+
+
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+def test_pydantic_tools_parser_streaming(*, use_tool_calls: bool) -> None:
+    input_iter = _get_iter(use_tool_calls=use_tool_calls)
+    chain = input_iter | PydanticToolsParser(tools=[NameCollector])
+
+    actual = list(chain.stream(None))
+    assert actual == EXPECTED_PYDANTIC_STREAM
+
+
+@pytest.mark.parametrize("use_tool_calls", [False, True])
+async def test_pydantic_tools_parser_streaming_async(*, use_tool_calls: bool) -> None:
+    input_iter = _get_aiter(use_tool_calls=use_tool_calls)
+    chain = input_iter | PydanticToolsParser(tools=[NameCollector])
+
+    actual = [p async for p in chain.astream(None)]
+    assert actual == EXPECTED_PYDANTIC_STREAM
+
+
+def test_pydantic_tools_parser_streaming_pydantic_v1() -> None:
+    if sys.version_info >= (3, 14):
+        Person = pydantic.v1.create_model(  # noqa: N806
+            "Person",
+            age=(int, ...),
+            hair_color=(str, ...),
+            job=(str, ...),
+        )
+        NameCollector = pydantic.v1.create_model(  # noqa: N806
+            "NameCollector",
+            names=(list, ...),
+            person=(Person, ...),
+        )
+    else:
+
+        class Person(pydantic.v1.BaseModel):  # type: ignore[no-redef]
+            age: int
+            hair_color: str
+            job: str
+
+        class NameCollector(pydantic.v1.BaseModel):  # type: ignore[no-redef]
+            """record names of all people mentioned."""
+
+            names: list[str]
+            person: Person
+
+    input_iter = _get_iter(use_tool_calls=False)
+    chain = input_iter | PydanticToolsParser(tools=[NameCollector])
+    results = list(chain.stream(None))
+
+    assert len(results) > 3
+    # results[0] is the initial [] before any args arrive;
+    # results[1] is the first partial after {} is suppressed.
+    assert results[1] == [NameCollector.construct(names=["suz"])]
+
+    final_result = results[-1]
+    assert len(final_result) == 1
+    assert isinstance(final_result[0], NameCollector)
+    assert final_result[0].person.job == "concierge"  # type: ignore[union-attr]
 
 
 def test_parse_with_different_pydantic_2_v1() -> None:
