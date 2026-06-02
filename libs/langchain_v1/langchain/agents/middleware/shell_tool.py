@@ -265,8 +265,18 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                # The marker is emitted by a `printf` that supplies its own
+                # newline. When a command's final output line has no trailing
+                # newline, `readline()` returns that output merged with the
+                # marker on a single line, so the marker can appear mid-line
+                # rather than at the very start. Preserve any real output that
+                # precedes the marker before extracting the exit status.
+                marker_index = data.index(marker)
+                if marker_index > 0:
+                    collected.append(data[:marker_index])
+                remainder = data[marker_index + len(marker) :]
+                _, _, status = remainder.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might

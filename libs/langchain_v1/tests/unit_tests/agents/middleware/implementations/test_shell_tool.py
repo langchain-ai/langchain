@@ -107,6 +107,39 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_output_without_trailing_newline_does_not_time_out(tmp_path: Path) -> None:
+    """Regression test for a command whose final output line lacks a newline.
+
+    The done-marker is emitted by a ``printf`` that supplies its own newline, so
+    when a command's last line of output has no trailing newline the reader's
+    ``readline()`` returns that output merged with the marker on a single line.
+    Completion detection must recognize the marker mid-line rather than only at
+    the very start, otherwise the marker is never matched and the command times
+    out. See https://github.com/langchain-ai/langchain/issues/37837.
+    """
+    policy = HostExecutionPolicy(command_timeout=5.0)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+        start = time.monotonic()
+        # `printf` (no `\n` in the format string) emits output without a trailing newline.
+        result = middleware._run_shell_tool(
+            resources, {"command": 'printf \'{"key":"value"}\''}, tool_call_id=None
+        )
+        elapsed = time.monotonic() - start
+        assert isinstance(result, str)
+        assert elapsed < policy.command_timeout
+        assert "timed out" not in result.lower()
+        assert '{"key":"value"}' in result
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_redaction_policy_applies(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
