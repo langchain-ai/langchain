@@ -546,3 +546,45 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_output_without_trailing_newline(tmp_path: Path) -> None:
+    """Test that commands outputting a file without a trailing newline complete without timing out.
+
+    Regression test for:
+    https://github.com/langchain-ai/langchain/issues/37837
+
+    When a command's stdout has no trailing newline (e.g. `head -n 1` on a
+    single-line file), the marker (written by the shell wrapper) arrives in
+    the same readline() chunk as the last line of output. The fix detects the
+    marker anywhere in the data rather than only at position 0, so the command
+    completes immediately instead of timing out.
+    """
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    policy = HostExecutionPolicy(command_timeout=5)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+
+    # Create a file with no trailing newline
+    no_newline_file = workspace / "no_newline.txt"
+    no_newline_file.write_bytes(b'{"key":"value"}')  # no trailing \n
+
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        start = time.monotonic()
+        result = middleware._run_shell_tool(
+            resources, {"command": f"head -n 1 {no_newline_file}"}, tool_call_id=None
+        )
+        elapsed = time.monotonic() - start
+
+        # Must not timeout — the fix makes this complete instantly
+        assert elapsed < 2.0, f"Command timed out or was slow: {elapsed:.2f}s"
+        assert result.strip() == '{"key":"value"}'
+    finally:
+        middleware.after_agent(state, runtime)
