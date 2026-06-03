@@ -4381,6 +4381,15 @@ def _pop_index_and_sub_index(block: dict) -> dict:
     return new_block
 
 
+def _dump_response_item_for_content_block(item: BaseModel) -> dict:
+    """Dump Responses API output item fields that can be round-tripped."""
+    return item.model_dump(
+        exclude_none=True,
+        mode="json",
+        exclude=getattr(item, "__api_exclude__", None),
+    )
+
+
 def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
@@ -4658,7 +4667,7 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_response_item_for_content_block(output))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -4683,7 +4692,7 @@ def _construct_lc_result_from_responses_api(
                 }
                 invalid_tool_calls.append(tool_call)
         elif output.type == "custom_tool_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_response_item_for_content_block(output))
             tool_call = {
                 "type": "tool_call",
                 "name": output.name,
@@ -4705,7 +4714,7 @@ def _construct_lc_result_from_responses_api(
             "tool_search_call",
             "tool_search_output",
         ):
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_response_item_for_content_block(output))
 
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI

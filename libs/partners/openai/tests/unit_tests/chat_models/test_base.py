@@ -36,6 +36,7 @@ from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
+from openai.types.responses.parsed_response import ParsedResponseFunctionToolCall
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
@@ -1758,6 +1759,61 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.tool_calls
     assert msg.content == [
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York", "unit": "celsius"}',
+            "call_id": "call_123",
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_parsed_function_call() -> None:
+    """Test parsed tool calls do not leak SDK-only fields into content."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ParsedResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"}',
+                parsed_arguments={"location": "New York", "unit": "celsius"},
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.content == [
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York", "unit": "celsius"}',
+            "call_id": "call_123",
+        }
+    ]
+    assert msg.tool_calls == [
+        {
+            "type": "tool_call",
+            "name": "get_weather",
+            "args": {"location": "New York", "unit": "celsius"},
+            "id": "call_123",
+        }
+    ]
+
+    input_ = _construct_responses_api_input([msg])
+    assert input_ == [
         {
             "type": "function_call",
             "id": "func_123",
