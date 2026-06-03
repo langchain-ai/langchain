@@ -13,7 +13,7 @@ from pydantic import SecretStr
 
 from langchain_minimax.chat_models import DEFAULT_API_BASE, ChatMiniMax
 
-MODEL_NAME = "MiniMax-M2.7"
+MODEL_NAME = "MiniMax-M3"
 
 
 class MockOpenAIResponse(BaseModel):
@@ -235,19 +235,21 @@ class TestChatMiniMaxCustomUnit:
 
 
 def test_profile() -> None:
-    """Test that model profile is loaded correctly."""
-    model = ChatMiniMax(model="MiniMax-M2.7", api_key=SecretStr("test_key"))
+    """Test that M3 model profile is loaded correctly (default model)."""
+    model = ChatMiniMax(model="MiniMax-M3", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
     assert model.profile["tool_calling"]
-    assert model.profile["max_input_tokens"] == 1000000
+    assert model.profile["max_input_tokens"] == 524288
+    assert model.profile["image_inputs"] is True
 
 
-def test_profile_m25() -> None:
-    """Test that M2.5 model profile is loaded correctly."""
-    model = ChatMiniMax(model="MiniMax-M2.5", api_key=SecretStr("test_key"))
+def test_profile_m27() -> None:
+    """Test that M2.7 model profile is loaded correctly."""
+    model = ChatMiniMax(model="MiniMax-M2.7", api_key=SecretStr("test_key"))
     assert model.profile is not None
-    assert model.profile["max_input_tokens"] == 204800
+    assert model.profile["reasoning_output"]
+    assert model.profile["max_input_tokens"] == 1000000
 
 
 def test_profile_highspeed() -> None:

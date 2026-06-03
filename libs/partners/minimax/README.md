@@ -17,7 +17,7 @@ pip install langchain-minimax
 This package contains the LangChain integration with [MiniMax](https://www.minimaxi.com/).
 
 MiniMax provides large language models accessible through an OpenAI-compatible API,
-including MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, and MiniMax-M2.5-highspeed.
+including MiniMax-M3 (default, 512K context, image input), MiniMax-M2.7, and MiniMax-M2.7-highspeed.
 
 ## Usage
 
@@ -25,7 +25,7 @@ including MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, and MiniMax-M2.5-h
 from langchain_minimax import ChatMiniMax
 
 model = ChatMiniMax(
-    model="MiniMax-M2.7",
+    model="MiniMax-M3",
     # api_key="...",  # or set MINIMAX_API_KEY env var
 )
 response = model.invoke("Hello, how are you?")

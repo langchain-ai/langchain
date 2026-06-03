@@ -10,7 +10,7 @@ from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_minimax.chat_models import ChatMiniMax
 
-MODEL_NAME = "MiniMax-M2.7"
+MODEL_NAME = "MiniMax-M3"
 
 
 class TestChatMiniMax(ChatModelIntegrationTests):
@@ -47,7 +47,7 @@ class TestChatMiniMax(ChatModelIntegrationTests):
 @pytest.mark.xfail(reason="Takes > 30s to run.")
 def test_reasoning_content() -> None:
     """Test reasoning content."""
-    chat_model = ChatMiniMax(model="MiniMax-M2.7")
+    chat_model = ChatMiniMax(model="MiniMax-M3")
     response = chat_model.invoke("What is 3^3?")
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
@@ -64,7 +64,7 @@ def test_reasoning_content() -> None:
 @pytest.mark.xfail(reason="Takes > 30s to run.")
 def test_reasoning_content_streaming() -> None:
     """Test reasoning content with streaming."""
-    chat_model = ChatMiniMax(model="MiniMax-M2.7")
+    chat_model = ChatMiniMax(model="MiniMax-M3")
     full: BaseMessageChunk | None = None
     for chunk in chat_model.stream("What is 3^3?"):
         full = chunk if full is None else full + chunk

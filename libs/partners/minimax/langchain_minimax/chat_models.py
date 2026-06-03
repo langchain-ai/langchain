@@ -54,7 +54,7 @@ class ChatMiniMax(BaseChatOpenAI):
 
     Key init args — completion params:
         model:
-            Name of MiniMax model to use, e.g. `'MiniMax-M2.7'`.
+            Name of MiniMax model to use, e.g. `'MiniMax-M3'`.
         temperature:
             Sampling temperature. Must be in (0.0, 1.0].
         max_tokens:
@@ -76,7 +76,7 @@ class ChatMiniMax(BaseChatOpenAI):
         from langchain_minimax import ChatMiniMax
 
         model = ChatMiniMax(
-            model="MiniMax-M2.7",
+            model="MiniMax-M3",
             temperature=0.5,
             max_tokens=None,
             timeout=None,
