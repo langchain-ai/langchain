@@ -1408,18 +1408,18 @@ class TestAsyncWrapModelCall:
 
         class AsyncFailOnceThenSucceed(GenericFakeChatModel):
             @override
-            async def _agenerate(
+            def _generate(
                 self,
                 messages: list[BaseMessage],
                 stop: list[str] | None = None,
-                run_manager: AsyncCallbackManagerForLLMRun | None = None,
+                run_manager: CallbackManagerForLLMRun | None = None,
                 **kwargs: Any,
             ) -> ChatResult:
                 call_count["value"] += 1
                 if call_count["value"] == 1:
                     msg = "First async call fails"
                     raise ValueError(msg)
-                return await super()._agenerate(messages, **kwargs)
+                return super()._generate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
             async def awrap_model_call(

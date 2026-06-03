@@ -17,7 +17,7 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -1348,8 +1348,33 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
-        if name:
+        # Use astream instead of ainvoke to trigger on_llm_new_token callbacks
+        # for token-by-token streaming. astream falls back to ainvoke internally
+        # when the model doesn't support streaming.
+        output = None
+        async for chunk in model_.astream(messages):
+            output = chunk if output is None else output + chunk
+
+        if output is None:
+            output = await model_.ainvoke(messages)
+
+        # Convert AIMessageChunk to AIMessage so the v3 streaming MessagesTransformer
+        # processes it correctly (it explicitly ignores AIMessageChunk payloads).
+        # Use id=None so LangGraph assigns a fresh ID; the chunk ID was already
+        # added to StreamMessagesHandlerV2's "seen" set by on_llm_end, which would
+        # cause on_chain_end to deduplicate and skip the final AIMessage.
+        if isinstance(output, AIMessageChunk):
+            output = AIMessage(
+                content=output.content,
+                id=None,
+                name=name or output.name,
+                additional_kwargs=output.additional_kwargs,
+                response_metadata=output.response_metadata,
+                tool_calls=output.tool_calls,
+                invalid_tool_calls=output.invalid_tool_calls,
+                usage_metadata=output.usage_metadata,
+            )
+        elif name:
             output.name = name
 
         # Handle model output to get messages and structured_response

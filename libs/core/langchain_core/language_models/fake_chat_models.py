@@ -314,6 +314,22 @@ class GenericFakeChatModel(BaseChatModel):
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
 
+        if message.tool_calls or message.invalid_tool_calls:
+            # Yield a single chunk carrying tool calls when there is no text
+            # content and no additional_kwargs (OpenAI-style tool call responses).
+            chunk = ChatGenerationChunk(
+                message=AIMessageChunk(
+                    id=message.id,
+                    content="",
+                    tool_calls=message.tool_calls,
+                    invalid_tool_calls=message.invalid_tool_calls,
+                    chunk_position="last",
+                )
+            )
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=chunk)
+            yield chunk
+
         if message.additional_kwargs:
             for key, value in message.additional_kwargs.items():
                 # We should further break down the additional kwargs into chunks
