@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field, fields as dc_fields, replace
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -116,11 +116,9 @@ class AgentRuntime(Runtime[ContextT]):
         model_settings: dict[str, Any] | None = None,
     ) -> AgentRuntime[ContextT]:
         """Construct an AgentRuntime from a base LangGraph Runtime."""
+        inherited = {f.name: getattr(runtime, f.name) for f in dc_fields(Runtime)}
         return cls(
-            context=runtime.context,
-            store=runtime.store,
-            stream_writer=runtime.stream_writer,
-            previous=runtime.previous,
+            **inherited,
             agent_name=name,
             model_name=model_name,
             model=model,
