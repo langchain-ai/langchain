@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentMiddleware",
+    "AgentRuntime",
     "AgentState",
     "ContextT",
     "ModelRequest",
@@ -118,8 +119,21 @@ class AgentRuntime(Generic[ContextT]):
     previous: Any = field(default=None)
     """The previous return value for the given thread."""
 
+    model_name: str | None = field(default=None)
+    """Name of the model being used, if statically known."""
+
+    tools: list[BaseTool] = field(default_factory=list)
+    """Tools registered with the agent."""
+
     @classmethod
-    def from_runtime(cls, name: str, runtime: Runtime[ContextT]) -> AgentRuntime[ContextT]:
+    def from_runtime(
+        cls,
+        name: str,
+        runtime: Runtime[ContextT],
+        *,
+        model_name: str | None = None,
+        tools: list[BaseTool] | None = None,
+    ) -> AgentRuntime[ContextT]:
         """Create an AgentRuntime from a Runtime."""
         return AgentRuntime[ContextT](
             agent_name=name,
@@ -127,6 +141,8 @@ class AgentRuntime(Generic[ContextT]):
             store=runtime.store,
             stream_writer=runtime.stream_writer,
             previous=runtime.previous,
+            model_name=model_name,
+            tools=tools or [],
         )
 
 
@@ -294,6 +310,16 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Defaults to the class name, but can be overridden for custom naming.
         """
         return self.__class__.__name__
+
+    def _build_runtime(self, runtime: AgentRuntime[ContextT]) -> AgentRuntime[ContextT]:
+        """Enrich AgentRuntime before it is passed to hook methods.
+
+        Called by the agent factory for every hook node (before_agent, before_model,
+        after_model, after_agent). The default is identity. Subpackages that need
+        extra fields on the runtime (e.g. a resolved backend) override this privately
+        — it is not a public extension point for end-user middleware.
+        """
+        return runtime
 
     def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts."""
