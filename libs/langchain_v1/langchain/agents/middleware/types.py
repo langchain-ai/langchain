@@ -28,14 +28,14 @@ from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMess
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.store.base import BaseStore  # noqa: TC002
-from langgraph.types import Command, StreamWriter  # noqa: TC002
+from langgraph.runtime import Runtime
+from langgraph.types import Command, StreamWriter, _DC_KWARGS  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
-    from langgraph.runtime import Runtime
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -62,65 +62,26 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
-@dataclass
-class AgentRuntime(Generic[ContextT]):
-    """Runtime context for agent execution, extending LangGraph's Runtime.
+@dataclass(**_DC_KWARGS)
+class AgentRuntime(Runtime[ContextT]):
+    """Agent-scoped runtime injected into all middleware hook nodes.
 
-    This class provides agent-specific execution context to middleware, including
-    the name of the currently executing graph and all Runtime properties flattened
-    for convenient access.
-
-    The AgentRuntime follows the same pattern as ToolRuntime, providing a flat
-    structure with all runtime properties directly accessible.
+    Extends LangGraph's `Runtime` with agent-level fields populated by
+    `create_agent` at wire time. Middleware that needs additional fields
+    (e.g. a resolved backend) can override the private `_build_runtime`
+    hook on `AgentMiddleware` to return a richer subclass.
 
     Attributes:
-        agent_name: The name of the currently executing graph/agent. This is the
-            name passed to `create_agent(name=...)` or defaults to "LangGraph".
-        context: Static context for the graph run (e.g., `user_id`, `db_conn`).
-        store: Store for persistence and memory, if configured.
-        stream_writer: Function for writing to the custom stream.
-        previous: The previous return value for the given thread (functional API only).
-
-    Example:
-        ```python
-        from langchain.agents.middleware import wrap_model_call, AgentRuntime
-        from langchain.agents.middleware.types import ModelRequest, ModelResponse
-
-
-        @wrap_model_call
-        def log_agent_name(
-            request: ModelRequest,
-            handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
-            '''Log which agent is making the model call.'''
-            agent_name = request.runtime.agent_name
-            print(f"Agent '{agent_name}' is calling the model")
-
-            # Access runtime context directly (flattened)
-            user_id = request.runtime.context.get("user_id")
-            print(f"User: {user_id}")
-
-            return handler(request)
-        ```
+        agent_name: Name passed to `create_agent(name=...)`.
+        model_name: Model identifier, if statically known at wire time.
+        tools: Tools registered with the agent.
     """
 
-    agent_name: str
-    """The name of the currently executing graph/agent."""
-
-    context: ContextT = field(default=None)  # type: ignore[assignment]
-    """Static context for the graph run, like `user_id`, `db_conn`, etc."""
-
-    store: BaseStore | None = field(default=None)
-    """Store for the graph run, enabling persistence and memory."""
-
-    stream_writer: StreamWriter = field(default=None)  # type: ignore[assignment]
-    """Function that writes to the custom stream."""
-
-    previous: Any = field(default=None)
-    """The previous return value for the given thread."""
+    agent_name: str = field(default="agent")
+    """The name of the currently executing agent."""
 
     model_name: str | None = field(default=None)
-    """Name of the model being used, if statically known."""
+    """Model identifier, if statically known at wire time."""
 
     tools: list[BaseTool] = field(default_factory=list)
     """Tools registered with the agent."""
@@ -134,13 +95,13 @@ class AgentRuntime(Generic[ContextT]):
         model_name: str | None = None,
         tools: list[BaseTool] | None = None,
     ) -> AgentRuntime[ContextT]:
-        """Create an AgentRuntime from a Runtime."""
-        return AgentRuntime[ContextT](
-            agent_name=name,
+        """Construct an AgentRuntime from a base Runtime."""
+        return cls(
             context=runtime.context,
             store=runtime.store,
             stream_writer=runtime.stream_writer,
             previous=runtime.previous,
+            agent_name=name,
             model_name=model_name,
             tools=tools or [],
         )
