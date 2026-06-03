@@ -1062,18 +1062,17 @@ def create_agent(  # noqa: PLR0915
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         # Create flat AgentRuntime with all runtime properties
-        agent_runtime = AgentRuntime.from_runtime(name or "agent", runtime, model_name=_agent_model_name, tools=default_tools)
-
-        request = ModelRequest(
-            model=model,
-            tools=default_tools,
+        agent_runtime = AgentRuntime.from_runtime(
+            name or "agent",
+            runtime,
+            model_name=_agent_model_name,
+            model=model if isinstance(model, BaseChatModel) else None,
             system_prompt=system_prompt,
-            response_format=initial_response_format,
-            messages=state["messages"],
+            tools=default_tools,
             tool_choice=None,
-            state=state,
-            runtime=agent_runtime,
+            response_format=initial_response_format,
         )
+        request = ModelRequest.from_runtime(agent_runtime, messages=state["messages"], state=state)
 
         if wrap_model_call_handler is None:
             # No handlers - execute directly
@@ -1118,18 +1117,17 @@ def create_agent(  # noqa: PLR0915
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Create flat AgentRuntime with all runtime properties
-        agent_runtime = AgentRuntime.from_runtime(name or "agent", runtime, model_name=_agent_model_name, tools=default_tools)
-
-        request = ModelRequest(
-            model=model,
-            tools=default_tools,
+        agent_runtime = AgentRuntime.from_runtime(
+            name or "agent",
+            runtime,
+            model_name=_agent_model_name,
+            model=model if isinstance(model, BaseChatModel) else None,
             system_prompt=system_prompt,
-            response_format=initial_response_format,
-            messages=state["messages"],
+            tools=default_tools,
             tool_choice=None,
-            state=state,
-            runtime=agent_runtime,
+            response_format=initial_response_format,
         )
+        request = ModelRequest.from_runtime(agent_runtime, messages=state["messages"], state=state)
 
         if awrap_model_call_handler is None:
             # No async handlers - execute directly

@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -66,25 +67,39 @@ ResponseT = TypeVar("ResponseT")
 class AgentRuntime(Runtime[ContextT]):
     """Agent-scoped runtime injected into all middleware hook nodes.
 
-    Extends LangGraph's `Runtime` with agent-level fields populated by
-    `create_agent` at wire time. Middleware that needs additional fields
-    (e.g. a resolved backend) can override the private `_build_runtime`
-    hook on `AgentMiddleware` to return a richer subclass.
+    Extends LangGraph's `Runtime` with all agent-level fields needed for
+    a model invocation. Populated by `create_agent` at node-dispatch time.
+    `ModelRequest` is constructed from an `AgentRuntime` via
+    `ModelRequest.from_runtime`; `ModelRequest.override` keeps both in sync.
 
-    Attributes:
-        agent_name: Name passed to `create_agent(name=...)`.
-        model_name: Model identifier, if statically known at wire time.
-        tools: Tools registered with the agent.
+    Middleware that needs additional fields (e.g. a resolved backend) can
+    override the private `_build_runtime` hook on `AgentMiddleware` to return
+    a richer subclass — this is not a public extension point.
     """
 
     agent_name: str = field(default="agent")
-    """The name of the currently executing agent."""
+    """Name passed to `create_agent(name=...)`."""
 
     model_name: str | None = field(default=None)
-    """Model identifier, if statically known at wire time."""
+    """Model identifier string, if statically known at wire time."""
 
-    tools: list[BaseTool] = field(default_factory=list)
+    model: BaseChatModel | None = field(default=None)
+    """Resolved model instance, if not a dynamic callable."""
+
+    system_prompt: str | None = field(default=None)
+    """System prompt for the agent."""
+
+    tool_choice: Any | None = field(default=None)
+    """Tool selection configuration."""
+
+    tools: list[BaseTool | dict] = field(default_factory=list)
     """Tools registered with the agent."""
+
+    response_format: ResponseFormat | None = field(default=None)
+    """Structured output format, if configured."""
+
+    model_settings: dict[str, Any] = field(default_factory=dict)
+    """Additional model-specific settings."""
 
     @classmethod
     def from_runtime(
@@ -93,9 +108,14 @@ class AgentRuntime(Runtime[ContextT]):
         runtime: Runtime[ContextT],
         *,
         model_name: str | None = None,
-        tools: list[BaseTool] | None = None,
+        model: BaseChatModel | None = None,
+        system_prompt: str | None = None,
+        tool_choice: Any | None = None,
+        tools: list[BaseTool | dict] | None = None,
+        response_format: ResponseFormat | None = None,
+        model_settings: dict[str, Any] | None = None,
     ) -> AgentRuntime[ContextT]:
-        """Construct an AgentRuntime from a base Runtime."""
+        """Construct an AgentRuntime from a base LangGraph Runtime."""
         return cls(
             context=runtime.context,
             store=runtime.store,
@@ -103,7 +123,12 @@ class AgentRuntime(Runtime[ContextT]):
             previous=runtime.previous,
             agent_name=name,
             model_name=model_name,
+            model=model,
+            system_prompt=system_prompt,
+            tool_choice=tool_choice,
             tools=tools or [],
+            response_format=response_format,
+            model_settings=model_settings or {},
         )
 
 
@@ -149,6 +174,32 @@ class ModelRequest:
     runtime: AgentRuntime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
+    # Fields shared with AgentRuntime — kept in sync by override().
+    _RUNTIME_FIELDS: ClassVar[frozenset[str]] = frozenset(
+        {"model", "system_prompt", "tool_choice", "tools", "response_format", "model_settings"}
+    )
+
+    @classmethod
+    def from_runtime(
+        cls,
+        runtime: AgentRuntime[ContextT],  # type: ignore[valid-type]
+        *,
+        messages: list[AnyMessage],
+        state: AgentState,
+    ) -> ModelRequest:
+        """Construct a ModelRequest from an AgentRuntime, messages, and state."""
+        return cls(
+            model=runtime.model,  # type: ignore[arg-type]
+            system_prompt=runtime.system_prompt,
+            messages=messages,
+            tool_choice=runtime.tool_choice,
+            tools=runtime.tools,
+            response_format=runtime.response_format,
+            state=state,
+            runtime=runtime,
+            model_settings=runtime.model_settings,
+        )
+
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
         """Replace the request with a new request with the given overrides.
 
@@ -177,7 +228,13 @@ class ModelRequest:
             new_request = request.override(system_prompt="New instructions", tool_choice="auto")
             ```
         """
-        return replace(self, **overrides)
+        runtime_overrides = {k: v for k, v in overrides.items() if k in self._RUNTIME_FIELDS}
+        new_runtime = (
+            replace(self.runtime, **runtime_overrides)
+            if runtime_overrides and self.runtime is not None
+            else self.runtime
+        )
+        return replace(self, runtime=new_runtime, **overrides)
 
 
 @dataclass
