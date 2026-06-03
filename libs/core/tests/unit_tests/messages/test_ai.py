@@ -201,6 +201,85 @@ def test_add_ai_message_chunks_usage() -> None:
     )
 
 
+def test_image_field_in_input_token_details() -> None:
+    """InputTokenDetails accepts an `image` key for multimodal image inputs."""
+    details = InputTokenDetails(audio=5, cache_read=10, image=50)
+    assert details["image"] == 50
+
+    usage = UsageMetadata(
+        input_tokens=100,
+        output_tokens=0,
+        total_tokens=100,
+        input_token_details=InputTokenDetails(image=50),
+    )
+    assert usage["input_token_details"]["image"] == 50  # type: ignore[typeddict-item]
+
+
+def test_image_field_in_output_token_details() -> None:
+    """OutputTokenDetails accepts an `image` key for image generation models."""
+    details = OutputTokenDetails(reasoning=200, image=128)
+    assert details["image"] == 128
+
+    usage = UsageMetadata(
+        input_tokens=0,
+        output_tokens=128,
+        total_tokens=128,
+        output_token_details=OutputTokenDetails(image=128),
+    )
+    assert usage["output_token_details"]["image"] == 128  # type: ignore[typeddict-item]
+
+
+def test_add_usage_with_image_details() -> None:
+    """add_usage correctly sums `image` token counts in both detail dicts."""
+    usage1 = UsageMetadata(
+        input_tokens=100,
+        output_tokens=128,
+        total_tokens=228,
+        input_token_details=InputTokenDetails(image=40),
+        output_token_details=OutputTokenDetails(image=100),
+    )
+    usage2 = UsageMetadata(
+        input_tokens=50,
+        output_tokens=64,
+        total_tokens=114,
+        input_token_details=InputTokenDetails(image=10),
+        output_token_details=OutputTokenDetails(image=28),
+    )
+    result = add_usage(usage1, usage2)
+    assert result["input_token_details"]["image"] == 50  # type: ignore[typeddict-item]
+    assert result["output_token_details"]["image"] == 128  # type: ignore[typeddict-item]
+
+
+def test_add_ai_message_chunks_usage_with_image() -> None:
+    """Accumulating chunks sums `image` tokens in both input and output details."""
+    chunks = [
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=10,
+                output_tokens=64,
+                total_tokens=74,
+                input_token_details=InputTokenDetails(image=10),
+                output_token_details=OutputTokenDetails(image=64),
+            ),
+        ),
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=5,
+                output_tokens=32,
+                total_tokens=37,
+                input_token_details=InputTokenDetails(image=5),
+                output_token_details=OutputTokenDetails(image=32),
+            ),
+        ),
+    ]
+    combined = add_ai_message_chunks(*chunks)
+    assert combined.usage_metadata is not None
+    assert combined.usage_metadata["input_token_details"]["image"] == 15  # type: ignore[typeddict-item]
+    assert combined.usage_metadata["output_token_details"]["image"] == 96  # type: ignore[typeddict-item]
+
+
 def test_init_tool_calls() -> None:
     # Test we add "type" key on init
     msg = AIMessage("", tool_calls=[{"name": "foo", "args": {"a": "b"}, "id": "abc"}])
