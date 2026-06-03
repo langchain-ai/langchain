@@ -251,6 +251,32 @@ class ShellSession:
         exit_code: int | None = None
         timed_out = False
 
+        def append_output(source: str, data: str) -> None:
+            nonlocal total_lines, total_bytes, truncated_by_lines, truncated_by_bytes
+
+            total_lines += 1
+            encoded = data.encode("utf-8", "replace")
+            total_bytes += len(encoded)
+
+            if total_lines > self._policy.max_output_lines:
+                truncated_by_lines = True
+                return
+
+            if (
+                self._policy.max_output_bytes is not None
+                and total_bytes > self._policy.max_output_bytes
+            ):
+                truncated_by_bytes = True
+                return
+
+            if source == "stderr":
+                stripped = data.rstrip("\n")
+                collected.append(f"[stderr] {stripped}")
+                if data.endswith("\n"):
+                    collected.append("\n")
+            else:
+                collected.append(data)
+
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -265,8 +291,11 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                output_before_marker, _, marker_output = data.partition(marker)
+                if output_before_marker:
+                    append_output(source, output_before_marker)
+                _, _, status = marker_output.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might
@@ -274,28 +303,7 @@ class ShellSession:
                 self._drain_remaining_stderr(collected, deadline)
                 break
 
-            total_lines += 1
-            encoded = data.encode("utf-8", "replace")
-            total_bytes += len(encoded)
-
-            if total_lines > self._policy.max_output_lines:
-                truncated_by_lines = True
-                continue
-
-            if (
-                self._policy.max_output_bytes is not None
-                and total_bytes > self._policy.max_output_bytes
-            ):
-                truncated_by_bytes = True
-                continue
-
-            if source == "stderr":
-                stripped = data.rstrip("\n")
-                collected.append(f"[stderr] {stripped}")
-                if data.endswith("\n"):
-                    collected.append("\n")
-            else:
-                collected.append(data)
+            append_output(source, data)
 
         if timed_out:
             LOGGER.warning(

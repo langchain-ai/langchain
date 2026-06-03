@@ -107,6 +107,37 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_command_output_without_trailing_newline_completes(tmp_path: Path) -> None:
+    policy = HostExecutionPolicy(command_timeout=0.5)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'no trailing newline'"},
+            tool_call_id="test-id",
+        )
+
+        assert isinstance(result, ToolMessage)
+        assert result.status == "success"
+        assert result.content == "no trailing newline"
+        assert result.artifact["timed_out"] is False
+        assert result.artifact["exit_code"] == 0
+
+        next_result = middleware._run_shell_tool(
+            resources, {"command": "echo still-running"}, tool_call_id=None
+        )
+        assert "still-running" in next_result
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_redaction_policy_applies(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
