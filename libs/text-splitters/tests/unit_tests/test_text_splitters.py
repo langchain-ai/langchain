@@ -3975,6 +3975,48 @@ def test_html_splitter_with_media_preservation() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_html_splitter_with_media_source_tags() -> None:
+    """Test HTML splitter preserves URLs from nested source tags in video/audio."""
+    html_content = """
+    <h1>Media</h1>
+    <p>Watch:</p>
+    <video controls>
+        <source src="https://example.com/video.mp4" type="video/mp4" />
+        <source src="https://example.com/video.webm" type="video/webm" />
+    </video>
+    <p>Listen:</p>
+    <audio controls>
+        <source src="https://example.com/audio.mp3" type="audio/mpeg" />
+        <source src="https://example.com/audio.ogg" type="audio/ogg" />
+    </audio>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_videos=True,
+            preserve_audio=True,
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content=(
+                "Watch: "
+                "![video:https://example.com/video.mp4, https://example.com/video.webm]"
+                "(https://example.com/video.mp4, https://example.com/video.webm) "
+                "Listen: "
+                "![audio:https://example.com/audio.mp3, https://example.com/audio.ogg]"
+                "(https://example.com/audio.mp3, https://example.com/audio.ogg)"
+            ),
+            metadata={"Header 1": "Media"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_keep_separator_true() -> None:
     """Test HTML splitting with keep_separator=True."""
     html_content = """
