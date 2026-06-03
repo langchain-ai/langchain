@@ -26,13 +26,48 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 > [!TIP]
 > Just getting started? Check out **[Deep Agents](http://docs.langchain.com/oss/python/deepagents/)** — a higher-level package built on LangChain for agents that have built-in capabilites for common usage patterns such as planning, subagents, file system usage, and more.
 
-## Quickstart
+
+## Common Installation Issues
+
+### OpenAI API Key Not Found
 
 ```bash
-pip install langchain
-# or
-uv add langchain
+export OPENAI_API_KEY=your_api_key
 ```
+
+### Module Not Found Error
+
+Make sure LangChain is installed:
+
+```bash
+pip install -U langchain
+```
+
+### Verify Installation
+
+```python
+import langchain
+print(langchain.__version__)
+```
+
+## Quickstart
+from langchain.chat_models import init_chat_model
+
+model = init_chat_model("openai:gpt-5.4")
+
+response = model.invoke("Hello, world!")
+
+print(response.content)
+
+## Next Steps
+
+After completing the quickstart, explore:
+
+- Build your first chatbot
+- Add retrieval-augmented generation (RAG)
+- Connect external tools
+- Build multi-agent workflows with LangGraph
+
 
 ```python
 from langchain.chat_models import init_chat_model
@@ -84,3 +119,5 @@ LangChain helps developers build applications powered by LLMs through a standard
 - [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
 - [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+
+## setty bhavana
