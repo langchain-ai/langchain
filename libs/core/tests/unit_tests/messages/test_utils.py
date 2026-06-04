@@ -3103,3 +3103,20 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_convert_to_openai_messages_does_not_mutate_input() -> None:
+    """convert_to_openai_messages should not mutate the caller's input blocks.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/37894
+    """
+    file_block = {
+        "type": "file",
+        "file": {"file_data": "data:application/pdf;base64,QQ=="},
+    }
+    message = HumanMessage(content=[file_block])
+
+    convert_to_openai_messages([message])
+
+    # The caller's block should not have been modified
+    assert "filename" not in file_block["file"]
