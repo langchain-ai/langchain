@@ -23,7 +23,7 @@ coverage:
 		$(TEST_FILE)
 
 test tests:
-	uv run --group test pytest -n auto $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
+	uv run --group test pytest -n auto --benchmark-disable $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
 	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket --only-extended tests/unit_tests
