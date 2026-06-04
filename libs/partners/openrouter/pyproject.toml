@@ -49,7 +49,7 @@ test = [
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]
 dev = ["langchain-core"]
-typing = ["mypy>=1.19.1,<2.0.0"]
+typing = ["mypy>=1.18.1,<1.19.0"]
 
 
 [tool.uv]

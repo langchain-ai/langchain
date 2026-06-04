@@ -591,6 +591,7 @@ test = [
     { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.2,<2.0.0" },
+    { name = "pytest-benchmark", specifier = ">=5.1.0,<6.0.0" },
     { name = "pytest-cov", specifier = ">=4.0.0,<8.0.0" },
     { name = "pytest-mock" },
     { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
@@ -608,13 +609,13 @@ test-integration = [
     { name = "wrapt", specifier = ">=1.15.0,<3.0.0" },
 ]
 typing = [
-    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-core"
-version = "1.2.25"
+version = "1.2.28"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -667,7 +668,7 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../../text-splitters" },
-    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
@@ -761,7 +762,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.5"
+version = "1.1.6"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -800,7 +801,7 @@ test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
+    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
