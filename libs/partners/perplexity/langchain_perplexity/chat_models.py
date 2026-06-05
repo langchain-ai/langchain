@@ -787,7 +787,9 @@ class ChatPerplexity(BaseChatModel):
                         "type": "function",
                         "function": {
                             "name": tool_call["name"],
-                            "arguments": json.dumps(tool_call["args"]),
+                            "arguments": json.dumps(
+                                tool_call["args"], ensure_ascii=False
+                            ),
                         },
                     }
                     for tool_call in message.tool_calls

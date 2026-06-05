@@ -284,3 +284,62 @@ def test_convert_ai_message_with_invalid_tool_calls_to_dict() -> None:
             "function": {"name": "search", "arguments": "{not valid json"},
         }
     ]
+
+
+def test_convert_ai_message_preserves_content_alongside_tool_calls() -> None:
+    """Non-empty content is preserved (not nulled) when tool_calls are present."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="Let me look that up.",
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "search",
+                "args": {"query": "weather"},
+                "type": "tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["content"] == "Let me look that up."
+
+
+def test_convert_ai_message_with_valid_and_invalid_tool_calls_to_dict() -> None:
+    """Valid and invalid tool calls serialize together, valid ones first."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_ok",
+                "name": "search",
+                "args": {"query": "weather"},
+                "type": "tool_call",
+            }
+        ],
+        invalid_tool_calls=[
+            {
+                "id": "call_bad",
+                "name": "search",
+                "args": "{not valid json",
+                "error": "could not parse args",
+                "type": "invalid_tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["tool_calls"] == [
+        {
+            "id": "call_ok",
+            "type": "function",
+            "function": {
+                "name": "search",
+                "arguments": json.dumps({"query": "weather"}),
+            },
+        },
+        {
+            "id": "call_bad",
+            "type": "function",
+            "function": {"name": "search", "arguments": "{not valid json"},
+        },
+    ]
