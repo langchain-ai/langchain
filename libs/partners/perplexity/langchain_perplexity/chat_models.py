@@ -34,6 +34,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
@@ -771,13 +772,31 @@ class ChatPerplexity(BaseChatModel):
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
         if isinstance(message, ChatMessage):
-            message_dict = {"role": message.role, "content": message.content}
+            message_dict: dict[str, Any] = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
             message_dict = {"role": "system", "content": message.content}
         elif isinstance(message, HumanMessage):
             message_dict = {"role": "user", "content": message.content}
         elif isinstance(message, AIMessage):
             message_dict = {"role": "assistant", "content": message.content}
+            if message.tool_calls:
+                message_dict["tool_calls"] = [
+                    {
+                        "type": "function",
+                        "id": tc["id"],
+                        "function": {
+                            "name": tc["name"],
+                            "arguments": json.dumps(tc["args"], ensure_ascii=False),
+                        },
+                    }
+                    for tc in message.tool_calls
+                ]
+        elif isinstance(message, ToolMessage):
+            message_dict = {
+                "role": "tool",
+                "content": message.content,
+                "tool_call_id": message.tool_call_id,
+            }
         else:
             raise TypeError(f"Got unknown type {message}")
         return message_dict
