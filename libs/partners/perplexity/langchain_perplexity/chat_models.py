@@ -34,6 +34,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
@@ -770,6 +771,7 @@ class ChatPerplexity(BaseChatModel):
         return {**params, **self.model_kwargs}
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
+        message_dict: dict[str, Any]
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
@@ -778,6 +780,39 @@ class ChatPerplexity(BaseChatModel):
             message_dict = {"role": "user", "content": message.content}
         elif isinstance(message, AIMessage):
             message_dict = {"role": "assistant", "content": message.content}
+            if message.tool_calls or message.invalid_tool_calls:
+                message_dict["tool_calls"] = [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": json.dumps(
+                                tool_call["args"], ensure_ascii=False
+                            ),
+                        },
+                    }
+                    for tool_call in message.tool_calls
+                ] + [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": tool_call["args"],
+                        },
+                    }
+                    for tool_call in message.invalid_tool_calls
+                ]
+                # OpenAI-compatible APIs reject empty-string content alongside
+                # tool_calls; send null instead.
+                message_dict["content"] = message_dict["content"] or None
+        elif isinstance(message, ToolMessage):
+            message_dict = {
+                "role": "tool",
+                "content": message.content,
+                "tool_call_id": message.tool_call_id,
+            }
         else:
             raise TypeError(f"Got unknown type {message}")
         return message_dict
