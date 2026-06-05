@@ -2499,6 +2499,40 @@ def test_tool_search_result_formatting() -> None:
     assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
 
 
+def test__format_messages_strips_streaming_index_from_tool_search_tool_result() -> None:
+    """Strip streaming-only index from tool_search_tool_result history blocks."""
+    messages = [
+        HumanMessage("What tools can help with weather?"),  # type: ignore[misc]
+        AIMessage(
+            content=[
+                {
+                    "type": "server_tool_use",
+                    "id": "srvtoolu_123",
+                    "name": "tool_search_tool_regex",
+                    "input": {"query": "weather"},
+                },
+                {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"}
+                    ],
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    tool_search_result = formatted[1]["content"][1]
+    assert tool_search_result == {
+        "type": "tool_search_tool_result",
+        "tool_use_id": "srvtoolu_123",
+        "content": [{"type": "tool_reference", "tool_name": "get_weather"}],
+    }
+
+
 def test_auto_append_betas_for_mcp_servers() -> None:
     """Test that `mcp-client-2025-11-20` beta is automatically appended
     for `mcp_servers`."""
