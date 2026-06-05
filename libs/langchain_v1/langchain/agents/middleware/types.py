@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -101,6 +100,11 @@ class AgentRuntime(Runtime[ContextT]):
     model_settings: dict[str, Any] = field(default_factory=dict)
     """Additional model-specific settings."""
 
+    backend: object | None = field(default=None)
+    """Opaque backend object injected by subpackages (e.g. deepagents).
+    Typed as ``object`` at this layer; subpackages narrow the type via
+    ``AgentMiddleware._build_runtime``."""
+
     @classmethod
     def from_runtime(
         cls,
@@ -114,6 +118,7 @@ class AgentRuntime(Runtime[ContextT]):
         tools: list[BaseTool | dict] | None = None,
         response_format: ResponseFormat | None = None,
         model_settings: dict[str, Any] | None = None,
+        backend: object | None = None,
     ) -> AgentRuntime[ContextT]:
         """Construct an AgentRuntime from a base LangGraph Runtime."""
         inherited = {f.name: getattr(runtime, f.name) for f in dc_fields(Runtime)}
@@ -127,6 +132,7 @@ class AgentRuntime(Runtime[ContextT]):
             tools=tools or [],
             response_format=response_format,
             model_settings=model_settings or {},
+            backend=backend,
         )
 
 
@@ -146,36 +152,47 @@ class _ModelRequestOverrides(TypedDict, total=False):
 class ModelRequest:
     """Model request information for the agent.
 
-    This dataclass contains all the information needed for a model invocation,
-    including the model, messages, tools, and runtime context.
+    Owns only the fields that are unique to a single model invocation
+    (``messages``, ``state``, ``runtime``).  All other fields (``model``,
+    ``system_prompt``, ``tools``, etc.) are properties that read directly
+    from ``runtime``, so there is no duplication with ``AgentRuntime``.
 
     Attributes:
-        model: The chat model to invoke.
-        system_prompt: Optional system prompt to prepend to messages.
         messages: List of conversation messages (excluding system prompt).
-        tool_choice: Tool selection configuration for the model.
-        tools: Available tools for the model to use.
-        response_format: Structured output format specification.
         state: Complete agent state at the time of model invocation.
-        runtime: Agent runtime context including agent name and underlying
-            LangGraph Runtime with context, store, and stream_writer.
-        model_settings: Additional model-specific settings.
+        runtime: Agent runtime context — carries model, tools, system_prompt,
+            and all other invocation settings.
     """
 
-    model: BaseChatModel
-    system_prompt: str | None
-    messages: list[AnyMessage]  # excluding system prompt
-    tool_choice: Any | None
-    tools: list[BaseTool | dict]
-    response_format: ResponseFormat | None
+    messages: list[AnyMessage]
     state: AgentState
     runtime: AgentRuntime[ContextT]  # type: ignore[valid-type]
-    model_settings: dict[str, Any] = field(default_factory=dict)
 
-    # Fields shared with AgentRuntime — kept in sync by override().
-    _RUNTIME_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"model", "system_prompt", "tool_choice", "tools", "response_format", "model_settings"}
-    )
+    # --- properties delegating to runtime ---
+
+    @property
+    def model(self) -> BaseChatModel:
+        return self.runtime.model  # type: ignore[return-value]
+
+    @property
+    def system_prompt(self) -> str | None:
+        return self.runtime.system_prompt
+
+    @property
+    def tool_choice(self) -> Any | None:
+        return self.runtime.tool_choice
+
+    @property
+    def tools(self) -> list[BaseTool | dict]:
+        return self.runtime.tools
+
+    @property
+    def response_format(self) -> ResponseFormat | None:
+        return self.runtime.response_format
+
+    @property
+    def model_settings(self) -> dict[str, Any]:
+        return self.runtime.model_settings
 
     @classmethod
     def from_runtime(
@@ -186,53 +203,32 @@ class ModelRequest:
         state: AgentState,
     ) -> ModelRequest:
         """Construct a ModelRequest from an AgentRuntime, messages, and state."""
-        return cls(
-            model=runtime.model,  # type: ignore[arg-type]
-            system_prompt=runtime.system_prompt,
-            messages=messages,
-            tool_choice=runtime.tool_choice,
-            tools=runtime.tools,
-            response_format=runtime.response_format,
-            state=state,
-            runtime=runtime,
-            model_settings=runtime.model_settings,
-        )
+        return cls(messages=messages, state=state, runtime=runtime)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
-        """Replace the request with a new request with the given overrides.
+        """Return a new ModelRequest with the given overrides applied.
 
-        Returns a new `ModelRequest` instance with the specified attributes replaced.
-        This follows an immutable pattern, leaving the original request unchanged.
+        Fields shared with ``AgentRuntime`` (``model``, ``system_prompt``,
+        ``tools``, etc.) are applied to the runtime via ``dataclasses.replace``.
+        ``messages`` and ``state`` are applied directly to the request.
 
         Args:
-            **overrides: Keyword arguments for attributes to override. Supported keys:
-                - model: BaseChatModel instance
-                - system_prompt: Optional system prompt string
-                - messages: List of messages
-                - tool_choice: Tool choice configuration
-                - tools: List of available tools
-                - response_format: Response format specification
-                - model_settings: Additional model settings
+            **overrides: Keyword arguments for attributes to override.
 
         Returns:
-            New ModelRequest instance with specified overrides applied.
+            New ``ModelRequest`` instance with overrides applied.
 
         Examples:
             ```python
-            # Create a new request with different model
             new_request = request.override(model=different_model)
-
-            # Override multiple attributes
             new_request = request.override(system_prompt="New instructions", tool_choice="auto")
             ```
         """
-        runtime_overrides = {k: v for k, v in overrides.items() if k in self._RUNTIME_FIELDS}
-        new_runtime = (
-            replace(self.runtime, **runtime_overrides)
-            if runtime_overrides and self.runtime is not None
-            else self.runtime
-        )
-        return replace(self, runtime=new_runtime, **overrides)
+        _runtime_fields = {"model", "system_prompt", "tool_choice", "tools", "response_format", "model_settings"}
+        runtime_overrides = {k: v for k, v in overrides.items() if k in _runtime_fields}
+        request_overrides = {k: v for k, v in overrides.items() if k not in _runtime_fields}
+        new_runtime = replace(self.runtime, **runtime_overrides) if runtime_overrides else self.runtime
+        return replace(self, runtime=new_runtime, **request_overrides)
 
 
 @dataclass
@@ -328,12 +324,16 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         return self.__class__.__name__
 
     def _build_runtime(self, runtime: AgentRuntime[ContextT]) -> AgentRuntime[ContextT]:
-        """Enrich AgentRuntime before it is passed to hook methods.
+        """Enrich the AgentRuntime before it is passed to hook methods.
 
-        Called by the agent factory for every hook node (before_agent, before_model,
-        after_model, after_agent). The default is identity. Subpackages that need
-        extra fields on the runtime (e.g. a resolved backend) override this privately
-        — it is not a public extension point for end-user middleware.
+        Called by the agent factory once per hook dispatch, with calls accumulated
+        across all middlewares in order. The result of each middleware's
+        ``_build_runtime`` is passed as input to the next, so a subpackage that
+        prepends a specialised middleware (e.g. ``BackendMiddleware``) can inject
+        a typed subclass that all subsequent middlewares receive.
+
+        The default implementation is the identity. Override to return an enriched
+        subclass — for example, one that carries a resolved backend.
         """
         return runtime
 

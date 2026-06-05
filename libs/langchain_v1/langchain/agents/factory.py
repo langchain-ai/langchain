@@ -520,6 +520,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    backend: object | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -714,35 +715,40 @@ def create_agent(  # noqa: PLR0915
         _agent_model_name = model.model
 
     # Wrappers that convert the LangGraph Runtime into an AgentRuntime before
-    # dispatching to each middleware hook. Middleware may further enrich the
-    # runtime by overriding _build_runtime (private, not a public extension point).
-    def _wrap_hook(hook, mw):
+    # dispatching to each middleware hook. _build_runtime calls are accumulated
+    # across all middlewares in order, so a subpackage that prepends a specialised
+    # middleware can inject an enriched runtime subclass for all hooks downstream.
+    def _accumulate_runtime(ar: AgentRuntime[ContextT]) -> AgentRuntime[ContextT]:
+        for mw in middleware:
+            ar = mw._build_runtime(ar)
+        return ar
+
+    def _build_hook_runtime(runtime: Runtime[ContextT]) -> AgentRuntime[ContextT]:
+        return _accumulate_runtime(
+            AgentRuntime.from_runtime(
+                name or "agent",
+                runtime,
+                model_name=_agent_model_name,
+                tools=default_tools,
+                backend=backend,
+            )
+        )
+
+    def _wrap_hook(hook):
         if hook is None:
             return None
 
         def _wrapped(state: AgentState, runtime: Runtime[ContextT]):
-            agent_runtime = AgentRuntime.from_runtime(
-                name or "agent",
-                runtime,
-                model_name=_agent_model_name,
-                tools=default_tools,
-            )
-            return hook(state, mw._build_runtime(agent_runtime))
+            return hook(state, _build_hook_runtime(runtime))
 
         return _wrapped
 
-    def _wrap_async_hook(hook, mw):
+    def _wrap_async_hook(hook):
         if hook is None:
             return None
 
         async def _wrapped(state: AgentState, runtime: Runtime[ContextT]):
-            agent_runtime = AgentRuntime.from_runtime(
-                name or "agent",
-                runtime,
-                model_name=_agent_model_name,
-                tools=default_tools,
-            )
-            return await hook(state, mw._build_runtime(agent_runtime))
+            return await hook(state, _build_hook_runtime(runtime))
 
         return _wrapped
 
@@ -1061,16 +1067,18 @@ def create_agent(  # noqa: PLR0915
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
-        # Create flat AgentRuntime with all runtime properties
-        agent_runtime = AgentRuntime.from_runtime(
-            name or "agent",
-            runtime,
-            model_name=_agent_model_name,
-            model=model if isinstance(model, BaseChatModel) else None,
-            system_prompt=system_prompt,
-            tools=default_tools,
-            tool_choice=None,
-            response_format=initial_response_format,
+        agent_runtime = _accumulate_runtime(
+            AgentRuntime.from_runtime(
+                name or "agent",
+                runtime,
+                model_name=_agent_model_name,
+                model=model if isinstance(model, BaseChatModel) else None,
+                system_prompt=system_prompt,
+                tools=default_tools,
+                tool_choice=None,
+                response_format=initial_response_format,
+                backend=backend,
+            )
         )
         request = ModelRequest.from_runtime(agent_runtime, messages=state["messages"], state=state)
 
@@ -1116,16 +1124,18 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
-        # Create flat AgentRuntime with all runtime properties
-        agent_runtime = AgentRuntime.from_runtime(
-            name or "agent",
-            runtime,
-            model_name=_agent_model_name,
-            model=model if isinstance(model, BaseChatModel) else None,
-            system_prompt=system_prompt,
-            tools=default_tools,
-            tool_choice=None,
-            response_format=initial_response_format,
+        agent_runtime = _accumulate_runtime(
+            AgentRuntime.from_runtime(
+                name or "agent",
+                runtime,
+                model_name=_agent_model_name,
+                model=model if isinstance(model, BaseChatModel) else None,
+                system_prompt=system_prompt,
+                tools=default_tools,
+                tool_choice=None,
+                response_format=initial_response_format,
+                backend=backend,
+            )
         )
         request = ModelRequest.from_runtime(agent_runtime, messages=state["messages"], state=state)
 
@@ -1157,10 +1167,10 @@ def create_agent(  # noqa: PLR0915
             or m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
         ):
             sync_before_agent = _wrap_hook(
-                m.before_agent if m.__class__.before_agent is not AgentMiddleware.before_agent else None, m
+                m.before_agent if m.__class__.before_agent is not AgentMiddleware.before_agent else None
             )
             async_before_agent = _wrap_async_hook(
-                m.abefore_agent if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent else None, m
+                m.abefore_agent if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent else None
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(
@@ -1172,10 +1182,10 @@ def create_agent(  # noqa: PLR0915
             or m.__class__.abefore_model is not AgentMiddleware.abefore_model
         ):
             sync_before = _wrap_hook(
-                m.before_model if m.__class__.before_model is not AgentMiddleware.before_model else None, m
+                m.before_model if m.__class__.before_model is not AgentMiddleware.before_model else None
             )
             async_before = _wrap_async_hook(
-                m.abefore_model if m.__class__.abefore_model is not AgentMiddleware.abefore_model else None, m
+                m.abefore_model if m.__class__.abefore_model is not AgentMiddleware.abefore_model else None
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(
@@ -1187,10 +1197,10 @@ def create_agent(  # noqa: PLR0915
             or m.__class__.aafter_model is not AgentMiddleware.aafter_model
         ):
             sync_after = _wrap_hook(
-                m.after_model if m.__class__.after_model is not AgentMiddleware.after_model else None, m
+                m.after_model if m.__class__.after_model is not AgentMiddleware.after_model else None
             )
             async_after = _wrap_async_hook(
-                m.aafter_model if m.__class__.aafter_model is not AgentMiddleware.aafter_model else None, m
+                m.aafter_model if m.__class__.aafter_model is not AgentMiddleware.aafter_model else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
             graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
@@ -1200,10 +1210,10 @@ def create_agent(  # noqa: PLR0915
             or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
         ):
             sync_after_agent = _wrap_hook(
-                m.after_agent if m.__class__.after_agent is not AgentMiddleware.after_agent else None, m
+                m.after_agent if m.__class__.after_agent is not AgentMiddleware.after_agent else None
             )
             async_after_agent = _wrap_async_hook(
-                m.aafter_agent if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent else None, m
+                m.aafter_agent if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent else None
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(
