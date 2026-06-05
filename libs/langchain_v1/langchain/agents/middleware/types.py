@@ -62,6 +62,23 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
+class _BackendProtocol(Protocol):
+    """Minimal backend protocol for agent storage operations.
+
+    Private to langchain — subpackages (e.g. deepagents) extend this with
+    additional methods and re-export it as their own ``BackendProtocol``.
+    """
+
+    def read(self, path: str) -> str: ...
+    def write(self, path: str, content: str) -> Any: ...
+    def ls(self, path: str) -> Any: ...
+    def download_files(self, paths: list[str]) -> Any: ...
+    async def aread(self, path: str) -> str: ...
+    async def awrite(self, path: str, content: str) -> Any: ...
+    async def als(self, path: str) -> Any: ...
+    async def adownload_files(self, paths: list[str]) -> Any: ...
+
+
 @dataclass(**_DC_KWARGS)
 class AgentRuntime(Runtime[ContextT]):
     """Agent-scoped runtime injected into all middleware hook nodes.
@@ -100,6 +117,9 @@ class AgentRuntime(Runtime[ContextT]):
     model_settings: dict[str, Any] = field(default_factory=dict)
     """Additional model-specific settings."""
 
+    backend: _BackendProtocol | None = field(default=None)
+    """Backend injected by the caller via ``create_agent(backend=...)``."""
+
     @classmethod
     def from_runtime(
         cls,
@@ -113,6 +133,7 @@ class AgentRuntime(Runtime[ContextT]):
         tools: list[BaseTool | dict] | None = None,
         response_format: ResponseFormat | None = None,
         model_settings: dict[str, Any] | None = None,
+        backend: _BackendProtocol | None = None,
     ) -> AgentRuntime[ContextT]:
         """Construct an AgentRuntime from a base LangGraph Runtime."""
         inherited = {f.name: getattr(runtime, f.name) for f in dc_fields(Runtime)}
@@ -126,6 +147,7 @@ class AgentRuntime(Runtime[ContextT]):
             tools=tools or [],
             response_format=response_format,
             model_settings=model_settings or {},
+            backend=backend,
         )
 
 

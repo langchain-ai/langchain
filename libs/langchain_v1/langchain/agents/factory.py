@@ -24,6 +24,7 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    _BackendProtocol,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -520,6 +521,7 @@ def create_agent(  # noqa: PLR0915
     debug: bool = False,
     name: str | None = None,
     cache: BaseCache | None = None,
+    backend: _BackendProtocol | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
@@ -729,6 +731,7 @@ def create_agent(  # noqa: PLR0915
                 runtime,
                 model_name=_agent_model_name,
                 tools=default_tools,
+                backend=backend,
             )
         )
 
@@ -1075,6 +1078,7 @@ def create_agent(  # noqa: PLR0915
                 tools=default_tools,
                 tool_choice=None,
                 response_format=initial_response_format,
+                backend=backend,
             )
         )
         request = ModelRequest.from_runtime(agent_runtime, messages=state["messages"], state=state)
