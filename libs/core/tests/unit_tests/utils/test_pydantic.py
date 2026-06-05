@@ -2,7 +2,7 @@
 
 import sys
 import warnings
-from typing import Any
+from typing import Annotated, Any, get_type_hints
 
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +16,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
     pre_init,
 )
+from tests.unit_tests.utils.pydantic_future_annotations import FutureModel
 
 
 def test_pre_init_decorator() -> None:
@@ -131,6 +132,64 @@ def test_with_field_metadata() -> None:
         "title": "Foo",
         "type": "object",
     }
+
+
+def test_create_subset_model_v2_resolves_string_annotations() -> None:
+    """Test that lazy string annotations are resolved on the subset model."""
+    subset_model = _create_subset_model_v2("Sub", FutureModel, ["metadata"])
+    assert subset_model.__annotations__ == {"metadata": dict[str, Any] | None}
+
+
+def test_create_subset_model_v2_preserves_annotated_extras() -> None:
+    """Test that `Annotated` metadata survives string annotation resolution."""
+    subset_model = _create_subset_model_v2("Sub", FutureModel, ["tagged"])
+    assert subset_model.__annotations__ == {"tagged": Annotated[dict, "extra"] | None}
+
+
+class LocalRegistry:
+    """Module-level shadow without `Inner` for the fallback test below."""
+
+
+def test_create_subset_model_v2_unresolvable_annotations_fall_back() -> None:
+    """Test the fallback for annotations `get_type_hints` cannot resolve.
+
+    Models defined inside function bodies can hold forward references to other
+    function-local names. Pydantic resolves those from the enclosing frame,
+    but `typing.get_type_hints` only sees the module namespace and raises,
+    for example `NameError` for an unknown name or `AttributeError` for an
+    attribute of a shadowed name. Subset model creation must not raise for
+    such models; the unresolvable annotation is copied as the raw string
+    instead.
+    """
+
+    class LocalModel(BaseModel):
+        x: "LocalDep | None" = None
+
+    class LocalDep(BaseModel):
+        y: int = 0
+
+    LocalModel.model_rebuild()
+
+    with pytest.raises(NameError):
+        get_type_hints(LocalModel)
+
+    subset_model = _create_subset_model_v2("Sub", LocalModel, ["x"])
+    assert subset_model.__annotations__ == {"x": "LocalDep | None"}
+
+    class LocalRegistry:
+        class Inner(BaseModel):
+            y: int = 0
+
+    class ShadowModel(BaseModel):
+        x: "LocalRegistry.Inner | None" = None
+
+    # `get_type_hints` resolves `LocalRegistry` to the module-level class of
+    # the same name above, which has no `Inner`.
+    with pytest.raises(AttributeError):
+        get_type_hints(ShadowModel)
+
+    subset_model = _create_subset_model_v2("Sub", ShadowModel, ["x"])
+    assert subset_model.__annotations__ == {"x": "LocalRegistry.Inner | None"}
 
 
 def test_fields_pydantic_v2_proper() -> None:
