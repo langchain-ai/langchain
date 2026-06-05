@@ -39,7 +39,7 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     OmitFromSchema,
     ResponseT,
-    StateT_co,
+    StateT,
     ToolCallRequest,
     _InputAgentState,
     _OutputAgentState,
@@ -699,9 +699,9 @@ def create_agent(
     tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
     *,
     system_prompt: str | SystemMessage | None = None,
-    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    middleware: Sequence[AgentMiddleware[StateT, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | dict[str, Any] | None = None,
-    state_schema: type[AgentState[ResponseT]] | None = None,
+    state_schema: type[StateT] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
     store: BaseStore | None = None,
@@ -712,7 +712,7 @@ def create_agent(
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    StateT, ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 

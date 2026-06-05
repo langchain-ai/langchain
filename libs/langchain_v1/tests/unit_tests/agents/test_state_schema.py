@@ -323,3 +323,14 @@ def test_get_schema_type_hints_cache_accepts_distinct_local_schema_types() -> No
     assert first_info.hits == 0
     assert second_info.misses == 2
     assert second_info.hits == 2
+
+
+def test_create_agent_annotations_preserve_state_typevar() -> None:
+    annotations = create_agent.__annotations__
+
+    assert annotations["middleware"] == "Sequence[AgentMiddleware[StateT, ContextT]]"
+    assert annotations["state_schema"] == "type[StateT] | None"
+    assert annotations["return"] == (
+        "CompiledStateGraph[StateT, ContextT, _InputAgentState, "
+        "_OutputAgentState[ResponseT]]"
+    )
