@@ -771,6 +771,7 @@ class ChatPerplexity(BaseChatModel):
         return {**params, **self.model_kwargs}
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
+        message_dict: dict[str, Any]
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
