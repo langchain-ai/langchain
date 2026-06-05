@@ -3503,6 +3503,28 @@ def test_visualbasic6_code_splitter() -> None:
     ]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=60, chunk_overlap=0
+    )
+    code = """
+# Check if a file exists
+my $filePath = "/tmp/file.txt";
+if (-e $filePath) {
+    # File exists
+} else {
+    # File does not exist
+}
+    """
+    chunks = splitter.split_text(code)
+    assert chunks == [
+        "# Check if a file exists",
+        'my $filePath = "/tmp/file.txt";',
+        "if (-e $filePath) {\n    # File exists\n} else {",
+        "# File does not exist\n}",
+    ]
+
+
 def custom_iframe_extractor(iframe_tag: Tag) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"
