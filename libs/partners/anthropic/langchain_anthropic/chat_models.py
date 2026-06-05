@@ -672,6 +672,7 @@ def _format_messages(
                         "mcp_tool_result",
                         "web_search_tool_result",
                         "web_fetch_tool_result",
+                        "tool_search_tool_result",
                     ):
                         content.append(
                             _normalize_block_tool_use_id(
