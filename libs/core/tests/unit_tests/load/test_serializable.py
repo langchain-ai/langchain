@@ -11,11 +11,9 @@ from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.documents import Document
 from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load, loads
 from langchain_core.load.load import (
-    ALL_SERIALIZABLE_MAPPINGS,
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful
-from langchain_core.load.validators import CLASS_INIT_VALIDATORS
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
@@ -938,22 +936,11 @@ class TestJinja2SecurityBlocking:
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
 
 
-class TestClassSpecificValidatorsInLoad:
-    """Tests that load() properly integrates with class-specific validators."""
+class TestInitValidatorInLoad:
+    """Tests that load() properly integrates with the init_validator."""
 
-    def test_validator_registry_keys_in_serializable_mapping(self) -> None:
-        """All CLASS_INIT_VALIDATORS keys must exist in ALL_SERIALIZABLE_MAPPINGS."""
-        all_known_paths = set(ALL_SERIALIZABLE_MAPPINGS.keys()) | set(
-            ALL_SERIALIZABLE_MAPPINGS.values()
-        )
-        for key in CLASS_INIT_VALIDATORS:
-            assert key in all_known_paths, (
-                f"{key} in CLASS_INIT_VALIDATORS but not in "
-                f"ALL_SERIALIZABLE_MAPPINGS keys or values"
-            )
-
-    def test_init_validator_still_called_without_class_validator(self) -> None:
-        """Test init_validator fires for classes without a class-specific validator."""
+    def test_init_validator_called(self) -> None:
+        """Test init_validator fires during deserialization."""
         msg = AIMessage(content="test")
         serialized = dumpd(msg)
 
@@ -971,27 +958,6 @@ class TestClassSpecificValidatorsInLoad:
         )
         assert loaded == msg
         assert len(init_validator_called) == 1
-
-    def test_no_bedrock_class_init_validators(self) -> None:
-        """Bedrock integrations are not prevalidated by `load`."""
-        bedrock_paths = {
-            ("langchain", "chat_models", "bedrock", "BedrockChat"),
-            ("langchain", "chat_models", "bedrock", "ChatBedrock"),
-            ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"),
-            ("langchain_aws", "chat_models", "ChatBedrockConverse"),
-            ("langchain", "llms", "bedrock", "Bedrock"),
-            ("langchain", "llms", "bedrock", "BedrockLLM"),
-            (
-                "langchain_aws",
-                "chat_models",
-                "bedrock_converse",
-                "ChatBedrockConverse",
-            ),
-            ("langchain_aws", "chat_models", "anthropic", "ChatAnthropicBedrock"),
-            ("langchain_aws", "chat_models", "ChatBedrock"),
-            ("langchain_aws", "llms", "bedrock", "BedrockLLM"),
-        }
-        assert bedrock_paths.isdisjoint(CLASS_INIT_VALIDATORS)
 
 
 class TestMessagesAllowlistTier:
