@@ -100,11 +100,6 @@ class AgentRuntime(Runtime[ContextT]):
     model_settings: dict[str, Any] = field(default_factory=dict)
     """Additional model-specific settings."""
 
-    backend: object | None = field(default=None)
-    """Opaque backend object injected by subpackages (e.g. deepagents).
-    Typed as ``object`` at this layer; subpackages narrow the type via
-    ``AgentMiddleware._build_runtime``."""
-
     @classmethod
     def from_runtime(
         cls,
@@ -118,7 +113,6 @@ class AgentRuntime(Runtime[ContextT]):
         tools: list[BaseTool | dict] | None = None,
         response_format: ResponseFormat | None = None,
         model_settings: dict[str, Any] | None = None,
-        backend: object | None = None,
     ) -> AgentRuntime[ContextT]:
         """Construct an AgentRuntime from a base LangGraph Runtime."""
         inherited = {f.name: getattr(runtime, f.name) for f in dc_fields(Runtime)}
@@ -132,7 +126,6 @@ class AgentRuntime(Runtime[ContextT]):
             tools=tools or [],
             response_format=response_format,
             model_settings=model_settings or {},
-            backend=backend,
         )
 
 
