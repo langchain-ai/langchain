@@ -793,6 +793,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if self._preserve_videos:
             for video_tag in _find_all_tags(soup, name="video"):
                 video_src = video_tag.get("src", "")
+                if not video_src:
+                    source_tag = video_tag.find("source")
+                    if source_tag:
+                        video_src = source_tag.get("src", "")
                 markdown_video = f"![video:{video_src}]({video_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_video
@@ -801,6 +805,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if self._preserve_audio:
             for audio_tag in _find_all_tags(soup, name="audio"):
                 audio_src = audio_tag.get("src", "")
+                if not audio_src:
+                    source_tag = audio_tag.find("source")
+                    if source_tag:
+                        audio_src = source_tag.get("src", "")
                 markdown_audio = f"![audio:{audio_src}]({audio_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_audio
