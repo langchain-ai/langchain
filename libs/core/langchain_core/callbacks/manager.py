@@ -281,7 +281,22 @@ def handle_event(
                 ):
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
-                        coros.append(event)
+                        if event_name == "on_chat_model_start":
+                            if message_strings is None:
+                                message_strings = [
+                                    get_buffer_string(m) for m in args[1]
+                                ]
+                            coros.append(
+                                _ahandle_event_coro_with_fallback(
+                                    handler,
+                                    event_name,
+                                    message_strings,
+                                    *args,
+                                    **kwargs,
+                                )
+                            )
+                        else:
+                            coros.append(event)
             except NotImplementedError as e:
                 if event_name == "on_chat_model_start":
                     if message_strings is None:
@@ -333,6 +348,68 @@ def handle_event(
             else:
                 # If there's no running loop, we can run the coroutines directly.
                 _run_coros(coros)
+
+
+async def _ahandle_event_coro_with_fallback(
+    handler: BaseCallbackHandler,
+    event_name: str,
+    message_strings: list[str] | None,
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """Coroutine wrapper that handles NotImplementedError for `on_chat_model_start`.
+
+    When an async tracer's `on_chat_model_start` is called in the sync
+    :func:`handle_event` path, the coroutine is returned without executing its
+    body. If the tracer's ``_create_chat_model_run`` raises
+    ``NotImplementedError``, it fires inside ``_run_coros`` where it is caught
+    generically, and the fallback to ``on_llm_start`` never happens.
+
+    This wrapper mirrors the approach in
+    :func:`_ahandle_event_for_handler`: it awaits the handler call inline
+    and, on ``NotImplementedError``, falls back to ``on_llm_start`` so a run
+    is created in ``run_map`` and subsequent operations do not raise
+    ``TracerException``.
+
+    Args:
+        handler: The callback handler instance.
+        event_name: The name of the event (typically ``'on_chat_model_start'``).
+        message_strings: Pre-computed message strings, or ``None`` to compute.
+        *args: Positional arguments to the handler method.
+        **kwargs: Keyword arguments to the handler method.
+    """
+    try:
+        await getattr(handler, event_name)(*args, **kwargs)
+    except NotImplementedError as e:
+        if event_name == "on_chat_model_start":
+            if message_strings is None:
+                message_strings = [get_buffer_string(m) for m in args[1]]
+            await _ahandle_event_for_handler(
+                handler,
+                "on_llm_start",
+                "ignore_llm",
+                args[0],
+                message_strings,
+                *args[2:],
+                **kwargs,
+            )
+        else:
+            handler_name = handler.__class__.__name__
+            logger.warning(
+                "NotImplementedError in %s.%s callback: %s",
+                handler_name,
+                event_name,
+                repr(e),
+            )
+    except Exception as e:
+        logger.warning(
+            "Error in %s.%s callback: %s",
+            handler.__class__.__name__,
+            event_name,
+            repr(e),
+        )
+        if handler.raise_error:
+            raise
 
 
 def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
