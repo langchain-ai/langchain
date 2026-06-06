@@ -412,6 +412,15 @@ def _convert_message_to_dict(
     elif isinstance(message, FunctionMessage):
         message_dict["role"] = "function"
     elif isinstance(message, ToolMessage):
+        if api == "responses" and name == "computer":
+            return {
+                "type": "computer_call_output",
+                "call_id": message.tool_call_id,
+                "output": {
+                    "type": "computer_screenshot",
+                    "image_url": message.content,
+                },
+            }
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
         message_dict["content"] = _sanitize_chat_completions_content(
@@ -4403,6 +4412,9 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 msg["content"] = _convert_from_v1_to_responses(msg["content"], tcs)
         else:
             msg = _convert_message_to_dict(lc_msg, api="responses")
+            if msg.get("type") == "computer_call_output":
+                input_.append(msg)
+                continue
             # Get content from non-standard content blocks
             if isinstance(msg["content"], list):
                 for i, block in enumerate(msg["content"]):
@@ -4691,12 +4703,20 @@ def _construct_lc_result_from_responses_api(
                 "id": output.call_id,
             }
             tool_calls.append(tool_call)
+        elif output.type == "computer_call":
+            output_dict = output.model_dump(exclude_none=True, mode="json")
+            tool_call = {
+                "name": "computer",
+                "args": output_dict["action"],
+                "id": output_dict["call_id"],
+                "type": "tool_call",
+            }
+            tool_calls.append(tool_call)
         elif output.type in (
             "reasoning",
             "compaction",
             "web_search_call",
             "file_search_call",
-            "computer_call",
             "code_interpreter_call",
             "mcp_call",
             "mcp_list_tools",

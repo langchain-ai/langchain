@@ -37,6 +37,9 @@ from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response
+from openai.types.responses.response_computer_tool_call import (
+    ResponseComputerToolCall,
+)
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -1766,6 +1769,101 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
             "call_id": "call_123",
         }
     ]
+
+
+def test__construct_lc_result_from_responses_api_computer_call() -> None:
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseComputerToolCall(
+                type="computer_call",
+                id="computer_123",
+                call_id="call_123",
+                pending_safety_checks=[],
+                status="completed",
+                action={
+                    "type": "click",
+                    "button": "left",
+                    "x": 10,
+                    "y": 20,
+                },
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.content == []
+    assert msg.tool_calls == [
+        {
+            "name": "computer",
+            "args": {
+                "type": "click",
+                "button": "left",
+                "x": 10,
+                "y": 20,
+            },
+            "id": "call_123",
+            "type": "tool_call",
+        }
+    ]
+
+
+def test__convert_message_to_dict_computer_tool_message_responses() -> None:
+    message = ToolMessage(
+        content="data:image/png;base64,<image_data>",
+        name="computer",
+        tool_call_id="call_123",
+    )
+
+    assert _convert_message_to_dict(message, api="responses") == {
+        "type": "computer_call_output",
+        "call_id": "call_123",
+        "output": {
+            "type": "computer_screenshot",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+    }
+
+
+def test__construct_lc_result_from_responses_api_text_only_has_no_tool_calls() -> None:
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Here is the answer.",
+                        annotations=[],
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.tool_calls == []
+    assert msg.content
 
 
 def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
