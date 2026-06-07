@@ -29,7 +29,7 @@ class Visitor(ABC):
         ):
             msg = (
                 f"Received disallowed operator {func}. Allowed "
-                f"comparators are {self.allowed_operators}"
+                f"operators are {self.allowed_operators}"
             )
             raise ValueError(msg)
         if (
@@ -91,7 +91,7 @@ class Expr(BaseModel):
         Returns:
             result of visiting.
         """
-        return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}")(
+        return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}"(
             self
         )
 
