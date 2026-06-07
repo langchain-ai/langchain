@@ -142,7 +142,54 @@ def test_add_usage_with_details() -> None:
     assert result["input_token_details"]["audio"] == 8
     assert result["output_token_details"]["reasoning"] == 15
 
+def test_usage_metadata_supports_image_token_details() -> None:
+    usage = UsageMetadata(
+        input_tokens=10,
+        output_tokens=5,
+        total_tokens=15,
+        input_token_details=InputTokenDetails(
+            audio=1,
+            cache_creation=2,
+            cache_read=3,
+            image=4,
+        ),
+        output_token_details=OutputTokenDetails(
+            audio=5,
+            reasoning=6,
+            image=7,
+        ),
+    )
 
+    assert usage["input_token_details"]["image"] == 4
+    assert usage["output_token_details"]["image"] == 7
+
+
+def test_usage_metadata_image_token_details_merge_and_subtract() -> None:
+    left = UsageMetadata(
+        input_tokens=10,
+        output_tokens=2,
+        total_tokens=12,
+        input_token_details=InputTokenDetails(image=4),
+        output_token_details=OutputTokenDetails(image=6),
+    )
+
+    right = UsageMetadata(
+        input_tokens=5,
+        output_tokens=3,
+        total_tokens=8,
+        input_token_details=InputTokenDetails(image=2),
+        output_token_details=OutputTokenDetails(image=1),
+    )
+
+    merged = add_usage(left, right)
+    subtracted = subtract_usage(left, right)
+
+    assert merged["input_token_details"]["image"] == 6
+    assert merged["output_token_details"]["image"] == 7
+
+    assert subtracted["input_token_details"]["image"] == 2
+    assert subtracted["output_token_details"]["image"] == 5
+    
 def test_subtract_usage_both_none() -> None:
     result = subtract_usage(None, None)
     assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)

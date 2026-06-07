@@ -62,7 +62,8 @@ class InputTokenDetails(TypedDict, total=False):
 
     Since there was a cache miss, the cache was created from these tokens.
     """
-
+    image: int
+    """Image input tokens."""
     cache_read: int
     """Input tokens that were cached and there was a cache hit.
 
@@ -92,7 +93,8 @@ class OutputTokenDetails(TypedDict, total=False):
 
     audio: int
     """Audio output tokens."""
-
+    image: int
+    """Image output tokens."""
     reasoning: int
     """Reasoning output tokens.
 
