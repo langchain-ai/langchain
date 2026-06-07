@@ -91,7 +91,7 @@ class Expr(BaseModel):
         Returns:
             result of visiting.
         """
-        return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}"(
+        return getattr(visitor, f"visit_{_to_snake_case(self.__class__.__name__)}")(
             self
         )
 
