@@ -63,12 +63,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
         Args:
             result: The result of the LLM call.
-            partial: Whether to parse partial JSON objects.
-
-                If `True`, the output will be a JSON object containing all the keys that
-                have been returned so far.
-
-                If `False`, the output will be the full JSON object.
+            partial: Whether to parse partial JSON objects. If `True`, the output 
+                will be a JSON object containing all the keys that have been 
+                returned so far. If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed JSON object.
