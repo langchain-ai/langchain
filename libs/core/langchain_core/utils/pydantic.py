@@ -13,6 +13,7 @@ from typing import (
     Any,
     TypeVar,
     cast,
+    get_type_hints,
     overload,
 )
 
@@ -263,13 +264,14 @@ def _create_subset_model_v2(
     # This is done to preserve __annotations__ when working with pydantic 2.x
     # and using the Annotated type with TypedDict.
     # Comment out the following line, to trigger the relevant test case.
-    selected_annotations = [
-        (name, annotation)
-        for name, annotation in model.__annotations__.items()
+    all_annotations = get_type_hints(model, include_extras=True)
+    selected_annotations = {
+        name: annotation
+        for name, annotation in all_annotations.items()
         if name in field_names
-    ]
+    }
 
-    rtn.__annotations__ = dict(selected_annotations)
+    rtn.__annotations__ = selected_annotations
     rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 

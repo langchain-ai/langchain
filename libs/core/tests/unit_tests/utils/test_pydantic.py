@@ -205,3 +205,25 @@ def test_create_subset_model_v2_preserves_default_factory() -> None:
     assert schema.get("required") == ["required_field"]
     assert "names" not in schema.get("required", [])
     assert "mapping" not in schema.get("required", [])
+
+
+# This test ensures that the __annotations__ attribute of the model is not directly mutated, which can cause issues with Pydantic 2.14+ when using Annotated types with TypedDict.
+
+
+def test_create_subset_model_v2_annotations_invariant() -> None:
+    """Ensure _create_subset_model_v2 doesn't break __annotations__ invariant.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/37835
+    Importing certain langgraph models before BaseLLM caused a TypeError
+    on Pydantic 2.14+ due to direct mutation of __annotations__.
+    """
+    from langgraph.managed import RemainingSteps
+    from pydantic import BaseModel as PydanticBaseModel
+
+    class Poison(PydanticBaseModel):
+        remaining_steps: RemainingSteps = 25
+
+    # This should not raise TypeError: 'function' object is not subscriptable
+    from langchain_core.language_models.llms import BaseLLM
+
+    assert BaseLLM is not None
