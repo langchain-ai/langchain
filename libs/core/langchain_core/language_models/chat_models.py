@@ -1465,7 +1465,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
-        params = self.dict()
+        params = self.model_dump()
         params["stop"] = stop
         return {**params, **kwargs}
 
