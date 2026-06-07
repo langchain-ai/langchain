@@ -49,6 +49,17 @@ def unique_by_key(iterable: Iterable[T], key: Callable[[T], H]) -> Iterator[T]:
             seen.add(k)
             yield e
 
+def _normalize_retriever_output(docs: Iterable[Any]) -> list[Document]:
+    """Normalize retriever outputs into Documents."""
+    normalized: list[Document] = []
+    for doc in docs:
+        if isinstance(doc, Document):
+            normalized.append(doc)
+        elif isinstance(doc, str):
+            normalized.append(Document(page_content=doc))
+        else:
+            normalized.append(Document(page_content=str(doc)))
+    return normalized
 
 class EnsembleRetriever(BaseRetriever):
     """Retriever that ensembles the multiple retrievers.
@@ -248,11 +259,9 @@ class EnsembleRetriever(BaseRetriever):
         ]
 
         # Enforce that retrieved docs are Documents for each list in retriever_docs
-        for i in range(len(retriever_docs)):
-            retriever_docs[i] = [
-                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc  # type: ignore[unreachable]
-                for doc in retriever_docs[i]
-            ]
+        retriever_docs = [
+            _normalize_retriever_output(docs) for docs in retriever_docs
+        ]
 
         # apply rank fusion
         return self.weighted_reciprocal_rank(retriever_docs)
@@ -292,11 +301,9 @@ class EnsembleRetriever(BaseRetriever):
         )
 
         # Enforce that retrieved docs are Documents for each list in retriever_docs
-        for i in range(len(retriever_docs)):
-            retriever_docs[i] = [
-                Document(page_content=doc) if not isinstance(doc, Document) else doc
-                for doc in retriever_docs[i]
-            ]
+        retriever_docs = [
+            _normalize_retriever_output(docs) for docs in retriever_docs
+        ]
 
         # apply rank fusion
         return self.weighted_reciprocal_rank(retriever_docs)
