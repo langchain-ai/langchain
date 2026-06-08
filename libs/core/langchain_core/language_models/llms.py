@@ -305,7 +305,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     @functools.cached_property
     def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
-        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
         return cast("builtins.dict[str, Any]", dumpd(self))
 
@@ -1385,6 +1385,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         """Return type of llm."""
 
     @deprecated("1.4.1", alternative="asdict", removal="2.0")
+    @override
     def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 

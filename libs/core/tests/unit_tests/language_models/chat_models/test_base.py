@@ -102,6 +102,14 @@ def test_asdict_replaces_deprecated_dict() -> None:
         assert model.dict() == expected
 
 
+def test_invoke_does_not_warn_deprecated_dict() -> None:
+    """Invoking should use `asdict()` internally, never the deprecated `dict()`."""
+    model = FakeListChatModel(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        assert model.invoke("hello").content == "foo"
+
+
 @pytest.fixture
 def messages() -> list[BaseMessage]:
     return [

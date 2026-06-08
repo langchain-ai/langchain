@@ -342,10 +342,11 @@ class BasePromptTemplate(
         raise NotImplementedError
 
     @deprecated("1.4.1", alternative="asdict", removal="2.0")
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 
-        Return a dictionary of the LLM.
+        Return a dictionary representation of the prompt.
         """
         return self.asdict(**kwargs)
 

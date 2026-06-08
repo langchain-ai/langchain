@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
@@ -31,6 +32,14 @@ def test_asdict_replaces_deprecated_dict() -> None:
     assert llm.asdict() == expected
     with pytest.warns(LangChainDeprecationWarning, match="asdict"):
         assert llm.dict() == expected
+
+
+def test_invoke_does_not_warn_deprecated_dict() -> None:
+    """Invoking should use `asdict()` internally, never the deprecated `dict()`."""
+    llm = FakeListLLM(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        assert llm.invoke("hello") == "foo"
 
 
 def test_batch() -> None:

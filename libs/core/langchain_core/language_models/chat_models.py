@@ -432,7 +432,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     @cached_property
     def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
-        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
         return cast("builtins.dict[str, Any]", dumpd(self))
 
@@ -2306,15 +2306,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Return type of chat model."""
 
     @deprecated("1.4.1", alternative="asdict", removal="2.0")
+    @override
     def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 
-        Return a dictionary of the LLM.
+        Return a dictionary of the chat model.
         """
         return self.asdict()
 
     def asdict(self) -> builtins.dict[str, Any]:
-        """Return a dictionary of the LLM."""
+        """Return a dictionary of the chat model."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
