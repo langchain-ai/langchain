@@ -320,6 +320,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "!!! note\n"
+                "\n"
                 "    `Document` is for **retrieval workflows**, not chat I/O. For "
                 "sending text\n"
                 "    to an LLM in a conversation, use message types from "
@@ -1161,7 +1162,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             "callbacks": None,
             "recursion_limit": 25,
             "configurable": {"hello": "there", "__secret_key": "nahnah"},
-            "metadata": {"hello": "there", "bye": "now"},
+            "metadata": {"bye": "now"},
         },
     )
     spy.reset_mock()

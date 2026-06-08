@@ -117,6 +117,18 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Integer 'index' should be preserved, not summed (tool call identification)
+        ({"index": 1}, {"index": 1}, {"index": 1}),
+        ({"index": 0}, {"index": 1}, {"index": 1}),
+        # 'created' timestamp should be preserved, not summed
+        ({"created": 1700000000}, {"created": 1700000000}, {"created": 1700000000}),
+        ({"created": 1700000000}, {"created": 1700000001}, {"created": 1700000001}),
+        # 'timestamp' should be preserved, not summed
+        ({"timestamp": 100}, {"timestamp": 100}, {"timestamp": 100}),
+        ({"timestamp": 100}, {"timestamp": 200}, {"timestamp": 200}),
+        # Other integer fields should still be summed (e.g., token counts)
+        ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
+        ({"count": 1}, {"count": 2}, {"count": 3}),
     ],
 )
 def test_merge_dicts(

@@ -47,6 +47,15 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         if not run.parent_run_id:
             self._persist_run(run)
         self.run_map.pop(str(run.id))
+        # If this run's parent was injected from an external tracing context
+        # (e.g. a langsmith @traceable), decrement its child refcount and
+        # remove it from run_map once the last child is done.
+        parent_id = str(run.parent_run_id) if run.parent_run_id else None
+        if parent_id and parent_id in self._external_run_ids:
+            self._external_run_ids[parent_id] -= 1
+            if self._external_run_ids[parent_id] <= 0:
+                self.run_map.pop(parent_id, None)
+                del self._external_run_ids[parent_id]
         self._on_run_update(run)
 
     def on_chat_model_start(
@@ -61,7 +70,13 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: str | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Start a trace for an LLM run.
+        """Start a trace for a chat model run.
+
+        Note:
+            Naming can be confusing here: there is `on_chat_model_start`, but no
+            corresponding `on_chat_model_end` callback. Chat model completion is
+            routed through `on_llm_end` / `_on_llm_end`, which are shared with
+            text LLM runs.
 
         Args:
             serialized: The serialized model.
@@ -141,7 +156,9 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new LLM token.
+
+        Only available when streaming is enabled.
 
         Args:
             token: The token.
@@ -189,7 +206,12 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
     @override
     def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> Run:
-        """End a trace for an LLM run.
+        """End a trace for an LLM or chat model run.
+
+        Note:
+            This is the end callback for both run types. Chat models start with
+            `on_chat_model_start`, but there is no `on_chat_model_end`;
+            completion is routed here for callback API compatibility.
 
         Args:
             response: The response.
@@ -440,7 +462,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         name: str | None = None,
         **kwargs: Any,
     ) -> Run:
-        """Run when the Retriever starts running.
+        """Run when the `Retriever` starts running.
 
         Args:
             serialized: The serialized retriever.
@@ -477,7 +499,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         run_id: UUID,
         **kwargs: Any,
     ) -> Run:
-        """Run when Retriever errors.
+        """Run when `Retriever` errors.
 
         Args:
             error: The error.
@@ -499,7 +521,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> Run:
-        """Run when the Retriever ends running.
+        """Run when the `Retriever` ends running.
 
         Args:
             documents: The documents.
@@ -527,7 +549,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
 
 class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
-    """Async Base interface for tracers."""
+    """Async base interface for tracers."""
 
     @abstractmethod
     @override
@@ -538,8 +560,9 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _start_trace(self, run: Run) -> None:
         """Start a trace for a run.
 
-        Starting a trace will run concurrently with each _on_[run_type]_start method.
-        No _on_[run_type]_start callback should depend on operations in _start_trace.
+        Starting a trace will run concurrently with each `_on_[run_type]_start` method.
+        No `_on_[run_type]_start` callback should depend on operations in
+        `_start_trace`.
         """
         super()._start_trace(run)
         await self._on_run_create(run)
@@ -548,12 +571,21 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _end_trace(self, run: Run) -> None:
         """End a trace for a run.
 
-        Ending a trace will run concurrently with each _on_[run_type]_end method.
-        No _on_[run_type]_end callback should depend on operations in _end_trace.
+        Ending a trace will run concurrently with each `_on_[run_type]_end` method.
+        No `_on_[run_type]_end` callback should depend on operations in `_end_trace`.
         """
         if not run.parent_run_id:
             await self._persist_run(run)
         self.run_map.pop(str(run.id))
+        # If this run's parent was injected from an external tracing context
+        # (e.g. a langsmith @traceable), decrement its child refcount and
+        # remove it from run_map once the last child is done.
+        parent_id = str(run.parent_run_id) if run.parent_run_id else None
+        if parent_id and parent_id in self._external_run_ids:
+            self._external_run_ids[parent_id] -= 1
+            if self._external_run_ids[parent_id] <= 0:
+                self.run_map.pop(parent_id, None)
+                del self._external_run_ids[parent_id]
         await self._on_run_update(run)
 
     @override
@@ -651,6 +683,14 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
+        """End a trace for an LLM or chat model run.
+
+        Note:
+            This async callback also handles both run types. Async chat models
+            start with `on_chat_model_start`, but there is no
+            `on_chat_model_end`; completion is routed here for callback API
+            compatibility.
+        """
         llm_run = self._complete_llm_run(
             response=response,
             run_id=run_id,
@@ -871,7 +911,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         """Process the LLM Run upon start."""
 
     async def _on_llm_end(self, run: Run) -> None:
-        """Process the LLM Run."""
+        """Process LLM/chat model run completion."""
 
     async def _on_llm_error(self, run: Run) -> None:
         """Process the LLM Run upon error."""

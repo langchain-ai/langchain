@@ -8,7 +8,7 @@
 #
 # Examples:
 #     feat(core): add multi‐tenant support
-#     fix(cli): resolve flag parsing error
+#     fix(langchain): resolve error
 #     docs: update API usage examples
 #     docs(openai): update API usage examples
 #
@@ -25,14 +25,21 @@
 #   * chore      — other changes that don't modify source or test files
 #   * revert     — reverts a previous commit
 #   * release    — prepare a new release
+#   * hotfix     — urgent fix
 #
 # Allowed Scope(s) (optional):
-#   core, cli, langchain, langchain-classic, model-profiles,
+#   core, langchain, langchain-classic, model-profiles,
 #   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
-#   perplexity, prompty, qdrant, xai, infra, deps
+#   perplexity, qdrant, xai, infra, deps, partners
 #
-# Multiple scopes can be used by separating them with a comma.
+# Multiple scopes can be used by separating them with a comma. For example:
+#
+#   feat(core,langchain): add multi‐tenant support to core and langchain
+#
+# Note: PRs touching the langchain package should use the 'langchain' scope. It is not
+#   acceptable to omit the scope for changes to the langchain package, despite it being
+#   the main package & name of the repo.
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
@@ -59,8 +66,17 @@ jobs:
     name: "validate format"
     runs-on: ubuntu-latest
     steps:
+      - name: "🚫 Reject empty scope"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$PR_TITLE" =~ ^[a-z]+\(\)[!]?: ]]; then
+            echo "::error::PR title has empty scope parentheses: '$PR_TITLE'"
+            echo "Either remove the parentheses or provide a scope (e.g., 'fix(core): ...')."
+            exit 1
+          fi
       - name: "✅ Validate Conventional Commits Format"
-        uses: amannn/action-semantic-pull-request@v6
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -77,9 +93,9 @@ jobs:
             chore
             revert
             release
+            hotfix
           scopes: |
             core
-            cli
             langchain
             langchain-classic
             model-profiles
@@ -97,12 +113,13 @@ jobs:
             nomic
             ollama
             openai
+            openrouter
             perplexity
-            prompty
             qdrant
             xai
             infra
             deps
+            partners
           requireScope: false
           disallowScopes: |
             release

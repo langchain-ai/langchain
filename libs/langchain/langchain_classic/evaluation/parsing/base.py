@@ -176,6 +176,6 @@ class JsonEqualityEvaluator(StringEvaluator):
         if isinstance(label, list):
             if not isinstance(parsed, list):
                 return {"score": 0}
-            parsed = sorted(parsed, key=lambda x: str(x))
-            label = sorted(label, key=lambda x: str(x))
+            parsed = sorted(parsed, key=str)
+            label = sorted(label, key=str)
         return {"score": self.operator(parsed, label)}

@@ -16,12 +16,15 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
+from langchain_core.runnables import RunnableBinding, RunnableSequence
+from pydantic import BaseModel
 
 from langchain_groq.chat_models import (
     ChatGroq,
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _create_usage_metadata,
+    _format_message_content,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -31,8 +34,10 @@ if "GROQ_API_KEY" not in os.environ:
 def test_groq_model_param() -> None:
     llm = ChatGroq(model="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
     llm = ChatGroq(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
+    assert llm.model == "foo"
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -253,6 +258,49 @@ def test_chat_groq_invalid_streaming_params() -> None:
         )
 
 
+def test_with_structured_output_json_schema_strict() -> None:
+    class Response(BaseModel):
+        """Response schema."""
+
+        foo: str
+
+    structured_model = ChatGroq(model="openai/gpt-oss-20b").with_structured_output(
+        Response, method="json_schema", strict=True
+    )
+
+    assert isinstance(structured_model, RunnableSequence)
+    first_step = structured_model.steps[0]
+    assert isinstance(first_step, RunnableBinding)
+    response_format = first_step.kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    json_schema = response_format["json_schema"]
+    assert json_schema["strict"] is True
+    assert json_schema["name"] == "Response"
+    assert json_schema["schema"]["properties"]["foo"]["type"] == "string"
+    assert "foo" in json_schema["schema"]["required"]
+    assert json_schema["schema"]["additionalProperties"] is False
+
+
+def test_with_structured_output_json_schema_strict_ignored_on_unsupported_model() -> (
+    None
+):
+    class Response(BaseModel):
+        """Response schema."""
+
+        foo: str
+
+    structured_model = ChatGroq(model="llama-3.1-8b-instant").with_structured_output(
+        Response, method="json_schema", strict=True
+    )
+
+    assert isinstance(structured_model, RunnableSequence)
+    first_step = structured_model.steps[0]
+    assert isinstance(first_step, RunnableBinding)
+    response_format = first_step.kwargs["response_format"]
+    assert response_format["type"] == "json_schema"
+    assert "strict" not in response_format["json_schema"]
+
+
 def test_chat_groq_secret() -> None:
     """Test that secret is not printed."""
     secret = "secretKey"  # noqa: S105
@@ -410,6 +458,47 @@ def test_create_usage_metadata_missing_total_tokens() -> None:
     assert result["input_tokens"] == 100
     assert result["output_tokens"] == 50
     assert result["total_tokens"] == 150
+
+
+def test_create_usage_metadata_zero_total_tokens() -> None:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+    token_usage = {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 0,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["total_tokens"] == 0
+
+
+def test_create_usage_metadata_zero_input_tokens_preferred_key() -> None:
+    """Test that input_tokens=0 is not overridden by prompt_tokens fallback."""
+    token_usage = {
+        "input_tokens": 0,
+        "prompt_tokens": 50,
+        "completion_tokens": 5,
+        "total_tokens": 55,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["input_tokens"] == 0
+
+
+def test_create_usage_metadata_zero_output_tokens_preferred_key() -> None:
+    """Test that output_tokens=0 is not overridden by completion_tokens fallback."""
+    token_usage = {
+        "input_tokens": 10,
+        "output_tokens": 0,
+        "completion_tokens": 50,
+        "total_tokens": 60,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["output_tokens"] == 0
 
 
 def test_create_usage_metadata_empty_details() -> None:
@@ -945,3 +1034,64 @@ def test_combine_llm_outputs_with_missing_details() -> None:
 def test_profile() -> None:
     model = ChatGroq(model="openai/gpt-oss-20b")
     assert model.profile
+
+
+def test_format_message_content_string() -> None:
+    """Test that string content is passed through unchanged."""
+    content = "hello"
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_none() -> None:
+    """Test that None content is passed through unchanged."""
+    content = None
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_empty_list() -> None:
+    """Test that empty list is passed through unchanged."""
+    content: list = []
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_text_and_image_url() -> None:
+    """Test that existing image_url format is passed through unchanged."""
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}},
+    ]
+    assert content == _format_message_content(content)
+
+
+def test_format_message_content_langchain_image_base64() -> None:
+    """Test that LangChain image blocks with base64 are converted."""
+    content = {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"}
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,<base64 data>"},
+        }
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_langchain_image_url() -> None:
+    """Test that LangChain image blocks with URL are converted."""
+    content = {"type": "image", "url": "https://example.com/image.jpg"}
+    expected = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+    ]
+    assert expected == _format_message_content([content])
+
+
+def test_format_message_content_mixed() -> None:
+    """Test that mixed content with text and image is handled correctly."""
+    content = [
+        {"type": "text", "text": "Describe this image"},
+        {"type": "image", "base64": "<data>", "mime_type": "image/png"},
+    ]
+    expected = [
+        {"type": "text", "text": "Describe this image"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,<data>"}},
+    ]
+    assert expected == _format_message_content(content)

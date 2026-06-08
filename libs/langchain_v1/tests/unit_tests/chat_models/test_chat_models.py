@@ -1,14 +1,15 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 import pytest
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -52,6 +53,12 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     assert llm1.dict() == llm2.dict()
 
 
+def test_init_chat_model_rejects_model_object() -> None:
+    """Passing a model object instead of a string should raise TypeError."""
+    with pytest.raises(TypeError, match="must be a string"):
+        init_chat_model(model=FakeChatModel())  # type: ignore[call-overload]
+
+
 def test_init_missing_dep() -> None:
     with pytest.raises(ImportError):
         init_chat_model("mixtral-8x7b-32768", model_provider="groq")
@@ -64,7 +71,7 @@ def test_init_unknown_provider() -> None:
 
 def test_supported_providers_is_sorted() -> None:
     """Test that supported providers are sorted alphabetically."""
-    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
+    assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
 
 
 @pytest.mark.parametrize(
@@ -81,7 +88,7 @@ def test_supported_providers_is_sorted() -> None:
         ("Accounts/Fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("gemini-1.5-pro", "google_vertexai"),
         ("gemini-2.5-pro", "google_vertexai"),
-        ("gemini-3-pro-preview", "google_vertexai"),
+        ("gemini-3.1-pro-preview", "google_vertexai"),
         ("amazon.titan-text-express-v1", "bedrock"),
         ("Amazon.Titan-Text-Express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
@@ -164,7 +171,7 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -185,6 +192,7 @@ def test_configurable() -> None:
             "reasoning_effort": None,
             "verbosity": None,
             "frequency_penalty": None,
+            "context_management": None,
             "include": None,
             "seed": None,
             "service_tier": None,
@@ -226,6 +234,7 @@ def test_configurable() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -289,7 +298,7 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -313,9 +322,11 @@ def test_configurable_with_default() -> None:
             "default_headers": None,
             "model_kwargs": {},
             "reuse_last_container": None,
+            "inference_geo": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
+            "output_config": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
@@ -323,7 +334,7 @@ def test_configurable_with_default() -> None:
         "config": {
             "callbacks": None,
             "configurable": {},
-            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "metadata": {},
             "recursion_limit": 25,
             "tags": ["foo"],
         },
@@ -331,6 +342,7 @@ def test_configurable_with_default() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)

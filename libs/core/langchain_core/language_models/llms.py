@@ -43,6 +43,7 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
+from langchain_core.language_models._utils import _filter_invocation_params_for_tracing
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -313,7 +314,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     @property
     @override
     def OutputType(self) -> type[str]:
-        """Get the input type for this `Runnable`."""
+        """Get the output type for this `Runnable`."""
         return str
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
@@ -353,9 +354,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ls_params["ls_model_name"] = self.model_name
 
         # temperature
-        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], (int, float)):
             ls_params["ls_temperature"] = kwargs["temperature"]
-        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+        elif hasattr(self, "temperature") and isinstance(
+            self.temperature, (int, float)
+        ):
             ls_params["ls_temperature"] = self.temperature
 
         # max_tokens
@@ -527,7 +530,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             options = {"stop": stop}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
@@ -537,6 +540,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 self.tags,
                 inheritable_metadata,
                 self.metadata,
+                langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                    params
+                ),
             )
             (run_manager,) = callback_manager.on_llm_start(
                 self._serialized,
@@ -597,7 +603,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         options = {"stop": stop}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
-            **self._get_ls_params(stop=stop, **kwargs),
+            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
         }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
@@ -607,6 +613,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             self.tags,
             inheritable_metadata,
             self.metadata,
+            langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                params
+            ),
         )
         (run_manager,) = await callback_manager.on_llm_start(
             self._serialized,
@@ -906,14 +915,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         if (
             isinstance(callbacks, list)
@@ -950,6 +959,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
+            params = self.asdict()
+            params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
                     callback,
@@ -959,6 +970,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
                 for callback, tag, meta in zip(
                     callbacks, tags_list, metadata_list, strict=False
@@ -966,6 +980,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
+            params = self.asdict()
+            params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
                     cast("Callbacks", callbacks),
@@ -975,12 +991,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.asdict()
-        params["stop"] = stop
         options = {"stop": stop}
         (
             existing_prompts,
@@ -1173,14 +1190,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             metadata = [
                 {
                     **(meta or {}),
-                    **self._get_ls_params(stop=stop, **kwargs),
+                    **self._get_ls_params_with_defaults(stop=stop, **kwargs),
                 }
                 for meta in metadata
             ]
         elif isinstance(metadata, dict):
             metadata = {
                 **(metadata or {}),
-                **self._get_ls_params(stop=stop, **kwargs),
+                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
             }
         # Create callback managers
         if isinstance(callbacks, list) and (
@@ -1214,6 +1231,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
+            params = self.asdict()
+            params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
                     callback,
@@ -1223,6 +1242,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     meta,
                     self.metadata,
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
                 for callback, tag, meta in zip(
                     callbacks, tags_list, metadata_list, strict=False
@@ -1230,6 +1252,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
+            params = self.asdict()
+            params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
                     cast("Callbacks", callbacks),
@@ -1239,12 +1263,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.tags,
                     cast("dict[str, Any]", metadata),
                     self.metadata,
+                    langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
+                        params
+                    ),
                 )
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        params = self.asdict()
-        params["stop"] = stop
         options = {"stop": stop}
         (
             existing_prompts,
@@ -1359,7 +1384,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
-    @deprecated("1.2.5", alternative="asdict", removal="2.0")
+    @deprecated("1.4.1", alternative="asdict", removal="2.0")
     def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 

@@ -38,10 +38,13 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -53,10 +56,13 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of `Generation` to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The Generations are assumed to be different candidate outputs for a
+                single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -244,13 +250,16 @@ class BaseOutputParser(
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         The return value is parsed from only the first `Generation` in the result, which
-            is assumed to be the highest-likelihood `Generation`.
+        is assumed to be the highest-likelihood `Generation`.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -274,13 +283,16 @@ class BaseOutputParser(
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         The return value is parsed from only the first `Generation` in the result, which
-            is assumed to be the highest-likelihood `Generation`.
+        is assumed to be the highest-likelihood `Generation`.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -306,9 +318,8 @@ class BaseOutputParser(
     ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
 
-        The prompt is largely provided in the event the `OutputParser` wants
-        to retry or fix the output in some way, and needs information from
-        the prompt to do so.
+        The prompt is largely provided in the event the `OutputParser` wants to retry or
+        fix the output in some way, and needs information from the prompt to do so.
 
         Args:
             completion: String output of a language model.
@@ -332,10 +343,10 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    @deprecated("1.2.5", alternative="asdict", removal="2.0")
+    @deprecated("1.4.1", alternative="asdict", removal="2.0")
     @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
-        return self.asdict()
+        return self.asdict(**kwargs)
 
     def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of output parser."""

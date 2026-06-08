@@ -31,11 +31,11 @@ def elapsed(run: Any) -> str:
     """Get the elapsed time of a run.
 
     Args:
-        run: any object with a start_time and end_time attribute.
+        run: any object with a `start_time` and `end_time` attribute.
 
     Returns:
-        A string with the elapsed time in seconds or
-            milliseconds if time is less than a second.
+        A string with the elapsed time in seconds or milliseconds if time is less than a
+            second.
 
     """
     elapsed_time = run.end_time - run.start_time
@@ -49,10 +49,13 @@ class FunctionCallbackHandler(BaseTracer):
     """Tracer that calls a function with a single str parameter."""
 
     name: str = "function_callback_handler"
-    """The name of the tracer. This is used to identify the tracer in the logs."""
+    """The name of the tracer.
+
+    This is used to identify the tracer in the logs.
+    """
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
-        """Create a FunctionCallbackHandler.
+        """Create a `FunctionCallbackHandler`.
 
         Args:
             function: The callback function to call.

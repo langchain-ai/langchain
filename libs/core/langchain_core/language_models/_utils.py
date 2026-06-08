@@ -2,6 +2,7 @@ import re
 from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
+    Any,
     Literal,
     TypedDict,
     TypeVar,
@@ -12,6 +13,21 @@ if TYPE_CHECKING:
 from langchain_core.messages.content import (
     ContentBlock,
 )
+
+
+def _filter_invocation_params_for_tracing(params: dict[str, Any]) -> dict[str, Any]:
+    """Filter out large/inappropriate fields from invocation params for tracing.
+
+    Removes fields like tools, functions, messages, response_format that can be large.
+
+    Args:
+        params: The invocation parameters to filter.
+
+    Returns:
+        The filtered parameters with large fields removed.
+    """
+    excluded_keys = {"tools", "functions", "messages", "response_format"}
+    return {k: v for k, v in params.items() if k not in excluded_keys}
 
 
 def is_openai_data_block(

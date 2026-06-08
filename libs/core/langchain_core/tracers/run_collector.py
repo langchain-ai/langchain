@@ -17,11 +17,10 @@ class RunCollectorCallbackHandler(BaseTracer):
     name: str = "run-collector_callback_handler"
 
     def __init__(self, example_id: UUID | str | None = None, **kwargs: Any) -> None:
-        """Initialize the RunCollectorCallbackHandler.
+        """Initialize the `RunCollectorCallbackHandler`.
 
         Args:
-            example_id: The ID of the example being traced. (default: None).
-                It can be either a UUID or a string.
+            example_id: The ID of the example being traced.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
@@ -31,7 +30,7 @@ class RunCollectorCallbackHandler(BaseTracer):
         self.traced_runs: list[Run] = []
 
     def _persist_run(self, run: Run) -> None:
-        """Persist a run by adding it to the traced_runs list.
+        """Persist a run by adding it to the `traced_runs` list.
 
         Args:
             run: The run to be persisted.

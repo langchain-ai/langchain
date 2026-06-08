@@ -6,6 +6,7 @@ import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
+    LangSmithParams,
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -27,7 +28,10 @@ from pydantic import Field
 from typing_extensions import override
 
 from langchain.agents import AgentState
-from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.summarization import (
+    SummarizationMiddleware,
+    _provider_matches,
+)
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -165,6 +169,7 @@ def test_summarization_middleware_helper_methods() -> None:
     assert isinstance(new_messages[0], HumanMessage)
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
+    assert new_messages[0].additional_kwargs.get("lc_source") == "summarization"
 
 
 def test_summarization_middleware_summary_creation() -> None:
@@ -352,8 +357,8 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
         model=ProfileChatModel(),
         trigger=("fraction", 0.1),
         keep=("fraction", 0.5),
+        token_counter=token_counter,
     )
-    middleware.token_counter = token_counter
 
     # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
     # Target keep: 500 tokens (50% of 1000)
@@ -387,36 +392,13 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
 
 
 def test_summarization_middleware_missing_profile() -> None:
-    """Ensure automatic profile inference falls back when profiles are unavailable."""
-
-    class ImportErrorProfileModel(BaseChatModel):
-        @override
-        def _generate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: CallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            raise NotImplementedError
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
-        def __getattribute__(self, name: str) -> Any:
-            if name == "profile":
-                msg = "Profile not available"
-                raise AttributeError(msg)
-            return super().__getattribute__(name)
-
+    """Ensure fractional limits fail when model has no profile data."""
     with pytest.raises(
         ValueError,
         match="Model profile information is required to use fractional token limits",
     ):
         _ = SummarizationMiddleware(
-            model=ImportErrorProfileModel(), trigger=("fraction", 0.5), keep=("messages", 1)
+            model=MockChatModel(), trigger=("fraction", 0.5), keep=("messages", 1)
         )
 
 
@@ -1027,6 +1009,32 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
 
+def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
+    calls: list[dict[str, Any]] = []
+
+    def fake_counter(_: Iterable[MessageLikeRepresentation], **kwargs: Any) -> int:
+        calls.append(kwargs)
+        return 100
+
+    with patch(
+        "langchain.agents.middleware.summarization.count_tokens_approximately",
+        side_effect=fake_counter,
+    ) as mock_counter:
+        middleware = SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger=("tokens", 1),
+            keep=("tokens", 1),
+            token_counter=mock_counter,
+        )
+        state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
+        assert middleware.before_model(state, Runtime()) is not None
+
+    # Test we support partial token counting (which for default token counter does not
+    # use use_usage_metadata_scaling)
+    assert any(call.get("use_usage_metadata_scaling") is False for call in calls)
+    assert any(call.get("use_usage_metadata_scaling") is True for call in calls)
+
+
 def test_summarization_middleware_find_safe_cutoff_preserves_ai_tool_pair() -> None:
     """Test `_find_safe_cutoff` preserves AI/Tool message pairs together."""
     middleware = SummarizationMiddleware(
@@ -1213,3 +1221,151 @@ def test_usage_metadata_trigger() -> None:
         ]
     )
     assert not middleware._should_summarize(messages, 0)
+
+
+def test_provider_matches() -> None:
+    """Direct equality matches, plus Bedrock aliases under amazon_bedrock."""
+    assert _provider_matches("anthropic", "anthropic")
+    assert _provider_matches("openai", "openai")
+    # Bedrock chat models tag messages with model_provider="bedrock" or
+    # "bedrock_converse" but trace under ls_provider="amazon_bedrock".
+    assert _provider_matches("bedrock", "amazon_bedrock")
+    assert _provider_matches("bedrock_converse", "amazon_bedrock")
+    # Non-matches
+    assert not _provider_matches("openai", "anthropic")
+    assert not _provider_matches("bedrock", "anthropic")
+    assert not _provider_matches("anthropic", None)
+
+
+class _MockBedrockChatModel(BaseChatModel):
+    """Mock model that mimics ChatBedrockConverse's ls_provider for tracing."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "amazon_bedrock_converse_chat"
+
+    @override
+    def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
+        return LangSmithParams(ls_provider="amazon_bedrock", ls_model_type="chat")
+
+
+def test_reported_tokens_trigger_for_bedrock_converse() -> None:
+    """Bedrock messages should satisfy the reported-token check.
+
+    Despite the model_provider/ls_provider mismatch (bedrock_converse vs.
+    amazon_bedrock), the reported-token check should still trigger summarization.
+    """
+    middleware = SummarizationMiddleware(
+        model=_MockBedrockChatModel(),
+        trigger=("tokens", 10_000),
+        keep=("messages", 4),
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "bedrock_converse"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # reported token count (10_001) should override the supplied count of 0
+    assert middleware._should_summarize(messages, 0)
+
+    # mismatched provider should not engage
+    messages_other_provider: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    assert not middleware._should_summarize(messages_other_provider, 0)
+
+
+class ConfigCapturingModel(BaseChatModel):
+    """Mock model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
+    """Test that summary creation passes `lc_source` metadata to the model.
+
+    When called outside a LangGraph runnable context, `get_config()` raises
+    `RuntimeError`. The middleware catches this and still passes the `lc_source`
+    metadata to the model.
+    """
+    model = ConfigCapturingModel()
+    model.captured_configs = []  # Reset for this test
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    assert len(model.captured_configs) == 1
+    config = model.captured_configs[0]
+    assert config is not None
+    assert "metadata" in config
+    assert config["metadata"]["lc_source"] == "summarization"
