@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
 import pytest
+from langsmith.env import get_langchain_env_var_metadata
 from pydantic import model_validator
 from typing_extensions import Self, override
 
@@ -1547,10 +1548,12 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
     assert len(collector.runs) == 1
     run = collector.runs[0]
 
-    key = "LANGSMITH_LANGGRAPH_API_VARIANT"
-
-    if key in run.extra["metadata"]:
-        del run.extra["metadata"][key]
+    # LangSmith injects environment-derived keys (e.g. `revision_id`,
+    # `LANGCHAIN_TESTS_USER_AGENT`, `LANGSMITH_*`) into run metadata. These vary
+    # by environment and are not the subject of this test, so strip them before
+    # the exact-equality comparison.
+    for env_key in get_langchain_env_var_metadata():
+        run.extra["metadata"].pop(env_key, None)
 
     assert run.extra == {
         "batch_size": 1,
@@ -1569,7 +1572,6 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             "ls_model_type": "chat",
             "ls_provider": "fakechatmodelwithinvocationparams",
             "ls_temperature": 0.7,
-            "revision_id": run.extra["metadata"]["revision_id"],
             "stop": None,
             "temperature": 0.7,
         },
