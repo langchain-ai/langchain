@@ -52,6 +52,11 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
             error = create_message(
                 message=error, error_code=ErrorCode.OUTPUT_PARSING_FAILURE
             )
+        elif isinstance(error, Exception):
+            # Preserve original error message/details when wrapping
+            error = create_message(
+                message=str(error), error_code=ErrorCode.OUTPUT_PARSING_FAILURE
+            )
 
         super().__init__(error)
         if send_to_llm and (observation is None or llm_output is None):
