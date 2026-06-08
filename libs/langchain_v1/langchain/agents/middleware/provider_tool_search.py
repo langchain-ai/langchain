@@ -1,0 +1,180 @@
+"""Provider-side tool search middleware."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypeAlias
+
+from langchain_core.tools import BaseTool
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.messages import AIMessage
+
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ModelRequest,
+    ModelResponse,
+    ResponseT,
+)
+
+ToolIdentifier: TypeAlias = str | BaseTool
+ProviderName: TypeAlias = str
+
+SERVER_TOOL_SEARCH_TOOLS: dict[ProviderName, dict[str, str]] = {
+    "anthropic": {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    },
+    "openai": {"type": "tool_search"},
+}
+
+
+class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+    """Defers selected tools behind provider-native tool search."""
+
+    def __init__(self, *, searchable_tools: list[ToolIdentifier] | None = None) -> None:
+        """Initialize provider-side tool search.
+
+        Args:
+            searchable_tools: Tools or tool names to defer behind provider-native
+                tool search.
+        """
+        super().__init__()
+        self.searchable_tool_names = _to_tool_names(searchable_tools)
+
+    def _prepare_request(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
+        """Prepare a model request with deferred tools and provider search."""
+        tools = request.tools
+        if self.searchable_tool_names:
+            available = {tool.name for tool in tools if isinstance(tool, BaseTool)}
+            unknown = sorted(self.searchable_tool_names - available)
+            if unknown:
+                msg = (
+                    "ProviderToolSearchMiddleware: searchable_tools references "
+                    f"tool(s) not bound to the model: {', '.join(unknown)}"
+                )
+                raise ValueError(msg)
+
+        provider = _get_model_provider(request.model)
+        if provider not in SERVER_TOOL_SEARCH_TOOLS:
+            msg = (
+                "ProviderToolSearchMiddleware requires a provider with server-side "
+                f"tool search, but got {provider}"
+            )
+            raise ValueError(msg)
+
+        if not any(_is_deferred_tool(tool, self.searchable_tool_names) for tool in tools):
+            return request
+
+        bound_tools = [_defer_tool_if_needed(tool, self.searchable_tool_names) for tool in tools]
+        return request.override(tools=[*bound_tools, dict(SERVER_TOOL_SEARCH_TOOLS[provider])])
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Defer tools before invoking the model.
+
+        Args:
+            request: Model request to execute.
+            handler: Callback that executes the model request.
+
+        Returns:
+            The model call result.
+        """
+        return handler(self._prepare_request(request))
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Defer tools before asynchronously invoking the model.
+
+        Args:
+            request: Model request to execute.
+            handler: Callback that executes the model request.
+
+        Returns:
+            The model call result.
+        """
+        return await handler(self._prepare_request(request))
+
+
+def _to_tool_names(tools: list[ToolIdentifier] | None) -> set[str]:
+    """Convert tool identifiers to names."""
+    if tools is None:
+        return set()
+    return {tool if isinstance(tool, str) else tool.name for tool in tools}
+
+
+def _is_deferred_tool(tool: BaseTool | dict[str, Any], tool_names: set[str]) -> bool:
+    """Return whether a tool should be deferred."""
+    if not isinstance(tool, BaseTool):
+        return False
+    extras = tool.extras if isinstance(tool.extras, dict) else {}
+    return extras.get("defer_loading") is True or tool.name in tool_names
+
+
+def _defer_tool_if_needed(
+    tool: BaseTool | dict[str, Any], tool_names: set[str]
+) -> BaseTool | dict[str, Any]:
+    """Return a copy of a tool with `defer_loading` when needed."""
+    if not _is_deferred_tool(tool, tool_names):
+        return tool
+    if not isinstance(tool, BaseTool):
+        return tool
+    extras = {**(tool.extras or {}), "defer_loading": True}
+    return tool.model_copy(update={"extras": extras})
+
+
+def _get_model_provider(model: BaseChatModel) -> str:
+    """Infer the model provider used for server-side tool search."""
+    default_config = getattr(model, "_default_config", None)
+    if isinstance(default_config, dict):
+        provider = default_config.get("model_provider")
+        if isinstance(provider, str):
+            return _normalize_provider(provider)
+        model_name = default_config.get("model")
+        if isinstance(model_name, str) and (provider := _provider_from_model_name(model_name)):
+            return provider
+
+    get_ls_params = getattr(model, "_get_ls_params", None)
+    if callable(get_ls_params):
+        ls_params = get_ls_params()
+        if isinstance(ls_params, dict) and isinstance(ls_params.get("ls_provider"), str):
+            return _normalize_provider(ls_params["ls_provider"])
+
+    return _provider_from_class_name(model.__class__.__name__)
+
+
+def _provider_from_model_name(model_name: str) -> str | None:
+    """Infer supported provider from a model name."""
+    provider, _, model = model_name.partition(":")
+    if model:
+        return _normalize_provider(provider)
+    model_lower = model_name.lower()
+    if model_lower.startswith("claude"):
+        return "anthropic"
+    if model_lower.startswith(("gpt-", "o1", "o3", "chatgpt")):
+        return "openai"
+    return None
+
+
+def _provider_from_class_name(class_name: str) -> str:
+    """Infer supported provider from a model class name."""
+    if class_name in {"ChatAnthropic", "AnthropicChat"}:
+        return "anthropic"
+    if class_name in {"ChatOpenAI", "OpenAIChat"}:
+        return "openai"
+    return "other"
+
+
+def _normalize_provider(provider: str) -> str:
+    """Normalize provider identifiers."""
+    return provider.replace("-", "_").lower()
