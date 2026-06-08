@@ -4,7 +4,7 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, get_type_hints
 from unittest.mock import patch
 
 import pytest
@@ -101,6 +101,10 @@ def test_asdict_replaces_deprecated_dict() -> None:
     assert model.asdict() == expected
     with pytest.warns(LangChainDeprecationWarning, match="asdict"):
         assert model.dict() == expected
+
+
+def test_base_chat_model_type_hints_resolve() -> None:
+    assert get_type_hints(BaseChatModel.asdict)["return"] == dict[str, Any]
 
 
 def test_invoke_preserves_deprecated_dict_override() -> None:

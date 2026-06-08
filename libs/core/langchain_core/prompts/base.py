@@ -15,7 +15,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
-from langchain_core._api import deprecated
+from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -390,8 +390,10 @@ class BasePromptTemplate(
             msg = "Cannot save prompt with partial variables."
             raise ValueError(msg)
 
-        # Fetch dictionary to save
-        prompt_dict = self.asdict()
+        # Fetch dictionary to save. Preserve deprecated `dict()` overrides until
+        # `dict()` is removed.
+        with suppress_langchain_deprecation_warning():
+            prompt_dict = self.dict()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)

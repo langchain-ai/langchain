@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins  # noqa: TC003
 import contextlib
 import inspect
 import json
@@ -93,7 +94,6 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
-    import builtins
     import uuid
     from collections.abc import Awaitable
 
