@@ -227,11 +227,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     {{/foo}}is a test."""
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo=[{"bar": "yo"}, {"bar": "hello"}]) == (
-        """This
-        yo
-
-        hello
-    is a test."""
+        "This\n        yo\n    \n        hello\n    is a test."
     )
     assert prompt.input_variables == ["foo"]
     if PYDANTIC_VERSION_AT_LEAST_29:
