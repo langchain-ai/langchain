@@ -446,7 +446,11 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             chunk += raw_line
             if self._match_code(raw_line):
                 return chunk
-        return ""
+        # No closing fence was found: keep the accumulated content instead of returning ""
+        # and silently discarding everything after the opening fence. A truncated or
+        # unterminated code block (common in LLM output cut at max_tokens) must not drop the
+        # rest of the document, including following headers and their bodies.
+        return chunk
 
     def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
