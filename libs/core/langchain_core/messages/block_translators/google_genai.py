@@ -2,7 +2,7 @@
 
 import base64
 import re
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -141,7 +141,7 @@ def _convert_to_v1_from_genai_input(
         Updated list with GenAI blocks converted to v1 format.
     """
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
             cast("dict[str, Any]", block)
             if block.get("type") != "non_standard"

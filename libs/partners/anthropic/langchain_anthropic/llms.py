@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping
 from typing import Any
 
 import anthropic
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -131,6 +131,7 @@ class _AnthropicCommon(BaseLanguageModel):
         return stop
 
 
+@deprecated(since="0.1.0", removal="2.0.0", alternative="ChatAnthropic")
 class AnthropicLLM(LLM, _AnthropicCommon):
     """Anthropic text completion large language model (legacy LLM).
 
@@ -149,18 +150,6 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         populate_by_name=True,
         arbitrary_types_allowed=True,
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_warning(cls, values: dict) -> Any:
-        """Raise warning that this class is deprecated."""
-        warnings.warn(
-            "This Anthropic LLM is deprecated. "
-            "Please use `from langchain_anthropic import ChatAnthropic` "
-            "instead",
-            stacklevel=2,
-        )
-        return values
 
     @property
     def _llm_type(self) -> str:

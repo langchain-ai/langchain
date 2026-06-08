@@ -1,4 +1,4 @@
-"""Callback Handler that prints to std out."""
+"""Callback handler that prints to std out."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class StdOutCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that prints to std out."""
+    """Callback handler that prints to std out."""
 
     def __init__(self, color: str | None = None) -> None:
         """Initialize callback handler.

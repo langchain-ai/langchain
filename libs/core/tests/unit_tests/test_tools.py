@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import logging
 import sys
 import textwrap
 import threading
@@ -57,6 +58,7 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _format_output,
     _is_message_content_block,
     _is_message_content_type,
     get_all_basemodel_annotations,
@@ -125,6 +127,22 @@ class _MockStructuredTool(BaseTool):
 
     async def _arun(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
         raise NotImplementedError
+
+
+class _FakeOutput(ToolOutputMixin):
+    """Minimal ToolOutputMixin subclass used only in tests."""
+
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, _FakeOutput) and self.value == other.value
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __repr__(self) -> str:
+        return f"_FakeOutput({self.value})"
 
 
 def test_structured_args() -> None:
@@ -1244,6 +1262,18 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema["description"] == expected["description"]
     assert args_schema["properties"] == expected["properties"]
 
+    # Test parsing with runtime does not raise error
+    def foo3_runtime(bar: str, baz: int, runtime: Any) -> str:  # noqa: D417
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    _ = tool(foo3_runtime, parse_docstring=True)
+
     # Test parameterless tool does not raise error for missing Args section
     # in docstring.
     def foo4() -> str:
@@ -2138,10 +2168,16 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A
 
+        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+            pass
+
     else:
 
         class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
             a: A
+            model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
@@ -2191,6 +2227,10 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
+    assert actual == expected
+
+    expected = {}
+    actual = get_all_basemodel_annotations(EmptyModel)
     assert actual == expected
 
 
@@ -2610,7 +2650,8 @@ def test_tool_mutate_input() -> None:
     assert my_input == {"x": "hi"}
 
 
-def test_structured_tool_args_schema_dict() -> None:
+def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
     args_schema = {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2644,6 +2685,8 @@ def test_structured_tool_args_schema_dict() -> None:
         "a": {"title": "A", "type": "integer"},
         "b": {"title": "B", "type": "integer"},
     }
+    # test that we didn't log an error about failing to get args_schema annotations
+    assert "Failed to get args_schema annotations for filtering" not in caplog.text
 
 
 def test_simple_tool_args_schema_dict() -> None:
@@ -3610,3 +3653,91 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_default_factory_not_required() -> None:
+    """Fields with default_factory should not appear in required."""
+
+    class Args(BaseModel):
+        """Hello."""
+
+        names: list[str] = Field(default_factory=list, description="Some names")
+
+    @tool(args_schema=Args)
+    def some_func(names: list[str] | None = None) -> None:
+        """Do something."""
+
+    schema = convert_to_openai_tool(some_func)
+    params = schema["function"]["parameters"]
+    assert "names" not in params.get("required", [])
+
+
+def test_format_output_list_of_tool_messages() -> None:
+    """A list of ToolMessages passes through unchanged."""
+    msgs = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        ToolMessage("b", tool_call_id="2", name="t"),
+    ]
+    result = _format_output(
+        msgs, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is msgs
+
+
+def test_format_output_list_of_custom_mixin_instances() -> None:
+    """A list of custom ToolOutputMixin subclass instances passes through."""
+    items = [_FakeOutput(1), _FakeOutput(2)]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_mixed_mixin_subclasses() -> None:
+    """A list mixing ToolMessage and custom ToolOutputMixin passes through."""
+    items: list[ToolOutputMixin] = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        _FakeOutput(42),
+    ]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_list_with_non_mixin_element() -> None:
+    """A list containing a non-ToolOutputMixin falls through to stringify."""
+    items = [ToolMessage("a", tool_call_id="1", name="t"), "oops"]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.tool_call_id == "0"
+
+
+def test_format_output_empty_list() -> None:
+    """An empty list falls through to stringify-and-wrap."""
+    result = _format_output(
+        [], artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.tool_call_id == "0"
+
+
+def test_tool_invoke_returns_list_of_mixin() -> None:
+    """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
+
+    @tool
+    def multi(x: int) -> list:
+        """Return multiple outputs."""
+        return [
+            ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
+            for i in range(x)
+        ]
+
+    result = multi.invoke(
+        {"type": "tool_call", "args": {"x": 3}, "name": "multi", "id": "outer"}
+    )
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert all(isinstance(m, ToolMessage) for m in result)

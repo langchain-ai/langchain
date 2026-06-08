@@ -31,7 +31,7 @@ from langchain_classic.chains.llm import LLMChain
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class ChatAgent(Agent):
     """Chat Agent."""

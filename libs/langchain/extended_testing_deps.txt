@@ -6,5 +6,5 @@
 jsonschema>=4.22.0,<5
 numexpr>=2.8.6,<3
 rapidfuzz>=3.1.1,<4
-aiosqlite>=0.19.0,<0.20
+aiosqlite>=0.19.0,<0.23
 greenlet>=3.1.0

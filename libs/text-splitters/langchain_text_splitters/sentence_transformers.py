@@ -25,18 +25,22 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
         tokens_per_chunk: int | None = None,
+        model_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter.
+        """Create a new `TextSplitter`.
 
         Args:
             chunk_overlap: The number of tokens to overlap between chunks.
             model_name: The name of the sentence transformer model to use.
-            tokens_per_chunk: The number of tokens per chunk. If `None`, uses the
-                maximum tokens allowed by the model.
+            tokens_per_chunk: The number of tokens per chunk.
+
+                If `None`, uses the maximum tokens allowed by the model.
+            model_kwargs: Additional parameters for model initialization.
+                Parameters of sentence_transformers.SentenceTransformer can be used.
 
         Raises:
-            ImportError: If the sentence_transformers package is not installed.
+            ImportError: If the `sentence_transformers` package is not installed.
         """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
@@ -49,7 +53,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             raise ImportError(msg)
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name)
+        self._model = SentenceTransformer(self.model_name, **(model_kwargs or {}))
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
@@ -82,7 +86,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         Returns:
             A list of string components derived from the input text after encoding and
-            processing.
+                processing.
         """
 
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
@@ -107,7 +111,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             text: The input text for which the token count is calculated.
 
         Returns:
-            int: The number of tokens in the encoded text.
+            The number of tokens in the encoded text.
         """
         return len(self._encode(text))
 

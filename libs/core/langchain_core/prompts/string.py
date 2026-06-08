@@ -1,4 +1,4 @@
-"""BasePrompt schema definition."""
+"""`BasePrompt` schema definition."""
 
 from __future__ import annotations
 
@@ -33,14 +33,16 @@ PromptTemplateFormat = Literal["f-string", "mustache", "jinja2"]
 def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using jinja2.
 
-    *Security warning*:
-        As of LangChain 0.0.329, this method uses Jinja2's
-        SandboxedEnvironment by default. However, this sand-boxing should
-        be treated as a best-effort approach rather than a guarantee of security.
+    !!! warning "Security"
+
+        As of LangChain 0.0.329, this method uses Jinja2's `SandboxedEnvironment` by
+        default. However, this sandboxing should be treated as a best-effort approach
+        rather than a guarantee of security.
+
         Do not accept jinja2 templates from untrusted sources as they may lead
         to arbitrary Python code execution.
 
-        https://jinja.palletsprojects.com/en/3.1.x/sandbox/
+        [More information.](https://jinja.palletsprojects.com/en/3.1.x/sandbox/)
 
     Args:
         template: The template string.
@@ -62,9 +64,11 @@ def jinja2_formatter(template: str, /, **kwargs: Any) -> str:
         )
         raise ImportError(msg)
 
-    # Use a restricted sandbox that blocks ALL attribute/method access
-    # Only simple variable lookups like {{variable}} are allowed
-    # Attribute access like {{variable.attr}} or {{variable.method()}} is blocked
+    # Use Jinja2's SandboxedEnvironment which blocks access to dunder attributes
+    # (e.g., __class__, __globals__) to prevent sandbox escapes.
+    # Note: regular attribute access (e.g., {{obj.attr}}) and method calls are
+    # still allowed. This is a best-effort measure — do not use with untrusted
+    # templates.
     return SandboxedEnvironment().from_string(template).render(**kwargs)
 
 
@@ -123,14 +127,14 @@ def mustache_template_vars(
 ) -> set[str]:
     """Get the top-level variables from a mustache template.
 
-    For nested variables like `{{person.name}}`, only the top-level
-    key (`person`) is returned.
+    For nested variables like `{{person.name}}`, only the top-level key (`person`) is
+    returned.
 
     Args:
         template: The template string.
 
     Returns:
-       The top-level variables from the template.
+        The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -215,6 +219,46 @@ DEFAULT_VALIDATOR_MAPPING: dict[str, Callable] = {
 }
 
 
+def _parse_f_string_fields(template: str) -> list[tuple[str, str | None]]:
+    fields: list[tuple[str, str | None]] = []
+    for _, field_name, format_spec, _ in Formatter().parse(template):
+        if field_name is not None:
+            fields.append((field_name, format_spec))
+    return fields
+
+
+def validate_f_string_template(template: str) -> list[str]:
+    """Validate an f-string template and return its input variables."""
+    input_variables = set()
+    for var, format_spec in _parse_f_string_fields(template):
+        if "." in var or "[" in var or "]" in var:
+            msg = (
+                f"Invalid variable name {var!r} in f-string template. "
+                f"Variable names cannot contain attribute "
+                f"access (.) or indexing ([])."
+            )
+            raise ValueError(msg)
+
+        if var.isdigit():
+            msg = (
+                f"Invalid variable name {var!r} in f-string template. "
+                f"Variable names cannot be all digits as they are interpreted "
+                f"as positional arguments."
+            )
+            raise ValueError(msg)
+
+        if format_spec and ("{" in format_spec or "}" in format_spec):
+            msg = (
+                "Invalid format specifier in f-string template. "
+                "Nested replacement fields are not allowed."
+            )
+            raise ValueError(msg)
+
+        input_variables.add(var)
+
+    return sorted(input_variables)
+
+
 def check_valid_template(
     template: str, template_format: str, input_variables: list[str]
 ) -> None:
@@ -222,7 +266,9 @@ def check_valid_template(
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'` or `'jinja2'`.
         input_variables: The input variables.
 
     Raises:
@@ -237,6 +283,8 @@ def check_valid_template(
             f" {list(DEFAULT_FORMATTER_MAPPING)}."
         )
         raise ValueError(msg) from exc
+    if template_format == "f-string":
+        validate_f_string_template(template)
     try:
         validator_func(template, input_variables)
     except (KeyError, IndexError) as exc:
@@ -252,7 +300,9 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
 
     Args:
         template: The template string.
-        template_format: The template format. Should be one of "f-string" or "jinja2".
+        template_format: The template format.
+
+            Should be one of `'f-string'`, `'mustache'` or `'jinja2'`.
 
     Returns:
         The variables from the template.
@@ -260,42 +310,17 @@ def get_template_variables(template: str, template_format: str) -> list[str]:
     Raises:
         ValueError: If the template format is not supported.
     """
+    input_variables: list[str] | set[str]
     if template_format == "jinja2":
         # Get the variables for the template
-        input_variables = _get_jinja2_variables_from_template(template)
+        input_variables = sorted(_get_jinja2_variables_from_template(template))
     elif template_format == "f-string":
-        input_variables = {
-            v for _, v, _, _ in Formatter().parse(template) if v is not None
-        }
+        input_variables = validate_f_string_template(template)
     elif template_format == "mustache":
         input_variables = mustache_template_vars(template)
     else:
         msg = f"Unsupported template format: {template_format}"
         raise ValueError(msg)
-
-    # For f-strings, block attribute access and indexing syntax
-    # This prevents template injection attacks via accessing dangerous attributes
-    if template_format == "f-string":
-        for var in input_variables:
-            # Formatter().parse() returns field names with dots/brackets if present
-            # e.g., "obj.attr" or "obj[0]" - we need to block these
-            if "." in var or "[" in var or "]" in var:
-                msg = (
-                    f"Invalid variable name {var!r} in f-string template. "
-                    f"Variable names cannot contain attribute "
-                    f"access (.) or indexing ([])."
-                )
-                raise ValueError(msg)
-
-            # Block variable names that are all digits (e.g., "0", "100")
-            # These are interpreted as positional arguments, not keyword arguments
-            if var.isdigit():
-                msg = (
-                    f"Invalid variable name {var!r} in f-string template. "
-                    f"Variable names cannot be all digits as they are interpreted "
-                    f"as positional arguments."
-                )
-                raise ValueError(msg)
 
     return sorted(input_variables)
 
@@ -366,7 +391,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
 
 def is_subsequence(child: Sequence, parent: Sequence) -> bool:
-    """Return True if child is subsequence of parent."""
+    """Return `True` if child is subsequence of parent."""
     if len(child) == 0 or len(parent) == 0:
         return False
     if len(parent) < len(child):
