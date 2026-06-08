@@ -2305,17 +2305,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
-    @deprecated("1.4.2", alternative="asdict", removal="2.0")
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
     @override
     def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 
-        Return a dictionary of the chat model.
+        Return a dictionary representation of the chat model.
         """
         return self.asdict()
 
     def asdict(self) -> builtins.dict[str, Any]:
-        """Return a dictionary of the chat model."""
+        """Return a dictionary representation of the chat model."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict

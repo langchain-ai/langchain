@@ -342,17 +342,17 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    @deprecated("1.4.2", alternative="asdict", removal="2.0")
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
     @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
 
-        Return dictionary representation of output parser.
+        Return a dictionary representation of the output parser.
         """
         return self.asdict(**kwargs)
 
     def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
-        """Return dictionary representation of output parser."""
+        """Return a dictionary representation of the output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type

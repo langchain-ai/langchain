@@ -341,7 +341,7 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    @deprecated("1.4.2", alternative="asdict", removal="2.0")
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
     @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
@@ -351,7 +351,7 @@ class BasePromptTemplate(
         return self.asdict(**kwargs)
 
     def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
-        """Return dictionary representation of prompt.
+        """Return a dictionary representation of the prompt.
 
         Args:
             **kwargs: Any additional arguments to pass to the dictionary.
@@ -363,6 +363,11 @@ class BasePromptTemplate(
         with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
+
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the prompt dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
 
     @deprecated(
         since="1.2.21",
@@ -392,8 +397,7 @@ class BasePromptTemplate(
 
         # Fetch dictionary to save. Preserve deprecated `dict()` overrides until
         # `dict()` is removed.
-        with suppress_langchain_deprecation_warning():
-            prompt_dict = self.dict()
+        prompt_dict = self._dict_for_compat()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)
