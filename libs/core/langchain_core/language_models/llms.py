@@ -32,7 +32,7 @@ from tenacity import (
 )
 from typing_extensions import override
 
-from langchain_core._api import deprecated
+from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -524,7 +524,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         else:
             prompt = self._convert_input(input).to_string()
             config = ensure_config(config)
-            params = self.asdict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
@@ -597,7 +597,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         prompt = self._convert_input(input).to_string()
         config = ensure_config(config)
-        params = self.asdict()
+        params = self._dict_for_compat()
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
@@ -959,7 +959,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
-            params = self.asdict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
@@ -980,7 +980,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
-            params = self.asdict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
@@ -1231,7 +1231,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
-            params = self.asdict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1252,7 +1252,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
-            params = self.asdict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1399,6 +1399,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         starter_dict["_type"] = self._llm_type
         return starter_dict
 
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the LLM dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
+
     def save(self, file_path: Path | str) -> None:
         """Save the LLM.
 
@@ -1420,7 +1425,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self.asdict()
+        prompt_dict = self._dict_for_compat()
 
         if save_path.suffix == ".json":
             with save_path.open("w", encoding="utf-8") as f:

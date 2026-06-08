@@ -16,7 +16,7 @@ from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
-from langchain_core._api import beta, deprecated
+from langchain_core._api import beta, deprecated, suppress_langchain_deprecation_warning
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -1467,7 +1467,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> builtins.dict:
-        params = self.asdict()
+        params = self._dict_for_compat()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -2319,6 +2319,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
+
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the chat model dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
 
     @override
     def bind(self, **kwargs: Any) -> _ChatModelBinding:

@@ -103,12 +103,26 @@ def test_asdict_replaces_deprecated_dict() -> None:
         assert model.dict() == expected
 
 
-def test_invoke_does_not_warn_deprecated_dict() -> None:
-    """Invoking should use `asdict()` internally, never the deprecated `dict()`."""
-    model = FakeListChatModel(responses=["foo"])
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictChatModel(FakeListChatModel):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    model = CustomDictChatModel(responses=["foo"])
     with warnings.catch_warnings():
         warnings.simplefilter("error", LangChainDeprecationWarning)
-        assert model.invoke("hello").content == "foo"
+        with collect_runs() as cb:
+            assert model.invoke("hello").content == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
 
 
 @pytest.fixture
