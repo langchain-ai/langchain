@@ -35,8 +35,14 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
+from openai.types.responses import (
+    ResponseApplyPatchToolCall,
+    ResponseApplyPatchToolCallOutput,
+    ResponseOutputMessage,
+    ResponseReasoningItem,
+)
 from openai.types.responses.response import IncompleteDetails, Response
+from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -1927,33 +1933,28 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
 
 def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
     """Test a response with apply_patch output."""
-    apply_patch_call = MagicMock()
-    apply_patch_call.type = "apply_patch_call"
-    apply_patch_call.model_dump.return_value = {
-        "type": "apply_patch_call",
-        "call_id": "call_123",
-        "operation": {
-            "type": "create_file",
-            "path": "hello.txt",
-            "diff": "+hello\\n",
-        },
-        "status": "completed",
-    }
-
-    response = MagicMock()
-    response.error = None
-    response.id = "resp_123"
-    response.output = [apply_patch_call]
-    response.usage = None
-    response.service_tier = None
-    response.text = None
-    response.model_dump.return_value = {
-        "id": "resp_123",
-        "created_at": 1234567890,
-        "model": "gpt-4o",
-        "object": "response",
-        "status": "completed",
-    }
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCall(
+                id="apply_patch_123",
+                type="apply_patch_call",
+                call_id="call_123",
+                operation=OperationCreateFile(
+                    type="create_file",
+                    path="hello.txt",
+                    diff="+hello\n",
+                ),
+                status="completed",
+            )
+        ],
+    )
 
     result = _construct_lc_result_from_responses_api(response)
 
@@ -1961,11 +1962,12 @@ def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
     assert message.content == [
         {
             "type": "apply_patch_call",
+            "id": "apply_patch_123",
             "call_id": "call_123",
             "operation": {
                 "type": "create_file",
                 "path": "hello.txt",
-                "diff": "+hello\\n",
+                "diff": "+hello\n",
             },
             "status": "completed",
         }
@@ -1976,29 +1978,24 @@ def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
 
 def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> None:
     """Test a response with apply_patch_call_output output."""
-    apply_patch_call_output = MagicMock()
-    apply_patch_call_output.type = "apply_patch_call_output"
-    apply_patch_call_output.model_dump.return_value = {
-        "type": "apply_patch_call_output",
-        "call_id": "call_123",
-        "status": "completed",
-        "output": "Created hello.txt",
-    }
-
-    response = MagicMock()
-    response.error = None
-    response.id = "resp_123"
-    response.output = [apply_patch_call_output]
-    response.usage = None
-    response.service_tier = None
-    response.text = None
-    response.model_dump.return_value = {
-        "id": "resp_123",
-        "created_at": 1234567890,
-        "model": "gpt-4o",
-        "object": "response",
-        "status": "completed",
-    }
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCallOutput(
+                id="apply_patch_output_123",
+                type="apply_patch_call_output",
+                call_id="call_123",
+                status="completed",
+                output="Created hello.txt",
+            )
+        ],
+    )
 
     result = _construct_lc_result_from_responses_api(response)
 
@@ -2006,6 +2003,7 @@ def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> No
     assert message.content == [
         {
             "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
             "call_id": "call_123",
             "status": "completed",
             "output": "Created hello.txt",
@@ -2069,17 +2067,17 @@ def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> 
     chunk = MagicMock()
     chunk.type = "response.output_item.done"
     chunk.output_index = 0
-    chunk.item.type = "apply_patch_call"
-    chunk.item.model_dump.return_value = {
-        "type": "apply_patch_call",
-        "call_id": "call_123",
-        "operation": {
-            "type": "create_file",
-            "path": "hello.txt",
-            "diff": "+hello\\n",
-        },
-        "status": "completed",
-    }
+    chunk.item = ResponseApplyPatchToolCall(
+        id="apply_patch_123",
+        type="apply_patch_call",
+        call_id="call_123",
+        operation=OperationCreateFile(
+            type="create_file",
+            path="hello.txt",
+            diff="+hello\n",
+        ),
+        status="completed",
+    )
 
     _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
         chunk,
@@ -2092,11 +2090,12 @@ def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> 
     assert generation_chunk.message.content == [
         {
             "type": "apply_patch_call",
+            "id": "apply_patch_123",
             "call_id": "call_123",
             "operation": {
                 "type": "create_file",
                 "path": "hello.txt",
-                "diff": "+hello\\n",
+                "diff": "+hello\n",
             },
             "status": "completed",
             "index": 0,
