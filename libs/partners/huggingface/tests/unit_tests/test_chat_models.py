@@ -391,3 +391,22 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+def test_with_structured_output_pydantic() -> None:
+    """Test that with_structured_output properly uses Pydantic schema."""
+    from pydantic import BaseModel, Field
+    class TestOutput(BaseModel):
+        name: str = Field(..., description="Name")
+
+    llm_mock = Mock(spec=HuggingFaceEndpoint)
+    llm_mock.repo_id = "test/model"
+    llm_mock.model = "test/model"
+    with patch("langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"):
+        chat = ChatHuggingFace(llm=llm_mock)
+
+        runnable_json = chat.with_structured_output(schema=TestOutput, method="json_schema")
+        assert runnable_json is not None
+
+        runnable_fn = chat.with_structured_output(schema=TestOutput, method="function_calling")
+        assert runnable_fn is not None
+
