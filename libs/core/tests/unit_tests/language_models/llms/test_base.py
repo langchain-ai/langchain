@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import Any
+from typing import Any, get_type_hints
 
 import pytest
 from typing_extensions import override
@@ -32,6 +32,10 @@ def test_asdict_replaces_deprecated_dict() -> None:
     assert llm.asdict() == expected
     with pytest.warns(LangChainDeprecationWarning, match="asdict"):
         assert llm.dict() == expected
+
+
+def test_base_llm_type_hints_resolve() -> None:
+    assert get_type_hints(BaseLLM.asdict)["return"] == dict[str, Any]
 
 
 def test_invoke_preserves_deprecated_dict_override() -> None:

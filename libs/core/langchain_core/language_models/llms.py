@@ -6,6 +6,7 @@ These are traditionally older models (newer models generally are chat models).
 from __future__ import annotations
 
 import asyncio
+import builtins  # noqa: TC003
 import functools
 import inspect
 import json
@@ -59,7 +60,6 @@ from langchain_core.runnables import RunnableConfig, ensure_config, get_config_l
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
-    import builtins
     import uuid
 
 logger = logging.getLogger(__name__)
