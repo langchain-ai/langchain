@@ -18,6 +18,7 @@ from typing import Any
 _PROFILES: dict[str, dict[str, Any]] = {
     "claude-3-5-haiku-20241022": {
         "name": "Claude Haiku 3.5",
+        "status": "deprecated",
         "release_date": "2024-10-22",
         "last_updated": "2024-10-22",
         "open_weights": False,
@@ -68,6 +69,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-5-sonnet-20240620": {
         "name": "Claude Sonnet 3.5",
+        "status": "deprecated",
         "release_date": "2024-06-20",
         "last_updated": "2024-06-20",
         "open_weights": False,
@@ -93,6 +95,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-5-sonnet-20241022": {
         "name": "Claude Sonnet 3.5 v2",
+        "status": "deprecated",
         "release_date": "2024-10-22",
         "last_updated": "2024-10-22",
         "open_weights": False,
@@ -118,6 +121,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-7-sonnet-20250219": {
         "name": "Claude Sonnet 3.7",
+        "status": "deprecated",
         "release_date": "2025-02-19",
         "last_updated": "2025-02-19",
         "open_weights": False,
@@ -143,6 +147,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-haiku-20240307": {
         "name": "Claude Haiku 3",
+        "status": "deprecated",
         "release_date": "2024-03-13",
         "last_updated": "2024-03-13",
         "open_weights": False,
@@ -168,6 +173,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-opus-20240229": {
         "name": "Claude Opus 3",
+        "status": "deprecated",
         "release_date": "2024-02-29",
         "last_updated": "2024-02-29",
         "open_weights": False,
@@ -193,6 +199,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-3-sonnet-20240229": {
         "name": "Claude Sonnet 3",
+        "status": "deprecated",
         "release_date": "2024-03-04",
         "last_updated": "2024-03-04",
         "open_weights": False,
@@ -465,6 +472,31 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "structured_output": True,
+    },
+    "claude-opus-4-8": {
+        "name": "Claude Opus 4.8",
+        "release_date": "2026-05-28",
+        "last_updated": "2026-05-28",
+        "open_weights": False,
+        "max_input_tokens": 1000000,
+        "max_output_tokens": 128000,
+        "text_inputs": True,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "pdf_inputs": True,
+        "video_inputs": False,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "attachment": True,
+        "temperature": False,
+        "image_url_inputs": True,
+        "pdf_tool_message": True,
+        "image_tool_message": True,
+        "structured_output": False,
     },
     "claude-sonnet-4-0": {
         "name": "Claude Sonnet 4 (latest)",

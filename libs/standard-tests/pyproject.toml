@@ -48,6 +48,9 @@ Twitter = "https://x.com/langchain_oss"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
+[project.entry-points.pytest11]
+langsmith_ci = "langchain_tests._langsmith_plugin"
+
 [dependency-groups]
 test = ["langchain-core>=1.4.0,<2.0.0"]
 test_integration = []

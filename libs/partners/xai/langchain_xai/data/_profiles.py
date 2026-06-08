@@ -175,7 +175,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_inputs": True,
         "audio_inputs": False,
         "pdf_inputs": True,
-        "video_inputs": False,
+        "video_inputs": True,
         "text_outputs": False,
         "image_outputs": False,
         "audio_outputs": False,

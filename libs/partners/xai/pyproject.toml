@@ -64,7 +64,13 @@ typing = [
 dev = ["langchain-core>=1.4.0,<2.0.0"]
 
 [tool.uv]
-constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
+constraint-dependencies = [
+    "pygments>=2.20.0",  # CVE-2026-4539
+    # aiohttp 3.14.0 removed `aiohttp.streams.AsyncStreamReaderMixin`, which
+    # vcrpy (<=8.1.1) still subclasses, breaking VCR-based integration tests.
+    # Remove once a vcrpy release includes the fix (kevin1024/vcrpy#996).
+    "aiohttp<3.14.0",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

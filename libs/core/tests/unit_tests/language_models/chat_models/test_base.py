@@ -4,13 +4,15 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, get_type_hints
 from unittest.mock import patch
 
 import pytest
+from langsmith.env import get_langchain_env_var_metadata
 from pydantic import model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     BaseCallbackHandler,
@@ -90,6 +92,41 @@ def _content_blocks_equal_ignore_id(
             return False
 
     return True
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    model = FakeListChatModel(responses=["foo"])
+
+    expected = {"responses": ["foo"], "_type": "fake-list-chat-model"}
+    assert model.asdict() == expected
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert model.dict() == expected
+
+
+def test_base_chat_model_type_hints_resolve() -> None:
+    assert get_type_hints(BaseChatModel.asdict)["return"] == dict[str, Any]
+
+
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictChatModel(FakeListChatModel):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    model = CustomDictChatModel(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        with collect_runs() as cb:
+            assert model.invoke("hello").content == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
 
 
 @pytest.fixture
@@ -1529,10 +1566,12 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
     assert len(collector.runs) == 1
     run = collector.runs[0]
 
-    key = "LANGSMITH_LANGGRAPH_API_VARIANT"
-
-    if key in run.extra["metadata"]:
-        del run.extra["metadata"][key]
+    # LangSmith injects environment-derived keys (e.g. `revision_id`,
+    # `LANGCHAIN_TESTS_USER_AGENT`, `LANGSMITH_*`) into run metadata. These vary
+    # by environment and are not the subject of this test, so strip them before
+    # the exact-equality comparison.
+    for env_key in get_langchain_env_var_metadata():
+        run.extra["metadata"].pop(env_key, None)
 
     assert run.extra == {
         "batch_size": 1,
@@ -1551,7 +1590,6 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             "ls_model_type": "chat",
             "ls_provider": "fakechatmodelwithinvocationparams",
             "ls_temperature": 0.7,
-            "revision_id": run.extra["metadata"]["revision_id"],
             "stop": None,
             "temperature": 0.7,
         },

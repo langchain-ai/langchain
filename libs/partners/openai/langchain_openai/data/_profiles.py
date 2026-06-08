@@ -1054,6 +1054,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "o1-mini": {
         "name": "o1-mini",
+        "status": "deprecated",
         "release_date": "2024-09-12",
         "last_updated": "2024-09-12",
         "open_weights": False,
@@ -1080,6 +1081,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "o1-preview": {
         "name": "o1-preview",
+        "status": "deprecated",
         "release_date": "2024-09-12",
         "last_updated": "2024-09-12",
         "open_weights": False,

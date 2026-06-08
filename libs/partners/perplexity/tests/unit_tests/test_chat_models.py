@@ -1,7 +1,13 @@
+import json
 from typing import Any, cast
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ToolMessage,
+)
 from pytest_mock import MockerFixture
 
 from langchain_perplexity import ChatPerplexity, MediaResponse, WebSearchOptions
@@ -211,3 +217,129 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile
+
+
+def test_convert_tool_message_to_dict() -> None:
+    """A ToolMessage serializes to a ``tool``-role dict so tool results can be
+    fed back to the model in a client-side tool-calling loop."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = ToolMessage(content="result text", tool_call_id="call_123")
+    assert llm._convert_message_to_dict(message) == {
+        "role": "tool",
+        "content": "result text",
+        "tool_call_id": "call_123",
+    }
+
+
+def test_convert_ai_message_with_tool_calls_to_dict() -> None:
+    """``AIMessage.tool_calls`` are serialized rather than dropped."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "search",
+                "args": {"query": "langchain"},
+                "type": "tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["role"] == "assistant"
+    # Empty content alongside tool_calls must be sent as null, not "".
+    assert result["content"] is None
+    assert result["tool_calls"] == [
+        {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+                "name": "search",
+                "arguments": json.dumps({"query": "langchain"}),
+            },
+        }
+    ]
+
+
+def test_convert_ai_message_with_invalid_tool_calls_to_dict() -> None:
+    """Invalid tool calls are serialized with their raw (unparsed) argument string."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            {
+                "id": "call_bad",
+                "name": "search",
+                "args": "{not valid json",
+                "error": "could not parse args",
+                "type": "invalid_tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["tool_calls"] == [
+        {
+            "id": "call_bad",
+            "type": "function",
+            "function": {"name": "search", "arguments": "{not valid json"},
+        }
+    ]
+
+
+def test_convert_ai_message_preserves_content_alongside_tool_calls() -> None:
+    """Non-empty content is preserved (not nulled) when tool_calls are present."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="Let me look that up.",
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "search",
+                "args": {"query": "weather"},
+                "type": "tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["content"] == "Let me look that up."
+
+
+def test_convert_ai_message_with_valid_and_invalid_tool_calls_to_dict() -> None:
+    """Valid and invalid tool calls serialize together, valid ones first."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_ok",
+                "name": "search",
+                "args": {"query": "weather"},
+                "type": "tool_call",
+            }
+        ],
+        invalid_tool_calls=[
+            {
+                "id": "call_bad",
+                "name": "search",
+                "args": "{not valid json",
+                "error": "could not parse args",
+                "type": "invalid_tool_call",
+            }
+        ],
+    )
+    result = llm._convert_message_to_dict(message)
+    assert result["tool_calls"] == [
+        {
+            "id": "call_ok",
+            "type": "function",
+            "function": {
+                "name": "search",
+                "arguments": json.dumps({"query": "weather"}),
+            },
+        },
+        {
+            "id": "call_bad",
+            "type": "function",
+            "function": {"name": "search", "arguments": "{not valid json"},
+        },
+    ]

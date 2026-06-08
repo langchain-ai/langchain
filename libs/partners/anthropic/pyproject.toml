@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.4.3"
+version = "1.4.4"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "anthropic>=0.96.0,<1.0.0",
@@ -124,6 +124,7 @@ addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5
 markers = [
     "requires: mark tests as requiring a specific library",
     "compile: mark placeholder test used to compile integration tests without running them",
+    "retry: retry test if it fails",
 ]
 asyncio_mode = "auto"
 
