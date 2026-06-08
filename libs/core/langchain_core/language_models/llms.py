@@ -1384,7 +1384,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
-    @deprecated("1.4.1", alternative="asdict", removal="2.0")
+    @deprecated("1.4.2", alternative="asdict", removal="2.0")
     @override
     def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
         """DEPRECATED - use `asdict()` instead.
