@@ -19,11 +19,7 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
-from langchain.agents.middleware.summarization import (
-    ContextSize,
-    SummarizationMiddleware,
-    TriggerClause,
-)
+from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
@@ -53,7 +49,6 @@ __all__ = [
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
-    "ContextSize",
     "DockerExecutionPolicy",
     "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
@@ -78,7 +73,6 @@ __all__ = [
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolRetryMiddleware",
-    "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",
