@@ -85,6 +85,14 @@ class ProfileChatModel(BaseChatModel):
         return "mock"
 
 
+class ProfileProviderChatModel(ProfileChatModel):
+    """Mock chat model with profile and provider metadata."""
+
+    @override
+    def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
+        return LangSmithParams(ls_provider="mock", ls_model_type="chat")
+
+
 def test_summarization_middleware_initialization() -> None:
     """Test SummarizationMiddleware initialization."""
     model = FakeToolCallingModel()
@@ -930,6 +938,40 @@ def test_summarization_middleware_cutoff_at_boundary() -> None:
     assert cutoff == 0
 
 
+def test_summarization_middleware_skips_when_no_safe_cutoff() -> None:
+    """Do not summarize when message retention leaves no older history to drop."""
+
+    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("tokens", 1000),
+        keep=("messages", 1),
+        token_counter=token_counter,
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
+
+    assert middleware.before_model(state, Runtime()) is None
+
+
+async def test_summarization_middleware_skips_when_no_safe_cutoff_async() -> None:
+    """Do not summarize when async message retention has no older history to drop."""
+
+    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("tokens", 1000),
+        keep=("messages", 1),
+        token_counter=token_counter,
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
+
+    assert await middleware.abefore_model(state, Runtime()) is None
+
+
 def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
     """Test that deprecated parameters work correctly with default values."""
     # Test that deprecated max_tokens_before_summary is ignored when trigger is set
@@ -1157,6 +1199,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
             {"tokens": 5000, "messages": 3},
             {"tokens": 3000, "messages": 6},
         ],
+        keep=("messages", 2),
     )
 
     # Test case 1: First clause met (tokens = 5500, messages = 4)
@@ -1214,13 +1257,14 @@ def test_backward_compatibility_tuple_trigger() -> None:
     middleware_single = SummarizationMiddleware(
         model=model,
         trigger=("tokens", 1000),
+        keep=("messages", 1),
     )
 
     def token_counter_high(messages):
         return 1500
 
     middleware_single.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content="test")]}
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
     result = middleware_single.before_model(state, None)
     assert result is not None, "Single tuple trigger should work"
 
@@ -1228,11 +1272,12 @@ def test_backward_compatibility_tuple_trigger() -> None:
     middleware_list = SummarizationMiddleware(
         model=model,
         trigger=[("tokens", 1000), ("messages", 5)],
+        keep=("messages", 2),
     )
 
     # Should trigger with high tokens (first condition met)
     middleware_list.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content="test")]}
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
     result = middleware_list.before_model(state, None)
     assert result is not None, "List of tuples should trigger when any condition met"
 
@@ -1257,6 +1302,7 @@ def test_mixed_and_or_conditions() -> None:
             {"tokens": 4000, "messages": 10},
             ("messages", 50),
         ],
+        keep=("messages", 5),
     )
 
     # Test case 1: First AND clause met
@@ -1290,6 +1336,7 @@ def test_fraction_in_and_trigger() -> None:
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
         trigger={"fraction": 0.8, "messages": 5},
+        keep=("messages", 2),
     )
 
     def token_counter(messages):
@@ -1601,6 +1648,30 @@ def test_reported_tokens_trigger_for_bedrock_converse() -> None:
         ),
     ]
     assert not middleware._should_summarize(messages_other_provider, 0)
+
+
+def test_reported_tokens_trigger_for_fraction() -> None:
+    """Fraction triggers should account for provider-reported token usage."""
+    middleware = SummarizationMiddleware(
+        model=ProfileProviderChatModel(),
+        trigger=("fraction", 0.8),
+        keep=("messages", 4),
+        token_counter=lambda _: 0,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 750,
+                "output_tokens": 51,
+                "total_tokens": 801,
+            },
+        ),
+    ]
+
+    assert middleware._should_summarize(messages, 0)
 
 
 class ConfigCapturingModel(BaseChatModel):

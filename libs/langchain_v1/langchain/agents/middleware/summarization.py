@@ -369,16 +369,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         cutoff_index = self._determine_cutoff_index(messages)
 
-        # If cutoff_index <= 0, we may still want to summarize when the keep policy
-        # is message-count based (default) and a trigger clause matched; in that case
-        # summarize at least one message to preserve backward compatibility
-        # (e.g., tuple-based triggers).
         if cutoff_index <= 0:
-            kind, _ = self.keep
-            if kind == "messages" and len(messages) > 0:
-                cutoff_index = 1
-            else:
-                return None
+            return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
@@ -415,14 +407,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         cutoff_index = self._determine_cutoff_index(messages)
 
-        # If cutoff_index <= 0, mirror sync behavior: allow summarization for message-count keeps
-        # to preserve backward compatibility.
         if cutoff_index <= 0:
-            kind, _ = self.keep
-            if kind == "messages" and len(messages) > 0:
-                cutoff_index = 1
-            else:
-                return None
+            return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
@@ -554,7 +540,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     threshold = int(max_input_tokens * cast("float", value))
                     if threshold <= 0:
                         threshold = 1
-                    if total_tokens < threshold:
+                    if (
+                        total_tokens < threshold
+                        and not self._should_summarize_based_on_reported_tokens(
+                            messages, float(threshold)
+                        )
+                    ):
                         clause_met = False
                         break
             if clause_met:
