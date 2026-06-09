@@ -538,6 +538,75 @@ def _finalize_and_build_finish(
 
 
 # ---------------------------------------------------------------------------
+# Shared block-lifecycle tracker
+# ---------------------------------------------------------------------------
+
+
+class BlockStreamTracker:
+    """Allocate wire indices and emit content-block lifecycle events.
+
+    Single source of truth for the start/delta/accumulate/finalize
+    mechanics shared by the compat bridge and provider-native converters.
+    Source-side keys (a block's `index` field, int or str, or a
+    positional fallback) are mapped to sequential `uint` wire indices.
+    """
+
+    def __init__(self) -> None:
+        self._blocks: dict[Any, tuple[int, CompatBlock]] = {}
+        self._next_wire_idx = 0
+
+    def feed(self, key: Any, block: CompatBlock) -> Iterator[MessagesData]:
+        """Yield lifecycle events for a per-chunk block.
+
+        Yields `content-block-start` the first time `key` is seen, then
+        `content-block-delta` when the block carries fresh content,
+        accumulating per-index state for later finalization.
+        """
+        if key not in self._blocks:
+            wire_idx = self._next_wire_idx
+            self._next_wire_idx += 1
+            self._blocks[key] = (wire_idx, dict(block))
+            yield ContentBlockStartData(
+                event="content-block-start",
+                index=wire_idx,
+                content=_start_skeleton(block),
+            )
+        else:
+            wire_idx, existing = self._blocks[key]
+            self._blocks[key] = (wire_idx, _accumulate(existing, block))
+        if _should_emit_delta(block):
+            wire_idx, current = self._blocks[key]
+            is_block_delta = block.get("type") in (
+                "tool_call_chunk",
+                "server_tool_call_chunk",
+            )
+            delta_source = current if is_block_delta else block
+            yield ContentBlockDeltaData(
+                event="content-block-delta",
+                index=wire_idx,
+                delta=_to_content_delta(delta_source or block),
+            )
+
+    def finish_block(self, key: Any) -> Iterator[MessagesData]:
+        """Finalize and close one block at its true stop boundary.
+
+        Native converters call this on the provider's block-stop signal.
+        A no-op for unknown / already-closed keys.
+        """
+        entry = self._blocks.pop(key, None)
+        if entry is None:
+            return
+        wire_idx, block = entry
+        yield _finalize_and_build_finish(wire_idx, block)
+
+    def finish_all(self) -> Iterator[MessagesData]:
+        """Finalize every still-open block, in wire-index order."""
+        for wire_idx, block in self._blocks.values():
+            yield _finalize_and_build_finish(wire_idx, block)
+        self._blocks.clear()
+
+
+# ---------------------------------------------------------------------------
 # Main generators
 # ---------------------------------------------------------------------------
 
@@ -564,8 +633,7 @@ def chunks_to_events(
         `MessagesData` lifecycle events.
     """
     started = False
-    blocks: dict[Any, tuple[int, CompatBlock]] = {}
-    next_wire_idx = 0
+    tracker = BlockStreamTracker()
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
 
@@ -595,30 +663,7 @@ def chunks_to_events(
             yield _build_message_start(msg, message_id)
 
         for key, block in _iter_protocol_blocks(msg):
-            if key not in blocks:
-                wire_idx = next_wire_idx
-                next_wire_idx += 1
-                blocks[key] = (wire_idx, dict(block))
-                yield ContentBlockStartData(
-                    event="content-block-start",
-                    index=wire_idx,
-                    content=_start_skeleton(block),
-                )
-            else:
-                wire_idx, existing = blocks[key]
-                blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                )
-                delta_source = current if is_block_delta else block
-                yield ContentBlockDeltaData(
-                    event="content-block-delta",
-                    index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
-                )
+            yield from tracker.feed(key, block)
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
@@ -626,8 +671,7 @@ def chunks_to_events(
     if not started:
         return
 
-    for wire_idx, block in blocks.values():
-        yield _finalize_and_build_finish(wire_idx, block)
+    yield from tracker.finish_all()
 
     yield _build_message_finish(
         usage=usage,
@@ -642,8 +686,7 @@ async def achunks_to_events(
 ) -> AsyncIterator[MessagesData]:
     """Async variant of `chunks_to_events`."""
     started = False
-    blocks: dict[Any, tuple[int, CompatBlock]] = {}
-    next_wire_idx = 0
+    tracker = BlockStreamTracker()
     usage: dict[str, Any] | None = None
     response_metadata: dict[str, Any] = {}
 
@@ -667,30 +710,8 @@ async def achunks_to_events(
             yield _build_message_start(msg, message_id)
 
         for key, block in _iter_protocol_blocks(msg):
-            if key not in blocks:
-                wire_idx = next_wire_idx
-                next_wire_idx += 1
-                blocks[key] = (wire_idx, dict(block))
-                yield ContentBlockStartData(
-                    event="content-block-start",
-                    index=wire_idx,
-                    content=_start_skeleton(block),
-                )
-            else:
-                wire_idx, existing = blocks[key]
-                blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                )
-                delta_source = current if is_block_delta else block
-                yield ContentBlockDeltaData(
-                    event="content-block-delta",
-                    index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
-                )
+            for event in tracker.feed(key, block):
+                yield event
 
         if msg.usage_metadata:
             usage = _accumulate_usage(usage, msg.usage_metadata)
@@ -698,8 +719,8 @@ async def achunks_to_events(
     if not started:
         return
 
-    for wire_idx, block in blocks.values():
-        yield _finalize_and_build_finish(wire_idx, block)
+    for event in tracker.finish_all():
+        yield event
 
     yield _build_message_finish(
         usage=usage,
@@ -769,6 +790,7 @@ async def amessage_to_events(
 
 
 __all__ = [
+    "BlockStreamTracker",
     "CompatBlock",
     "achunks_to_events",
     "amessage_to_events",
