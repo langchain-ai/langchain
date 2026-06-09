@@ -744,11 +744,10 @@ def test_missing_docstring() -> None:
         def search_api(query: str) -> str:
             return "API result"
 
-    @tool
-    class MyTool(BaseModel):
-        foo: str
-
-    assert not MyTool.description  # type: ignore[attr-defined]
+    with pytest.raises(ValueError, match="Function must have a docstring"):
+        @tool
+        class MyTool(BaseModel):
+            foo: str
 
 
 def test_create_tool_positional_args() -> None:
@@ -3741,3 +3740,32 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+def test_tool_class_docstring_no_inheritance() -> None:
+    """Test that tool classes do not inherit docstrings from their parent classes."""
+    # 1. Child class without docstring -> raises ValueError when no description is provided
+    class ParentTool1(BaseModel):
+        """Parent Tool Docstring"""
+        foo: str
+
+    with pytest.raises(ValueError, match="Function must have a docstring if description not provided."):
+        @tool
+        class ChildTool1(ParentTool1):
+            bar: str
+
+    # 2. Child class without docstring but with explicit description -> succeeds
+    @tool(description="Explicit Child Description")
+    class ChildTool2(ParentTool1):
+        bar: str
+
+    assert ChildTool2.description == "Explicit Child Description"
+
+    # 3. Child class with its own docstring -> uses child docstring
+    @tool
+    class ChildTool3(ParentTool1):
+        """Child Tool Docstring"""
+        bar: str
+
+    assert ChildTool3.description == "Child Tool Docstring"
+

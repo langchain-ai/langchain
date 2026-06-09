@@ -267,7 +267,11 @@ def _convert_any_typed_dicts_to_pydantic(
         return type_
     if is_typeddict(type_):
         typed_dict = type_
-        docstring = inspect.getdoc(typed_dict)
+        if inspect.isclass(typed_dict):
+            docstring = typed_dict.__dict__.get("__doc__")
+            docstring = inspect.cleandoc(docstring) if docstring else None
+        else:
+            docstring = inspect.getdoc(typed_dict)
         # Use get_type_hints to properly resolve forward references and
         # string annotations in Python 3.14+ (PEP 649 deferred annotations).
         # include_extras=True preserves Annotated metadata.
