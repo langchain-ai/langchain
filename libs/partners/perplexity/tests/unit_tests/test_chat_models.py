@@ -567,6 +567,7 @@ def test_convert_responses_stream_event_emits_tool_call_chunk() -> None:
     """A streamed `function_call` output item becomes a tool-call chunk."""
     event = {
         "type": "response.output_item.done",
+        "output_index": 0,
         "item": {
             "type": "function_call",
             "call_id": "call_1",
@@ -585,6 +586,53 @@ def test_convert_responses_stream_event_emits_tool_call_chunk() -> None:
     assert tcc[0]["args"] == '{"location": "Paris"}'
     assert tcc[0]["id"] == "call_1"
     assert tcc[0]["index"] == 0
+
+
+def test_convert_responses_stream_event_aggregates_multiple_tool_calls() -> None:
+    """Distinct Responses output items aggregate as distinct tool calls."""
+    events = [
+        {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "Paris"}',
+            },
+        },
+        {
+            "type": "response.output_item.done",
+            "output_index": 1,
+            "item": {
+                "type": "function_call",
+                "name": "get_population",
+                "arguments": '{"location": "Paris"}',
+            },
+        },
+    ]
+    chunks = [
+        chunk
+        for event in events
+        if (chunk := _convert_responses_stream_event_to_chunk(event)) is not None
+    ]
+
+    message = chunks[0].message + chunks[1].message
+
+    assert isinstance(message, AIMessageChunk)
+    assert message.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"location": "Paris"},
+            "id": None,
+            "type": "tool_call",
+        },
+        {
+            "name": "get_population",
+            "args": {"location": "Paris"},
+            "id": None,
+            "type": "tool_call",
+        },
+    ]
 
 
 def test_convert_responses_stream_event_ignores_non_function_items() -> None:

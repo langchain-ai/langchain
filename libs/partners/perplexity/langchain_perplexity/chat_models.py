@@ -478,7 +478,7 @@ def _convert_responses_stream_event_to_chunk(
                             args=_get_attr(item, "arguments", None),
                             id=_get_attr(item, "call_id", None)
                             or _get_attr(item, "id", None),
-                            index=0,
+                            index=_get_attr(event, "output_index", 0),
                         )
                     ],
                 )
