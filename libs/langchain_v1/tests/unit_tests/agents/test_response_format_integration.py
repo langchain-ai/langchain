@@ -76,7 +76,7 @@ def get_weather(city: str) -> str:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_inference_to_native_output(*, use_responses_api: bool) -> None:
     """Test that native output is inferred when a model supports it."""
-    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -111,7 +111,7 @@ def test_inference_to_native_output(*, use_responses_api: bool) -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
     """Test that tool output is inferred when a model supports it."""
-    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"
@@ -146,7 +146,7 @@ def test_inference_to_tool_output(*, use_responses_api: bool) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_strict_mode(*, use_responses_api: bool) -> None:
-    model_kwargs = {"model": "gpt-5", "use_responses_api": use_responses_api}
+    model_kwargs: dict[str, Any] = {"model": "gpt-5", "use_responses_api": use_responses_api}
 
     if "OPENAI_API_KEY" not in os.environ:
         model_kwargs["api_key"] = "foo"

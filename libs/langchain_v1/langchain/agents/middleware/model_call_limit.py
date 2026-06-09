@@ -11,7 +11,9 @@ from typing_extensions import NotRequired, override
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ContextT,
     PrivateStateAttr,
+    ResponseT,
     hook_config,
 )
 
@@ -19,10 +21,13 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-class ModelCallLimitState(AgentState):
+class ModelCallLimitState(AgentState[ResponseT]):
     """State schema for `ModelCallLimitMiddleware`.
 
     Extends `AgentState` with model call tracking fields.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
@@ -86,7 +91,9 @@ class ModelCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
+class ModelCallLimitMiddleware(
+    AgentMiddleware[ModelCallLimitState[ResponseT], ContextT, ResponseT]
+):
     """Tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution
@@ -101,20 +108,20 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
     Example:
         ```python
-        from langchain.agents.middleware.call_tracking import ModelCallLimitMiddleware
+        from langchain.agents.middleware import ModelCallLimitMiddleware
         from langchain.agents import create_agent
 
         # Create middleware with limits
         call_tracker = ModelCallLimitMiddleware(thread_limit=10, run_limit=5, exit_behavior="end")
 
-        agent = create_agent("openai:gpt-4o", middleware=[call_tracker])
+        agent = create_agent("openai:gpt-5.5", middleware=[call_tracker])
 
         # Agent will automatically jump to end when limits are exceeded
         result = await agent.invoke({"messages": [HumanMessage("Help me with a task")]})
         ```
     """
 
-    state_schema = ModelCallLimitState
+    state_schema = ModelCallLimitState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -158,7 +165,9 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
     @hook_config(can_jump_to=["end"])
     @override
-    def before_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
+    def before_model(
+        self, state: ModelCallLimitState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Check model call limits before making a model call.
 
         Args:
@@ -203,8 +212,8 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
     @hook_config(can_jump_to=["end"])
     async def abefore_model(
         self,
-        state: ModelCallLimitState,
-        runtime: Runtime,
+        state: ModelCallLimitState[ResponseT],
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async check model call limits before making a model call.
 
@@ -224,7 +233,9 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
         return self.before_model(state, runtime)
 
     @override
-    def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(
+        self, state: ModelCallLimitState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
         """Increment model call counts after a model call.
 
         Args:
@@ -241,8 +252,8 @@ class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
 
     async def aafter_model(
         self,
-        state: ModelCallLimitState,
-        runtime: Runtime,
+        state: ModelCallLimitState[ResponseT],
+        runtime: Runtime[ContextT],
     ) -> dict[str, Any] | None:
         """Async increment model call counts after a model call.
 

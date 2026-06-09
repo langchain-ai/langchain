@@ -8,6 +8,7 @@ from langchain_tests.integration_tests import (  # type: ignore[import-not-found
 )
 
 from langchain_fireworks import ChatFireworks
+from tests.integration_tests._rate_limiter import rate_limiter
 
 
 class TestFireworksStandard(ChatModelIntegrationTests):
@@ -18,8 +19,9 @@ class TestFireworksStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "fireworks/kimi-k2-instruct-0905",
+            "model": "accounts/fireworks/models/kimi-k2p6",
             "temperature": 0,
+            "rate_limiter": rate_limiter,
         }
 
     @pytest.mark.xfail(reason="Not yet implemented.")

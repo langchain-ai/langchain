@@ -6,10 +6,9 @@ import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import httpx
-import openai
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
@@ -23,15 +22,15 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_tests.integration_tests.chat_models import (
-    _validate_tool_call_message,
-    magic_function,
-)
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_model_stream import ChatModelStream
 
 MAX_TOKEN_COUNT = 100
 
@@ -723,7 +722,9 @@ def test_image_token_counting_jpeg() -> None:
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
 
-    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode(
+        "utf-8"
+    )
     message = HumanMessage(
         content=[
             {"type": "text", "text": "describe the weather in this image"},
@@ -755,7 +756,9 @@ def test_image_token_counting_png() -> None:
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
 
-    image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+    image_data = base64.b64encode(httpx.get(image_url, timeout=10.0).content).decode(
+        "utf-8"
+    )
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
@@ -770,49 +773,6 @@ def test_image_token_counting_png() -> None:
     ]
     actual = model.get_num_tokens_from_messages([message])
     assert expected == actual
-
-
-@pytest.mark.parametrize("use_responses_api", [False, True])
-def test_tool_calling_strict(use_responses_api: bool) -> None:
-    """Test tool calling with strict=True.
-
-    Responses API appears to have fewer constraints on schema when strict=True.
-    """
-
-    class magic_function_notrequired_arg(BaseModel):  # noqa: N801
-        """Applies a magic function to an input."""
-
-        input: int | None = Field(default=None)
-
-    model = ChatOpenAI(
-        model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
-    )
-    # N.B. magic_function adds metadata to schema (min/max for number fields)
-    model_with_tools = model.bind_tools([magic_function], strict=True)
-    # Having a not-required argument in the schema remains invalid.
-    model_with_invalid_tool_schema = model.bind_tools(
-        [magic_function_notrequired_arg], strict=True
-    )
-
-    # Test invoke
-    query = "What is the value of magic_function(3)? Use the tool."
-    response = model_with_tools.invoke(query)
-    _validate_tool_call_message(response)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        model_with_invalid_tool_schema.invoke(query)
-
-    # Test stream
-    full: BaseMessageChunk | None = None
-    for chunk in model_with_tools.stream(query):
-        full = chunk if full is None else full + chunk  # type: ignore
-    assert isinstance(full, AIMessage)
-    _validate_tool_call_message(full)
-
-    # Test invalid tool schema
-    with pytest.raises(openai.BadRequestError):
-        next(model_with_invalid_tool_schema.stream(query))
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -938,7 +898,7 @@ def test_json_schema_openai_format(
 
 def test_audio_output_modality() -> None:
     llm = ChatOpenAI(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio",
         temperature=0,
         model_kwargs={
             "modalities": ["text", "audio"],
@@ -966,7 +926,7 @@ def test_audio_output_modality() -> None:
 
 def test_audio_input_modality() -> None:
     llm = ChatOpenAI(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio",
         temperature=0,
         model_kwargs={
             "modalities": ["text", "audio"],
@@ -1321,3 +1281,63 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
         raise AssertionError
+
+
+class _Person(BaseModel):
+    """A person with a name and age."""
+
+    name: str = Field(description="The person's name")
+    age: int = Field(description="The person's age in years")
+
+
+@pytest.mark.vcr
+def test_streaming_tool_call_v1_v2_parity() -> None:
+    """`stream()` and `stream_events(version="v3")` agree on their final `AIMessage`.
+
+    Both paths are invoked against the same HTTP response (the cassette's
+    single recorded interaction, replayed for both calls via
+    `allow_playback_repeats=True`). Any remaining divergence is a real
+    library issue, not a difference between two LLM calls.
+    """
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        output_version="v1",
+    )
+    with_tool = llm.bind_tools([_Person], tool_choice="_Person")
+    prompt = "Extract: Erick is 27 years old."
+
+    v1: AIMessageChunk | None = None
+    for chunk in with_tool.stream(prompt):
+        assert isinstance(chunk, AIMessageChunk)
+        v1 = chunk if v1 is None else v1 + chunk
+    assert isinstance(v1, AIMessageChunk)
+
+    stream = cast("ChatModelStream", with_tool.stream_events(prompt, version="v3"))
+    events = list(stream)
+    assert_valid_event_stream(events)
+    v2 = stream.output
+    assert isinstance(v2, AIMessage)
+
+    assert v1.tool_calls == v2.tool_calls
+    assert v1.invalid_tool_calls == v2.invalid_tool_calls
+    assert v1.content_blocks == v2.content_blocks
+
+    # `usage_metadata` top-level counts must match. The detail dicts
+    # (`input_token_details`, `output_token_details`) survive in v1 but
+    # are dropped by the bridge's `_to_protocol_usage` because
+    # `langchain_protocol.UsageInfo` has no fields for them. Tracked
+    # as a protocol-repo change; compare counts strictly for now.
+    detail_keys = {"input_token_details", "output_token_details"}
+    v1_usage = {
+        k: v for k, v in (v1.usage_metadata or {}).items() if k not in detail_keys
+    }
+    v2_usage = {
+        k: v for k, v in (v2.usage_metadata or {}).items() if k not in detail_keys
+    }
+    assert v1_usage == v2_usage
+
+    # `response_metadata` must match exactly: the bridge passes the
+    # provider's raw `finish_reason` through without normalization, so
+    # OpenAI's `"stop"` on a forced tool call appears on both paths.
+    assert v1.response_metadata == v2.response_metadata

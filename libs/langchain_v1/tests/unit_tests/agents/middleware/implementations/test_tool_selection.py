@@ -1,19 +1,24 @@
 """Unit tests for LLM tool selection middleware."""
 
-import typing
+from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
 import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import LLMToolSelectorMiddleware, wrap_model_call
+from langchain.agents.middleware import (
+    LLMToolSelectorMiddleware,
+    ModelRequest,
+    ModelResponse,
+    wrap_model_call,
+)
 from langchain.agents.middleware.tool_selection import _create_tool_selection_response
 from langchain.messages import AIMessage
 
@@ -53,9 +58,9 @@ class FakeModel(GenericFakeChatModel):
 
     def bind_tools(
         self,
-        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | typing.Callable | BaseTool],
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+        **_kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)
@@ -100,7 +105,9 @@ class TestLLMToolSelectorBasic:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Middleware to select relevant tools based on state/context."""
             # Select a small, relevant subset of tools based on state/context
             model_requests.append(request)
@@ -150,7 +157,10 @@ class TestLLMToolSelectorBasic:
         assert isinstance(response["messages"][-1], AIMessage)
 
         for request in model_requests:
-            selected_tool_names = [tool.name for tool in request.tools] if request.tools else []
+            selected_tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                selected_tool_names.append(tool_.name)
             assert selected_tool_names == ["get_weather", "calculate"]
 
     async def test_async_basic_selection(self) -> None:
@@ -205,7 +215,9 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -251,7 +263,10 @@ class TestMaxToolsLimiting:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 2
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             # Should be first 2 from the selection
             assert tool_names == ["get_weather", "search_web"]
 
@@ -260,7 +275,9 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -305,7 +322,10 @@ class TestMaxToolsLimiting:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert set(tool_names) == {
                 "get_weather",
                 "search_web",
@@ -322,7 +342,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -362,7 +384,10 @@ class TestAlwaysInclude:
         # Both selected and always_include tools should be present
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "search_web" in tool_names
             assert "send_email" in tool_names
             assert len(tool_names) == 2
@@ -372,7 +397,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -415,7 +442,10 @@ class TestAlwaysInclude:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
             assert "send_email" in tool_names
@@ -426,7 +456,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -468,7 +500,10 @@ class TestAlwaysInclude:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "get_weather" in tool_names
             assert "send_email" in tool_names
             assert "calculate" in tool_names
@@ -483,7 +518,9 @@ class TestDuplicateAndInvalidTools:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -527,16 +564,21 @@ class TestDuplicateAndInvalidTools:
         # Duplicates should be removed
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert tool_names == ["get_weather", "search_web"]
             assert len(tool_names) == 2
 
     def test_max_tools_with_duplicates(self) -> None:
         """Test that max_tools works correctly with duplicate selections."""
-        model_requests = []
+        model_requests: list[ModelRequest] = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -581,7 +623,10 @@ class TestDuplicateAndInvalidTools:
         # Should deduplicate and respect max_tools
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert len(tool_names) == 2
             assert "get_weather" in tool_names
             assert "search_web" in tool_names

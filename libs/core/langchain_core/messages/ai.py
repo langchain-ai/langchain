@@ -355,7 +355,31 @@ class AIMessage(BaseMessage):
         Returns:
             A pretty representation of the message.
 
-        """
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(
+                content="Let me check the weather.",
+                tool_calls=[
+                    {"name": "get_weather", "args": {"city": "Paris"}, "id": "1"}
+                ],
+            )
+            ```
+
+            Results in:
+            ```python
+            >>> print(msg.pretty_repr())
+            ================================== Ai Message ==================================
+
+            Let me check the weather.
+            Tool Calls:
+              get_weather (1)
+             Call ID: 1
+              Args:
+                city: Paris
+            ```
+        """  # noqa: E501
         base = super().pretty_repr(html=html)
         lines = []
 
@@ -406,8 +430,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     """
 
     @property
+    @override
     def lc_attributes(self) -> dict:
-        """Attributes to be serialized, even if they are derived from other initialization args."""  # noqa: E501
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -564,7 +588,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
-        """Parse `server_tool_call_chunks` from [`ServerToolCallChunk`][langchain.messages.ServerToolCallChunk] objects."""  # noqa: E501
+        """Initialize server tool calls.
+
+        Parse `server_tool_call_chunks` from
+        [`ServerToolCallChunk`][langchain.messages.ServerToolCallChunk] objects.
+        """
         if (
             self.chunk_position == "last"
             and self.response_metadata.get("output_version") == "v1"

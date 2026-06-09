@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import copy
 import os
+import warnings
 from collections.abc import Callable
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
@@ -11,9 +13,10 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
-from langchain_core.tools import BaseTool
+from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from pydantic import BaseModel, Field, SecretStr, ValidationError
@@ -21,11 +24,14 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import (
+    _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
     _format_image,
     _format_messages,
     _is_builtin_tool,
     _merge_messages,
+    _normalize_tool_call_id,
+    _thinking_in_params,
     convert_to_anthropic_tool,
 )
 
@@ -49,6 +55,15 @@ def test_initialization() -> None:
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+def test_user_agent_header_in_client_params() -> None:
+    """Test that _client_params includes a User-Agent header."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test-key")  # type: ignore[arg-type]
+    params = llm._client_params
+    assert "default_headers" in params
+    assert "User-Agent" in params["default_headers"]
+    assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
 
 
 @pytest.mark.parametrize("async_api", [True, False])
@@ -411,6 +426,91 @@ def test__merge_messages_mutation() -> None:
     assert messages == original_messages
 
 
+def test__merge_messages_tool_message_cache_control() -> None:
+    """Test that cache_control is hoisted from content blocks to tool_result level."""
+    # Test with cache_control in content block
+    messages = [
+        ToolMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "tool output",
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            tool_call_id="1",
+        )
+    ]
+    original_messages = [copy.deepcopy(m) for m in messages]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [{"type": "text", "text": "tool output"}],
+                    "tool_use_id": "1",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    # Verify no mutation
+    assert messages == original_messages
+
+    # Test with multiple content blocks, cache_control on last one
+    messages = [
+        ToolMessage(
+            content=[
+                {"type": "text", "text": "first output"},
+                {
+                    "type": "text",
+                    "text": "second output",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+            tool_call_id="2",
+        )
+    ]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": [
+                        {"type": "text", "text": "first output"},
+                        {"type": "text", "text": "second output"},
+                    ],
+                    "tool_use_id": "2",
+                    "is_error": False,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+    # Test without cache_control
+    messages = [ToolMessage(content="simple output", tool_call_id="3")]
+    expected = [
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "content": "simple output",
+                    "tool_use_id": "3",
+                    "is_error": False,
+                }
+            ]
+        )
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+
+
 def test__format_image() -> None:
     url = "dummyimage.com/600x400/000/fff"
     with pytest.raises(ValueError):
@@ -667,6 +767,153 @@ def test__format_messages_with_tool_calls() -> None:
             "user",
             "user",
         ]
+
+
+def test__normalize_tool_call_id() -> None:
+    # Already-valid IDs (including native Anthropic and OpenAI styles) pass
+    # through unchanged.
+    for valid in ("1", "toolu_01abcDEF-_", "call_Ao02pnFYXD6GN1yzc0uXPsvF"):
+        assert _normalize_tool_call_id(valid) == valid
+
+    # Empty and None IDs pass through so a malformed request surfaces a clear
+    # error from Anthropic rather than a synthesized ID.
+    assert _normalize_tool_call_id("") == ""
+    assert _normalize_tool_call_id(None) is None
+
+    # Foreign IDs with characters Anthropic rejects (e.g. Fireworks/Kimi's
+    # `functions.write_todos:0`) are rewritten to a compatible form.
+    invalid = "functions.write_todos:0"
+    normalized = _normalize_tool_call_id(invalid)
+    assert normalized is not None
+    assert normalized != invalid
+    assert _TOOL_CALL_ID_PATTERN.match(normalized)
+
+    # Deterministic + idempotent: same input always maps to the same output.
+    assert _normalize_tool_call_id(invalid) == normalized
+    assert _normalize_tool_call_id(normalized) == normalized
+
+    # Distinct invalid IDs map to distinct replacements (no collision that
+    # would break multi-tool turns).
+    other = _normalize_tool_call_id("functions.read_file:1")
+    assert other != normalized
+
+
+def test__format_messages_normalizes_cross_provider_tool_call_ids() -> None:
+    """A `tool_use.id` and its paired `tool_use_id` must normalize identically.
+
+    Reproduces the Fireworks/Kimi -> Anthropic 400 from replaying a thread whose
+    tool-call IDs were minted by another provider.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage("done", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["type"] == "tool_use"
+    assert tool_result["type"] == "tool_result"
+
+    # The rewritten IDs are valid and still reference each other.
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_prestructured_tool_result_id() -> None:
+    """A `ToolMessage` whose content is already `tool_result` blocks is covered.
+
+    This shape bypasses the `tool_call_id` normalization in `_merge_messages` and
+    flows through the `tool_result` content branch, so its `tool_use_id` must
+    still be normalized to match the paired `tool_use.id`.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage(
+        [{"type": "tool_result", "tool_use_id": bad_id, "content": "done"}],
+        tool_call_id=bad_id,
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_inline_tool_use_block() -> None:
+    """An invalid ID on an inline `tool_use` content block is normalized.
+
+    Covers the v1-compat destination where tool calls are stored as content
+    blocks rather than the `tool_calls` attribute, paired with a `ToolMessage`.
+    """
+    bad_id = "functions.search:2"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "search", "id": bad_id, "input": {"q": "x"}}],
+    )
+    tool = ToolMessage("result", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+
+
+def test__format_messages_dedupes_overlapping_normalized_tool_use() -> None:
+    """An invalid ID shared by a `tool_use` block and `tool_calls` yields one block.
+
+    Guards the dedup branch: `tool_use_ids` are normalized, so the comparison
+    against the (also normalized) tool-call ID must not re-emit a duplicate block.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "write_todos", "id": bad_id, "input": {"a": 1}}],
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"a": 1}}],
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai])
+
+    tool_use_blocks = [b for b in formatted[1]["content"] if b["type"] == "tool_use"]
+    assert len(tool_use_blocks) == 1
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use_blocks[0]["id"])
+
+
+def test__format_messages_normalizes_distinct_ids_independently() -> None:
+    """Multiple distinct invalid IDs in one turn stay distinct and correctly paired."""
+    id_a = "functions.write_todos:0"
+    id_b = "functions.read_file:1"
+    ai = AIMessage(
+        "",
+        tool_calls=[
+            {"name": "write_todos", "id": id_a, "args": {}},
+            {"name": "read_file", "id": id_b, "args": {}},
+        ],
+    )
+    tool_a = ToolMessage("a", tool_call_id=id_a)
+    tool_b = ToolMessage("b", tool_call_id=id_b)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool_a, tool_b])
+
+    tool_uses = formatted[1]["content"]
+    results = formatted[2]["content"]
+    assert tool_uses[0]["id"] == _normalize_tool_call_id(id_a)
+    assert tool_uses[1]["id"] == _normalize_tool_call_id(id_b)
+    assert tool_uses[0]["id"] != tool_uses[1]["id"]
+    # Each result still pairs with its own tool_use.
+    assert {r["tool_use_id"] for r in results} == {
+        tool_uses[0]["id"],
+        tool_uses[1]["id"],
+    }
 
 
 def test__format_tool_use_block() -> None:
@@ -1422,6 +1669,132 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_cache_creation_ttl() -> None:
+    """Test _create_usage_metadata with granular cache_creation TTL fields."""
+
+    # Case 1: cache_creation with specific ephemeral TTL tokens (BaseModel)
+    class CacheCreation(BaseModel):
+        ephemeral_5m_input_tokens: int = 100
+        ephemeral_1h_input_tokens: int = 50
+
+    class UsageWithCacheCreation(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: CacheCreation = CacheCreation()
+
+    result = _create_usage_metadata(UsageWithCacheCreation())
+    # input_tokens = 200 (base) + 10 (cache_read) + 150 (specific: 100+50)
+    assert result["input_tokens"] == 360
+    assert result["output_tokens"] == 30
+    assert result["total_tokens"] == 390
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 10
+    # cache_creation should be suppressed to avoid double counting
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 100
+    assert details["ephemeral_1h_input_tokens"] == 50
+
+    # Case 2: cache_creation as a dict
+    class UsageWithCacheCreationDict(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: dict = {
+            "ephemeral_5m_input_tokens": 80,
+            "ephemeral_1h_input_tokens": 70,
+        }
+
+    result = _create_usage_metadata(UsageWithCacheCreationDict())
+    assert result["input_tokens"] == 200 + 10 + 80 + 70
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 80
+    assert details["ephemeral_1h_input_tokens"] == 70
+
+    # Case 3: cache_creation exists but specific keys are zero — falls back to
+    # generic cache_creation_input_tokens
+    class CacheCreationZero(BaseModel):
+        ephemeral_5m_input_tokens: int = 0
+        ephemeral_1h_input_tokens: int = 0
+
+    class UsageWithCacheCreationZero(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 50
+        cache_creation: CacheCreationZero = CacheCreationZero()
+
+    result = _create_usage_metadata(UsageWithCacheCreationZero())
+    # specific_cache_creation_tokens = 0, so falls back to cache_creation_input_tokens
+    # input_tokens = 200 + 10 + 50 = 260
+    assert result["input_tokens"] == 260
+    assert result["output_tokens"] == 30
+    assert result["total_tokens"] == 290
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 10
+    assert details["cache_creation"] == 50
+
+    # Case 4: cache_creation exists but specific keys are missing from the dict
+    class CacheCreationEmpty(BaseModel):
+        pass
+
+    class UsageWithCacheCreationEmpty(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 20
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 15
+        cache_creation: CacheCreationEmpty = CacheCreationEmpty()
+
+    result = _create_usage_metadata(UsageWithCacheCreationEmpty())
+    # specific_cache_creation_tokens = 0, falls back to cache_creation_input_tokens
+    assert result["input_tokens"] == 100 + 5 + 15
+    assert result["output_tokens"] == 20
+    assert result["total_tokens"] == 140
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 15
+
+    # Case 5: only one ephemeral key is non-zero
+    class CacheCreationPartial(BaseModel):
+        ephemeral_5m_input_tokens: int = 0
+        ephemeral_1h_input_tokens: int = 75
+
+    class UsageWithPartialCache(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 10
+        cache_read_input_tokens: int = 0
+        cache_creation_input_tokens: int = 75
+        cache_creation: CacheCreationPartial = CacheCreationPartial()
+
+    result = _create_usage_metadata(UsageWithPartialCache())
+    # specific_cache_creation_tokens = 75 > 0, so generic cache_creation is suppressed
+    assert result["input_tokens"] == 100 + 0 + 75
+    assert result["output_tokens"] == 10
+    assert result["total_tokens"] == 185
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_1h_input_tokens"] == 75
+    # ephemeral_5m_input_tokens is 0 — still included since 0 is not None
+    assert details["ephemeral_5m_input_tokens"] == 0
+
+    # Case 6: no cache_creation field at all (the pre-existing path)
+    class UsageNoCacheCreation(BaseModel):
+        input_tokens: int = 50
+        output_tokens: int = 25
+        cache_read_input_tokens: int = 5
+        cache_creation_input_tokens: int = 10
+
+    result = _create_usage_metadata(UsageNoCacheCreation())
+    assert result["input_tokens"] == 50 + 5 + 10
+    assert result["output_tokens"] == 25
+    assert result["total_tokens"] == 90
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_read"] == 5
+    assert details["cache_creation"] == 10
+
+
 class FakeTracer(BaseTracer):
     """Fake tracer to capture inputs to `chat_model_start`."""
 
@@ -1488,64 +1861,223 @@ def test_cache_control_kwarg() -> None:
 
     messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
     payload = llm._get_request_payload(messages)
+    assert "cache_control" not in payload
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["cache_control"] == {"type": "ephemeral"}
     assert payload["messages"] == [
         {"role": "user", "content": "foo"},
         {"role": "assistant", "content": "bar"},
         {"role": "user", "content": "baz"},
     ]
 
+
+class _BedrockLikeAnthropic(ChatAnthropic):
+    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests.
+
+    Vertex is not modeled here: `langchain-google-vertexai`'s
+    `ChatAnthropicVertex` does not subclass `ChatAnthropic` and ships its own
+    `_get_request_payload`, so it never reaches the gate under test.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-bedrock-chat"
+
+
+def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
+    """Non-direct subclasses must place `cache_control` inside the last block.
+
+    Transports like Bedrock reject the top-level `cache_control` field, so
+    the kwarg has to be expanded into a nested breakpoint to remain effective.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
     payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-    ]
-    assert isinstance(messages[-1].content, str)  # test no mutation
 
-    messages = [
-        HumanMessage("foo"),
-        AIMessage("bar"),
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux"},
-            ]
-        ),
+    assert "cache_control" not in payload
+    last_message = payload["messages"][-1]
+    assert last_message["content"] == [
+        {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
     ]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {"role": "user", "content": "foo"},
-        {"role": "assistant", "content": "bar"},
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "baz"},
-                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
-            ],
-        },
-    ]
-    assert "cache_control" not in messages[-1].content[-1]  # test no mutation
 
 
-def test_cache_control_kwarg_skips_empty_messages() -> None:
-    llm = ChatAnthropic(model=MODEL_NAME)
+def test_cache_control_kwarg_bedrock_with_list_content() -> None:
+    """`cache_control` lands on the last block when content is already a list."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
 
-    messages = [HumanMessage("foo"), AIMessage(content=[])]
-    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
-    assert payload["messages"] == [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
-            ],
-        },
-        {"role": "assistant", "content": []},
+    messages = [HumanMessage([{"type": "text", "text": "foo"}])]
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "1h"}
+    )
+
+    assert "cache_control" not in payload
+    last_block = payload["messages"][-1]["content"][-1]
+    assert last_block["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+
+
+def test_cache_control_kwarg_bedrock_skips_code_execution_blocks() -> None:
+    """`cache_control` must skip `code_execution`-related blocks.
+
+    Anthropic rejects breakpoints applied to those blocks, so the injector
+    walks backwards until it finds an eligible block.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "earlier text"},
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "get_weather",
+                "input": {"location": "NYC"},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            },
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    last_content = payload["messages"][-1]["content"]
+    assert last_content[0]["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in last_content[1]
+
+
+def test_cache_control_kwarg_bedrock_walks_back_to_earlier_message() -> None:
+    """When the last message has no eligible blocks, walk back to a prior one.
+
+    Pins the contract that `reversed(formatted_messages)` is intentional: a
+    refactor that only inspects the last message would silently regress.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("earlier"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    first_message_content = payload["messages"][0]["content"]
+    assert first_message_content == [
+        {"type": "text", "text": "earlier", "cache_control": {"type": "ephemeral"}}
     ]
+    last_message_content = payload["messages"][-1]["content"]
+    assert all("cache_control" not in block for block in last_message_content)
+
+
+def test_cache_control_kwarg_bedrock_no_eligible_block_warns() -> None:
+    """When every candidate is `code_execution`-related, warn and drop the kwarg.
+
+    Pins the silent-drop contract: payload remains valid for Anthropic, but
+    the caller is told their cache request was skipped.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    with pytest.warns(UserWarning, match="cache_control.*dropped"):
+        payload = llm._get_request_payload(
+            [ai_message],
+            cache_control={"type": "ephemeral"},
+        )
+
+    assert "cache_control" not in payload
+    only_block = payload["messages"][-1]["content"][0]
+    assert "cache_control" not in only_block
+
+
+def test_cache_control_absent_kwarg_bedrock_is_noop() -> None:
+    """Without a `cache_control` kwarg, the Bedrock branch must not mutate."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+
+    assert "cache_control" not in payload
+    for message in payload["messages"]:
+        content = message["content"]
+        if isinstance(content, list):
+            for block in content:
+                assert "cache_control" not in block
+
+
+def test_cache_control_kwarg_unknown_subclass_injects_into_blocks() -> None:
+    """Any subclass that overrides `_llm_type` is treated as non-direct.
+
+    The gate is allowlist-shaped on `"anthropic-chat"`, so a future subclass
+    routing through a new transport is safe by default rather than silently
+    sending an unsupported top-level field.
+    """
+
+    class _FutureTransportAnthropic(ChatAnthropic):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-some-future-transport"
+
+    llm = _FutureTransportAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload(
+        [HumanMessage("hello")],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert "cache_control" not in payload
+    assert payload["messages"][-1]["content"] == [
+        {"type": "text", "text": "hello", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("llm_type", "expected"),
+    [
+        ("anthropic-chat", True),
+        ("anthropic-bedrock-chat", False),
+        ("anthropic-chat-vertexai", False),
+        ("", False),
+        ("ANTHROPIC-CHAT", False),
+        (None, False),
+        (object(), False),
+    ],
+)
+def test_is_direct_anthropic_llm_type(llm_type: object, expected: bool) -> None:  # noqa: FBT001
+    """Predicate is exact-match and tolerates non-string inputs."""
+    from langchain_anthropic.chat_models import _is_direct_anthropic_llm_type
+
+    assert _is_direct_anthropic_llm_type(llm_type) is expected
 
 
 def test_context_management_in_payload() -> None:
@@ -1562,6 +2094,13 @@ def test_context_management_in_payload() -> None:
     assert payload["context_management"] == {
         "edits": [{"type": "clear_tool_uses_20250919"}]
     }
+
+
+def test_inference_geo_in_payload() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, inference_geo="us")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert payload["inference_geo"] == "us"
 
 
 def test_anthropic_model_params() -> None:
@@ -1585,8 +2124,6 @@ def test_streaming_cache_token_reporting() -> None:
     from unittest.mock import MagicMock
 
     from anthropic.types import MessageDeltaUsage
-
-    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
 
     # Create a mock message_start event
     mock_message = MagicMock()
@@ -1617,8 +2154,10 @@ def test_streaming_cache_token_reporting() -> None:
     message_delta_event.usage = mock_delta_usage
     message_delta_event.delta = mock_delta
 
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
     # Test message_start event
-    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_start_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -1626,7 +2165,7 @@ def test_streaming_cache_token_reporting() -> None:
     )
 
     # Test message_delta event - should contain complete usage metadata (w/ cache)
-    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
         message_delta_event,
         stream_usage=True,
         coerce_content_to_string=True,
@@ -1656,7 +2195,6 @@ def test_streaming_cache_token_reporting() -> None:
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["structured-outputs-2025-11-13"],
     )
 
     def get_weather(location: str, unit: Literal["C", "F"]) -> str:
@@ -1669,8 +2207,8 @@ def test_strict_tool_use() -> None:
     assert tool_definition["strict"] is True
 
 
-def test_beta_merging_with_response_format() -> None:
-    """Test that structured-outputs beta is merged with existing betas."""
+def test_response_format_with_output_config() -> None:
+    """Test that response_format is converted to output_config.format."""
 
     class Person(BaseModel):
         """Person data."""
@@ -1678,114 +2216,47 @@ def test_beta_merging_with_response_format() -> None:
         name: str
         age: int
 
-    # Auto-inject structured-outputs beta with no others specified
+    # Test that response_format converts to output_config.format
     model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload(
         "Test query",
         response_format=Person.model_json_schema(),
     )
-    assert payload["betas"] == ["structured-outputs-2025-11-13"]
+    assert "output_config" in payload
+    assert "format" in payload["output_config"]
+    assert payload["output_config"]["format"]["type"] == "json_schema"
+    assert "schema" in payload["output_config"]["format"]
 
-    # Merge structured-outputs beta if other betas are present
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=["mcp-client-2025-04-04"],
-    )
-    payload = model._get_request_payload(
-        "Test query",
-        response_format=Person.model_json_schema(),
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # Structured-outputs beta already present - don't duplicate
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=[
-            "mcp-client-2025-04-04",
-            "structured-outputs-2025-11-13",
-        ],
-    )
-    payload = model._get_request_payload(
-        "Test query",
-        response_format=Person.model_json_schema(),
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # No response_format - betas should not be modified
-    model = ChatAnthropic(
-        model=MODEL_NAME,
-        betas=["mcp-client-2025-04-04"],
-    )
+    # No response_format - output_config should not have format
+    model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload("Test query")
-    assert payload["betas"] == ["mcp-client-2025-04-04"]
+    if "output_config" in payload:
+        assert "format" not in payload["output_config"]
 
 
-def test_beta_merging_with_strict_tool_use() -> None:
-    """Test beta merging for strict tools."""
+def test_strict_tool_use_payload() -> None:
+    """Test that strict tool use property is correctly passed through to payload."""
 
     def get_weather(location: str) -> str:
         """Get the weather at a location."""
         return "Sunny"
 
-    # Auto-inject structured-outputs beta with no others specified
+    # Test that strict=True is correctly passed to payload
     model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     model_with_tools = model.bind_tools([get_weather], strict=True)
     payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
         "What's the weather?",
         **model_with_tools.kwargs,  # type: ignore[attr-defined]
     )
-    assert payload["betas"] == ["structured-outputs-2025-11-13"]
+    assert payload["tools"][0]["strict"] is True
 
-    # Merge structured-outputs beta if other betas are present
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=True)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+    # Test that strict=False is correctly passed to payload
+    model_without_strict = model.bind_tools([get_weather], strict=False)
+    payload = model_without_strict._get_request_payload(  # type: ignore[attr-defined]
         "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+        **model_without_strict.kwargs,  # type: ignore[attr-defined]
     )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # Structured-outputs beta already present - don't duplicate
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=[
-            "mcp-client-2025-04-04",
-            "structured-outputs-2025-11-13",
-        ],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=True)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
-        "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
-    )
-    assert payload["betas"] == [
-        "mcp-client-2025-04-04",
-        "structured-outputs-2025-11-13",
-    ]
-
-    # No strict tools - betas should not be modified
-    model = ChatAnthropic(
-        model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["mcp-client-2025-04-04"],
-    )
-    model_with_tools = model.bind_tools([get_weather], strict=False)
-    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
-        "What's the weather?",
-        **model_with_tools.kwargs,  # type: ignore[attr-defined]
-    )
-    assert payload["betas"] == ["mcp-client-2025-04-04"]
+    assert payload["tools"][0].get("strict") is False
 
 
 def test_auto_append_betas_for_tool_types() -> None:
@@ -1971,9 +2442,9 @@ def test_tool_search_with_deferred_tools() -> None:
 
     # Find the calculator tool in the payload
     calculator_tool = None
-    for tool in payload["tools"]:
-        if isinstance(tool, dict) and tool.get("name") == "calculator":
-            calculator_tool = tool
+    for tool_ in payload["tools"]:
+        if isinstance(tool_, dict) and tool_.get("name") == "calculator":
+            calculator_tool = tool_
             break
 
     assert calculator_tool is not None
@@ -2136,6 +2607,23 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
+def test_profile_1m_context_beta() -> None:
+    model = ChatAnthropic(model="claude-sonnet-4-5")
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+    model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 1000000
+
+    model = ChatAnthropic(
+        model="claude-sonnet-4-5",
+        betas=["token-efficient-tools-2025-02-19"],
+    )
+    assert model.profile
+    assert model.profile["max_input_tokens"] == 200000
+
+
 async def test_model_profile_not_blocking() -> None:
     with blockbuster_ctx():
         model = ChatAnthropic(model="claude-sonnet-4-5")
@@ -2145,7 +2633,7 @@ async def test_model_profile_not_blocking() -> None:
 def test_effort_parameter_validation() -> None:
     """Test that effort parameter is validated correctly.
 
-    The effort parameter is currently in beta and only supported by Claude Opus 4.5.
+    The effort parameter is generally available on Claude Opus 4.6 and Opus 4.5.
     """
     # Valid effort values should work
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
@@ -2157,20 +2645,22 @@ def test_effort_parameter_validation() -> None:
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="low")
     assert model.effort == "low"
 
+    model = ChatAnthropic(model="claude-opus-4-6", effort="max")
+    assert model.effort == "max"
+
     # Invalid effort values should raise ValidationError
     with pytest.raises(ValidationError, match="Input should be"):
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
-def test_effort_populates_betas() -> None:
-    """Test that effort parameter auto-populates required betas."""
+def test_effort_in_output_config_payload() -> None:
+    """Test that effort parameter is properly added to output_config in payload."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
     assert model.effort == "medium"
 
-    # Test that effort works with dated API ID
+    # Test that effort is added to output_config
     payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "medium"
-    assert "effort-2025-11-24" in payload["betas"]
 
 
 def test_effort_in_output_config() -> None:
@@ -2180,7 +2670,9 @@ def test_effort_in_output_config() -> None:
         model="claude-opus-4-5-20251101",
         output_config={"effort": "low"},
     )
-    assert model.model_kwargs["output_config"] == {"effort": "low"}
+    assert model.output_config == {"effort": "low"}
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
 
 
 def test_effort_priority() -> None:
@@ -2196,43 +2688,6 @@ def test_effort_priority() -> None:
     assert payload["output_config"]["effort"] == "high"
 
 
-def test_effort_beta_header_auto_append() -> None:
-    """Test that effort beta header is automatically appended."""
-    # Test with top-level effort parameter
-    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")
-    payload = model._get_request_payload("Test query")
-    assert "effort-2025-11-24" in payload["betas"]
-
-    # Test with output_config
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        output_config={"effort": "low"},
-    )
-    payload = model._get_request_payload("Test query")
-    assert "effort-2025-11-24" in payload["betas"]
-
-    # Test that beta is not duplicated if already present
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        effort="high",
-        betas=["effort-2025-11-24"],
-    )
-    payload = model._get_request_payload("Test query")
-    assert payload["betas"].count("effort-2025-11-24") == 1
-
-    # Test combining effort with other betas
-    model = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
-        effort="medium",
-        betas=["context-1m-2025-08-07"],
-    )
-    payload = model._get_request_payload("Test query")
-    assert set(payload["betas"]) == {
-        "context-1m-2025-08-07",
-        "effort-2025-11-24",
-    }
-
-
 def test_output_config_without_effort() -> None:
     """Test that output_config can be used without effort."""
     # output_config might have other fields in the future
@@ -2242,15 +2697,10 @@ def test_output_config_without_effort() -> None:
     )
     payload = model._get_request_payload("Test query")
     assert payload["output_config"] == {"some_future_param": "value"}
-    # No effort beta should be added
-    assert payload.get("betas") is None or "effort-2025-11-24" not in payload.get(
-        "betas", []
-    )
 
 
 def test_extras_with_defer_loading() -> None:
     """Test that extras with `defer_loading` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(extras={"defer_loading": True})
     def get_weather(location: str) -> str:
@@ -2279,7 +2729,6 @@ def test_extras_with_defer_loading() -> None:
 
 def test_extras_with_cache_control() -> None:
     """Test that extras with `cache_control` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(extras={"cache_control": {"type": "ephemeral"}})
     def search_files(query: str) -> str:
@@ -2304,9 +2753,31 @@ def test_extras_with_cache_control() -> None:
     assert search_tool.get("cache_control") == {"type": "ephemeral"}
 
 
+def test_extras_with_fine_grained_streaming() -> None:
+    @tool(extras={"eager_input_streaming": True})
+    def tell_story(story: str) -> None:
+        """Tell a story."""
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    model_with_tools = model.bind_tools([tell_story])
+
+    payload = model_with_tools._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **model_with_tools.kwargs,  # type: ignore[attr-defined]
+    )
+
+    tell_story_tool = None
+    for tool_def in payload["tools"]:
+        if isinstance(tool_def, dict) and tool_def.get("name") == "tell_story":
+            tell_story_tool = tool_def
+            break
+
+    assert tell_story_tool is not None
+    assert tell_story_tool.get("eager_input_streaming") is True
+
+
 def test_extras_with_input_examples() -> None:
     """Test that extras with `input_examples` are merged into tool definitions."""
-    from langchain_core.tools import tool
 
     @tool(
         extras={
@@ -2349,7 +2820,6 @@ def test_extras_with_input_examples() -> None:
 
 def test_extras_with_multiple_fields() -> None:
     """Test that multiple extra fields can be specified together."""
-    from langchain_core.tools import tool
 
     @tool(
         extras={
@@ -2380,3 +2850,511 @@ def test_extras_with_multiple_fields() -> None:
     assert tool_def.get("defer_loading") is True
     assert tool_def.get("cache_control") == {"type": "ephemeral"}
     assert "input_examples" in tool_def
+
+
+@pytest.mark.parametrize("block_type", ["reasoning", "function_call"])
+def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
+    """Test that reasoning/function_call blocks are filtered for non-anthropic."""
+    block = {"type": block_type, "other": "foo"}
+    human = HumanMessage("hi")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "openai"},
+    )
+    _, msgs = _format_messages([human, ai])
+    assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
+
+    ai_anthropic = AIMessage(  # type: ignore[misc]
+        content=[block, {"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    _, msgs = _format_messages([human, ai_anthropic])
+    assert any(b["type"] == block_type for b in msgs[1]["content"])
+
+
+def test__format_messages_trailing_whitespace() -> None:
+    """Test that trailing whitespace is trimmed from the final assistant message."""
+    human = HumanMessage("foo")  # type: ignore[misc]
+
+    # Test string content
+    ai_string = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_string])
+    assert anthropic_messages[-1]["content"] == "thought"
+
+    # Test list content
+    ai_list = AIMessage([{"type": "text", "text": "thought "}])  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_list])
+    assert anthropic_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
+
+    # Test that intermediate messages are NOT trimmed
+    ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
+    _, anthropic_messages = _format_messages([human, ai_intermediate, human])
+    assert anthropic_messages[1]["content"] == "thought "
+
+
+# Test fixtures for context overflow error tests
+_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
+    message="prompt is too long: 209752 tokens > 200000 maximum",
+    response=MagicMock(status_code=400),
+    body={
+        "type": "error",
+        "error": {
+            "type": "invalid_request_error",
+            "message": "prompt is too long: 209752 tokens > 200000 maximum",
+        },
+    },
+)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Test context overflow error on invoke (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Test context overflow error on invoke (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Test context overflow error on stream (sync)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Test context overflow error on stream (async)."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """Test that ContextOverflowError can be caught as BadRequestError."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(anthropic.BadRequestError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    # Verify it's both types (multiple inheritance)
+    assert isinstance(exc_info.value, anthropic.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/35539.
+
+    Anthropic API rejects forced tool_choice when thinking is enabled:
+    "Thinking may not be enabled when tool_choice forces tool use."
+    bind_tools should drop forced tool_choice and warn.
+    """
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 5000},
+    )
+
+    # tool_choice="any" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+    assert "thinking is enabled" in str(w[0].message)
+
+    # tool_choice="auto" should NOT be dropped (auto is allowed)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "auto"}
+    assert len(w) == 0
+
+    # tool_choice=specific tool name should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "tool" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "tool", "name": "GetWeather"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "any" should also be dropped
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "any"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+
+def test_bind_tools_drops_forced_tool_choice_when_adaptive_thinking() -> None:
+    """Adaptive thinking has the same forced tool_choice restriction as enabled."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "adaptive"},
+    )
+
+    # tool_choice="any" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+    assert "thinking is enabled" in str(w[0].message)
+
+    # tool_choice="auto" should NOT be dropped (auto is allowed)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "auto"}
+    assert len(w) == 0
+
+    # tool_choice=specific tool name should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools([GetWeather], tool_choice="GetWeather")
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "tool" should be dropped with warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "tool", "name": "GetWeather"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+    # tool_choice=dict with type "any" should also be dropped
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [GetWeather],
+            tool_choice={"type": "any"},
+        )
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 1
+
+
+def test_bind_tools_keeps_forced_tool_choice_when_thinking_disabled() -> None:
+    """When thinking is not enabled, forced tool_choice should pass through."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    # No thinking — tool_choice="any" should pass through
+    result = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly None
+    chat_model_none = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=None,
+    )
+    result = chat_model_none.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+    # Thinking explicitly disabled — should NOT drop tool_choice
+    chat_model_disabled = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "disabled"},
+    )
+    result = chat_model_disabled.bind_tools([GetWeather], tool_choice="any")
+    assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
+
+
+def test_thinking_in_params_recognizes_adaptive() -> None:
+    """_thinking_in_params should recognize both enabled and adaptive types."""
+    assert _thinking_in_params({"thinking": {"type": "enabled", "budget_tokens": 5000}})
+    assert _thinking_in_params({"thinking": {"type": "adaptive"}})
+    assert not _thinking_in_params({"thinking": {"type": "disabled"}})
+    assert not _thinking_in_params({"thinking": {}})
+    assert not _thinking_in_params({})
+
+
+def test_effort_xhigh() -> None:
+    """Test that xhigh effort level is accepted and lands in output_config."""
+    model = ChatAnthropic(model="claude-opus-4-6", effort="xhigh")
+    assert model.effort == "xhigh"
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "xhigh"
+
+
+def test_output_config_top_level_field() -> None:
+    """Test that output_config is a top-level field, not model_kwargs."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={
+            "effort": "low",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    assert model.output_config == {
+        "effort": "low",
+        "task_budget": {"type": "tokens", "total": 50000},
+    }
+    assert "output_config" not in model.model_kwargs
+
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "low"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_output_config_merged_with_kwargs() -> None:
+    """Test that call-time output_config overrides field-level output_config."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"effort": "low"},
+    )
+    payload = model._get_request_payload(
+        "Test query",
+        output_config={
+            "effort": "high",
+            "task_budget": {"type": "tokens", "total": 50000},
+        },
+    )
+    # Call-time kwargs override field-level
+    assert payload["output_config"]["effort"] == "high"
+    assert payload["output_config"]["task_budget"] == {"type": "tokens", "total": 50000}
+
+
+def test_task_budget_auto_appends_beta() -> None:
+    """Test that task_budget in output_config triggers beta header."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert "betas" in payload
+    assert "task-budgets-2026-03-13" in payload["betas"]
+
+
+def test_task_budget_beta_not_duplicated() -> None:
+    """Test that task_budget beta is not duplicated if already present."""
+    model = ChatAnthropic(
+        model=MODEL_NAME,
+        betas=["task-budgets-2026-03-13"],
+        output_config={"task_budget": {"type": "tokens", "total": 128000}},
+    )
+    payload = model._get_request_payload("Test query")
+    assert payload["betas"].count("task-budgets-2026-03-13") == 1
+
+
+def test_no_task_budget_no_beta() -> None:
+    """Test that task_budget beta is not added when no task_budget is set."""
+    model = ChatAnthropic(model=MODEL_NAME, output_config={"effort": "high"})
+    payload = model._get_request_payload("Test query")
+    betas = payload.get("betas")
+    if betas:
+        assert "task-budgets-2026-03-13" not in betas
+
+
+def test_anthropic_stream_events_v3_lifecycle() -> None:
+    """Validate lifecycle events across a thinking + text + tool_use stream.
+
+    Anthropic emits raw `content_block_start` / `content_block_delta` /
+    `content_block_stop` events with integer `index` fields, interleaved
+    with `message_start` and `message_delta`. This test threads a
+    realistic event sequence through `_stream` via a mocked raw client
+    and asserts that `stream_events(version="v3")` produces a spec-conformant
+    event stream: paired start/finish per block, no interleaving, sequential
+    `uint` wire indices.
+    """
+    from unittest.mock import patch
+
+    from anthropic.types import (
+        InputJSONDelta,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+        ThinkingBlock,
+        ThinkingDelta,
+        ToolUseBlock,
+    )
+    from anthropic.types.raw_message_delta_event import Delta as RawMessageDelta
+    from anthropic.types.raw_message_delta_event import (
+        MessageDeltaUsage as RawMessageDeltaUsage,
+    )
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    msg = Message(
+        id="msg_1",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # thinking block (index=0)
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(signature="", thinking="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="Let me ", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        # text block (index=1)
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=1,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="The answer ", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="is 42.", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=1, type="content_block_stop"),
+        # tool_use block (index=2)
+        RawContentBlockStartEvent(
+            content_block=ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="search",
+                type="tool_use",
+            ),
+            index=2,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json='{"q":', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json=' "weather"}', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=2, type="content_block_stop"),
+        # message_delta with final usage and stop_reason
+        RawMessageDeltaEvent(
+            delta=RawMessageDelta(stop_reason="tool_use", stop_sequence=None),
+            type="message_delta",
+            usage=RawMessageDeltaUsage(
+                output_tokens=50,
+                input_tokens=10,
+                cache_read_input_tokens=0,
+                cache_creation_input_tokens=0,
+            ),
+        ),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+
+    # Enable thinking so `coerce_content_to_string=False` in `_stream`,
+    # which gives every content block an integer `index` field — the
+    # structured path the protocol bridge actually exercises.  Default
+    # (no tools / thinking / documents) coerces text to a plain string,
+    # which strips indices and is a separate code path not covered here.
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    def mock_create(_payload: Any) -> list:
+        return events
+
+    with patch.object(llm, "_create", mock_create):
+        stream_events = list(llm.stream_events("Test query", version="v3"))
+
+    assert_valid_event_stream(stream_events)
+
+    finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
+    types = [f["content"]["type"] for f in finishes]
+    assert types == ["reasoning", "text", "tool_call"]
+
+    wire_indices = [f["index"] for f in finishes]
+    assert wire_indices == [0, 1, 2]
+
+    # Content accumulation reaches content-block-finish intact.
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content"])
+    text_block = cast("dict[str, Any]", finishes[1]["content"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content"])
+    assert reasoning_block["reasoning"] == "Let me think."
+    assert text_block["text"] == "The answer is 42."
+    assert tool_block["args"] == {"q": "weather"}
+    assert tool_block["name"] == "search"
+
+    # message-finish carries the tool_use stop reason inside metadata
+    # (protocol 0.0.9 moved the finish reason off the top-level event
+    # and into `metadata`, where the bridge deposits the provider's raw
+    # `stop_reason` alongside other response metadata).
+    message_finish = cast("dict[str, Any]", stream_events[-1])
+    assert message_finish["event"] == "message-finish"
+    assert message_finish["metadata"]["stop_reason"] == "tool_use"

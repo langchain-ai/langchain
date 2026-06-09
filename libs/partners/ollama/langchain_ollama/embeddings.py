@@ -6,10 +6,20 @@ from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
-from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 from typing_extensions import Self
 
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -119,6 +129,20 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     model: str
     """Model name to use."""
+
+    dimensions: int | None = None
+    """Number of dimensions for the output embedding vectors.
+
+    If not provided, the model's default embedding dimensionality is used.
+    """
+
+    @field_validator("dimensions")
+    @classmethod
+    def _validate_dimensions(cls, v: int | None) -> int | None:
+        if v is not None and v < 1:
+            msg = "`dimensions` must be a positive integer."
+            raise ValueError(msg)
+        return v
 
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
@@ -294,12 +318,16 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._client:
             msg = (
-                "Ollama client is not initialized. "
-                "Please ensure Ollama is running and the model is loaded."
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
             )
-            raise ValueError(msg)
+            raise RuntimeError(msg)
         return self._client.embed(
-            self.model, texts, options=self._default_params, keep_alive=self.keep_alive
+            self.model,
+            texts,
+            dimensions=self.dimensions,
+            options=self._default_params,
+            keep_alive=self.keep_alive,
         )["embeddings"]
 
     def embed_query(self, text: str) -> list[float]:
@@ -310,14 +338,15 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         if not self._async_client:
             msg = (
-                "Ollama client is not initialized. "
-                "Please ensure Ollama is running and the model is loaded."
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
             )
-            raise ValueError(msg)
+            raise RuntimeError(msg)
         return (
             await self._async_client.embed(
                 self.model,
                 texts,
+                dimensions=self.dimensions,
                 options=self._default_params,
                 keep_alive=self.keep_alive,
             )

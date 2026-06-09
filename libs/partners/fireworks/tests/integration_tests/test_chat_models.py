@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from langchain_fireworks import ChatFireworks
+from tests.integration_tests._rate_limiter import rate_limiter
 
 _MODEL = "accounts/fireworks/models/gpt-oss-120b"
 
@@ -21,7 +22,9 @@ _MODEL = "accounts/fireworks/models/gpt-oss-120b"
 @pytest.mark.parametrize("strict", [None, True, False])
 def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
     """Test that tool choice is respected with different strict values."""
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
+    )
 
     class MyTool(BaseModel):
         name: str
@@ -59,7 +62,9 @@ def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
+    )
 
     full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
@@ -96,7 +101,7 @@ async def test_astream() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatFireworks."""
-    llm = ChatFireworks(model=_MODEL)
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -107,7 +112,7 @@ async def test_abatch_tags() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatFireworks."""
-    llm = ChatFireworks(model=_MODEL)
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -115,7 +120,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatFireworks."""
-    llm = ChatFireworks(model=_MODEL)
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -157,7 +162,9 @@ def _get_joke_class(
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_structured_output_json_schema(schema_type: str) -> None:
-    llm = ChatFireworks(model="fireworks/kimi-k2-instruct-0905")
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
+    )
     schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
     chat = llm.with_structured_output(schema, method="json_schema")
 
