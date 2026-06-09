@@ -773,6 +773,19 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             transformed.extend(splits)
         return transformed
 
+    @staticmethod
+    def _get_media_src(media_tag: Tag) -> str:
+        direct_src = media_tag.get("src")
+        if isinstance(direct_src, str) and direct_src:
+            return direct_src
+
+        for source_tag in _find_all_tags(media_tag, name="source"):
+            source_src = source_tag.get("src")
+            if isinstance(source_src, str) and source_src:
+                return source_src
+
+        return ""
+
     def _process_media(self, soup: BeautifulSoup) -> None:
         """Processes the media elements.
 
@@ -792,7 +805,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._preserve_videos:
             for video_tag in _find_all_tags(soup, name="video"):
-                video_src = video_tag.get("src", "")
+                video_src = self._get_media_src(video_tag)
                 markdown_video = f"![video:{video_src}]({video_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_video
@@ -800,7 +813,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._preserve_audio:
             for audio_tag in _find_all_tags(soup, name="audio"):
-                audio_src = audio_tag.get("src", "")
+                audio_src = self._get_media_src(audio_tag)
                 markdown_audio = f"![audio:{audio_src}]({audio_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_audio
