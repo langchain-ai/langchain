@@ -379,7 +379,7 @@ def test_bind_tools_is_overridden() -> None:
     """`bind_tools` must be overridden so `langchain-tests` detects tool support.
 
     The standard suite derives `has_tool_calling` from
-    ``bind_tools is not BaseChatModel.bind_tools``; if this regresses, the entire
+    `bind_tools is not BaseChatModel.bind_tools`; if this regresses, the entire
     tool-calling test family is silently skipped.
     """
     assert ChatPerplexity.bind_tools is not BaseChatModel.bind_tools

@@ -41,8 +41,8 @@ class TestPerplexityResponsesStandard(ChatModelIntegrationTests):
     """Standard tests on the Responses (Agent) API, which supports tool calling.
 
     Client-side function tools require the Responses route and a tool-capable
-    model (the ``sonar`` family does not support them), so the tool-calling test
-    family runs here rather than on ``TestPerplexityStandard``.
+    model (the `sonar` family does not support them), so the tool-calling test
+    family runs here rather than on `TestPerplexityStandard`.
     """
 
     @property
