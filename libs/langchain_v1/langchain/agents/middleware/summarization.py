@@ -167,13 +167,6 @@ class TriggerClause(TypedDict, total=False):
     trigger summarization (AND semantics). When multiple clauses are provided in a list,
     summarization triggers if any clause is met (OR semantics).
 
-    Attributes:
-        tokens: Trigger when the computed (or provider-reported) token count reaches or
-            exceeds this value.
-        messages: Trigger when message count reaches or exceeds this value.
-        fraction: Trigger when the computed (or provider-reported) token count reaches or
-            exceeds this fraction of the model's maximum input tokens.
-
     Example:
         ```python
         # AND: Trigger when tokens >= 4000 AND messages >= 10
@@ -188,8 +181,17 @@ class TriggerClause(TypedDict, total=False):
     """
 
     tokens: int
+    """Trigger when the computed (or provider-reported) token count reaches or
+    exceeds this value.
+    """
+
     messages: int
+    """Trigger when message count reaches or exceeds this value."""
+
     fraction: float
+    """Trigger when the computed (or provider-reported) token count reaches or
+    exceeds this fraction of the model's maximum input tokens.
+    """
 
 
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
