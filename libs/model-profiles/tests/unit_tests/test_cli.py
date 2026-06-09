@@ -1,12 +1,19 @@
 """Tests for CLI functionality."""
 
 import importlib.util
+import warnings
 from pathlib import Path
+from typing import Any, get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
+from langchain_core.language_models.model_profile import ModelProfile
 
-from langchain_model_profiles.cli import _model_data_to_profile, refresh
+from langchain_model_profiles.cli import (
+    _model_data_to_profile,
+    _warn_undeclared_profile_keys,
+    refresh,
+)
 
 
 @pytest.fixture
@@ -272,6 +279,70 @@ def test_refresh_generates_sorted_profiles(
     assert model_ids == sorted(model_ids), f"Profile keys are not sorted: {model_ids}"
 
 
+def test_model_data_to_profile_captures_all_models_dev_fields() -> None:
+    """Test that all models.dev fields are captured in the profile."""
+    model_data = {
+        "id": "claude-opus-4-6",
+        "name": "Claude Opus 4.6",
+        "status": "deprecated",
+        "release_date": "2025-06-01",
+        "last_updated": "2025-07-01",
+        "open_weights": False,
+        "reasoning": True,
+        "tool_call": True,
+        "tool_choice": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": True,
+        "limit": {"context": 200000, "output": 64000},
+        "modalities": {
+            "input": ["text", "image", "pdf"],
+            "output": ["text"],
+        },
+    }
+    profile = _model_data_to_profile(model_data)
+
+    # Metadata
+    assert profile["name"] == "Claude Opus 4.6"
+    assert profile["status"] == "deprecated"
+    assert profile["release_date"] == "2025-06-01"
+    assert profile["last_updated"] == "2025-07-01"
+    assert profile["open_weights"] is False
+
+    # Limits
+    assert profile["max_input_tokens"] == 200000
+    assert profile["max_output_tokens"] == 64000
+
+    # Capabilities
+    assert profile["reasoning_output"] is True
+    assert profile["tool_calling"] is True
+    assert profile["tool_choice"] is True
+    assert profile["structured_output"] is True
+    assert profile["attachment"] is True
+
+    # Modalities
+    assert profile["text_inputs"] is True
+    assert profile["image_inputs"] is True
+    assert profile["pdf_inputs"] is True
+    assert profile["text_outputs"] is True
+
+
+def test_model_data_to_profile_omits_absent_fields() -> None:
+    """Test that fields not present in source data are omitted (not None)."""
+    minimal = {
+        "modalities": {"input": ["text"], "output": ["text"]},
+        "limit": {"context": 8192, "output": 4096},
+    }
+    profile = _model_data_to_profile(minimal)
+
+    assert "status" not in profile
+    assert "family" not in profile
+    assert "knowledge_cutoff" not in profile
+    assert "cost_input" not in profile
+    assert "interleaved" not in profile
+    assert None not in profile.values()
+
+
 def test_model_data_to_profile_text_modalities() -> None:
     """Test that text input/output modalities are correctly mapped."""
     # Model with text in both input and output
@@ -300,3 +371,104 @@ def test_model_data_to_profile_text_modalities() -> None:
     profile = _model_data_to_profile(image_gen_model)
     assert profile["text_inputs"] is True
     assert profile["text_outputs"] is False
+
+
+def test_model_data_to_profile_keys_subset_of_model_profile() -> None:
+    """All CLI-emitted profile keys must be declared in `ModelProfile`."""
+    # Build a model_data dict with every possible field populated so
+    # _model_data_to_profile includes all keys it can emit.
+    model_data = {
+        "id": "test-model",
+        "name": "Test Model",
+        "status": "active",
+        "release_date": "2025-01-01",
+        "last_updated": "2025-01-01",
+        "open_weights": True,
+        "reasoning": True,
+        "tool_call": True,
+        "tool_choice": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": True,
+        "image_url_inputs": True,
+        "image_tool_message": True,
+        "pdf_tool_message": True,
+        "pdf_inputs": True,
+        "limit": {"context": 100000, "output": 4096},
+        "modalities": {
+            "input": ["text", "image", "audio", "video", "pdf"],
+            "output": ["text", "image", "audio", "video"],
+        },
+    }
+
+    profile = _model_data_to_profile(model_data)
+    declared_fields = set(get_type_hints(ModelProfile).keys())
+    emitted_fields = set(profile.keys())
+    extra = emitted_fields - declared_fields
+
+    assert not extra, (
+        f"CLI emits profile keys not declared in ModelProfile: {sorted(extra)}. "
+        f"Add these fields to langchain_core.language_models.model_profile."
+        f"ModelProfile and release langchain-core before refreshing partner "
+        f"profiles."
+    )
+
+
+class TestWarnUndeclaredProfileKeys:
+    """Tests for _warn_undeclared_profile_keys."""
+
+    def test_warns_on_undeclared_keys(self) -> None:
+        """Extra keys across profiles trigger a single warning."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"max_input_tokens": 100, "future_key": True},
+            "model-b": {"another_key": "val"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        assert len(w) == 1
+        assert "another_key" in str(w[0].message)
+        assert "future_key" in str(w[0].message)
+
+    def test_silent_on_declared_keys_only(self) -> None:
+        """No warning when all keys are declared in ModelProfile."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"max_input_tokens": 100, "tool_calling": True},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        assert len(w) == 0
+
+    def test_silent_when_langchain_core_not_installed(self) -> None:
+        """Gracefully skips when langchain-core is not importable."""
+        import sys
+
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"unknown": True},
+        }
+        with (
+            patch.dict(
+                sys.modules,
+                {"langchain_core.language_models.model_profile": None},
+            ),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        undeclared_warnings = [x for x in w if "not declared" in str(x.message)]
+        assert len(undeclared_warnings) == 0
+
+    def test_survives_get_type_hints_failure(self) -> None:
+        """Gracefully handles TypeError from get_type_hints."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"unknown": True},
+        }
+        with patch(
+            "langchain_model_profiles.cli.get_type_hints",
+            side_effect=TypeError("broken"),
+        ):
+            _warn_undeclared_profile_keys(profiles)

@@ -35,18 +35,12 @@ Passage:
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "LangChain has introduced a method called `with_structured_output` that "
-        "is available on ChatModels capable of tool calling. "
-        "See API reference for this function for replacement: <"
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html"
-        "> You can read more about `with_structured_output` here: "
-        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
-        "If you notice other issues, please provide "
-        "feedback here: "
-        "<https://github.com/langchain-ai/langchain/discussions/18154>"
+    removal="2.0.0",
+    alternative="ChatModel.with_structured_output(...)",
+    addendum=(
+        "Available on chat models capable of tool calling. See "
+        "https://docs.langchain.com/oss/python/langchain/structured-output"
     ),
-    removal="1.0",
 )
 def create_tagging_chain(
     schema: dict,
@@ -84,7 +78,7 @@ def create_tagging_chain(
     )
     ```
 
-    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
+    Read more here: https://docs.langchain.com/oss/python/langchain/structured-output
 
     Args:
         schema: The schema of the entities to extract.
@@ -111,18 +105,12 @@ def create_tagging_chain(
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "LangChain has introduced a method called `with_structured_output` that "
-        "is available on ChatModels capable of tool calling. "
-        "See API reference for this function for replacement: <"
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html"
-        "> You can read more about `with_structured_output` here: "
-        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
-        "If you notice other issues, please provide "
-        "feedback here: "
-        "<https://github.com/langchain-ai/langchain/discussions/18154>"
+    removal="2.0.0",
+    alternative="ChatModel.with_structured_output(...)",
+    addendum=(
+        "Available on chat models capable of tool calling. See "
+        "https://docs.langchain.com/oss/python/langchain/structured-output"
     ),
-    removal="1.0",
 )
 def create_tagging_chain_pydantic(
     pydantic_schema: Any,
@@ -160,7 +148,7 @@ def create_tagging_chain_pydantic(
     )
     ```
 
-    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
+    Read more here: https://docs.langchain.com/oss/python/langchain/structured-output
 
     Args:
         pydantic_schema: The Pydantic schema of the entities to extract.
