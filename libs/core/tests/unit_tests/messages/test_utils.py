@@ -3103,3 +3103,14 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_convert_to_openai_messages_no_mutation() -> None:
+    # Verify convert_to_openai_messages does not mutate input in place
+    file_block = {
+        "type": "file",
+        "file": {"file_data": "data:application/pdf;base64,QQ=="},
+    }
+    message = HumanMessage(content=[file_block])
+    convert_to_openai_messages([message])
+    assert file_block["file"].get("filename") is None
