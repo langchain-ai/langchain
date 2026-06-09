@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -10,7 +11,9 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -222,6 +225,60 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+class PersonForStructuredOutput(BaseModel):
+    name: str
+    age: int
+
+
+def test_with_structured_output_json_schema_pydantic_returns_model(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    runnable = RunnableLambda(lambda _: AIMessage(content='{"name": "Ada", "age": 36}'))
+
+    with patch.object(ChatHuggingFace, "bind", return_value=runnable):
+        result = chat_hugging_face.with_structured_output(
+            PersonForStructuredOutput,
+            method="json_schema",
+        ).invoke("Return a person")
+
+    assert isinstance(result, PersonForStructuredOutput)
+    assert result.name == "Ada"
+    assert result.age == 36
+
+
+def test_with_structured_output_json_schema_pydantic_validates_output(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    runnable = RunnableLambda(
+        lambda _: AIMessage(content='{"name": "Ada", "age": "not-an-int"}')
+    )
+
+    with patch.object(ChatHuggingFace, "bind", return_value=runnable):
+        structured = chat_hugging_face.with_structured_output(
+            PersonForStructuredOutput,
+            method="json_schema",
+        )
+
+        with pytest.raises(OutputParserException):
+            structured.invoke("Return a person")
+
+
+def test_with_structured_output_json_mode_pydantic_returns_model(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    runnable = RunnableLambda(lambda _: AIMessage(content='{"name": "Ada", "age": 36}'))
+
+    with patch.object(ChatHuggingFace, "bind", return_value=runnable):
+        result = chat_hugging_face.with_structured_output(
+            PersonForStructuredOutput,
+            method="json_mode",
+        ).invoke("Return a person")
+
+    assert isinstance(result, PersonForStructuredOutput)
+    assert result.name == "Ada"
+    assert result.age == 36
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
