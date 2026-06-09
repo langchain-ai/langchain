@@ -135,7 +135,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "attachment": False,
+        "attachment": True,
         "temperature": True,
     },
     "accounts/fireworks/models/kimi-k2p6": {
@@ -155,7 +155,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "attachment": False,
+        "attachment": True,
         "temperature": True,
     },
     "accounts/fireworks/models/minimax-m2p5": {
