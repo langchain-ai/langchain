@@ -131,6 +131,33 @@ def test_anthropic_proxy_from_environment() -> None:
         assert llm.anthropic_proxy == explicit_proxy
 
 
+def test_http_client_used_when_provided() -> None:
+    """A user-supplied sync httpx client is passed through to the SDK client."""
+    import httpx
+
+    custom = httpx.Client()
+    llm = ChatAnthropic(model=MODEL_NAME, http_client=custom)
+    assert llm._client._client is custom
+
+
+def test_http_async_client_used_when_provided() -> None:
+    """A user-supplied async httpx client is passed through to the SDK client."""
+    import httpx
+
+    custom = httpx.AsyncClient()
+    llm = ChatAnthropic(model=MODEL_NAME, http_async_client=custom)
+    assert llm._async_client._client is custom
+
+
+def test_default_http_client_when_not_provided() -> None:
+    """Default client construction is unchanged when no client is supplied."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm.http_client is None
+    assert llm.http_async_client is None
+    assert llm._client is not None
+    assert llm._async_client is not None
+
+
 def test_set_default_max_tokens() -> None:
     """Test the set_default_max_tokens function."""
     # Test claude-sonnet-4-5 models

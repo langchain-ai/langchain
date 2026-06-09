@@ -974,6 +974,20 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    http_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.Client`.
+
+    Only used for sync invocations. Must specify `http_async_client` as well if
+    you'd like a custom client for async invocations.
+    """
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.AsyncClient`.
+
+    Only used for async invocations. Must specify `http_client` as well if you'd
+    like a custom client for sync invocations.
+    """
+
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
@@ -1198,12 +1212,15 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_httpx_client(**http_client_params)
+        # Use a user-supplied client when provided, else build the default.
+        http_client = self.http_client
+        if http_client is None:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
@@ -1213,12 +1230,15 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_async_httpx_client(**http_client_params)
+        # Use a user-supplied client when provided, else build the default.
+        http_client = self.http_async_client
+        if http_client is None:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
