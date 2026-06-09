@@ -3803,3 +3803,61 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test__construct_lc_result_from_responses_api_parsed_function_call() -> None:
+    """Test that parsed_arguments from ParsedResponseFunctionToolCall is excluded.
+
+    When using structured output with the Responses API, the OpenAI SDK returns
+    ParsedResponseFunctionToolCall instances with a ``parsed_arguments`` field
+    marked as client-side-only via ``__api_exclude__``.  If this field leaks
+    into AIMessage.content, the next API turn fails with
+    ``BadRequestError: Unknown parameter: 'input[N].parsed_arguments'``.
+
+    See: https://github.com/langchain-ai/langchain/issues/37836
+    """
+    class MockParsedResponseFunctionToolCall(ResponseFunctionToolCall):
+        parsed_arguments: dict
+
+    output = MockParsedResponseFunctionToolCall(
+        type="function_call",
+        id="func_456",
+        call_id="call_456",
+        name="get_weather",
+        arguments='{"location": "Paris"}',
+        parsed_arguments={"location": "Paris"},
+    )
+    object.__setattr__(output, "__api_exclude__", {"parsed_arguments"})
+
+    response = Response(
+        id="resp_456",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[output],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+
+    # The content block for the function call must NOT contain parsed_arguments
+    assert len(msg.content) == 1
+    content_block = msg.content[0]
+    assert isinstance(content_block, dict)
+    assert "parsed_arguments" not in content_block
+
+    # Required fields must still be present
+    assert content_block["type"] == "function_call"
+    assert content_block["name"] == "get_weather"
+    assert content_block["arguments"] == '{"location": "Paris"}'
+    assert content_block["call_id"] == "call_456"
+    assert content_block["id"] == "func_456"
+
+    # Tool call must still be properly parsed
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["name"] == "get_weather"
+    assert msg.tool_calls[0]["args"] == {"location": "Paris"}
+    assert msg.tool_calls[0]["id"] == "call_456"

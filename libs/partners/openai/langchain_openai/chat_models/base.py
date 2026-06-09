@@ -4577,6 +4577,15 @@ def _get_output_text(response: Response) -> str:
     return "".join(texts)
 
 
+def _dump_for_content_block(obj: BaseModel) -> dict:
+    """Dump an OpenAI SDK model to dict, honoring ``__api_exclude__``."""
+    return obj.model_dump(
+        exclude_none=True,
+        mode="json",
+        exclude=getattr(obj, "__api_exclude__", None),
+    )
+
+
 def _construct_lc_result_from_responses_api(
     response: Response,
     schema: type[_BM] | None = None,
@@ -4658,7 +4667,7 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -4683,7 +4692,7 @@ def _construct_lc_result_from_responses_api(
                 }
                 invalid_tool_calls.append(tool_call)
         elif output.type == "custom_tool_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
             tool_call = {
                 "type": "tool_call",
                 "name": output.name,
@@ -4705,7 +4714,7 @@ def _construct_lc_result_from_responses_api(
             "tool_search_call",
             "tool_search_output",
         ):
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            content_blocks.append(_dump_for_content_block(output))
 
     # Workaround for parsing structured output in the streaming case.
     #    from openai import OpenAI
@@ -4960,7 +4969,7 @@ def _convert_responses_chunk_to_generation_chunk(
         "tool_search_output",
     ):
         _advance(chunk.output_index)
-        tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
+        tool_output = _dump_for_content_block(chunk.item)
         tool_output["index"] = current_index
         content.append(tool_output)
     elif (
@@ -4968,7 +4977,7 @@ def _convert_responses_chunk_to_generation_chunk(
         and chunk.item.type == "custom_tool_call"
     ):
         _advance(chunk.output_index)
-        tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
+        tool_output = _dump_for_content_block(chunk.item)
         tool_output["index"] = current_index
         content.append(tool_output)
         tool_call_chunks.append(
@@ -4993,7 +5002,7 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
         _advance(chunk.output_index)
         current_sub_index = 0
-        reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+        reasoning = _dump_for_content_block(chunk.item)
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
