@@ -589,7 +589,16 @@ def test_convert_responses_stream_event_emits_tool_call_chunk() -> None:
 
 
 def test_convert_responses_stream_event_aggregates_multiple_tool_calls() -> None:
-    """Distinct Responses output items aggregate as distinct tool calls."""
+    """Distinct Responses output items aggregate as distinct tool calls.
+
+    `call_id`/`id` are intentionally omitted so that `index` (derived from each
+    event's `output_index`) is the *only* thing separating the two calls. This
+    keeps the test sensitive to the indexing logic: with a hardcoded
+    ``index=0`` the chunks would merge into one corrupted call. Real streams
+    always carry a unique `call_id`, which would keep the calls distinct on its
+    own, so this payload isolates the mechanism rather than mirroring the wire
+    format.
+    """
     events = [
         {
             "type": "response.output_item.done",
