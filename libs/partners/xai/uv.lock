@@ -679,7 +679,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.0"
+version = "1.4.2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -741,7 +741,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.2.2"
+version = "1.3.0"
 source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
