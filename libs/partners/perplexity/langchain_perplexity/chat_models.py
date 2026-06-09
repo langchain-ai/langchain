@@ -173,8 +173,8 @@ def _is_builtin_tool(tool: dict) -> bool:
 
 
 def _flatten_responses_tool(tool: dict) -> dict:
-    """Flatten a Chat-Completions function tool (nested under ``function``) to
-    the Responses-API's flat shape. Built-in tools (e.g. ``web_search``) pass
+    """Flatten a Chat-Completions function tool (nested under `function`) to
+    the Responses-API's flat shape. Built-in tools (e.g. `web_search`) pass
     through unchanged.
     """
     if tool.get("type") == "function" and isinstance(tool.get("function"), dict):
@@ -189,8 +189,12 @@ def _flatten_responses_tool(tool: dict) -> dict:
 
 def _content_to_text(content: Any) -> str:
     """Concatenate text from a string or list-of-blocks content, dropping
-    non-text blocks (e.g. ``tool_use``) that the Responses API can't take on a
-    tool turn.
+    non-text blocks (e.g. a `tool_call`/`tool_use` block) that the Responses API
+    can't take on a tool turn.
+
+    Only the optional plain-text preamble of an assistant tool turn is built
+    here; the calls themselves are re-materialized as `function_call` items by
+    `_translate_responses_input`, so nothing actionable is lost.
     """
     if isinstance(content, str):
         return content
@@ -202,6 +206,10 @@ def _content_to_text(content: Any) -> str:
             elif isinstance(block, dict) and block.get("type") == "text":
                 parts.append(block.get("text", ""))
         return "".join(parts)
+    if content is not None:
+        # An unexpected content shape (not str/list/None) is dropped rather than
+        # guessed at; log it so content-shape drift stays diagnosable.
+        logger.debug("Dropping unexpected content type %s on tool turn.", type(content))
     return ""
 
 
