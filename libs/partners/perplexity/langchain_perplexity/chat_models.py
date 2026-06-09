@@ -216,9 +216,14 @@ def _content_to_text(content: Any) -> str:
 def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]:
     """Translate Chat-Completions message dicts into Responses-API input items.
 
-    The Responses API has no ``tool`` role: an assistant turn's ``tool_calls``
-    become ``function_call`` items and a ``tool`` message becomes a
-    ``function_call_output``. Other messages pass through.
+    The Responses API has no `tool` role: an assistant turn's `tool_calls`
+    become `function_call` items and a `tool` message becomes a
+    `function_call_output`. Other messages pass through.
+
+    `name`, `id`, and `tool_call_id` are the fields that pair a call with its
+    result; `_convert_message_to_dict` always populates them, so a missing one
+    here signals upstream drift or a hand-built message and is logged at
+    `WARNING` rather than silently coerced.
     """
     translated: list[Any] = []
     for message in message_dicts:
@@ -234,21 +239,37 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
                 translated.append({"role": "assistant", "content": text})
             for tool_call in message["tool_calls"]:
                 function = tool_call.get("function", {})
+                call_id = tool_call.get("id")
+                name = function.get("name", "")
+                if not name or not call_id:
+                    logger.warning(
+                        "Assistant tool_call missing identity field "
+                        "(name=%r, id=%r); the Responses API may reject this "
+                        "turn or fail to pair the call with its output.",
+                        name,
+                        call_id,
+                    )
                 translated.append(
                     {
                         "type": "function_call",
-                        "call_id": tool_call.get("id"),
-                        "name": function.get("name", ""),
+                        "call_id": call_id,
+                        "name": name,
                         "arguments": function.get("arguments", "") or "",
                     }
                 )
         elif role == "tool":
             content = message.get("content", "")
             output = content if isinstance(content, str) else json.dumps(content)
+            call_id = message.get("tool_call_id")
+            if not call_id:
+                logger.warning(
+                    "Tool message missing tool_call_id; the Responses API "
+                    "cannot pair this function_call_output with its call."
+                )
             translated.append(
                 {
                     "type": "function_call_output",
-                    "call_id": message.get("tool_call_id"),
+                    "call_id": call_id,
                     "output": output,
                 }
             )
@@ -1499,26 +1520,28 @@ class ChatPerplexity(BaseChatModel):
         """Bind tool-like objects to this chat model.
 
         Client-side function tools require the Perplexity Responses (Agent) API:
-        construct the model with ``use_responses_api=True`` and a tool-capable
-        model such as ``openai/gpt-5.5``. The ``sonar`` family does not support
+        construct the model with `use_responses_api=True` and a tool-capable
+        model such as `openai/gpt-5.5`. The `sonar` family does not support
         client-side function tools.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool handled by
-                :func:`~langchain_core.utils.function_calling.convert_to_openai_tool`
-                (Pydantic models, ``TypedDict`` classes, callables, ``BaseTool``,
+                [convert_to_openai_tool][langchain_core.utils.function_calling.convert_to_openai_tool]
+                (Pydantic models, `TypedDict` classes, callables, `BaseTool`,
                 or OpenAI-format dicts), as well as Perplexity built-in tools such
-                as ``{"type": "web_search"}``, which are passed through unchanged.
-            tool_choice: Which tool the model should use. Accepted for API parity
-                with ``langchain-openai`` (a tool name, ``"auto"``, ``"none"``,
-                ``"any"``/``"required"``/``True``, or an OpenAI-style dict), but
-                the Perplexity Responses (Agent) API does not currently honor it
-                and raises ``ValueError`` if it is set. The restriction can be
-                relaxed if Perplexity adds ``tool_choice`` support.
-            strict: If ``True``, the tool parameter schema is sent with ``strict``
-                enabled. If ``None`` (default), the flag is omitted.
-            kwargs: Any additional parameters are passed directly to ``bind``.
+                as `{"type": "web_search"}`, which are passed through unchanged.
+            tool_choice: Which tool the model should use. Normalized here for API
+                parity with `langchain-openai` (a tool name, `"auto"`, `"none"`,
+                `"any"`/`"required"`/`True`, or an OpenAI-style dict) and stored
+                on the binding, but the Perplexity Responses (Agent) API does not
+                currently honor it: a non-empty `tool_choice` makes
+                `_to_responses_payload` raise `ValueError` at invoke time on the
+                Responses route. The restriction can be relaxed if Perplexity
+                adds `tool_choice` support.
+            strict: If `True`, the tool parameter schema is sent with `strict`
+                enabled. If `None` (default), the flag is omitted.
+            kwargs: Any additional parameters are passed directly to `bind`.
         """
         formatted_tools = [
             tool
