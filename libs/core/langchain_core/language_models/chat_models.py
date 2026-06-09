@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins  # noqa: TC003
 import contextlib
 import inspect
 import json
@@ -16,7 +17,7 @@ from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
-from langchain_core._api import beta
+from langchain_core._api import beta, deprecated, suppress_langchain_deprecation_warning
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -93,7 +94,6 @@ from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
-    import builtins
     import uuid
     from collections.abc import Awaitable
 
@@ -430,11 +430,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         return self
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
-        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -1371,7 +1371,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     # --- Custom methods ---
 
-    def _combine_llm_outputs(self, _llm_outputs: list[dict | None], /) -> dict:
+    def _combine_llm_outputs(
+        self, _llm_outputs: list[builtins.dict | None], /
+    ) -> builtins.dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -1464,8 +1466,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> dict:
-        params = self.dict()
+    ) -> builtins.dict:
+        params = self._dict_for_compat()
         params["stop"] = stop
         return {**params, **kwargs}
 
@@ -1566,7 +1568,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -1692,7 +1694,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         run_name: str | None = None,
         run_id: uuid.UUID | None = None,
         **kwargs: Any,
@@ -2303,12 +2305,25 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def _llm_type(self) -> str:
         """Return type of chat model."""
 
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
     @override
-    def dict(self, **kwargs: Any) -> dict:
-        """Return a dictionary of the LLM."""
+    def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary representation of the chat model.
+        """
+        return self.asdict()
+
+    def asdict(self) -> builtins.dict[str, Any]:
+        """Return a dictionary representation of the chat model."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
+
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the chat model dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
 
     @override
     def bind(self, **kwargs: Any) -> _ChatModelBinding:

@@ -200,6 +200,62 @@ async def test_web_search_async() -> None:
         assert tool_output["type"] == "web_search_call"
 
 
+@pytest.mark.default_cassette("test_apply_patch.yaml.gz")
+@pytest.mark.vcr
+def test_apply_patch() -> None:
+    """Test the apply_patch built-in tool end-to-end.
+
+    apply_patch is a client-executed tool: the model proposes a file operation
+    via an `apply_patch_call` block, the client applies it, and the result is
+    returned as an ``apply_patch_call_output`` block. Requires a model that
+    supports the tool.
+    """
+    prompt = "Create a new file named hello.txt containing the line: hello world"
+    llm = ChatOpenAI(model="gpt-5.1", output_version="responses/v1")
+    tool = {"type": "apply_patch"}
+
+    # Non-streaming: the model should emit an apply_patch_call block.
+    response = llm.invoke(prompt, tools=[tool])
+    assert isinstance(response, AIMessage)
+    calls = [
+        block
+        for block in response.content
+        if isinstance(block, dict) and block["type"] == "apply_patch_call"
+    ]
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["call_id"]
+    assert call["operation"]["type"] in ("create_file", "update_file", "delete_file")
+
+    # Streaming: the apply_patch_call block survives chunk aggregation.
+    aggregated: BaseMessageChunk | None = None
+    for chunk in llm.stream(prompt, tools=[tool]):
+        assert isinstance(chunk, AIMessageChunk)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+    assert isinstance(aggregated, AIMessageChunk)
+    assert any(
+        isinstance(block, dict) and block["type"] == "apply_patch_call"
+        for block in aggregated.content
+    )
+
+    # Round-trip: return an apply_patch_call_output and continue the conversation.
+    output_message = HumanMessage(
+        content=[
+            {
+                "type": "apply_patch_call_output",
+                "call_id": call["call_id"],
+                "status": "completed",
+                "output": f"Created {call['operation']['path']}",
+            }
+        ]
+    )
+    follow_up = llm.invoke(
+        [HumanMessage(prompt), response, output_message],
+        tools=[tool],
+    )
+    assert isinstance(follow_up, AIMessage)
+
+
 @pytest.mark.default_cassette("test_function_calling.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
