@@ -317,7 +317,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         self.model = model
 
-        # Store the original trigger for backward compatibility
+        # Preserve the caller's original trigger input on the public attribute; the
+        # normalized clauses used for evaluation live in `_trigger_conditions`.
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             trigger
         )
@@ -445,7 +446,14 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return cast("TriggerClause", {kind: value})
 
         def _validate_mapping(m: Mapping[str, Any]) -> TriggerClause:
-            """Validate and convert a mapping to a TriggerClause."""
+            """Validate and convert a mapping to a TriggerClause.
+
+            Type checks reject silent coercion (booleans, numeric strings, and
+            fractional floats for integer metrics) so a misconfigured clause fails loudly
+            at construction. Range and positivity checks are delegated to
+            `_validate_context_size`, keeping a single source of truth for the rules and
+            error messages shared with the tuple form.
+            """
             if not m:
                 msg = "trigger clause must specify at least one of 'tokens', 'messages', 'fraction'"
                 raise ValueError(msg)
@@ -454,31 +462,29 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 if k not in {"tokens", "messages", "fraction"}:
                     msg = f"Unsupported trigger metric: {k!r}"
                     raise ValueError(msg)
+                # `bool` is an `int` subclass; reject it so `{"messages": True}` cannot
+                # silently become a threshold of 1. Raise `ValueError` (not `TypeError`)
+                # so every trigger-config error stays one catchable type.
+                if isinstance(v, bool):
+                    msg = f"{k} trigger value must be numeric, got {v!r}"
+                    raise ValueError(msg)  # noqa: TRY004
                 if k == "fraction":
-                    try:
-                        fv = float(v)
-                    except (TypeError, ValueError) as err:
+                    if not isinstance(v, (int, float)):
                         msg = f"Fraction trigger values must be numeric, got {v!r}"
-                        raise ValueError(msg) from err
-                    if not 0 < fv <= 1:
-                        msg = "fraction must be > 0 and <= 1"
                         raise ValueError(msg)
-                    out[k] = fv
-                else:
-                    try:
-                        iv = int(v)
-                    except (TypeError, ValueError) as err:
-                        msg = f"{k} trigger values must be integer-like, got {v!r}"
-                        raise ValueError(msg) from err
-                    if iv <= 0:
-                        msg = f"{k} threshold must be > 0"
-                        raise ValueError(msg)
-                    out[k] = iv
+                elif not isinstance(v, int):
+                    # Reject floats and numeric strings rather than truncating/coercing.
+                    msg = f"{k} trigger values must be integers, got {v!r}"
+                    raise ValueError(msg)
+                # Delegate range/positivity validation so dict and tuple forms share
+                # identical rules and error messages.
+                self._validate_context_size(cast("ContextSize", (k, v)), "trigger")
+                out[k] = v
             return cast("TriggerClause", out)
 
         clauses: list[TriggerClause] = []
         # `trigger` may originate from untyped callers, so dispatch on the runtime type
-        # and reject anything unsupported (the guards below are intentionally reachable).
+        # and raise on anything unsupported.
         subject: Any = trigger
         if isinstance(subject, Mapping):
             clauses.append(_validate_mapping(subject))

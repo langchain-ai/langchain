@@ -1146,7 +1146,7 @@ def test_and_trigger_conditions() -> None:
 
     # Test case 1: Only tokens threshold met (messages = 3 < 5)
     # Should NOT trigger summarization
-    def token_counter_high(messages):
+    def token_counter_high(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 1500  # Above token threshold
 
     middleware.token_counter = token_counter_high
@@ -1157,12 +1157,12 @@ def test_and_trigger_conditions() -> None:
             HumanMessage(content="3"),
         ]
     }
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when only tokens condition is met"
 
     # Test case 2: Only messages threshold met (tokens = 500 < 1000)
     # Should NOT trigger summarization
-    def token_counter_low(messages):
+    def token_counter_low(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 500  # Below token threshold
 
     middleware.token_counter = token_counter_low
@@ -1176,13 +1176,13 @@ def test_and_trigger_conditions() -> None:
             AIMessage(content="6"),
         ]
     }
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when only messages condition is met"
 
     # Test case 3: Both conditions met (tokens >= 1000 AND messages >= 5)
     # Should trigger summarization
     middleware.token_counter = token_counter_high
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when both conditions are met"
     assert isinstance(result["messages"][0], RemoveMessage)
 
@@ -1204,7 +1204,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
 
     # Test case 1: First clause met (tokens = 5500, messages = 4)
     # Should trigger summarization
-    def token_counter_5500(messages):
+    def token_counter_5500(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 5500
 
     middleware.token_counter = token_counter_5500
@@ -1216,24 +1216,24 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
             AIMessage(content="4"),
         ]
     }
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when first OR clause is met"
 
     # Test case 2: Second clause met (tokens = 3500, messages = 7)
     # Should trigger summarization
-    def token_counter_3500(messages):
+    def token_counter_3500(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 3500
 
     middleware.token_counter = token_counter_3500
     state = {"messages": [HumanMessage(content=str(i)) for i in range(7)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when second OR clause is met"
 
     # Test case 3: Neither clause fully met
     # (tokens = 4500 meets second token threshold but not message count)
     # (messages = 4 meets first message threshold but not token count)
     # Should NOT trigger summarization
-    def token_counter_4500(messages):
+    def token_counter_4500(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 4500
 
     middleware.token_counter = token_counter_4500
@@ -1245,7 +1245,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
             AIMessage(content="4"),
         ]
     }
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when no complete clause is met"
 
 
@@ -1259,19 +1259,19 @@ async def test_and_trigger_conditions_async() -> None:
     state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
 
     # Only the messages threshold met (tokens below) -> should not summarize.
-    def token_counter_low(messages):
+    def token_counter_low(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 500
 
     middleware.token_counter = token_counter_low
-    result = await middleware.abefore_model(state, None)
+    result = await middleware.abefore_model(state, Runtime())
     assert result is None, "Should not summarize when only messages condition is met"
 
     # Both conditions met -> should summarize.
-    def token_counter_high(messages):
+    def token_counter_high(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 1500
 
     middleware.token_counter = token_counter_high
-    result = await middleware.abefore_model(state, None)
+    result = await middleware.abefore_model(state, Runtime())
     assert result is not None, "Should summarize when both conditions are met"
     assert isinstance(result["messages"][0], RemoveMessage)
 
@@ -1289,19 +1289,19 @@ async def test_or_trigger_conditions_with_and_clauses_async() -> None:
     state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
 
     # First clause met (tokens = 5500, messages = 4) -> should summarize.
-    def token_counter_5500(messages):
+    def token_counter_5500(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 5500
 
     middleware.token_counter = token_counter_5500
-    result = await middleware.abefore_model(state, None)
+    result = await middleware.abefore_model(state, Runtime())
     assert result is not None, "Should summarize when first OR clause is met"
 
     # Neither clause fully met (tokens = 4500, messages = 4) -> should not summarize.
-    def token_counter_4500(messages):
+    def token_counter_4500(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 4500
 
     middleware.token_counter = token_counter_4500
-    result = await middleware.abefore_model(state, None)
+    result = await middleware.abefore_model(state, Runtime())
     assert result is None, "Should not summarize when no complete clause is met"
 
 
@@ -1316,12 +1316,12 @@ def test_backward_compatibility_tuple_trigger() -> None:
         keep=("messages", 1),
     )
 
-    def token_counter_high(messages):
+    def token_counter_high(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 1500
 
     middleware_single.token_counter = token_counter_high
     state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
-    result = middleware_single.before_model(state, None)
+    result = middleware_single.before_model(state, Runtime())
     assert result is not None, "Single tuple trigger should work"
 
     # List of tuples trigger
@@ -1334,16 +1334,16 @@ def test_backward_compatibility_tuple_trigger() -> None:
     # Should trigger with high tokens (first condition met)
     middleware_list.token_counter = token_counter_high
     state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
-    result = middleware_list.before_model(state, None)
+    result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when any condition met"
 
     # Should trigger with many messages (second condition met)
-    def token_counter_low(messages):
+    def token_counter_low(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 100
 
     middleware_list.token_counter = token_counter_low
     state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
-    result = middleware_list.before_model(state, None)
+    result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when second condition met"
 
 
@@ -1362,27 +1362,27 @@ def test_mixed_and_or_conditions() -> None:
     )
 
     # Test case 1: First AND clause met
-    def token_counter_high(messages):
+    def token_counter_high(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 4500
 
     middleware.token_counter = token_counter_high
     state = {"messages": [HumanMessage(content=str(i)) for i in range(12)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when AND clause is met"
 
     # Test case 2: Second simple condition met
-    def token_counter_low(messages):
+    def token_counter_low(messages: Iterable[MessageLikeRepresentation]) -> int:
         return 1000
 
     middleware.token_counter = token_counter_low
     state = {"messages": [HumanMessage(content=str(i)) for i in range(55)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when simple messages condition is met"
 
     # Test case 3: Neither condition met
     middleware.token_counter = token_counter_low
     state = {"messages": [HumanMessage(content=str(i)) for i in range(8)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when no condition is met"
 
 
@@ -1395,8 +1395,8 @@ def test_fraction_in_and_trigger() -> None:
         keep=("messages", 2),
     )
 
-    def token_counter(messages):
-        return len(messages) * 200  # Each message = 200 tokens
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 200  # Each message = 200 tokens
 
     middleware.token_counter = token_counter
 
@@ -1404,21 +1404,21 @@ def test_fraction_in_and_trigger() -> None:
     # 5 messages * 200 = 1000 tokens (profile max is 1000)
     # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
     state = {"messages": [HumanMessage(content=str(i)) for i in range(5)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when both fraction and messages conditions met"
 
     # Test case 2: Only messages condition met
     # 3 messages * 200 = 600 tokens
     # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
     state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when neither condition is fully met"
 
     # Test case 3: High fraction but not enough messages
     # 4 messages * 200 = 800 tokens
     # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
     state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
-    result = middleware.before_model(state, None)
+    result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when only fraction condition is met"
 
 
@@ -1433,29 +1433,30 @@ def test_trigger_validation_errors() -> None:
             trigger={"invalid_metric": 100},
         )
 
-    # Invalid fraction value (> 1)
-    with pytest.raises(ValueError, match="fraction must be > 0 and <= 1"):
+    # Invalid fraction value (> 1) — shares the tuple path's message via
+    # `_validate_context_size`.
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
         SummarizationMiddleware(
             model=model,
             trigger={"fraction": 1.5},
         )
 
     # Invalid fraction value (<= 0)
-    with pytest.raises(ValueError, match="fraction must be > 0 and <= 1"):
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
         SummarizationMiddleware(
             model=model,
             trigger={"fraction": 0},
         )
 
     # Invalid token threshold (<= 0)
-    with pytest.raises(ValueError, match="tokens threshold must be > 0"):
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
         SummarizationMiddleware(
             model=model,
             trigger={"tokens": 0},
         )
 
     # Invalid message threshold (<= 0)
-    with pytest.raises(ValueError, match="messages threshold must be > 0"):
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
         SummarizationMiddleware(
             model=model,
             trigger={"messages": -5},
@@ -1468,11 +1469,39 @@ def test_trigger_validation_errors() -> None:
             trigger={"fraction": "invalid"},
         )
 
+    # Float value for an integer metric is rejected (no silent truncation)
+    with pytest.raises(ValueError, match="tokens trigger values must be integers"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"tokens": 1000.5},
+        )
+
+    # Numeric string for an integer metric is rejected (no silent coercion)
+    with pytest.raises(ValueError, match="messages trigger values must be integers"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": "10"},
+        )
+
+    # Boolean is rejected (bool is an int subclass)
+    with pytest.raises(ValueError, match="messages trigger value must be numeric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": True},
+        )
+
     # Invalid list item type
     with pytest.raises(TypeError, match="Unsupported trigger item type"):
         SummarizationMiddleware(
             model=model,
             trigger=["invalid"],
+        )
+
+    # Unsupported top-level trigger type (not a tuple, dict, or list)
+    with pytest.raises(TypeError, match="Unsupported trigger type"):
+        SummarizationMiddleware(
+            model=model,
+            trigger="foo",  # type: ignore[arg-type]
         )
 
 
@@ -1496,6 +1525,106 @@ def test_empty_and_condition() -> None:
             model=model,
             trigger=[{"tokens": 1000}, {}],
         )
+
+
+def test_empty_list_trigger_never_summarizes() -> None:
+    """An empty trigger list normalizes to no conditions and never summarizes."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[],
+        token_counter=lambda _: 10_000,
+    )
+    assert middleware._trigger_conditions == []
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(50)]}
+    assert middleware.before_model(state, Runtime()) is None
+
+
+def test_reported_tokens_satisfy_tokens_within_and_clause() -> None:
+    """Provider-reported tokens can satisfy the `tokens` metric inside an AND clause.
+
+    The computed token count is below the threshold, so the clause only triggers if the
+    reported-token fallback is honored *within* the AND evaluation (not just for bare
+    single-metric tuples).
+    """
+    middleware = SummarizationMiddleware(
+        model=ProfileProviderChatModel(),
+        trigger={"tokens": 10_000, "messages": 2},
+        keep=("messages", 1),
+        token_counter=lambda _: 0,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hello"),
+        AIMessage(
+            content="hi",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 9_000,
+                "output_tokens": 1_001,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # Computed tokens (0) are below threshold, but reported tokens (10_001) clear it and
+    # message count (2) meets its threshold -> clause satisfied.
+    assert middleware._should_summarize(messages, 0)
+
+    # Drop the reported count below the threshold -> tokens metric unmet -> no summarize.
+    messages_low: list[AnyMessage] = [
+        HumanMessage(content="hello"),
+        AIMessage(
+            content="hi",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 50,
+                "output_tokens": 50,
+                "total_tokens": 100,
+            },
+        ),
+    ]
+    assert not middleware._should_summarize(messages_low, 0)
+
+
+def test_three_metric_and_clause() -> None:
+    """All three metrics in a single clause must be met (AND), with no short-circuit."""
+    # Profile max is 1000 -> fraction 0.8 resolves to an 800-token threshold. The tokens
+    # threshold (100) is deliberately lower so `fraction` can be isolated as the binding
+    # constraint.
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"tokens": 100, "messages": 5, "fraction": 0.8},
+        keep=("messages", 2),
+    )
+    five: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    four: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(4)]
+
+    # All three met: tokens (800 >= 100), messages (5 >= 5), fraction (800 >= 800).
+    assert middleware._should_summarize(five, 800)
+
+    # fraction unmet: 500 < 800 threshold (tokens + messages still met).
+    assert not middleware._should_summarize(five, 500)
+
+    # messages unmet: 4 < 5 (tokens + fraction still met).
+    assert not middleware._should_summarize(four, 800)
+
+
+def test_tokens_and_fraction_and_clause() -> None:
+    """A clause combining `tokens` and `fraction` (no `messages`) is AND-evaluated."""
+    # Profile max is 1000 -> fraction 0.5 resolves to a 500-token threshold.
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"tokens": 300, "fraction": 0.5},
+        keep=("messages", 2),
+    )
+    messages: list[AnyMessage] = [HumanMessage(content="x")]
+
+    # Both met: 500 >= 300 tokens and 500 >= 500 fraction.
+    assert middleware._should_summarize(messages, 500)
+
+    # fraction unmet: 400 < 500 (tokens still met at 400 >= 300).
+    assert not middleware._should_summarize(messages, 400)
+
+    # Both unmet.
+    assert not middleware._should_summarize(messages, 200)
 
 
 def test_create_summary_uses_get_buffer_string_format() -> None:
