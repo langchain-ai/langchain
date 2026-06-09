@@ -483,7 +483,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        partner: [ anthropic ]
+        partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -574,8 +574,13 @@ jobs:
     permissions:
       contents: read
     # Only run for core or langchain_v1 releases.
-    # Job-level 'if' does not support env context; must use inputs directly.
+    # Job-level 'if' does not support env context, so EFFECTIVE_WORKING_DIR is
+    # unavailable; must use inputs directly and match both forms: short dropdown
+    # names (workflow_dispatch, e.g. 'core') and full 'libs/' paths
+    # (workflow_call / working-directory-override).
     if: >-
+      contains(fromJSON('["core","langchain_v1"]'),
+      inputs.working-directory-override || inputs.working-directory) ||
       startsWith(inputs.working-directory-override || inputs.working-directory,
       'libs/core') || startsWith(inputs.working-directory-override ||
       inputs.working-directory, 'libs/langchain_v1')
