@@ -168,10 +168,11 @@ class TriggerClause(TypedDict, total=False):
     summarization triggers if any clause is met (OR semantics).
 
     Attributes:
-        tokens: Trigger when token count reaches or exceeds this value.
+        tokens: Trigger when the computed (or provider-reported) token count reaches or
+            exceeds this value.
         messages: Trigger when message count reaches or exceeds this value.
-        fraction: Trigger when token count reaches or exceeds this fraction of the
-            model's maximum input tokens.
+        fraction: Trigger when the computed (or provider-reported) token count reaches or
+            exceeds this fraction of the model's maximum input tokens.
 
     Example:
         ```python
@@ -214,9 +215,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self,
         model: str | BaseChatModel,
         *,
-        trigger: (
-            ContextSize | list[ContextSize] | TriggerClause | list[TriggerClause] | None
-        ) = None,
+        trigger: (ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None) = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
@@ -231,8 +230,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
                 Provide a single
                 [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
-                tuple or a list of tuples, in which case summarization runs when any
-                threshold is met.
+                tuple, or a single
+                [`TriggerClause`][langchain.agents.middleware.summarization.TriggerClause]
+                dict, or a list mixing either form.
+
+                A `ContextSize` tuple expresses one threshold. A `TriggerClause` dict
+                expresses multiple thresholds that must *all* be met (AND). When a list is
+                provided, summarization runs if *any* item is met (OR).
 
                 !!! example
 
@@ -314,9 +318,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self.model = model
 
         # Store the original trigger for backward compatibility
-        self.trigger: (
-            ContextSize | list[ContextSize] | TriggerClause | list[TriggerClause] | None
-        ) = trigger
+        self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
+            trigger
+        )
 
         # Normalize trigger into a list of TriggerClause
         # (AND inside a TriggerClause, OR across items)
@@ -425,7 +429,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     def _normalize_trigger(
         self,
-        trigger: (ContextSize | list[ContextSize] | TriggerClause | list[TriggerClause] | None),
+        trigger: (ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None),
     ) -> list[TriggerClause]:
         """Normalize supported trigger inputs into list of Trigger clauses.
 
@@ -436,12 +440,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if trigger is None:
             return []
 
-        def _validate_and_convert_tuple(t: tuple) -> TriggerClause:
+        def _validate_and_convert_tuple(t: ContextSize) -> TriggerClause:
             kind, value = self._validate_context_size(t, "trigger")
             return cast("TriggerClause", {kind: value})
 
-        def _validate_mapping(m: Mapping) -> TriggerClause:
+        def _validate_mapping(m: Mapping[str, Any]) -> TriggerClause:
             """Validate and convert a mapping to a TriggerClause."""
+            if not m:
+                msg = "trigger clause must specify at least one of 'tokens', 'messages', 'fraction'"
+                raise ValueError(msg)
             out: dict[str, float | int] = {}
             for k, v in m.items():
                 if k not in {"tokens", "messages", "fraction"}:
@@ -450,7 +457,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 if k == "fraction":
                     try:
                         fv = float(v)
-                    except Exception as err:
+                    except (TypeError, ValueError) as err:
                         msg = f"Fraction trigger values must be numeric, got {v!r}"
                         raise ValueError(msg) from err
                     if not 0 < fv <= 1:
@@ -460,7 +467,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 else:
                     try:
                         iv = int(v)
-                    except Exception as err:
+                    except (TypeError, ValueError) as err:
                         msg = f"{k} trigger values must be integer-like, got {v!r}"
                         raise ValueError(msg) from err
                     if iv <= 0:
@@ -470,21 +477,24 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return cast("TriggerClause", out)
 
         clauses: list[TriggerClause] = []
-        if isinstance(trigger, Mapping):
-            clauses.append(_validate_mapping(trigger))
-        elif isinstance(trigger, tuple):
-            clauses.append(_validate_and_convert_tuple(trigger))
-        elif isinstance(trigger, list):
-            for item in trigger:
+        # `trigger` may originate from untyped callers, so dispatch on the runtime type
+        # and reject anything unsupported (the guards below are intentionally reachable).
+        subject: Any = trigger
+        if isinstance(subject, Mapping):
+            clauses.append(_validate_mapping(subject))
+        elif isinstance(subject, tuple):
+            clauses.append(_validate_and_convert_tuple(cast("ContextSize", subject)))
+        elif isinstance(subject, list):
+            for item in subject:
                 if isinstance(item, Mapping):
                     clauses.append(_validate_mapping(item))
                 elif isinstance(item, tuple):
-                    clauses.append(_validate_and_convert_tuple(item))
+                    clauses.append(_validate_and_convert_tuple(cast("ContextSize", item)))
                 else:
                     msg = f"Unsupported trigger item type: {type(item)}"
                     raise TypeError(msg)
         else:
-            msg = f"Unsupported trigger type: {type(trigger)}"
+            msg = f"Unsupported trigger type: {type(subject)}"
             raise TypeError(msg)
         return clauses
 

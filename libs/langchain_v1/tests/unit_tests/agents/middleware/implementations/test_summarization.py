@@ -1249,6 +1249,62 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
     assert result is None, "Should not summarize when no complete clause is met"
 
 
+async def test_and_trigger_conditions_async() -> None:
+    """AND-capable trigger conditions via the async `abefore_model` path."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger={"tokens": 1000, "messages": 5},
+        keep=("messages", 2),
+    )
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+
+    # Only the messages threshold met (tokens below) -> should not summarize.
+    def token_counter_low(messages):
+        return 500
+
+    middleware.token_counter = token_counter_low
+    result = await middleware.abefore_model(state, None)
+    assert result is None, "Should not summarize when only messages condition is met"
+
+    # Both conditions met -> should summarize.
+    def token_counter_high(messages):
+        return 1500
+
+    middleware.token_counter = token_counter_high
+    result = await middleware.abefore_model(state, None)
+    assert result is not None, "Should summarize when both conditions are met"
+    assert isinstance(result["messages"][0], RemoveMessage)
+
+
+async def test_or_trigger_conditions_with_and_clauses_async() -> None:
+    """OR across multiple AND clauses via the async `abefore_model` path."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ],
+        keep=("messages", 2),
+    )
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+
+    # First clause met (tokens = 5500, messages = 4) -> should summarize.
+    def token_counter_5500(messages):
+        return 5500
+
+    middleware.token_counter = token_counter_5500
+    result = await middleware.abefore_model(state, None)
+    assert result is not None, "Should summarize when first OR clause is met"
+
+    # Neither clause fully met (tokens = 4500, messages = 4) -> should not summarize.
+    def token_counter_4500(messages):
+        return 4500
+
+    middleware.token_counter = token_counter_4500
+    result = await middleware.abefore_model(state, None)
+    assert result is None, "Should not summarize when no complete clause is met"
+
+
 def test_backward_compatibility_tuple_trigger() -> None:
     """Test backward compatibility with existing tuple-based triggers."""
     model = FakeToolCallingModel()
@@ -1421,23 +1477,25 @@ def test_trigger_validation_errors() -> None:
 
 
 def test_empty_and_condition() -> None:
-    """Test that empty dict trigger clause is rejected or handled appropriately."""
+    """An empty dict trigger clause is rejected (no metrics to evaluate).
+
+    Without this guard an empty clause would vacuously match and summarize on every
+    invocation, which is almost never what a caller intends.
+    """
     model = FakeToolCallingModel()
 
-    # Empty dict should be allowed but never triggers (no conditions to check)
-    middleware = SummarizationMiddleware(
-        model=model,
-        trigger={},
-    )
+    with pytest.raises(ValueError, match="at least one of"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={},
+        )
 
-    def token_counter_high(messages):
-        return 5000
-
-    middleware.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(100)]}
-    # Empty clause should vacuously be true (all zero conditions are met)
-    result = middleware.before_model(state, None)
-    assert result is not None, "Empty trigger clause should trigger"
+    # An empty clause inside a list is rejected for the same reason.
+    with pytest.raises(ValueError, match="at least one of"):
+        SummarizationMiddleware(
+            model=model,
+            trigger=[{"tokens": 1000}, {}],
+        )
 
 
 def test_create_summary_uses_get_buffer_string_format() -> None:
