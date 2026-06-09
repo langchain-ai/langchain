@@ -1133,6 +1133,32 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
     assert cutoff == 2
 
 
+def test_trigger_copies_mutable_inputs() -> None:
+    """Test caller mutations do not change stored trigger configuration."""
+    model = FakeToolCallingModel()
+    clause = {"tokens": 1000}
+    trigger = [clause]
+
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=trigger,
+        keep=("messages", 2),
+    )
+
+    clause["messages"] = 1
+    trigger.append(("messages", 1))
+
+    assert middleware.trigger == [{"tokens": 1000}]
+
+    def token_counter_low(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 500
+
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content="1"), HumanMessage(content="2")]}
+    result = middleware.before_model(state, Runtime())
+    assert result is None
+
+
 def test_and_trigger_conditions() -> None:
     """Test AND-capable trigger conditions (all conditions in dict must be met)."""
     model = FakeToolCallingModel()

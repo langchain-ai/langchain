@@ -319,15 +319,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         self.model = model
 
-        # Preserve the caller's original trigger input on the public attribute; the
-        # normalized clauses used for evaluation live in `_trigger_conditions`.
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
-            trigger
+            self._copy_trigger(trigger)
         )
 
         # Normalize trigger into a list of TriggerClause
         # (AND inside a TriggerClause, OR across items)
-        self._trigger_conditions = self._normalize_trigger(trigger)
+        self._trigger_conditions = self._normalize_trigger(self.trigger)
 
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
@@ -429,6 +427,20 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 *preserved_messages,
             ]
         }
+
+    @staticmethod
+    def _copy_trigger(
+        trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None,
+    ) -> ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None:
+        """Copy mutable trigger containers so caller mutations do not affect this instance."""
+        if isinstance(trigger, Mapping):
+            return cast("TriggerClause", dict(trigger))
+        if isinstance(trigger, list):
+            return [
+                cast("TriggerClause", dict(item)) if isinstance(item, Mapping) else item
+                for item in trigger
+            ]
+        return trigger
 
     def _normalize_trigger(
         self,
