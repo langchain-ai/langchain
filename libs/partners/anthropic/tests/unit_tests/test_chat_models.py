@@ -3053,19 +3053,12 @@ def test_no_task_budget_no_beta() -> None:
         assert "task-budgets-2026-03-13" not in betas
 
 
-def test_anthropic_stream_events_v3_lifecycle() -> None:
-    """Validate lifecycle events across a thinking + text + tool_use stream.
+def _lifecycle_events() -> list[Any]:
+    """Build a raw thinking + text + tool_use Anthropic stream fixture.
 
-    Anthropic emits raw `content_block_start` / `content_block_delta` /
-    `content_block_stop` events with integer `index` fields, interleaved
-    with `message_start` and `message_delta`. This test threads a
-    realistic event sequence through `_stream` via a mocked raw client
-    and asserts that `stream_events(version="v3")` produces a spec-conformant
-    event stream: paired start/finish per block, no interleaving, sequential
-    `uint` wire indices.
+    Shared by the sync and async v3 lifecycle parity tests so both exercise
+    the identical event sequence through the native hooks.
     """
-    from unittest.mock import patch
-
     from anthropic.types import (
         InputJSONDelta,
         RawContentBlockDeltaEvent,
@@ -3083,7 +3076,6 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     from anthropic.types.raw_message_delta_event import (
         MessageDeltaUsage as RawMessageDeltaUsage,
     )
-    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
     msg = Message(
         id="msg_1",
@@ -3096,7 +3088,7 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         type="message",
     )
 
-    events = [
+    return [
         RawMessageStartEvent(message=msg, type="message_start"),
         # thinking block (index=0)
         RawContentBlockStartEvent(
@@ -3168,6 +3160,24 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         RawMessageStopEvent(type="message_stop"),
     ]
 
+
+def test_anthropic_stream_events_v3_lifecycle() -> None:
+    """Validate lifecycle events across a thinking + text + tool_use stream.
+
+    Anthropic emits raw `content_block_start` / `content_block_delta` /
+    `content_block_stop` events with integer `index` fields, interleaved
+    with `message_start` and `message_delta`. This test threads a
+    realistic event sequence through `_stream` via a mocked raw client
+    and asserts that `stream_events(version="v3")` produces a spec-conformant
+    event stream: paired start/finish per block, no interleaving, sequential
+    `uint` wire indices.
+    """
+    from unittest.mock import patch
+
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    events = _lifecycle_events()
+
     # Enable thinking so `coerce_content_to_string=False` in `_stream`,
     # which gives every content block an integer `index` field — the
     # structured path the protocol bridge actually exercises.  Default
@@ -3185,6 +3195,14 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         stream_events = list(llm.stream_events("Test query", version="v3"))
 
     assert_valid_event_stream(stream_events)
+
+    # `message-start` must carry the stream's LangChain run id (threaded from
+    # core), matching the bridge path — not the provider message id ("msg_1")
+    # and not an empty string.
+    message_start = cast("dict[str, Any]", stream_events[0])
+    assert message_start["event"] == "message-start"
+    assert message_start["id"]
+    assert message_start["id"] != "msg_1"
 
     finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
     types = [f["content"]["type"] for f in finishes]
@@ -3209,3 +3227,36 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+async def test_anthropic_astream_events_v3_lifecycle() -> None:
+    """Async twin of `test_anthropic_stream_events_v3_lifecycle`.
+
+    Exercises `_astream_chat_model_events` end-to-end via the
+    `AsyncChatModelStream` producer task.
+    """
+    from unittest.mock import patch
+
+    events = _lifecycle_events()
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "enabled", "budget_tokens": 1024}
+    )
+
+    async def mock_acreate(_payload: Any) -> Any:
+        async def _gen() -> Any:
+            for event in events:
+                yield event
+
+        return _gen()
+
+    with patch.object(llm, "_acreate", mock_acreate):
+        stream = await llm.astream_events("Test query", version="v3")
+        collected = [e async for e in stream]
+
+    finishes = [e for e in collected if e["event"] == "content-block-finish"]
+    assert [f["content"]["type"] for f in finishes] == [
+        "reasoning",
+        "text",
+        "tool_call",
+    ]
+    assert collected[-1]["metadata"]["stop_reason"] == "tool_use"
