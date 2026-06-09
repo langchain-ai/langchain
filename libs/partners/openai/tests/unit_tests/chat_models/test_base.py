@@ -2926,6 +2926,57 @@ def test_compat_responses_v03() -> None:
     assert message_v03_output is not message_v03
 
 
+def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Done.", "id": "msg_123"},
+            {
+                "type": "apply_patch_call",
+                "id": "apply_patch_123",
+                "call_id": "call_123",
+                "operation": {
+                    "type": "create_file",
+                    "path": "hello.txt",
+                    "diff": "+hello\n",
+                },
+                "status": "completed",
+            },
+            {
+                "type": "apply_patch_call_output",
+                "id": "apply_patch_output_123",
+                "call_id": "call_123",
+                "status": "completed",
+                "output": "Created hello.txt",
+            },
+        ],
+        id="resp_123",
+    )
+
+    message_v03_output = _convert_to_v03_ai_message(message)
+
+    assert message_v03_output.content == [{"type": "text", "text": "Done."}]
+    assert message_v03_output.additional_kwargs["tool_outputs"] == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
+
+
 @pytest.mark.parametrize(
     ("message_v1", "expected"),
     [
