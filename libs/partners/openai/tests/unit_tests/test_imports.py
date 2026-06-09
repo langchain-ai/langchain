@@ -9,6 +9,8 @@ EXPECTED_ALL = [
     "AzureChatOpenAI",
     "AzureOpenAIEmbeddings",
     "StreamChunkTimeoutError",
+    "aconvert_openai_completions_stream",
+    "convert_openai_completions_stream",
     "custom_tool",
 ]
 

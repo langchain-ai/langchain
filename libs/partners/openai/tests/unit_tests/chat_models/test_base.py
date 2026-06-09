@@ -635,11 +635,36 @@ def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None
         events = list(llm.stream_events("你的名字叫什么？只回答名字", version="v3"))
 
     assert_valid_event_stream(events)
+    # `message-start` carries the stream's LangChain run id (threaded from core),
+    # not the provider completion id and not an empty string.
+    assert events[0]["event"] == "message-start"
+    assert events[0]["id"]
+    assert not events[0]["id"].startswith("chatcmpl")
     # At minimum, a text block with the accumulated answer.
     finishes = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) >= 1
     text_finishes = [f for f in finishes if f["content"]["type"] == "text"]
     assert len(text_finishes) == 1
+
+
+async def test_openai_astream_events_v3_lifecycle(mock_openai_completion: list) -> None:
+    """Async twin of `test_openai_stream_events_v3_lifecycle`."""
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test"))
+    mock_client = MagicMock()
+
+    async def mock_acreate(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_acreate
+    with patch.object(llm, "async_client", mock_client):
+        stream = await llm.astream_events("test", version="v3")
+        events = [e async for e in stream]
+
+    assert_valid_event_stream(events)
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len([f for f in finishes if f["content"]["type"] == "text"]) == 1
 
 
 @pytest.fixture
