@@ -306,10 +306,15 @@ def get_buffer_string(
         tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
         format: The output format. `'prefix'` uses `Role: content` format (default).
+            For multimodal messages, only string content and `text` blocks are
+            included; non-text blocks such as images, audio, and video are omitted.
 
-            `'xml'` uses XML-style `<message type='role'>` format with proper character
-            escaping, which is useful when message content may contain role-like
-            prefixes that could cause ambiguity.
+            `'xml'` uses XML-style `<message type='role'>` format with proper
+            character escaping, which is useful when message content may
+            contain role-like prefixes that could cause ambiguity.
+
+            Use `'xml'` when you need a structured representation of supported
+            multimodal content blocks.
 
     Returns:
         A single string concatenation of all input messages.
