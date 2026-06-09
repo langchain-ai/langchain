@@ -667,8 +667,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             getattr(self, "_stream_chat_model_events", None),
         )
         if native is not None:
+            # Thread the stream's message id (the LangChain run id) into the
+            # native producer so its `message-start` carries the same id the
+            # bridge path emits — keeping the two paths consistent for
+            # consumers that correlate v3 events by `message-start.id`.
             event_iter: Iterator[MessagesData] = native(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                message_id=stream.message_id,
+                **kwargs,
             )
         else:
             event_iter = chunks_to_events(
@@ -698,8 +706,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             getattr(self, "_astream_chat_model_events", None),
         )
         if native is not None:
+            # See `_iter_v2_events`: thread the stream's message id into the
+            # native producer for `message-start` consistency with the bridge.
             event_iter: AsyncIterator[MessagesData] = native(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                message_id=stream.message_id,
+                **kwargs,
             )
         else:
             event_iter = achunks_to_events(
