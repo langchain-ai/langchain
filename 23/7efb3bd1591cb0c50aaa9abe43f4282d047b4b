@@ -1,0 +1,30 @@
+libs/partners/openrouter/langchain_openrouter/_stream_events.py
+  s_dfc29189803279::t_1dbf5ba7400ccb 88-117
+  s_dfc29189803279::t_0bb958f45c281e 134,136,139-141,143,145,147,149-152,159,161,164-166,168,171,173,175,177-179
+  s_dfc29189803279::t_4d265aa6dd50ed 1-87,118-133,135,137-138,142,144,146,148,153-158,160,162-163,167,169-170,172,174,176
+libs/partners/openrouter/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_dbe6a8846fce23 1-110,112-118,124-140,142-215,218-228,234-250,253-334
+  s_dfc29189803279::t_2167f712352375 216-217,229-233
+  s_dfc29189803279::t_8aead6c437d68b 251-252
+  s_dfc29189803279::t_761830d71095a7 111,119-123,141
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_dfc29189803279::t_13fb2661307d6c 9
+  s_dfc29189803279::t_2985d5ef0156cb 74-76
+  s_dfc29189803279::t_562aac744ebef3 709-774
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "237efb3bd1591cb0c50aaa9abe43f4282d047b4b",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
