@@ -2079,7 +2079,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.4"
+version = "1.4.5"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2095,14 +2095,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "langchain-core", editable = "../core" }]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.5,<1.6" },
     { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain", editable = "." },
-    { name = "langchain-core", editable = "../core" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "langgraph-prebuilt", specifier = ">=0.7.0a2" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
@@ -2116,12 +2114,8 @@ test = [
     { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
 ]
-test-integration = [
-    { name = "langchain-core", editable = "../core" },
-    { name = "requests", specifier = ">=2.32.3,<3.0.0" },
-]
+test-integration = [{ name = "requests", specifier = ">=2.32.3,<3.0.0" }]
 typing = [
-    { name = "langchain-core", editable = "../core" },
     { name = "mypy", specifier = ">=1.17.1,<2.0.0" },
     { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
 ]
