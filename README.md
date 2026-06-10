@@ -31,6 +31,13 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 ```bash
 pip install langchain
 # or
+
+<!-- AUTO-PACKAGE-BADGES:START -->
+<!-- Auto-generated package badges -->
+
+![TestPyPI version](https://img.shields.io/testpypi/v/langchain?style=flat-square&logo=pypi&color=orange) ![TestPyPI](https://img.shields.io/badge/testpypi-preview-orange?style=flat-square&logo=pypi) [![Deployed](https://img.shields.io/badge/deployed-unknown-blue?style=flat-square)](https://test.pypi.org/project/langchain)
+
+<!-- AUTO-PACKAGE-BADGES:END -->
 uv add langchain
 ```
 
