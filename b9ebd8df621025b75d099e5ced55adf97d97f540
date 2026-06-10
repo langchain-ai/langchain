@@ -1,0 +1,40 @@
+libs/partners/ollama/langchain_ollama/chat_models.py
+  s_dfc29189803279::t_d6189214a53c6f 1433
+  s_dfc29189803279::t_d906972284bd9d 1320
+  s_dfc29189803279::t_89704fcce5749a 50
+  s_dfc29189803279::t_51163a666fcb02 1321-1322,1434-1435
+  s_dfc29189803279::t_8ef496c1f47814 1421-1432,1436-1451
+  s_dfc29189803279::t_8d4779a5142fc1 99-101
+  s_dfc29189803279::t_3b64af91093774 1302-1319,1323-1338
+libs/partners/ollama/langchain_ollama/_stream_events.py
+  s_dfc29189803279::t_8fc5d20606d988 13-14
+  s_dfc29189803279::t_4c32c8c4a7744e 72,144
+  s_dfc29189803279::t_d49b70dc1431e3 1-12,15-71,73-143,145-205
+libs/partners/ollama/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_68322fa87bf4ab 166-190,192-197,200-208
+  s_dfc29189803279::t_7435e77fe3412d 9-12
+  s_dfc29189803279::t_9419c9a68caae3 8
+  s_dfc29189803279::t_4c73170ec8fcc3 121-124
+  s_dfc29189803279::t_02098605ff7875 198-199
+  s_dfc29189803279::t_df482a464958cb 99-120,125-137
+  s_dfc29189803279::t_479c71ea13ac2c 1-3,5-7,13-81,86-98,138-165
+  s_dfc29189803279::t_6f5d141701f4b9 4
+  s_dfc29189803279::t_04d73958366b06 191
+  s_dfc29189803279::t_494d136afd046c 82-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b9ebd8df621025b75d099e5ced55adf97d97f540",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
