@@ -9,7 +9,7 @@ import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable, Sequence
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -69,7 +69,6 @@ from langchain_core.utils.pydantic import (
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 TOOL_MESSAGE_BLOCK_TYPES = (
@@ -398,12 +397,19 @@ class ToolException(Exception):  # noqa: N818
 
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
-ToolExceptionHandlerOutput = str | list[str | dict[str, Any]]
+MessageContentBlock = str | dict[str, Any]
+"""A single message content block: plain text or a structured block.
+
+A dict block is only considered valid at runtime when its `type` key is one of
+`TOOL_MESSAGE_BLOCK_TYPES` (see `_is_message_content_block`); the static type
+intentionally stays broad because block payloads vary by provider format.
+"""
+ToolExceptionHandlerOutput = str | Sequence[MessageContentBlock]
 """Content returned by a `handle_tool_error` callable.
 
-Error handlers may return plain text or structured message content blocks.
-When the original tool call includes a `tool_call_id`, this content is used
-as the content of a `ToolMessage` with `status="error"`.
+Error handlers may return plain text or a sequence of structured message
+content blocks. When the original tool call includes a `tool_call_id`, this
+content is normalized to the content of a `ToolMessage` with `status="error"`.
 """
 
 _EMPTY_SET: frozenset[str] = frozenset()
@@ -1302,8 +1308,8 @@ def _format_output(
         return content
     if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
-    if not _is_message_content_type(content):
-        content = _stringify(content)
+    normalized_content = _normalize_message_content(content)
+    content = _stringify(content) if normalized_content is None else normalized_content
     return ToolMessage(
         content,
         artifact=artifact,
@@ -1313,20 +1319,27 @@ def _format_output(
     )
 
 
-def _is_message_content_type(obj: Any) -> bool:
-    """Check if object is valid message content format.
+def _normalize_message_content(obj: Any) -> str | list[MessageContentBlock] | None:
+    """Coerce valid message content to the shape expected by `ToolMessage`.
 
-    Validates content for OpenAI or Anthropic format tool messages.
+    A string passes through unchanged; any `Sequence` of valid content blocks
+    (e.g. a list or tuple) is materialized into a `list`. Returning `None`
+    signals the caller (`_format_output`) that `obj` is not message content and
+    should be stringified instead.
 
     Args:
-        obj: The object to check.
+        obj: The object to normalize.
 
     Returns:
-        `True` if the object is valid message content, `False` otherwise.
+        The normalized content, or `None` if `obj` is not valid message content.
     """
-    return isinstance(obj, str) or (
-        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
-    )
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, Sequence):
+        normalized = list(obj)
+        if all(_is_message_content_block(e) for e in normalized):
+            return normalized
+    return None
 
 
 def _is_message_content_block(obj: Any) -> bool:
