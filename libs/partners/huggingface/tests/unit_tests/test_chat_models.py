@@ -10,7 +10,9 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -222,6 +224,49 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+def test_with_structured_output_function_calling_supports_pydantic(
+    chat_hugging_face: Any,
+) -> None:
+    class Answer(BaseModel):
+        answer: str
+
+    fake_llm = RunnableLambda(
+        lambda _: AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "Answer",
+                    "args": {"answer": "ok"},
+                    "id": "call_1",
+                    "type": "tool_call",
+                }
+            ],
+        )
+    )
+
+    with patch.object(ChatHuggingFace, "bind_tools", return_value=fake_llm):
+        structured_llm = chat_hugging_face.with_structured_output(Answer)
+
+    assert structured_llm.invoke("question") == Answer(answer="ok")
+
+
+def test_with_structured_output_json_mode_supports_pydantic(
+    chat_hugging_face: Any,
+) -> None:
+    class Answer(BaseModel):
+        answer: str
+
+    fake_llm = RunnableLambda(lambda _: AIMessage(content='{"answer": "ok"}'))
+
+    with patch.object(ChatHuggingFace, "bind", return_value=fake_llm):
+        structured_llm = chat_hugging_face.with_structured_output(
+            Answer,
+            method="json_mode",
+        )
+
+    assert structured_llm.invoke("question") == Answer(answer="ok")
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
