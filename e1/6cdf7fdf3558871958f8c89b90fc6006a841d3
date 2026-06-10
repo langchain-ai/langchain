@@ -1,0 +1,14 @@
+libs/core/langchain_core/messages/utils.py
+  h_9f69767fa5fabf 712-713
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "e16cdf7fdf3558871958f8c89b90fc6006a841d3",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
