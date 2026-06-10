@@ -9,7 +9,6 @@ from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    cast,
 )
 
 from pydantic import BaseModel, RootModel
@@ -577,9 +576,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
                 if filtered:
                     yield filtered
             # yield map output
-            yield cast("dict[str, Any]", first_map_chunk_future.result())
-            for chunk in map_output:
-                yield chunk
+            first_chunk = first_map_chunk_future.result()
+            if first_chunk is not None:
+                yield first_chunk
+                for chunk in map_output:
+                    yield chunk
 
     @override
     def transform(
