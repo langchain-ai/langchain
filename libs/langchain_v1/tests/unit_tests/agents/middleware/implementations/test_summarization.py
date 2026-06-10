@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -34,6 +35,20 @@ from langchain.agents.middleware.summarization import (
 )
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+
+def _langchain_pyproject_major_version() -> int:
+    """Read the `langchain` package major version from `pyproject.toml`."""
+    pyproject = next(
+        parent / "pyproject.toml"
+        for parent in Path(__file__).parents
+        if (parent / "pyproject.toml").exists()
+    )
+    for line in pyproject.read_text().splitlines():
+        if line.startswith("version = "):
+            return int(line.split('"')[1].split(".")[0])
+    msg = "Could not find project version in pyproject.toml"
+    raise AssertionError(msg)
 
 
 class MockChatModel(BaseChatModel):
@@ -1173,8 +1188,11 @@ def test_trigger_clauses_are_canonical_representation() -> None:
     ]
 
 
-def test_trigger_conditions_preserve_legacy_tuple_view() -> None:
-    """Test `_trigger_conditions` remains a tuple-shaped compatibility view."""
+def test_trigger_conditions_legacy_tuple_view_remove_in_2_0() -> None:
+    """Test `_trigger_conditions` remains a temporary tuple-shaped compatibility view."""
+    assert _langchain_pyproject_major_version() < 2, (
+        "Remove `_trigger_conditions` and this compatibility test in LangChain 2.0."
+    )
     middleware = SummarizationMiddleware(
         model=FakeToolCallingModel(),
         trigger=[("messages", 5), {"tokens": 1000}, {"tokens": 2000, "messages": 10}],
