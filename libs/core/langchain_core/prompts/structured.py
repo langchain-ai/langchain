@@ -162,8 +162,6 @@ class StructuredPrompt(ChatPromptTemplate):
         other: Runnable[PromptValue, Other]
         | Callable[[Iterator[PromptValue]], Iterator[Other]]
         | Callable[[AsyncIterator[PromptValue]], AsyncIterator[Other]]
-        | Callable[[PromptValue], Runnable[PromptValue, Other]]
-        | Callable[[PromptValue], Awaitable[Runnable[PromptValue, Other]]]
         | Callable[[PromptValue], Other],
     ) -> RunnableSerializable[dict[str, Any], Other]: ...
 

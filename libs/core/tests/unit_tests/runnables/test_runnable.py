@@ -3874,6 +3874,8 @@ def test_each_simple() -> None:
         [["a", "b"], ["c"]],
         [["c", "e"]],
     ]
+    # `.map()` accepts any `Sequence`, not just `list` (e.g. a tuple).
+    assert parser.map().invoke(("a, b", "c")) == [["a", "b"], ["c"]]
 
 
 def test_each(snapshot: SnapshotAssertion) -> None:
