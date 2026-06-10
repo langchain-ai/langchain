@@ -139,13 +139,19 @@ def _defer_tool_if_needed(
 
 def _get_model_provider(model: BaseChatModel, runtime: Any) -> str:
     """Infer the model provider used for server-side tool search."""
+    default_config = getattr(model, "_default_config", None)
     model_params_fn = getattr(model, "_model_params", None)
     if callable(model_params_fn):
         model_params = model_params_fn(getattr(runtime, "config", None))
-        if isinstance(model_params, dict) and (provider := _provider_from_params(model_params)):
-            return provider
+        if isinstance(model_params, dict):
+            params = (
+                {**default_config, **model_params}
+                if isinstance(default_config, dict)
+                else model_params
+            )
+            if provider := _provider_from_params(params):
+                return provider
 
-    default_config = getattr(model, "_default_config", None)
     if isinstance(default_config, dict) and (provider := _provider_from_params(default_config)):
         return provider
 

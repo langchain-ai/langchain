@@ -192,12 +192,26 @@ def test_detects_provider_from_runtime_configurable_model() -> None:
     assert {"type": "tool_search"} in modified_request.tools
 
 
-def test_runtime_config_overrides_default_configurable_model_provider() -> None:
+def test_runtime_model_override_uses_default_configurable_model_provider() -> None:
     request = ModelRequest(
         model=cast("BaseChatModel", FakeConfigurableModel({"model_provider": "openai"})),
         messages=[HumanMessage("hi")],
         tools=[send_email],
         runtime=cast("Any", FakeRuntime({"configurable": {"model": "claude-sonnet-4-5"}})),
+    )
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    assert {"type": "tool_search"} in modified_request.tools
+
+
+def test_runtime_provider_override_uses_runtime_configurable_model_provider() -> None:
+    request = ModelRequest(
+        model=cast("BaseChatModel", FakeConfigurableModel({"model_provider": "openai"})),
+        messages=[HumanMessage("hi")],
+        tools=[send_email],
+        runtime=cast("Any", FakeRuntime({"configurable": {"model_provider": "anthropic"}})),
     )
     middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
 
