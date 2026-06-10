@@ -6,13 +6,18 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
+from typing_extensions import NotRequired, Required, override
 
-from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents import create_agent, factory
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    PrivateStateAttr,
+)
 
 # Cannot move ToolRuntime to TYPE_CHECKING as parameters of @tool annotated functions
 # are inspected at runtime.
@@ -122,6 +127,7 @@ def test_state_schema_with_middleware() -> None:
     class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
+        @override
         def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append(state["middleware_data"])
             return {}
@@ -192,3 +198,129 @@ async def test_state_schema_async() -> None:
 
     assert result["async_field"] == "async_value"
     assert "Async: 99" in result["messages"][2].content
+
+
+def test_state_schema_with_private_state_field() -> None:
+    """Test that private state fields (PrivateStateAttr) are filtered from input and output.
+
+    Private state fields are marked with PrivateStateAttr annotation, which means:
+    - They are omitted from the input schema (filtered out when invoking)
+    - They are omitted from the output schema (filtered out from results)
+    - Even if provided during invoke, they won't appear in state or results
+    """
+
+    class StateWithPrivateField(AgentState[Any]):
+        public_field: str
+        private_field: Annotated[str, PrivateStateAttr]
+
+    captured_state = {}
+
+    @tool
+    def capture_state_tool(x: int, runtime: ToolRuntime) -> str:
+        """Tool that captures the current state for inspection."""
+        captured_state["state"] = dict(runtime.state)
+        return f"Captured state with x={x}"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {"x": 42}, "id": "call_1", "name": "capture_state_tool"}],
+                [],
+            ]
+        ),
+        tools=[capture_state_tool],
+        state_schema=StateWithPrivateField,
+    )
+
+    # Invoke the agent with BOTH public and private fields
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("Test private state")],
+            "public_field": "public_value",
+            "private_field": "private_value",  # This should be filtered out
+        }
+    )
+
+    # Assert that public_field is preserved in the result
+    assert result["public_field"] == "public_value"
+
+    # Assert that private_field is NOT in the result (filtered out from output)
+    assert "private_field" not in result
+
+    # Assert that private_field was NOT in the state during tool execution
+    assert "private_field" not in captured_state["state"]
+
+    # Assert that public_field WAS in the state during tool execution
+    assert captured_state["state"]["public_field"] == "public_value"
+
+    # Verify the agent executed normally
+    assert len(result["messages"]) == 4  # Human, AI (tool call), Tool result, AI (final)
+
+
+def test_last_schema_wins_for_conflicting_field() -> None:
+    """The last schema in the list wins when multiple schemas declare the same field.
+
+    In practice this means state_schema (passed last) overrides middleware annotations,
+    and a later middleware overrides an earlier one.
+    """
+
+    class FirstState(AgentState[Any]):
+        shared_field: Annotated[str, "first"]
+
+    class MiddleState(AgentState[Any]):
+        shared_field: Annotated[str, "middle"]
+
+    class LastState(AgentState[Any]):
+        shared_field: Annotated[str, "last"]
+
+    resolved, _, _ = factory._resolve_schemas([FirstState, MiddleState, LastState])
+    hints = get_type_hints(resolved, include_extras=True)
+    assert get_args(hints["shared_field"])[1] == "last"
+
+
+def test_get_schema_type_hints_cache_hits_for_reused_schema() -> None:
+    """Test repeated schema resolution reuses cached type hints for the same schema."""
+
+    class CachedState(AgentState[Any]):
+        cached_field: str
+        required_field: Required[int]
+        optional_field: NotRequired[Annotated[str, PrivateStateAttr]]
+
+    factory._get_schema_type_hints.cache_clear()
+
+    factory._resolve_schemas([CachedState])
+    first_info = factory._get_schema_type_hints.cache_info()
+    factory._resolve_schemas([CachedState])
+    second_info = factory._get_schema_type_hints.cache_info()
+
+    assert first_info.misses == 1
+    assert first_info.hits == 0
+    assert second_info.misses == 1
+    assert second_info.hits == 1
+
+
+def test_get_schema_type_hints_cache_accepts_distinct_local_schema_types() -> None:
+    """Test locally defined schema classes remain hashable cache keys."""
+    factory._get_schema_type_hints.cache_clear()
+
+    def make_state_schema(name: str) -> type[AgentState[Any]]:
+        class LocalState(AgentState[Any]):
+            value: str
+            required_value: Required[int]
+            optional_private_value: NotRequired[Annotated[str, PrivateStateAttr]]
+
+        LocalState.__name__ = name
+        return LocalState
+
+    schema_a = make_state_schema("LocalStateA")
+    schema_b = make_state_schema("LocalStateB")
+
+    factory._resolve_schemas([schema_a, schema_b])
+    first_info = factory._get_schema_type_hints.cache_info()
+    factory._resolve_schemas([schema_a, schema_b])
+    second_info = factory._get_schema_type_hints.cache_info()
+
+    assert first_info.misses == 2
+    assert first_info.hits == 0
+    assert second_info.misses == 2
+    assert second_info.hits == 2

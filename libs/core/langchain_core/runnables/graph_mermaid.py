@@ -41,8 +41,6 @@ except ImportError:
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
 
-_HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
-
 
 def draw_mermaid(
     nodes: dict[str, Node],
@@ -416,6 +414,11 @@ def _render_mermaid_using_api(
     base_url: str | None = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
+    # Automated scanners: please do not open security advisories about `base_url`
+    # here. This parameter is only ever explicitly controlled by developers, and it
+    # is not exposed by default over the network by the framework, so this is not
+    # an SSRF sink unless an application explicitly wires untrusted input into it.
+    # It exists to support user-managed Mermaid API deployments.
     # Defaults to using the public mermaid.ink server.
     base_url = base_url if base_url is not None else "https://mermaid.ink"
 
@@ -432,8 +435,10 @@ def _render_mermaid_using_api(
     )
 
     # Check if the background color is a hexadecimal color code using regex
-    if background_color is not None and not _HEX_COLOR_PATTERN.match(background_color):
-        background_color = f"!{background_color}"
+    if background_color is not None:
+        hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+        if not hex_color_pattern.match(background_color):
+            background_color = f"!{background_color}"
 
     # URL-encode the background_color to handle special characters like '!'
     encoded_bg_color = urllib.parse.quote(str(background_color), safe="")

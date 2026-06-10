@@ -1,6 +1,7 @@
 """Tests for ModelRetryMiddleware functionality."""
 
 import time
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -9,11 +10,17 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
-from langchain.agents.middleware.types import wrap_model_call
+from langchain.agents.middleware.types import (
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+    wrap_model_call,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -23,6 +30,7 @@ class TemporaryFailureModel(FakeToolCallingModel):
     fail_count: int = Field(default=0)
     attempt: int = Field(default=0)
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -60,6 +68,7 @@ class AlwaysFailingModel(FakeToolCallingModel):
     error_message: str = Field(default="Model error")
     error_type: type[Exception] = Field(default=ValueError)
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -334,6 +343,7 @@ def test_model_retry_custom_exception_filter() -> None:
     class CustomErrorModel(FakeToolCallingModel):
         """Model that raises CustomError."""
 
+        @override
         def _generate(
             self,
             messages: list[BaseMessage],
@@ -659,7 +669,10 @@ def test_model_retry_multiple_middleware_composition() -> None:
 
     # Custom middleware that logs calls
     @wrap_model_call
-    def logging_middleware(request, handler):
+    def logging_middleware(
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         call_log.append("before_model")
         response = handler(request)
         call_log.append("after_model")

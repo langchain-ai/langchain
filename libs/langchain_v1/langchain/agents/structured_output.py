@@ -76,13 +76,13 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 def _parse_with_schema(
     schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
-) -> Any:
+) -> SchemaT | dict[str, Any]:
     """Parse data using for any supported schema type.
 
     Args:
         schema: The schema type (Pydantic model, `dataclass`, or `TypedDict`)
-        schema_kind: One of `"pydantic"`, `"dataclass"`, `"typeddict"`, or
-            `"json_schema"`
+        schema_kind: One of `'pydantic'`, `'dataclass'`, `'typeddict'`, or
+            `'json_schema'`
         data: The data to parse
 
     Returns:
@@ -92,9 +92,10 @@ def _parse_with_schema(
         ValueError: If parsing fails
     """
     if schema_kind == "json_schema":
+        # Raw JSON schema has no corresponding Python type to instantiate.
         return data
     try:
-        adapter: TypeAdapter[SchemaT] = TypeAdapter(schema)
+        adapter = TypeAdapter[SchemaT](schema)
         return adapter.validate_python(data)
     except Exception as e:
         schema_name = getattr(schema, "__name__", str(schema))
@@ -108,13 +109,16 @@ class _SchemaSpec(Generic[SchemaT]):
 
     schema: type[SchemaT] | dict[str, Any]
     """The schema for the response, can be a Pydantic model, `dataclass`, `TypedDict`,
-    or JSON schema dict."""
+    or JSON schema dict.
+    """
 
     name: str
     """Name of the schema, used for tool calling.
 
     If not provided, the name will be the class name for models/dataclasses/TypedDicts,
-    or the `title` field for JSON schemas. Falls back to a generated name if unavailable.
+    or the `title` field for JSON schemas.
+
+    Falls back to a generated name if unavailable.
     """
 
     description: str
@@ -200,7 +204,8 @@ class ToolStrategy(Generic[SchemaT]):
 
     tool_message_content: str | None
     """The content of the tool message to be returned when the model calls
-    an artificial structured output tool."""
+    an artificial structured output tool.
+    """
 
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
@@ -269,7 +274,7 @@ class ProviderStrategy(Generic[SchemaT]):
         *,
         strict: bool | None = None,
     ) -> None:
-        """Initialize ProviderStrategy with schema.
+        """Initialize `ProviderStrategy` with schema.
 
         Args:
             schema: Schema to enforce via the provider's native structured output.
@@ -304,14 +309,15 @@ class ProviderStrategy(Generic[SchemaT]):
 class OutputToolBinding(Generic[SchemaT]):
     """Information for tracking structured output tool metadata.
 
-    This contains all necessary information to handle structured responses
-    generated via tool calls, including the original schema, its type classification,
-    and the corresponding tool implementation used by the tools strategy.
+    This contains all necessary information to handle structured responses generated via
+    tool calls, including the original schema, its type classification, and the
+    corresponding tool implementation used by the tools strategy.
     """
 
     schema: type[SchemaT] | dict[str, Any]
-    """The original schema provided for structured output
-    (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
+    """The original schema provided for structured output (Pydantic model, dataclass,
+    TypedDict, or JSON schema dict).
+    """
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -339,7 +345,7 @@ class OutputToolBinding(Generic[SchemaT]):
             ),
         )
 
-    def parse(self, tool_args: dict[str, Any]) -> SchemaT:
+    def parse(self, tool_args: dict[str, Any]) -> SchemaT | dict[str, Any]:
         """Parse tool arguments according to the schema.
 
         Args:
@@ -358,14 +364,15 @@ class OutputToolBinding(Generic[SchemaT]):
 class ProviderStrategyBinding(Generic[SchemaT]):
     """Information for tracking native structured output metadata.
 
-    This contains all necessary information to handle structured responses
-    generated via native provider output, including the original schema,
-    its type classification, and parsing logic for provider-enforced JSON.
+    This contains all necessary information to handle structured responses generated via
+    native provider output, including the original schema, its type classification, and
+    parsing logic for provider-enforced JSON.
     """
 
     schema: type[SchemaT] | dict[str, Any]
-    """The original schema provided for structured output
-    (Pydantic model, `dataclass`, `TypedDict`, or JSON schema dict)."""
+    """The original schema provided for structured output (Pydantic model, `dataclass`,
+    `TypedDict`, or JSON schema dict).
+    """
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -385,7 +392,7 @@ class ProviderStrategyBinding(Generic[SchemaT]):
             schema_kind=schema_spec.schema_kind,
         )
 
-    def parse(self, response: AIMessage) -> SchemaT:
+    def parse(self, response: AIMessage) -> SchemaT | dict[str, Any]:
         """Parse `AIMessage` content according to the schema.
 
         Args:
@@ -415,7 +422,7 @@ class ProviderStrategyBinding(Generic[SchemaT]):
 
     @staticmethod
     def _extract_text_content_from_message(message: AIMessage) -> str:
-        """Extract text content from an AIMessage.
+        """Extract text content from an `AIMessage`.
 
         Args:
             message: The AI message to extract text from
@@ -448,8 +455,9 @@ class AutoStrategy(Generic[SchemaT]):
         self,
         schema: type[SchemaT] | dict[str, Any],
     ) -> None:
-        """Initialize AutoStrategy with schema."""
+        """Initialize `AutoStrategy` with schema."""
         self.schema = schema
 
 
 ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]
+"""Union type for all supported response format strategies."""

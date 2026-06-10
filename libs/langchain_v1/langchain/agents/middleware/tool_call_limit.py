@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -32,7 +32,7 @@ ExitBehavior = Literal["continue", "error", "end"]
 """
 
 
-class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
+class ToolCallLimitState(AgentState[ResponseT]):
     """State schema for `ToolCallLimitMiddleware`.
 
     Extends `AgentState` with tool call tracking fields.
@@ -40,6 +40,9 @@ class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
     The count fields are dictionaries mapping tool names to execution counts. This
     allows multiple middleware instances to track different tools independently. The
     special key `'__all__'` is used for tracking all tool calls globally.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
@@ -134,10 +137,7 @@ class ToolCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ToolCallLimitMiddleware(
-    AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
-    Generic[ResponseT, ContextT],
-):
+class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], ContextT, ResponseT]):
     """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
@@ -166,7 +166,7 @@ class ToolCallLimitMiddleware(
                 exit_behavior="continue",  # default
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Stop immediately when limit exceeded"
@@ -175,7 +175,7 @@ class ToolCallLimitMiddleware(
             # End execution immediately with an AI message
             limiter = ToolCallLimitMiddleware(run_limit=5, exit_behavior="end")
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Raise exception on limit"
@@ -186,7 +186,7 @@ class ToolCallLimitMiddleware(
                 tool_name="search", thread_limit=5, exit_behavior="error"
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
 
             try:
                 result = await agent.invoke({"messages": [HumanMessage("Task")]})
@@ -300,8 +300,7 @@ class ToolCallLimitMiddleware(
             run_count: Current run call count.
 
         Returns:
-            Tuple of `(allowed_calls, blocked_calls, final_thread_count,
-                final_run_count)`.
+            Tuple of `(allowed_calls, blocked_calls, final_thread_count, final_run_count)`.
         """
         allowed_calls: list[ToolCall] = []
         blocked_calls: list[ToolCall] = []

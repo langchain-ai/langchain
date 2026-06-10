@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -6,6 +7,7 @@ import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
+    LangSmithParams,
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -27,9 +29,26 @@ from pydantic import Field
 from typing_extensions import override
 
 from langchain.agents import AgentState
-from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.summarization import (
+    SummarizationMiddleware,
+    _provider_matches,
+)
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+
+def _langchain_pyproject_major_version() -> int:
+    """Read the `langchain` package major version from `pyproject.toml`."""
+    pyproject = next(
+        parent / "pyproject.toml"
+        for parent in Path(__file__).parents
+        if (parent / "pyproject.toml").exists()
+    )
+    for line in pyproject.read_text().splitlines():
+        if line.startswith("version = "):
+            return int(line.split('"')[1].split(".")[0])
+    msg = "Could not find project version in pyproject.toml"
+    raise AssertionError(msg)
 
 
 class MockChatModel(BaseChatModel):
@@ -79,6 +98,14 @@ class ProfileChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "mock"
+
+
+class ProfileProviderChatModel(ProfileChatModel):
+    """Mock chat model with profile and provider metadata."""
+
+    @override
+    def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
+        return LangSmithParams(ls_provider="mock", ls_model_type="chat")
 
 
 def test_summarization_middleware_initialization() -> None:
@@ -165,6 +192,7 @@ def test_summarization_middleware_helper_methods() -> None:
     assert isinstance(new_messages[0], HumanMessage)
     assert "Here is a summary of the conversation to date:" in new_messages[0].content
     assert summary in new_messages[0].content
+    assert new_messages[0].additional_kwargs.get("lc_source") == "summarization"
 
 
 def test_summarization_middleware_summary_creation() -> None:
@@ -352,8 +380,8 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
         model=ProfileChatModel(),
         trigger=("fraction", 0.1),
         keep=("fraction", 0.5),
+        token_counter=token_counter,
     )
-    middleware.token_counter = token_counter
 
     # Total tokens: 300 + 200 + 50 + 180 + 160 = 890
     # Target keep: 500 tokens (50% of 1000)
@@ -387,36 +415,13 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
 
 
 def test_summarization_middleware_missing_profile() -> None:
-    """Ensure automatic profile inference falls back when profiles are unavailable."""
-
-    class ImportErrorProfileModel(BaseChatModel):
-        @override
-        def _generate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: CallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            raise NotImplementedError
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-        # NOTE: Using __getattribute__ because @property cannot override Pydantic fields.
-        def __getattribute__(self, name: str) -> Any:
-            if name == "profile":
-                msg = "Profile not available"
-                raise AttributeError(msg)
-            return super().__getattribute__(name)
-
+    """Ensure fractional limits fail when model has no profile data."""
     with pytest.raises(
         ValueError,
         match="Model profile information is required to use fractional token limits",
     ):
         _ = SummarizationMiddleware(
-            model=ImportErrorProfileModel(), trigger=("fraction", 0.5), keep=("messages", 1)
+            model=MockChatModel(), trigger=("fraction", 0.5), keep=("messages", 1)
         )
 
 
@@ -948,6 +953,40 @@ def test_summarization_middleware_cutoff_at_boundary() -> None:
     assert cutoff == 0
 
 
+def test_summarization_middleware_skips_when_no_safe_cutoff() -> None:
+    """Do not summarize when message retention leaves no older history to drop."""
+
+    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("tokens", 1000),
+        keep=("messages", 1),
+        token_counter=token_counter,
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
+
+    assert middleware.before_model(state, Runtime()) is None
+
+
+async def test_summarization_middleware_skips_when_no_safe_cutoff_async() -> None:
+    """Do not summarize when async message retention has no older history to drop."""
+
+    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("tokens", 1000),
+        keep=("messages", 1),
+        token_counter=token_counter,
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
+
+    assert await middleware.abefore_model(state, Runtime()) is None
+
+
 def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
     """Test that deprecated parameters work correctly with default values."""
     # Test that deprecated max_tokens_before_summary is ignored when trigger is set
@@ -1027,6 +1066,32 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
 
+def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
+    calls: list[dict[str, Any]] = []
+
+    def fake_counter(_: Iterable[MessageLikeRepresentation], **kwargs: Any) -> int:
+        calls.append(kwargs)
+        return 100
+
+    with patch(
+        "langchain.agents.middleware.summarization.count_tokens_approximately",
+        side_effect=fake_counter,
+    ) as mock_counter:
+        middleware = SummarizationMiddleware(
+            model=MockChatModel(),
+            trigger=("tokens", 1),
+            keep=("tokens", 1),
+            token_counter=mock_counter,
+        )
+        state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
+        assert middleware.before_model(state, Runtime()) is not None
+
+    # Test we support partial token counting (which for default token counter does not
+    # use use_usage_metadata_scaling)
+    assert any(call.get("use_usage_metadata_scaling") is False for call in calls)
+    assert any(call.get("use_usage_metadata_scaling") is True for call in calls)
+
+
 def test_summarization_middleware_find_safe_cutoff_preserves_ai_tool_pair() -> None:
     """Test `_find_safe_cutoff` preserves AI/Tool message pairs together."""
     middleware = SummarizationMiddleware(
@@ -1081,6 +1146,564 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
     # Index 2 is an AIMessage (safe cutoff point), so no adjustment needed
     cutoff = middleware._find_safe_cutoff(messages, messages_to_keep=4)
     assert cutoff == 2
+
+
+def test_trigger_copies_mutable_inputs() -> None:
+    """Test caller mutations do not change stored trigger configuration."""
+    model = FakeToolCallingModel()
+    clause = {"tokens": 1000}
+    trigger = [clause]
+
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=trigger,
+        keep=("messages", 2),
+    )
+
+    clause["messages"] = 1
+    trigger.append(("messages", 1))
+
+    assert middleware.trigger == [{"tokens": 1000}]
+
+    def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 500
+
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content="1"), HumanMessage(content="2")]}
+    result = middleware.before_model(state, Runtime())
+    assert result is None
+
+
+def test_trigger_clauses_are_canonical_representation() -> None:
+    """Test `_trigger_clauses` is the canonical AND/OR trigger representation."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[("messages", 5), {"tokens": 1000}, {"tokens": 2000, "messages": 10}],
+    )
+
+    assert middleware._trigger_clauses == [
+        {"messages": 5},
+        {"tokens": 1000},
+        {"tokens": 2000, "messages": 10},
+    ]
+
+
+def test_trigger_conditions_legacy_tuple_view_remove_in_2_0() -> None:
+    """Test `_trigger_conditions` remains a temporary tuple-shaped compatibility view."""
+    assert _langchain_pyproject_major_version() < 2, (
+        "Remove `_trigger_conditions` and this compatibility test in LangChain 2.0."
+    )
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[("messages", 5), {"tokens": 1000}, {"tokens": 2000, "messages": 10}],
+    )
+
+    assert middleware._trigger_conditions == [("messages", 5), ("tokens", 1000)]
+
+
+def test_compound_trigger_has_no_legacy_tuple_projection() -> None:
+    """Test compound AND clauses are not misrepresented as legacy OR tuples."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger={"tokens": 1000, "messages": 5},
+    )
+
+    assert middleware._trigger_clauses == [{"tokens": 1000, "messages": 5}]
+    assert middleware._trigger_conditions == []
+
+
+def test_and_trigger_conditions() -> None:
+    """Test AND-capable trigger conditions (all conditions in dict must be met)."""
+    model = FakeToolCallingModel()
+
+    # Create middleware with AND condition: tokens >= 1000 AND messages >= 5
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger={"tokens": 1000, "messages": 5},
+        keep=("messages", 2),  # Explicitly set a smaller keep value
+    )
+
+    # Test case 1: Only tokens threshold met (messages = 3 < 5)
+    # Should NOT trigger summarization
+    def token_counter_high(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500  # Above token threshold
+
+    middleware.token_counter = token_counter_high
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+        ]
+    }
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not summarize when only tokens condition is met"
+
+    # Test case 2: Only messages threshold met (tokens = 500 < 1000)
+    # Should NOT trigger summarization
+    def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 500  # Below token threshold
+
+    middleware.token_counter = token_counter_low
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+            HumanMessage(content="5"),
+            AIMessage(content="6"),
+        ]
+    }
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not summarize when only messages condition is met"
+
+    # Test case 3: Both conditions met (tokens >= 1000 AND messages >= 5)
+    # Should trigger summarization
+    middleware.token_counter = token_counter_high
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should summarize when both conditions are met"
+    assert isinstance(result["messages"][0], RemoveMessage)
+
+
+def test_or_trigger_conditions_with_and_clauses() -> None:
+    """Test OR across multiple AND clauses."""
+    model = FakeToolCallingModel()
+
+    # Create middleware with OR of AND conditions:
+    # (tokens >= 5000 AND messages >= 3) OR (tokens >= 3000 AND messages >= 6)
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=[
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ],
+        keep=("messages", 2),
+    )
+
+    # Test case 1: First clause met (tokens = 5500, messages = 4)
+    # Should trigger summarization
+    def token_counter_5500(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 5500
+
+    middleware.token_counter = token_counter_5500
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+        ]
+    }
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should summarize when first OR clause is met"
+
+    # Test case 2: Second clause met (tokens = 3500, messages = 7)
+    # Should trigger summarization
+    def token_counter_3500(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 3500
+
+    middleware.token_counter = token_counter_3500
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(7)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should summarize when second OR clause is met"
+
+    # Test case 3: Neither clause fully met
+    # (tokens = 4500 meets second token threshold but not message count)
+    # (messages = 4 meets first message threshold but not token count)
+    # Should NOT trigger summarization
+    def token_counter_4500(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 4500
+
+    middleware.token_counter = token_counter_4500
+    state = {
+        "messages": [
+            HumanMessage(content="1"),
+            AIMessage(content="2"),
+            HumanMessage(content="3"),
+            AIMessage(content="4"),
+        ]
+    }
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not summarize when no complete clause is met"
+
+
+async def test_and_trigger_conditions_async() -> None:
+    """AND-capable trigger conditions via the async `abefore_model` path."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger={"tokens": 1000, "messages": 5},
+        keep=("messages", 2),
+    )
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+
+    # Only the messages threshold met (tokens below) -> should not summarize.
+    def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 500
+
+    middleware.token_counter = token_counter_low
+    result = await middleware.abefore_model(state, Runtime())
+    assert result is None, "Should not summarize when only messages condition is met"
+
+    # Both conditions met -> should summarize.
+    def token_counter_high(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware.token_counter = token_counter_high
+    result = await middleware.abefore_model(state, Runtime())
+    assert result is not None, "Should summarize when both conditions are met"
+    assert isinstance(result["messages"][0], RemoveMessage)
+
+
+async def test_or_trigger_conditions_with_and_clauses_async() -> None:
+    """OR across multiple AND clauses via the async `abefore_model` path."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ],
+        keep=("messages", 2),
+    )
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+
+    # First clause met (tokens = 5500, messages = 4) -> should summarize.
+    def token_counter_5500(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 5500
+
+    middleware.token_counter = token_counter_5500
+    result = await middleware.abefore_model(state, Runtime())
+    assert result is not None, "Should summarize when first OR clause is met"
+
+    # Neither clause fully met (tokens = 4500, messages = 4) -> should not summarize.
+    def token_counter_4500(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 4500
+
+    middleware.token_counter = token_counter_4500
+    result = await middleware.abefore_model(state, Runtime())
+    assert result is None, "Should not summarize when no complete clause is met"
+
+
+def test_backward_compatibility_tuple_trigger() -> None:
+    """Test backward compatibility with existing tuple-based triggers."""
+    model = FakeToolCallingModel()
+
+    # Single tuple trigger
+    middleware_single = SummarizationMiddleware(
+        model=model,
+        trigger=("tokens", 1000),
+        keep=("messages", 1),
+    )
+
+    def token_counter_high(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 1500
+
+    middleware_single.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    result = middleware_single.before_model(state, Runtime())
+    assert result is not None, "Single tuple trigger should work"
+
+    # List of tuples trigger
+    middleware_list = SummarizationMiddleware(
+        model=model,
+        trigger=[("tokens", 1000), ("messages", 5)],
+        keep=("messages", 2),
+    )
+
+    # Should trigger with high tokens (first condition met)
+    middleware_list.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    result = middleware_list.before_model(state, Runtime())
+    assert result is not None, "List of tuples should trigger when any condition met"
+
+    # Should trigger with many messages (second condition met)
+    def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 100
+
+    middleware_list.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+    result = middleware_list.before_model(state, Runtime())
+    assert result is not None, "List of tuples should trigger when second condition met"
+
+
+def test_mixed_and_or_conditions() -> None:
+    """Test mixing dict (AND) and tuple (single condition) triggers in a list (OR)."""
+    model = FakeToolCallingModel()
+
+    # (tokens >= 4000 AND messages >= 10) OR (messages >= 50)
+    middleware = SummarizationMiddleware(
+        model=model,
+        trigger=[
+            {"tokens": 4000, "messages": 10},
+            ("messages", 50),
+        ],
+        keep=("messages", 5),
+    )
+
+    # Test case 1: First AND clause met
+    def token_counter_high(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 4500
+
+    middleware.token_counter = token_counter_high
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(12)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should trigger when AND clause is met"
+
+    # Test case 2: Second simple condition met
+    def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
+        return 1000
+
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(55)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should trigger when simple messages condition is met"
+
+    # Test case 3: Neither condition met
+    middleware.token_counter = token_counter_low
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(8)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not trigger when no condition is met"
+
+
+def test_fraction_in_and_trigger() -> None:
+    """Test using fraction threshold in AND conditions."""
+    # Create middleware with AND condition: fraction >= 0.8 AND messages >= 5
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"fraction": 0.8, "messages": 5},
+        keep=("messages", 2),
+    )
+
+    def token_counter(messages: Iterable[MessageLikeRepresentation]) -> int:
+        return len(list(messages)) * 200  # Each message = 200 tokens
+
+    middleware.token_counter = token_counter
+
+    # Test case 1: Both conditions met
+    # 5 messages * 200 = 1000 tokens (profile max is 1000)
+    # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(5)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is not None, "Should trigger when both fraction and messages conditions met"
+
+    # Test case 2: Only messages condition met
+    # 3 messages * 200 = 600 tokens
+    # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not trigger when neither condition is fully met"
+
+    # Test case 3: High fraction but not enough messages
+    # 4 messages * 200 = 800 tokens
+    # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+    result = middleware.before_model(state, Runtime())
+    assert result is None, "Should not trigger when only fraction condition is met"
+
+
+def test_trigger_validation_errors() -> None:
+    """Test validation errors for invalid trigger configurations."""
+    model = FakeToolCallingModel()
+
+    # Invalid metric name
+    with pytest.raises(ValueError, match="Unsupported trigger metric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"invalid_metric": 100},
+        )
+
+    # Invalid fraction value (> 1) — shares the tuple path's message via
+    # `_validate_context_size`.
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": 1.5},
+        )
+
+    # Invalid fraction value (<= 0)
+    with pytest.raises(ValueError, match="Fractional trigger values must be between 0 and 1"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": 0},
+        )
+
+    # Invalid token threshold (<= 0)
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"tokens": 0},
+        )
+
+    # Invalid message threshold (<= 0)
+    with pytest.raises(ValueError, match="trigger thresholds must be greater than 0"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": -5},
+        )
+
+    # Non-numeric fraction value
+    with pytest.raises(ValueError, match="Fraction trigger values must be numeric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"fraction": "invalid"},
+        )
+
+    # Float value for an integer metric is rejected (no silent truncation)
+    with pytest.raises(ValueError, match="tokens trigger values must be integers"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"tokens": 1000.5},
+        )
+
+    # Numeric string for an integer metric is rejected (no silent coercion)
+    with pytest.raises(ValueError, match="messages trigger values must be integers"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": "10"},
+        )
+
+    # Boolean is rejected (bool is an int subclass)
+    with pytest.raises(ValueError, match="messages trigger value must be numeric"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={"messages": True},
+        )
+
+    # Invalid list item type
+    with pytest.raises(TypeError, match="Unsupported trigger item type"):
+        SummarizationMiddleware(
+            model=model,
+            trigger=["invalid"],
+        )
+
+    # Unsupported top-level trigger type (not a tuple, dict, or list)
+    with pytest.raises(TypeError, match="Unsupported trigger type"):
+        SummarizationMiddleware(
+            model=model,
+            trigger="foo",  # type: ignore[arg-type]
+        )
+
+
+def test_empty_and_condition() -> None:
+    """An empty dict trigger clause is rejected (no metrics to evaluate).
+
+    Without this guard an empty clause would vacuously match and summarize on every
+    invocation, which is almost never what a caller intends.
+    """
+    model = FakeToolCallingModel()
+
+    with pytest.raises(ValueError, match="at least one of"):
+        SummarizationMiddleware(
+            model=model,
+            trigger={},
+        )
+
+    # An empty clause inside a list is rejected for the same reason.
+    with pytest.raises(ValueError, match="at least one of"):
+        SummarizationMiddleware(
+            model=model,
+            trigger=[{"tokens": 1000}, {}],
+        )
+
+
+def test_empty_list_trigger_never_summarizes() -> None:
+    """An empty trigger list normalizes to no conditions and never summarizes."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[],
+        token_counter=lambda _: 10_000,
+    )
+    assert middleware._trigger_conditions == []
+    state = {"messages": [HumanMessage(content=str(i)) for i in range(50)]}
+    assert middleware.before_model(state, Runtime()) is None
+
+
+def test_reported_tokens_satisfy_tokens_within_and_clause() -> None:
+    """Provider-reported tokens can satisfy the `tokens` metric inside an AND clause.
+
+    The computed token count is below the threshold, so the clause only triggers if the
+    reported-token fallback is honored *within* the AND evaluation (not just for bare
+    single-metric tuples).
+    """
+    middleware = SummarizationMiddleware(
+        model=ProfileProviderChatModel(),
+        trigger={"tokens": 10_000, "messages": 2},
+        keep=("messages", 1),
+        token_counter=lambda _: 0,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hello"),
+        AIMessage(
+            content="hi",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 9_000,
+                "output_tokens": 1_001,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # Computed tokens (0) are below threshold, but reported tokens (10_001) clear it and
+    # message count (2) meets its threshold -> clause satisfied.
+    assert middleware._should_summarize(messages, 0)
+
+    # Drop the reported count below the threshold -> tokens metric unmet -> no summarize.
+    messages_low: list[AnyMessage] = [
+        HumanMessage(content="hello"),
+        AIMessage(
+            content="hi",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 50,
+                "output_tokens": 50,
+                "total_tokens": 100,
+            },
+        ),
+    ]
+    assert not middleware._should_summarize(messages_low, 0)
+
+
+def test_three_metric_and_clause() -> None:
+    """All three metrics in a single clause must be met (AND), with no short-circuit."""
+    # Profile max is 1000 -> fraction 0.8 resolves to an 800-token threshold. The tokens
+    # threshold (100) is deliberately lower so `fraction` can be isolated as the binding
+    # constraint.
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"tokens": 100, "messages": 5, "fraction": 0.8},
+        keep=("messages", 2),
+    )
+    five: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    four: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(4)]
+
+    # All three met: tokens (800 >= 100), messages (5 >= 5), fraction (800 >= 800).
+    assert middleware._should_summarize(five, 800)
+
+    # fraction unmet: 500 < 800 threshold (tokens + messages still met).
+    assert not middleware._should_summarize(five, 500)
+
+    # messages unmet: 4 < 5 (tokens + fraction still met).
+    assert not middleware._should_summarize(four, 800)
+
+
+def test_tokens_and_fraction_and_clause() -> None:
+    """A clause combining `tokens` and `fraction` (no `messages`) is AND-evaluated."""
+    # Profile max is 1000 -> fraction 0.5 resolves to a 500-token threshold.
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger={"tokens": 300, "fraction": 0.5},
+        keep=("messages", 2),
+    )
+    messages: list[AnyMessage] = [HumanMessage(content="x")]
+
+    # Both met: 500 >= 300 tokens and 500 >= 500 fraction.
+    assert middleware._should_summarize(messages, 500)
+
+    # fraction unmet: 400 < 500 (tokens still met at 400 >= 300).
+    assert not middleware._should_summarize(messages, 400)
+
+    # Both unmet.
+    assert not middleware._should_summarize(messages, 200)
 
 
 def test_create_summary_uses_get_buffer_string_format() -> None:
@@ -1213,3 +1836,175 @@ def test_usage_metadata_trigger() -> None:
         ]
     )
     assert not middleware._should_summarize(messages, 0)
+
+
+def test_provider_matches() -> None:
+    """Direct equality matches, plus Bedrock aliases under amazon_bedrock."""
+    assert _provider_matches("anthropic", "anthropic")
+    assert _provider_matches("openai", "openai")
+    # Bedrock chat models tag messages with model_provider="bedrock" or
+    # "bedrock_converse" but trace under ls_provider="amazon_bedrock".
+    assert _provider_matches("bedrock", "amazon_bedrock")
+    assert _provider_matches("bedrock_converse", "amazon_bedrock")
+    # Non-matches
+    assert not _provider_matches("openai", "anthropic")
+    assert not _provider_matches("bedrock", "anthropic")
+    assert not _provider_matches("anthropic", None)
+
+
+class _MockBedrockChatModel(BaseChatModel):
+    """Mock model that mimics ChatBedrockConverse's ls_provider for tracing."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "amazon_bedrock_converse_chat"
+
+    @override
+    def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
+        return LangSmithParams(ls_provider="amazon_bedrock", ls_model_type="chat")
+
+
+def test_reported_tokens_trigger_for_bedrock_converse() -> None:
+    """Bedrock messages should satisfy the reported-token check.
+
+    Despite the model_provider/ls_provider mismatch (bedrock_converse vs.
+    amazon_bedrock), the reported-token check should still trigger summarization.
+    """
+    middleware = SummarizationMiddleware(
+        model=_MockBedrockChatModel(),
+        trigger=("tokens", 10_000),
+        keep=("messages", 4),
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "bedrock_converse"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    # reported token count (10_001) should override the supplied count of 0
+    assert middleware._should_summarize(messages, 0)
+
+    # mismatched provider should not engage
+    messages_other_provider: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "anthropic"},
+            usage_metadata={
+                "input_tokens": 7500,
+                "output_tokens": 2501,
+                "total_tokens": 10_001,
+            },
+        ),
+    ]
+    assert not middleware._should_summarize(messages_other_provider, 0)
+
+
+def test_reported_tokens_trigger_for_fraction() -> None:
+    """Fraction triggers should account for provider-reported token usage."""
+    middleware = SummarizationMiddleware(
+        model=ProfileProviderChatModel(),
+        trigger=("fraction", 0.8),
+        keep=("messages", 4),
+        token_counter=lambda _: 0,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="msg1"),
+        AIMessage(
+            content="msg2",
+            response_metadata={"model_provider": "mock"},
+            usage_metadata={
+                "input_tokens": 750,
+                "output_tokens": 51,
+                "total_tokens": 801,
+            },
+        ),
+    ]
+
+    assert middleware._should_summarize(messages, 0)
+
+
+class ConfigCapturingModel(BaseChatModel):
+    """Mock model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
+    """Test that summary creation passes `lc_source` metadata to the model.
+
+    When called outside a LangGraph runnable context, `get_config()` raises
+    `RuntimeError`. The middleware catches this and still passes the `lc_source`
+    metadata to the model.
+    """
+    model = ConfigCapturingModel()
+    model.captured_configs = []  # Reset for this test
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    messages: list[AnyMessage] = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    assert len(model.captured_configs) == 1
+    config = model.captured_configs[0]
+    assert config is not None
+    assert "metadata" in config
+    assert config["metadata"]["lc_source"] == "summarization"

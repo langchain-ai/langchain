@@ -48,7 +48,7 @@ def get_pypi_versions(package_name: str) -> List[str]:
         KeyError: If package not found or response format unexpected
     """
     pypi_url = f"https://pypi.org/pypi/{package_name}/json"
-    response = requests.get(pypi_url)
+    response = requests.get(pypi_url, timeout=10.0)
     response.raise_for_status()
     return list(response.json()["releases"].keys())
 

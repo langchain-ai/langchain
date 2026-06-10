@@ -17,6 +17,7 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
     """Test reasoning features.
 
     !!! note
+
         `grok-4` does not return `reasoning_content`, but may optionally return
         encrypted reasoning content if `use_encrypted_content` is set to `True`.
     """
@@ -25,12 +26,14 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
         chat_model = ChatXAI(
             model="grok-3-mini",
             reasoning_effort="low",
+            temperature=0,
             output_version=output_version,
         )
     else:
         chat_model = ChatXAI(
             model="grok-3-mini",
             reasoning_effort="low",
+            temperature=0,
         )
     input_message = "What is 3^3?"
     response = chat_model.invoke(input_message)
@@ -95,21 +98,33 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
 
 
 def test_web_search() -> None:
-    llm = ChatXAI(
-        model=MODEL_NAME,
-        search_parameters={"mode": "on", "max_search_results": 3},
-    )
+    llm = ChatXAI(model=MODEL_NAME, temperature=0).bind_tools([{"type": "web_search"}])
+
+    # xAI may emit additional block types (e.g. `citation`, `reasoning`) alongside
+    # the core set, so assert each required type is present individually rather
+    # than checking set equality.
+    expected_types = ("server_tool_call", "server_tool_result", "text")
+
+    def _assert_web_search_block(blocks: list) -> None:
+        server_tool_calls = [b for b in blocks if b["type"] == "server_tool_call"]
+        assert server_tool_calls, "expected at least one server_tool_call block"
+        assert server_tool_calls[0]["name"] == "web_search"
 
     # Test invoke
-    response = llm.invoke("Provide me a digest of world news in the last 24 hours.")
+    response = llm.invoke("Look up the current time in Boston, MA.")
     assert response.content
-    assert response.additional_kwargs["citations"]
-    assert len(response.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in response.content_blocks}
+    for expected in expected_types:
+        assert expected in content_types, f"missing {expected!r} in {content_types}"
+    _assert_web_search_block(response.content_blocks)
 
     # Test streaming
-    full = None
-    for chunk in llm.stream("Provide me a digest of world news in the last 24 hours."):
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream("Look up the current time in Boston, MA."):
+        assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    assert full.additional_kwargs["citations"]
-    assert len(full.additional_kwargs["citations"]) <= 3
+    content_types = {block["type"] for block in full.content_blocks}
+    for expected in expected_types:
+        assert expected in content_types, f"missing {expected!r} in {content_types}"
+    _assert_web_search_block(full.content_blocks)

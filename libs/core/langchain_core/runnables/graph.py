@@ -1,4 +1,4 @@
-"""Graph used in Runnables."""
+"""Graph used in `Runnable` objects."""
 
 from __future__ import annotations
 
