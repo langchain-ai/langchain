@@ -1,6 +1,4 @@
 import sys
-from collections.abc import Callable
-from inspect import isawaitable
 from typing import Annotated, Any
 
 import pytest
@@ -9,7 +7,6 @@ from langchain_core.tools import BaseTool
 from langgraph.prebuilt import InjectedStore, ToolRuntime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
-from pydantic import StringConstraints
 
 from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState
@@ -17,10 +14,10 @@ from langchain.tools import tool as dec_tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
-class UserState(AgentState):
+class UserState(AgentState[Any]):
     user_id: str
-    api_key: Annotated[str, StringConstraints(min_length=50)]
-    session_data: dict
+    api_key: str
+    session_data: dict[str, Any]
 
 
 @pytest.mark.skipif(
@@ -202,7 +199,8 @@ def test_create_agent_error() -> None:
         _ = (query, limit, state, store, runtime)
         return "ok"
 
-    _verify_agent_error_sync(complex_tool, lambda agent, *args: agent.invoke(*args))
+    agent, payload = _build_complex_agent(complex_tool)
+    _assert_agent_error(agent.invoke(payload))
 
 
 @pytest.mark.skipif(
@@ -240,17 +238,25 @@ async def test_create_agent_error_async() -> None:
         _ = (query, limit, state, store, runtime)
         return "ok"
 
-    async def invoke_async(agent, *args):
-        return await agent.ainvoke(*args)
-
-    await _verify_agent_error(complex_tool, invoke_async)
+    agent, payload = _build_complex_agent(complex_tool)
+    _assert_agent_error(await agent.ainvoke(payload))
 
 
-def _verify_agent_error_sync(tool: BaseTool, agent_func: Callable) -> None:
-    # Create a model that makes an incorrect tool call with multiple errors:
-    # - query is wrong type (int instead of str)
-    # - limit is missing
-    # Then returns no tool calls to end the loop
+def _build_complex_agent(tool: BaseTool) -> tuple[Any, dict[str, Any]]:
+    """Build an agent and invocation payload shared by the complex-tool error tests.
+
+    The model issues a single tool call with multiple errors:
+    - `query` has the wrong type (int instead of str)
+    - `wrong_arg` is not an expected parameter
+    - `limit` is missing (required)
+    Then returns no tool calls so the agent loop terminates.
+
+    Args:
+        tool: The complex tool (sync or async) under test.
+
+    Returns:
+        The compiled agent and the invocation payload (with sensitive state values).
+    """
     model = FakeToolCallingModel(
         tool_calls=[
             [
@@ -258,7 +264,7 @@ def _verify_agent_error_sync(tool: BaseTool, agent_func: Callable) -> None:
                     "name": "complex_tool",
                     "args": {
                         "query": 12345,  # Wrong type - should be str
-                        "wrong_arg": "value",  # Not expected
+                        "wrong_arg": "value",  # Not an expected parameter
                         # "limit" is missing - required field
                     },
                     "id": "call_complex_1",
@@ -268,8 +274,7 @@ def _verify_agent_error_sync(tool: BaseTool, agent_func: Callable) -> None:
         ]
     )
 
-    # Create an agent with the complex tool and custom state
-    # Need to provide a store since the tool uses InjectedStore
+    # A store is required because the tool uses InjectedStore.
     agent = create_agent(
         model=model,
         tools=[tool],
@@ -277,66 +282,17 @@ def _verify_agent_error_sync(tool: BaseTool, agent_func: Callable) -> None:
         store=InMemoryStore(),
     )
 
-    result = agent_func(
-        agent,
-        {
-            "messages": [HumanMessage("Search for something")],
-            "user_id": "user_12345",
-            "api_key": "sk-secret-key-abc123xyz",
-            "session_data": {"token": "secret_session_token"},
-        },
-    )
+    payload = {
+        "messages": [HumanMessage("Search for something")],
+        "user_id": "user_12345",
+        "api_key": "sk-secret-key-abc123xyz",
+        "session_data": {"token": "secret_session_token"},
+    }
 
-    _assert_agent_error(result)
+    return agent, payload
 
 
-async def _verify_agent_error(tool: BaseTool, agent_func: Callable) -> None:
-    # Create a model that makes an incorrect tool call with multiple errors:
-    # - query is wrong type (int instead of str)
-    # - limit is missing
-    # Then returns no tool calls to end the loop
-    model = FakeToolCallingModel(
-        tool_calls=[
-            [
-                {
-                    "name": "complex_tool",
-                    "args": {
-                        "query": 12345,  # Wrong type - should be str
-                        "wrong_arg": "value",  # Not expected
-                        # "limit" is missing - required field
-                    },
-                    "id": "call_complex_1",
-                }
-            ],
-            [],  # No tool calls on second iteration to end the loop
-        ]
-    )
-
-    # Create an agent with the complex tool and custom state
-    # Need to provide a store since the tool uses InjectedStore
-    agent = create_agent(
-        model=model,
-        tools=[tool],
-        state_schema=UserState,
-        store=InMemoryStore(),
-    )
-
-    result_ = agent_func(
-        agent,
-        {
-            "messages": [HumanMessage("Search for something")],
-            "user_id": "user_12345",
-            "api_key": "sk-secret-key-abc123xyz",
-            "session_data": {"token": "secret_session_token"},
-        },
-    )
-
-    result = await result_ if isawaitable(result_) else result_
-
-    _assert_agent_error(result)
-
-
-def _assert_agent_error(result: dict) -> None:
+def _assert_agent_error(result: dict[str, Any]) -> None:
     # Find the tool error message
     tool_messages = [m for m in result["messages"] if m.type == "tool"]
     assert len(tool_messages) == 1
@@ -345,17 +301,17 @@ def _assert_agent_error(result: dict) -> None:
     assert tool_message.tool_call_id == "call_complex_1"
 
     content = tool_message.content.lower()
-    error = content.split("with error:")[1]
+    assert "with error:" in content, "Error should be formatted with an error section"
+    _, _, error = content.partition("with error:")
 
-    # Verify error mentions LLM-controlled parameter issues
+    # Verify the error section mentions LLM-controlled parameter issues
     assert "query" in error, "Error should mention 'query' (LLM-controlled)"
     assert "limit" in error, "Error should mention 'limit' (LLM-controlled)"
 
-    # Verify unexpected argument is mentioned
-    assert "wrong_arg" in content, "Error should mention 'wrong_type'"
-
-    # Should indicate validation errors occurred
-    assert "error" in content, "Error should indicate validation occurred"
+    # The LLM's original (invalid) args are echoed back so it can self-correct
+    assert "wrong_arg" in content, "Error should echo the LLM-provided 'wrong_arg'"
+    assert "12345" in content, "Error should show the invalid query value provided by LLM (12345)"
+    assert "complex_tool" in content, "Error should mention the tool name"
 
     # Verify NO system-injected parameter names appear in error
     # These are not controlled by the LLM and should be excluded
@@ -370,13 +326,6 @@ def _assert_agent_error(result: dict) -> None:
     assert "secret_session_token" not in content, (
         "Error should NOT contain session_data value (from state)"
     )
-
-    # Verify the LLM's original tool call args are present
-    # The error should show what the LLM actually provided to help it correct the mistake
-    assert "12345" in content, "Error should show the invalid query value provided by LLM (12345)"
-
-    # Check error is well-formatted
-    assert "complex_tool" in content, "Error should mention the tool name"
 
 
 @pytest.mark.skipif(
