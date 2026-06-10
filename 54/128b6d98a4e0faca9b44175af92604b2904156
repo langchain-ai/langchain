@@ -1,0 +1,20 @@
+libs/core/langchain_core/runnables/branch.py
+  s_9d1d26750a86bd::t_f0d04480ac3c72 109
+  s_9d1d26750a86bd::t_bd1385eabc342a 129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "54128b6d98a4e0faca9b44175af92604b2904156",
+  "prompts": {},
+  "sessions": {
+    "s_9d1d26750a86bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "49a85e45-271d-4d9d-af34-b58b2bead80e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
