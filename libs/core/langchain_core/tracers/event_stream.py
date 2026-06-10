@@ -429,7 +429,7 @@ class _AstreamEventsCallbackHandler(
     @override
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -465,7 +465,8 @@ class _AstreamEventsCallbackHandler(
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
             if chunk is None:
-                chunk_ = GenerationChunk(text=token)
+                text = token if isinstance(token, str) else ""
+                chunk_ = GenerationChunk(text=text)
             else:
                 chunk_ = cast("GenerationChunk", chunk)
         else:
