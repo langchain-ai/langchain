@@ -429,7 +429,7 @@ class _AstreamEventsCallbackHandler(
     @override
     async def on_llm_new_token(
         self,
-        token: str | list[str | dict],
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,

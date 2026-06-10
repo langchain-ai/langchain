@@ -47,7 +47,9 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """
 
     @override
-    def on_llm_new_token(self, token: str | list[str | dict], **kwargs: Any) -> None:
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:

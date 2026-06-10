@@ -737,7 +737,7 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
     # Check handling of empty AIMessage
-    empty_contents: list[str | list[str | dict]] = ["", []]
+    empty_contents: list[str | list[str | dict[str, Any]]] = ["", []]
     for empty_content in empty_contents:
         ## Permit message in final position
         _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])

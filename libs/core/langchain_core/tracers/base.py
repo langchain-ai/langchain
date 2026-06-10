@@ -149,7 +149,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     @override
     def on_llm_new_token(
         self,
-        token: str | list[str | dict],
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -645,7 +645,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     @override
     async def on_llm_new_token(
         self,
-        token: str | list[str | dict],
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -919,7 +919,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _on_llm_new_token(
         self,
         run: Run,
-        token: str | list[str | dict],
+        token: str | list[str | dict[str, Any]],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""

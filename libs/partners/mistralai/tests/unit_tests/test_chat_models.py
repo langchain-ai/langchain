@@ -339,8 +339,11 @@ async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        self.last_token = token
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
+        if isinstance(token, str):
+            self.last_token = token
 
 
 @patch(
