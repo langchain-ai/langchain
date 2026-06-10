@@ -22,7 +22,10 @@ from langchain.agents.middleware.types import (
 )
 
 ToolIdentifier: TypeAlias = str | BaseTool
+"""Tool name or tool instance that can be deferred behind provider tool search."""
+
 ProviderName: TypeAlias = str
+"""Normalized provider identifier used for provider-side tool search."""
 
 SERVER_TOOL_SEARCH_TOOLS: dict[ProviderName, dict[str, str]] = {
     "anthropic": {
@@ -31,6 +34,7 @@ SERVER_TOOL_SEARCH_TOOLS: dict[ProviderName, dict[str, str]] = {
     },
     "openai": {"type": "tool_search"},
 }
+"""Provider-native tool search descriptors keyed by normalized provider name."""
 
 
 class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
