@@ -709,9 +709,9 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     - 2-tuple of (role string, template); e.g., (`'human'`, `'{user_input}'`)
     - dict: a message dict with role and content keys
     - dict: the `Serializable` constructor-envelope wire shape
-      `{"lc": 1, "type": "constructor", "id": [..., "<ClassName>"],
-      "kwargs": {...}}` — unpacked structurally and routed through the
-      standard dict-with-type dispatch.
+        `{"lc": 1, "type": "constructor", "id": [..., "<ClassName>"],
+        "kwargs": {...}}` — unpacked structurally and routed through the
+        standard dict-with-type dispatch.
     - string: shorthand for (`'human'`, template); e.g., `'{user_input}'`
 
     Args:
