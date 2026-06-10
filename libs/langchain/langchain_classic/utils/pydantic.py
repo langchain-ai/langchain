@@ -10,4 +10,9 @@ def get_pydantic_major_version() -> int:
     return PYDANTIC_VERSION.major
 
 
-__all__ = ["get_pydantic_major_version"]
+def _parse_obj(pydantic_object, obj):
+    """Validate obj against pydantic model, allowing coercion."""
+    return pydantic_object.model_validate(obj, strict=False)
+
+
+__all__ = ["get_pydantic_major_version", "_parse_obj"]
