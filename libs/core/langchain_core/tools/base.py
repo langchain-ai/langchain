@@ -398,6 +398,13 @@ class ToolException(Exception):  # noqa: N818
 
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
+ToolExceptionHandlerOutput = str | list[str | dict[str, Any]]
+"""Content returned by a `handle_tool_error` callable.
+
+Error handlers may return plain text or structured message content blocks.
+When the original tool call includes a `tool_call_id`, this content is used
+as the content of a `ToolMessage` with `status="error"`.
+"""
 
 _EMPTY_SET: frozenset[str] = frozenset()
 
@@ -496,8 +503,20 @@ class ChildTool(BaseTool):
     You can use these to, e.g., identify a specific instance of a tool with its usecase.
     """
 
-    handle_tool_error: bool | str | Callable[[ToolException], str] | None = False
-    """Handle the content of the `ToolException` thrown."""
+    handle_tool_error: (
+        bool | str | Callable[[ToolException], ToolExceptionHandlerOutput] | None
+    ) = False
+    """Handle `ToolException` raised by tool execution.
+
+    If `False`, the exception is re-raised. If `True`, the exception message is
+    returned as tool output. If a string is passed, that string is returned
+    as tool output. If a callable is passed, it receives the exception and
+    its return value is used as the tool output.
+
+    Callable handlers may return either a string or a list of message
+    content blocks. If the tool was invoked with a `tool_call_id`, the handled
+    content is wrapped in a `ToolMessage` with `status="error"`.
+    """
 
     handle_validation_error: (
         bool | str | Callable[[ValidationError | ValidationErrorV1], str] | None
@@ -1182,16 +1201,23 @@ def _handle_validation_error(
 def _handle_tool_error(
     e: ToolException,
     *,
-    flag: Literal[True] | str | Callable[[ToolException], str] | None,
-) -> str:
-    """Handle tool execution errors based on the configured flag.
+    flag: Literal[True]
+    | str
+    | Callable[[ToolException], ToolExceptionHandlerOutput]
+    | None,
+) -> ToolExceptionHandlerOutput:
+    """Convert a `ToolException` into handled tool output content.
 
     Args:
         e: The tool exception that occurred.
-        flag: How to handle the error (`bool`, `str`, or `Callable`).
+        flag: How to handle the error. `True` uses the exception message, a string
+            replaces the message, and a callable computes replacement content from
+            the exception.
 
     Returns:
-        The error message to return.
+        The handled error content. This may be plain text or structured message
+            content blocks; callers pass it through normal tool
+            output formatting.
 
     Raises:
         ValueError: If the flag type is unexpected.

@@ -826,6 +826,23 @@ def test_exception_handling_callable() -> None:
     assert expected == actual
 
 
+def test_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[str | dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[str | dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
 def test_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
@@ -855,6 +872,23 @@ async def test_async_exception_handling_callable() -> None:
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.arun({})
     assert expected == actual
+
+
+async def test_async_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[str | dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[str | dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
