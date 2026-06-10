@@ -1335,10 +1335,11 @@ def _normalize_message_content(obj: Any) -> str | list[MessageContentBlock] | No
     """
     if isinstance(obj, str):
         return obj
-    if isinstance(obj, Sequence):
-        normalized = list(obj)
-        if all(_is_message_content_block(e) for e in normalized):
-            return normalized
+    # Validate lazily before materializing: `all` short-circuits on the first
+    # invalid element, so a large non-content sequence (e.g. `range(10**12)`)
+    # falls back to stringification without allocating it.
+    if isinstance(obj, Sequence) and all(_is_message_content_block(e) for e in obj):
+        return list(obj)
     return None
 
 

@@ -2243,6 +2243,9 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         (invalid_tool_result_blocks, False),
         (tuple(invalid_tool_result_blocks), False),
         (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
+        # Large non-content sequence: must reject lazily without materializing
+        # (would hang/OOM if validation allocated the sequence first).
+        (range(10**12), False),
     ],
 )
 def test_normalize_message_content_validity(obj: Any, *, expected: bool) -> None:
