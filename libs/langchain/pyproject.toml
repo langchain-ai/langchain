@@ -143,7 +143,6 @@ plugins = ["pydantic.mypy"]
 strict = true
 ignore_missing_imports = true
 enable_error_code = "deprecated"
-disable_error_code = "untyped-decorator"
 warn_unreachable = true
 
 # TODO: activate for 'strict' checking
