@@ -104,7 +104,6 @@ langchain-anthropic = { path = "../partners/anthropic", editable = true }
 
 [tool.ruff]
 line-length = 100
-output-format = "concise"
 
 [tool.mypy]
 strict = true
