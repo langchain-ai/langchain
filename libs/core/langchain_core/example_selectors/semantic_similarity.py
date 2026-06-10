@@ -33,13 +33,17 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
 
     vectorstore: VectorStore
     """VectorStore that contains information about examples."""
+
     k: int = 4
     """Number of examples to select."""
+
     example_keys: list[str] | None = None
     """Optional keys to filter examples to."""
+
     input_keys: list[str] | None = None
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
+
     vectorstore_kwargs: dict[str, Any] | None = None
     """Extra arguments passed to similarity_search function of the `VectorStore`."""
 

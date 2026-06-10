@@ -2248,7 +2248,7 @@ def count_tokens_approximately(
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
     - For multimodal messages with images, applies a fixed token penalty per image
-      instead of counting base64-encoded characters.
+        instead of counting base64-encoded characters.
     - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:

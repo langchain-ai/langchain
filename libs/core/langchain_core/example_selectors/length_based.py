@@ -98,7 +98,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.
@@ -123,7 +123,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.
