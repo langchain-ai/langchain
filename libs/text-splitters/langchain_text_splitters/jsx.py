@@ -9,20 +9,20 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
     """Text splitter that handles React (JSX), Vue, and Svelte code.
 
-    This splitter extends RecursiveCharacterTextSplitter to handle
-    React (JSX), Vue, and Svelte code by:
+    This splitter extends `RecursiveCharacterTextSplitter` to handle React (JSX), Vue,
+    and Svelte code by:
 
     1. Detecting and extracting custom component tags from the text
     2. Using those tags as additional separators along with standard JS syntax
 
     The splitter combines:
 
-    * Custom component tags as separators (e.g. <Component, <div)
+    * Custom component tags as separators (e.g. `<Component`, `<div`)
     * JavaScript syntax elements (function, const, if, etc)
     * Standard text splitting on newlines
 
-    This allows chunks to break at natural boundaries in
-    React, Vue, and Svelte component code.
+    This allows chunks to break at natural boundaries in React, Vue, and Svelte
+    component code.
     """
 
     def __init__(
@@ -92,11 +92,15 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             "\ndefault ",
             " default ",
         ]
+        # Build the effective separator list for this call only.
+        # Do NOT assign back to self._separators: doing so would permanently
+        # append js_separators + component_separators on every invocation,
+        # causing the list to grow unboundedly when split_text() is called
+        # multiple times on the same instance.
         separators = (
             self._separators
             + js_separators
             + component_separators
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
-        self._separators = separators
-        return super().split_text(text)
+        return self._split_text(text, separators)

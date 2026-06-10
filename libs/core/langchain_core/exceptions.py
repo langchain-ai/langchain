@@ -52,6 +52,7 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
             error = create_message(
                 message=error, error_code=ErrorCode.OUTPUT_PARSING_FAILURE
             )
+
         super().__init__(error)
         if send_to_llm and (observation is None or llm_output is None):
             msg = (
@@ -62,6 +63,14 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         self.observation = observation
         self.llm_output = llm_output
         self.send_to_llm = send_to_llm
+
+
+class ContextOverflowError(LangChainException):
+    """Exception raised when input exceeds the model's context limit.
+
+    This exception is raised by chat models when the input tokens exceed
+    the maximum context window supported by the model.
+    """
 
 
 class ErrorCode(Enum):
@@ -85,6 +94,15 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
 
     Returns:
         The full message with the troubleshooting link.
+
+    Example:
+        ```python
+        create_message(
+            message="Failed to parse output",
+            error_code=ErrorCode.OUTPUT_PARSING_FAILURE,
+        )
+        "Failed to parse output. For troubleshooting, visit: ..."
+        ```
     """
     return (
         f"{message}\n"

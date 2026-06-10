@@ -1,4 +1,4 @@
-"""**Callback handlers** allow listening to events in LangChain."""
+"""Callback handlers allow listening to events in LangChain."""
 
 from typing import TYPE_CHECKING
 

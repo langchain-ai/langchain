@@ -355,7 +355,31 @@ class AIMessage(BaseMessage):
         Returns:
             A pretty representation of the message.
 
-        """
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(
+                content="Let me check the weather.",
+                tool_calls=[
+                    {"name": "get_weather", "args": {"city": "Paris"}, "id": "1"}
+                ],
+            )
+            ```
+
+            Results in:
+            ```python
+            >>> print(msg.pretty_repr())
+            ================================== Ai Message ==================================
+
+            Let me check the weather.
+            Tool Calls:
+              get_weather (1)
+             Call ID: 1
+              Args:
+                city: Paris
+            ```
+        """  # noqa: E501
         base = super().pretty_repr(html=html)
         lines = []
 

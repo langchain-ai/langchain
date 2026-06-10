@@ -1,4 +1,4 @@
-"""Configuration utilities for Runnables."""
+"""Configuration utilities for `Runnable` objects."""
 
 from __future__ import annotations
 
@@ -20,7 +20,6 @@ from typing import (
     cast,
 )
 
-from langsmith.run_helpers import _set_tracing_context, get_tracing_context
 from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -30,7 +29,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
 )
-from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
@@ -51,8 +49,24 @@ class EmptyDict(TypedDict, total=False):
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a `Runnable`.
 
-    See the [reference docs](https://reference.langchain.com/python/langchain_core/runnables/#langchain_core.runnables.RunnableConfig)
-    for more details.
+    !!! note Custom values
+
+        The `TypedDict` has `total=False` set intentionally to:
+
+        - Allow partial configs to be created and merged together via `merge_configs`
+        - Support config propagation from parent to child runnables via
+            `var_child_runnable_config` (a `ContextVar` that automatically passes
+            config down the call stack without explicit parameter passing), where
+            configs are merged rather than replaced
+
+        !!! example
+
+            ```python
+            # Parent sets tags
+            chain.invoke(input, config={"tags": ["parent"]})
+            # Child automatically inherits and can add:
+            # ensure_config({"tags": ["child"]}) -> {"tags": ["parent", "child"]}
+            ```
     """
 
     tags: list[str]
@@ -92,7 +106,8 @@ class RunnableConfig(TypedDict, total=False):
 
     configurable: dict[str, Any]
     """Runtime values for attributes previously made configurable on this `Runnable`,
-    or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+    or sub-`Runnable` objects, through `configurable_fields` or
+    `configurable_alternatives`.
 
     Check `output_schema` for a description of the attributes that have been made
     configurable.
@@ -123,6 +138,28 @@ COPIABLE_KEYS = [
     "configurable",
 ]
 
+
+# Users are expected to use the `context` API with a context object
+# (which does not get traced)
+CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
+
+
+def _get_langsmith_inheritable_metadata_from_config(
+    config: RunnableConfig,
+) -> dict[str, Any] | None:
+    """Get LangSmith-only inheritable metadata defaults derived from config."""
+    configurable = config.get("configurable") or {}
+    metadata = {
+        key: value
+        for key, value in configurable.items()
+        if not key.startswith("__")
+        and isinstance(value, (str, int, float, bool))
+        and key not in config.get("metadata", {})
+        and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
+    }
+    return metadata or None
+
+
 DEFAULT_RECURSION_LIMIT = 25
 
 
@@ -143,6 +180,14 @@ def _set_config_context(
     Returns:
         The token to reset the config and the previous tracing context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import (  # noqa: PLC0415
+        _set_tracing_context,
+        get_tracing_context,
+    )
+
+    from langchain_core.tracers.langchain import LangChainTracer  # noqa: PLC0415
+
     config_token = var_child_runnable_config.set(config)
     current_context = None
     if (
@@ -177,6 +222,9 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     Yields:
         The config context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import _set_tracing_context  # noqa: PLC0415
+
     ctx = copy_context()
     config_token, _ = ctx.run(_set_config_context, config)
     try:
@@ -238,14 +286,17 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.get("configurable", {}).items():
+    for configurable_key in ("model", "checkpoint_ns"):
         if (
-            not key.startswith("__")
-            and isinstance(value, (str, int, float, bool))
-            and key not in empty["metadata"]
-            and key != "api_key"
+            isinstance(
+                configurable_value := empty.get("configurable", {}).get(
+                    configurable_key
+                ),
+                str,
+            )
+            and configurable_key not in empty["metadata"]
         ):
-            empty["metadata"][key] = value
+            empty["metadata"][configurable_key] = configurable_value
     return empty
 
 
@@ -482,6 +533,9 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 
@@ -500,6 +554,9 @@ def get_async_callback_manager_for_config(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 

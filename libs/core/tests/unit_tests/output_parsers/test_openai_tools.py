@@ -6,6 +6,7 @@ import pydantic
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -814,7 +815,7 @@ def test_parse_with_different_pydantic_2_v1() -> None:
         temperature: int
         forecast: str
 
-    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # Can't get pydantic to work here due to the odd typing of trying to support
     # both v1 and v2 in the same codebase.
     parser = PydanticToolsParser(tools=[Forecast])
     message = AIMessage(
@@ -847,7 +848,7 @@ def test_parse_with_different_pydantic_2_proper() -> None:
         temperature: int
         forecast: str
 
-    # Can't get pydantic to work here due to the odd typing of tryig to support
+    # Can't get pydantic to work here due to the odd typing of trying to support
     # both v1 and v2 in the same codebase.
     parser = PydanticToolsParser(tools=[Forecast])
     message = AIMessage(
@@ -1423,3 +1424,31 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
+    partial: bool,  # noqa: FBT001
+) -> None:
+    class KnownTool(BaseModel):
+        value: int
+
+    parser = PydanticToolsParser(tools=[KnownTool])
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_unknown",
+                "name": "UnknownTool",
+                "args": {"value": 1},
+            }
+        ],
+    )
+    generation = ChatGeneration(message=message)
+
+    with pytest.raises(OutputParserException) as excinfo:
+        parser.parse_result([generation], partial=partial)
+
+    msg = str(excinfo.value)
+    assert "Unknown tool type" in msg
+    assert "UnknownTool" in msg

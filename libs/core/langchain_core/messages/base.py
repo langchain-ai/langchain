@@ -319,7 +319,22 @@ class BaseMessage(Serializable):
         Returns:
             A pretty representation of the message.
 
-        """
+        Example:
+            ```python
+            from langchain_core.messages import HumanMessage
+
+            msg = HumanMessage(content="What is the capital of France?")
+            print(msg.pretty_repr())
+            ```
+
+            Results in:
+
+            ```txt
+            ================================ Human Message =================================
+
+            What is the capital of France?
+            ```
+        """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
         if self.name is not None:
@@ -327,7 +342,24 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        """Print a pretty representation of the message."""
+        """Print a pretty representation of the message.
+
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(content="The capital of France is Paris.")
+            msg.pretty_print()
+            ```
+
+            Results in:
+
+            ```txt
+            ================================== Ai Message ==================================
+
+            The capital of France is Paris.
+            ```
+        """  # noqa: E501
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 

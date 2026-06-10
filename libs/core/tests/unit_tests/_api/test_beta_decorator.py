@@ -16,8 +16,10 @@ from langchain_core._api.beta_decorator import beta, warn_beta
                 "name": "OldClass",
                 "obj_type": "class",
             },
-            "The class `OldClass` is in beta. It is actively being worked on, so the "
-            "API may change.",
+            (
+                "The class `OldClass` is in beta. "
+                "It is actively being worked on, so the API may change."
+            ),
         ),
         (
             {
@@ -35,9 +37,11 @@ from langchain_core._api.beta_decorator import beta, warn_beta
                 "obj_type": "",
                 "addendum": "Please migrate your code.",
             },
-            "`SomeFunction` is in beta. It is actively being worked on, "
-            "so the API may "
-            "change. Please migrate your code.",
+            (
+                "`SomeFunction` is in beta. "
+                "It is actively being worked on, so the API may change. "
+                "Please migrate your code."
+            ),
         ),
     ],
 )
