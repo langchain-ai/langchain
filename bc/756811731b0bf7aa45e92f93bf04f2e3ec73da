@@ -1,0 +1,35 @@
+libs/core/langchain_core/agents.py
+  s_cb038991ff7d0a::t_4735cdb9d63c35 54,72,154,169
+libs/core/langchain_core/messages/tool.py
+  h_9f69767fa5fabf 86
+  s_cb038991ff7d0a::t_4735cdb9d63c35 84,87,138,145,152,167
+libs/core/langchain_core/messages/base.py
+  s_cb038991ff7d0a::t_4735cdb9d63c35 103,106,114,149,156,163,367-369,380
+libs/core/langchain_core/messages/human.py
+  s_cb038991ff7d0a::t_4735cdb9d63c35 35,42,49,56
+libs/core/langchain_core/messages/system.py
+  s_cb038991ff7d0a::t_4735cdb9d63c35 35,42,49,56
+libs/core/langchain_core/messages/ai.py
+  s_cb038991ff7d0a::t_4735cdb9d63c35 188,195,202,224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "bc756811731b0bf7aa45e92f93bf04f2e3ec73da",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_cb038991ff7d0a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb2f9-1190-7401-b3d4-5ac82887724a",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
