@@ -92,6 +92,7 @@ def _parse_with_schema(
         ValueError: If parsing fails
     """
     if schema_kind == "json_schema":
+        # Raw JSON schema has no corresponding Python type to instantiate.
         return data
     try:
         adapter = TypeAdapter[SchemaT](schema)
