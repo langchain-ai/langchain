@@ -19,12 +19,15 @@ class TestAnthropicStandard(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": _MODEL}
+        return {"model": _MODEL, "base_url": "https://api.anthropic.com"}
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
-            {"ANTHROPIC_API_KEY": "test"},
+            {
+                "ANTHROPIC_API_KEY": "test",
+                "ANTHROPIC_API_URL": "https://api.anthropic.com",
+            },
             {"model": _MODEL},
             {"anthropic_api_key": "test"},
         )
