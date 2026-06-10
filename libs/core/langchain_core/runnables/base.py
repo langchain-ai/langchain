@@ -667,6 +667,13 @@ class Runnable(ABC, Generic[Input, Output]):
     @overload
     def __ror__(
         self,
+        other: Callable[[Other], Runnable[Other, Input]]
+        | Callable[[Other], Awaitable[Runnable[Other, Input]]],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
         other: Runnable[Other, Input]
         | Callable[[Iterator[Other]], Iterator[Input]]
         | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
@@ -678,8 +685,8 @@ class Runnable(ABC, Generic[Input, Output]):
         other: Runnable[Other, Input]
         | Callable[[Iterator[Other]], Iterator[Input]]
         | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
-        | Callable[[Other], Input]
-        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Input] | Any],
+        | Callable[[Other], Any]
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Any] | Any],
     ) -> RunnableSerializable[Any, Output]:
         """Runnable "reverse-or" operator.
 
@@ -3344,6 +3351,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @overload
     def __ror__(
         self,
+        other: Callable[[Other], Runnable[Other, Input]]
+        | Callable[[Other], Awaitable[Runnable[Other, Input]]],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
         other: Runnable[Other, Input]
         | Callable[[Iterator[Other]], Iterator[Input]]
         | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
@@ -3356,10 +3370,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         other: Runnable[Other, Input]
         | Callable[[Iterator[Other]], Iterator[Input]]
         | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
-        | Callable[[Output], Runnable[Output, Other]]
-        | Callable[[Output], Awaitable[Runnable[Output, Other]]]
-        | Callable[[Other], Input]
-        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Input] | Any],
+        | Callable[[Other], Any]
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Any] | Any],
     ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
