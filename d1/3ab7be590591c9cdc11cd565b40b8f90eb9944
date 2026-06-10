@@ -1,0 +1,14 @@
+libs/langchain_v1/langchain/chat_models/base.py
+  h_9f69767fa5fabf 1020-1025,1037-1044
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d13ab7be590591c9cdc11cd565b40b8f90eb9944",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
