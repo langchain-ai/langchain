@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.stream._mux import TransformerFactory
     from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
@@ -90,7 +91,9 @@ class ModelRequest(Generic[ContextT]):
     """Model request information for the agent.
 
     Type Parameters:
-        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+        ContextT: The type of the runtime context.
+
+            Defaults to `None` if not specified.
     """
 
     model: BaseChatModel
@@ -117,7 +120,7 @@ class ModelRequest(Generic[ContextT]):
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
     ) -> None:
-        """Initialize ModelRequest with backward compatibility for system_prompt.
+        """Initialize `ModelRequest` with backward compatibility for `system_prompt`.
 
         Args:
             model: The chat model to use.
@@ -129,7 +132,7 @@ class ModelRequest(Generic[ContextT]):
             runtime: Runtime context.
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
-            system_prompt: System prompt string (deprecated, converted to SystemMessage).
+            system_prompt: System prompt string (deprecated, converted to `SystemMessage`).
 
         Raises:
             ValueError: If both `system_prompt` and `system_message` are provided.
@@ -245,7 +248,7 @@ class ModelRequest(Generic[ContextT]):
 
                 ```python
                 new_request = request.override(
-                    model=ChatOpenAI(model="gpt-4o"),
+                    model=ChatOpenAI(model="gpt-5.5"),
                     system_message=SystemMessage(content="New instructions"),
                 )
                 ```
@@ -406,6 +409,16 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     ``awrap_model_call`` so that the check runs inside the model node rather than
     in a separate ``after_model`` node that executes after tokens have already been
     streamed.
+    """
+
+    transformers: Sequence[TransformerFactory] = ()
+    """Stream transformer factories registered by the middleware.
+
+    Each entry is a scope-aware factory invoked as `factory(scope)` so every
+    invocation receives a fresh instance. Factories are merged with the
+    `transformers` argument of [`create_agent`][langchain.agents.create_agent]
+    at graph compile time, after the `ToolCallTransformer` and before any
+    user-supplied entries.
     """
 
     @property

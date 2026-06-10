@@ -123,3 +123,9 @@ repos:
         entry: make -C libs/langchain_v1 check_version
         files: ^libs/langchain_v1/(pyproject\.toml|langchain/__init__\.py)$
         pass_filenames: false
+      - id: anthropic-version
+        name: check anthropic version consistency
+        language: system
+        entry: make -C libs/partners/anthropic check_version
+        files: ^libs/partners/anthropic/(pyproject\.toml|langchain_anthropic/_version\.py)$
+        pass_filenames: false

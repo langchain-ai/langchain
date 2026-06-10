@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from functools import partial
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, ToolMessage
+from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
@@ -33,6 +35,460 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langgraph.runtime import Runtime
+    from langgraph.stream._types import ProtocolEvent
+
+
+_DEFAULT_STREAM_LOOKBACK = 128
+"""Default trailing-buffer size for cross-delta PII detection.
+
+The transformer always holds the last `lookback` characters in a per-content
+block buffer so that PII patterns straddling delta boundaries are detected
+before any text is released downstream. 128 comfortably covers the built-in
+detectors (the credit-card regex tops out at 19 characters; URLs and emails
+are typically well under 100) while bounding first-token latency.
+"""
+
+
+class _PIIStreamTransformer(StreamTransformer):
+    """Mutates `content-block-delta` text on `messages` events in flight.
+
+    Runs before built-in stream transformers so the redacted text is what
+    every downstream consumer sees — both the main protocol event log and
+    the `run.messages` projection that `MessagesTransformer` snapshots into.
+
+    Holds a sliding buffer of the most recent text per (run_id, content
+    block index) so PII patterns that straddle delta boundaries are caught.
+    Anything older than `lookback` characters is redacted with the resolved
+    rule's strategy and emitted as the new delta text; the trailing tail
+    stays in the buffer until a later delta extends it past the cap or the
+    block's finish event flushes the snapshot.
+    """
+
+    before_builtins: ClassVar[bool] = True
+    required_stream_modes: ClassVar[tuple[str, ...]] = ("messages", "tools", "values")
+
+    def __init__(
+        self,
+        scope: tuple[str, ...] = (),
+        *,
+        rule: ResolvedRedactionRule,
+        lookback: int = _DEFAULT_STREAM_LOOKBACK,
+    ) -> None:
+        super().__init__(scope)
+        self._rule = rule
+        self._lookback = lookback
+        # Text/reasoning deltas keyed by `(run_id, content_block_index)`.
+        self._buffers: dict[tuple[str, int], str] = {}
+        # Tool-output-delta buffers keyed by `tool_call_id`. Held in a
+        # separate dict so `_drop_run` on the messages channel can't
+        # sweep active tool-output state.
+        self._tool_buffers: dict[str, str] = {}
+
+    def init(self) -> dict[str, Any]:
+        # No projection — this transformer mutates events in place rather
+        # than building a derived view.
+        return {}
+
+    def process(self, event: ProtocolEvent) -> bool:
+        method = event["method"]
+        if method == "messages":
+            return self._process_messages_event(event)
+        if method == "tools":
+            return self._process_tools_event(event)
+        if method == "values":
+            return self._process_values_event(event)
+        return True
+
+    def _process_values_event(self, event: ProtocolEvent) -> bool:
+        """Redact the state snapshot on the `values` channel.
+
+        State snapshots emitted between nodes carry the full state dict,
+        which typically includes the messages list. Walking the snapshot
+        with `_redact_value` returns a fresh structure where every
+        message has a redacted copy of its content — the original
+        objects in graph state remain intact for the state-level
+        enforcer (`apply_to_tool_results` via `before_model`) to act on
+        independently when the agent loops back.
+        """
+        data = event["params"].get("data")
+        if data is None:
+            return True
+        event["params"]["data"] = self._redact_value(data)
+        return True
+
+    def _process_messages_event(self, event: ProtocolEvent) -> bool:
+        params = event["params"]
+        data = params.get("data")
+        if not isinstance(data, tuple) or len(data) != 2:  # noqa: PLR2004
+            return True
+        payload, metadata = data
+
+        # Legacy `(BaseMessage, metadata)` shape: the langgraph→langchain
+        # integration emits this when a model only implements `_generate`
+        # (or when its `_astream` falls back), producing a single event
+        # carrying the full message rather than streamed content-block
+        # deltas. Swap in a redacted copy so the consumer sees scrubbed
+        # text on the wire while the original stays intact in graph state
+        # for `after_model` to act on independently. Under `block`,
+        # `_redact_base_message` raises `PIIDetectionError` via
+        # `apply_strategy` before we get here.
+        if isinstance(payload, BaseMessage):
+            redacted = self._redact_base_message(payload)
+            if redacted is not payload:
+                params["data"] = (redacted, metadata)
+            return True
+
+        if not isinstance(payload, dict):
+            return True
+        kind = payload.get("event")
+        run_id = str(metadata.get("run_id") or "") if metadata else ""
+
+        if kind == "content-block-delta":
+            self._mutate_delta(payload, run_id)
+        elif kind == "content-block-finish":
+            self._finalize_block(payload, run_id)
+        elif kind in {"message-finish", "error"}:
+            self._drop_run(run_id)
+        return True
+
+    def _process_tools_event(self, event: ProtocolEvent) -> bool:
+        data = event["params"].get("data")
+        if not isinstance(data, dict):
+            return True
+        kind = data.get("event")
+        tool_call_id = data.get("tool_call_id")
+
+        if kind == "tool-started":
+            # Tool inputs may be a dict (multi-arg tools), a string
+            # (single-arg tools — `BaseTool._parse_input` passes the
+            # raw string through), or a list (array-input tools).
+            # `_redact_value` handles all three uniformly.
+            if "input" in data:
+                data["input"] = self._redact_value(data["input"])
+        elif kind == "tool-output-delta":
+            # Use the tool_call_id as buffer key when present; fall back
+            # to a None-keyed slot for the rare malformed/custom emitter
+            # case (the buffer becomes shared but at least redaction runs).
+            self._mutate_tool_output_delta(
+                data, tool_call_id if isinstance(tool_call_id, str) else ""
+            )
+        elif kind == "tool-finished":
+            if "output" in data:
+                data["output"] = self._redact_value(data["output"])
+            if isinstance(tool_call_id, str):
+                self._tool_buffers.pop(tool_call_id, None)
+        elif kind == "tool-error":
+            msg = data.get("message")
+            if isinstance(msg, str) and msg:
+                matches = self._rule.detector(msg)
+                if matches:
+                    data["message"] = apply_strategy(msg, matches, self._rule.strategy)
+            if isinstance(tool_call_id, str):
+                self._tool_buffers.pop(tool_call_id, None)
+
+        return True
+
+    def _mutate_tool_output_delta(self, data: dict[str, Any], tool_call_id: str) -> None:
+        """Redact a `tool-output-delta` payload.
+
+        String deltas go through the same lookback machinery as
+        text-deltas, keyed by `tool_call_id` in the disjoint
+        `_tool_buffers` dict so `_drop_run` on the messages channel
+        can't sweep active tool-output state.
+
+        Structured deltas (dict/list) walk recursively without
+        buffering — they don't have a position-stable shape across
+        deltas to buffer against.
+        """
+        delta = data.get("delta")
+        if isinstance(delta, str):
+            held = self._tool_buffers.get(tool_call_id, "")
+            combined = held + delta
+
+            matches = self._rule.detector(combined)
+            if matches:
+                # `apply_strategy` raises `PIIDetectionError` under
+                # `strategy="block"`, failing the run immediately —
+                # cleaner than withholding deltas until `after_model`
+                # raises later.
+                combined = apply_strategy(combined, matches, self._rule.strategy)
+
+            emit_end = max(0, len(combined) - self._lookback)
+            self._tool_buffers[tool_call_id] = combined[emit_end:]
+            data["delta"] = combined[:emit_end]
+        elif isinstance(delta, (dict, list)):
+            data["delta"] = self._redact_value(delta)
+
+    def _redact_tool_call_list(self, calls: list[Any] | None) -> tuple[list[Any], bool]:
+        """Walk a list of tool-call (or invalid-tool-call) dicts.
+
+        Returns `(new_list, changed)`. Each element's `args` is run
+        through `_redact_value` regardless of its type — `tool_call.args`
+        is a dict, `invalid_tool_call.args` is a raw JSON string, and
+        `_redact_value` handles both shapes uniformly. If nothing
+        changed, returns the input list and `changed=False`.
+        """
+        if not calls:
+            return calls or [], False
+        new_calls: list[Any] = []
+        changed = False
+        for tc in calls:
+            if isinstance(tc, dict) and "args" in tc and tc["args"] is not None:
+                redacted = self._redact_value(tc["args"])
+                if redacted != tc["args"]:
+                    new_tc = dict(tc)
+                    new_tc["args"] = redacted
+                    new_calls.append(new_tc)
+                    changed = True
+                    continue
+            new_calls.append(tc)
+        return new_calls, changed
+
+    def _redact_value(self, value: Any) -> Any:
+        """Recursively redact PII in string leaves of a nested structure.
+
+        Returns a new value where every `str` leaf that contains PII has
+        been replaced (or emptied under `block`). Non-string leaves and
+        the structure itself are preserved.
+
+        `BaseMessage` payloads (typically `ToolMessage` from
+        `tool-finished.output`, or any message reached via the `values`
+        channel) return a fresh copy with `.content` redacted plus
+        `AIMessage.tool_calls[*].args` / `invalid_tool_calls[*].args`
+        walked. The original object stays intact for state-level
+        enforcers (`after_model`, `before_model` with
+        `apply_to_tool_results`) to act on independently.
+
+        Scope mirrors the pre-streaming state-level surfaces:
+        `.content` (string or list-of-content-blocks) and `tool_calls`
+        args. Other message attributes (`additional_kwargs`,
+        `response_metadata`, `ToolMessage.artifact`) are intentionally
+        not walked here — they aren't scrubbed in graph state by the
+        existing hooks, so scrubbing them on the wire would create
+        a wire/state divergence.
+        """
+        if isinstance(value, str):
+            if not value:
+                return value
+            matches = self._rule.detector(value)
+            if not matches:
+                return value
+            # `apply_strategy` raises `PIIDetectionError` under `block`
+            # — the run fails immediately rather than buffering until a
+            # state-level hook can raise.
+            return apply_strategy(value, matches, self._rule.strategy)
+        if isinstance(value, BaseMessage):
+            return self._redact_base_message(value)
+        if isinstance(value, dict):
+            return {k: self._redact_value(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._redact_value(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(self._redact_value(v) for v in value)
+        return value
+
+    def _redact_base_message(self, value: BaseMessage) -> BaseMessage:
+        """Return a fresh copy of `value` with PII-carrying surfaces redacted."""
+        update: dict[str, Any] = {}
+
+        content = value.content
+        if isinstance(content, str) and content:
+            matches = self._rule.detector(content)
+            if matches:
+                update["content"] = apply_strategy(content, matches, self._rule.strategy)
+        elif isinstance(content, list) and content:
+            # Structured content-blocks shape:
+            # `[{"type": "text", "text": "..."}, {"type": "tool_call", ...}, ...]`.
+            redacted_content = self._redact_value(content)
+            if redacted_content != content:
+                update["content"] = redacted_content
+
+        # `AIMessage.tool_calls` and `.invalid_tool_calls` carry PII in
+        # `args` independently of `.content`. `tool_call.args` is a
+        # dict; `invalid_tool_call.args` is a raw JSON string —
+        # `_redact_value` handles both shapes via the recursion.
+        if isinstance(value, AIMessage):
+            new_tc_list, tc_changed = self._redact_tool_call_list(value.tool_calls)
+            if tc_changed:
+                update["tool_calls"] = new_tc_list
+            new_inv_list, inv_changed = self._redact_tool_call_list(value.invalid_tool_calls)
+            if inv_changed:
+                update["invalid_tool_calls"] = new_inv_list
+
+        if not update:
+            return value
+        return value.model_copy(update=update)
+
+    def _mutate_delta(self, payload: dict[str, Any], run_id: str) -> None:
+        delta = payload.get("delta")
+        if not isinstance(delta, dict):
+            return
+        delta_type = delta.get("type")
+        if delta_type == "text-delta":
+            self._mutate_string_field_delta(delta, payload, run_id, "text")
+            return
+        if delta_type == "reasoning-delta":
+            # Reasoning content (chain-of-thought from extended-thinking
+            # models) is a real PII surface — models echo back
+            # user-supplied data or synthesize it from context. Run the
+            # same lookback machinery as text-delta against the
+            # `reasoning` field. Block indices are unique within a
+            # message regardless of block type, so the buffer key
+            # `(run_id, index)` naturally disjoint from text-delta keys.
+            self._mutate_string_field_delta(delta, payload, run_id, "reasoning")
+            return
+        if delta_type == "block-delta":
+            fields = delta.get("fields")
+            if isinstance(fields, dict) and fields.get("type") in {
+                "tool_call_chunk",
+                "server_tool_call_chunk",
+            }:
+                self._mutate_tool_call_chunk_delta(fields)
+        # Other delta types (`data-delta`, vendor block types) pass
+        # through. The pre-streaming middleware scrubbed `.content` text
+        # on state messages only; binary payloads and provider-specific
+        # block shapes are out of scope for parity with that surface.
+
+    def _mutate_string_field_delta(
+        self,
+        delta: dict[str, Any],
+        payload: dict[str, Any],
+        run_id: str,
+        field: str,
+    ) -> None:
+        """Apply the lookback-buffer redaction to a string field on a delta.
+
+        Shared by `text-delta` (`field="text"`) and `reasoning-delta`
+        (`field="reasoning"`). Buffer is keyed by `(run_id, block_index)`;
+        block indices are unique within a message so different block
+        types share the same key space without collision.
+        """
+        text = delta.get(field)
+        if not isinstance(text, str) or not text:
+            return
+        index = payload.get("index")
+        if not isinstance(index, int):
+            return
+
+        key = (run_id, index)
+        held = self._buffers.get(key, "")
+        combined = held + text
+
+        # Run detection on the full accumulated buffer before splitting.
+        # Detecting only on the about-to-emit prefix would miss matches
+        # that straddle the lookback boundary — the detector's regex
+        # needs a complete, boundary-anchored hit, so a truncated prefix
+        # would fail to match and the partial PII would leak on the
+        # wire. Under `strategy="block"`, `apply_strategy` raises
+        # `PIIDetectionError` here, failing the run as soon as PII
+        # arrives rather than buffering until `after_model`.
+        matches = self._rule.detector(combined)
+        if matches:
+            combined = apply_strategy(combined, matches, self._rule.strategy)
+
+        emit_end = max(0, len(combined) - self._lookback)
+        self._buffers[key] = combined[emit_end:]
+        delta[field] = combined[:emit_end]
+
+    def _mutate_tool_call_chunk_delta(self, fields: dict[str, Any]) -> None:
+        """Redact cumulative tool-call args with lookback withholding.
+
+        Each `tool_call_chunk` `block-delta` event carries the full
+        accumulated args string (verified against `_compat_bridge.py`
+        — `delta_source = current` for these block types — and against
+        the consumer-side `_merge_block_delta_into_store`, which
+        replaces wholesale rather than appends).
+
+        Detection runs on the full cumulative args so any complete PII
+        anywhere in the string is redacted before emission. Lookback
+        withholding then trims the trailing the lookback window characters
+        from what reaches the consumer — those characters might be the
+        start of a partial PII match that completes in a future
+        cumulative delta. The trimmed tail surfaces at `content-block-
+        finish` where `_finalize_block` redacts the parsed args dict.
+
+        For args that fit within the lookback window (the typical case),
+        this withholds the entire args string during streaming — the
+        redacted args dict appears only at finalize. For args that
+        exceed the lookback window, the safe prefix streams incrementally
+        as the cumulative state grows. PII that appears more than
+        the lookback window characters from the cumulative tail in a
+        delta where it hasn't yet completed can still surface in the
+        emit prefix — same residual exposure as PII longer than
+        the lookback window on the text path. The `content-block-finish`
+        snapshot redaction is the backstop.
+        """
+        args = fields.get("args")
+        if not isinstance(args, str) or not args:
+            return
+
+        matches = self._rule.detector(args)
+        if matches:
+            # `apply_strategy` raises `PIIDetectionError` under
+            # `strategy="block"` — the run fails the moment a complete
+            # PII pattern surfaces in the cumulative args string.
+            args = apply_strategy(args, matches, self._rule.strategy)
+
+        emit_end = max(0, len(args) - self._lookback)
+        fields["args"] = args[:emit_end]
+
+    def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
+        index = payload.get("index")
+        if not isinstance(index, int):
+            return
+        key = (run_id, index)
+        # The finalized block carries the model's original concatenation
+        # of deltas, not what we emitted on the wire. Re-run detection over
+        # its full text so the snapshot matches the redacted stream.
+        content = payload.get("content")
+        if isinstance(content, dict):
+            ctype = content.get("type")
+            if ctype == "text":
+                self._finalize_string_field(content, "text")
+            elif ctype == "reasoning":
+                self._finalize_string_field(content, "reasoning")
+            elif (
+                ctype in {"tool_call", "server_tool_call", "invalid_tool_call"}
+                and "args" in content
+                and content["args"] is not None
+            ):
+                # `tool_call` / `server_tool_call` args are dicts;
+                # `invalid_tool_call.args` is the raw unparsed JSON
+                # string. `_redact_value` handles both shapes.
+                content["args"] = self._redact_value(content["args"])
+        self._buffers.pop(key, None)
+
+    def _finalize_string_field(self, content: dict[str, Any], field: str) -> None:
+        """Re-redact a string content-block field on `content-block-finish`.
+
+        Used for `text` and `reasoning` content blocks. Under
+        `strategy="block"` `apply_strategy` raises `PIIDetectionError`,
+        failing the run immediately.
+        """
+        text = content.get(field)
+        if not isinstance(text, str) or not text:
+            return
+        matches = self._rule.detector(text)
+        if not matches:
+            return
+        content[field] = apply_strategy(text, matches, self._rule.strategy)
+
+    def _drop_run(self, run_id: str) -> None:
+        # Release any buffered tails for this run_id — content-block-finish
+        # should have already done so for normal completion, but message-finish
+        # / error paths need an explicit sweep so abandoned blocks don't
+        # accumulate in long-lived processes.
+        stale = [key for key in self._buffers if key[0] == run_id]
+        for key in stale:
+            del self._buffers[key]
+
+    def finalize(self) -> None:
+        self._buffers.clear()
+        self._tool_buffers.clear()
+
+    def fail(self, err: BaseException) -> None:  # noqa: ARG002
+        self._buffers.clear()
+        self._tool_buffers.clear()
 
 
 class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -73,7 +529,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Redact all emails in user input
         agent = create_agent(
-            "openai:gpt-5",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("email", strategy="redact"),
             ],
@@ -81,7 +537,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Use different strategies for different PII types
         agent = create_agent(
-            "openai:gpt-4o",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("credit_card", strategy="mask"),
                 PIIMiddleware("url", strategy="redact"),
@@ -91,7 +547,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
         # Custom PII type with regex
         agent = create_agent(
-            "openai:gpt-5",
+            "openai:gpt-5.5",
             middleware=[
                 PIIMiddleware("api_key", detector=r"sk-[a-zA-Z0-9]{32}", strategy="block"),
             ],
@@ -135,6 +591,32 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 * If `None`: Uses built-in detector for the `pii_type`
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
+
+                When `True`, a stream transformer is also installed so
+                that every wire surface of an agent run is redacted in
+                flight:
+
+                * Streamed AI text deltas (`content-block-delta` of type
+                  `text-delta`)
+                * Streamed tool-call arguments (`content-block-delta`
+                  with `tool_call_chunk` / `server_tool_call_chunk`
+                  fields, plus the finalized `tool_call` content block
+                  on `content-block-finish`)
+                * Tool execution events on the `tools` channel
+                  (`tool-started.input`, `tool-output-delta`,
+                  `tool-finished.output`, `tool-error.message`)
+                * State snapshots on the `values` channel — message
+                  lists are walked and each message's `.content` is
+                  redacted on a fresh copy (state itself stays intact
+                  for `before_model` / `after_model` to act on
+                  independently)
+
+                State-level redaction via `after_model` (and
+                `before_model` with `apply_to_tool_results`) remains the
+                canonical enforcer; the streaming transformer ensures
+                consumers reading `astream_events(version="v3")` or
+                `run.messages` / `run.tool_calls` / `run.values` never
+                see PII on the wire.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
 
         Raises:
@@ -155,6 +637,26 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         self.pii_type = self._resolved_rule.pii_type
         self.strategy = self._resolved_rule.strategy
         self.detector = self._resolved_rule.detector
+
+        # Stream transformer scrubs the streamed surface of the same
+        # messages that the state-level hooks scrub in graph state.
+        # Installed whenever any output-side scrubbing is enabled —
+        # `apply_to_output` covers AI messages (text, tool-call args,
+        # reasoning), `apply_to_tool_results` covers tool execution
+        # (the `tools` channel + ToolMessage content on `values` and
+        # `messages`). For `block` the transformer raises
+        # `PIIDetectionError` directly from its event handler the
+        # moment a complete PII pattern is detected, failing the run
+        # via langgraph's `StreamMux.afail` path. The state-level
+        # `after_model` / `before_model` hooks remain a backstop for
+        # non-streaming consumers.
+        if self.apply_to_output or self.apply_to_tool_results:
+            self.transformers = (
+                partial(
+                    _PIIStreamTransformer,
+                    rule=self._resolved_rule,
+                ),
+            )
 
     @property
     def name(self) -> str:

@@ -9,12 +9,25 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     PromptTemplateFormat,
+    get_template_variables,
 )
 from langchain_core.runnables import run_in_executor
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
-    """Image prompt template for a multimodal model."""
+    """Image prompt template for a multimodal model.
+
+    Example:
+        ```python
+        prompt = ImagePromptTemplate(
+            input_variables=["image_id"],
+            template={"url": "https://example.com/{image_id}.png", "detail": "high"},
+            template_format="f-string",
+        )
+        prompt.format(image_id="cat")
+        # {"url": "https://example.com/cat.png", "detail": "high"}
+        ```
+    """
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
@@ -43,6 +56,13 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
                 f" Found: {overlap}"
             )
             raise ValueError(msg)
+
+        template = kwargs.get("template", {})
+        template_format = kwargs.get("template_format", "f-string")
+        for value in template.values():
+            if isinstance(value, str):
+                get_template_variables(value, template_format)
+
         super().__init__(**kwargs)
 
     @property

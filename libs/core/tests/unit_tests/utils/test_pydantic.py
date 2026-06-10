@@ -186,3 +186,22 @@ def test_create_model_v2() -> None:
         foo.model_json_schema()
 
     assert list(record) == []
+
+
+def test_create_subset_model_v2_preserves_default_factory() -> None:
+    """Fields with default_factory should not be marked as required."""
+
+    class Original(BaseModel):
+        required_field: str
+        names: list[str] = Field(default_factory=list, description="Some names")
+        mapping: dict[str, int] = Field(default_factory=dict, description="A mapping")
+
+    subset = _create_subset_model_v2(
+        "Subset",
+        Original,
+        ["required_field", "names", "mapping"],
+    )
+    schema = subset.model_json_schema()
+    assert schema.get("required") == ["required_field"]
+    assert "names" not in schema.get("required", [])
+    assert "mapping" not in schema.get("required", [])
