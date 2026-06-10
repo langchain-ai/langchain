@@ -1,0 +1,26 @@
+libs/langchain/pyproject.toml
+  h_9f69767fa5fabf 23,26
+libs/langchain/uv.lock
+  s_ab5cc987b28415::t_9e7772910b42a9 2653
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b96a44904ae0c0a32f726811de4c990117090f6a",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_ab5cc987b28415": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e9d98778-03bf-45b7-a10b-73febedd99dc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
