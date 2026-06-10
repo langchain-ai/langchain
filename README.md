@@ -30,6 +30,7 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 
 ```bash
 pip install langchain
+
 # or
 
 <!-- AUTO-PACKAGE-BADGES:START -->
