@@ -1,0 +1,29 @@
+libs/partners/mistralai/langchain_mistralai/chat_models.py
+  s_dfc29189803279::t_024723c1edc9a0 823-894
+  s_dfc29189803279::t_51422f8dd0eee3 87-88
+libs/partners/mistralai/langchain_mistralai/_stream_events.py
+  s_dfc29189803279::t_3d046b7b0f38d1 108-153
+  s_dfc29189803279::t_5c19cfb05ea2a3 1-31,36-107
+  s_dfc29189803279::t_c584a03a3b470c 32-35
+libs/partners/mistralai/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_c96fc7f27364dc 1-3,5-7,9-102
+  s_dfc29189803279::t_7473e8e860d653 105-174
+  s_dfc29189803279::t_e62909d3c6da30 103-104,175-205
+  s_dfc29189803279::t_3be3980ed50488 4,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "0c09b86e6dc7252756cc9ba4343f8b7f921c405f",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}

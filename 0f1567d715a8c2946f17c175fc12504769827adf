@@ -1,0 +1,23 @@
+libs/core/tests/unit_tests/language_models/test_compat_bridge.py
+  s_a02b8337caa133::t_dfbc02d79e52ef 123-144
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_a02b8337caa133::t_b2eb4e113ba659 503-509
+libs/core/tests/unit_tests/language_models/test_chat_model_v3_stream.py
+  s_a02b8337caa133::t_d38f99c945a370 1365-1481
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "0f1567d715a8c2946f17c175fc12504769827adf",
+  "prompts": {},
+  "sessions": {
+    "s_a02b8337caa133": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9810db94-1f17-43d8-9034-051fcb26c0db",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
