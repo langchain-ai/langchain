@@ -1,0 +1,16 @@
+libs/langchain_v1/pyproject.toml
+  h_9f69767fa5fabf 24
+libs/langchain_v1/langchain/__init__.py
+  h_9f69767fa5fabf 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "93f2ece2a3a33372304c2357b0a97055e630a7b3",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
