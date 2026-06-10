@@ -67,7 +67,7 @@ def test_structured_output() -> None:
 def test_reasoning_content() -> None:
     """Test reasoning content from a reasoning model."""
     model = ChatOpenRouter(
-        model="openai/o3-mini",
+        model="openai/gpt-5-nano",
         reasoning={"effort": "low"},
     )
     response = model.invoke("What is 2 + 2?")
