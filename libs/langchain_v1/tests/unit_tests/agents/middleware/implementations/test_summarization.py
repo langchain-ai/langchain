@@ -1159,6 +1159,41 @@ def test_trigger_copies_mutable_inputs() -> None:
     assert result is None
 
 
+def test_trigger_clauses_are_canonical_representation() -> None:
+    """Test `_trigger_clauses` is the canonical AND/OR trigger representation."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[("messages", 5), {"tokens": 1000}, {"tokens": 2000, "messages": 10}],
+    )
+
+    assert middleware._trigger_clauses == [
+        {"messages": 5},
+        {"tokens": 1000},
+        {"tokens": 2000, "messages": 10},
+    ]
+
+
+def test_trigger_conditions_preserve_legacy_tuple_view() -> None:
+    """Test `_trigger_conditions` remains a tuple-shaped compatibility view."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger=[("messages", 5), {"tokens": 1000}, {"tokens": 2000, "messages": 10}],
+    )
+
+    assert middleware._trigger_conditions == [("messages", 5), ("tokens", 1000)]
+
+
+def test_compound_trigger_has_no_legacy_tuple_projection() -> None:
+    """Test compound AND clauses are not misrepresented as legacy OR tuples."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(),
+        trigger={"tokens": 1000, "messages": 5},
+    )
+
+    assert middleware._trigger_clauses == [{"tokens": 1000, "messages": 5}]
+    assert middleware._trigger_conditions == []
+
+
 def test_and_trigger_conditions() -> None:
     """Test AND-capable trigger conditions (all conditions in dict must be met)."""
     model = FakeToolCallingModel()
