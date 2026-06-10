@@ -1,0 +1,19 @@
+libs/standard-tests/langchain_tests/integration_tests/chat_models.py
+  s_333b03f0a3d0f4::t_97f71d3ba2e888 855-859,908-912,950-954,984-988
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "02ee97d86c918c0c890b7b020c5dedce287c4909",
+  "prompts": {},
+  "sessions": {
+    "s_333b03f0a3d0f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "348a2811-4930-470f-bcd5-154f557327dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}

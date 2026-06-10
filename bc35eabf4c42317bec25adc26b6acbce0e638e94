@@ -1,0 +1,19 @@
+libs/partners/fireworks/tests/integration_tests/test_standard.py
+  s_333b03f0a3d0f4::t_8bb63b41f60d2a 5-9,14-16,42-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "bc35eabf4c42317bec25adc26b6acbce0e638e94",
+  "prompts": {},
+  "sessions": {
+    "s_333b03f0a3d0f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "348a2811-4930-470f-bcd5-154f557327dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
