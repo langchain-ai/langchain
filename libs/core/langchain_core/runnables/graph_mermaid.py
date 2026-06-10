@@ -395,7 +395,7 @@ async def _render_mermaid_using_pyppeteer(
     await browser.close()
 
     if output_file_path is not None:
-        await asyncio.get_event_loop().run_in_executor(
+        await asyncio.get_running_loop().run_in_executor(
             None, Path(output_file_path).write_bytes, img_bytes
         )
 
