@@ -49,6 +49,7 @@ test = [
     "pytest-xdist>=3.6.1,<4.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
+test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
     "mypy>=1.10.0,<2.0.0",

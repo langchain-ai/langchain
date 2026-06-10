@@ -477,6 +477,7 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
 ]
+test-integration = []
 typing = [{ name = "mypy", specifier = ">=1.10.0,<2.0.0" }]
 
 [[package]]
