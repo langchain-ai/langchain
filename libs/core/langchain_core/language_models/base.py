@@ -38,13 +38,6 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
-try:
-    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
-
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
-
 
 class LangSmithParams(TypedDict, total=False):
     """LangSmith parameters for tracing."""
@@ -73,6 +66,22 @@ class LangSmithParams(TypedDict, total=False):
     """Integration that created the trace."""
 
 
+@cache
+def _get_tokenizer_module() -> Callable[[str], Any] | None:
+    """
+    Get the `from_pretrained` module function from GPT2TokenizerFast
+    if it can be imported; None otherwise.
+
+    Cached to pay the cost of loading `pytorch` once.
+    """
+    try:
+        from transformers import GPT2TokenizerFast # type: ignore[import-not-found]
+
+        return GPT2TokenizerFast.from_pretrained
+    except ImportError:
+        return None
+
+
 @cache  # Cache the tokenizer
 def get_tokenizer() -> Any:
     """Get a GPT-2 tokenizer instance.
@@ -86,7 +95,8 @@ def get_tokenizer() -> Any:
         The GPT-2 tokenizer instance.
 
     """
-    if not _HAS_TRANSFORMERS:
+    loader_impl = _get_tokenizer_module()
+    if loader_impl is None:
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
@@ -94,7 +104,7 @@ def get_tokenizer() -> Any:
         )
         raise ImportError(msg)
     # create a GPT-2 tokenizer instance
-    return GPT2TokenizerFast.from_pretrained("gpt2")
+    return loader_impl("gpt2")
 
 
 _GPT2_TOKENIZER_WARNED = False
