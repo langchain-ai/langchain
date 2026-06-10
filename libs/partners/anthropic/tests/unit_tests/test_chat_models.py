@@ -190,9 +190,23 @@ def test_anthropic_model_kwargs() -> None:
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens_to_sample'} should be specified explicitly. "
+            "Instead they were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens'} should be specified explicitly. Instead they "
+            "were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 

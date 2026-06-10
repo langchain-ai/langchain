@@ -13,6 +13,11 @@ _MODEL = "claude-3-haiku-20240307"
 class TestAnthropicStandard(ChatModelUnitTests):
     """Use the standard chat model unit tests against the `ChatAnthropic` class."""
 
+    pytestmark = pytest.mark.filterwarnings(
+        "ignore:Unrecognized structured output method 'json_mode'. "
+        "Defaulting to 'json_schema' method.:UserWarning"
+    )
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic
