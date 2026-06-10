@@ -905,7 +905,7 @@ def _get_data_content_block_types() -> tuple[str, ...]:
     return tuple(data_block_types)
 
 
-def is_data_content_block(block: dict) -> bool:
+def is_data_content_block(block: dict[str, Any]) -> bool:
     """Check if the provided content block is a data content block.
 
     Returns True for both v0 (old-style) and v1 (new-style) multimodal data blocks.

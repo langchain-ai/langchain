@@ -22,7 +22,7 @@ def stringify_value(val: Any) -> str:
     return str(val)
 
 
-def stringify_dict(data: dict) -> str:
+def stringify_dict(data: dict[Any, Any]) -> str:
     """Stringify a dictionary.
 
     Args:

@@ -6,7 +6,7 @@ These are traditionally older models (newer models generally are chat models).
 from __future__ import annotations
 
 import asyncio
-import builtins  # noqa: TC003
+import builtins
 import functools
 import inspect
 import json
@@ -60,11 +60,12 @@ from langchain_core.runnables import RunnableConfig, ensure_config, get_config_l
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
     import uuid
 
 logger = logging.getLogger(__name__)
 
-_background_tasks: set[asyncio.Task] = set()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 @functools.lru_cache
@@ -159,7 +160,7 @@ def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
     cache: BaseCache | bool | None = None,  # noqa: FBT001
-) -> tuple[dict[int, list], str, list[int], list[str]]:
+) -> tuple[dict[int, list[Generation]], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
     Args:
@@ -195,7 +196,7 @@ async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
     cache: BaseCache | bool | None = None,  # noqa: FBT001
-) -> tuple[dict[int, list], str, list[int], list[str]]:
+) -> tuple[dict[int, list[Generation]], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
     Args:
@@ -228,12 +229,12 @@ async def aget_prompts(
 
 def update_cache(
     cache: BaseCache | bool | None,  # noqa: FBT001
-    existing_prompts: dict[int, list],
+    existing_prompts: dict[int, list[Generation]],
     llm_string: str,
     missing_prompt_idxs: list[int],
     new_results: LLMResult,
     prompts: list[str],
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Update the cache and get the LLM output.
 
     Args:
@@ -261,12 +262,12 @@ def update_cache(
 
 async def aupdate_cache(
     cache: BaseCache | bool | None,  # noqa: FBT001
-    existing_prompts: dict[int, list],
+    existing_prompts: dict[int, list[Generation]],
     llm_string: str,
     missing_prompt_idxs: list[int],
     new_results: LLMResult,
     prompts: list[str],
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Update the cache and get the LLM output. Async version.
 
     Args:
@@ -954,7 +955,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[builtins.dict[str, Any] | None]",
+                metadata or ([{}] * len(prompts)),
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
@@ -989,7 +991,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.verbose,
                     cast("list[str]", tags),
                     self.tags,
-                    cast("dict[str, Any]", metadata),
+                    cast("builtins.dict[str, Any]", metadata),
                     self.metadata,
                     langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
@@ -1074,8 +1076,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @staticmethod
     def _get_run_ids_list(
-        run_id: uuid.UUID | list[uuid.UUID | None] | None, prompts: list
-    ) -> list:
+        run_id: uuid.UUID | list[uuid.UUID | None] | None, prompts: list[str]
+    ) -> list[uuid.UUID | None]:
         if run_id is None:
             return [None] * len(prompts)
         if isinstance(run_id, list):
@@ -1226,7 +1228,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[builtins.dict[str, Any] | None]",
+                metadata or ([{}] * len(prompts)),
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
@@ -1261,7 +1264,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.verbose,
                     cast("list[str]", tags),
                     self.tags,
-                    cast("dict[str, Any]", metadata),
+                    cast("builtins.dict[str, Any]", metadata),
                     self.metadata,
                     langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
