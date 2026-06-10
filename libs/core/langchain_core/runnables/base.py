@@ -3676,6 +3676,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
         final_pipeline = cast("AsyncIterator[Output]", inputs)
+        pipelines: list[AsyncIterator[Any]] = []
         for idx, step in enumerate(steps):
             config = patch_config(
                 config,
@@ -3685,8 +3686,14 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 final_pipeline = step.atransform(final_pipeline, config, **kwargs)
             else:
                 final_pipeline = step.atransform(final_pipeline, config)
-        async for output in final_pipeline:
-            yield output
+            pipelines.append(final_pipeline)
+        try:
+            async for output in final_pipeline:
+                yield output
+        finally:
+            for pipeline in reversed(pipelines):
+                if hasattr(pipeline, "aclose"):
+                    await cast("Any", pipeline).aclose()
 
     @override
     def transform(
@@ -3718,13 +3725,15 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
-        async for chunk in self._atransform_stream_with_config(
+        iterator = self._atransform_stream_with_config(
             input,
             self._atransform,
             patch_config(config, run_name=(config or {}).get("run_name") or self.name),
             **kwargs,
-        ):
-            yield chunk
+        )
+        async with aclosing(iterator):
+            async for chunk in iterator:
+                yield chunk
 
     @override
     async def astream(
@@ -3736,8 +3745,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
 
-        async for chunk in self.atransform(input_aiter(), config, **kwargs):
-            yield chunk
+        iterator = self.atransform(input_aiter(), config, **kwargs)
+        async with aclosing(iterator):
+            async for chunk in iterator:
+                yield chunk
 
 
 class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):

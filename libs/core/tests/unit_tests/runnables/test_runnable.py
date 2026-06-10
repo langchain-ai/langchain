@@ -1140,6 +1140,70 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     ]
 
 
+async def test_sequence_astream_closes_nested_stream_on_cancel_scope() -> None:
+    """RunnableSequence cancellation must close nested async iterators.
+
+    ASGI servers such as Starlette/FastAPI cancel streaming response tasks through
+    AnyIO cancel scopes when a client disconnects. Cleanup code then runs inside a
+    still-cancelled scope, so unshielded `aclose()` calls can be interrupted before
+    provider HTTP streams release sockets.
+    """
+    anyio = pytest.importorskip("anyio")
+
+    class CleanupTrackingRunnable(Runnable[Any, str]):
+        def __init__(self) -> None:
+            self.started = anyio.Event()
+            self.cleanup_started = anyio.Event()
+            self.cleanup_done = anyio.Event()
+
+        def invoke(
+            self,
+            input: Any,
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> str:
+            del config, kwargs
+            return str(input)
+
+        async def atransform(
+            self,
+            input: AsyncIterator[Any],
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> AsyncIterator[str]:
+            del config, kwargs
+            async for _ in input:
+                break
+            try:
+                self.started.set()
+                yield "first"
+                await anyio.sleep_forever()
+            finally:
+                self.cleanup_started.set()
+                await anyio.sleep(0.01)
+                self.cleanup_done.set()
+
+    tail = CleanupTrackingRunnable()
+    seq = RunnableLambda(lambda x: x) | tail
+
+    async def consume() -> None:
+        stream = cast("Any", seq.astream("hello"))
+        try:
+            assert await anext(stream) == "first"
+            await anyio.sleep_forever()
+        finally:
+            await stream.aclose()
+
+    with anyio.fail_after(2):
+        async with anyio.create_task_group() as task_group:
+            task_group.start_soon(consume)
+            await tail.started.wait()
+            task_group.cancel_scope.cancel()
+
+    assert tail.cleanup_started.is_set()
+    assert tail.cleanup_done.is_set()
+
+
 async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
     fake = FakeRunnableSerializable()
     spy = mocker.spy(fake.__class__, "invoke")

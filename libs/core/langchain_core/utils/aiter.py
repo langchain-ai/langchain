@@ -5,6 +5,7 @@ https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.
 MIT License.
 """
 
+import importlib
 from collections import deque
 from collections.abc import (
     AsyncGenerator,
@@ -318,8 +319,22 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        if hasattr(self.thing, "aclose"):
-            await self.thing.aclose()
+        if not hasattr(self.thing, "aclose"):
+            return
+
+        close = cast("Any", self.thing).aclose
+        try:
+            anyio = importlib.import_module("anyio")
+        except ImportError:
+            await close()
+        else:
+            # AnyIO/ASGI cancellation is level-triggered: cleanup awaits inside a
+            # cancelled scope are cancelled again unless explicitly shielded.
+            # Shielding here lets nested async generators run their `finally`
+            # blocks and release provider HTTP/socket resources before the
+            # outer cancellation continues.
+            with anyio.CancelScope(shield=True):
+                await close()
 
 
 async def abatch_iterate(
