@@ -1,0 +1,28 @@
+libs/langchain/langchain_classic/chains/loading.py
+  s_65c62dca987d48::t_1c6942fafb4ed5 712-714
+libs/langchain/tests/unit_tests/agents/test_loading.py
+  s_65c62dca987d48::t_ea98b5fca82ef9 14-16,21-22,26-39
+libs/langchain/tests/unit_tests/chains/test_loading.py
+  s_65c62dca987d48::t_ce26e4a51cd950 14-16,21-22,26-39
+libs/langchain/langchain_classic/_path_safety.py
+  s_65c62dca987d48::t_79971e42eb63c5 10,16-20,23-26,32,36,40,47,49-52
+libs/langchain/langchain_classic/agents/loading.py
+  s_65c62dca987d48::t_170de058d780ab 171-175
+  s_65c62dca987d48::t_87e29397f5b2d0 112-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "2636af137445a3a30f5d3c0026efb015b15c0fd7",
+  "prompts": {},
+  "sessions": {
+    "s_65c62dca987d48": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f614ba1a-f183-4b31-916b-8c53841fee1a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
