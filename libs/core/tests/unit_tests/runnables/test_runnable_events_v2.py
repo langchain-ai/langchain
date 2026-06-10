@@ -93,7 +93,7 @@ async def _collect_events(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict[str, Any]:
+    def foo(x: int) -> dict[str, int]:
         """Foo."""
         _ = x
         return {"x": 5}

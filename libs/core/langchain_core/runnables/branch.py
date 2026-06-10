@@ -106,7 +106,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             msg = "RunnableBranch default must be Runnable, callable or mapping."
             raise TypeError(msg)
 
-        default_ = coerce_to_runnable(cast("RunnableLike[Input, Output]", default))
+        default_ = coerce_to_runnable(cast("Runnable[Input, Output]", default))
 
         branches_ = []
 
@@ -126,7 +126,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 raise ValueError(msg)
             condition, runnable = branch
             condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
-            runnable = coerce_to_runnable(runnable)
+            runnable = coerce_to_runnable(cast("Runnable[Input, Output]", runnable))
             branches_.append((condition, runnable))
 
         super().__init__(
