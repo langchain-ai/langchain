@@ -58,8 +58,9 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _format_output,
     _is_message_content_block,
-    _is_message_content_type,
+    _normalize_message_content,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -128,6 +129,22 @@ class _MockStructuredTool(BaseTool):
         self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
     ) -> str:
         raise NotImplementedError
+
+
+class _FakeOutput(ToolOutputMixin):
+    """Minimal ToolOutputMixin subclass used only in tests."""
+
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, _FakeOutput) and self.value == other.value
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __repr__(self) -> str:
+        return f"_FakeOutput({self.value})"
 
 
 def test_structured_args() -> None:
@@ -819,6 +836,57 @@ def test_exception_handling_callable() -> None:
     assert expected == actual
 
 
+def test_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_message_content_blocks_sequence() -> None:
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_invalid_blocks_stringified() -> None:
+    # A sequence whose elements are not valid content blocks is not message
+    # content, so it falls back to a JSON-stringified ToolMessage.
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return [{"text": "foo"}]  # missing 'type' -> not a valid block
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == '[{"text": "foo"}]'
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
 def test_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
@@ -848,6 +916,42 @@ async def test_async_exception_handling_callable() -> None:
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.arun({})
     assert expected == actual
+
+
+async def test_async_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+async def test_async_exception_handling_callable_message_content_blocks_sequence() -> (
+    None
+):
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
@@ -2145,11 +2249,19 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
     [
         ("foo", True),
         (valid_tool_result_blocks, True),
+        (tuple(valid_tool_result_blocks), True),
+        ([], True),  # empty sequences are vacuously valid content
+        ((), True),
         (invalid_tool_result_blocks, False),
+        (tuple(invalid_tool_result_blocks), False),
+        (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
+        # Large non-content sequence: must reject lazily without materializing
+        # (would hang/OOM if validation allocated the sequence first).
+        (range(10**12), False),
     ],
 )
-def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
-    assert _is_message_content_type(obj) is expected
+def test_normalize_message_content_validity(obj: Any, *, expected: bool) -> None:
+    assert (_normalize_message_content(obj) is not None) is expected
 
 
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
@@ -3669,3 +3781,75 @@ def test_tool_default_factory_not_required() -> None:
     schema = convert_to_openai_tool(some_func)
     params = schema["function"]["parameters"]
     assert "names" not in params.get("required", [])
+
+
+def test_format_output_list_of_tool_messages() -> None:
+    """A list of ToolMessages passes through unchanged."""
+    msgs = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        ToolMessage("b", tool_call_id="2", name="t"),
+    ]
+    result = _format_output(
+        msgs, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is msgs
+
+
+def test_format_output_list_of_custom_mixin_instances() -> None:
+    """A list of custom ToolOutputMixin subclass instances passes through."""
+    items = [_FakeOutput(1), _FakeOutput(2)]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_mixed_mixin_subclasses() -> None:
+    """A list mixing ToolMessage and custom ToolOutputMixin passes through."""
+    items: list[ToolOutputMixin] = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        _FakeOutput(42),
+    ]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_list_with_non_mixin_element() -> None:
+    """A list containing a non-ToolOutputMixin falls through to stringify."""
+    items = [ToolMessage("a", tool_call_id="1", name="t"), "oops"]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.tool_call_id == "0"
+
+
+def test_format_output_empty_list() -> None:
+    """An empty list is vacuously valid content and wrapped unchanged."""
+    result = _format_output(
+        [], artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.content == []
+    assert result.tool_call_id == "0"
+
+
+def test_tool_invoke_returns_list_of_mixin() -> None:
+    """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
+
+    @tool
+    def multi(x: int) -> list:
+        """Return multiple outputs."""
+        return [
+            ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
+            for i in range(x)
+        ]
+
+    result = multi.invoke(
+        {"type": "tool_call", "args": {"x": 3}, "name": "multi", "id": "outer"}
+    )
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert all(isinstance(m, ToolMessage) for m in result)

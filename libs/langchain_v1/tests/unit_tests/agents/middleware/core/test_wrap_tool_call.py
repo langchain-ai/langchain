@@ -291,7 +291,7 @@ def test_wrap_tool_call_short_circuit() -> None:
 
     @wrap_tool_call
     def short_circuit(
-        request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]]
+        request: ToolCallRequest, *_args: Any, **_kwargs: Any
     ) -> ToolMessage | Command[Any]:
         # Don't call handler, return custom response directly
         handler_called.append(False)
@@ -638,7 +638,7 @@ def test_wrap_tool_call_inner_short_circuits() -> None:
 
     @wrap_tool_call(name="InnerShortCircuit")
     def inner_short_circuit(
-        request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]]
+        request: ToolCallRequest, *_args: Any, **_kwargs: Any
     ) -> ToolMessage | Command[Any]:
         call_log.append("inner_short_circuit")
         # Don't call handler, return custom response

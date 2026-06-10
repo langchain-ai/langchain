@@ -189,9 +189,13 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API key"""
     api_base: str = Field(
+        alias="base_url",
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
-    """DeepSeek API base URL"""
+    """DeepSeek API base URL.
+
+    Automatically read from env variable `DEEPSEEK_API_BASE` if not provided.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -254,12 +258,8 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     def _get_request_payload(
         self,

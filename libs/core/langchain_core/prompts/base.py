@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import builtins  # noqa: TC003
+import builtins
 import contextlib
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Mapping  # noqa: TC003
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
@@ -15,21 +15,20 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
-from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
+from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.runnables.config import ensure_config
+from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.config import RunnableConfig, ensure_config
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from langchain_core.documents import Document
 
 
@@ -348,8 +347,17 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
-        """Return dictionary representation of prompt.
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary representation of the prompt.
+        """
+        return self.asdict(**kwargs)
+
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        """Return a dictionary representation of the prompt.
 
         Args:
             **kwargs: Any additional arguments to pass to the dictionary.
@@ -362,6 +370,17 @@ class BasePromptTemplate(
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the prompt dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
+
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save the prompt.
 
@@ -382,8 +401,9 @@ class BasePromptTemplate(
             msg = "Cannot save prompt with partial variables."
             raise ValueError(msg)
 
-        # Fetch dictionary to save
-        prompt_dict = self.dict()
+        # Fetch dictionary to save. Preserve deprecated `dict()` overrides until
+        # `dict()` is removed.
+        prompt_dict = self._dict_for_compat()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)
@@ -394,11 +414,12 @@ class BasePromptTemplate(
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
-        if save_path.suffix == ".json":
-            with save_path.open("w", encoding="utf-8") as f:
+        resolved_path = save_path.resolve()
+        if resolved_path.suffix == ".json":
+            with resolved_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w", encoding="utf-8") as f:
+        elif resolved_path.suffix.endswith((".yaml", ".yml")):
+            with resolved_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
