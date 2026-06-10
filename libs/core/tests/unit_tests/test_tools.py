@@ -60,7 +60,7 @@ from langchain_core.tools.base import (
     _DirectlyInjectedToolArg,
     _format_output,
     _is_message_content_block,
-    _is_message_content_type,
+    _normalize_message_content,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -826,6 +826,57 @@ def test_exception_handling_callable() -> None:
     assert expected == actual
 
 
+def test_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_message_content_blocks_sequence() -> None:
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_invalid_blocks_stringified() -> None:
+    # A sequence whose elements are not valid content blocks is not message
+    # content, so it falls back to a JSON-stringified ToolMessage.
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return [{"text": "foo"}]  # missing 'type' -> not a valid block
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == '[{"text": "foo"}]'
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
 def test_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
@@ -855,6 +906,42 @@ async def test_async_exception_handling_callable() -> None:
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.arun({})
     assert expected == actual
+
+
+async def test_async_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+async def test_async_exception_handling_callable_message_content_blocks_sequence() -> (
+    None
+):
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
@@ -2150,11 +2237,19 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
     [
         ("foo", True),
         (valid_tool_result_blocks, True),
+        (tuple(valid_tool_result_blocks), True),
+        ([], True),  # empty sequences are vacuously valid content
+        ((), True),
         (invalid_tool_result_blocks, False),
+        (tuple(invalid_tool_result_blocks), False),
+        (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
+        # Large non-content sequence: must reject lazily without materializing
+        # (would hang/OOM if validation allocated the sequence first).
+        (range(10**12), False),
     ],
 )
-def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
-    assert _is_message_content_type(obj) is expected
+def test_normalize_message_content_validity(obj: Any, *, expected: bool) -> None:
+    assert (_normalize_message_content(obj) is not None) is expected
 
 
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
@@ -3716,11 +3811,12 @@ def test_format_output_list_with_non_mixin_element() -> None:
 
 
 def test_format_output_empty_list() -> None:
-    """An empty list falls through to stringify-and-wrap."""
+    """An empty list is vacuously valid content and wrapped unchanged."""
     result = _format_output(
         [], artifact=None, tool_call_id="0", name="t", status="success"
     )
     assert isinstance(result, ToolMessage)
+    assert result.content == []
     assert result.tool_call_id == "0"
 
 

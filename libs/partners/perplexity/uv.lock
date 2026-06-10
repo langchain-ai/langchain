@@ -434,7 +434,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.1"
+version = "1.4.3"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -496,7 +496,7 @@ typing = [
 
 [[package]]
 name = "langchain-perplexity"
-version = "1.3.2"
+version = "1.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },

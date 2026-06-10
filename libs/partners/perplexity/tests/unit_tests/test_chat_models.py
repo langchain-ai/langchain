@@ -2,16 +2,25 @@ import json
 from typing import Any, cast
 from unittest.mock import MagicMock
 
+import pytest
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
     ToolMessage,
 )
+from langchain_core.runnables import RunnableBinding
 from pytest_mock import MockerFixture
 
 from langchain_perplexity import ChatPerplexity, MediaResponse, WebSearchOptions
-from langchain_perplexity.chat_models import _create_usage_metadata
+from langchain_perplexity.chat_models import (
+    _content_to_text,
+    _convert_responses_stream_event_to_chunk,
+    _create_usage_metadata,
+    _flatten_responses_tool,
+    _translate_responses_input,
+)
 
 
 def test_perplexity_model_name_param() -> None:
@@ -343,3 +352,302 @@ def test_convert_ai_message_with_valid_and_invalid_tool_calls_to_dict() -> None:
             "function": {"name": "search", "arguments": "{not valid json"},
         },
     ]
+
+
+def _weather_tool() -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the weather for a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+                "required": ["location"],
+            },
+        },
+    }
+
+
+def _bound_kwargs(bound: Any) -> dict[str, Any]:
+    """Return the kwargs from the `RunnableBinding` that `bind_tools` produces."""
+    assert isinstance(bound, RunnableBinding)
+    return dict(bound.kwargs)
+
+
+def test_bind_tools_is_overridden() -> None:
+    """`bind_tools` must be overridden so `langchain-tests` detects tool support.
+
+    The standard suite derives `has_tool_calling` from
+    `bind_tools is not BaseChatModel.bind_tools`; if this regresses, the entire
+    tool-calling test family is silently skipped.
+    """
+    assert ChatPerplexity.bind_tools is not BaseChatModel.bind_tools
+
+
+def test_bind_tools_formats_function_tool() -> None:
+    """A callable is converted to the OpenAI (Chat Completions) function shape."""
+    llm = ChatPerplexity(model="test", api_key="test")
+
+    def get_weather(location: str) -> str:
+        """Get the weather for a city."""
+        return "sunny"
+
+    bound = llm.bind_tools([get_weather])
+    tools = _bound_kwargs(bound)["tools"]
+    assert tools[0]["type"] == "function"
+    assert tools[0]["function"]["name"] == "get_weather"
+
+
+def test_bind_tools_passes_through_builtin_tool() -> None:
+    """Perplexity built-in tools are bound unchanged, not run through conversion."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    bound = llm.bind_tools([{"type": "web_search"}])
+    assert _bound_kwargs(bound)["tools"] == [{"type": "web_search"}]
+
+
+def test_bind_tools_tool_choice_by_name() -> None:
+    llm = ChatPerplexity(model="test", api_key="test")
+    bound = llm.bind_tools([_weather_tool()], tool_choice="get_weather")
+    assert _bound_kwargs(bound)["tool_choice"] == {
+        "type": "function",
+        "function": {"name": "get_weather"},
+    }
+
+
+def test_bind_tools_tool_choice_any_and_bool() -> None:
+    llm = ChatPerplexity(model="test", api_key="test")
+    any_bound = llm.bind_tools([_weather_tool()], tool_choice="any")
+    assert _bound_kwargs(any_bound)["tool_choice"] == "required"
+    true_bound = llm.bind_tools([_weather_tool()], tool_choice=True)
+    assert _bound_kwargs(true_bound)["tool_choice"] == "required"
+
+
+def test_bind_tools_tool_choice_invalid_raises() -> None:
+    llm = ChatPerplexity(model="test", api_key="test")
+    with pytest.raises(ValueError, match="Unrecognized tool_choice"):
+        llm.bind_tools([_weather_tool()], tool_choice=123)  # type: ignore[arg-type]
+
+
+def test_content_to_text() -> None:
+    """List content is reduced to text; tool_use and other blocks are dropped."""
+    assert _content_to_text("hello") == "hello"
+    assert (
+        _content_to_text(
+            [
+                {"type": "text", "text": "some text"},
+                {"type": "tool_use", "id": "1", "name": "f", "input": {}},
+            ]
+        )
+        == "some text"
+    )
+    assert _content_to_text([]) == ""
+    assert _content_to_text(None) == ""
+
+
+def test_flatten_responses_tool() -> None:
+    """Function tools are flattened for the Responses API; built-ins pass through."""
+    assert _flatten_responses_tool(_weather_tool()) == {
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get the weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    }
+    assert _flatten_responses_tool({"type": "web_search"}) == {"type": "web_search"}
+
+
+def test_translate_responses_input_tool_roundtrip() -> None:
+    """Tool turns become typed Responses input items (no `tool` role exists)."""
+    message_dicts: list[dict[str, Any]] = [
+        {"role": "user", "content": "hi"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "arguments": '{"location": "Paris"}',
+                    },
+                }
+            ],
+        },
+        {"role": "tool", "content": "18C cloudy", "tool_call_id": "call_1"},
+    ]
+    translated = _translate_responses_input(message_dicts)
+    assert translated[0] == {"role": "user", "content": "hi"}
+    # Empty/None assistant content is dropped; only the function_call item remains.
+    assert translated[1] == {
+        "type": "function_call",
+        "call_id": "call_1",
+        "name": "get_weather",
+        "arguments": '{"location": "Paris"}',
+    }
+    assert translated[2] == {
+        "type": "function_call_output",
+        "call_id": "call_1",
+        "output": "18C cloudy",
+    }
+
+
+def test_translate_responses_input_keeps_assistant_text_with_tool_calls() -> None:
+    """An assistant turn with both text and tool_calls emits the text first."""
+    translated = _translate_responses_input(
+        [
+            {
+                "role": "assistant",
+                "content": "Let me check.",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "get_weather", "arguments": "{}"},
+                    }
+                ],
+            }
+        ]
+    )
+    assert translated[0] == {"role": "assistant", "content": "Let me check."}
+    assert translated[1]["type"] == "function_call"
+    assert translated[1]["call_id"] == "call_1"
+
+
+def test_to_responses_payload_flattens_tools_and_translates_messages() -> None:
+    """End-to-end: `_to_responses_payload` flattens tools and translates tool turns."""
+    llm = ChatPerplexity(model="openai/gpt-5.5", api_key="test", use_responses_api=True)
+    message_dicts: list[dict[str, Any]] = [
+        {"role": "user", "content": "weather in Paris?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "arguments": '{"location": "Paris"}',
+                    },
+                }
+            ],
+        },
+        {"role": "tool", "content": "18C cloudy", "tool_call_id": "call_1"},
+    ]
+    payload = llm._to_responses_payload(message_dicts, {"tools": [_weather_tool()]})
+    # tools flattened to the Responses shape
+    assert payload["tools"] == [
+        {
+            "type": "function",
+            "name": "get_weather",
+            "description": "Get the weather for a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+                "required": ["location"],
+            },
+        }
+    ]
+    # tool turns translated into typed input items, with call_id pairing preserved
+    fc = [i for i in payload["input"] if i.get("type") == "function_call"]
+    fco = [i for i in payload["input"] if i.get("type") == "function_call_output"]
+    assert len(fc) == 1
+    assert len(fco) == 1
+    assert fc[0]["call_id"] == fco[0]["call_id"] == "call_1"
+    assert fc[0]["name"] == "get_weather"
+    assert fc[0]["arguments"] == '{"location": "Paris"}'
+
+
+def test_convert_responses_stream_event_emits_tool_call_chunk() -> None:
+    """A streamed `function_call` output item becomes a tool-call chunk."""
+    event = {
+        "type": "response.output_item.done",
+        "output_index": 0,
+        "item": {
+            "type": "function_call",
+            "call_id": "call_1",
+            "id": "item_1",
+            "name": "get_weather",
+            "arguments": '{"location": "Paris"}',
+        },
+    }
+    chunk = _convert_responses_stream_event_to_chunk(event)
+    assert chunk is not None
+    message = chunk.message
+    assert isinstance(message, AIMessageChunk)
+    tcc = message.tool_call_chunks
+    assert len(tcc) == 1
+    assert tcc[0]["name"] == "get_weather"
+    assert tcc[0]["args"] == '{"location": "Paris"}'
+    assert tcc[0]["id"] == "call_1"
+    assert tcc[0]["index"] == 0
+
+
+def test_convert_responses_stream_event_aggregates_multiple_tool_calls() -> None:
+    """Distinct Responses output items aggregate as distinct tool calls.
+
+    `call_id`/`id` are intentionally omitted so that `index` (derived from each
+    event's `output_index`) is the *only* thing separating the two calls. This
+    keeps the test sensitive to the indexing logic: with a hardcoded
+    ``index=0`` the chunks would merge into one corrupted call. Real streams
+    always carry a unique `call_id`, which would keep the calls distinct on its
+    own, so this payload isolates the mechanism rather than mirroring the wire
+    format.
+    """
+    events = [
+        {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "Paris"}',
+            },
+        },
+        {
+            "type": "response.output_item.done",
+            "output_index": 1,
+            "item": {
+                "type": "function_call",
+                "name": "get_population",
+                "arguments": '{"location": "Paris"}',
+            },
+        },
+    ]
+    chunks = [
+        chunk
+        for event in events
+        if (chunk := _convert_responses_stream_event_to_chunk(event)) is not None
+    ]
+
+    message = chunks[0].message + chunks[1].message
+
+    assert isinstance(message, AIMessageChunk)
+    assert message.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"location": "Paris"},
+            "id": None,
+            "type": "tool_call",
+        },
+        {
+            "name": "get_population",
+            "args": {"location": "Paris"},
+            "id": None,
+            "type": "tool_call",
+        },
+    ]
+
+
+def test_convert_responses_stream_event_ignores_non_function_items() -> None:
+    """Non-function output items (e.g. messages) do not yield tool-call chunks."""
+    event = {
+        "type": "response.output_item.done",
+        "item": {"type": "message", "content": "hi"},
+    }
+    assert _convert_responses_stream_event_to_chunk(event) is None
