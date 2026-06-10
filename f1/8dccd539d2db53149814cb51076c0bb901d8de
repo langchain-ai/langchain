@@ -1,0 +1,27 @@
+libs/langchain/uv.lock
+  s_ab5cc987b28415::t_ced0a75cbc1daa 2912
+libs/langchain_v1/uv.lock
+  s_ab5cc987b28415::t_ced0a75cbc1daa 2228
+libs/core/uv.lock
+  s_ab5cc987b28415::t_ced0a75cbc1daa 998
+libs/model-profiles/uv.lock
+  s_ab5cc987b28415::t_ced0a75cbc1daa 535
+libs/text-splitters/uv.lock
+  s_ab5cc987b28415::t_ced0a75cbc1daa 1191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f18dccd539d2db53149814cb51076c0bb901d8de",
+  "prompts": {},
+  "sessions": {
+    "s_ab5cc987b28415": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e9d98778-03bf-45b7-a10b-73febedd99dc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
