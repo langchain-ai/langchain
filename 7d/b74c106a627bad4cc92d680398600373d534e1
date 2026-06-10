@@ -1,0 +1,19 @@
+libs/langchain_v1/tests/unit_tests/agents/test_injected_runtime_create_agent.py
+  s_ef4ac585df85ed::t_75bde30d5d255a 447
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7db74c106a627bad4cc92d680398600373d534e1",
+  "prompts": {},
+  "sessions": {
+    "s_ef4ac585df85ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b7be2a7-124d-4c1a-8bd1-10b665e7ffdb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
