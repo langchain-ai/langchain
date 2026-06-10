@@ -45,8 +45,21 @@ class FakeModel:
 
 
 class FakeConfigurableModel:
-    def __init__(self, default_config: dict[str, Any]) -> None:
-        self._default_config = default_config
+    def __init__(
+        self,
+        default_config: dict[str, Any] | None = None,
+        model_params: dict[str, Any] | None = None,
+    ) -> None:
+        self._default_config = default_config or {}
+        self.model_params = model_params or {}
+
+    def _model_params(self, config: dict[str, Any] | None = None) -> dict[str, Any]:
+        return self.model_params if config is None else config.get("configurable", {})
+
+
+class FakeRuntime:
+    def __init__(self, config: dict[str, Any]) -> None:
+        self.config = config
 
 
 def _request(provider: str, tools: list[BaseTool | dict[str, Any]]) -> ModelRequest:
@@ -163,6 +176,37 @@ def test_detects_provider_from_configurable_model() -> None:
     modified_request = _invoke(middleware, request)
 
     assert {"type": "tool_search"} in modified_request.tools
+
+
+def test_detects_provider_from_runtime_configurable_model() -> None:
+    request = ModelRequest(
+        model=cast("BaseChatModel", FakeConfigurableModel()),
+        messages=[HumanMessage("hi")],
+        tools=[send_email],
+        runtime=cast("Any", FakeRuntime({"configurable": {"model_provider": "openai"}})),
+    )
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    assert {"type": "tool_search"} in modified_request.tools
+
+
+def test_runtime_config_overrides_default_configurable_model_provider() -> None:
+    request = ModelRequest(
+        model=cast("BaseChatModel", FakeConfigurableModel({"model_provider": "openai"})),
+        messages=[HumanMessage("hi")],
+        tools=[send_email],
+        runtime=cast("Any", FakeRuntime({"configurable": {"model": "claude-sonnet-4-5"}})),
+    )
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    assert {
+        "type": "tool_search_tool_bm25_20251119",
+        "name": "tool_search_tool_bm25",
+    } in modified_request.tools
 
 
 async def test_async_wrap_model_call_defers_tools() -> None:

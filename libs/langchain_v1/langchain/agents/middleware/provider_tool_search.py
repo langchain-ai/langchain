@@ -63,7 +63,7 @@ class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
                 )
                 raise ValueError(msg)
 
-        provider = _get_model_provider(request.model)
+        provider = _get_model_provider(request.model, request.runtime)
         if provider not in SERVER_TOOL_SEARCH_TOOLS:
             msg = (
                 "ProviderToolSearchMiddleware requires a provider with server-side "
@@ -137,16 +137,17 @@ def _defer_tool_if_needed(
     return tool.model_copy(update={"extras": extras})
 
 
-def _get_model_provider(model: BaseChatModel) -> str:
+def _get_model_provider(model: BaseChatModel, runtime: Any) -> str:
     """Infer the model provider used for server-side tool search."""
-    default_config = getattr(model, "_default_config", None)
-    if isinstance(default_config, dict):
-        provider = default_config.get("model_provider")
-        if isinstance(provider, str):
-            return _normalize_provider(provider)
-        model_name = default_config.get("model")
-        if isinstance(model_name, str) and (provider := _provider_from_model_name(model_name)):
+    model_params_fn = getattr(model, "_model_params", None)
+    if callable(model_params_fn):
+        model_params = model_params_fn(getattr(runtime, "config", None))
+        if isinstance(model_params, dict) and (provider := _provider_from_params(model_params)):
             return provider
+
+    default_config = getattr(model, "_default_config", None)
+    if isinstance(default_config, dict) and (provider := _provider_from_params(default_config)):
+        return provider
 
     get_ls_params = getattr(model, "_get_ls_params", None)
     if callable(get_ls_params):
@@ -155,6 +156,17 @@ def _get_model_provider(model: BaseChatModel) -> str:
             return _normalize_provider(ls_params["ls_provider"])
 
     return _provider_from_class_name(model.__class__.__name__)
+
+
+def _provider_from_params(params: dict[str, Any]) -> str | None:
+    """Infer supported provider from model parameters."""
+    provider = params.get("model_provider")
+    if isinstance(provider, str):
+        return _normalize_provider(provider)
+    model_name = params.get("model")
+    if isinstance(model_name, str):
+        return _provider_from_model_name(model_name)
+    return None
 
 
 def _provider_from_model_name(model_name: str) -> str | None:
