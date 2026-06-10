@@ -76,15 +76,15 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-
     """
 
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation."""
 
-    additional_kwargs: dict[str, Any] = Field(default_factory=dict, repr=False)
+    additional_kwargs: dict[Any, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
-    response_metadata: dict[str, Any] = Field(default_factory=dict, repr=False)
+
+    response_metadata: dict[Any, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
@@ -135,21 +135,21 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -164,7 +164,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         """
         if content_blocks is not None:
             super().__init__(
-                content=cast("list[str | dict[str, Any]]", content_blocks),
+                content=cast("list[str | dict[Any, Any]]", content_blocks),
                 **kwargs,
             )
         else:

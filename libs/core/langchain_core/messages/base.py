@@ -100,10 +100,10 @@ class BaseMessage(Serializable):
     [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
-    content: str | list[str | dict[str, Any]]
+    content: str | list[str | dict[Any, Any]]
     """The contents of the message."""
 
-    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
+    additional_kwargs: dict[Any, Any] = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
 
     For example, for a message from an AI, this could include tool calls as
@@ -111,7 +111,7 @@ class BaseMessage(Serializable):
 
     """
 
-    response_metadata: dict[str, Any] = Field(default_factory=dict)
+    response_metadata: dict[Any, Any] = Field(default_factory=dict)
     """Examples: response headers, logprobs, token counts, model name."""
 
     type: str
@@ -146,21 +146,21 @@ class BaseMessage(Serializable):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -364,9 +364,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: str | list[str | dict[str, Any]],
-    *contents: str | list[str | dict[str, Any]],
-) -> str | list[str | dict[str, Any]]:
+    first_content: str | list[str | dict[Any, Any]],
+    *contents: str | list[str | dict[Any, Any]],
+) -> str | list[str | dict[Any, Any]]:
     """Merge multiple message contents.
 
     Args:
@@ -377,7 +377,7 @@ def merge_content(
         The merged content.
 
     """
-    merged: str | list[str | dict[str, Any]]
+    merged: str | list[str | dict[Any, Any]]
     merged = "" if first_content is None else first_content
 
     for content in contents:

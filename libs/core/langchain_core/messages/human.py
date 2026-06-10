@@ -32,28 +32,28 @@ class HumanMessage(BaseMessage):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
         """Specify `content` as positional arg or `content_blocks` for typing."""
         if content_blocks is not None:
             super().__init__(
-                content=cast("list[str | dict[str, Any]]", content_blocks),
+                content=cast("list[str | dict[Any, Any]]", content_blocks),
                 **kwargs,
             )
         else:

@@ -51,7 +51,7 @@ class AgentAction(Serializable):
     tool: str
     """The name of the `Tool` to execute."""
 
-    tool_input: str | dict[str, Any]
+    tool_input: str | dict[Any, Any]
     """The input to pass in to the `Tool`."""
 
     log: str
@@ -69,7 +69,7 @@ class AgentAction(Serializable):
 
     # Override init to support instantiation by position for backward compat.
     def __init__(
-        self, tool: str, tool_input: str | dict[str, Any], log: str, **kwargs: Any
+        self, tool: str, tool_input: str | dict[Any, Any], log: str, **kwargs: Any
     ):
         """Create an `AgentAction`.
 
@@ -151,7 +151,7 @@ class AgentFinish(Serializable):
     Agents return an `AgentFinish` when they have reached a stopping condition.
     """
 
-    return_values: dict[str, Any]
+    return_values: dict[Any, Any]
     """Dictionary of return values."""
 
     log: str
@@ -166,7 +166,7 @@ class AgentFinish(Serializable):
     """
     type: Literal["AgentFinish"] = "AgentFinish"
 
-    def __init__(self, return_values: dict[str, Any], log: str, **kwargs: Any):
+    def __init__(self, return_values: dict[Any, Any], log: str, **kwargs: Any):
         """Override init to support instantiation by position for backward compat."""
         super().__init__(return_values=return_values, log=log, **kwargs)
 

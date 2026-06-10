@@ -185,21 +185,21 @@ class AIMessage(BaseMessage):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict[str, Any]] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -221,7 +221,7 @@ class AIMessage(BaseMessage):
                 kwargs["tool_calls"] = content_tool_calls
 
             super().__init__(
-                content=cast("list[str | dict[str, Any]]", content_blocks),
+                content=cast("list[str | dict[Any, Any]]", content_blocks),
                 **kwargs,
             )
         else:
