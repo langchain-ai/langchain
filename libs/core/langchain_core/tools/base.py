@@ -9,7 +9,7 @@ import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable, Sequence
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -69,7 +69,6 @@ from langchain_core.utils.pydantic import (
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
 TOOL_MESSAGE_BLOCK_TYPES = (
@@ -398,6 +397,20 @@ class ToolException(Exception):  # noqa: N818
 
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
+MessageContentBlock = str | dict[str, Any]
+"""A single message content block: plain text or a structured block.
+
+A dict block is only considered valid at runtime when its `type` key is one of
+`TOOL_MESSAGE_BLOCK_TYPES` (see `_is_message_content_block`); the static type
+intentionally stays broad because block payloads vary by provider format.
+"""
+ToolExceptionHandlerOutput = str | Sequence[MessageContentBlock]
+"""Content returned by a `handle_tool_error` callable.
+
+Error handlers may return plain text or a sequence of structured message
+content blocks. When the original tool call includes a `tool_call_id`, this
+content is normalized to the content of a `ToolMessage` with `status="error"`.
+"""
 
 _EMPTY_SET: frozenset[str] = frozenset()
 
@@ -496,8 +509,20 @@ class ChildTool(BaseTool):
     You can use these to, e.g., identify a specific instance of a tool with its usecase.
     """
 
-    handle_tool_error: bool | str | Callable[[ToolException], str] | None = False
-    """Handle the content of the `ToolException` thrown."""
+    handle_tool_error: (
+        bool | str | Callable[[ToolException], ToolExceptionHandlerOutput] | None
+    ) = False
+    """Handle `ToolException` raised by tool execution.
+
+    If `False`, the exception is re-raised. If `True`, the exception message is
+    returned as tool output. If a string is passed, that string is returned
+    as tool output. If a callable is passed, it receives the exception and
+    its return value is used as the tool output.
+
+    Callable handlers may return either a string or a list of message
+    content blocks. If the tool was invoked with a `tool_call_id`, the handled
+    content is wrapped in a `ToolMessage` with `status="error"`.
+    """
 
     handle_validation_error: (
         bool | str | Callable[[ValidationError | ValidationErrorV1], str] | None
@@ -1182,16 +1207,23 @@ def _handle_validation_error(
 def _handle_tool_error(
     e: ToolException,
     *,
-    flag: Literal[True] | str | Callable[[ToolException], str] | None,
-) -> str:
-    """Handle tool execution errors based on the configured flag.
+    flag: Literal[True]
+    | str
+    | Callable[[ToolException], ToolExceptionHandlerOutput]
+    | None,
+) -> ToolExceptionHandlerOutput:
+    """Convert a `ToolException` into handled tool output content.
 
     Args:
         e: The tool exception that occurred.
-        flag: How to handle the error (`bool`, `str`, or `Callable`).
+        flag: How to handle the error. `True` uses the exception message, a string
+            replaces the message, and a callable computes replacement content from
+            the exception.
 
     Returns:
-        The error message to return.
+        The handled error content. This may be plain text or structured message
+            content blocks; callers pass it through normal tool
+            output formatting.
 
     Raises:
         ValueError: If the flag type is unexpected.
@@ -1265,12 +1297,19 @@ def _format_output(
         status: The execution status.
 
     Returns:
-        The formatted output, either as a `ToolMessage` or the original content.
+        The formatted output, either as a `ToolMessage`, the original content,
+        or an unchanged list of `ToolOutputMixin` instances.
     """
+    if (
+        isinstance(content, list)
+        and content
+        and all(isinstance(item, ToolOutputMixin) for item in content)
+    ):
+        return content
     if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
-    if not _is_message_content_type(content):
-        content = _stringify(content)
+    normalized_content = _normalize_message_content(content)
+    content = _stringify(content) if normalized_content is None else normalized_content
     return ToolMessage(
         content,
         artifact=artifact,
@@ -1280,20 +1319,28 @@ def _format_output(
     )
 
 
-def _is_message_content_type(obj: Any) -> bool:
-    """Check if object is valid message content format.
+def _normalize_message_content(obj: Any) -> str | list[MessageContentBlock] | None:
+    """Coerce valid message content to the shape expected by `ToolMessage`.
 
-    Validates content for OpenAI or Anthropic format tool messages.
+    A string passes through unchanged; any `Sequence` of valid content blocks
+    (e.g. a list or tuple) is materialized into a `list`. Returning `None`
+    signals the caller (`_format_output`) that `obj` is not message content and
+    should be stringified instead.
 
     Args:
-        obj: The object to check.
+        obj: The object to normalize.
 
     Returns:
-        `True` if the object is valid message content, `False` otherwise.
+        The normalized content, or `None` if `obj` is not valid message content.
     """
-    return isinstance(obj, str) or (
-        isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
-    )
+    if isinstance(obj, str):
+        return obj
+    # Validate lazily before materializing: `all` short-circuits on the first
+    # invalid element, so a large non-content sequence (e.g. `range(10**12)`)
+    # falls back to stringification without allocating it.
+    if isinstance(obj, Sequence) and all(_is_message_content_block(e) for e in obj):
+        return list(obj)
+    return None
 
 
 def _is_message_content_block(obj: Any) -> bool:

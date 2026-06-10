@@ -13,11 +13,12 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from langchain_mistralai.chat_models import ChatMistralAI
+from tests.integration_tests._rate_limiter import rate_limiter
 
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatMistralAI."""
-    llm = ChatMistralAI()
+    llm = ChatMistralAI(rate_limiter=rate_limiter)
 
     full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
@@ -70,7 +71,7 @@ def _check_parsed_result(result: Any, schema: Any) -> None:
 
 @pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
 def test_structured_output_json_schema(schema: Any) -> None:
-    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    llm = ChatMistralAI(model="ministral-8b-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(schema, method="json_schema")
 
     messages = [
@@ -91,7 +92,7 @@ def test_structured_output_json_schema(schema: Any) -> None:
 
 @pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
 async def test_structured_output_json_schema_async(schema: Any) -> None:
-    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    llm = ChatMistralAI(model="ministral-8b-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
     structured_llm = llm.with_structured_output(schema, method="json_schema")
 
     messages = [
@@ -116,6 +117,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
     mistral = ChatMistralAI(
         timeout=1,  # Very short timeout to trigger timeouts
         max_retries=3,  # Should retry 3 times
+        rate_limiter=rate_limiter,
     )
 
     # Simple test input that should take longer than 1 second to process
@@ -148,7 +150,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
 
 def test_reasoning() -> None:
-    model = ChatMistralAI(model="magistral-medium-latest")  # type: ignore[call-arg]
+    model = ChatMistralAI(model="magistral-medium-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
     input_message = {
         "role": "user",
         "content": "Hello, my name is Bob.",
@@ -172,7 +174,11 @@ def test_reasoning() -> None:
 
 
 def test_reasoning_v1() -> None:
-    model = ChatMistralAI(model="magistral-medium-latest", output_version="v1")  # type: ignore[call-arg]
+    model = ChatMistralAI(  # type: ignore[call-arg]
+        model="magistral-medium-latest",
+        output_version="v1",
+        rate_limiter=rate_limiter,
+    )
     input_message = {
         "role": "user",
         "content": "Hello, my name is Bob.",

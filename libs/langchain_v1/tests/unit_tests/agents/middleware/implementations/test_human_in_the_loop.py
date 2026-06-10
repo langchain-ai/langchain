@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware import InterruptOnConfig
@@ -11,7 +12,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.types import AgentState
+from langchain.agents.middleware.types import AgentState, ToolCallRequest
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -148,6 +149,169 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert result["messages"][1].content == "Custom response message"
         assert result["messages"][1].name == "test_tool"
         assert result["messages"][1].tool_call_id == "1"
+
+
+def test_human_in_the_loop_middleware_default_rejection_message() -> None:
+    """Test reject decision default message discourages retries."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_response(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "reject"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
+    ):
+        result = middleware.after_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 2
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == (
+            "User rejected the tool call for `test_tool` with id 1. "
+            "The tool was not executed. Do not retry this tool call unless the user "
+            "explicitly requests it."
+        )
+        assert tool_message.status == "error"
+        assert tool_message.name == "test_tool"
+        assert tool_message.tool_call_id == "1"
+
+
+def test_human_in_the_loop_middleware_single_tool_respond() -> None:
+    """Test HumanInTheLoopMiddleware with `respond` decision producing a success ToolMessage."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"ask_user": {"allowed_decisions": ["respond"]}}
+    )
+
+    ai_message = AIMessage(
+        content="Let me ask the user.",
+        tool_calls=[{"name": "ask_user", "args": {"question": "favorite color?"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_respond(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "respond", "message": "blue"}]}
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_respond):
+        result = middleware.after_model(state, Runtime())
+        assert result is not None
+        assert "messages" in result
+        assert len(result["messages"]) == 2
+        assert isinstance(result["messages"][0], AIMessage)
+        # Tool call is preserved on the AI message (provider APIs require pairing).
+        assert len(result["messages"][0].tool_calls) == 1
+        assert result["messages"][0].tool_calls[0]["id"] == "1"
+
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "blue"
+        assert tool_message.name == "ask_user"
+        assert tool_message.tool_call_id == "1"
+        assert tool_message.status == "success"
+
+
+def test_human_in_the_loop_middleware_respond_disallowed() -> None:
+    """Test that `respond` raises when not in `allowed_decisions`."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_respond(_: Any) -> dict[str, Any]:
+        return {"decisions": [{"type": "respond", "message": "synthetic"}]}
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_respond),
+        pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Decision type 'respond' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'edit', 'reject'] based on the tool's "
+                "configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
+
+
+def test_human_in_the_loop_middleware_mixed_with_respond() -> None:
+    """Test mixed decisions: one tool approved, one tool answered via `respond`."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "get_forecast": {"allowed_decisions": ["approve"]},
+            "ask_user": {"allowed_decisions": ["respond"]},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="Two things",
+        tool_calls=[
+            {"name": "get_forecast", "args": {"location": "SF"}, "id": "1"},
+            {"name": "ask_user", "args": {"question": "favorite color?"}, "id": "2"},
+        ],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    def mock_mixed(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {"type": "approve"},
+                {"type": "respond", "message": "blue"},
+            ]
+        }
+
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed):
+        result = middleware.after_model(state, Runtime())
+        assert result is not None
+        # AI message + 1 synthetic ToolMessage for the respond decision.
+        assert len(result["messages"]) == 2
+
+        updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 2
+        assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"
+        assert updated_ai_message.tool_calls[1]["name"] == "ask_user"
+
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "blue"
+        assert tool_message.name == "ask_user"
+        assert tool_message.tool_call_id == "2"
+        assert tool_message.status == "success"
+
+
+def test_human_in_the_loop_middleware_true_allows_respond() -> None:
+    """Test that the `True` shortcut permits `respond` decisions."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"ask_user": True})
+
+    ai_message = AIMessage(
+        content="Asking",
+        tool_calls=[{"name": "ask_user", "args": {"q": "?"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "respond", "message": "answer"}]},
+    ):
+        result = middleware.after_model(state, Runtime())
+        assert result is not None
+        assert len(result["messages"]) == 2
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "answer"
+        assert tool_message.status == "success"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
@@ -751,3 +915,107 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "Rejected tool B"
         assert tool_message.tool_call_id == "id_b"
+
+
+# ---------------------------------------------------------------------------
+# when predicate
+# ---------------------------------------------------------------------------
+
+
+def test_when_predicate_batch_skips_interrupt_when_false() -> None:
+    """`when` returning False prevents the tool call from joining the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda req: req.tool_call["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": False}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt,
+    ):
+        result = middleware.after_model(state, Runtime())
+        mock_interrupt.assert_not_called()
+
+    assert result is None
+
+
+def test_when_predicate_batch_fires_interrupt_when_true() -> None:
+    """`when` returning True allows the tool call to trigger the batch interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=lambda req: req.tool_call["args"].get("risky", False),
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"risky": True}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "approve"}]},
+        ),
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+
+
+def test_when_predicate_receives_correct_args() -> None:
+    """The when predicate receives a ToolCallRequest with correct values and a ToolRuntime."""
+    captured: list[Any] = []
+
+    def capture_when(req: ToolCallRequest) -> bool:
+        captured.append(req)
+        return True
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["approve"],
+                when=capture_when,
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"val": 42}, "id": "tc-1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+    runtime = Runtime()
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": [{"type": "approve"}]},
+        ),
+    ):
+        middleware.after_model(state, runtime)
+
+    assert len(captured) == 1
+    req = captured[0]
+    assert req.tool_call["name"] == "test_tool"
+    assert req.tool_call["args"] == {"val": 42}
+    assert req.tool is None
+    assert req.state is state
+    assert isinstance(req.runtime, ToolRuntime)
+    assert req.runtime.tool_call_id == "tc-1"
+    assert req.runtime.state is state
+    assert req.runtime.context is runtime.context
+    assert req.runtime.store is runtime.store

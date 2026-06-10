@@ -12,19 +12,39 @@ module.
 import contextlib
 import functools
 import inspect
+import sys
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import (
+    TYPE_CHECKING,
     Any,
     ParamSpec,
+    TypeGuard,
     TypeVar,
     cast,
 )
 
 from pydantic.fields import FieldInfo
-from pydantic.v1.fields import FieldInfo as FieldInfoV1
 
 from langchain_core._api.internal import is_caller_internal
+
+if TYPE_CHECKING:
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1
+
+
+def _is_pydantic_v1_field_info(obj: Any) -> TypeGuard["FieldInfoV1"]:
+    """Check if `obj` is a `pydantic.v1.fields.FieldInfo` without forcing import.
+
+    Importing `pydantic.v1` emits a `UserWarning` on Python 3.14+. Skipping the
+    import entirely when no caller has constructed a v1 `FieldInfo` keeps that
+    warning out of `langchain_core`'s import path. If a caller did construct one,
+    `pydantic.v1.fields` is already in `sys.modules` and isinstance is safe.
+    """
+    mod = sys.modules.get("pydantic.v1.fields")
+    if mod is None:
+        return False
+    return isinstance(obj, mod.FieldInfo)
 
 
 def _build_deprecation_message(
@@ -56,10 +76,21 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
 
 
+# Tracks when callers intentionally silence LangChain deprecation warnings.
+# Suppressed warnings should not consume a deprecated callable's one-time
+# warning state; otherwise an internal compatibility path can prevent the first
+# user-visible call from warning.
+_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING", default=False
+)
+
+
 # PUBLIC API
 
 
-# Last Any should be FieldInfoV1 but this leads to circular imports
+# Bound is `Any` (not `FieldInfoV1`) because importing `pydantic.v1` at module
+# scope emits a `UserWarning` on Python 3.14+; v1 `FieldInfo` support is handled
+# at runtime via `_is_pydantic_v1_field_info`.
 T = TypeVar("T", bound=type | Callable[..., Any] | Any)
 
 
@@ -136,9 +167,8 @@ def deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
@@ -200,16 +230,20 @@ def deprecated(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         _package = _package or obj.__module__.split(".")[0].replace("_", "-")
@@ -233,8 +267,10 @@ def deprecated(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_deprecation_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
@@ -247,7 +283,7 @@ def deprecated(
                 )
                 return obj
 
-        elif isinstance(obj, FieldInfoV1):
+        elif _is_pydantic_v1_field_info(obj):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -257,6 +293,8 @@ def deprecated(
             old_doc = obj.description
 
             def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+                from pydantic.v1.fields import FieldInfo as FieldInfoV1  # noqa: PLC0415
+
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -429,10 +467,14 @@ def deprecated(
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
     """Context manager to suppress `LangChainDeprecationWarning`."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainDeprecationWarning)
-        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
-        yield
+    token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LangChainDeprecationWarning)
+            warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
+            yield
+    finally:
+        _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
 
 
 def warn_deprecated(
@@ -472,21 +514,13 @@ def warn_deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
     """
-    if not pending:
-        if not removal:
-            removal = f"in {removal}" if removal else "within ?? minor releases"
-            msg = (
-                f"Need to determine which default deprecation schedule to use. "
-                f"{removal}"
-            )
-            raise NotImplementedError(msg)
+    if not pending and removal:
         removal = f"in {removal}"
 
     if not message:

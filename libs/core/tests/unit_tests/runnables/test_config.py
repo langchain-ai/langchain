@@ -16,6 +16,7 @@ from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHan
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _get_langsmith_inheritable_metadata_from_config,
     _set_config_context,
     ensure_config,
     merge_configs,
@@ -61,13 +62,171 @@ def test_ensure_config() -> None:
     assert config["configurable"] is not arg["configurable"]
     assert config == {
         "tags": ["tag1", "tag2"],
-        "metadata": {"foo": "bar", "baz": "qux", "something": "else"},
+        "metadata": {"foo": "bar"},
         "callbacks": [arg["callbacks"][0]],
         "recursion_limit": 100,
         "configurable": {"baz": "qux", "something": "else"},
         "max_concurrency": 1,
         "run_id": run_id,
         "run_name": "test",
+    }
+
+
+def test_ensure_config_copies_model_to_metadata() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "thread_id": "th-123",
+                "checkpoint_id": "ckpt-1",
+                "checkpoint_ns": "ns-1",
+                "task_id": "task-1",
+                "run_id": "run-456",
+                "assistant_id": "asst-789",
+                "graph_id": "graph-0",
+                "model": "gpt-4o",
+                "user_id": "uid-1",
+                "cron_id": "cron-1",
+                "langgraph_auth_user_id": "user-1",
+                "some_api_key": "opaque-token",
+                "custom_setting": {"nested": True},
+                "none_value": None,
+            },
+            "metadata": {"nooverride": 18},
+        }
+    )
+
+    assert config["metadata"] == {
+        "nooverride": 18,
+        "model": "gpt-4o",
+        "checkpoint_ns": "ns-1",
+    }
+    assert config["configurable"] == {
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
+        "checkpoint_ns": "ns-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "model": "gpt-4o",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
+        "some_api_key": "opaque-token",
+        "custom_setting": {"nested": True},
+        "none_value": None,
+    }
+
+
+def test_ensure_config_metadata_is_not_overridden_by_configurable_model() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "model": "from-configurable",
+                "run_id": None,
+                "checkpoint_ns": "from-configurable",
+            },
+            "metadata": {
+                "model": "from-metadata",
+                "run_id": "from-metadata",
+                "checkpoint_ns": "from-metadata",
+            },
+        }
+    )
+
+    assert config["metadata"] == {
+        "model": "from-metadata",
+        "run_id": "from-metadata",
+        "checkpoint_ns": "from-metadata",
+    }
+    assert config["configurable"] == {
+        "model": "from-configurable",
+        "run_id": None,
+        "checkpoint_ns": "from-configurable",
+    }
+
+
+def test_ensure_config_copies_top_level_model_to_metadata() -> None:
+    config = ensure_config(
+        cast(
+            "RunnableConfig",
+            {
+                "model": "gpt-4o",
+                "metadata": {"nooverride": 18},
+            },
+        )
+    )
+
+    assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
+    assert config["configurable"] == {"model": "gpt-4o"}
+
+
+def test_ensure_config_copies_top_level_checkpoint_ns_to_metadata() -> None:
+    config = ensure_config(
+        cast(
+            "RunnableConfig",
+            {
+                "checkpoint_ns": "ns-1",
+                "metadata": {"nooverride": 18},
+            },
+        )
+    )
+
+    assert config["metadata"] == {"nooverride": 18, "checkpoint_ns": "ns-1"}
+    assert config["configurable"] == {"checkpoint_ns": "ns-1"}
+
+
+def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules() -> (
+    None
+):
+    config = ensure_config(
+        cast(
+            "RunnableConfig",
+            {
+                "something": "else",
+                "metadata": {
+                    "foo": "bar",
+                    "model": "from-metadata",
+                    "checkpoint_ns": "from-metadata",
+                },
+                "configurable": {
+                    "baz": "qux",
+                    "thread_id": "th-123",
+                    "checkpoint_id": "ckpt-1",
+                    "checkpoint_ns": "from-configurable",
+                    "task_id": "task-1",
+                    "run_id": "run-456",
+                    "assistant_id": "asst-789",
+                    "graph_id": "graph-0",
+                    "model": "from-configurable",
+                    "user_id": "uid-1",
+                    "cron_id": "cron-1",
+                    "langgraph_auth_user_id": "user-1",
+                    "api_key": "should-not-propagate",
+                    "__secret_key": "should-not-propagate",
+                    "temperature": 0.5,
+                    "streaming": True,
+                    "custom_setting": {"nested": True},
+                    "none_value": None,
+                },
+            },
+        )
+    )
+
+    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+        "something": "else",
+        "baz": "qux",
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
+        "temperature": 0.5,
+        "streaming": True,
     }
 
 
