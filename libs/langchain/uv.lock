@@ -2650,7 +2650,7 @@ wheels = [
 
 [[package]]
 name = "langchain-classic"
-version = "1.0.7"
+version = "1.0.8"
 source = { editable = "." }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2719,8 +2719,6 @@ xai = [
 [package.dev-dependencies]
 dev = [
     { name = "jupyter" },
-    { name = "langchain-core" },
-    { name = "langchain-text-splitters" },
     { name = "playwright" },
     { name = "setuptools" },
 ]
@@ -2731,10 +2729,8 @@ lint = [
 test = [
     { name = "cffi" },
     { name = "freezegun" },
-    { name = "langchain-core" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
-    { name = "langchain-text-splitters" },
     { name = "lark" },
     { name = "numpy" },
     { name = "packaging" },
@@ -2754,16 +2750,12 @@ test = [
 ]
 test-integration = [
     { name = "cassio", marker = "python_full_version < '3.14'" },
-    { name = "langchain-core" },
-    { name = "langchain-text-splitters" },
     { name = "python-dotenv" },
     { name = "vcrpy" },
     { name = "wrapt" },
 ]
 typing = [
     { name = "fastapi" },
-    { name = "langchain-core" },
-    { name = "langchain-text-splitters" },
     { name = "mypy" },
     { name = "mypy-protobuf" },
     { name = "numpy" },
@@ -2808,8 +2800,6 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "go
 [package.metadata.requires-dev]
 dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "langchain-core", editable = "../core" },
-    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "playwright", specifier = ">=1.28.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
 ]
@@ -2822,10 +2812,8 @@ test = [
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", editable = "../core" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
-    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "lark", specifier = ">=1.1.5,<2.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -2846,16 +2834,12 @@ test = [
 ]
 test-integration = [
     { name = "cassio", marker = "python_full_version < '3.14'", specifier = ">=0.1.0,<1.0.0" },
-    { name = "langchain-core", editable = "../core" },
-    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
     { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
     { name = "wrapt", specifier = ">=1.15.0,<3.0.0" },
 ]
 typing = [
     { name = "fastapi", specifier = ">=0.116.1,<1.0.0" },
-    { name = "langchain-core", editable = "../core" },
-    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "mypy", specifier = ">=1.19.1,<1.20.0" },
     { name = "mypy-protobuf", specifier = ">=3.0.0,<6.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
