@@ -73,3 +73,27 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_get_function_nonlocals_no_memory_leak() -> None:
+    import gc
+
+    class Container:
+        def __init__(self, value: str) -> None:
+            self.value = value
+
+        def method(self, x: str) -> str:
+            return self.value + x
+
+    def build_and_discard() -> int:
+        c = Container("hello")
+        f = c.method
+        _ = get_function_nonlocals(f)
+        return id(c)
+
+    cid = build_and_discard()
+    gc.collect()
+    # After gc.collect, Container should be freed. If lru_cache held a
+    # strong reference to the bound method, the Container would survive.
+    objs = [o for o in gc.get_objects() if id(o) == cid]
+    assert len(objs) == 0, "Container was not garbage collected"

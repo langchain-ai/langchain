@@ -11,7 +11,6 @@ import textwrap
 # Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
 # RunnableConfigurableFields.
 from collections.abc import Mapping, Sequence  # noqa: TC003
-from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
@@ -404,7 +403,6 @@ def get_lambda_source(func: Callable) -> str | None:
     return visitor.source if visitor.count == 1 else name
 
 
-@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
