@@ -852,7 +852,7 @@ class _CallableReturningModelResponse(Protocol[ContextT, ResponseT]):
         self,
         request: ModelRequest[ContextT],
         handler: Callable[
-            [ModelRequest[ContextT]], ModelResponse | Awaitable[ModelResponse[ResponseT]]
+            [ModelRequest[ContextT]], ModelResponse[ResponseT] | Awaitable[ModelResponse[ResponseT]]
         ],
     ) -> ModelResponse[ResponseT] | AIMessage | Awaitable[ModelResponse[ResponseT] | AIMessage]:
         """Intercept model execution via handler callback."""
@@ -870,15 +870,15 @@ class _CallableReturningToolResponse(Protocol):
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> Awaitable[ToolMessage | Command[Any]]: ...
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]: ...
 
     @overload
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]: ...
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> Awaitable[ToolMessage | Command[Any]]: ...
 
     def __call__(
         self,
