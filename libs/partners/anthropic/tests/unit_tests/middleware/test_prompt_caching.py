@@ -237,9 +237,12 @@ async def test_anthropic_prompt_caching_middleware_async_min_messages() -> None:
     """Test async path respects min_messages_to_cache."""
     middleware = AnthropicPromptCachingMiddleware(min_messages_to_cache=5)
 
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
+
     # Test with fewer messages than minimum
     fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model=mock_chat_anthropic,
         messages=[HumanMessage("Hello")] * 3,
         system_prompt=None,
         tool_choice=None,
