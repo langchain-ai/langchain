@@ -1,0 +1,19 @@
+libs/core/tests/unit_tests/runnables/test_runnable.py
+  s_b7ed7c8faba244::t_e4f97a06502f7b 3877-3878
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8460e0d88507482e0068016ce1ef6b6735ff8f57",
+  "prompts": {},
+  "sessions": {
+    "s_b7ed7c8faba244": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9116823b-80e2-4c09-8cf4-a2453633c9b1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
