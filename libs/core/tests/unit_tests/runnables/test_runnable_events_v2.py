@@ -1103,9 +1103,7 @@ async def test_event_streaming_with_tools() -> None:
 
     @tool
     def with_parameters_and_callbacks(
-        x: int,
-        y: str,
-        callbacks: Callbacks,
+        x: int, y: str, callbacks: Callbacks
     ) -> dict[str, Any]:
         """A tool that does nothing."""
         _ = callbacks

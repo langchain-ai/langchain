@@ -723,7 +723,11 @@ jobs:
       - name: Create Tag
         uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
-          artifacts: "dist/*"
+          # JS actions ignore `defaults.run.working-directory`, so this glob is
+          # resolved from the repo root. Point it at the package's `dist/`
+          # (where `download-artifact` placed the wheels) instead of a bare
+          # `dist/*`, which never matched and attached no assets to releases.
+          artifacts: "${{ env.EFFECTIVE_WORKING_DIR }}/dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}

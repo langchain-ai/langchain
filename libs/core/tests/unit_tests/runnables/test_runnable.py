@@ -3784,6 +3784,40 @@ async def test_deep_astream_assign() -> None:
     }
 
 
+def _empty_mapper_assign() -> RunnableAssign:
+    """Build an assign whose mapper yields zero chunks.
+
+    The map output stream is started with `next(map_output, None)` /
+    `anext(map_output, None)`, so `None` is the exhaustion sentinel rather than
+    a real chunk. Both `stream` and `astream` must guard against yielding that
+    sentinel into the output stream.
+    """
+
+    def empty_gen(it: Iterator[Any]) -> Iterator[dict[str, Any]]:
+        for _ in it:
+            pass
+        yield from ()  # consume input, yield nothing
+
+    async def aempty_gen(it: AsyncIterator[Any]) -> AsyncIterator[dict[str, Any]]:
+        async for _ in it:
+            pass
+        return
+        yield  # pragma: no cover  # make this an async generator function
+
+    return RunnablePassthrough.assign(foo=RunnableGenerator(empty_gen, aempty_gen))
+
+
+def test_stream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (sync)."""
+    assert list(_empty_mapper_assign().stream({"a": 1})) == [{"a": 1}]
+
+
+async def test_astream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (async)."""
+    chunks = [chunk async for chunk in _empty_mapper_assign().astream({"a": 1})]
+    assert chunks == [{"a": 1}]
+
+
 def test_runnable_sequence_transform() -> None:
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 

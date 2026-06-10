@@ -454,7 +454,9 @@ def _resolve_schema(
             if not should_omit:
                 all_annotations[field_name] = field_type
 
-    return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
+    # `TypedDict` dynamically creates a class, but type checkers don't infer that
+    # the runtime result satisfies this function's `type` return contract.
+    return cast("type", TypedDict(schema_name, all_annotations))  # type: ignore[operator]
 
 
 def _extract_metadata(type_: type) -> list[Any]:
@@ -493,7 +495,8 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         and sync_method is not base_sync_method
         and hasattr(sync_method, "__can_jump_to__")
     ):
-        return sync_method.__can_jump_to__
+        # `hasattr` proves the metadata exists at runtime, but not its value type.
+        return cast("list[JumpTo]", sync_method.__can_jump_to__)
 
     # Try async method - only if it's overridden from base class
     async_method = getattr(middleware.__class__, f"a{hook_name}", None)
@@ -502,7 +505,8 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         and async_method is not base_async_method
         and hasattr(async_method, "__can_jump_to__")
     ):
-        return async_method.__can_jump_to__
+        # `hasattr` proves the metadata exists at runtime, but not its value type.
+        return cast("list[JumpTo]", async_method.__can_jump_to__)
 
     return []
 
