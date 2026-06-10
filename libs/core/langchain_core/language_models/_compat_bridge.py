@@ -500,6 +500,13 @@ def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
     for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
         if key in usage:
             result[key] = usage[key]
+    # `UsageInfo` does not declare the detail dicts yet, but they must ride
+    # along: providers fold cache reads/writes into `input_tokens` and break
+    # them out in `input_token_details`, so dropping the details makes
+    # tracers price every input token at the uncached rate.
+    for detail_key in ("input_token_details", "output_token_details"):
+        if isinstance(usage.get(detail_key), dict):
+            result[detail_key] = dict(usage[detail_key])
     return cast("UsageInfo", result) if result else None
 
 

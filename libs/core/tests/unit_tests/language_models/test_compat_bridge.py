@@ -120,6 +120,28 @@ def test_to_protocol_usage_none() -> None:
     assert _to_protocol_usage(None) is None
 
 
+def test_to_protocol_usage_preserves_token_details() -> None:
+    """Cache / reasoning breakdowns must survive the protocol conversion.
+
+    `input_tokens` already includes cached tokens; without the detail
+    dicts, tracers price every input token at the uncached rate.
+    """
+    usage = {
+        "input_tokens": 100,
+        "output_tokens": 5,
+        "total_tokens": 105,
+        "input_token_details": {"cache_read": 90, "cache_creation": 7},
+        "output_token_details": {"reasoning": 3},
+    }
+    result = cast("dict[str, Any]", _to_protocol_usage(usage))
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 90, "cache_creation": 7}
+    assert result["output_token_details"] == {"reasoning": 3}
+    # Detail dicts are copied, not aliased — later mutation of the
+    # accumulator must not leak into the emitted event.
+    assert result["input_token_details"] is not usage["input_token_details"]
+
+
 # ---------------------------------------------------------------------------
 # chunks_to_events: streaming lifecycle
 # ---------------------------------------------------------------------------
