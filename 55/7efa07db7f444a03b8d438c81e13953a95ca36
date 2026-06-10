@@ -1,0 +1,23 @@
+libs/core/langchain_core/prompts/loading.py
+  s_65c62dca987d48::t_6a40d094a7b850 48-49,51-54,57-58,60-61,63-71
+  s_65c62dca987d48::t_86da056f461ce4 148
+  s_65c62dca987d48::t_1f23aa8f9c0365 22,28,30,32-34,38
+  s_65c62dca987d48::t_fa336c5bcc7b31 6
+  s_65c62dca987d48::t_06199cdb760d9b 128-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "557efa07db7f444a03b8d438c81e13953a95ca36",
+  "prompts": {},
+  "sessions": {
+    "s_65c62dca987d48": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f614ba1a-f183-4b31-916b-8c53841fee1a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
