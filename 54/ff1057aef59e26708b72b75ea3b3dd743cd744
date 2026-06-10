@@ -1,0 +1,14 @@
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_typing.py
+  h_9f69767fa5fabf 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "54ff1057aef59e26708b72b75ea3b3dd743cd744",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
