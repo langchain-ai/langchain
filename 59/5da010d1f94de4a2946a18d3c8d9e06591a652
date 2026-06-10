@@ -1,0 +1,21 @@
+libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py
+  s_21fe591b79bd32::t_a16da7120d4f0d 142,146-153
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_provider_tool_search.py
+  s_21fe591b79bd32::t_9af1700f6afc38 195,206-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "595da010d1f94de4a2946a18d3c8d9e06591a652",
+  "prompts": {},
+  "sessions": {
+    "s_21fe591b79bd32": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb212-2102-7f42-9389-4af23601d653",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
