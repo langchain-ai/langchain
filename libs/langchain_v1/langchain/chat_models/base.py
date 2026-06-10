@@ -1017,6 +1017,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     # Explicitly added to satisfy downstream linters.
+    # `bind_tools` is implemented by concrete models because tool binding is
+    # provider-specific. A configurable model may not have a concrete model instance
+    # yet, since invocation config can choose it later. Save the `bind_tools` tools
+    # and kwargs now. When `_model` later builds the selected provider model, it calls
+    # `selected_model.bind_tools(tools, **kwargs)` and returns that runnable.
+    # Cast so callers still get the public return type.
     def bind_tools(
         self,
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
@@ -1028,6 +1034,14 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     # Explicitly added to satisfy downstream linters.
+    # `with_structured_output` is implemented by concrete models because structured
+    # output support is provider-specific. A configurable model may not have a
+    # concrete model instance yet, since invocation config can choose it later. Save
+    # the structured-output schema and kwargs now. When `_model` later builds the
+    # selected provider model, it calls
+    # `selected_model.with_structured_output(schema, **kwargs)` and returns that
+    # runnable.
+    # Cast so callers still get the public return type.
     def with_structured_output(
         self,
         schema: dict[str, Any] | type[BaseModel],
