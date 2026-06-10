@@ -794,8 +794,8 @@ class TestDynamicSystemPromptMiddleware:
             == "You are a helpful assistant. Region: EU"
         )
 
-    def test_middleware_can_use_system_message_with_metadata(self) -> None:
-        """Test middleware creating SystemMessage with additional metadata."""
+    def test_system_message_with_metadata(self) -> None:
+        """Test creating a `SystemMessage` with additional metadata."""
         system_message = SystemMessage(
             content="You are a helpful assistant",
             additional_kwargs={"temperature": 0.7, "model": "gpt-4"},
@@ -826,8 +826,8 @@ class TestDynamicSystemPromptMiddleware:
         assert len(new_system_message.content_blocks) == 1
         assert new_system_message.content_blocks[0].get("text") == "Default system prompt"
 
-    def test_middleware_with_content_blocks(self) -> None:
-        """Test middleware creating SystemMessage with content blocks."""
+    def test_system_message_with_content_blocks(self) -> None:
+        """Test creating a `SystemMessage` with content blocks."""
         system_message = SystemMessage(
             content=[
                 {"type": "text", "text": "Base instructions"},
