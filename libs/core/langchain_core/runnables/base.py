@@ -9,6 +9,9 @@ import functools
 import inspect
 import threading
 from abc import ABC, abstractmethod
+
+_BACKGROUND_TASKS: set[asyncio.Task] = set()
+
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
@@ -2639,7 +2642,18 @@ class Runnable(ABC, Generic[Input, Output]):
             await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
             if iterator_ is not None and hasattr(iterator_, "aclose"):
-                await iterator_.aclose()
+                try:
+                    loop = asyncio.get_running_loop()
+                    task = loop.create_task(iterator_.aclose())
+                    # Prevent task from being garbage collected mid-execution
+                    # by adding it to the event loop or a module-level set if needed.
+                    # A fire-and-forget task without a hard reference might get GC'd,
+                    # but for `aclose()`, it is usually executed quickly enough.
+                    # To be perfectly safe, we store it in a module level set.
+                    _BACKGROUND_TASKS.add(task)
+                    task.add_done_callback(_BACKGROUND_TASKS.discard)
+                except RuntimeError:
+                    pass
 
     @beta_decorator.beta(message="This API is in beta and may change in the future.")
     def as_tool(
@@ -3685,8 +3699,18 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 final_pipeline = step.atransform(final_pipeline, config, **kwargs)
             else:
                 final_pipeline = step.atransform(final_pipeline, config)
-        async for output in final_pipeline:
-            yield output
+        try:
+            async for output in final_pipeline:
+                yield output
+        finally:
+            if hasattr(final_pipeline, "aclose"):
+                try:
+                    loop = asyncio.get_running_loop()
+                    task = loop.create_task(final_pipeline.aclose())
+                    _BACKGROUND_TASKS.add(task)
+                    task.add_done_callback(_BACKGROUND_TASKS.discard)
+                except RuntimeError:
+                    pass
 
     @override
     def transform(
