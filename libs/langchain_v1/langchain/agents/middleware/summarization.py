@@ -327,7 +327,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         self._trigger_clauses = self._normalize_trigger(self.trigger)
         # Legacy compatibility view for private consumers that inspected the previous
         # tuple-normalized representation. LangChain behavior is driven by
-        # `_trigger_clauses`, not this attribute.
+        # `_trigger_clauses`, not this attribute. Remove in LangChain 2.0.
         self._trigger_conditions = self._legacy_trigger_conditions(self.trigger)
 
         self.keep = self._validate_context_size(keep, "keep")
