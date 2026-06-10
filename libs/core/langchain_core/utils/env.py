@@ -58,14 +58,14 @@ def get_from_dict_or_env(
 
 
 def get_from_env(key: str, env_key: str, default: str | None = None) -> str:
-    """Get a value from a dictionary or an environment variable.
+    """Get a value from an environment variable.
 
     Args:
-        key: The key to look up in the dictionary.
-        env_key: The environment variable to look up if the key is not
-            in the dictionary.
-        default: The default value to return if the key is not in the dictionary
-            or the environment.
+        key: The name of the parameter. Used for error messages if the
+            environment variable is not set.
+        env_key: The environment variable to look up.
+        default: The default value to return if the environment variable
+            is not set.
 
     Returns:
         The value of the key.
