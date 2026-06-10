@@ -9,7 +9,8 @@ Run type check: uv run --group typing mypy <this file>
 Run tests: uv run --group test pytest <this file> -v
 
 To see type errors being caught, run:
-  uv run --group typing mypy .../test_middleware_type_errors.py
+
+    uv run --group typing mypy .../test_middleware_type_errors.py
 """
 
 from __future__ import annotations
