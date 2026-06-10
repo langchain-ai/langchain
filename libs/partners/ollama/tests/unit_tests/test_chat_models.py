@@ -10,6 +10,9 @@ import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
+from unittest.mock import AsyncMock, MagicMock, patch
+from ollama import ResponseError
+from langchain_ollama.chat_models import ChatOllama
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -33,6 +36,43 @@ class TestChatOllama(ChatModelUnitTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": MODEL_NAME}
+
+@pytest.mark.asyncio
+async def test_acreate_chat_stream_handles_malformed_tool_call_response_error():
+    """Test that malformed tool call ResponseError is caught and logged, not raised."""
+    llm = ChatOllama(model="llama3.2")
+
+    mock_async_client = MagicMock()
+    mock_async_client.chat = AsyncMock(
+        side_effect=ResponseError("error parsing tool call: raw='{\"key\":}', err=invalid character")
+    )
+    llm._async_client = mock_async_client
+
+    chunks = []
+    async for chunk in llm._acreate_chat_stream(
+        messages=[], stop=None, stream=True
+    ):
+        chunks.append(chunk)
+
+    assert chunks == []
+
+
+@pytest.mark.asyncio
+async def test_acreate_chat_stream_reraises_non_tool_call_response_error():
+    """Test that ResponseErrors unrelated to tool call parsing are still raised."""
+    llm = ChatOllama(model="llama3.2")
+
+    mock_async_client = MagicMock()
+    mock_async_client.chat = AsyncMock(
+        side_effect=ResponseError("model not found")
+    )
+    llm._async_client = mock_async_client
+
+    with pytest.raises(ResponseError, match="model not found"):
+        async for _ in llm._acreate_chat_stream(
+            messages=[], stop=None, stream=True
+        ):
+            pass
 
 
 def test__parse_arguments_from_tool_call() -> None:

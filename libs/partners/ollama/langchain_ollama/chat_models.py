@@ -50,6 +50,7 @@ from operator import itemgetter
 from typing import Any, Literal, cast
 from uuid import uuid4
 
+
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
@@ -83,7 +84,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from ollama import AsyncClient, Client, Message
+from ollama import AsyncClient, Client, Message, ResponseError
 from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -1101,12 +1102,22 @@ class ChatOllama(BaseChatModel):
             )
             raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
-
-        if chat_params["stream"]:
-            async for part in await self._async_client.chat(**chat_params):
-                yield part
-        else:
-            yield await self._async_client.chat(**chat_params)
+        try:
+            if chat_params["stream"]:
+                stream = await self._async_client.chat(**chat_params)  # <- await separately
+                async for part in stream:
+                    yield part
+            else:
+                yield await self._async_client.chat(**chat_params)
+        except ResponseError as e:
+            if "error parsing tool call" in str(e):
+                log.warning(
+                    "Ollama failed to parse a tool call and returned malformed JSON. "
+                    "Skipping response chunk. Raw error: %s",
+                    e,
+                )
+                return
+            raise
 
     def _create_chat_stream(
         self,
