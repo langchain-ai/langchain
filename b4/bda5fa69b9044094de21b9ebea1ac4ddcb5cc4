@@ -1,0 +1,23 @@
+libs/core/langchain_core/runnables/passthrough.py
+  s_26a5cfc1db7b6c::t_e5b359753813aa 579-583
+libs/core/tests/unit_tests/runnables/test_runnable.py
+  s_26a5cfc1db7b6c::t_7048d60d58fbf8 3776-3779,3785
+  s_26a5cfc1db7b6c::t_f9fc194a0e3a8a 3773-3774,3793,3795-3804
+  s_26a5cfc1db7b6c::t_2633cbd490312e 3775,3780-3784,3786-3792,3794,3805-3806
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b4bda5fa69b9044094de21b9ebea1ac4ddcb5cc4",
+  "prompts": {},
+  "sessions": {
+    "s_26a5cfc1db7b6c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d74b6dd-2738-4960-8d46-6fad0ca1c3a6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
