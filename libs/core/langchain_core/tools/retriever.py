@@ -33,7 +33,7 @@ def create_retriever_tool(
     name: str,
     description: str,
     *,
-    document_prompt: BasePromptTemplate | None = None,
+    document_prompt: BasePromptTemplate[str] | None = None,
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
 ) -> StructuredTool:

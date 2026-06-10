@@ -1,6 +1,6 @@
 """Tools are classes that an Agent uses to interact with the world.
 
-Each tool has a description. Agent uses the description to choose the righ tool for the
+Each tool has a description. Agent uses the description to choose the right tool for the
 job.
 """
 

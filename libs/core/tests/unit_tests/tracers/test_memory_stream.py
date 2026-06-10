@@ -12,7 +12,7 @@ async def test_same_event_loop() -> None:
     This is the easy case.
     """
     reader_loop = asyncio.get_event_loop()
-    channel = _MemoryStream[dict](reader_loop)
+    channel = _MemoryStream[dict[str, int | float]](reader_loop)
     writer = channel.get_send_stream()
     reader = channel.get_receive_stream()
 
@@ -30,7 +30,7 @@ async def test_same_event_loop() -> None:
             )
         await writer.aclose()
 
-    async def consumer() -> AsyncIterator[dict]:
+    async def consumer() -> AsyncIterator[dict[str, int | float]]:
         tic = time.time()
         async for item in reader:
             toc = time.time()
@@ -63,7 +63,7 @@ async def test_same_event_loop() -> None:
 async def test_queue_for_streaming_via_sync_call() -> None:
     """Test via async -> sync -> async path."""
     reader_loop = asyncio.get_event_loop()
-    channel = _MemoryStream[dict](reader_loop)
+    channel = _MemoryStream[dict[str, int | float]](reader_loop)
     writer = channel.get_send_stream()
     reader = channel.get_receive_stream()
 
@@ -85,7 +85,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         """Blocking sync call."""
         asyncio.run(producer())
 
-    async def consumer() -> AsyncIterator[dict]:
+    async def consumer() -> AsyncIterator[dict[str, int | float]]:
         tic = time.time()
         async for item in reader:
             toc = time.time()

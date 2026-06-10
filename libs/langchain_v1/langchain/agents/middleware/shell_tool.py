@@ -764,7 +764,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         payload: dict[str, Any],
         *,
         tool_call_id: str | None,
-    ) -> Any:
+    ) -> ToolMessage | str:
         session = resources.session
 
         if payload.get("restart"):

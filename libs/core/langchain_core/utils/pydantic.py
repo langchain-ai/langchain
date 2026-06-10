@@ -126,7 +126,9 @@ def is_basemodel_instance(obj: Any) -> bool:
 
 
 # How to type hint this?
-def pre_init(func: Callable) -> Any:
+def pre_init(
+    func: Callable[[Any, dict[str, Any]], Any],
+) -> Callable[[Any, dict[str, Any]], Any]:
     """Decorator to run a function before model initialization.
 
     Args:
@@ -202,9 +204,9 @@ class _IgnoreUnserializable(GenerateJsonSchema):
 def _create_subset_model_v1(
     name: str,
     model: type[BaseModelV1],
-    field_names: list,
+    field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
@@ -233,7 +235,7 @@ def _create_subset_model_v2(
     model: type[BaseModel],
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a Pydantic model with a subset of the model fields."""
@@ -242,7 +244,12 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
-        field_info = FieldInfoV2(description=description, default=field.default)
+        field_kwargs: dict[str, Any] = {"description": description}
+        if field.default_factory is not None:
+            field_kwargs["default_factory"] = field.default_factory
+        else:
+            field_kwargs["default"] = field.default
+        field_info = FieldInfoV2(**field_kwargs)
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
@@ -278,7 +285,7 @@ def _create_subset_model(
     model: TypeBaseModel,
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model.

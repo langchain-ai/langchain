@@ -1,10 +1,10 @@
 from collections.abc import Callable, Mapping
 from operator import itemgetter
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain_core.runnables import RouterRunnable, Runnable
+from langchain_core.runnables import RouterInput, RouterRunnable, Runnable
 from langchain_core.runnables.base import RunnableBindingBase
 from typing_extensions import TypedDict
 
@@ -46,9 +46,10 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):  # type: ign
             if not all(func["name"] in runnables for func in functions):
                 msg = "One or more function names are not found in runnables."
                 raise ValueError(msg)
-        router = (
+        router = cast(
+            "Runnable[Any, RouterInput]",
             JsonOutputFunctionsParser(args_only=False)
-            | {"key": itemgetter("name"), "input": itemgetter("arguments")}
-            | RouterRunnable(runnables)
-        )
+            | {"key": itemgetter("name"), "input": itemgetter("arguments")},
+        ) | RouterRunnable(runnables)
+
         super().__init__(bound=router, kwargs={}, functions=functions)
