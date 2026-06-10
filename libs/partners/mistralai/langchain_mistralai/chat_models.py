@@ -546,6 +546,8 @@ class ChatMistralAI(BaseChatModel):
 
     max_tokens: int | None = None
 
+    stop: list[str] | None = None
+
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
     probability sum is at least `top_p`. Must be in the closed interval
@@ -599,7 +601,7 @@ class ChatMistralAI(BaseChatModel):
         )
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
-        if ls_stop := stop or params.get("stop", None):
+        if ls_stop := stop or self.stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
@@ -749,6 +751,7 @@ class ChatMistralAI(BaseChatModel):
         self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict], dict[str, Any]]:
         params = self._client_params
+        stop = stop if stop is not None else self.stop
         if stop is not None or "stop" in params:
             if "stop" in params:
                 params.pop("stop")

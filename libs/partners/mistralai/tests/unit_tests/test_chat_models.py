@@ -90,12 +90,12 @@ def test_mistralai_initialization_baseurl(
         ("MISTRAL_BASE_URL"),
     ],
 )
-def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
+def test_mistralai_initialization_baseurl_env(
+    env_var_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test ChatMistralAI initialization."""
     # Verify that ChatMistralAI can be initialized using env variable
-    import os
-
-    os.environ[env_var_name] = "boo"
+    monkeypatch.setenv(env_var_name, "boo")
     model = ChatMistralAI(model="test")  # type: ignore[call-arg]
     assert model.endpoint == "boo"
 
@@ -513,12 +513,14 @@ def test_tool_id_conversion() -> None:
 
 def test_extra_kwargs() -> None:
     # Check that foo is saved in extra_kwargs.
-    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
