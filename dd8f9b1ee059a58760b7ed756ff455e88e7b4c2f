@@ -1,0 +1,19 @@
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_summarization.py
+  s_35e88563205d90::t_96e95d18b29c17 1168,1228,1244,1286,1303,1315,1341,1349,1371,1379,1398,1420,1444,1453
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "dd8f9b1ee059a58760b7ed756ff455e88e7b4c2f",
+  "prompts": {},
+  "sessions": {
+    "s_35e88563205d90": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb2ab-eebe-7f30-9e61-559062610df8",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

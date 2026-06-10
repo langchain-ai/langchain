@@ -1,0 +1,20 @@
+libs/langchain_v1/tests/unit_tests/agents/test_system_message.py
+  s_ef4ac585df85ed::t_dd67e2013b23bf 829-830
+  s_ef4ac585df85ed::t_e4809c370f4125 797-798
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "600caa9f8c9786453d6ffb6f86ad929daa413127",
+  "prompts": {},
+  "sessions": {
+    "s_ef4ac585df85ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b7be2a7-124d-4c1a-8bd1-10b665e7ffdb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
