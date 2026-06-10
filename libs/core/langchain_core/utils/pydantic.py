@@ -242,7 +242,12 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
-        field_info = FieldInfoV2(description=description, default=field.default)
+        field_kwargs: dict[str, Any] = {"description": description}
+        if field.default_factory is not None:
+            field_kwargs["default_factory"] = field.default_factory
+        else:
+            field_kwargs["default"] = field.default
+        field_info = FieldInfoV2(**field_kwargs)
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)

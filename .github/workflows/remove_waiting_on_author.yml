@@ -1,0 +1,60 @@
+# Remove the `waiting-on-author` label from an issue or PR when the original
+# author replies. Fires on every issue/PR comment; the job's `if:` filter skips
+# runs unless the item is open, carries the label, and the commenter is the
+# original author (and not a bot).
+#
+# Uses the default GITHUB_TOKEN so the label-removal event does NOT re-trigger
+# other workflows: GitHub does not trigger new workflow runs from actions
+# performed by the default GITHUB_TOKEN (with narrow exceptions like
+# workflow_dispatch), which prevents infinite loops.
+
+name: Remove waiting-on-author on Author Reply
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  remove-label:
+    if: >-
+      github.event.issue.state == 'open' &&
+      contains(github.event.issue.labels.*.name, 'waiting-on-author') &&
+      github.event.comment.user.type != 'Bot' &&
+      github.event.comment.user.login == github.event.issue.user.login
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Remove waiting-on-author label
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const author = context.payload.issue.user.login;
+
+            console.log(
+              `Author ${author} commented on #${issue_number} — removing waiting-on-author`,
+            );
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'waiting-on-author',
+              });
+            } catch (e) {
+              // 404: typically label not present (already removed or never
+              // applied). Could also indicate issue/repo not found — include
+              // e.message to disambiguate.
+              if (e.status === 404) {
+                console.log(`Label already absent (404) — nothing to do: ${e.message}`);
+                return;
+              }
+              throw e;
+            }

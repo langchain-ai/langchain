@@ -132,6 +132,34 @@ def test_message_chunks() -> None:
         + AIMessageChunk(
             content="",
             tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='{"arg1": "val', id="", index=0)
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='ue"}', id="", index=0)
+            ],
+        )
+    ) == AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="tool1", args='{"arg1": "value"}', id="1", index=0
+            )
+        ],
+    )
+
+    assert (
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
                 create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
             ],
         )

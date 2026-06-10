@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -18,6 +18,9 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
+
+if TYPE_CHECKING:
+    from langchain_core.language_models import ModelProfile
 
 logger = logging.getLogger(__name__)
 
@@ -536,12 +539,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_name: str | None = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. `'gpt-4o'`, `'gpt-35-turbo'`, etc.
+    """Name of the deployed OpenAI model.
 
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
 
     !!! warning
+
         Does NOT affect completion.
     """
 
@@ -674,8 +678,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }
@@ -701,12 +705,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None and self.deployment_name is not None:
-            self.profile = _get_default_model_profile(self.deployment_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        if (self.model_name is not None) and (
+            profile := _get_default_model_profile(self.model_name) or None
+        ):
+            return profile
+        if self.deployment_name is not None:
+            return _get_default_model_profile(self.deployment_name) or None
+        return None
 
     @property
     def _identifying_params(self) -> dict[str, Any]:
@@ -743,7 +749,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.model_name:
+        if "model" in kwargs:
+            # Honor explicit per-call override resolved by super().
+            pass
+        elif self.model_name:
             if self.model_version and self.model_version not in self.model_name:
                 params["ls_model_name"] = (
                     self.model_name + "-" + self.model_version.lstrip("-")

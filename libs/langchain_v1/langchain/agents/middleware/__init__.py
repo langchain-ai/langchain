@@ -1,5 +1,7 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
+from langgraph.runtime import Runtime
+
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -17,7 +19,7 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
-from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
@@ -64,12 +66,14 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",
+    "Runtime",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolRetryMiddleware",
+    "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",

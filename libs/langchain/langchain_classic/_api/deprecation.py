@@ -7,18 +7,12 @@ from langchain_core._api.deprecation import (
     warn_deprecated,
 )
 
-# TODO: this is old, fix
 AGENT_DEPRECATION_WARNING = (
-    "LangChain agents will continue to be supported, but it is recommended for new "
-    "use cases to be built with LangGraph. LangGraph offers a more flexible and "
-    "full-featured framework for building agents, including support for "
-    "tool-calling, persistence of state, and human-in-the-loop workflows. For "
-    "details, refer to the "
-    "[LangGraph documentation](https://langchain-ai.github.io/langgraph/)"
-    " as well as guides for "
-    "[Migrating from AgentExecutor](https://python.langchain.com/docs/how_to/migrate_agent/)"
-    " and LangGraph's "
-    "[Pre-built ReAct agent](https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/)."
+    "Use `langchain.agents.create_agent` for new applications. It provides a "
+    "more flexible agent factory with middleware support, structured output, "
+    "and integration with LangGraph for persistence, streaming, and "
+    "human-in-the-loop workflows. Migration guide: "
+    "https://docs.langchain.com/oss/python/migrate/langchain-v1"
 )
 
 
