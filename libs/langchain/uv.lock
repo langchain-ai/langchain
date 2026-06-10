@@ -2804,13 +2804,11 @@ dev = [
     { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
 ]
 lint = [
-    { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
-    { name = "cffi", marker = "python_full_version >= '3.10'" },
+    { name = "cffi" },
     { name = "ruff", specifier = ">=0.15.0,<0.16.0" },
 ]
 test = [
-    { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
-    { name = "cffi", marker = "python_full_version >= '3.10'" },
+    { name = "cffi" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },

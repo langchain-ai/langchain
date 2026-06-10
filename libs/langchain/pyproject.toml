@@ -74,8 +74,7 @@ test = [
     "pytest-xdist<4.0.0,>=3.6.1",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
+    "cffi",
     "freezegun>=1.2.2,<2.0.0",
     "responses>=0.22.0,<1.0.0",
     "lark>=1.1.5,<2.0.0",
@@ -95,8 +94,7 @@ test_integration = [
 ]
 lint = [
     "ruff>=0.15.0,<0.16.0",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
+    "cffi",
 ]
 typing = [
     "mypy>=1.19.1,<1.20.0",
