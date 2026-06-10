@@ -500,6 +500,7 @@ def convert_to_openai_function(
 _WellKnownOpenAITools = (
     "function",
     "file_search",
+    "computer",
     "computer_use_preview",
     "code_interpreter",
     "mcp",
@@ -507,6 +508,7 @@ _WellKnownOpenAITools = (
     "web_search_preview",
     "web_search",
     "tool_search",
+    "apply_patch",
     "namespace",
 )
 
@@ -545,7 +547,7 @@ def convert_to_openai_tool(
 
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
-        `"computer_use_preview"`, `"web_search_preview"`.
+        `"computer_use_preview"`, `"web_search_preview"`, `"apply_patch"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
 
