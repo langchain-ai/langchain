@@ -1,0 +1,16 @@
+libs/partners/anthropic/pyproject.toml
+  h_9f69767fa5fabf 23,27
+libs/partners/anthropic/langchain_anthropic/_version.py
+  h_9f69767fa5fabf 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "11e13d38358304531634a4f971d638781299c2ea",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
