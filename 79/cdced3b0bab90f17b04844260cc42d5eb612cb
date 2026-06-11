@@ -1,0 +1,21 @@
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_ae1092721ee973::t_df6b060e2b9d20 57-58,64-78
+  s_ae1092721ee973::t_d1033b8ed3029f 80,92,94
+  s_ae1092721ee973::t_4f586da5b3ba43 524-528
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "79cdced3b0bab90f17b04844260cc42d5eb612cb",
+  "prompts": {},
+  "sessions": {
+    "s_ae1092721ee973": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e69eab6-f97e-4638-bd38-5477973c5c8d",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
