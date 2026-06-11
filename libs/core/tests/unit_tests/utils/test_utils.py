@@ -65,6 +65,9 @@ def test_check_package_version(
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
+        # Differing booleans: must stay bool (last-wins), not coerce to int.
+        ({"a": True}, {"a": False}, {"a": False}),
+        ({"a": False}, {"a": True}, {"a": True}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
         ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
