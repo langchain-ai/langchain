@@ -1,0 +1,31 @@
+libs/partners/mistralai/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_c96fc7f27364dc 1-3,5-7,9-67,160-194
+  s_dfc29189803279::t_3be3980ed50488 4,8
+  s_dfc29189803279::t_45d23d918fb73e 68-87,92-105,110-159
+  s_dfc29189803279::t_39b05d9096bee9 88-91,106-109
+  s_dfc29189803279::t_e62909d3c6da30 195-196,267-297
+  s_dfc29189803279::t_7473e8e860d653 197-266
+libs/partners/mistralai/langchain_mistralai/chat_models.py
+  s_dfc29189803279::t_51422f8dd0eee3 88-89
+  s_dfc29189803279::t_024723c1edc9a0 835-906
+libs/partners/mistralai/langchain_mistralai/_stream_events.py
+  s_dfc29189803279::t_5c19cfb05ea2a3 1-31,36-107
+  s_dfc29189803279::t_c584a03a3b470c 32-35
+  s_dfc29189803279::t_3d046b7b0f38d1 108-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b7a60ac5f2acb97d99455e186f05d6ebfd0543bd",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
