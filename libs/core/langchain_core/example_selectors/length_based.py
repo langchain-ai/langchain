@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
@@ -15,9 +16,40 @@ def _get_length_based(text: str) -> int:
 
 
 class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
-    """Select examples based on length."""
+    r"""Select examples based on length.
 
-    examples: list[dict]
+    Example:
+        ```python
+        from langchain_core.example_selectors import LengthBasedExampleSelector
+        from langchain_core.prompts import PromptTemplate
+
+        # Define examples
+        examples = [
+            {"input": "happy", "output": "sad"},
+            {"input": "tall", "output": "short"},
+            {"input": "fast", "output": "slow"},
+        ]
+
+        # Create prompt template
+        example_prompt = PromptTemplate(
+            input_variables=["input", "output"],
+            template="Input: {input}\nOutput: {output}",
+        )
+
+        # Create selector with max length constraint
+        selector = LengthBasedExampleSelector(
+            examples=examples,
+            example_prompt=example_prompt,
+            max_length=50,  # Maximum prompt length
+        )
+
+        # Select examples for a new input
+        selected = selector.select_examples({"input": "large", "output": "tiny"})
+        # Returns examples that fit within max_length constraint
+        ```
+    """
+
+    examples: list[dict[str, Any]]
     """A list of the examples that the prompt template expects."""
 
     example_prompt: PromptTemplate
@@ -61,12 +93,12 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         self.example_text_lengths = [self.get_text_length(eg) for eg in string_examples]
         return self
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, Any]]:
         """Select which examples to use based on the input lengths.
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.
@@ -84,12 +116,14 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             i += 1
         return examples
 
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Async select which examples to use based on the input lengths.
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.

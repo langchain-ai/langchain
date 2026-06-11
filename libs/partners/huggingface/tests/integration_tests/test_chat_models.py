@@ -8,7 +8,7 @@ def test_stream_usage() -> None:
     llm = HuggingFaceEndpoint(  # type: ignore[call-arg]  # (model is inferred in class)
         repo_id="google/gemma-3-27b-it",
         task="conversational",
-        provider="nebius",
+        provider="scaleway",
     )
 
     model = ChatHuggingFace(llm=llm, stream_usage=True)

@@ -52,7 +52,7 @@ class BaseMedia(Serializable):
     as a UUID, but this will not be enforced.
     """
 
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[Any, Any] = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
 
 
@@ -218,7 +218,7 @@ class Blob(BaseMedia):
         encoding: str = "utf-8",
         mime_type: str | None = None,
         guess_type: bool = True,
-        metadata: dict | None = None,
+        metadata: dict[Any, Any] | None = None,
     ) -> Blob:
         """Load the blob from a path like object.
 
@@ -234,7 +234,7 @@ class Blob(BaseMedia):
             `Blob` instance
         """
         if mime_type is None and guess_type:
-            mimetype = mimetypes.guess_type(path)[0] if guess_type else None
+            mimetype = mimetypes.guess_type(path)[0]
         else:
             mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
@@ -255,7 +255,7 @@ class Blob(BaseMedia):
         encoding: str = "utf-8",
         mime_type: str | None = None,
         path: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[Any, Any] | None = None,
     ) -> Blob:
         """Initialize the `Blob` from in-memory data.
 

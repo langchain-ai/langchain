@@ -1951,6 +1951,24 @@ def test_fstring_rejects_invalid_identifier_variable_names() -> None:
         assert result.messages[0].content == expected  # type: ignore[attr-defined]
 
 
+def test_fstring_rejects_nested_replacement_field_in_image_url() -> None:
+    with pytest.raises(ValueError, match="Nested replacement fields are not allowed"):
+        ChatPromptTemplate.from_messages(
+            [
+                (
+                    "human",
+                    [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "{img:{img.__class__.__name__}}"},
+                        }
+                    ],
+                )
+            ],
+            template_format="f-string",
+        )
+
+
 def test_mustache_template_attribute_access_vulnerability() -> None:
     """Test that Mustache template injection is blocked.
 

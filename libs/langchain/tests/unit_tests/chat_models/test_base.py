@@ -9,6 +9,8 @@ from pydantic import SecretStr
 
 from langchain_classic.chat_models.base import __all__, init_chat_model
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 EXPECTED_ALL = [
     "BaseChatModel",
     "SimpleChatModel",
@@ -31,7 +33,7 @@ def test_all_imports() -> None:
 @pytest.mark.parametrize(
     ("model_name", "model_provider"),
     [
-        ("gpt-4o", "openai"),
+        (OPENAI_TEST_MODEL, "openai"),
         ("claude-opus-4-1", "anthropic"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("mixtral-8x7b-32768", "groq"),
@@ -85,7 +87,7 @@ def test_configurable() -> None:
     model.get_num_tokens("hello")  # AttributeError!
 
     # This works - provides model at runtime
-    response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
+    response = model.invoke("Hello", config={"configurable": {"model": "gpt-5.5"}})
     ```
     """
     model = init_chat_model()
@@ -119,9 +121,9 @@ def test_configurable() -> None:
     # Can iteratively call declarative methods.
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"model": "gpt-4o"},
+        configurable={"model": OPENAI_TEST_MODEL},
     )
-    assert model_with_config.model_name == "gpt-4o"  # type: ignore[attr-defined]
+    assert model_with_config.model_name == OPENAI_TEST_MODEL  # type: ignore[attr-defined]
 
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
@@ -132,7 +134,7 @@ def test_configurable() -> None:
             "name": None,
             "disable_streaming": False,
             "disabled_params": None,
-            "model_name": "gpt-4o",
+            "model_name": OPENAI_TEST_MODEL,
             "temperature": None,
             "model_kwargs": {},
             "openai_api_key": SecretStr("foo"),
@@ -147,6 +149,7 @@ def test_configurable() -> None:
             "reasoning_effort": None,
             "verbosity": None,
             "frequency_penalty": None,
+            "context_management": None,
             "include": None,
             "seed": None,
             "service_tier": None,
@@ -203,9 +206,9 @@ def test_configurable_with_default() -> None:
     Example:
     ```python
     # This creates a configurable model with default parameters (model)
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+    model = init_chat_model("gpt-5.5", configurable_fields="any", config_prefix="bar")
 
-    # This works immediately - uses default gpt-4o
+    # This works immediately - uses default gpt-5.5
     tokens = model.get_num_tokens("hello")
 
     # This also works - switches to Claude at runtime
@@ -215,7 +218,9 @@ def test_configurable_with_default() -> None:
     )
     ```
     """
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+    model = init_chat_model(
+        OPENAI_TEST_MODEL, configurable_fields="any", config_prefix="bar"
+    )
     for method in (
         "invoke",
         "ainvoke",
@@ -233,7 +238,7 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"
+    assert model.model_name == OPENAI_TEST_MODEL
 
     model_with_tools = model.bind_tools(
         [{"name": "foo", "description": "foo", "parameters": {}}],
@@ -270,9 +275,11 @@ def test_configurable_with_default() -> None:
             "default_headers": None,
             "model_kwargs": {},
             "reuse_last_container": None,
+            "inference_geo": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
+            "output_config": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

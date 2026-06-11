@@ -92,11 +92,15 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             "\ndefault ",
             " default ",
         ]
+        # Build the effective separator list for this call only.
+        # Do NOT assign back to self._separators: doing so would permanently
+        # append js_separators + component_separators on every invocation,
+        # causing the list to grow unboundedly when split_text() is called
+        # multiple times on the same instance.
         separators = (
             self._separators
             + js_separators
             + component_separators
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
-        self._separators = separators
-        return super().split_text(text)
+        return self._split_text(text, separators)

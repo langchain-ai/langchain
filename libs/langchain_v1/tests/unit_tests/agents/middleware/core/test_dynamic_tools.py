@@ -120,7 +120,7 @@ class MultipleDynamicToolsMiddleware(AgentMiddleware):
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
         updated = self._handle_tool(request)
-        return handler(updated if updated else request)
+        return handler(updated or request)
 
     async def awrap_tool_call(
         self,
@@ -128,7 +128,7 @@ class MultipleDynamicToolsMiddleware(AgentMiddleware):
         handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
     ) -> ToolMessage | Command[Any]:
         updated = self._handle_tool(request)
-        return await handler(updated if updated else request)
+        return await handler(updated or request)
 
 
 class DynamicToolMiddlewareWithoutHandler(AgentMiddleware):

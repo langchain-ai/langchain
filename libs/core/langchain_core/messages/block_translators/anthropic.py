@@ -1,7 +1,7 @@
 """Derivations of standard content blocks from Anthropic content."""
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -45,7 +45,7 @@ def _convert_to_v1_from_anthropic_input(
         Updated list with Anthropic blocks converted to v1 format.
     """
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
             cast("dict[str, Any]", block)
             if block.get("type") != "non_standard"
@@ -197,12 +197,13 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
 def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Anthropic message content to v1 format."""
+    content: list[str | dict[str, Any]]
     if isinstance(message.content, str):
-        content: list[str | dict] = [{"type": "text", "text": message.content}]
+        content = [{"type": "text", "text": message.content}]
     else:
         content = message.content
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for block in content:
             if not isinstance(block, dict):
                 continue

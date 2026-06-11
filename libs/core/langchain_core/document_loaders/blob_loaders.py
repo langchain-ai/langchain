@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from langchain_core.documents.base import Blob, PathLike
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
 
 class BlobLoader(ABC):
@@ -26,11 +26,11 @@ class BlobLoader(ABC):
     @abstractmethod
     def yield_blobs(
         self,
-    ) -> Iterable[Blob]:
+    ) -> Iterator[Blob]:
         """A lazy loader for raw data represented by LangChain's `Blob` object.
 
-        Returns:
-            A generator over `Blob` objects.
+        Yields:
+            `Blob` objects.
         """
 
 

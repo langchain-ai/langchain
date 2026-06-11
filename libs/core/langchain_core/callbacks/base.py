@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from uuid import UUID
 
+    from langchain_protocol.protocol import MessagesData
     from tenacity import RetryCallState
     from typing_extensions import Self
 
@@ -63,7 +64,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -78,7 +79,7 @@ class LLMManagerMixin:
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -118,6 +119,46 @@ class LLMManagerMixin:
 
         Args:
             error: The error that occurred.
+            run_id: The ID of the current run.
+            parent_run_id: The ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
+        """
+
+    def on_stream_event(
+        self,
+        event: MessagesData,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run on each protocol event from `stream_events(version="v3")`.
+
+        Also fires for the async equivalent
+        (`astream_events(version="v3")`).
+
+        Fires once per `MessagesData` event — `message-start`, per-block
+        `content-block-start` / `content-block-delta` /
+        `content-block-finish`, and `message-finish`. Analogous to
+        `on_llm_new_token` in v1 streaming, but at event granularity rather
+        than chunk: a single chunk can map to multiple events (e.g. a
+        `content-block-start` plus its first `content-block-delta`), and
+        lifecycle boundaries are explicit.
+
+        Fires uniformly whether the provider emits events natively via
+        `_stream_chat_model_events` or goes through the chunk-to-event
+        compat bridge. Observers see the same event stream regardless of
+        how the underlying model produces output.
+
+        Not fired from v1 `stream()` / `astream()`; for those, keep using
+        `on_llm_new_token`. Purely additive — `on_chat_model_start`,
+        `on_llm_end`, and `on_llm_error` still fire around a v2 call as
+        they do around a v1 call.
+
+        Args:
+            event: The protocol event.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
             tags: The tags.
@@ -285,9 +326,29 @@ class CallbackManagerMixin:
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        !!! note
+
+            When overriding this method, the signature **must** include the two
+            required positional arguments `serialized` and `messages`.  Avoid
+            using `*args` in your override — doing so causes an `IndexError`
+            in the fallback path when the callback system converts `messages`
+            to prompt strings for `on_llm_start`.  Always declare the
+            signature explicitly:
+
+            .. code-block:: python
+
+                def on_chat_model_start(
+                    self,
+                    serialized: dict[str, Any],
+                    messages: list[list[BaseMessage]],
+                    **kwargs: Any,
+                ) -> None:
+                    raise NotImplementedError  # triggers fallback to on_llm_start
+
         Args:
             serialized: The serialized chat model.
-            messages: The messages.
+            messages: The messages. Must be a list of message lists — this is a
+                required positional argument and must be present in any override.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
             tags: The tags.
@@ -295,7 +356,7 @@ class CallbackManagerMixin:
             **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
+        # Callback handler will fall back to on_llm_start if this exception is thrown
         msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         raise NotImplementedError(msg)
 
@@ -534,9 +595,29 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use `on_llm_start` instead.
 
+        !!! note
+
+            When overriding this method, the signature **must** include the two
+            required positional arguments `serialized` and `messages`.  Avoid
+            using `*args` in your override — doing so causes an `IndexError`
+            in the fallback path when the callback system converts `messages`
+            to prompt strings for `on_llm_start`.  Always declare the
+            signature explicitly:
+
+            .. code-block:: python
+
+                async def on_chat_model_start(
+                    self,
+                    serialized: dict[str, Any],
+                    messages: list[list[BaseMessage]],
+                    **kwargs: Any,
+                ) -> None:
+                    raise NotImplementedError  # triggers fallback to on_llm_start
+
         Args:
             serialized: The serialized chat model.
-            messages: The messages.
+            messages: The messages. Must be a list of message lists — this is a
+                required positional argument and must be present in any override.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
             tags: The tags.
@@ -544,13 +625,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
-        # Callback handler will fall back to on_llm_start if this is exception is thrown
+        # Callback handler will fall back to on_llm_start if this exception is thrown
         msg = f"{self.__class__.__name__} does not implement `on_chat_model_start`"
         raise NotImplementedError(msg)
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -563,7 +644,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -610,6 +691,31 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
                 - response (LLMResult): The response which was generated before
                     the error occurred.
+        """
+
+    async def on_stream_event(
+        self,
+        event: MessagesData,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run on each protocol event produced by `astream_events(version="v3")`.
+
+        See :meth:`LLMManagerMixin.on_stream_event` for the full contract.
+        Fires once per `MessagesData` event at event granularity, uniformly
+        across native and compat-bridge providers, and is purely additive
+        to the existing `on_chat_model_start` / `on_llm_end` /
+        `on_llm_error` callbacks.
+
+        Args:
+            event: The protocol event.
+            run_id: The ID of the current run.
+            parent_run_id: The ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_chain_start(

@@ -229,7 +229,7 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
     """Tracer that streams run logs to a stream."""
 
     def __init__(
@@ -264,8 +264,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
                 - `'original'` is the format used by all current tracers. This format is
                     slightly inconsistent with respect to inputs and outputs.
                 - 'streaming_events' is used for supporting streaming events, for
-                    internal usage. It will likely change in the future, or deprecated
-                    entirely in favor of a dedicated async tracer for streaming events.
+                    internal usage. It will likely change in the future,
+                    or be deprecated entirely in favor of a dedicated async
+                    tracer for streaming events.
 
         Raises:
             ValueError: If an invalid schema format is provided (internal use only).
@@ -356,7 +357,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap an output async iterator to stream its values to the log.
+        """Tap an output iterator to stream its values to the log.
 
         Args:
             run_id: The ID of the run.
@@ -536,7 +537,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""
@@ -584,7 +585,7 @@ def _get_standardized_inputs(
         )
         raise NotImplementedError(msg)
 
-    inputs = load(run.inputs, allowed_objects="all")
+    inputs = load(run.inputs, allowed_objects="messages")
 
     if run.run_type in {"retriever", "llm", "chat_model"}:
         return inputs
@@ -616,7 +617,7 @@ def _get_standardized_outputs(
     Returns:
         An output if returned, otherwise `None`.
     """
-    outputs = load(run.outputs, allowed_objects="all")
+    outputs = load(run.outputs, allowed_objects="messages")
     if schema_format == "original":
         if run.run_type == "prompt" and "output" in outputs:
             # These were previously dumped before the tracer.
@@ -673,7 +674,7 @@ async def _astream_log_implementation(
     """Implementation of astream_log for a given runnable.
 
     The implementation has been factored out (at least temporarily) as both
-    `astream_log` and `astream_events` relies on it.
+    `astream_log` and `astream_events` rely on it.
 
     Args:
         runnable: The runnable to run in streaming mode.

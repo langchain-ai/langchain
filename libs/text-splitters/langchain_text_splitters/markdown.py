@@ -455,7 +455,8 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             # Apply the header stack as metadata
             for depth, value in self.current_header_stack:
                 header_key = self.splittable_headers.get("#" * depth)
-                self.current_chunk.metadata[header_key] = value
+                if header_key is not None:
+                    self.current_chunk.metadata[header_key] = value
             self.chunks.append(self.current_chunk)
         # Reset the current chunk
         self.current_chunk = Document(page_content="")
