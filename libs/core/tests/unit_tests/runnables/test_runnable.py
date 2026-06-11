@@ -91,6 +91,7 @@ from langchain_core.tracers import (
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from langchain_core.version import VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
@@ -461,7 +462,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert router.get_output_jsonschema() == {"title": "RouterRunnableOutput"}
 
-    seq_w_map: Runnable = (
+    seq_w_map = (
         prompt
         | fake_llm
         | {
@@ -530,7 +531,7 @@ def test_passthrough_assign_schema() -> None:
 
     invalid_seq_w_assign = (
         RunnablePassthrough.assign(context=itemgetter("question") | retriever)
-        | fake_llm
+        | fake_llm  # type: ignore[operator]
     )
 
     # fallback to RunnableAssign.input_schema if next runnable doesn't have
@@ -673,7 +674,7 @@ def test_schema_with_itemgetter() -> None:
         "type": "object",
     }
     prompt = ChatPromptTemplate.from_template("what is {language}?")
-    chain: Runnable = {"language": itemgetter("language")} | prompt
+    chain = {"language": itemgetter("language")} | prompt
     assert _schema(chain.input_schema) == {
         "properties": {"language": {"title": "Language"}},
         "required": ["language"],
@@ -696,7 +697,7 @@ def test_schema_complex_seq() -> None:
 
     assert chain1.name == "city_chain"
 
-    chain2: Runnable = (
+    chain2 = (
         {"city": chain1, "language": itemgetter("language")}
         | prompt2
         | model
@@ -840,7 +841,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
         "required": ["lang", "name"],
     }
 
-    chain_with_map_configurable: Runnable = prompt_configurable | {
+    chain_with_map_configurable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
         "llm2": fake_llm_configurable | StrOutputParser(),
         "llm3": fake_llm.configurable_fields(
@@ -1708,7 +1709,7 @@ def test_with_listener_propagation(mocker: MockerFixture) -> None:
         + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
-    chain: Runnable = prompt | chat
+    chain = prompt | chat
     mock_start = mocker.Mock()
     mock_end = mocker.Mock()
     chain_with_listeners = chain.with_listeners(on_start=mock_start, on_end=mock_end)
@@ -1722,9 +1723,7 @@ def test_with_listener_propagation(mocker: MockerFixture) -> None:
     mock_start.reset_mock()
     mock_end.reset_mock()
 
-    chain_with_listeners.with_types(output_type=str).invoke(
-        {"question": "Who are you?"}
-    )
+    chain_with_listeners.invoke({"question": "Who are you?"})
 
     assert mock_start.call_count == 1
     assert mock_start.call_args[0][0].name == "RunnableSequence"
@@ -2149,7 +2148,11 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakelist",
+                        "versions": {"langchain-core": VERSION},
+                    },
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2363,6 +2366,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
+                        "versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2473,7 +2477,7 @@ async def test_stream_log_retriever() -> None:
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
-    chain: Runnable = (
+    chain = (
         {"documents": FakeRetriever(), "question": itemgetter("question")}
         | prompt
         | {"one": llm, "two": llm}
@@ -2740,7 +2744,7 @@ Question:
 
     parser = CommaSeparatedListOutputParser()
 
-    chain: Runnable = (
+    chain = (
         {
             "question": RunnablePassthrough[str]() | passthrough,
             "documents": passthrough | retriever,
@@ -2870,7 +2874,7 @@ def test_router_runnable(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
-    chain: Runnable = {
+    chain = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
@@ -2914,7 +2918,7 @@ async def test_router_runnable_async() -> None:
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
-    chain: Runnable = {
+    chain = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
@@ -2946,7 +2950,7 @@ def test_higher_order_lambda_runnable(
         input={"question": lambda x: x["question"]},
     )
 
-    def router(params: dict[str, Any]) -> Runnable:
+    def router(params: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if params["key"] == "math":
             return itemgetter("input") | math_chain
         if params["key"] == "english":
@@ -2954,7 +2958,7 @@ def test_higher_order_lambda_runnable(
         msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
-    chain: Runnable = input_map | router
+    chain = input_map | router
     assert dumps(chain, pretty=True) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
@@ -3010,7 +3014,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         msg = f"Unknown key: {value['key']}"
         raise ValueError(msg)
 
-    chain: Runnable = input_map | router
+    chain = input_map | router
 
     result = await chain.ainvoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -3032,7 +3036,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
-    achain: Runnable = input_map | arouter
+    achain = input_map | arouter
     math_spy = mocker.spy(math_chain.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
@@ -3139,7 +3143,7 @@ def test_map_stream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = prompt | {
+    chain = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -3150,6 +3154,7 @@ def test_map_stream() -> None:
     final_value = None
     streamed_chunks = []
     for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3164,7 +3169,9 @@ def test_map_stream() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -3177,19 +3184,19 @@ def test_map_stream() -> None:
         "type": "string",
     }
 
-    stream = chain_pick_one.stream({"question": "What is your name?"})
+    stream_picked = chain_pick_one.stream({"question": "What is your name?"})
 
     final_value = None
-    streamed_chunks = []
-    for chunk in stream:
-        streamed_chunks.append(chunk)
+    streamed_chunks_picked = []
+    for chunk in stream_picked:
+        streamed_chunks_picked.append(chunk)
         if final_value is None:
             final_value = chunk
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] == "i"
-    assert len(streamed_chunks) == len(llm_res)
+    assert streamed_chunks_picked[0] == "i"
+    assert len(streamed_chunks_picked) == len(llm_res)
 
     chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(llm)).pick(
         [
@@ -3208,30 +3215,30 @@ def test_map_stream() -> None:
         "required": ["llm", "hello"],
     }
 
-    stream = chain_pick_two.stream({"question": "What is your name?"})
+    stream_picked = chain_pick_two.stream({"question": "What is your name?"})
 
     final_value = None
-    streamed_chunks = []
-    for chunk in stream:
-        streamed_chunks.append(chunk)
+    streamed_chunks_picked = []
+    for chunk in stream_picked:
+        streamed_chunks_picked.append(chunk)
         if final_value is None:
             final_value = chunk
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] in [
+    assert streamed_chunks_picked[0] in [
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     if not (
         # TODO: Rewrite properly the statement above
-        streamed_chunks[0] == {"llm": "i"}
+        streamed_chunks_picked[0] == {"llm": "i"}
         or {"chat": _any_id_ai_message_chunk(content="i")}
     ):
-        msg = f"Got an unexpected chunk: {streamed_chunks[0]}"
+        msg = f"Got an unexpected chunk: {streamed_chunks_picked[0]}"
         raise AssertionError(msg)
 
-    assert len(streamed_chunks) == len(llm_res) + len(chat_res)
+    assert len(streamed_chunks_picked) == len(llm_res) + len(chat_res)
 
 
 def test_map_stream_iterator_input() -> None:
@@ -3248,7 +3255,7 @@ def test_map_stream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = (
+    chain = (
         prompt
         | llm
         | {
@@ -3263,6 +3270,7 @@ def test_map_stream_iterator_input() -> None:
     final_value = None
     streamed_chunks = []
     for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3277,7 +3285,9 @@ def test_map_stream_iterator_input() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == "i'm a textbot"
 
@@ -3296,7 +3306,7 @@ async def test_map_astream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = prompt | {
+    chain = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -3307,6 +3317,7 @@ async def test_map_astream() -> None:
     final_value = None
     streamed_chunks = []
     async for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3321,8 +3332,10 @@ async def test_map_astream() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
-    final_value["chat"].id = AnyStr()
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
+    chat_message.id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -3332,12 +3345,12 @@ async def test_map_astream() -> None:
 
     final_state = None
     streamed_ops = []
-    async for chunk in chain.astream_log({"question": "What is your name?"}):
-        streamed_ops.extend(chunk.ops)
+    async for patch in chain.astream_log({"question": "What is your name?"}):
+        streamed_ops.extend(patch.ops)
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3365,13 +3378,13 @@ async def test_map_astream() -> None:
 
     # Test astream_log with include filters
     final_state = None
-    async for chunk in chain.astream_log(
+    async for patch in chain.astream_log(
         {"question": "What is your name?"}, include_names=["FakeListChatModel"]
     ):
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3381,13 +3394,13 @@ async def test_map_astream() -> None:
 
     # Test astream_log with exclude filters
     final_state = None
-    async for chunk in chain.astream_log(
+    async for patch in chain.astream_log(
         {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
     ):
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3425,7 +3438,7 @@ async def test_map_astream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = (
+    chain = (
         prompt
         | llm
         | {
@@ -3440,6 +3453,7 @@ async def test_map_astream_iterator_input() -> None:
     final_value = None
     streamed_chunks = []
     async for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3454,7 +3468,9 @@ async def test_map_astream_iterator_input() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
 
@@ -3555,11 +3571,11 @@ def test_deep_stream_assign() -> None:
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+    chain = prompt | llm | {"str": StrOutputParser()}
 
     stream = chain.stream({"question": "What up"})
 
-    chunks = list(stream)
+    chunks = [chunk for chunk in stream if isinstance(chunk, AddableDict)]
 
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
@@ -3677,14 +3693,16 @@ async def test_deep_astream_assign() -> None:
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+    chain = prompt | llm | {"str": StrOutputParser()}
 
     stream = chain.astream({"question": "What up"})
 
-    chunks = [chunk async for chunk in stream]
+    chunks: list[AddableDict] = [
+        chunk async for chunk in stream if isinstance(chunk, AddableDict)
+    ]
 
     assert len(chunks) == len("foo-lish")
-    assert add(chunks) == {"str": "foo-lish"}
+    assert add(chunks) == AddableDict({"str": "foo-lish"})
 
     chain_with_assign = chain.assign(
         hello=itemgetter("str") | llm,
@@ -3758,9 +3776,11 @@ async def test_deep_astream_assign() -> None:
         "required": ["str", "hello"],
     }
 
-    chunks = []
-    async for chunk in chain_with_assign_shadow.astream({"question": "What up"}):
-        chunks.append(chunk)
+    chunks = [
+        chunk
+        async for chunk in chain_with_assign_shadow.astream({"question": "What up"})
+        if isinstance(chunk, AddableDict)
+    ]
 
     assert len(chunks) == len("foo-lish") + 1
     assert add(chunks) == {"str": "shadow", "hello": "foo-lish"}
@@ -3768,6 +3788,40 @@ async def test_deep_astream_assign() -> None:
         "str": "shadow",
         "hello": "foo-lish",
     }
+
+
+def _empty_mapper_assign() -> RunnableAssign:
+    """Build an assign whose mapper yields zero chunks.
+
+    The map output stream is started with `next(map_output, None)` /
+    `anext(map_output, None)`, so `None` is the exhaustion sentinel rather than
+    a real chunk. Both `stream` and `astream` must guard against yielding that
+    sentinel into the output stream.
+    """
+
+    def empty_gen(it: Iterator[Any]) -> Iterator[dict[str, Any]]:
+        for _ in it:
+            pass
+        yield from ()  # consume input, yield nothing
+
+    async def aempty_gen(it: AsyncIterator[Any]) -> AsyncIterator[dict[str, Any]]:
+        async for _ in it:
+            pass
+        return
+        yield  # pragma: no cover  # make this an async generator function
+
+    return RunnablePassthrough.assign(foo=RunnableGenerator(empty_gen, aempty_gen))
+
+
+def test_stream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (sync)."""
+    assert list(_empty_mapper_assign().stream({"a": 1})) == [{"a": 1}]
+
+
+async def test_astream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (async)."""
+    chunks = [chunk async for chunk in _empty_mapper_assign().astream({"a": 1})]
+    assert chunks == [{"a": 1}]
 
 
 def test_runnable_sequence_transform() -> None:
@@ -3826,6 +3880,8 @@ def test_each_simple() -> None:
         [["a", "b"], ["c"]],
         [["c", "e"]],
     ]
+    # `.map()` accepts any `Sequence`, not just `list` (e.g. a tuple).
+    assert parser.map().invoke(("a, b", "c")) == [["a", "b"], ["c"]]
 
 
 def test_each(snapshot: SnapshotAssertion) -> None:
@@ -5320,8 +5376,8 @@ async def test_runnable_gen_transform() -> None:
         async for i in ints:
             yield i + 1
 
-    chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
-    achain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
+    chain = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
+    achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.get_input_jsonschema() == {
         "title": "gen_indexes_input",
@@ -5374,7 +5430,7 @@ async def test_ainvoke_on_returned_runnable() -> None:
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)
@@ -5394,7 +5450,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
 
 
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)

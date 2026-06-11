@@ -64,7 +64,7 @@ class LLMManagerMixin:
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -79,7 +79,7 @@ class LLMManagerMixin:
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -631,7 +631,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -644,7 +644,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         For both chat models and non-chat models (legacy text completion LLMs).
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The new generated chunk, containing content and other information.
             run_id: The ID of the current run.
             parent_run_id: The ID of the parent run.
@@ -1205,9 +1205,15 @@ class BaseCallbackManager(CallbackManagerMixin):
             metadata: The metadata to add.
             inherit: Whether to inherit the metadata.
         """
-        self.metadata.update(metadata)
+        from langchain_core.runnables.config import (  # noqa: PLC0415
+            _merge_metadata_dicts,
+        )
+
+        self.metadata = _merge_metadata_dicts(self.metadata, metadata)
         if inherit:
-            self.inheritable_metadata.update(metadata)
+            self.inheritable_metadata = _merge_metadata_dicts(
+                self.inheritable_metadata, metadata
+            )
 
     def remove_metadata(self, keys: list[str]) -> None:
         """Remove metadata from the callback manager.

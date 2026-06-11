@@ -74,7 +74,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             var `OPENAI_ORG_ID`.
         model:
             The name of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g. `'gpt-4'`, `'gpt-35-turbo'`, etc.
+            counting. Does not affect completion.
         model_version:
             The version of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g., `'0125'`, `'0125-preview'`, etc.
@@ -147,7 +147,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "prompt_tokens": 28,
                     "total_tokens": 34,
                 },
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_7ec89fabc6",
                 "prompt_filter_results": [
                     {
@@ -195,7 +195,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             content="",
             response_metadata={
                 "finish_reason": "stop",
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_811936bd4f",
             },
             id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
@@ -215,7 +215,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             content="J'adore la programmation.",
             response_metadata={
                 "finish_reason": "stop",
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_811936bd4f",
             },
             id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
@@ -871,8 +871,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 - `'json_schema'`:
                     Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
-                    Supported for `'gpt-4o-mini'`, `'gpt-4o-2024-08-06'`, `'o1'`, and later
-                    models.
+                    Supported only by models listed in OpenAI's Structured Output API
+                    documentation.
                 - `'function_calling'`:
                     Uses OpenAI's tool-calling (formerly called function calling)
                     [API](https://platform.openai.com/docs/guides/function-calling)
@@ -968,7 +968,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(AnswerWithJustification)
 
@@ -1001,7 +1001,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(
                 AnswerWithJustification, method="function_calling"
@@ -1032,7 +1032,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
@@ -1066,7 +1066,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(AnswerWithJustification)
 
@@ -1098,7 +1098,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 model = AzureChatOpenAI(
                     azure_deployment="...",
-                    model="gpt-4o",
+                    model="gpt-5.5",
                     temperature=0,
                 )
                 structured_model = model.with_structured_output(oai_schema)
@@ -1126,7 +1126,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             model = AzureChatOpenAI(
                 azure_deployment="...",
-                model="gpt-4o",
+                model="gpt-5.5",
                 temperature=0,
             )
             structured_model = model.with_structured_output(

@@ -12,8 +12,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Protocol,
-    TypeAlias,
     cast,
     overload,
 )
@@ -46,10 +44,12 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ExtendedModelResponse",
+    "InputAgentState",
     "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "OutputAgentState",
     "ResponseT",
     "StateT_co",
     "ToolCallRequest",
@@ -310,10 +310,8 @@ class ExtendedModelResponse(Generic[ResponseT]):
     """Optional command to apply as an additional state update."""
 
 
-ModelCallResult: TypeAlias = (
-    "ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]"
-)
-"""`TypeAlias` for model call handler return value.
+ModelCallResult = ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]
+"""Return type for model call handlers.
 
 Middleware can return either:
 
@@ -354,17 +352,23 @@ class AgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 
 
-class _InputAgentState(TypedDict):  # noqa: PYI049
+class InputAgentState(TypedDict):
     """Input state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage | dict[str, Any]], add_messages]]
 
 
-class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
+class OutputAgentState(TypedDict, Generic[ResponseT]):
     """Output state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     structured_response: NotRequired[ResponseT]
+
+
+# Deprecated aliases kept for backwards compatibility with external consumers that
+# imported the previously private names. Remove in a future release.
+_InputAgentState = InputAgentState
+_OutputAgentState = OutputAgentState
 
 
 StateT = TypeVar("StateT", bound=AgentState[Any], default=AgentState[Any])
@@ -826,69 +830,35 @@ _CallableReturningSystemMessage = (
     _SyncCallableReturningSystemMessage[ContextT] | _AsyncCallableReturningSystemMessage[ContextT]
 )
 
+# Sync/async signatures for `wrap_model_call` interception; see `@wrap_model_call`.
+_SyncCallableReturningModelResponse = Callable[
+    [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]]],
+    ModelCallResult,
+]
+_AsyncCallableReturningModelResponse = Callable[
+    [
+        ModelRequest[ContextT],
+        Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ],
+    Awaitable[ModelCallResult],
+]
+_CallableReturningModelResponse = (
+    _SyncCallableReturningModelResponse[ContextT, ResponseT]
+    | _AsyncCallableReturningModelResponse[ContextT, ResponseT]
+)
 
-class _CallableReturningModelResponse(Protocol[ContextT, ResponseT]):
-    """Callable for model call interception with handler callback.
-
-    Receives handler callback to execute model and returns `ModelResponse` or
-    `AIMessage`.
-    """
-
-    @overload
-    def __call__(
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage: ...
-
-    @overload
-    def __call__(
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> Awaitable[ModelResponse[ResponseT] | AIMessage]: ...
-
-    def __call__(
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[
-            [ModelRequest[ContextT]], ModelResponse[ResponseT] | Awaitable[ModelResponse[ResponseT]]
-        ],
-    ) -> ModelResponse[ResponseT] | AIMessage | Awaitable[ModelResponse[ResponseT] | AIMessage]:
-        """Intercept model execution via handler callback."""
-        ...
-
-
-class _CallableReturningToolResponse(Protocol):
-    """Callable for tool call interception with handler callback.
-
-    Receives handler callback to execute tool and returns final `ToolMessage` or
-    `Command`.
-    """
-
-    @overload
-    def __call__(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
-    ) -> ToolMessage | Command[Any]: ...
-
-    @overload
-    def __call__(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
-    ) -> Awaitable[ToolMessage | Command[Any]]: ...
-
-    def __call__(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[
-            [ToolCallRequest], ToolMessage | Command[Any] | Awaitable[ToolMessage | Command[Any]]
-        ],
-    ) -> ToolMessage | Command[Any] | Awaitable[ToolMessage | Command[Any]]:
-        """Intercept tool execution via handler callback."""
-        ...
+# Sync/async signatures for `wrap_tool_call` interception; see `@wrap_tool_call`.
+_SyncCallableReturningToolResponse = Callable[
+    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command[Any]]],
+    ToolMessage | Command[Any],
+]
+_AsyncCallableReturningToolResponse = Callable[
+    [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]]],
+    Awaitable[ToolMessage | Command[Any]],
+]
+_CallableReturningToolResponse = (
+    _SyncCallableReturningToolResponse | _AsyncCallableReturningToolResponse
+)
 
 
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
@@ -1966,8 +1936,10 @@ def wrap_model_call(
                 _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest[ContextT],
                 handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-            ) -> ModelResponse[ResponseT] | AIMessage:
-                return await func(request, handler)
+            ) -> ModelCallResult[ResponseT]:
+                return await cast(
+                    "_AsyncCallableReturningModelResponse[ContextT, ResponseT]", func
+                )(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
@@ -1992,8 +1964,10 @@ def wrap_model_call(
             _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-        ) -> ModelResponse[ResponseT] | AIMessage:
-            return func(request, handler)
+        ) -> ModelCallResult[ResponseT]:
+            return cast("_SyncCallableReturningModelResponse[ContextT, ResponseT]", func)(
+                request, handler
+            )
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
@@ -2137,7 +2111,7 @@ def wrap_tool_call(
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
             ) -> ToolMessage | Command[Any]:
-                return await func(request, handler)
+                return await cast("_AsyncCallableReturningToolResponse", func)(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapToolCallMiddleware")
@@ -2163,7 +2137,7 @@ def wrap_tool_call(
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
         ) -> ToolMessage | Command[Any]:
-            return func(request, handler)
+            return cast("_SyncCallableReturningToolResponse", func)(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
 

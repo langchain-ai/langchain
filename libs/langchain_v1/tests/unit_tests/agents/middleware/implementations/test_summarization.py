@@ -36,6 +36,8 @@ from langchain.agents.middleware.summarization import (
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 
 def _langchain_pyproject_major_version() -> int:
     """Read the `langchain` package major version from `pyproject.toml`."""
@@ -1722,7 +1724,7 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
             content="Let me check the weather for you.",
             tool_calls=[{"name": "get_weather", "args": {"city": "NYC"}, "id": "call_123"}],
             usage_metadata={"input_tokens": 50, "output_tokens": 30, "total_tokens": 80},
-            response_metadata={"model": "gpt-4", "finish_reason": "tool_calls"},
+            response_metadata={"model": OPENAI_TEST_MODEL, "finish_reason": "tool_calls"},
         ),
         ToolMessage(
             content="72F and sunny",
@@ -1736,7 +1738,7 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
                 "output_tokens": 25,
                 "total_tokens": 125,
             },
-            response_metadata={"model": "gpt-4", "finish_reason": "stop"},
+            response_metadata={"model": OPENAI_TEST_MODEL, "finish_reason": "stop"},
         ),
     ]
 

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 logger = logging.getLogger(__name__)
-_LOGGED = set()
+_LOGGED: set[tuple[str, type[Exception]]] = set()
 _EXECUTOR: ThreadPoolExecutor | None = None
 
 OVERRIDABLE_LANGSMITH_INHERITABLE_METADATA_KEYS: frozenset[str] = frozenset(
@@ -359,7 +359,7 @@ class LangChainTracer(BaseTracer):
     @override
     def _llm_run_with_token_event(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         parent_run_id: UUID | None = None,

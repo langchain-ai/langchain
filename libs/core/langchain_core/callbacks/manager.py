@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import functools
+import inspect
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
@@ -214,7 +215,7 @@ async def atrace_as_chain_group(
             await run_manager.on_chain_end({})
 
 
-Func = TypeVar("Func", bound=Callable)
+Func = TypeVar("Func", bound=Callable[..., Any])
 
 
 def shielded(func: Func) -> Func:
@@ -252,6 +253,35 @@ def shielded(func: Func) -> Func:
     return cast("Func", wrapped)
 
 
+async def _achat_model_start_fallback(
+    coro: Coroutine[Any, Any, Any],
+    handler: BaseCallbackHandler,
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """Wrap an async `on_chat_model_start` coroutine with fallback.
+
+    Catches `NotImplementedError` and triggers the `on_llm_start` fallback.
+    This covers async handlers invoked from a **sync** `handle_event` call,
+    where the coroutine is collected into `coros` and executed later by
+    `_run_coros`. Without this wrapper the `NotImplementedError` would be
+    caught generically by `_run_coros` and the trace would be lost.
+    """
+    try:
+        await coro
+    except NotImplementedError:
+        message_strings = [get_buffer_string(m) for m in args[1]]
+        await _ahandle_event_for_handler(
+            handler,
+            "on_llm_start",
+            "ignore_llm",
+            args[0],
+            message_strings,
+            *args[2:],
+            **kwargs,
+        )
+
+
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
@@ -281,6 +311,10 @@ def handle_event(
                 ):
                     event = getattr(handler, event_name)(*args, **kwargs)
                     if asyncio.iscoroutine(event):
+                        if event_name == "on_chat_model_start":
+                            event = _achat_model_start_fallback(
+                                event, handler, *args, **kwargs
+                            )
                         coros.append(event)
             except NotImplementedError as e:
                 if event_name == "on_chat_model_start":
@@ -327,15 +361,18 @@ def handle_event(
                 # running coroutine, which we cannot interrupt to run this one.
                 # The solution is to run the synchronous function on the globally shared
                 # thread pool executor to avoid blocking the main event loop.
-                _executor().submit(
-                    cast("Callable", copy_context().run), _run_coros, coros
-                ).result()
+                _executor().submit(copy_context().run, _run_coros, coros).result()
             else:
                 # If there's no running loop, we can run the coroutines directly.
                 _run_coros(coros)
 
 
 def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
+    # Note: exceptions raised by these coroutines are always logged and swallowed
+    # here, regardless of the handler's `raise_error` setting. Async-handler errors
+    # driven through sync `handle_event` therefore never propagate, unlike errors
+    # from sync handlers (which honor `raise_error`). This is a pre-existing
+    # asymmetry between the sync and async callback paths.
     if hasattr(asyncio, "Runner"):
         # Python 3.11+
         # Run the coroutines in a new event loop, taking care to
@@ -374,17 +411,14 @@ async def _ahandle_event_for_handler(
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
-            if asyncio.iscoroutinefunction(event):
+            if inspect.iscoroutinefunction(event):
                 await event(*args, **kwargs)
             elif handler.run_inline:
                 event(*args, **kwargs)
             else:
                 await asyncio.get_event_loop().run_in_executor(
                     None,
-                    cast(
-                        "Callable",
-                        functools.partial(copy_context().run, event, *args, **kwargs),
-                    ),
+                    functools.partial(copy_context().run, event, *args, **kwargs),
                 )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
@@ -673,7 +707,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -681,7 +715,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 
@@ -792,7 +826,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -800,7 +834,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 

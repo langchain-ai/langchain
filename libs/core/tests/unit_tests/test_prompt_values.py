@@ -12,7 +12,7 @@ from langchain_core.prompt_values import ChatPromptValueConcrete
 
 
 def test_chat_prompt_value_concrete() -> None:
-    messages: list = [
+    messages = [
         AIMessage("foo"),
         HumanMessage("foo"),
         SystemMessage("foo"),

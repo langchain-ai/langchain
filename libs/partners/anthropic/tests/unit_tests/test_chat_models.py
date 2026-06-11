@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
@@ -42,19 +43,22 @@ MODEL_NAME = "claude-sonnet-4-5-20250929"
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    for model in [
-        ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
-        ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
-            model=MODEL_NAME,
-            anthropic_api_key="xyz",
-            default_request_timeout=2,
-            base_url="https://api.anthropic.com",
-        ),
-    ]:
-        assert model.model == MODEL_NAME
-        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
-        assert model.default_request_timeout == 2.0
-        assert model.anthropic_api_url == "https://api.anthropic.com"
+    with patch.dict(os.environ, {"ANTHROPIC_API_URL": "https://api.anthropic.com"}):
+        for model in [
+            ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
+            ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
+                model=MODEL_NAME,
+                anthropic_api_key="xyz",
+                default_request_timeout=2,
+                base_url="https://api.anthropic.com",
+            ),
+        ]:
+            assert model.model == MODEL_NAME
+            assert (
+                cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
+            )
+            assert model.default_request_timeout == 2.0
+            assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 def test_user_agent_header_in_client_params() -> None:
@@ -187,9 +191,23 @@ def test_anthropic_model_kwargs() -> None:
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens_to_sample'} should be specified explicitly. "
+            "Instead they were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens'} should be specified explicitly. Instead they "
+            "were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 
@@ -737,7 +755,7 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
     # Check handling of empty AIMessage
-    empty_contents: list[str | list[str | dict]] = ["", []]
+    empty_contents: list[str | list[str | dict[str, Any]]] = ["", []]
     for empty_content in empty_contents:
         ## Permit message in final position
         _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
@@ -2114,6 +2132,8 @@ def test_anthropic_model_params() -> None:
         "ls_max_tokens": 64000,
         "ls_temperature": None,
     }
+    assert llm.metadata is not None
+    assert llm.metadata["versions"]["langchain-anthropic"] == __version__
 
     ls_params = llm._get_ls_params(model=MODEL_NAME)
     assert ls_params.get("ls_model_name") == MODEL_NAME

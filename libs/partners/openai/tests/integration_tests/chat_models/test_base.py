@@ -624,7 +624,7 @@ def test_disable_parallel_tool_calling() -> None:
     assert len(result.tool_calls) == 1
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4", "gpt-5-nano"])
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "gpt-4.1-mini", "gpt-5-nano"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
@@ -708,7 +708,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
 
 
 def test_image_token_counting_jpeg() -> None:
-    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/9f99bb977307a1bd5efeb8dc6b67eb13904c4af1/src/oss/images/checkpoints.jpg"
     message = HumanMessage(
         content=[
@@ -742,7 +742,7 @@ def test_image_token_counting_jpeg() -> None:
 
 
 def test_image_token_counting_png() -> None:
-    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     message = HumanMessage(
         content=[
@@ -778,7 +778,7 @@ def test_image_token_counting_png() -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize(
     ("model", "method"),
-    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
+    [("gpt-4.1-mini", "function_calling"), ("gpt-4.1-mini", "json_schema")],
 )
 def test_structured_output_strict(
     model: str,
@@ -821,7 +821,7 @@ def test_structured_output_strict(
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
+@pytest.mark.parametrize(("model", "method"), [("gpt-4.1-mini", "json_schema")])
 def test_nested_structured_output_strict(
     model: str, method: Literal["json_schema"], use_responses_api: bool
 ) -> None:
@@ -991,7 +991,7 @@ def test_prediction_tokens() -> None:
     """
     )
 
-    llm = ChatOpenAI(model="gpt-4.1-nano")
+    llm = ChatOpenAI(model="gpt-4.1-mini")
     query = (
         "Replace the Username property with an Email property. "
         "Respond only with code, and with no markdown formatting."
@@ -1010,18 +1010,18 @@ def test_prediction_tokens() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_stream_o_series(use_responses_api: bool) -> None:
+def test_stream_reasoning_model(use_responses_api: bool) -> None:
     list(
-        ChatOpenAI(model="o3-mini", use_responses_api=use_responses_api).stream(
+        ChatOpenAI(model="gpt-5-nano", use_responses_api=use_responses_api).stream(
             "how are you"
         )
     )
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-async def test_astream_o_series(use_responses_api: bool) -> None:
+async def test_astream_reasoning_model(use_responses_api: bool) -> None:
     async for _ in ChatOpenAI(
-        model="o3-mini", use_responses_api=use_responses_api
+        model="gpt-5-nano", use_responses_api=use_responses_api
     ).astream("how are you"):
         pass
 
@@ -1064,34 +1064,9 @@ async def test_astream_response_format() -> None:
     assert parsed.response == parsed_content["response"]
 
 
-@pytest.mark.parametrize("use_responses_api", [False, True])
-@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
-def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
-    # o1 models need higher token limits for reasoning
-    o1_token_limit = 1000
-    if use_max_completion_tokens:
-        kwargs: dict = {"max_completion_tokens": o1_token_limit}
-    else:
-        kwargs = {"max_tokens": o1_token_limit}
-    response = ChatOpenAI(
-        model="o1",
-        reasoning_effort="low",
-        use_responses_api=use_responses_api,
-        **kwargs,
-    ).invoke(
-        [
-            {"role": "developer", "content": "respond in all caps"},
-            {"role": "user", "content": "HOW ARE YOU"},
-        ]
-    )
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.text, str)
-    assert response.text.upper() == response.text
-
-
 @pytest.mark.scheduled
-def test_o1_stream_default_works() -> None:
-    result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
+def test_reasoning_model_stream_default_works() -> None:
+    result = list(ChatOpenAI(model="gpt-5-nano").stream("say 'hi'"))
     assert len(result) > 0
 
 
@@ -1303,6 +1278,7 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
         model="gpt-4o-mini",
         temperature=0,
         output_version="v1",
+        stream_usage=False,
     )
     with_tool = llm.bind_tools([_Person], tool_choice="_Person")
     prompt = "Extract: Erick is 27 years old."

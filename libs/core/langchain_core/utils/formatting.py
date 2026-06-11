@@ -21,7 +21,7 @@ class StrictFormatter(Formatter):
     """
 
     def vformat(
-        self, format_string: str, args: Sequence, kwargs: Mapping[str, Any]
+        self, format_string: str, args: Sequence[Any], kwargs: Mapping[str, Any]
     ) -> str:
         """Format a string using only keyword arguments.
 

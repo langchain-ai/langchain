@@ -20,10 +20,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.1.4"
+version = "1.1.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.6,<2.0.0",
     "tokenizers>=0.15.1,<1.0.0",
     "httpx>=0.25.2,<1.0.0",
     "httpx-sse>=0.3.1,<1.0.0",
@@ -47,15 +47,12 @@ test = [
     "pytest-retry>=1.7.0,<1.8.0",
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
 typing = [
-    "mypy>=1.10.0,<2.0.0",
-    "langchain-core>=1.4.0,<2.0.0"
+    "mypy>=2.1.0,<2.2.0",
 ]
 
 [tool.uv]
@@ -66,7 +63,7 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.ruff.format]
 docstring-code-format = true

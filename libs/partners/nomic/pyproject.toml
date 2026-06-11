@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.6,<2.0.0",
     "nomic>=3.5.3,<4.0.0",
     "pillow>=12.1.1,<13.0.0",
 ]
@@ -47,16 +47,14 @@ test = [
     "pytest-xdist>=3.6.1,<4.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "syrupy>=5.0.0,<6.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
-    "langchain-core>=1.4.0,<2.0.0"
+    "mypy>=2.1.0,<2.2.0",
 ]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
+dev = []
 
 [tool.uv]
 constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
@@ -91,7 +89,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 ban-relative-imports = "all"
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.coverage.run]
 omit = ["tests/*"]
