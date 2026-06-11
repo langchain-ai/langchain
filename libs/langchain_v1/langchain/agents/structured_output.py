@@ -57,6 +57,25 @@ class MultipleStructuredOutputsError(StructuredOutputError):
         )
 
 
+class NoStructuredOutputError(StructuredOutputError):
+    """Raised when model fails to return a structured output tool call."""
+
+    def __init__(self, tool_names: list[str], ai_message: AIMessage) -> None:
+        """Initialize `NoStructuredOutputError`.
+
+        Args:
+            tool_names: The names of the expected structured output tools.
+            ai_message: The AI message that omitted the structured output tool call.
+        """
+        self.tool_names = tool_names
+        self.ai_message = ai_message
+
+        expected = ", ".join(tool_names) if tool_names else "structured output"
+        super().__init__(
+            f"Model failed to return the required structured response tool call for {expected}."
+        )
+
+
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 

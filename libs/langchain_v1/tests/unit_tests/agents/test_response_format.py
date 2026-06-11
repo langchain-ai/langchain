@@ -26,6 +26,7 @@ from langchain.agents.middleware.types import (
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
+    StructuredOutputError,
     StructuredOutputValidationError,
     ToolStrategy,
 )
@@ -527,6 +528,57 @@ class TestResponseFormatAsToolStrategy:
             match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_missing_structured_output_tool_call_without_retry(self) -> None:
+        """Test missing structured output tool call raises without retry."""
+        model = FakeToolCallingModel(tool_calls=[[]])
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputError,
+            match=r".*WeatherBaseModel.*",
+        ):
+            agent.invoke(
+                {"messages": [HumanMessage("What's the weather?")]},
+                {"recursion_limit": 2},
+            )
+
+    def test_missing_structured_output_tool_call_with_retry(self) -> None:
+        """Test missing structured output tool call retries when configured."""
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [],
+                [
+                    {
+                        "name": "WeatherBaseModel",
+                        "id": "1",
+                        "args": WEATHER_DATA,
+                    },
+                ],
+            ],
+        )
+
+        agent = create_agent(
+            model,
+            [get_weather],
+            response_format=ToolStrategy(WeatherBaseModel),
+        )
+
+        response = agent.invoke(
+            {"messages": [HumanMessage("What's the weather?")]},
+            {"recursion_limit": 4},
+        )
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert len(response["messages"]) == 5
 
     def test_structured_output_parsing_error_with_retry(self) -> None:
         """Test that retry handles parsing errors for structured output."""

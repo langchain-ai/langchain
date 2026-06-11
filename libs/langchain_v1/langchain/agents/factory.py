@@ -17,7 +17,7 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -47,6 +47,7 @@ from langchain.agents.middleware.types import (
 from langchain.agents.structured_output import (
     AutoStrategy,
     MultipleStructuredOutputsError,
+    NoStructuredOutputError,
     OutputToolBinding,
     ProviderStrategy,
     ProviderStrategyBinding,
@@ -1087,11 +1088,21 @@ def create_agent(
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
-        if (
-            isinstance(effective_response_format, ToolStrategy)
-            and isinstance(output, AIMessage)
-            and output.tool_calls
-        ):
+        if isinstance(effective_response_format, ToolStrategy) and isinstance(output, AIMessage):
+            if not output.tool_calls:
+                missing_output_error = NoStructuredOutputError(
+                    list(structured_output_tools), output
+                )
+                should_retry, error_message = _handle_structured_output_error(
+                    missing_output_error, effective_response_format
+                )
+                if not should_retry:
+                    raise missing_output_error
+
+                return {
+                    "messages": [output, HumanMessage(content=error_message)],
+                }
+
             structured_tool_calls = [
                 tc for tc in output.tool_calls if tc["name"] in structured_output_tools
             ]
@@ -1751,8 +1762,12 @@ def _make_model_to_tools_edge(
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
         # 3. If the model hasn't called any tools, exit the loop
-        # this is the classic exit condition for an agent loop
+        # this is the classic exit condition for an agent loop.
+        # When structured output is required, a retry instruction may be added
+        # after the AI message if the model forgot the structured output tool call.
         if len(last_ai_message.tool_calls) == 0:
+            if structured_output_tools and isinstance(state["messages"][-1], HumanMessage):
+                return model_destination
             return end_destination
 
         pending_tool_calls = [
