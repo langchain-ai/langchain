@@ -60,7 +60,7 @@ test = [
 lint = ["ruff>=0.13.1,<0.14.0"]
 test_integration = ["requests>=2.32.3,<3.0.0"]
 typing = [
-    "mypy>=1.17.1,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-requests>=2.31.0,<3.0.0",
 ]
 
@@ -74,8 +74,13 @@ langchain = { path = "../../langchain_v1", editable = true }
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.mypy]
-disallow_untyped_defs = "True"
-plugins = ['pydantic.mypy']
+# `pydantic.mypy` is required here (and on perplexity): this package's code is
+# authored against the plugin and reports many errors without it. It is
+# intentionally NOT enabled on the other partner packages, where it adds no real
+# coverage and instead false-flags the public alias-based constructor API
+# (e.g. `Chat...(model=...)`, `...(api_key=...)`) used in their tests.
+plugins = ["pydantic.mypy"]
+disallow_untyped_defs = true
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -68,7 +68,7 @@ dev = [
 ]
 test_integration = []
 typing = [
-    "mypy>=1.10.0,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "langchain-core>=1.4.0,<2.0.0"
 ]
 
@@ -81,7 +81,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = ["torch", "torch.*", "langchain_community", "langchain_community.*",]

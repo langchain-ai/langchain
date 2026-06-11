@@ -97,7 +97,7 @@ lint = [
     "cffi",
 ]
 typing = [
-    "mypy>=1.19.1,<1.20.0",
+    "mypy>=2.1.0,<2.2.0",
     "mypy-protobuf>=3.0.0,<6.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
@@ -131,9 +131,10 @@ exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 strict = true
-ignore_missing_imports = true
 enable_error_code = "deprecated"
 warn_unreachable = true
+
+ignore_missing_imports = true
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
