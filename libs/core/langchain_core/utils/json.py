@@ -94,6 +94,9 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         elif char == '"':
             is_inside_string = True
             escaped = False
+        # Remove newlines outside strings to avoid breaking non-string values
+        elif char == "\n":
+            new_char = ""
         elif char == "{":
             stack.append("}")
         elif char == "[":
