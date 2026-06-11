@@ -42,19 +42,22 @@ MODEL_NAME = "claude-sonnet-4-5-20250929"
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    for model in [
-        ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
-        ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
-            model=MODEL_NAME,
-            anthropic_api_key="xyz",
-            default_request_timeout=2,
-            base_url="https://api.anthropic.com",
-        ),
-    ]:
-        assert model.model == MODEL_NAME
-        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
-        assert model.default_request_timeout == 2.0
-        assert model.anthropic_api_url == "https://api.anthropic.com"
+    with patch.dict(os.environ, {"ANTHROPIC_API_URL": "https://api.anthropic.com"}):
+        for model in [
+            ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
+            ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
+                model=MODEL_NAME,
+                anthropic_api_key="xyz",
+                default_request_timeout=2,
+                base_url="https://api.anthropic.com",
+            ),
+        ]:
+            assert model.model == MODEL_NAME
+            assert (
+                cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
+            )
+            assert model.default_request_timeout == 2.0
+            assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 def test_user_agent_header_in_client_params() -> None:
@@ -187,9 +190,23 @@ def test_anthropic_model_kwargs() -> None:
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens_to_sample'} should be specified explicitly. "
+            "Instead they were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens'} should be specified explicitly. Instead they "
+            "were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 
