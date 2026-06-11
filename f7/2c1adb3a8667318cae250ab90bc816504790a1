@@ -1,0 +1,35 @@
+libs/partners/openrouter/langchain_openrouter/_stream_events.py
+  s_dfc29189803279::t_4d265aa6dd50ed 1-87,144-159,161,163-164,168,172,174,179-184,186,188-189,193,195,198,200,202
+  s_dfc29189803279::t_1dbf5ba7400ccb 88-97,100-111,119-121
+  s_dfc29189803279::t_4cbcc6a81507eb 98-99,112-118,122-141
+  s_dfc29189803279::t_0bb958f45c281e 160,165-167,169,173,175-178,185,190-192,194,199,201,203-205
+  s_dfc29189803279::t_583cda47b8bbb2 162,170-171
+  s_dfc29189803279::t_4be1e73b3ea974 187,196-197
+libs/partners/openrouter/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_dbe6a8846fce23 1-110,112-118,124-140,142-146,205-273,276-286,292-308,311-392
+  s_dfc29189803279::t_761830d71095a7 111,119-123,141
+  s_dfc29189803279::t_b052e43fd1c9f8 147-161,163-204
+  s_dfc29189803279::t_34588bb1e8faee 162
+  s_dfc29189803279::t_2167f712352375 274-275,287-291
+  s_dfc29189803279::t_8aead6c437d68b 309-310
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_dfc29189803279::t_13fb2661307d6c 9
+  s_dfc29189803279::t_2985d5ef0156cb 75-77
+  s_dfc29189803279::t_562aac744ebef3 716-781
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f72c1adb3a8667318cae250ab90bc816504790a1",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
