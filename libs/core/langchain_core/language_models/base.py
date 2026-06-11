@@ -155,6 +155,13 @@ def _get_langchain_version() -> str | None:
         return None
 
 
+# Warm the cache at import time, while we're guaranteed to be on the synchronous
+# import path and outside any event loop. Otherwise the first model constructed
+# inside async code would run the blocking `os.stat` (via `importlib.metadata`)
+# on the event loop, tripping blocking-I/O detectors like blockbuster.
+_get_langchain_version()
+
+
 class BaseLanguageModel(
     RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
