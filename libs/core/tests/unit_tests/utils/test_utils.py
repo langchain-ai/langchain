@@ -65,6 +65,9 @@ def test_check_package_version(
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
+        # Differing booleans must stay bool, not coerce to int (#38064)
+        ({"a": True}, {"a": False}, {"a": False}),
+        ({"a": False}, {"a": True}, {"a": True}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
         ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
@@ -505,3 +508,37 @@ def test_merge_obj_tuple_raises() -> None:
     """Test `merge_obj` raises `ValueError` for tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj((1, 2), (3, 4))
+
+
+# --- Regression test for #38064 ---
+
+
+def test_merge_dicts_differing_bools_preserve_type() -> None:
+    """Regression test: differing booleans must produce bool, not int.
+
+    Before the fix, `isinstance(True, int)` was True so booleans fell into
+    the integer summation branch: True + False → 1 (int).
+    """
+    result = merge_dicts({"a": True}, {"a": False})
+    assert result == {"a": False}
+    assert isinstance(result["a"], bool), f"Expected bool, got {type(result['a'])}"
+
+    result2 = merge_dicts({"a": False}, {"a": True})
+    assert result2 == {"a": True}
+    assert isinstance(result2["a"], bool), f"Expected bool, got {type(result2['a'])}"
+
+
+def test_ai_message_chunk_add_preserves_bool_in_additional_kwargs() -> None:
+    """Regression test: AIMessageChunk.__add__ must not coerce bool to int.
+
+    The streaming chunk aggregation path uses merge_dicts under the hood.
+    A provider emitting a boolean flag like 'refusal' in additional_kwargs
+    must preserve bool type after chunk addition.
+    """
+    from langchain_core.messages import AIMessageChunk
+
+    a = AIMessageChunk(content="", additional_kwargs={"refusal": True})
+    b = AIMessageChunk(content="", additional_kwargs={"refusal": False})
+    merged = a + b
+    assert merged.additional_kwargs["refusal"] is False
+    assert isinstance(merged.additional_kwargs["refusal"], bool)
