@@ -11,10 +11,15 @@ from typing import Any, get_type_hints
 
 import httpx
 
-try:
-    import tomllib  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
+# Use a `sys.version_info` guard rather than try/except: under strict mypy,
+# `warn_unused_ignores` cannot be satisfied across versions with try/except
+# (3.10 needs an `import-not-found` ignore on `tomllib`; 3.11+ flags it unused).
+# mypy resolves this guard per target version and exempts it from
+# `warn_unreachable`, so it type-checks cleanly with no ignores.
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 def _validate_data_dir(data_dir: Path) -> Path:
