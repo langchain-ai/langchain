@@ -64,19 +64,22 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
+            # ... upar ka logic ...
             elif isinstance(merged[right_k], list):
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+
+            # --- Yahan se tumhara Fix shuru hota hai ---
+            elif isinstance(merged[right_k], bool):
+                merged[right_k] = right_v  # Last-wins logic
             elif isinstance(merged[right_k], int):
-                # Preserve identification and temporal fields using last-wins strategy
-                # instead of summing:
-                # - index: identifies which tool call a chunk belongs to
-                # - created/timestamp: temporal values that shouldn't be accumulated
                 if right_k in {"index", "created", "timestamp"}:
                     merged[right_k] = right_v
                 else:
                     merged[right_k] += right_v
+            # --------------------------------------------
+
             else:
                 msg = (
                     f"Additional kwargs key {right_k} already exists in left dict and "
