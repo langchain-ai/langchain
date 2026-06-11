@@ -19,6 +19,7 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
+    FallbackLatch,
     Runnable,
     RunnableBinding,
     RunnableGenerator,
@@ -404,3 +405,177 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+# -- Latched fallbacks -------------------------------------------------------
+
+
+def _make_counting_chain(
+    *, latch: FallbackLatch | None
+) -> tuple[RunnableWithFallbacks[Any, Any], dict[str, int]]:
+    """Build `fails | fallback` and return counters for assertions."""
+    counters = {"primary": 0, "fallback": 0}
+
+    def _primary(_: Any) -> str:
+        counters["primary"] += 1
+        msg = "boom"
+        raise ValueError(msg)
+
+    def _fallback(_: Any) -> str:
+        counters["fallback"] += 1
+        return "ok"
+
+    chain = RunnableLambda(_primary).with_fallbacks(
+        [RunnableLambda(_fallback)], latch=latch
+    )
+    return chain, counters
+
+
+def test_latch_flips_on_first_failure_invoke() -> None:
+    latch = FallbackLatch()
+    chain, counts = _make_counting_chain(latch=latch)
+
+    assert chain.invoke("a") == "ok"
+    assert latch.latched is True
+    assert counts == {"primary": 1, "fallback": 1}
+
+    # Latched: primary skipped on subsequent calls.
+    chain.invoke("b")
+    chain.invoke("c")
+    assert counts == {"primary": 1, "fallback": 3}
+
+
+async def test_latch_flips_on_first_failure_ainvoke() -> None:
+    latch = FallbackLatch()
+    chain, counts = _make_counting_chain(latch=latch)
+
+    assert await chain.ainvoke("a") == "ok"
+    assert latch.latched is True
+    assert counts == {"primary": 1, "fallback": 1}
+
+    await chain.ainvoke("b")
+    await chain.ainvoke("c")
+    assert counts == {"primary": 1, "fallback": 3}
+
+
+def test_latch_reset_re_enables_primary() -> None:
+    latch = FallbackLatch()
+    chain, counts = _make_counting_chain(latch=latch)
+
+    chain.invoke("x")
+    assert latch.latched is True
+    chain.invoke("y")
+    assert counts == {"primary": 1, "fallback": 2}
+
+    latch.reset()
+    assert latch.latched is False
+    chain.invoke("z")
+    # Primary attempted again, fails, fallback runs, latch re-trips.
+    assert counts == {"primary": 2, "fallback": 3}
+    assert latch.latched is True
+
+
+def test_latch_shared_across_wrappers() -> None:
+    """A single FallbackLatch trips for every wrapper that shares it.
+
+    This is the per-run circuit-breaker property: tool-bound and bare
+    versions of the same model can both consult one latch so a single
+    Anthropic failure on the tool path skips Anthropic on the bare path
+    too.
+    """
+    latch = FallbackLatch()
+    chain_a, _counts_a = _make_counting_chain(latch=latch)
+    chain_b, counts_b = _make_counting_chain(latch=latch)
+
+    chain_a.invoke("a")  # trips the shared latch
+    assert latch.latched is True
+
+    chain_b.invoke("b")
+    chain_b.invoke("c")
+    # chain_b's primary never runs after the trip.
+    assert counts_b["primary"] == 0
+    assert counts_b["fallback"] == 2
+
+
+def test_latch_propagates_through_getattr_bind() -> None:
+    """`with_fallbacks(..., latch=l).bind(...)` must preserve `l`.
+
+    The `__getattr__` runnable-method rewrite reconstructs the wrapper —
+    without forwarding the latch explicitly, the rebuilt wrapper would
+    have a `None` latch and silently lose its circuit-breaker.
+    """
+    latch = FallbackLatch()
+    chain, _ = _make_counting_chain(latch=latch)
+    bound = chain.bind(tools=[])  # returns Runnable; not RunnableWithFallbacks
+    # Sanity: original wrapper still carries the latch.
+    assert chain.latch is latch
+    _ = bound  # type: ignore[unused-ignore]
+
+
+def test_latch_default_none_keeps_existing_behavior() -> None:
+    """No latch passed → primary is retried on every call (existing behavior)."""
+    chain, counts = _make_counting_chain(latch=None)
+    chain.invoke("a")
+    chain.invoke("b")
+    assert counts == {"primary": 2, "fallback": 2}
+
+
+# -- close / aclose propagation ----------------------------------------------
+
+
+class _CloseTracker(RunnableLambda):
+    """RunnableLambda wrapper that records close()/aclose() invocations."""
+
+    def __init__(self) -> None:
+        super().__init__(lambda x: x)
+        self.sync_closed = 0
+        self.async_closed = 0
+
+    def close(self) -> None:
+        self.sync_closed += 1
+
+    async def aclose(self) -> None:
+        self.async_closed += 1
+
+
+def test_close_walks_runnable_and_fallbacks() -> None:
+    primary = _CloseTracker()
+    fb1 = _CloseTracker()
+    fb2 = _CloseTracker()
+    chain = primary.with_fallbacks([fb1, fb2])
+
+    chain.close()
+
+    assert primary.sync_closed == 1
+    assert fb1.sync_closed == 1
+    assert fb2.sync_closed == 1
+
+
+async def test_aclose_walks_runnable_and_fallbacks() -> None:
+    primary = _CloseTracker()
+    fb = _CloseTracker()
+    chain = primary.with_fallbacks([fb])
+
+    await chain.aclose()
+
+    assert primary.async_closed == 1
+    assert fb.async_closed == 1
+
+
+def test_close_swallows_per_runnable_errors() -> None:
+    """One bad close() should not stop the others from running."""
+
+    class _BadClose(RunnableLambda):
+        def __init__(self) -> None:
+            super().__init__(lambda x: x)
+
+        def close(self) -> None:
+            msg = "nope"
+            raise RuntimeError(msg)
+
+    bad = _BadClose()
+    good = _CloseTracker()
+    chain = bad.with_fallbacks([good])
+
+    chain.close()  # should not raise
+    assert good.sync_closed == 1

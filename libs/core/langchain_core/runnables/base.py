@@ -106,6 +106,9 @@ if TYPE_CHECKING:
     )
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
+        FallbackLatch as FallbackLatchT,
+    )
+    from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
     from langchain_core.runnables.graph import Graph
@@ -2171,6 +2174,7 @@ class Runnable(ABC, Generic[Input, Output]):
         *,
         exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,),
         exception_key: str | None = None,
+        latch: FallbackLatchT | None = None,
     ) -> RunnableWithFallbacksT[Input, Output]:
         """Add fallbacks to a `Runnable`, returning a new `Runnable`.
 
@@ -2226,6 +2230,14 @@ class Runnable(ABC, Generic[Input, Output]):
 
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
+            latch: Optional shared
+                [`FallbackLatch`][langchain_core.runnables.fallbacks.FallbackLatch]
+                used to circuit-break the primary. When the latch is tripped (on
+                the primary's first handled exception) every subsequent call skips
+                the primary and starts at the first fallback. Useful when a primary
+                failure is unlikely to recover within the wrapper's lifetime — e.g.,
+                a wrong API key, where the unconditional re-try wastes a round-trip
+                on every call.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
@@ -2241,6 +2253,7 @@ class Runnable(ABC, Generic[Input, Output]):
             fallbacks=fallbacks,
             exceptions_to_handle=exceptions_to_handle,
             exception_key=exception_key,
+            latch=latch,
         )
 
     """ --- Helper methods for Subclasses --- """

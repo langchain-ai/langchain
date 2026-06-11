@@ -2298,6 +2298,73 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         msg = "Unexpected generation type"
         raise ValueError(msg)
 
+    # -- Resource lifecycle ---------------------------------------------------
+
+    def close(self) -> None:
+        """Release any synchronous resources held by this model.
+
+        Default: no-op. Override in subclasses that own HTTP clients,
+        connection pools, or other resources whose lifetime should be
+        tied to the model. Idempotent — safe to call multiple times.
+
+        Note:
+            Provider SDKs typically back chat models with httpx pools that
+            they only close best-effort from `__del__`. In long-lived
+            workers that construct models per request, calling `close()`
+            (or `aclose()`) when done prevents pool accumulation.
+
+        Example:
+            ```python
+            with ChatProvider(model="foo") as model:
+                model.invoke("hi")
+            # HTTP clients released here.
+            ```
+        """
+
+    async def aclose(self) -> None:
+        """Release any asynchronous resources held by this model.
+
+        Default: dispatches to `close()`. Override when async resources
+        (e.g., `httpx.AsyncClient`, anyio task groups) need an event-loop
+        -aware teardown. Idempotent — safe to call multiple times.
+
+        Example:
+            ```python
+            async with ChatProvider(model="foo") as model:
+                await model.ainvoke("hi")
+            # Async HTTP clients released here.
+            ```
+        """
+        self.close()
+
+    def __enter__(self) -> Self:
+        """Enter the sync context — returns self."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
+        """Exit the sync context — calls `close()`."""
+        del exc_type, exc, tb
+        self.close()
+
+    async def __aenter__(self) -> Self:
+        """Enter the async context — returns self."""
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None:
+        """Exit the async context — calls `aclose()`."""
+        del exc_type, exc, tb
+        await self.aclose()
+
     @property
     @abstractmethod
     def _llm_type(self) -> str:

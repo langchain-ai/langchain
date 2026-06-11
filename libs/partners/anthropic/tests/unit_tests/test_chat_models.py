@@ -3375,3 +3375,96 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+# -- close / aclose ----------------------------------------------------------
+#
+# `ChatAnthropic` always wraps the process-shared `@lru_cache` httpx pool
+# (`_get_default_(async_)httpx_client`); it has no per-instance http_client.
+# So `close()` / `aclose()` must NOT close that pool — doing so broke every
+# sibling model in prod with "Cannot send a request, as the client has been
+# closed." These tests pin the shared-pool safety + the defensive owned-client
+# path.
+
+
+class _FakeOwnedAsyncClient:
+    """`anthropic.AsyncClient` stand-in whose `_client` is NOT the shared pool.
+
+    Simulates a hypothetical privately-owned client so we can assert the
+    ownership guard would close it (defensive — no such path exists today).
+    """
+
+    def __init__(self) -> None:
+        self._client = object()  # distinct from any lru-cached httpx client
+        self.closed = False
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+def _make_anthropic() -> ChatAnthropic:
+    return ChatAnthropic(model=MODEL_NAME, api_key="dummy")  # type: ignore[arg-type]
+
+
+async def test_aclose_does_not_close_shared_async_pool() -> None:
+    """Regression: closing one model must not close the shared httpx pool.
+
+    Two `ChatAnthropic` instances with the same params share one lru-cached
+    httpx pool. Closing model 1 must leave model 2 (and every future model)
+    able to keep issuing requests.
+    """
+    m1 = _make_anthropic()
+    m2 = _make_anthropic()
+    shared = m1._async_client._client
+    assert m2._async_client._client is shared  # same lru-cached pool
+
+    await m1.aclose()
+
+    assert shared.is_closed is False
+    assert m2._async_client._client.is_closed is False
+
+
+def test_close_does_not_close_shared_sync_pool() -> None:
+    m1 = _make_anthropic()
+    m2 = _make_anthropic()
+    shared = m1._client._client
+    assert m2._client._client is shared
+
+    m1.close()
+
+    assert shared.is_closed is False
+
+
+def test_close_noop_when_clients_uninstantiated() -> None:
+    """`close()` must not materialize a `cached_property` client to inspect it."""
+    llm = _make_anthropic()
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+
+    llm.close()
+
+    assert "_client" not in llm.__dict__
+    assert "_async_client" not in llm.__dict__
+
+
+async def test_aclose_idempotent() -> None:
+    llm = _make_anthropic()
+    _ = llm._async_client
+    await llm.aclose()
+    await llm.aclose()  # second call must not raise
+
+
+async def test_aclose_closes_privately_owned_client() -> None:
+    """Defensive: a client NOT backed by the shared pool *is* closed.
+
+    Guards the ownership check itself — if a future construction path ever
+    builds a private `anthropic.AsyncClient`, teardown should release it.
+    """
+    llm = _make_anthropic()
+    owned = _FakeOwnedAsyncClient()
+    llm.__dict__["_async_client"] = owned
+
+    await llm.aclose()
+
+    assert owned.closed is True
+    assert "_async_client" not in llm.__dict__

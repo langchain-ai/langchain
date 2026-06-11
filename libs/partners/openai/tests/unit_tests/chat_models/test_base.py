@@ -4042,3 +4042,117 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+# -- close / aclose ----------------------------------------------------------
+#
+# By default `ChatOpenAI` wraps the process-shared `@lru_cache` httpx pool
+# (`_get_default_*httpx_client`). `close()` / `aclose()` must only release a
+# client this model *privately owns* — a fresh client built for an unhashable
+# `httpx.Timeout` or an `openai_proxy` transport — never the shared pool or a
+# user-supplied client. Closing the shared pool broke sibling models in prod
+# ("Cannot send a request, as the client has been closed.").
+
+
+class _FakeAsyncClient:
+    """`openai.AsyncOpenAI` stand-in recording `close()` awaits."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+def test_close_default_does_not_close_shared_pool() -> None:
+    """Two default models share one lru-cached pool; closing one must not
+    close it out from under the other (the prod regression)."""
+    m1 = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    m2 = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    assert m1._owns_sync_http_client is False
+    assert m1._owns_async_http_client is False
+    shared = m1.root_async_client._client
+    assert m2.root_async_client._client is shared  # same lru-cached pool
+
+    m1.close()
+
+    assert shared.is_closed is False
+    assert m2.root_async_client._client.is_closed is False
+
+
+async def test_aclose_default_does_not_close_shared_pool() -> None:
+    m1 = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    m2 = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    shared = m1.root_async_client._client
+
+    await m1.aclose()
+
+    assert shared.is_closed is False
+    assert m2.root_async_client._client.is_closed is False
+    # Default model owns nothing → SDK wrappers are left intact.
+    assert m1.root_async_client is not None
+
+
+def test_proxy_client_is_owned() -> None:
+    llm = ChatOpenAI(model="foo", api_key="dummy", openai_proxy="http://localhost:8080")  # type: ignore[arg-type]
+    assert llm._owns_sync_http_client is True
+    assert llm._owns_async_http_client is True
+
+
+def test_unhashable_timeout_client_is_owned() -> None:
+    import httpx
+
+    llm = ChatOpenAI(model="foo", api_key="dummy", timeout=httpx.Timeout(5.0))  # type: ignore[arg-type]
+    assert llm._owns_sync_http_client is True
+    assert llm._owns_async_http_client is True
+
+
+async def test_user_injected_client_not_closed() -> None:
+    import httpx
+
+    injected = httpx.AsyncClient()
+    llm = ChatOpenAI(model="foo", api_key="dummy", http_async_client=injected)  # type: ignore[arg-type]
+    assert llm._owns_async_http_client is False
+
+    await llm.aclose()
+
+    # The caller owns the injected client; we must not close it.
+    assert injected.is_closed is False
+    await injected.aclose()
+
+
+async def test_aclose_closes_owned_async_client() -> None:
+    """When the model owns its client, `aclose()` releases it."""
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    fake = _FakeAsyncClient()
+    llm.root_async_client = fake
+    llm.async_client = fake
+    object.__setattr__(llm, "_owns_async_http_client", True)
+
+    await llm.aclose()
+
+    assert fake.closed is True
+    assert llm.root_async_client is None
+    assert llm.async_client is None
+
+
+async def test_aclose_idempotent() -> None:
+    llm = ChatOpenAI(model="foo", api_key="dummy")  # type: ignore[arg-type]
+    fake = _FakeAsyncClient()
+    llm.root_async_client = fake
+    llm.async_client = fake
+    object.__setattr__(llm, "_owns_async_http_client", True)
+
+    await llm.aclose()
+    await llm.aclose()  # second call must not raise
+    assert fake.closed is True
+
+
+async def test_async_context_manager_closes_owned_client() -> None:
+    fake = _FakeAsyncClient()
+    async with ChatOpenAI(model="foo", api_key="dummy") as llm:  # type: ignore[arg-type]
+        llm.root_async_client = fake
+        llm.async_client = fake
+        object.__setattr__(llm, "_owns_async_http_client", True)
+
+    assert fake.closed is True

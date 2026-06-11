@@ -1,13 +1,15 @@
 """`Runnable` that can fallback to other `Runnable` objects if it fails."""
 
 import asyncio
+import contextlib
 import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
+from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -31,6 +33,49 @@ from langchain_core.runnables.utils import (
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
+
+
+@dataclass
+class FallbackLatch:
+    """Mutable shared state used by [`RunnableWithFallbacks`][langchain_core.runnables.fallbacks.RunnableWithFallbacks] for circuit-breaking.
+
+    The default fallback strategy retries the primary on every call.
+    For failures that are unlikely to recover within the lifetime of the
+    wrapper (a wrong API key, a sustained provider outage), this means
+    every call pays a failing round-trip to the primary before falling
+    back to the fallback. A `FallbackLatch` flips once on the first
+    handled exception from the primary and stays flipped, so subsequent
+    calls on the wrapper — and on any sibling wrapper sharing the same
+    latch instance — skip the primary entirely and start at the first
+    fallback.
+
+    Pass the same `latch` instance to multiple `with_fallbacks(...)`
+    calls (e.g., a bare model and the same model after `bind_tools(...)`)
+    when you want them to act as one circuit. Reset with `reset()`.
+
+    Example:
+        ```python
+        from langchain_core.runnables.fallbacks import FallbackLatch
+
+        latch = FallbackLatch()
+        chat = primary.with_fallbacks([fallback], latch=latch)
+
+        chat.invoke("hi")  # primary fails -> latch trips, fallback returns
+        chat.invoke("again")  # primary skipped entirely, straight to fallback
+
+        latch.reset()
+        chat.invoke("retry")  # primary attempted again
+        ```
+
+    !!! version-added "Added in `langchain-core` 1.2.0"
+    """  # noqa: E501
+
+    latched: bool = False
+    """`True` once a handled exception has tripped the latch."""
+
+    def reset(self) -> None:
+        """Reset the latch so the primary is attempted on the next call."""
+        self.latched = False
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
@@ -102,6 +147,18 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     If used, the base `Runnable` and its fallbacks must accept a dictionary as input.
     """
+    latch: FallbackLatch | None = Field(default=None, exclude=True)
+    """Optional shared circuit-breaker that, once tripped, skips the primary.
+
+    On the first handled exception from `runnable`, `latch.latched` flips
+    to `True` and every subsequent call on this wrapper goes straight to
+    `fallbacks`. Pass the same `FallbackLatch` instance to multiple
+    `with_fallbacks(...)` calls (e.g., the bare model and the same model
+    after `bind_tools(...)`) to make them act as one circuit. Reset with
+    `latch.reset()` to re-enable primary attempts.
+
+    !!! version-added "Added in `langchain-core` 1.2.0"
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -158,9 +215,33 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
         Yields:
             The `Runnable` then its fallbacks.
+
+        !!! note
+            Does not consult `latch`. Use `_run_targets` from the execution
+            paths so a tripped latch can short-circuit past the primary;
+            this property is for introspection / serialization.
         """
         yield self.runnable
         yield from self.fallbacks
+
+    @property
+    def _run_targets(self) -> Iterator[tuple[bool, Runnable[Input, Output]]]:
+        """Yield (is_primary, runnable) pairs for execution paths.
+
+        Skips the primary when `latch` is tripped so subsequent calls go
+        straight to the fallbacks. The `is_primary` flag lets the caller
+        trip the latch on the primary's first handled failure without
+        re-scanning the list.
+        """
+        if self.latch is None or not self.latch.latched:
+            yield True, self.runnable
+        for fb in self.fallbacks:
+            yield False, fb
+
+    def _trip_latch_if_primary(self, is_primary: bool) -> None:  # noqa: FBT001
+        """Flip `latch.latched` when the primary raises a handled exception."""
+        if is_primary and self.latch is not None:
+            self.latch.latched = True
 
     @override
     def invoke(
@@ -184,7 +265,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error  # type: ignore[index]
@@ -197,6 +278,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         **kwargs,
                     )
             except self.exceptions_to_handle as e:
+                self._trip_latch_if_primary(is_primary)
                 if first_error is None:
                     first_error = e
                 last_error = e
@@ -238,7 +320,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
         first_error = None
         last_error = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error  # type: ignore[index]
@@ -247,6 +329,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     coro = context.run(runnable.ainvoke, input, config, **kwargs)
                     output = await coro_with_context(coro, context)
             except self.exceptions_to_handle as e:
+                self._trip_latch_if_primary(is_primary)
                 if first_error is None:
                     first_error = e
                 last_error = e
@@ -314,7 +397,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             outputs = runnable.batch(
                 [input_ for _, input_ in sorted(run_again.items())],
                 [
@@ -325,6 +408,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return_exceptions=True,
                 **kwargs,
             )
+            primary_had_handled_exception = False
             for (i, input_), output in zip(
                 sorted(run_again.copy().items()), outputs, strict=False
             ):
@@ -340,11 +424,17 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if self.exception_key:
                         input_[self.exception_key] = output  # type: ignore[index]
                     handled_exceptions[i] = output
+                    primary_had_handled_exception = True
                 else:
                     run_managers[i].on_chain_end(output)
                     to_return[i] = output
                     run_again.pop(i)
                     handled_exceptions.pop(i, None)
+            # Any handled exception on the primary trips the latch — even
+            # one bad input is enough to skip the primary for subsequent
+            # batches sharing the same latch.
+            if primary_had_handled_exception:
+                self._trip_latch_if_primary(is_primary)
             if first_to_raise:
                 raise first_to_raise
             if not run_again:
@@ -412,7 +502,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             outputs = await runnable.abatch(
                 [input_ for _, input_ in sorted(run_again.items())],
                 [
@@ -424,6 +514,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
 
+            primary_had_handled_exception = False
             for (i, input_), output in zip(
                 sorted(run_again.copy().items()), outputs, strict=False
             ):
@@ -439,12 +530,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     if self.exception_key:
                         input_[self.exception_key] = output  # type: ignore[index]
                     handled_exceptions[i] = output
+                    primary_had_handled_exception = True
                 else:
                     to_return[i] = output
                     await run_managers[i].on_chain_end(output)
                     run_again.pop(i)
                     handled_exceptions.pop(i, None)
 
+            if primary_had_handled_exception:
+                self._trip_latch_if_primary(is_primary)
             if first_to_raise:
                 raise first_to_raise
             if not run_again:
@@ -487,7 +581,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error  # type: ignore[index]
@@ -500,6 +594,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     )
                     chunk: Output = context.run(next, stream)
             except self.exceptions_to_handle as e:
+                self._trip_latch_if_primary(is_primary)
                 first_error = e if first_error is None else first_error
                 last_error = e
             except BaseException as e:
@@ -551,7 +646,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
-        for runnable in self.runnables:
+        for is_primary, runnable in self._run_targets:
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error  # type: ignore[index]
@@ -564,6 +659,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     )
                     chunk = await coro_with_context(anext(stream), context)
             except self.exceptions_to_handle as e:
+                self._trip_latch_if_primary(is_primary)
                 first_error = e if first_error is None else first_error
                 last_error = e
             except BaseException as e:
@@ -633,17 +729,55 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     fallback_attr = getattr(fallback, name)
                     new_fallbacks.append(fallback_attr(*args, **kwargs))
 
+                # `latch` is `exclude=True` so it's missing from `model_dump`;
+                # forward the same instance explicitly so derived wrappers
+                # (e.g. `model.bind_tools([...])`) share the original
+                # circuit-breaker rather than each getting an orphan latch
+                # that nothing can trip.
                 return self.__class__(
                     **{
                         **self.model_dump(),
                         "runnable": new_runnable,
                         "fallbacks": new_fallbacks,
+                        "latch": self.latch,
                     }
                 )
 
             return wrapped
 
         return attr
+
+    # -- Resource lifecycle ---------------------------------------------------
+
+    def close(self) -> None:
+        """Release sync resources held by the wrapped `Runnable` + `fallbacks`.
+
+        Walks `self.runnables` and calls `close()` on each one that has it.
+        Per-runnable failures are suppressed so one bad close doesn't
+        prevent the others from running. Idempotent.
+
+        Useful when the wrapped runnables own HTTP clients / connection
+        pools that should be released when the wrapper is no longer in
+        use (e.g., per-request chat models in a long-lived worker).
+        """
+        for r in self.runnables:
+            close_fn = getattr(r, "close", None)
+            if callable(close_fn):
+                with contextlib.suppress(Exception):
+                    close_fn()
+
+    async def aclose(self) -> None:
+        """Async sibling of `close()`. Walks runnables, awaits async closes."""
+        for r in self.runnables:
+            aclose_fn = getattr(r, "aclose", None)
+            if aclose_fn is not None and inspect.iscoroutinefunction(aclose_fn):
+                with contextlib.suppress(Exception):
+                    await aclose_fn()
+                continue
+            close_fn = getattr(r, "close", None)
+            if callable(close_fn):
+                with contextlib.suppress(Exception):
+                    close_fn()
 
 
 def _returns_runnable(attr: Any) -> bool:

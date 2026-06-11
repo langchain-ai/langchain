@@ -1195,15 +1195,25 @@ class ChatAnthropic(BaseChatModel):
 
         return client_params
 
-    @cached_property
-    def _client(self) -> anthropic.Client:
+    def _http_client_params(self) -> dict[str, Any]:
+        """Args passed to `_get_default_(async_)httpx_client`.
+
+        Shared by `_client` / `_async_client` (to build the SDK clients)
+        and by `close` / `aclose` (to identify whether the SDK client
+        wraps the process-shared cached httpx pool).
+        """
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
+        http_client_params: dict[str, Any] = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
             http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_httpx_client(**http_client_params)
+        return http_client_params
+
+    @cached_property
+    def _client(self) -> anthropic.Client:
+        client_params = self._client_params
+        http_client = _get_default_httpx_client(**self._http_client_params())
         params = {
             **client_params,
             "http_client": http_client,
@@ -1213,17 +1223,75 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_async_httpx_client(**http_client_params)
+        http_client = _get_default_async_httpx_client(**self._http_client_params())
         params = {
             **client_params,
             "http_client": http_client,
         }
         return anthropic.AsyncClient(**params)
+
+    def close(self) -> None:
+        """Release HTTP resources privately owned by this model.
+
+        `ChatAnthropic` does not own its httpx connection pool: `_client`
+        / `_async_client` wrap the **process-wide shared** pool returned
+        by the `@lru_cache`d `_get_default_(async_)httpx_client`
+        (`_client_utils.py`). Every `ChatAnthropic` built with the same
+        `base_url` / `timeout` / `proxy` reuses that one pool, by design —
+        so closing it here would break every *other* live model in the
+        process (`RuntimeError: Cannot send a request, as the client has
+        been closed.`).
+
+        This method therefore closes the SDK client only when its
+        underlying httpx client is **not** the shared cached singleton
+        (a defensive guard against future construction paths that build a
+        private client). For the normal shared-pool path it is a no-op:
+        the pool's lifetime is the process, and the cache keeps it alive.
+        Idempotent. Reads from `__dict__` so we never materialize an
+        uninstantiated `cached_property` just to inspect it.
+        """
+        self._close_if_owned(is_async=False)
+
+    async def aclose(self) -> None:
+        """Async sibling of [`close`][]. Awaits `AsyncClient.close()`.
+
+        Same shared-pool guard as `close`: only the privately-owned async
+        client (if any) is closed; the shared cached pool is left intact.
+        """
+        async_client = self.__dict__.get("_async_client")
+        if async_client is not None and not self._wraps_shared_httpx(
+            async_client, is_async=True
+        ):
+            await async_client.close()
+            del self.__dict__["_async_client"]
+        # Sync client (rare on an async model) is closeable synchronously.
+        self._close_if_owned(is_async=False)
+
+    def _close_if_owned(self, *, is_async: bool) -> None:
+        key = "_async_client" if is_async else "_client"
+        client = self.__dict__.get(key)
+        if client is not None and not self._wraps_shared_httpx(
+            client, is_async=is_async
+        ):
+            client.close()
+            del self.__dict__[key]
+
+    def _wraps_shared_httpx(self, sdk_client: Any, *, is_async: bool) -> bool:
+        """Whether `sdk_client`'s httpx client is the shared cached singleton.
+
+        Re-calls the `@lru_cache`d getter with the same params; on a cache
+        hit it returns the *same* object (no new allocation), so an `is`
+        comparison tells us whether this model's pool is shared.
+        """
+        getter = (
+            _get_default_async_httpx_client if is_async else _get_default_httpx_client
+        )
+        try:
+            shared = getter(**self._http_client_params())
+        except Exception:
+            # If we can't prove private ownership, assume shared and don't close.
+            return True
+        return getattr(sdk_client, "_client", None) is shared
 
     def _get_request_payload(
         self,

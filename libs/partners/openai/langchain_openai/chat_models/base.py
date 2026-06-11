@@ -122,6 +122,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     ValidationError,
     field_validator,
@@ -596,6 +597,15 @@ class BaseChatOpenAI(BaseChatModel):
     root_client: Any = Field(default=None, exclude=True)
 
     root_async_client: Any = Field(default=None, exclude=True)
+
+    # Whether this model privately owns the underlying httpx client (and may
+    # therefore close it on `close()` / `aclose()`). False when the client is
+    # the process-shared `@lru_cache` singleton from `_get_default_*httpx_client`
+    # or a user-supplied `http_client` / `http_async_client` — closing either
+    # would break other models / violate the caller's ownership. Set in
+    # `validate_environment`.
+    _owns_sync_http_client: bool = PrivateAttr(default=False)
+    _owns_async_http_client: bool = PrivateAttr(default=False)
 
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
@@ -1223,6 +1233,19 @@ class BaseChatOpenAI(BaseChatModel):
             _warn_if_proxy_env_shadowed(
                 resolved_socket_options, openai_proxy=self.openai_proxy
             )
+        # Capture before the proxy branches below mutate `http_(async_)client`.
+        # A user-supplied client is owned by the caller; we must never close it.
+        user_supplied_sync_http_client = self.http_client is not None
+        user_supplied_async_http_client = self.http_async_client is not None
+        # The default getters return a process-shared `@lru_cache` singleton
+        # *unless* the timeout is unhashable (then a fresh, private client).
+        try:
+            hash(self.request_timeout)
+        except TypeError:
+            default_client_is_private = True
+        else:
+            default_client_is_private = False
+
         if not self.client:
             if sync_api_key_value is None:
                 # No valid sync API key, leave client as None and raise informative
@@ -1247,6 +1270,12 @@ class BaseChatOpenAI(BaseChatModel):
                 }
                 self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
                 self.client = self.root_client.chat.completions
+                # Owned when we built a private client (proxy transport, or the
+                # unhashable-timeout fresh-client path) and the user didn't
+                # supply their own.
+                self._owns_sync_http_client = not user_supplied_sync_http_client and (
+                    bool(self.openai_proxy) or default_client_is_private
+                )
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 self.http_async_client = _build_proxied_async_httpx_client(
@@ -1268,7 +1297,55 @@ class BaseChatOpenAI(BaseChatModel):
                 **async_specific,  # type: ignore[arg-type]
             )
             self.async_client = self.root_async_client.chat.completions
+            self._owns_async_http_client = not user_supplied_async_http_client and (
+                bool(self.openai_proxy) or default_client_is_private
+            )
         return self
+
+    def close(self) -> None:
+        """Release HTTP resources privately owned by this model.
+
+        `validate_environment` builds an `openai.OpenAI` (sync) and an
+        `openai.AsyncOpenAI` (async) client. By default both wrap the
+        **process-wide shared** httpx pool returned by the `@lru_cache`d
+        `_get_default_*httpx_client` — every `ChatOpenAI` with the same
+        `base_url` / `timeout` / socket options reuses it, by design.
+        Closing that shared pool would break every other live model in
+        the process (`RuntimeError: Cannot send a request, as the client
+        has been closed.`), so `close` only releases a client this model
+        **privately owns**:
+
+        - a fresh client built for an unhashable `httpx.Timeout`, or
+        - a proxy transport built from `openai_proxy`.
+
+        A user-supplied `http_client` / `http_async_client` is owned by
+        the caller and is never closed here. For the common shared-pool
+        case this is a no-op (the pool's lifetime is the process).
+
+        Closes the sync client only; use [`aclose`][] when an event loop
+        is available to release a privately-owned async client too.
+        Idempotent.
+        """
+        if self._owns_sync_http_client and self.root_client is not None:
+            self.root_client.close()
+            self.root_client = None
+            self.client = None
+
+    async def aclose(self) -> None:
+        """Async sibling of [`close`][]. Awaits `AsyncOpenAI.close()`.
+
+        Same ownership guard as `close`: only privately-owned clients are
+        closed; the shared cached pool and user-supplied clients are left
+        intact. Idempotent.
+        """
+        if self._owns_sync_http_client and self.root_client is not None:
+            self.root_client.close()
+            self.root_client = None
+            self.client = None
+        if self._owns_async_http_client and self.root_async_client is not None:
+            await self.root_async_client.close()
+            self.root_async_client = None
+            self.async_client = None
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None

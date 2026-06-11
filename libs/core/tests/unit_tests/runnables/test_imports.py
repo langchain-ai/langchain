@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
     "ConfigurableFieldSpec",
+    "FallbackLatch",
     "ensure_config",
     "run_in_executor",
     "patch_config",
