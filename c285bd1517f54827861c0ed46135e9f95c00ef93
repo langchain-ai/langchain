@@ -1,0 +1,21 @@
+libs/langchain_v1/langchain/agents/middleware/file_search.py
+  s_65c62dca987d48::t_b1146b87fc925b 24-42,181-186
+libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py
+  s_65c62dca987d48::t_b1146b87fc925b 206-213,217-223,227,377-379
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "c285bd1517f54827861c0ed46135e9f95c00ef93",
+  "prompts": {},
+  "sessions": {
+    "s_65c62dca987d48": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f614ba1a-f183-4b31-916b-8c53841fee1a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
