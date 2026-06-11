@@ -58,8 +58,9 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _format_output,
     _is_message_content_block,
-    _is_message_content_type,
+    _normalize_message_content,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -112,7 +113,7 @@ class _MockSchema(BaseModel):
 
     arg1: int
     arg2: bool
-    arg3: dict | None = None
+    arg3: dict[str, Any] | None = None
 
 
 class _MockStructuredTool(BaseTool):
@@ -121,11 +122,29 @@ class _MockStructuredTool(BaseTool):
     description: str = "A Structured Tool"
 
     @override
-    def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def _run(self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
-    async def _arun(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    async def _arun(
+        self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+    ) -> str:
         raise NotImplementedError
+
+
+class _FakeOutput(ToolOutputMixin):
+    """Minimal ToolOutputMixin subclass used only in tests."""
+
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, _FakeOutput) and self.value == other.value
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __repr__(self) -> str:
+        return f"_FakeOutput({self.value})"
 
 
 def test_structured_args() -> None:
@@ -149,11 +168,13 @@ def test_misannotated_base_tool_raises_error() -> None:
             description: str = "A Structured Tool"
 
             @override
-            def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+            def _run(
+                self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+            ) -> str:
                 return f"{arg1} {arg2} {arg3}"
 
             async def _arun(
-                self, *, arg1: int, arg2: bool, arg3: dict | None = None
+                self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
             ) -> str:
                 raise NotImplementedError
 
@@ -167,11 +188,13 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
         description: str = "A Structured Tool"
 
         @override
-        def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+        def _run(
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+        ) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, *, arg1: int, arg2: bool, arg3: dict | None = None
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
         ) -> str:
             raise NotImplementedError
 
@@ -185,11 +208,13 @@ def test_subclass_annotated_base_tool_accepted() -> None:
         description: str = "A Structured Tool"
 
         @override
-        def _run(self, *, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+        def _run(
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+        ) -> str:
             return f"{arg1} {arg2} {arg3}"
 
         async def _arun(
-            self, *, arg1: int, arg2: bool, arg3: dict | None = None
+            self, *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
         ) -> str:
             raise NotImplementedError
 
@@ -202,7 +227,7 @@ def test_decorator_with_specified_schema() -> None:
     """Test that manually specified schemata are passed through to the tool."""
 
     @tool(args_schema=_MockSchema)
-    def tool_func(*, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def tool_func(*, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
@@ -221,10 +246,12 @@ def test_decorator_with_specified_schema_pydantic_v1() -> None:
 
         arg1: int
         arg2: bool
-        arg3: dict | None = None
+        arg3: dict[str, Any] | None = None
 
     @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
-    def tool_func_v1(*, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
+    def tool_func_v1(
+        *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
+    ) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func_v1, BaseTool)
@@ -236,7 +263,7 @@ def test_decorated_function_schema_equivalent() -> None:
 
     @tool
     def structured_tool_input(
-        *, arg1: int, arg2: bool, arg3: dict | None = None
+        *, arg1: int, arg2: bool, arg3: dict[str, Any] | None = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
@@ -305,7 +332,7 @@ def test_structured_args_decorator_no_infer_schema() -> None:
 
     @tool(infer_schema=False)
     def structured_tool_input(
-        arg1: int, arg2: float | datetime, opt_arg: dict | None = None
+        arg1: int, arg2: float | datetime, opt_arg: dict[str, Any] | None = None
     ) -> str:
         """Return the arguments directly."""
         return f"{arg1}, {arg2}, {opt_arg}"
@@ -345,7 +372,7 @@ def test_structured_tool_types_parsed() -> None:
     def structured_tool(
         some_enum: SomeEnum,
         some_base_model: SomeBaseModel,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Return the arguments directly."""
         return {
             "some_enum": some_enum,
@@ -809,6 +836,57 @@ def test_exception_handling_callable() -> None:
     assert expected == actual
 
 
+def test_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_message_content_blocks_sequence() -> None:
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+def test_exception_handling_callable_invalid_blocks_stringified() -> None:
+    # A sequence whose elements are not valid content blocks is not message
+    # content, so it falls back to a JSON-stringified ToolMessage.
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return [{"text": "foo"}]  # missing 'type' -> not a valid block
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == '[{"text": "foo"}]'
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
 def test_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
@@ -838,6 +916,42 @@ async def test_async_exception_handling_callable() -> None:
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.arun({})
     assert expected == actual
+
+
+async def test_async_exception_handling_callable_message_content_blocks() -> None:
+    expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
+
+    def handling(e: ToolException) -> list[dict[str, Any]]:
+        return expected
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == expected
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
+
+
+async def test_async_exception_handling_callable_message_content_blocks_sequence() -> (
+    None
+):
+    content = ({"type": "text", "text": "handled error"},)
+
+    def handling(e: ToolException) -> tuple[dict[str, Any], ...]:
+        return content
+
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == list(content)
+    assert actual.status == "error"
+    assert actual.tool_call_id == "call_1"
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
@@ -928,7 +1042,7 @@ def test_validation_error_handling_non_validation_error(
 
         def _parse_input(
             self,
-            tool_input: str | dict,
+            tool_input: str | dict[str, Any],
             tool_call_id: str | None,
         ) -> str | dict[str, Any]:
             raise NotImplementedError
@@ -994,7 +1108,7 @@ async def test_async_validation_error_handling_non_validation_error(
 
         def _parse_input(
             self,
-            tool_input: str | dict,
+            tool_input: str | dict[str, Any],
             tool_call_id: str | None,
         ) -> str | dict[str, Any]:
             raise NotImplementedError
@@ -1041,9 +1155,11 @@ def test_optional_subset_model_rewrite() -> None:
         ({"bar": "bar", "baz": None}, {"bar": "bar", "baz": None, "buzz": "buzz"}),
     ],
 )
-def test_tool_invoke_optional_args(inputs: dict, expected: dict | None) -> None:
+def test_tool_invoke_optional_args(
+    inputs: dict[str, Any], expected: dict[str, Any] | None
+) -> None:
     @tool
-    def foo(bar: str, baz: int | None = 3, buzz: str | None = "buzz") -> dict:
+    def foo(bar: str, baz: int | None = 3, buzz: str | None = "buzz") -> dict[str, Any]:
         """The foo."""
         return {
             "bar": bar,
@@ -2133,11 +2249,19 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
     [
         ("foo", True),
         (valid_tool_result_blocks, True),
+        (tuple(valid_tool_result_blocks), True),
+        ([], True),  # empty sequences are vacuously valid content
+        ((), True),
         (invalid_tool_result_blocks, False),
+        (tuple(invalid_tool_result_blocks), False),
+        (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
+        # Large non-content sequence: must reject lazily without materializing
+        # (would hang/OOM if validation allocated the sequence first).
+        (range(10**12), False),
     ],
 )
-def test__is_message_content_type(obj: Any, *, expected: bool) -> None:
-    assert _is_message_content_type(obj) is expected
+def test_normalize_message_content_validity(obj: Any, *, expected: bool) -> None:
+    assert (_normalize_message_content(obj) is not None) is expected
 
 
 @pytest.mark.parametrize("use_v1_namespace", [True, False])
@@ -2171,9 +2295,13 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
             return "foo"
 
     class ModelC(Mixin, ModelB):
-        c: dict
+        c: dict[str, Any]
 
-    expected = {"a": str, "b": Annotated[ModelA[dict[str, Any]], "foo"], "c": dict}
+    expected = {
+        "a": str,
+        "b": Annotated[ModelA[dict[str, Any]], "foo"],
+        "c": dict[str, Any],
+    }
     actual = get_all_basemodel_annotations(ModelC)
     assert actual == expected
 
@@ -2197,7 +2325,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     expected = {
         "a": str,
         "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
+        "c": dict[str, Any],
         "d": str | int | None,
     }
     actual = get_all_basemodel_annotations(ModelD)
@@ -2206,7 +2334,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     expected = {
         "a": str,
         "b": Annotated[ModelA[dict[str, Any]], "foo"],
-        "c": dict,
+        "c": dict[str, Any],
         "d": int | None,
     }
     actual = get_all_basemodel_annotations(ModelD[int])
@@ -2230,7 +2358,7 @@ def test_tool_annotations_preserved() -> None:
     """Test that annotations are preserved when creating a tool."""
 
     @tool
-    def my_tool(val: int, other_val: Annotated[dict, "my annotation"]) -> str:
+    def my_tool(val: int, other_val: Annotated[dict[str, Any], "my annotation"]) -> str:
         """Tool docstring."""
         return "foo"
 
@@ -2968,7 +3096,7 @@ def test_tool_args_schema_with_annotated_type() -> None:
 class CallbackHandlerWithInputCapture(FakeCallbackHandler):
     """Callback handler that captures inputs passed to on_tool_start."""
 
-    captured_inputs: list[dict | None] = Field(default_factory=list)
+    captured_inputs: list[dict[str, Any] | None] = Field(default_factory=list)
 
     def on_tool_start(
         self,
@@ -3002,7 +3130,7 @@ def test_filter_injected_args_from_callbacks() -> None:
     @tool
     def search_tool(
         query: str,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
     ) -> str:
         """Search with injected state.
 
@@ -3070,7 +3198,7 @@ def test_filter_multiple_injected_args() -> None:
     def complex_tool(
         query: str,
         limit: int,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
         context: Annotated[str, InjectedToolArg()],
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
@@ -3138,7 +3266,7 @@ async def test_filter_injected_args_async() -> None:
     @tool
     async def async_search_tool(
         query: str,
-        state: Annotated[dict, InjectedToolArg()],
+        state: Annotated[dict[str, Any], InjectedToolArg()],
     ) -> str:
         """Async search with injected state.
 
@@ -3636,3 +3764,92 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_default_factory_not_required() -> None:
+    """Fields with default_factory should not appear in required."""
+
+    class Args(BaseModel):
+        """Hello."""
+
+        names: list[str] = Field(default_factory=list, description="Some names")
+
+    @tool(args_schema=Args)
+    def some_func(names: list[str] | None = None) -> None:
+        """Do something."""
+
+    schema = convert_to_openai_tool(some_func)
+    params = schema["function"]["parameters"]
+    assert "names" not in params.get("required", [])
+
+
+def test_format_output_list_of_tool_messages() -> None:
+    """A list of ToolMessages passes through unchanged."""
+    msgs = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        ToolMessage("b", tool_call_id="2", name="t"),
+    ]
+    result = _format_output(
+        msgs, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is msgs
+
+
+def test_format_output_list_of_custom_mixin_instances() -> None:
+    """A list of custom ToolOutputMixin subclass instances passes through."""
+    items = [_FakeOutput(1), _FakeOutput(2)]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_mixed_mixin_subclasses() -> None:
+    """A list mixing ToolMessage and custom ToolOutputMixin passes through."""
+    items: list[ToolOutputMixin] = [
+        ToolMessage("a", tool_call_id="1", name="t"),
+        _FakeOutput(42),
+    ]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert result is items
+
+
+def test_format_output_list_with_non_mixin_element() -> None:
+    """A list containing a non-ToolOutputMixin falls through to stringify."""
+    items = [ToolMessage("a", tool_call_id="1", name="t"), "oops"]
+    result = _format_output(
+        items, artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.tool_call_id == "0"
+
+
+def test_format_output_empty_list() -> None:
+    """An empty list is vacuously valid content and wrapped unchanged."""
+    result = _format_output(
+        [], artifact=None, tool_call_id="0", name="t", status="success"
+    )
+    assert isinstance(result, ToolMessage)
+    assert result.content == []
+    assert result.tool_call_id == "0"
+
+
+def test_tool_invoke_returns_list_of_mixin() -> None:
+    """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
+
+    @tool
+    def multi(x: int) -> list:
+        """Return multiple outputs."""
+        return [
+            ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
+            for i in range(x)
+        ]
+
+    result = multi.invoke(
+        {"type": "tool_call", "args": {"x": 3}, "name": "multi", "id": "outer"}
+    )
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert all(isinstance(m, ToolMessage) for m in result)

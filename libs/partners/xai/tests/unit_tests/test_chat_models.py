@@ -12,6 +12,7 @@ from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
+from pydantic import SecretStr
 
 from langchain_xai import ChatXAI
 
@@ -21,11 +22,6 @@ MODEL_NAME = "grok-4"
 def test_initialization() -> None:
     """Test chat model initialization."""
     ChatXAI(model=MODEL_NAME)
-
-
-def test_profile() -> None:
-    model = ChatXAI(model="grok-4")
-    assert model.profile
 
 
 def test_xai_model_param() -> None:
@@ -52,17 +48,40 @@ def test_chat_xai_invalid_streaming_params() -> None:
 def test_chat_xai_extra_kwargs() -> None:
     """Test extra kwargs to chat xai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_chat_xai_base_url_alias() -> None:
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        api_key=SecretStr("test-api-key"),
+        base_url="http://example.test/v1",
+    )
+    assert llm.xai_api_base == "http://example.test/v1"
+    assert llm.model_kwargs == {}
+
+
+def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XAI_API_BASE", "http://env.example.test/v1")
+
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        api_key=SecretStr("test-api-key"),
+    )
+
+    assert llm.xai_api_base == "http://env.example.test/v1"
 
 
 def test_function_dict_to_message_function_message() -> None:

@@ -86,7 +86,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     return merged
 
 
-def merge_lists(left: list | None, *others: list | None) -> list | None:
+def merge_lists(left: list[Any] | None, *others: list[Any] | None) -> list[Any] | None:
     """Add many lists, handling `None`.
 
     Args:
@@ -121,9 +121,9 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                             "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
                             and (  # IDs not inconsistent
-                                e_left.get("id") is None
-                                or e.get("id") is None
-                                or e_left["id"] == e["id"]
+                                e_left.get("id") in (None, "")
+                                or e.get("id") in (None, "")
+                                or e_left.get("id") == e.get("id")
                             )
                         )
                     ]

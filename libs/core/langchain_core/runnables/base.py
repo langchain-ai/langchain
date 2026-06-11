@@ -41,6 +41,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from langchain_core._api import beta_decorator
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.load.serializable import (
     Serializable,
@@ -604,7 +605,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
     def get_prompts(
         self, config: RunnableConfig | None = None
-    ) -> list[BasePromptTemplate]:
+    ) -> list[BasePromptTemplate[Any]]:
         """Return a list of prompts used by this `Runnable`."""
         # Import locally to prevent circular import
         from langchain_core.prompts.base import BasePromptTemplate  # noqa: PLC0415
@@ -615,14 +616,35 @@ class Runnable(ABC, Generic[Input, Output]):
             if isinstance(node.data, BasePromptTemplate)
         ]
 
+    @overload
+    def __or__(
+        self, other: Mapping[str, Any]
+    ) -> RunnableSerializable[Input, dict[str, Any]]: ...
+
+    @overload
     def __or__(
         self,
-        other: Runnable[Any, Other]
-        | Callable[[Iterator[Any]], Iterator[Other]]
-        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
-        | Callable[[Any], Other]
-        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[Input, Other]:
+        other: Callable[[Output], Runnable[Output, Other]]
+        | Callable[[Output], Awaitable[Runnable[Output, Other]]],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other]
+        | Mapping[str, Runnable[Output, Any] | Callable[[Output], Any] | Any],
+    ) -> RunnableSerializable[Input, Any]:
         """Runnable "or" operator.
 
         Compose this `Runnable` with another object to create a
@@ -636,14 +658,36 @@ class Runnable(ABC, Generic[Input, Output]):
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
+    @overload
     def __ror__(
         self,
-        other: Runnable[Other, Any]
-        | Callable[[Iterator[Other]], Iterator[Any]]
-        | Callable[[AsyncIterator[Other]], AsyncIterator[Any]]
+        other: Mapping[str, Any],
+    ) -> RunnableSerializable[Any, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Callable[[Other], Runnable[Other, Input]]
+        | Callable[[Other], Awaitable[Runnable[Other, Input]]],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Other], Input],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
         | Callable[[Other], Any]
-        | Mapping[str, Runnable[Other, Any] | Callable[[Other], Any] | Any],
-    ) -> RunnableSerializable[Other, Output]:
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Any] | Any],
+    ) -> RunnableSerializable[Any, Output]:
         """Runnable "reverse-or" operator.
 
         Compose this `Runnable` with another object to create a
@@ -767,7 +811,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Import locally to prevent circular import
         from langchain_core.runnables.passthrough import RunnablePick  # noqa: PLC0415
 
-        return self | RunnablePick(keys)
+        return self | RunnablePick(keys)  # type: ignore[operator, no-any-return]
 
     def assign(
         self,
@@ -814,7 +858,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Import locally to prevent circular import
         from langchain_core.runnables.passthrough import RunnableAssign  # noqa: PLC0415
 
-        return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
+        return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))  # type: ignore[operator, no-any-return]
 
     """ --- Public API --- """
 
@@ -1245,6 +1289,11 @@ class Runnable(ABC, Generic[Input, Output]):
             A `RunLogPatch` or `RunLog` object.
 
         """
+        warn_deprecated(
+            since="1.3.3",
+            message=("astream_log is deprecated. Use astream instead."),
+            removal="2.0.0",
+        )
         stream = LogStreamCallbackHandler(
             auto_close=False,
             include_names=include_names,
@@ -1270,7 +1319,8 @@ class Runnable(ABC, Generic[Input, Output]):
         ):
             yield item
 
-    async def astream_events(
+    @overload
+    def astream_events(
         self,
         input: Any,
         config: RunnableConfig | None = None,
@@ -1283,7 +1333,32 @@ class Runnable(ABC, Generic[Input, Output]):
         exclude_types: Sequence[str] | None = None,
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[StreamEvent]:
+    ) -> AsyncIterator[StreamEvent]: ...
+
+    @overload
+    def astream_events(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Awaitable[Any]: ...
+
+    def astream_events(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
         """Generate a stream of events.
 
         Use to create an iterator over `StreamEvent` that provide real-time information
@@ -1453,15 +1528,23 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: The config to use for the `Runnable`.
-            version: The version of the schema to use, either `'v2'` or `'v1'`.
+            version: The version of the schema to use. One of `'v1'`, `'v2'`,
+                or `'v3'`.
 
-                Users should use `'v2'`.
+                Most callers should use `'v2'` (the default), which yields
+                `StreamEvent` dicts and supports custom events.
 
-                `'v1'` is for backwards compatibility and will be deprecated
-                in `0.4.0`.
+                `'v3'` selects the typed, content-block-centric streaming
+                protocol and is only supported on `Runnable` subclasses that
+                implement it (currently `BaseChatModel` and
+                `langgraph.CompiledGraph`); on a generic `Runnable` it raises
+                `NotImplementedError`. The `'v3'` API is in beta and may
+                change. See the subclass override (e.g.
+                `BaseChatModel.astream_events`) for the v3 return shape.
 
-                No default will be assigned until the API is stabilized.
-                custom events will only be surfaced in `'v2'`.
+                `'v1'` is retained for backwards compatibility and will be
+                deprecated in `0.4.0`. Custom events are only surfaced in
+                `'v2'` / `'v3'`.
             include_names: Only include events from `Runnable` objects with matching names.
             include_types: Only include events from `Runnable` objects with matching types.
             include_tags: Only include events from `Runnable` objects with matching tags.
@@ -1470,16 +1553,59 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_tags: Exclude events from `Runnable` objects with matching tags.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
-                These will be passed to `astream_log` as this implementation
-                of `astream_events` is built on top of `astream_log`.
-
         Yields:
             An async stream of `StreamEvent`.
 
         Raises:
-            NotImplementedError: If the version is not `'v1'` or `'v2'`.
+            NotImplementedError: If the version is not `'v1'`, `'v2'`, or `'v3'`, or
+                if `'v3'` is requested on a `Runnable` that does not implement the v3
+                streaming protocol.
 
         """  # noqa: E501
+        if version == "v3":
+            return self._astream_events_v3_unsupported()
+        return self._astream_events_v1_v2(
+            input,
+            config=config,
+            version=version,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_names=exclude_names,
+            exclude_types=exclude_types,
+            exclude_tags=exclude_tags,
+            **kwargs,
+        )
+
+    async def _astream_events_v3_unsupported(self) -> Any:
+        """Coroutine that raises when v3 isn't implemented on this Runnable.
+
+        Lets the public `astream_events(version="v3")` return an awaitable
+        whose error surfaces on `await`, matching the v3 contract on
+        subclasses that do implement the protocol.
+        """
+        msg = (
+            "astream_events(version='v3') is only supported on Runnable "
+            "subclasses that implement the v3 streaming protocol "
+            "(BaseChatModel, CompiledGraph). "
+            f"Got: {type(self).__name__}"
+        )
+        raise NotImplementedError(msg)
+
+    async def _astream_events_v1_v2(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]:
         if version == "v2":
             event_stream = _astream_events_implementation_v2(
                 self,
@@ -1494,6 +1620,14 @@ class Runnable(ABC, Generic[Input, Output]):
                 **kwargs,
             )
         elif version == "v1":
+            warn_deprecated(
+                since="1.3.3",
+                message=(
+                    "astream_events version='v1' is deprecated. "
+                    "Use version='v2' or astream instead."
+                ),
+                removal="2.0.0",
+            )
             # First implementation, built on top of astream_log API
             # This implementation will be deprecated as of 0.2.0
             event_stream = _astream_events_implementation_v1(
@@ -1509,12 +1643,99 @@ class Runnable(ABC, Generic[Input, Output]):
                 **kwargs,
             )
         else:
-            msg = 'Only versions "v1" and "v2" of the schema is currently supported.'
+            msg = f"Unsupported version: {version!r}. Expected 'v1', 'v2', or 'v3'."
             raise NotImplementedError(msg)
 
         async with aclosing(event_stream):
             async for event in event_stream:
                 yield event
+
+    @overload
+    def stream_events(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent]: ...
+
+    @overload
+    def stream_events(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Iterator[Any]: ...
+
+    def stream_events(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent] | Iterator[Any]:
+        """Generate a stream of events synchronously.
+
+        Synchronous counterpart to `astream_events`. For `version='v3'`, subclasses
+        that implement the v3 streaming protocol (`BaseChatModel`, `CompiledGraph`)
+        override this method. All other versions and base-class calls raise
+        `NotImplementedError`.
+
+        Args:
+            input: The input to the `Runnable`.
+            config: The config to use for the `Runnable`.
+            version: The version of the schema to use. `'v3'` requires a subclass
+                that implements the v3 streaming protocol. `'v1'` and `'v2'` are not
+                supported on the sync path.
+            include_names: Only include events from `Runnable` objects with matching
+                names.
+            include_types: Only include events from `Runnable` objects with matching
+                types.
+            include_tags: Only include events from `Runnable` objects with matching
+                tags.
+            exclude_names: Exclude events from `Runnable` objects with matching names.
+            exclude_types: Exclude events from `Runnable` objects with matching types.
+            exclude_tags: Exclude events from `Runnable` objects with matching tags.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
+
+        Raises:
+            NotImplementedError: Always. Subclasses override this method for supported
+                versions.
+
+        """
+        # Base impl always raises; consume args so they don't trip ARG002.
+        del input, config, include_names, include_types, include_tags
+        del exclude_names, exclude_types, exclude_tags, kwargs
+        if version == "v3":
+            msg = (
+                "stream_events(version='v3') is only supported on Runnable subclasses "
+                "that implement the v3 streaming protocol "
+                "(BaseChatModel, CompiledGraph). "
+                f"Got: {type(self).__name__}"
+            )
+            raise NotImplementedError(msg)
+        msg = (
+            f"stream_events(version={version!r}) is not supported. "
+            "Use astream_events() for v1/v2, or stream_events(version='v3') "
+            "on a supported subclass."
+        )
+        raise NotImplementedError(msg)
 
     def transform(
         self,
@@ -1921,7 +2142,7 @@ class Runnable(ABC, Generic[Input, Output]):
             exponential_jitter_params=exponential_jitter_params,
         )
 
-    def map(self) -> Runnable[list[Input], list[Output]]:
+    def map(self) -> Runnable[Sequence[Input], list[Output]]:
         """Return a new `Runnable` that maps a list of inputs to a list of outputs.
 
         Calls `invoke` with each input.
@@ -2310,7 +2531,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
                 if stream_handler := next(
                     (
-                        cast("_StreamingCallbackHandler", h)
+                        h
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
                         if isinstance(h, _StreamingCallbackHandler)
@@ -2412,7 +2633,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
                 if stream_handler := next(
                     (
-                        cast("_StreamingCallbackHandler", h)
+                        h
                         for h in run_manager.handlers
                         # instance check OK here, it's a mixin
                         if isinstance(h, _StreamingCallbackHandler)
@@ -2910,7 +3131,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     def __init__(
         self,
-        *steps: RunnableLike,
+        *steps: RunnableLike[Any, Any],
         name: str | None = None,
         first: Runnable[Any, Any] | None = None,
         middle: list[Runnable[Any, Any]] | None = None,
@@ -2928,7 +3149,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         Raises:
             ValueError: If the sequence has less than 2 steps.
         """
-        steps_flat: list[Runnable] = []
+        steps_flat: list[Runnable[Any, Any]] = []
         if not steps and first is not None and last is not None:
             steps_flat = [first] + (middle or []) + [last]
         for step in steps:
@@ -3073,15 +3294,36 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             for i, s in enumerate(self.steps)
         )
 
+    @overload
+    def __or__(
+        self, other: Mapping[str, Any]
+    ) -> RunnableSerializable[Input, dict[str, Any]]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Callable[[Output], Runnable[Output, Other]]
+        | Callable[[Output], Awaitable[Runnable[Output, Other]]],
+    ) -> RunnableSerializable[Input, Other]: ...
+
+    @overload
+    def __or__(
+        self,
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other],
+    ) -> RunnableSerializable[Input, Other]: ...
+
     @override
     def __or__(
         self,
-        other: Runnable[Any, Other]
-        | Callable[[Iterator[Any]], Iterator[Other]]
-        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
-        | Callable[[Any], Other]
-        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
-    ) -> RunnableSerializable[Input, Other]:
+        other: Runnable[Output, Other]
+        | Callable[[Iterator[Output]], Iterator[Other]]
+        | Callable[[AsyncIterator[Output]], AsyncIterator[Other]]
+        | Callable[[Output], Other]
+        | Mapping[str, Runnable[Output, Any] | Callable[[Output], Any] | Any],
+    ) -> RunnableSerializable[Input, Any]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
                 self.first,
@@ -3100,14 +3342,36 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name=self.name,
         )
 
+    @overload
+    def __ror__(
+        self,
+        other: Mapping[str, Any],
+    ) -> RunnableSerializable[Any, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Callable[[Other], Runnable[Other, Input]]
+        | Callable[[Other], Awaitable[Runnable[Other, Input]]],
+    ) -> RunnableSerializable[Other, Output]: ...
+
+    @overload
+    def __ror__(
+        self,
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
+        | Callable[[Other], Input],
+    ) -> RunnableSerializable[Other, Output]: ...
+
     @override
     def __ror__(
         self,
-        other: Runnable[Other, Any]
-        | Callable[[Iterator[Other]], Iterator[Any]]
-        | Callable[[AsyncIterator[Other]], AsyncIterator[Any]]
+        other: Runnable[Other, Input]
+        | Callable[[Iterator[Other]], Iterator[Input]]
+        | Callable[[AsyncIterator[Other]], AsyncIterator[Input]]
         | Callable[[Other], Any]
-        | Mapping[str, Runnable[Other, Any] | Callable[[Other], Any] | Any],
+        | Mapping[str, Runnable[Other, Input] | Callable[[Other], Any] | Any],
     ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
             return RunnableSequence(
@@ -4038,7 +4302,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         ]
 
         # Wrap in a coroutine to satisfy linter
-        async def get_next_chunk(generator: AsyncIterator) -> Output | None:
+        async def get_next_chunk(generator: AsyncIterator[Any]) -> Output | None:
             return await anext(generator)
 
         # Start the first iteration of each generator
@@ -4205,9 +4469,10 @@ class RunnableGenerator(Runnable[Input, Output]):
             TypeError: If the transform is not a generator function.
 
         """
+        func_for_name: Callable[..., Any]
         if atransform is not None:
             self._atransform = atransform
-            func_for_name: Callable = atransform
+            func_for_name = atransform
 
         if is_async_generator(transform):
             self._atransform = transform
@@ -4617,9 +4882,10 @@ class RunnableLambda(Runnable[Input, Output]):
             TypeError: If both `func` and `afunc` are provided.
 
         """
+        func_for_name: Callable[..., Any]
         if afunc is not None:
             self.afunc = afunc
-            func_for_name: Callable = afunc
+            func_for_name = afunc
 
         if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
@@ -4761,7 +5027,7 @@ class RunnableLambda(Runnable[Input, Output]):
         )
 
     @functools.cached_property
-    def deps(self) -> list[Runnable]:
+    def deps(self) -> list[Runnable[Any, Any]]:
         """The dependencies of this `Runnable`.
 
         Returns:
@@ -4776,7 +5042,7 @@ class RunnableLambda(Runnable[Input, Output]):
         else:
             objects = []
 
-        deps: list[Runnable] = []
+        deps: list[Runnable[Any, Any]] = []
         for obj in objects:
             if isinstance(obj, Runnable):
                 deps.append(obj)
@@ -4952,7 +5218,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 cast(
                     "AsyncGenerator[Any, Any]",
                     acall_func_with_variable_args(
-                        cast("Callable", afunc),
+                        cast("Callable[..., Any]", afunc),
                         value,
                         config,
                         run_manager,
@@ -4973,7 +5239,7 @@ class RunnableLambda(Runnable[Input, Output]):
                             output = chunk
         else:
             output = await acall_func_with_variable_args(
-                cast("Callable", afunc), value, config, run_manager, **kwargs
+                cast("Callable[..., Any]", afunc), value, config, run_manager, **kwargs
             )
         # If the output is a Runnable, invoke it
         if isinstance(output, Runnable):
@@ -5195,7 +5461,7 @@ class RunnableLambda(Runnable[Input, Output]):
             async for chunk in cast(
                 "AsyncIterator[Output]",
                 acall_func_with_variable_args(
-                    cast("Callable", afunc),
+                    cast("Callable[..., Any]", afunc),
                     final,
                     config,
                     run_manager,
@@ -5212,7 +5478,7 @@ class RunnableLambda(Runnable[Input, Output]):
                         output = chunk
         else:
             output = await acall_func_with_variable_args(
-                cast("Callable", afunc),
+                cast("Callable[..., Any]", afunc),
                 final,
                 config,
                 run_manager,
@@ -5269,7 +5535,7 @@ class RunnableLambda(Runnable[Input, Output]):
             yield chunk
 
 
-class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
+class RunnableEachBase(RunnableSerializable[Sequence[Input], list[Output]]):
     """RunnableEachBase class.
 
     `Runnable` that calls another `Runnable` for each element of the input sequence.
@@ -5360,7 +5626,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
 
     def _invoke(
         self,
-        inputs: list[Input],
+        inputs: Sequence[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -5368,17 +5634,20 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
-        return self.bound.batch(inputs, configs, **kwargs)
+        return self.bound.batch(list(inputs), configs, **kwargs)
 
     @override
     def invoke(
-        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: Sequence[Input],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> list[Output]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
-        inputs: list[Input],
+        inputs: Sequence[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
@@ -5386,28 +5655,41 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         configs = [
             patch_config(config, callbacks=run_manager.get_child()) for _ in inputs
         ]
-        return await self.bound.abatch(inputs, configs, **kwargs)
+        return await self.bound.abatch(list(inputs), configs, **kwargs)
 
     @override
     async def ainvoke(
-        self, input: list[Input], config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: Sequence[Input],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> list[Output]:
-        return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
+        return await self._acall_with_config(
+            self._ainvoke, input, config=config, **kwargs
+        )
 
     @override
-    async def astream_events(
+    def astream_events(  # type: ignore[override]
         self,
         input: Input,
         config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
         **kwargs: Any | None,
-    ) -> AsyncIterator[StreamEvent]:
-        def _error_stream_event(message: str) -> StreamEvent:
-            raise NotImplementedError(message)
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
+        del input, config, kwargs
+        if version == "v3":
+            return self._astream_events_unsupported_v3()
+        return self._astream_events_unsupported_v1_v2()
 
-        for _ in range(1):
-            yield _error_stream_event(
-                "RunnableEach does not support astream_events yet."
-            )
+    async def _astream_events_unsupported_v3(self) -> Any:
+        msg = "RunnableEach does not support astream_events yet."
+        raise NotImplementedError(msg)
+
+    async def _astream_events_unsupported_v1_v2(self) -> AsyncIterator[StreamEvent]:
+        msg = "RunnableEach does not support astream_events yet."
+        raise NotImplementedError(msg)
+        yield  # makes this an async generator (never reached)
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
@@ -5889,17 +6171,144 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         ):
             yield item
 
+    @overload
+    def stream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent]: ...
+
+    @overload
+    def stream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Any: ...
+
+    def stream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2", "v3"] = "v2",
+        **kwargs: Any,
+    ) -> Iterator[StreamEvent] | Any:
+        """Forward `stream_events` to the bound runnable with bound kwargs merged.
+
+        For `version="v3"`, the bound runnable's typed stream object (e.g.
+        `ChatModelStream`) is returned. For `version="v1"` / `"v2"`, dispatches
+        to the base `Runnable.stream_events`.
+
+        Without this override, `__getattr__` would drop `self.kwargs` — losing
+        tools bound via `bind_tools`, `stop` sequences, etc.
+        """
+        # Probe `version` from the merged view so `bind(version="v3")` routes
+        # correctly even when the caller doesn't repeat `version` at the call
+        # site, and strip it before forwarding so it isn't passed twice.
+        merged_kwargs = {**self.kwargs, **kwargs}
+        version = merged_kwargs.get("version", version)
+        merged_without_version = {
+            k: v for k, v in merged_kwargs.items() if k != "version"
+        }
+        if version == "v3":
+            return self.bound.stream_events(
+                input,
+                self._merge_configs(config),
+                version="v3",
+                **merged_without_version,
+            )
+        return super().stream_events(
+            input,
+            self._merge_configs(config),
+            version=version,
+            **merged_without_version,
+        )
+
+    async def _astream_events_v3(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Return the v3 async stream object from the bound runnable.
+
+        Returns an awaitable (an `async def` coroutine, not an async
+        generator) so callers can `await` it to obtain the typed stream
+        (e.g. `AsyncChatModelStream`) directly — Python does not allow
+        `return <value>` inside an async generator.
+
+        The caller is responsible for merging `self.kwargs` and stripping
+        `version`; this method passes `version="v3"` explicitly and would
+        raise on a duplicate keyword.
+        """
+        return await self.bound.astream_events(
+            input,
+            self._merge_configs(config),
+            version="v3",
+            **kwargs,
+        )
+
+    @overload
+    def astream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v1", "v2"] = "v2",
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]: ...
+
+    @overload
+    def astream_events(
+        self,
+        input: Input,
+        config: RunnableConfig | None = None,
+        *,
+        version: Literal["v3"],
+        **kwargs: Any,
+    ) -> Awaitable[Any]: ...
+
     @override
-    async def astream_events(
+    def astream_events(
         self,
         input: Input,
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
-    ) -> AsyncIterator[StreamEvent]:
-        async for item in self.bound.astream_events(
-            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
-        ):
-            yield item
+    ) -> AsyncIterator[StreamEvent] | Awaitable[Any]:
+        """Forward `astream_events` to the bound runnable with bound kwargs merged.
+
+        For `version="v3"`, returns an awaitable that resolves to the
+        bound runnable's typed stream object (e.g. `AsyncChatModelStream`).
+        For `version="v1"` / `"v2"`, returns an async iterator over
+        `StreamEvent` items.
+
+        Without this override, `__getattr__` would drop `self.kwargs` — losing
+        tools bound via `bind_tools`, `stop` sequences, etc.
+        """
+        # Probe `version` from the merged view so `bind(version="v3")` routes
+        # correctly even when the caller doesn't repeat `version` at the call
+        # site.
+        merged_kwargs = {**self.kwargs, **kwargs}
+        version = merged_kwargs.get("version", "v2")
+        if version == "v3":
+            merged_without_version = {
+                k: v for k, v in merged_kwargs.items() if k != "version"
+            }
+            return self._astream_events_v3(input, config, **merged_without_version)
+        # v1/v2: bound.astream_events is a real async generator — iterate it
+        # directly without an extra wrapper layer.
+        return cast(
+            "AsyncIterator[StreamEvent]",
+            self.bound.astream_events(
+                input, self._merge_configs(config), **merged_kwargs
+            ),
+        )
 
     @override
     def transform(
@@ -6173,7 +6582,25 @@ RunnableLike = (
 )
 
 
-def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
+@overload
+def coerce_to_runnable(
+    thing: Runnable[Input, Output]
+    | Callable[[Input], Output]
+    | Callable[[Input], Awaitable[Output]]
+    | Callable[[Iterator[Input]], Iterator[Output]]
+    | Callable[[AsyncIterator[Input]], AsyncIterator[Output]]
+    | _RunnableCallableSync[Input, Output]
+    | _RunnableCallableAsync[Input, Output]
+    | _RunnableCallableIterator[Input, Output]
+    | _RunnableCallableAsyncIterator[Input, Output],
+) -> Runnable[Input, Output]: ...
+
+
+@overload
+def coerce_to_runnable(thing: Mapping[str, Any]) -> RunnableParallel[Input]: ...
+
+
+def coerce_to_runnable(thing: RunnableLike[Input, Output]) -> Runnable[Input, Any]:
     """Coerce a `Runnable`-like object into a `Runnable`.
 
     Args:
@@ -6192,7 +6619,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     if callable(thing):
         return RunnableLambda(cast("Callable[[Input], Output]", thing))
     if isinstance(thing, dict):
-        return cast("Runnable[Input, Output]", RunnableParallel(thing))
+        return RunnableParallel(thing)
     msg = (
         f"Expected a Runnable, callable or dict."
         f"Instead got an unsupported type: {type(thing)}"

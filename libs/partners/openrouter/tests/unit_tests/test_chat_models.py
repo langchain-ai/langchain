@@ -35,7 +35,7 @@ from langchain_openrouter.chat_models import (
     _wrap_messages_for_sdk,
 )
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 def _make_model(**kwargs: Any) -> ChatOpenRouter:
@@ -202,6 +202,7 @@ class TestChatOpenRouterInstantiation:
         """Test basic model instantiation with required params."""
         model = _make_model()
         assert model.model_name == MODEL_NAME
+        assert model.model == MODEL_NAME
         assert model.openrouter_api_base is None
 
     def test_api_key_from_field(self) -> None:
@@ -287,7 +288,7 @@ class TestChatOpenRouterInstantiation:
         assert model.client is client_1
 
     def test_app_url_passed_to_client(self) -> None:
-        """Test that app_url is passed as http_referer to the SDK client."""
+        """Test that app_url is passed as HTTP-Referer header via httpx clients."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -296,10 +297,10 @@ class TestChatOpenRouterInstantiation:
                 app_url="https://myapp.com",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == "https://myapp.com"
+            assert call_kwargs["client"].headers["HTTP-Referer"] == "https://myapp.com"
 
     def test_app_title_passed_to_client(self) -> None:
-        """Test that app_title is passed as x_title to the SDK client."""
+        """Test that app_title is passed as X-Title header via httpx clients."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -308,7 +309,7 @@ class TestChatOpenRouterInstantiation:
                 app_title="My App",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["x_title"] == "My App"
+            assert call_kwargs["client"].headers["X-Title"] == "My App"
 
     def test_default_attribution_headers(self) -> None:
         """Test that default attribution headers are sent when not overridden."""
@@ -319,8 +320,9 @@ class TestChatOpenRouterInstantiation:
                 api_key=SecretStr("test-key"),
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == ("https://docs.langchain.com/oss")
-            assert call_kwargs["x_title"] == "langchain"
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://docs.langchain.com"
+            assert sync_headers["X-Title"] == "LangChain"
 
     def test_user_attribution_overrides_defaults(self) -> None:
         """Test that user-supplied attribution overrides the defaults."""
@@ -333,8 +335,116 @@ class TestChatOpenRouterInstantiation:
                 app_title="My Custom App",
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["http_referer"] == "https://my-custom-app.com"
-            assert call_kwargs["x_title"] == "My Custom App"
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://my-custom-app.com"
+            assert sync_headers["X-Title"] == "My Custom App"
+
+    def test_app_categories_passed_to_client(self) -> None:
+        """Test that app_categories injects custom httpx clients with header."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["cli-agent", "programming-app"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # Custom httpx clients should be created
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            # Verify the header value is comma-joined
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+            async_headers = call_kwargs["async_client"].headers
+            assert async_headers["X-OpenRouter-Categories"] == (
+                "cli-agent,programming-app"
+            )
+
+    def test_app_categories_none_no_categories_header(self) -> None:
+        """Test that no X-OpenRouter-Categories header when categories unset."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # httpx clients still created for X-Title default
+            sync_headers = call_kwargs["client"].headers
+            assert "X-OpenRouter-Categories" not in sync_headers
+
+    def test_app_categories_empty_list_no_categories_header(self) -> None:
+        """Test that an empty list does not inject categories header."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=[],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert "X-OpenRouter-Categories" not in sync_headers
+
+    def test_app_categories_with_other_attribution(self) -> None:
+        """Test that app_categories coexists with app_url and app_title."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+                app_categories=["cli-agent"],
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://myapp.com"
+            assert sync_headers["X-Title"] == "My App"
+            assert sync_headers["X-OpenRouter-Categories"] == "cli-agent"
+
+    def test_app_title_none_no_x_title_header(self) -> None:
+        """Test that X-Title header is omitted when app_title is explicitly None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_title=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert "X-Title" not in sync_headers
+
+    def test_app_url_none_no_referer_header(self) -> None:
+        """Test that HTTP-Referer header is omitted when app_url is explicitly None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert "HTTP-Referer" not in sync_headers
+
+    def test_no_attribution_no_custom_clients(self) -> None:
+        """Test that no httpx clients are created when all attribution is None."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
@@ -382,6 +492,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)
@@ -647,6 +758,11 @@ class TestMockedGenerate:
 class TestRequestPayload:
     """Tests verifying the exact dict sent to the SDK."""
 
+    @pytest.fixture(autouse=True)
+    def _clear_openrouter_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Clear env vars that would otherwise leak into tests via `from_env`."""
+        monkeypatch.delenv("OPENROUTER_SESSION_ID", raising=False)
+
     def test_message_format_in_payload(self) -> None:
         """Test that messages are formatted correctly in the SDK call."""
         model = _make_model(temperature=0)
@@ -715,6 +831,115 @@ class TestRequestPayload:
         assert call_kwargs["reasoning"] == {"effort": "high"}
         assert call_kwargs["provider"] == {"order": ["Anthropic"]}
         assert call_kwargs["route"] == "fallback"
+
+    def test_session_id_and_trace_in_payload(self) -> None:
+        """Test that session_id and trace are forwarded to the SDK."""
+        model = _make_model(
+            session_id="session-abc",
+            trace={"trace_id": "trace-1", "span_name": "summarize"},
+        )
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "session-abc"
+        assert call_kwargs["trace"] == {
+            "trace_id": "trace-1",
+            "span_name": "summarize",
+        }
+
+    def test_session_id_and_trace_omitted_when_unset(self) -> None:
+        """Test that session_id and trace are omitted when not configured."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "session_id" not in call_kwargs
+        assert "trace" not in call_kwargs
+
+    def test_session_id_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that session_id falls back to OPENROUTER_SESSION_ID env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session-xyz")
+        model = _make_model()
+        assert model.session_id == "env-session-xyz"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "env-session-xyz"
+
+    def test_session_id_constructor_overrides_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that an explicit session_id wins over the env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session")
+        model = _make_model(session_id="explicit-session")
+        assert model.session_id == "explicit-session"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "explicit-session"
+
+    def test_session_id_per_call_override(self) -> None:
+        """Test that a per-call session_id kwarg overrides the constructor value."""
+        model = _make_model(session_id="constructor-session")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", session_id="call-session")
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["session_id"] == "call-session"
+
+        # Per-call override must not mutate the constructor value, and the next
+        # call without the kwarg should fall back to the constructor's value.
+        assert model.session_id == "constructor-session"
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["session_id"] == "constructor-session"
+
+    def test_trace_per_call_override(self) -> None:
+        """Test that a per-call trace kwarg overrides the constructor value."""
+        constructor_trace = {"trace_id": "constructor-trace"}
+        call_trace = {"trace_id": "call-trace", "span_name": "summarize"}
+        model = _make_model(trace=constructor_trace)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", trace=call_trace)
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["trace"] == call_trace
+
+        assert model.trace == constructor_trace
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["trace"] == constructor_trace
+
+    def test_empty_session_id_treated_as_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that empty `session_id` (constructor or env) is not forwarded."""
+        # Explicit empty string on the constructor.
+        model = _make_model(session_id="")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        assert "session_id" not in model.client.chat.send.call_args[1]
+
+        # Empty string sourced from the env var.
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "")
+        env_model = _make_model()
+        env_model.client = MagicMock()
+        env_model.client.chat.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSE_DICT
+        )
+        env_model.invoke("Hi")
+        assert "session_id" not in env_model.client.chat.send.call_args[1]
 
 
 # ===========================================================================
@@ -969,11 +1194,57 @@ class TestMessageConversion:
         assert result["content"] == "The answer is 42."
         assert result["reasoning"] == "Let me think about this..."
 
-    def test_ai_message_with_reasoning_details_to_dict(self) -> None:
-        """Test that reasoning_details is preserved when converting back to dict."""
+    def test_ai_message_with_fragmented_reasoning_details_merged(self) -> None:
+        """Fragmented `reasoning_details` are merged before serialization.
+
+        Float `index` values mirror what `ChatOpenRouter.stream()` produces
+        (the OpenRouter SDK coerces `index` via Pydantic). With float
+        `index`, `langchain_core.utils._merge.merge_lists` does not auto-merge
+        list entries (its index-match path requires `int`), so fragments
+        accumulate as separate list items and require this helper to merge
+        them before the next API turn.
+        """
         details = [
-            {"type": "reasoning.text", "text": "Step 1: analyze"},
-            {"type": "reasoning.text", "text": "Step 2: solve"},
+            {
+                "type": "reasoning.text",
+                "text": "The",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+            {
+                "type": "reasoning.text",
+                "text": " user wants",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+            {
+                "type": "reasoning.text",
+                "signature": "sig_abc123",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {
+                "type": "reasoning.text",
+                "text": "The user wants",
+                "format": "anthropic-claude-v1",
+                "signature": "sig_abc123",
+                "index": 0.0,
+            }
+        ]
+        assert "reasoning" not in result
+
+    def test_ai_message_distinct_reasoning_details_preserved(self) -> None:
+        """Distinct entries (different `index`) are not merged."""
+        details = [
+            {"type": "reasoning.text", "text": "First thought", "index": 0},
+            {"type": "reasoning.text", "text": "Second thought", "index": 1},
         ]
         msg = AIMessage(
             content="Answer",
@@ -981,7 +1252,138 @@ class TestMessageConversion:
         )
         result = _convert_message_to_dict(msg)
         assert result["reasoning_details"] == details
-        assert "reasoning" not in result
+
+    def test_ai_message_unindexed_reasoning_details_not_merged(self) -> None:
+        """Entries without an `index` are passed through unchanged."""
+        details = [
+            {"type": "reasoning.text", "text": "First"},
+            {"type": "reasoning.text", "text": "Second"},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_interleaved_index_fragments_preserved(self) -> None:
+        """Only consecutive same-`index` runs merge; interleaved runs stay split."""
+        details = [
+            {"type": "reasoning.text", "text": "A", "index": 0},
+            {"type": "reasoning.text", "text": "B", "index": 1},
+            {"type": "reasoning.text", "text": "C", "index": 0},
+            {"type": "reasoning.text", "text": "D", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_fragment_metadata_preserved(self) -> None:
+        """Test that metadata from later fragments is preserved after merge."""
+        details = [
+            {"type": "reasoning.text", "text": "thinking...", "index": 0},
+            {
+                "type": "reasoning.text",
+                "text": " done",
+                "index": 0,
+                "signature": "sig_abc123",
+            },
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert len(result["reasoning_details"]) == 1
+        assert result["reasoning_details"][0]["text"] == "thinking... done"
+        assert result["reasoning_details"][0]["signature"] == "sig_abc123"
+
+    def test_streamed_reasoning_details_roundtrip_to_next_turn_payload(self) -> None:
+        """Test the chunk-merge-to-next-turn serialization path from issue #36400."""
+        chunk_dicts = [
+            {"choices": [{"delta": {"role": "assistant", "content": ""}, "index": 0}]},
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "text": "The",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "text": " user wants",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "signature": "sig_abc123",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {"choices": [{"delta": {"content": "Answer"}, "index": 0}]},
+        ]
+        chunks = [
+            _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+            for chunk in chunk_dicts
+        ]
+        merged_chunk = chunks[0]
+        for chunk in chunks[1:]:
+            merged_chunk = merged_chunk + chunk
+
+        assert len(merged_chunk.additional_kwargs["reasoning_details"]) == 3
+
+        msg = AIMessage(
+            content=merged_chunk.content,
+            additional_kwargs=merged_chunk.additional_kwargs,
+            response_metadata=merged_chunk.response_metadata,
+        )
+
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {
+                "type": "reasoning.text",
+                "text": "The user wants",
+                "format": "anthropic-claude-v1",
+                "signature": "sig_abc123",
+                "index": 0.0,
+            }
+        ]
 
     def test_ai_message_with_both_reasoning_fields_to_dict(self) -> None:
         """Test that both reasoning_content and reasoning_details are preserved."""
@@ -1224,11 +1626,11 @@ class TestCreateChatResult:
         model = _make_model()
         response = {
             **_SIMPLE_RESPONSE_DICT,
-            "model": "openai/gpt-4o",
+            "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
         assert result.llm_output is not None
-        assert result.llm_output["model_name"] == "openai/gpt-4o"
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_system_fingerprint_in_metadata(self) -> None:
         """Test that system_fingerprint is included in response_metadata."""
@@ -1260,6 +1662,143 @@ class TestCreateChatResult:
         msg = result.generations[0].message
         assert isinstance(msg, AIMessage)
         assert msg.response_metadata["native_finish_reason"] == "end_turn"
+
+    def test_cost_in_response_metadata(self) -> None:
+        """Test that OpenRouter cost data is surfaced in response_metadata."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            **_SIMPLE_RESPONSE_DICT,
+            "usage": {
+                **_SIMPLE_RESPONSE_DICT["usage"],
+                "cost": 7.5e-05,
+                "cost_details": {
+                    "upstream_inference_cost": 7.745e-05,
+                    "upstream_inference_prompt_cost": 8.95e-06,
+                    "upstream_inference_completions_cost": 6.85e-05,
+                },
+            },
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["cost"] == 7.5e-05
+        assert msg.response_metadata["cost_details"] == {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+
+    def test_cost_absent_when_not_in_usage(self) -> None:
+        """Test that cost fields are not added when not present in usage."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "cost" not in msg.response_metadata
+        assert "cost_details" not in msg.response_metadata
+
+    def test_stream_cost_survives_final_chunk(self) -> None:
+        """Test that cost fields are preserved on the final streaming chunk.
+
+        The final chunk carries both finish_reason metadata and usage/cost data.
+        Regression test: generation_info must merge into response_metadata, not
+        replace it, so cost fields set by _convert_chunk_to_message_chunk are
+        not lost.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        cost_details = {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+                "model": "openai/gpt-4o-mini",
+                "id": "gen-cost-stream",
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cost": 7.5e-05,
+                    "cost_details": cost_details,
+                },
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(stream_chunks)
+
+        chunks = list(model.stream("Hello"))
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["cost"] == 7.5e-05
+        assert meta["cost_details"] == cost_details
+        assert meta["finish_reason"] == "stop"
+
+    async def test_astream_cost_survives_final_chunk(self) -> None:
+        """Test that cost fields are preserved on the final async streaming chunk.
+
+        Same regression coverage as the sync test above, for the _astream path.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        cost_details = {
+            "upstream_inference_cost": 7.745e-05,
+            "upstream_inference_prompt_cost": 8.95e-06,
+            "upstream_inference_completions_cost": 6.85e-05,
+        }
+        stream_chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {},
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+                "model": "openai/gpt-4o-mini",
+                "id": "gen-cost-astream",
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "cost": 7.5e-05,
+                    "cost_details": cost_details,
+                },
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(stream_chunks)
+        )
+
+        chunks = [c async for c in model.astream("Hello")]
+        final = [
+            c for c in chunks if c.response_metadata.get("finish_reason") == "stop"
+        ]
+        assert len(final) == 1
+        meta = final[0].response_metadata
+        assert meta["cost"] == 7.5e-05
+        assert meta["cost_details"] == cost_details
+        assert meta["finish_reason"] == "stop"
 
     def test_missing_optional_metadata_excluded(self) -> None:
         """Test that absent optional fields are not added to response_metadata."""
@@ -1326,6 +1865,41 @@ class TestCreateChatResult:
         assert isinstance(usage["input_token_details"]["cache_read"], int)
         assert usage["output_token_details"]["reasoning"] == 10
         assert isinstance(usage["output_token_details"]["reasoning"], int)
+
+
+class TestCreateUsageMetadataZeroTotal:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+
+    def test_zero_total_tokens_preserved(self) -> None:
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 0,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["total_tokens"] == 0
+
+    def test_zero_input_tokens_preferred_key(self) -> None:
+        """prompt_tokens=0 must not fall through to input_tokens."""
+        token_usage = {
+            "prompt_tokens": 0,
+            "input_tokens": 50,
+            "completion_tokens": 5,
+            "total_tokens": 55,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["input_tokens"] == 0
+
+    def test_zero_output_tokens_preferred_key(self) -> None:
+        """completion_tokens=0 must not fall through to output_tokens."""
+        token_usage = {
+            "prompt_tokens": 10,
+            "completion_tokens": 0,
+            "output_tokens": 50,
+            "total_tokens": 60,
+        }
+        result = _create_usage_metadata(token_usage)
+        assert result["output_tokens"] == 0
 
 
 # ===========================================================================
@@ -2260,8 +2834,8 @@ class TestWrapMessagesForSdk:
         ]
         result = _wrap_messages_for_sdk(msgs)
         assert len(result) == 2
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
 
     def test_wrapped_serializes_correctly(self) -> None:
         """Wrapped models should serialize to the correct JSON payload."""
@@ -2318,10 +2892,10 @@ class TestWrapMessagesForSdk:
             {"role": "tool", "content": "result", "tool_call_id": "c1"},
         ]
         result = _wrap_messages_for_sdk(msgs)
-        assert isinstance(result[0], components.SystemMessage)
-        assert isinstance(result[1], components.UserMessage)
-        assert isinstance(result[2], components.AssistantMessage)
-        assert isinstance(result[3], components.ToolResponseMessage)
+        assert isinstance(result[0], components.ChatSystemMessage)
+        assert isinstance(result[1], components.ChatUserMessage)
+        assert isinstance(result[2], components.ChatAssistantMessage)
+        assert isinstance(result[3], components.ChatToolMessage)
 
 
 # ===========================================================================
@@ -2693,3 +3267,141 @@ class TestStreamingErrors:
             assert any(
                 "malformed tool call chunk" in str(warning.message) for warning in w
             )
+
+
+class TestStreamUsage:
+    """Tests for stream_usage and usage-only chunk handling."""
+
+    def test_stream_options_passed_by_default(self) -> None:
+        """Test that stream_options with include_usage is sent by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    def test_stream_options_not_passed_when_disabled(self) -> None:
+        """Test that stream_options is omitted when stream_usage=False."""
+        model = _make_model(stream_usage=False)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            [dict(c) for c in _STREAM_CHUNKS]
+        )
+        list(model.stream("Hello"))
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "stream_options" not in call_kwargs
+
+    def test_usage_only_chunk_emitted(self) -> None:
+        """Test that a usage-only chunk (no choices) emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        # Content chunks followed by a usage-only chunk (no choices key)
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            # Usage-only final chunk — no choices
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send.return_value = _MockSyncStream(
+            chunks_with_separate_usage
+        )
+        chunks = list(model.stream("Hello"))
+
+        # Last chunk should carry usage_metadata
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
+
+    async def test_astream_options_passed_by_default(self) -> None:
+        """Test that async stream sends stream_options by default."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream([dict(c) for c in _STREAM_CHUNKS])
+        )
+        chunks = [c async for c in model.astream("Hello")]  # noqa: F841
+        call_kwargs = model.client.chat.send_async.call_args[1]
+        assert call_kwargs["stream_options"] == {"include_usage": True}
+
+    async def test_astream_usage_only_chunk_emitted(self) -> None:
+        """Test that an async usage-only chunk emits usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        chunks_with_separate_usage: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+            {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-1",
+            },
+        ]
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(chunks_with_separate_usage)
+        )
+        chunks = [c async for c in model.astream("Hello")]
+
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) >= 1
+        usage = usage_chunks[-1].usage_metadata
+        assert usage is not None
+        assert usage["input_tokens"] == 10
+        assert usage["output_tokens"] == 5
+        assert usage["total_tokens"] == 15
+
+
+def test_profile() -> None:
+    """Test that the model has a profile."""
+    model = _make_model()
+    assert model.profile
