@@ -28,6 +28,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
@@ -582,12 +583,44 @@ class ChildTool(BaseTool):
                 json_schema = input_schema.model_json_schema()
         return cast("dict[str, Any]", json_schema["properties"])
 
+    _tool_call_schema_memo: tuple[Any, str, str, ArgsSchema] | None = PrivateAttr(
+        default=None
+    )
+    """Memo for `tool_call_schema`: `(args_schema, name, description, schema)`.
+
+    Building the subset model is expensive and returning a new class per access
+    defeats pydantic's per-class `model_json_schema` cache, so agent loops would
+    otherwise pay full schema generation for every tool on every model call.
+    The first three elements are the inputs the schema was built from; the memo
+    is bypassed when any of them has since been reassigned.
+    """
+
+    def __getstate__(self) -> dict[Any, Any]:
+        """Drop the tool-call schema memo when pickling or copying.
+
+        The memoized subset model is a dynamically created class that cannot be
+        pickled by reference; it is rebuilt lazily on next access.
+        """
+        state = super().__getstate__()
+        private = state.get("__pydantic_private__")
+        if private and private.get("_tool_call_schema_memo") is not None:
+            state = dict(state)
+            state["__pydantic_private__"] = {
+                **private,
+                "_tool_call_schema_memo": None,
+            }
+        return state
+
     @property
     def tool_call_schema(self) -> ArgsSchema:
         """Get the schema for tool calls, excluding injected arguments.
 
         Returns:
             The schema that should be used for tool calls from language models.
+
+            The returned model class is memoized per tool instance (invalidated
+            when `name`, `description`, or `args_schema` is reassigned) so
+            repeated access does not regenerate the class.
         """
         if isinstance(self.args_schema, dict):
             if self.description:
@@ -598,14 +631,29 @@ class ChildTool(BaseTool):
 
             return self.args_schema
 
+        if (
+            (memo := self._tool_call_schema_memo) is not None
+            and memo[0] is self.args_schema
+            and memo[1] == self.name
+            and memo[2] == self.description
+        ):
+            return memo[3]
+
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
-        return _create_subset_model(
+        subset_model = _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
+        self._tool_call_schema_memo = (
+            self.args_schema,
+            self.name,
+            self.description,
+            subset_model,
+        )
+        return subset_model
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:

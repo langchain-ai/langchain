@@ -3,6 +3,7 @@
 import inspect
 import json
 import logging
+import pickle
 import sys
 import textwrap
 import threading
@@ -3853,3 +3854,61 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+class _MemoSchemaInput(BaseModel):
+    query: str = Field(description="Query to run.")
+
+
+class _MemoSchemaTool(BaseTool):
+    """Module-level tool so pickling by class reference works."""
+
+    name: str = "memo_schema_tool"
+    description: str = "Tool for tool_call_schema memoization tests."
+    args_schema: type[BaseModel] = _MemoSchemaInput
+
+    def _run(self, query: str) -> str:
+        return query
+
+
+def test_tool_call_schema_memoized_across_accesses() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+    assert tool.tool_call_schema is first
+
+
+def test_tool_call_schema_memo_invalidated_on_reassignment() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+
+    tool.description = "Updated description."
+    second = tool.tool_call_schema
+    assert second is not first
+    assert (
+        cast("type[BaseModel]", second).model_json_schema()["description"]
+        == "Updated description."
+    )
+
+    class OtherInput(BaseModel):
+        other_field: str = Field(description="A different field.")
+
+    tool.args_schema = OtherInput
+    third = tool.tool_call_schema
+    assert third is not second
+    assert (
+        "other_field"
+        in cast("type[BaseModel]", third).model_json_schema()["properties"]
+    )
+
+
+def test_tool_picklable_after_tool_call_schema_access() -> None:
+    """The memoized schema is a dynamic class and must not leak into pickles."""
+    tool = _MemoSchemaTool()
+    pickle.loads(pickle.dumps(tool))
+
+    schema = tool.tool_call_schema
+    restored = pickle.loads(pickle.dumps(tool))
+    restored_schema = cast("type[BaseModel]", restored.tool_call_schema)
+    assert restored_schema.model_json_schema()["title"] == "memo_schema_tool"
+    # Pickling must not clear the live instance's memo.
+    assert tool.tool_call_schema is schema
