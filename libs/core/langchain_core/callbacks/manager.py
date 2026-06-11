@@ -214,7 +214,7 @@ async def atrace_as_chain_group(
             await run_manager.on_chain_end({})
 
 
-Func = TypeVar("Func", bound=Callable)
+Func = TypeVar("Func", bound=Callable[..., Any])
 
 
 def shielded(func: Func) -> Func:
@@ -327,9 +327,7 @@ def handle_event(
                 # running coroutine, which we cannot interrupt to run this one.
                 # The solution is to run the synchronous function on the globally shared
                 # thread pool executor to avoid blocking the main event loop.
-                _executor().submit(
-                    cast("Callable", copy_context().run), _run_coros, coros
-                ).result()
+                _executor().submit(copy_context().run, _run_coros, coros).result()
             else:
                 # If there's no running loop, we can run the coroutines directly.
                 _run_coros(coros)
@@ -381,10 +379,7 @@ async def _ahandle_event_for_handler(
             else:
                 await asyncio.get_event_loop().run_in_executor(
                     None,
-                    cast(
-                        "Callable",
-                        functools.partial(copy_context().run, event, *args, **kwargs),
-                    ),
+                    functools.partial(copy_context().run, event, *args, **kwargs),
                 )
     except NotImplementedError as e:
         if event_name == "on_chat_model_start":
@@ -673,7 +668,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
     def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -681,7 +676,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 
@@ -792,7 +787,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
@@ -800,7 +795,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: The chunk.
             **kwargs: Additional keyword arguments.
 

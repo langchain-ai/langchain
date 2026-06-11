@@ -20,11 +20,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.4.3"
+version = "1.4.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "anthropic>=0.96.0,<1.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.4,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
@@ -54,17 +54,14 @@ test = [
     "pytest-xdist>=3.8.0,<4.0.0",
     "vcrpy>=8.0.0,<9.0.0",
     "langgraph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain>=1.0.0,<2.0.0",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
-test_integration = ["requests>=2.32.3,<3.0.0", "langchain-core>=1.4.0,<2.0.0"]
+test_integration = ["requests>=2.32.3,<3.0.0"]
 typing = [
     "mypy>=1.17.1,<2.0.0",
     "types-requests>=2.31.0,<3.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
 ]
 
 

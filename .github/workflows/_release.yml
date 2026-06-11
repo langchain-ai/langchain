@@ -483,7 +483,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        partner: [ anthropic ]
+        partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -574,8 +574,13 @@ jobs:
     permissions:
       contents: read
     # Only run for core or langchain_v1 releases.
-    # Job-level 'if' does not support env context; must use inputs directly.
+    # Job-level 'if' does not support env context, so EFFECTIVE_WORKING_DIR is
+    # unavailable; must use inputs directly and match both forms: short dropdown
+    # names (workflow_dispatch, e.g. 'core') and full 'libs/' paths
+    # (workflow_call / working-directory-override).
     if: >-
+      contains(fromJSON('["core","langchain_v1"]'),
+      inputs.working-directory-override || inputs.working-directory) ||
       startsWith(inputs.working-directory-override || inputs.working-directory,
       'libs/core') || startsWith(inputs.working-directory-override ||
       inputs.working-directory, 'libs/langchain_v1')
@@ -638,8 +643,9 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
       - test-dependents
-      # - test-prior-published-packages-against-new-core
-      # Run if all needed jobs succeeded or were skipped (test-dependents only runs for core/langchain_v1)
+      - test-prior-published-packages-against-new-core
+      # Run if all needed jobs succeeded or were skipped (test-dependents and
+      # test-prior-published-packages-against-new-core only run for core/langchain_v1)
     if: ${{ !cancelled() && !failure() }}
     environment: Release
     runs-on: ubuntu-latest
@@ -717,7 +723,11 @@ jobs:
       - name: Create Tag
         uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
-          artifacts: "dist/*"
+          # JS actions ignore `defaults.run.working-directory`, so this glob is
+          # resolved from the repo root. Point it at the package's `dist/`
+          # (where `download-artifact` placed the wheels) instead of a bare
+          # `dist/*`, which never matched and attached no assets to releases.
+          artifacts: "${{ env.EFFECTIVE_WORKING_DIR }}/dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}

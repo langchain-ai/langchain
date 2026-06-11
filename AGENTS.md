@@ -73,6 +73,15 @@ make format
 uv run --group lint mypy .
 ```
 
+#### Environment and dependency management
+
+Use `uv` for all environment and dependency operations in this monorepo. Do not invoke `pip`, `poetry`, or `conda` directly.
+
+- Let `uv` manage the interpreter and virtual environments — `uv sync` and `uv run` operate without manual `source .venv/bin/activate`. Do not create ad-hoc virtual environments outside the package directory.
+- Each package targets its own supported Python range via its `pyproject.toml`; do not pin a global Python version. If you need an interpreter explicitly, defer to the package's `requires-python` rather than assuming system Python.
+- Install dependencies explicitly through `uv sync` (optionally `--group <name>` / `--all-groups`); never let them install implicitly.
+- Don't mix environments within a session, and don't add new dependencies unless strictly required — when you do, justify them (recent releases/commits, adoption).
+
 #### Key config files
 
 - pyproject.toml: Main workspace configuration with dependency groups
@@ -97,6 +106,22 @@ feat(langchain): `ls_agent_type` tag on `create_agent` calls
 fix(openai): infer Azure chat profiles from model name
 ```
 
+#### Branch naming
+
+Branches should be prefixed `<github-username>/<scope>/<short-description>`:
+
+- `<github-username>` — the author's GitHub login (e.g. `mdrxy`).
+- `<scope>` — the same scope used in the Conventional Commit title (`core`, `langchain`, partner name, `infra`, `docs`, etc.).
+- `<short-description>` — kebab-case, brief, no trailing slash.
+
+Examples:
+
+```txt
+mdrxy/anthropic/normalize-tool-call-ids
+mdrxy/core/vector-store-type-hints
+mdrxy/infra/agents-md-branch
+```
+
 #### PR descriptions
 
 The description *is* the summary — do not add a `# Summary` header.
@@ -113,7 +138,7 @@ The description *is* the summary — do not add a `# Summary` header.
 
   Only `Closes`, `Fixes`, and `Resolves` auto-close the referenced issue on merge. `Related:` or similar labels are informational and do not close anything.
 
-- Explain the *why*: the motivation and why this solution is the right one. Limit prose.
+- Explain the *why*: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
 - Write for readers who may be unfamiliar with this area of the codebase. Avoid insider shorthand and prefer language that is friendly to public viewers — this aids interpretability.
 - Do **not** cite line numbers; they go stale as soon as the file changes.
 - Rarely include full file paths or filenames. Reference the affected symbol, class, or subsystem by name instead.

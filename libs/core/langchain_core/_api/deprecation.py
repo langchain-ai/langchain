@@ -15,6 +15,7 @@ import inspect
 import sys
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -73,6 +74,15 @@ class LangChainDeprecationWarning(DeprecationWarning):
 
 class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
+
+
+# Tracks when callers intentionally silence LangChain deprecation warnings.
+# Suppressed warnings should not consume a deprecated callable's one-time
+# warning state; otherwise an internal compatibility path can prevent the first
+# user-visible call from warning.
+_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING", default=False
+)
 
 
 # PUBLIC API
@@ -220,16 +230,20 @@ def deprecated(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         _package = _package or obj.__module__.split(".")[0].replace("_", "-")
@@ -253,8 +267,10 @@ def deprecated(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_deprecation_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
@@ -315,7 +331,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast("type | Callable", obj.fget).__qualname__
+            _name = _name or cast("type", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -370,7 +386,7 @@ def deprecated(
                 return cast("T", prop)
 
         else:
-            _name = _name or cast("type | Callable", obj).__qualname__
+            _name = _name or cast("type", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -451,10 +467,14 @@ def deprecated(
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
     """Context manager to suppress `LangChainDeprecationWarning`."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainDeprecationWarning)
-        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
-        yield
+    token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LangChainDeprecationWarning)
+            warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
+            yield
+    finally:
+        _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
 
 
 def warn_deprecated(

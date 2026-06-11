@@ -90,12 +90,12 @@ def test_mistralai_initialization_baseurl(
         ("MISTRAL_BASE_URL"),
     ],
 )
-def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
+def test_mistralai_initialization_baseurl_env(
+    env_var_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test ChatMistralAI initialization."""
     # Verify that ChatMistralAI can be initialized using env variable
-    import os
-
-    os.environ[env_var_name] = "boo"
+    monkeypatch.setenv(env_var_name, "boo")
     model = ChatMistralAI(model="test")  # type: ignore[call-arg]
     assert model.endpoint == "boo"
 
@@ -339,8 +339,11 @@ async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        self.last_token = token
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
+        if isinstance(token, str):
+            self.last_token = token
 
 
 @patch(
@@ -510,17 +513,65 @@ def test_tool_id_conversion() -> None:
 
 def test_extra_kwargs() -> None:
     # Check that foo is saved in extra_kwargs.
-    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_stop_stored_as_field() -> None:
+    """`stop` is a first-class field, not routed into `model_kwargs`."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm.stop == ["END"]
+    assert "stop" not in llm.model_kwargs
+
+
+def test_create_message_dicts_sends_instance_stop() -> None:
+    """Instance-level `stop` is forwarded to the request params."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert params["stop"] == ["END"]
+
+
+def test_create_message_dicts_per_call_stop_overrides_instance() -> None:
+    """A per-call `stop` (including an empty list) overrides the instance value."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    # A non-empty per-call value wins over the instance default.
+    _, params = llm._create_message_dicts([HumanMessage("hi")], ["STOP"])
+    assert params["stop"] == ["STOP"]
+
+    # An explicit empty list overrides the instance default and is treated as
+    # "no stop sequences", so it is omitted from the request rather than sent
+    # as an empty array (which the API would reject).
+    _, params = llm._create_message_dicts([HumanMessage("hi")], [])
+    assert "stop" not in params
+
+
+def test_create_message_dicts_omits_stop_when_unset() -> None:
+    """No `stop` field and no per-call value means `stop` is not sent."""
+    llm = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert "stop" not in params
+
+
+def test_get_ls_params_stop_precedence() -> None:
+    """`_get_ls_params` records instance `stop` and lets a per-call value win."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm._get_ls_params().get("ls_stop") == ["END"]
+    assert llm._get_ls_params(stop=["STOP"]).get("ls_stop") == ["STOP"]
+
+    # Without an instance default and no per-call value, `ls_stop` is omitted.
+    llm_no_stop = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    assert "ls_stop" not in llm_no_stop._get_ls_params()
 
 
 def test_retry_with_failure_then_success() -> None:

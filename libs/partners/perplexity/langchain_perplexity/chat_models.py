@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator, Mapping
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import Any, Literal, TypeAlias, cast
 
@@ -34,6 +34,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
@@ -41,10 +42,15 @@ from langchain_core.messages.ai import (
     UsageMetadata,
     subtract_usage,
 )
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
-from langchain_core.utils.function_calling import convert_to_json_schema
+from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
+    convert_to_openai_tool,
+)
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -166,6 +172,112 @@ def _is_builtin_tool(tool: dict) -> bool:
     return "type" in tool and tool["type"] != "function"
 
 
+def _flatten_responses_tool(tool: dict) -> dict:
+    """Flatten a Chat-Completions function tool (nested under `function`) to
+    the Responses-API's flat shape. Built-in tools (e.g. `web_search`) pass
+    through unchanged.
+    """
+    if tool.get("type") == "function" and isinstance(tool.get("function"), dict):
+        fn = tool["function"]
+        flat: dict[str, Any] = {"type": "function", "name": fn.get("name")}
+        for key in ("description", "parameters", "strict"):
+            if key in fn:
+                flat[key] = fn[key]
+        return flat
+    return tool
+
+
+def _content_to_text(content: Any) -> str:
+    """Concatenate text from a string or list-of-blocks content, dropping
+    non-text blocks (e.g. a `tool_call`/`tool_use` block) that the Responses API
+    can't take on a tool turn.
+
+    Only the optional plain-text preamble of an assistant tool turn is built
+    here; the calls themselves are re-materialized as `function_call` items by
+    `_translate_responses_input`, so nothing actionable is lost.
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and block.get("type") == "text":
+                parts.append(block.get("text", ""))
+        return "".join(parts)
+    if content is not None:
+        # An unexpected content shape (not str/list/None) is dropped rather than
+        # guessed at; log it so content-shape drift stays diagnosable.
+        logger.debug("Dropping unexpected content type %s on tool turn.", type(content))
+    return ""
+
+
+def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]:
+    """Translate Chat-Completions message dicts into Responses-API input items.
+
+    The Responses API has no `tool` role: an assistant turn's `tool_calls`
+    become `function_call` items and a `tool` message becomes a
+    `function_call_output`. Other messages pass through.
+
+    `name`, `id`, and `tool_call_id` are the fields that pair a call with its
+    result; `_convert_message_to_dict` always populates them, so a missing one
+    here signals upstream drift or a hand-built message and is logged at
+    `WARNING` rather than silently coerced.
+    """
+    translated: list[Any] = []
+    for message in message_dicts:
+        if not isinstance(message, dict):
+            translated.append(message)
+            continue
+        role = message.get("role")
+        if role == "assistant" and message.get("tool_calls"):
+            # Assistant text (if any) becomes a plain message; the calls follow
+            # as `function_call` items.
+            text = _content_to_text(message.get("content"))
+            if text:
+                translated.append({"role": "assistant", "content": text})
+            for tool_call in message["tool_calls"]:
+                function = tool_call.get("function", {})
+                call_id = tool_call.get("id")
+                name = function.get("name", "")
+                if not name or not call_id:
+                    logger.warning(
+                        "Assistant tool_call missing identity field "
+                        "(name=%r, id=%r); the Responses API may reject this "
+                        "turn or fail to pair the call with its output.",
+                        name,
+                        call_id,
+                    )
+                translated.append(
+                    {
+                        "type": "function_call",
+                        "call_id": call_id,
+                        "name": name,
+                        "arguments": function.get("arguments", "") or "",
+                    }
+                )
+        elif role == "tool":
+            content = message.get("content", "")
+            output = content if isinstance(content, str) else json.dumps(content)
+            call_id = message.get("tool_call_id")
+            if not call_id:
+                logger.warning(
+                    "Tool message missing tool_call_id; the Responses API "
+                    "cannot pair this function_call_output with its call."
+                )
+            translated.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": call_id,
+                    "output": output,
+                }
+            )
+        else:
+            translated.append(message)
+    return translated
+
+
 def _use_responses_api(payload: dict) -> bool:
     """Determine whether to route a payload through the Responses API.
 
@@ -198,6 +310,14 @@ def _use_responses_api(payload: dict) -> bool:
         )
         return True
     return False
+
+
+def _set_model_name_alias(response_metadata: dict[str, Any]) -> None:
+    """Mirror `model` into `model_name`, which langchain-core usage callbacks
+    read for cost tracking (the Chat Completions path already sets it).
+    """
+    if "model" in response_metadata:
+        response_metadata["model_name"] = response_metadata["model"]
 
 
 def _get_attr(obj: Any, name: str, default: Any = None) -> Any:
@@ -318,6 +438,7 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
         value = _get_attr(response, key, None)
         if value is not None:
             response_metadata[key] = value
+    _set_model_name_alias(response_metadata)
 
     message = AIMessage(
         content=content,
@@ -361,17 +482,37 @@ def _convert_responses_stream_event_to_chunk(
 ) -> ChatGenerationChunk | None:
     """Convert a Responses API streaming event to a `ChatGenerationChunk`.
 
-    Handles `response.output_text.delta` (text chunk), `response.completed`
+    Handles `response.output_text.delta` (text chunk), `response.output_item.done`
+    carrying a `function_call` (surfaced as a tool-call chunk), `response.completed`
     (final usage + metadata), and `response.failed` / `response.error`
     (raises `PerplexityResponsesStreamError`). Returns `None` for any other
-    event type — including function-call streaming events, which are
-    intentionally not surfaced as chunks today; unrecognized event types are
-    logged at `DEBUG` so SDK drift is diagnosable without flooding logs.
+    event type; unrecognized event types are logged at `DEBUG` so SDK drift is
+    diagnosable without flooding logs.
     """
     event_type = _get_attr(event, "type", None)
     if event_type == "response.output_text.delta":
         delta = _get_attr(event, "delta", "") or ""
         return ChatGenerationChunk(message=AIMessageChunk(content=delta))
+    if event_type == "response.output_item.done":
+        item = _get_attr(event, "item", None)
+        if item is not None and _get_attr(item, "type", None) == "function_call":
+            # The Responses API delivers the whole function call in one item
+            # (no argument deltas), so emit it as a single tool-call chunk.
+            return ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    tool_call_chunks=[
+                        tool_call_chunk(
+                            name=_get_attr(item, "name", None),
+                            args=_get_attr(item, "arguments", None),
+                            id=_get_attr(item, "call_id", None)
+                            or _get_attr(item, "id", None),
+                            index=_get_attr(event, "output_index", 0),
+                        )
+                    ],
+                )
+            )
+        return None
     if event_type == "response.completed":
         response = _get_attr(event, "response", None)
         usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
@@ -382,6 +523,7 @@ def _convert_responses_stream_event_to_chunk(
                 value = _get_attr(response, key, None)
                 if value is not None:
                     response_metadata[key] = value
+            _set_model_name_alias(response_metadata)
             for key in (
                 "citations",
                 "images",
@@ -770,6 +912,7 @@ class ChatPerplexity(BaseChatModel):
         return {**params, **self.model_kwargs}
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
+        message_dict: dict[str, Any]
         if isinstance(message, ChatMessage):
             message_dict = {"role": message.role, "content": message.content}
         elif isinstance(message, SystemMessage):
@@ -778,6 +921,39 @@ class ChatPerplexity(BaseChatModel):
             message_dict = {"role": "user", "content": message.content}
         elif isinstance(message, AIMessage):
             message_dict = {"role": "assistant", "content": message.content}
+            if message.tool_calls or message.invalid_tool_calls:
+                message_dict["tool_calls"] = [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": json.dumps(
+                                tool_call["args"], ensure_ascii=False
+                            ),
+                        },
+                    }
+                    for tool_call in message.tool_calls
+                ] + [
+                    {
+                        "id": tool_call["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tool_call["name"],
+                            "arguments": tool_call["args"],
+                        },
+                    }
+                    for tool_call in message.invalid_tool_calls
+                ]
+                # OpenAI-compatible APIs reject empty-string content alongside
+                # tool_calls; send null instead.
+                message_dict["content"] = message_dict["content"] or None
+        elif isinstance(message, ToolMessage):
+            message_dict = {
+                "role": "tool",
+                "content": message.content,
+                "tool_call_id": message.tool_call_id,
+            }
         else:
             raise TypeError(f"Got unknown type {message}")
         return message_dict
@@ -853,7 +1029,7 @@ class ChatPerplexity(BaseChatModel):
                 `dict` — silently dropping subsequent params would mask
                 user-set search/filter knobs.
         """
-        payload: dict[str, Any] = {"input": message_dicts}
+        payload: dict[str, Any] = {"input": _translate_responses_input(message_dicts)}
         runtime_keys = user_set_keys or set()
         user_set_temperature = (
             "temperature" in self.model_fields_set or "temperature" in runtime_keys
@@ -866,6 +1042,13 @@ class ChatPerplexity(BaseChatModel):
                 continue
             if key == "messages":
                 continue
+            if key in _RESPONSES_DROP_KEYS:
+                # Suppress the warning for the class-default `temperature`,
+                # which `_default_params` injects on every call and would
+                # otherwise spam users who never asked for it.
+                if key != "temperature" or user_set_temperature:
+                    dropped_for_warning[key] = value
+                continue
             if key == "tool_choice":
                 msg = (
                     "Perplexity Responses (Agent) API does not support "
@@ -875,15 +1058,13 @@ class ChatPerplexity(BaseChatModel):
                     "decide."
                 )
                 raise ValueError(msg)
-            if key in _RESPONSES_DROP_KEYS:
-                # Suppress the warning for the class-default `temperature`,
-                # which `_default_params` injects on every call and would
-                # otherwise spam users who never asked for it.
-                if key != "temperature" or user_set_temperature:
-                    dropped_for_warning[key] = value
-                continue
             if key == "max_tokens":
                 payload["max_output_tokens"] = value
+                continue
+            if key == "tools":
+                # Function tools must be flattened to the Responses-API shape;
+                # built-in tools (web_search, etc.) pass through unchanged.
+                payload["tools"] = [_flatten_responses_tool(tool) for tool in value]
                 continue
             if key in _RESPONSES_PASSTHROUGH_KEYS:
                 payload[key] = value
@@ -1327,6 +1508,74 @@ class ChatPerplexity(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "perplexitychat"
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+        *,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Client-side function tools require the Perplexity Responses (Agent) API:
+        construct the model with `use_responses_api=True` and a tool-capable
+        model such as `openai/gpt-5.5`. The `sonar` family does not support
+        client-side function tools.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Supports any tool handled by
+                [convert_to_openai_tool][langchain_core.utils.function_calling.convert_to_openai_tool]
+                (Pydantic models, `TypedDict` classes, callables, `BaseTool`,
+                or OpenAI-format dicts), as well as Perplexity built-in tools such
+                as `{"type": "web_search"}`, which are passed through unchanged.
+            tool_choice: Which tool the model should use. Normalized here for API
+                parity with `langchain-openai` (a tool name, `"auto"`, `"none"`,
+                `"any"`/`"required"`/`True`, or an OpenAI-style dict) and stored
+                on the binding, but the Perplexity Responses (Agent) API does not
+                currently honor it: a non-empty `tool_choice` makes
+                `_to_responses_payload` raise `ValueError` at invoke time on the
+                Responses route. The restriction can be relaxed if Perplexity
+                adds `tool_choice` support.
+            strict: If `True`, the tool parameter schema is sent with `strict`
+                enabled. If `None` (default), the flag is omitted.
+            kwargs: Any additional parameters are passed directly to `bind`.
+        """
+        formatted_tools = [
+            tool
+            if isinstance(tool, dict) and _is_builtin_tool(tool)
+            else convert_to_openai_tool(tool, strict=strict)
+            for tool in tools
+        ]
+        if tool_choice:
+            tool_names = [
+                t["function"]["name"] if "function" in t else t.get("name")
+                for t in formatted_tools
+            ]
+            if isinstance(tool_choice, str):
+                if tool_choice in tool_names:
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                # 'any' is not native to the OpenAI schema; map it to 'required'
+                # for parity with providers that use 'any'.
+                elif tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                pass
+            else:
+                msg = (
+                    "Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+                raise ValueError(msg)
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
         self,

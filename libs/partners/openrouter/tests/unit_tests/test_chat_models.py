@@ -492,6 +492,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)

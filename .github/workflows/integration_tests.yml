@@ -5,7 +5,7 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
 
 on:
   workflow_dispatch:
@@ -47,6 +47,9 @@ on:
       working-directory-override:
         type: string
         description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+      exclude:
+        type: string
+        description: "Comma-separated short names to drop from the 'all' run (e.g. openai,anthropic). Ignored unless dropdown is 'all' and no working-directory-override is set."
       python-version-override:
         type: string
         description: "Python version override — defaults to 3.10 and 3.13 in matrix (e.g. 3.11)"
@@ -89,6 +92,7 @@ jobs:
           WORKING_DIRECTORY_OVERRIDE: ${{ github.event.inputs.working-directory-override || '' }}
           WORKING_DIRECTORY_CHOICE: ${{ github.event.inputs.working-directory || 'all' }}
           PYTHON_VERSION_OVERRIDE: ${{ github.event.inputs.python-version-override || '' }}
+          EXCLUDE: ${{ github.event.inputs.exclude || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
           # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
@@ -117,6 +121,28 @@ jobs:
                 working_directory="[\"libs/partners/$WORKING_DIRECTORY_CHOICE\"]"
                 ;;
             esac
+          elif [ -n "$EXCLUDE" ]; then
+            # Only honored on the 'all' run (no override, dropdown left at 'all').
+            # Map each comma-separated short name to its full path (mirroring the
+            # case statement above), then subtract from the DEFAULT_LIBS array.
+            exclude_paths='[]'
+            IFS=',' read -ra exclude_names <<< "$EXCLUDE"
+            for name in "${exclude_names[@]}"; do
+              # Trim surrounding whitespace so "openai, anthropic" works.
+              name="${name#"${name%%[![:space:]]*}"}" # ltrim
+              name="${name%"${name##*[![:space:]]}"}" # rtrim
+              [ -z "$name" ] && continue
+              case "$name" in
+                core|langchain|langchain_v1|text-splitters|standard-tests|model-profiles)
+                  path="libs/$name"
+                  ;;
+                *)
+                  path="libs/partners/$name"
+                  ;;
+              esac
+              exclude_paths="$(jq -nc --argjson acc "$exclude_paths" --arg path "$path" '$acc + [$path]')"
+            done
+            working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo "$matrix"
@@ -165,7 +191,7 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

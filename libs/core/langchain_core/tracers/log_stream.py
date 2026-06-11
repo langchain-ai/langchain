@@ -229,7 +229,7 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
     """Tracer that streams run logs to a stream."""
 
     def __init__(
@@ -537,7 +537,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""

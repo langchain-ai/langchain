@@ -6,6 +6,7 @@ These are traditionally older models (newer models generally are chat models).
 from __future__ import annotations
 
 import asyncio
+import builtins
 import functools
 import inspect
 import json
@@ -32,6 +33,7 @@ from tenacity import (
 )
 from typing_extensions import override
 
+from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -58,11 +60,12 @@ from langchain_core.runnables import RunnableConfig, ensure_config, get_config_l
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
     import uuid
 
 logger = logging.getLogger(__name__)
 
-_background_tasks: set[asyncio.Task] = set()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 @functools.lru_cache
@@ -157,7 +160,7 @@ def get_prompts(
     params: dict[str, Any],
     prompts: list[str],
     cache: BaseCache | bool | None = None,  # noqa: FBT001
-) -> tuple[dict[int, list], str, list[int], list[str]]:
+) -> tuple[dict[int, list[Generation]], str, list[int], list[str]]:
     """Get prompts that are already cached.
 
     Args:
@@ -193,7 +196,7 @@ async def aget_prompts(
     params: dict[str, Any],
     prompts: list[str],
     cache: BaseCache | bool | None = None,  # noqa: FBT001
-) -> tuple[dict[int, list], str, list[int], list[str]]:
+) -> tuple[dict[int, list[Generation]], str, list[int], list[str]]:
     """Get prompts that are already cached. Async version.
 
     Args:
@@ -226,12 +229,12 @@ async def aget_prompts(
 
 def update_cache(
     cache: BaseCache | bool | None,  # noqa: FBT001
-    existing_prompts: dict[int, list],
+    existing_prompts: dict[int, list[Generation]],
     llm_string: str,
     missing_prompt_idxs: list[int],
     new_results: LLMResult,
     prompts: list[str],
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Update the cache and get the LLM output.
 
     Args:
@@ -259,12 +262,12 @@ def update_cache(
 
 async def aupdate_cache(
     cache: BaseCache | bool | None,  # noqa: FBT001
-    existing_prompts: dict[int, list],
+    existing_prompts: dict[int, list[Generation]],
     llm_string: str,
     missing_prompt_idxs: list[int],
     new_results: LLMResult,
     prompts: list[str],
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Update the cache and get the LLM output. Async version.
 
     Args:
@@ -301,11 +304,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     )
 
     @functools.cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
-        # guaranteed to be a dict since dumps uses the default callback, which uses
+        # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     # --- Runnable methods ---
 
@@ -522,7 +525,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         else:
             prompt = self._convert_input(input).to_string()
             config = ensure_config(config)
-            params = self.dict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
@@ -595,7 +598,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         prompt = self._convert_input(input).to_string()
         config = ensure_config(config)
-        params = self.dict()
+        params = self._dict_for_compat()
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
@@ -853,7 +856,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks | list[Callbacks] | None = None,
         *,
         tags: list[str] | list[list[str]] | None = None,
-        metadata: dict[str, Any] | list[dict[str, Any]] | None = None,
+        metadata: builtins.dict[str, Any] | list[builtins.dict[str, Any]] | None = None,
         run_name: str | list[str] | None = None,
         run_id: uuid.UUID | list[uuid.UUID | None] | None = None,
         **kwargs: Any,
@@ -952,12 +955,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[builtins.dict[str, Any] | None]",
+                metadata or ([{}] * len(prompts)),
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
-            params = self.dict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
@@ -978,7 +982,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
-            params = self.dict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 CallbackManager.configure(
@@ -987,7 +991,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.verbose,
                     cast("list[str]", tags),
                     self.tags,
-                    cast("dict[str, Any]", metadata),
+                    cast("builtins.dict[str, Any]", metadata),
                     self.metadata,
                     langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
@@ -1072,8 +1076,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @staticmethod
     def _get_run_ids_list(
-        run_id: uuid.UUID | list[uuid.UUID | None] | None, prompts: list
-    ) -> list:
+        run_id: uuid.UUID | list[uuid.UUID | None] | None, prompts: list[str]
+    ) -> list[uuid.UUID | None]:
         if run_id is None:
             return [None] * len(prompts)
         if isinstance(run_id, list):
@@ -1136,7 +1140,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks | list[Callbacks] | None = None,
         *,
         tags: list[str] | list[list[str]] | None = None,
-        metadata: dict[str, Any] | list[dict[str, Any]] | None = None,
+        metadata: builtins.dict[str, Any] | list[builtins.dict[str, Any]] | None = None,
         run_name: str | list[str] | None = None,
         run_id: uuid.UUID | list[uuid.UUID | None] | None = None,
         **kwargs: Any,
@@ -1224,12 +1228,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
-                "list[dict[str, Any] | None]", metadata or ([{}] * len(prompts))
+                "list[builtins.dict[str, Any] | None]",
+                metadata or ([{}] * len(prompts)),
             )
             run_name_list = run_name or cast(
                 "list[str | None]", ([None] * len(prompts))
             )
-            params = self.dict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1250,7 +1255,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ]
         else:
             # We've received a single callbacks arg to apply to all inputs
-            params = self.dict()
+            params = self._dict_for_compat()
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -1259,7 +1264,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     self.verbose,
                     cast("list[str]", tags),
                     self.tags,
-                    cast("dict[str, Any]", metadata),
+                    cast("builtins.dict[str, Any]", metadata),
                     self.metadata,
                     langsmith_inheritable_metadata=_filter_invocation_params_for_tracing(
                         params
@@ -1358,7 +1363,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks = None,
         *,
         tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: builtins.dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -1382,12 +1387,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
     @override
-    def dict(self, **kwargs: Any) -> dict:
-        """Return a dictionary of the LLM."""
+    def dict(self, **_kwargs: Any) -> builtins.dict[str, Any]:
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary representation of the LLM.
+        """
+        return self.asdict()
+
+    def asdict(self) -> builtins.dict[str, Any]:
+        """Return a dictionary representation of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
         return starter_dict
+
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the LLM dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
 
     def save(self, file_path: Path | str) -> None:
         """Save the LLM.
@@ -1410,7 +1428,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        prompt_dict = self.dict()
+        prompt_dict = self._dict_for_compat()
 
         if save_path.suffix == ".json":
             with save_path.open("w", encoding="utf-8") as f:
