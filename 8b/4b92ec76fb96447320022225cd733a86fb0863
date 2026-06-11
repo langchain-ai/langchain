@@ -1,0 +1,30 @@
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_ae1092721ee973::t_45663aeb384eda 571
+  s_ae1092721ee973::t_d1033b8ed3029f 79,91
+  s_ae1092721ee973::t_0423266a82cb39 529-530,532-536,540-542,544-545,547
+  s_ae1092721ee973::t_1c4061ae3ba197 580
+  s_ae1092721ee973::t_1142b16c334c7f 93-97
+  s_ae1092721ee973::t_a4094263909e82 531,537-538,543,546
+  s_ae1092721ee973::t_df6b060e2b9d20 57-58,64-77
+  s_ae1092721ee973::t_fd17e6c9aef620 501-526
+  s_ae1092721ee973::t_0e3e8b56e92131 639,730
+libs/core/tests/unit_tests/language_models/test_compat_bridge.py
+  s_ae1092721ee973::t_b4d6e57d8787c4 12
+  s_ae1092721ee973::t_b7cf6e3b9b32d0 111,113,119-120,123-124,136,140-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8b4b92ec76fb96447320022225cd733a86fb0863",
+  "prompts": {},
+  "sessions": {
+    "s_ae1092721ee973": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e69eab6-f97e-4638-bd38-5477973c5c8d",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
