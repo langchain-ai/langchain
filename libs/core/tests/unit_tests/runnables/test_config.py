@@ -383,8 +383,13 @@ class TestMergeMetadataDicts:
         assert _merge_metadata_dicts({}, {}) == {}
 
     def test_empty_base(self) -> None:
-        result = _merge_metadata_dicts({}, {"versions": {"pkg": "1.0"}})
+        incoming = {"versions": {"pkg": "1.0"}}
+        result = _merge_metadata_dicts({}, incoming)
         assert result == {"versions": {"pkg": "1.0"}}
+        assert result["versions"] is not incoming["versions"]
+
+        result["versions"]["new"] = "2.0"
+        assert incoming == {"versions": {"pkg": "1.0"}}
 
     def test_empty_incoming(self) -> None:
         result = _merge_metadata_dicts({"versions": {"pkg": "1.0"}}, {})

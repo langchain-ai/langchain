@@ -429,6 +429,8 @@ def _merge_metadata_dicts(
             and isinstance(value, Mapping)
         ):
             merged[key] = {**merged[key], **value}
+        elif isinstance(value, Mapping):
+            merged[key] = {**value}
         else:
             merged[key] = value
     # Ensure non-overlapping nested mappings are also copies, not shared refs.
