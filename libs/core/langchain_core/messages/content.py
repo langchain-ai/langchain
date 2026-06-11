@@ -70,7 +70,7 @@ AIMessage(
             "text": "Hello, world!",
             # Additional fields not specified in the TypedDict
             # These are valid with PEP 728 and are typed as Any
-            "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
+            "openai_metadata": {"model": "gpt-5.5", "temperature": 0.7},
             "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
             "custom_field": "any value",
         }

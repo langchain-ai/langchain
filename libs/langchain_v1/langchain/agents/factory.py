@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import itertools
+import re
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -150,13 +151,25 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
-    # if model profile data are not available, these models are assumed to support
-    # structured output
-    "grok",
-    "gpt-5",
-    "gpt-4.1",
-    "gpt-4o",
-    "gpt-oss",
+    # If model profile data are not available, model names matching these patterns
+    # are assumed to support provider-native structured output. These are regexes
+    # so matches stay bounded to model-name segments instead of arbitrary substrings.
+    r"(^|[/:.])gpt-4\.1($|[-/:])",
+    r"(^|[/:.])gpt-4o($|[-/:])",
+    r"(^|[/:.])gpt-5($|[-/:])",
+    r"(^|[/:.])gpt-5\.1($|[-/:])",
+    r"(^|[/:.])gpt-5\.2($|[/:])",
+    r"(^|[/:.])gpt-5\.2-(chat|codex)($|[-/:])",
+    r"(^|[/:.])gpt-5\.3($|[-/:])",
+    r"(^|[/:.])gpt-5\.4($|[/:])",
+    r"(^|[/:.])gpt-5\.4-(mini|nano)($|[-/:])",
+    r"(^|[/:.])gpt-5\.5($|[-/:])",
+    r"(^|[/:.])claude-(fable|mythos)-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-haiku-4-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-opus-4-(5|6|7|8)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-sonnet-4-(5|6)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])grok-4($|[-.:/])",
+    r"(^|[/:.])grok-build($|[-/:])",
 ]
 
 
@@ -550,7 +563,10 @@ def _supports_provider_strategy(
             return True
 
     return (
-        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
+        any(
+            re.search(pattern, model_name.lower())
+            for pattern in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT
+        )
         if model_name
         else False
     )
@@ -726,7 +742,7 @@ def create_agent(
     Args:
         model: The language model for the agent.
 
-            Can be a string identifier (e.g., `"openai:gpt-4"`) or a direct chat model
+            Can be a string identifier (e.g., `"openai:gpt-5.5"`) or a direct chat model
             instance (e.g., [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
             [LangChain chat model](https://docs.langchain.com/oss/python/integrations/chat)).
 

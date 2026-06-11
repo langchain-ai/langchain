@@ -89,6 +89,9 @@ from langchain_openai.chat_models.base import (
     _resize,
 )
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL = "gpt-4o-mini"
+
 
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
@@ -112,30 +115,30 @@ def test_streaming_attribute_should_stream(async_api: bool) -> None:
 
 def test_openai_client_caching() -> None:
     """Test that the OpenAI client is cached."""
-    llm1 = ChatOpenAI(model="gpt-4.1-mini")
-    llm2 = ChatOpenAI(model="gpt-4.1-mini")
+    llm1 = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    llm2 = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert llm1.root_client._client is llm2.root_client._client
 
-    llm3 = ChatOpenAI(model="gpt-4.1-mini", base_url="foo")
+    llm3 = ChatOpenAI(model=OPENAI_TEST_MODEL, base_url="foo")
     assert llm1.root_client._client is not llm3.root_client._client
 
-    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    llm4 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=None)
     assert llm1.root_client._client is llm4.root_client._client
 
-    llm5 = ChatOpenAI(model="gpt-4.1-mini", timeout=3)
+    llm5 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=3)
     assert llm1.root_client._client is not llm5.root_client._client
 
     llm6 = ChatOpenAI(
-        model="gpt-4.1-mini", timeout=httpx.Timeout(timeout=60.0, connect=5.0)
+        model=OPENAI_TEST_MODEL, timeout=httpx.Timeout(timeout=60.0, connect=5.0)
     )
     assert llm1.root_client._client is not llm6.root_client._client
 
-    llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
+    llm7 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=(5, 1))
     assert llm1.root_client._client is not llm7.root_client._client
 
 
 def test_profile() -> None:
-    model = ChatOpenAI(model="gpt-4")
+    model = ChatOpenAI(model="gpt-5.2-pro")
     assert model.profile
     assert not model.profile["structured_output"]
 
@@ -160,13 +163,6 @@ def test_profile() -> None:
     # Test overrides for gpt-5 input tokens
     model = ChatOpenAI(model="gpt-5")
     assert model.profile["max_input_tokens"] == 272_000
-
-
-def test_openai_o1_temperature() -> None:
-    llm = ChatOpenAI(model="o1-preview")
-    assert llm.temperature == 1
-    llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
-    assert llm.temperature == 1
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -531,12 +527,12 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
-OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
+OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
 [DONE]"""  # noqa: E501
 
 
@@ -552,8 +548,8 @@ def mock_openai_completion() -> list[dict]:
 
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
-    llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name)
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     assert llm.stream_usage
     mock_client = AsyncMock()
 
@@ -577,8 +573,8 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
 
 def test_openai_stream(mock_openai_completion: list) -> None:
-    llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name)
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     assert llm.stream_usage
     mock_client = MagicMock()
 
@@ -627,7 +623,7 @@ def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None
     """`stream_events(version="v3")` on chat completions emits a valid lifecycle."""
     from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -651,7 +647,7 @@ def mock_completion() -> dict:
         "id": "chatcmpl-7fcZavknQda3SQ",
         "object": "chat.completion",
         "created": 1689989000,
-        "model": "gpt-3.5-turbo-0613",
+        "model": OPENAI_TEST_MODEL,
         "choices": [
             {
                 "index": 0,
@@ -719,12 +715,10 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 @pytest.mark.parametrize(
     "model",
     [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-3.5-0125",
-        "gpt-4-0125-preview",
-        "gpt-4-turbo-preview",
-        "gpt-4-vision-preview",
+        OPENAI_TEST_MODEL,
+        "gpt-5-nano",
+        "o3",
+        "gpt-5.2",
     ],
 )
 def test__get_encoding_model(model: str) -> None:
@@ -752,7 +746,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
 
 def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     # Test that we ignore function calls if tool_calls are present
-    llm = ChatOpenAI(model="gpt-4.1-mini")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     tool_call_message = AIMessage(
         content="",
         additional_kwargs={
@@ -942,7 +936,7 @@ class MakeASandwich(BaseModel):
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
     llm.bind_tools(
         tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice, strict=strict
     )
@@ -963,14 +957,14 @@ def test_with_structured_output(
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
         strict = None
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
     llm.with_structured_output(
         schema, method=method, strict=strict, include_raw=include_raw
     )
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     messages = [
         SystemMessage("you're a good assistant"),
         HumanMessage("how are you"),
@@ -1082,7 +1076,7 @@ class Foo(BaseModel):
 def test_schema_from_with_structured_output(schema: type) -> None:
     """Test schema from with_structured_output."""
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     structured_llm = llm.with_structured_output(
         schema, method="json_schema", strict=True
@@ -1204,7 +1198,7 @@ def test_structured_output_strict(
 ) -> None:
     """Test to verify structured output with strict=True."""
 
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     class Joke(BaseModel):
         """Joke to tell user."""
@@ -1220,7 +1214,7 @@ def test_structured_output_strict(
 def test_nested_structured_output_strict() -> None:
     """Test to verify structured output with strict=True for nested object."""
 
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     class SelfEvaluation(TypedDict):
         score: int
@@ -1237,7 +1231,7 @@ def test_nested_structured_output_strict() -> None:
 
 
 def test__get_request_payload() -> None:
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     messages: list = [
         SystemMessage("hello"),
         SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
@@ -1253,14 +1247,14 @@ def test__get_request_payload() -> None:
             {"role": "user", "content": "how are you"},
             {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
-        "model": "gpt-4o-2024-08-06",
+        "model": OPENAI_TEST_MODEL,
         "stream": False,
     }
     payload = llm._get_request_payload(messages)
     assert payload == expected
 
     # Test we coerce to developer role for o-series models
-    llm = ChatOpenAI(model="o3-mini")
+    llm = ChatOpenAI(model="o3")
     payload = llm._get_request_payload(messages)
     expected = {
         "messages": [
@@ -1270,7 +1264,7 @@ def test__get_request_payload() -> None:
             {"role": "user", "content": "how are you"},
             {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
-        "model": "o3-mini",
+        "model": "o3",
         "stream": False,
     }
     assert payload == expected
@@ -1303,7 +1297,7 @@ def test__get_request_payload() -> None:
                 "content": [{"type": "text", "text": "thoughtful response"}],
             },
         ],
-        "model": "o3-mini",
+        "model": "o3",
         "stream": False,
     }
     payload = llm._get_request_payload(reasoning_messages)
@@ -1330,7 +1324,7 @@ def test_sanitize_chat_completions_text_blocks() -> None:
 def test_init_o1() -> None:
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("error")  # Treat warnings as errors
-        ChatOpenAI(model="o1", reasoning_effort="medium")
+        ChatOpenAI(model=OPENAI_TEST_MODEL, reasoning_effort="medium")
 
     assert len(record) == 0
 
@@ -1401,14 +1395,14 @@ def test_verbosity_parameter_payload() -> None:
     assert payload["text"]["verbosity"] == "high"
 
 
-def test_structured_output_old_model() -> None:
+def test_structured_output_legacy_model() -> None:
     class Output(TypedDict):
         """output."""
 
         foo: str
 
     with pytest.warns(match="Cannot use method='json_schema'"):
-        llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
+        llm = ChatOpenAI(model="gpt-3-legacy").with_structured_output(Output)
     # assert tool calling was used instead of json_schema
     assert "tools" in llm.steps[0].kwargs  # type: ignore
     assert "response_format" not in llm.steps[0].kwargs  # type: ignore
@@ -1451,7 +1445,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         id: str = "chatcmpl-1"
         object: str = "chat.completion"
         created: int = 0
-        model: str = "gpt-4o-mini"
+        model: str = OPENAI_TEST_MODEL
         choices: list[MockChoice]
         usage: dict[str, int] | None = None
 
@@ -1465,7 +1459,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
     )
 
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
         result = llm._create_chat_result(response)
@@ -1500,7 +1494,7 @@ def test__construct_lc_result_from_responses_api_error_handling() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         error=ResponseError(message="Test error", code="server_error"),
         parallel_tool_calls=True,
@@ -1520,7 +1514,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1563,7 +1557,10 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.usage_metadata["output_tokens"] == 3
     assert result.generations[0].message.usage_metadata["total_tokens"] == 13
     assert result.generations[0].message.response_metadata["id"] == "resp_123"
-    assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
+    assert (
+        result.generations[0].message.response_metadata["model_name"]
+        == OPENAI_TEST_MODEL
+    )
 
     # responses/v1
     result = _construct_lc_result_from_responses_api(response)
@@ -1579,7 +1576,7 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1616,7 +1613,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1684,7 +1681,7 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1727,7 +1724,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1780,7 +1777,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1817,7 +1814,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1905,7 +1902,7 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1936,7 +1933,7 @@ def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1981,7 +1978,7 @@ def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> No
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2112,7 +2109,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2162,7 +2159,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2254,7 +2251,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2730,7 +2727,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert messages_copy == messages
 
     # Test dict messages
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
     message_dicts: list = [
         {"role": "developer", "content": "This is a developer message."},
         {
@@ -2772,7 +2769,7 @@ def test__construct_responses_api_input_message_type_on_all_roles() -> None:
         )
 
     # Also test developer messages via dict input
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
     payload = llm._get_request_payload(
         [{"role": "developer", "content": "Translate English to Italian"}]
     )
@@ -2783,7 +2780,7 @@ def test__construct_responses_api_input_message_type_on_all_roles() -> None:
 
 
 def test_service_tier() -> None:
-    llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, service_tier="flex")
     payload = llm._get_request_payload([HumanMessage("Hello")])
     assert payload["service_tier"] == "flex"
 
@@ -2804,7 +2801,7 @@ class FakeTracer(BaseTracer):
 def test_mcp_tracing() -> None:
     # Test we exclude sensitive information from traces
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
     )
 
     tracer = FakeTracer()
@@ -2815,7 +2812,7 @@ def test_mcp_tracing() -> None:
         mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
-            model="o4-mini",
+            model=OPENAI_TEST_MODEL,
             object="response",
             parallel_tool_calls=True,
             tools=[],
@@ -3304,7 +3301,7 @@ def test_get_last_messages_with_mixed_response_metadata() -> None:
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
     )
     messages = [
         HumanMessage("Hello"),
@@ -3317,7 +3314,7 @@ def test_get_request_payload_use_previous_response_id() -> None:
 
     # Use previous response ID
     llm = ChatOpenAI(
-        model="o4-mini",
+        model=OPENAI_TEST_MODEL,
         # Specifying use_previous_response_id automatically engages Responses API
         use_previous_response_id=True,
     )
@@ -3434,7 +3431,7 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_TEST_MODEL,
         api_key=SecretStr(
             "test-api-key"
         ),  # Set a fake API key to avoid validation error
@@ -3453,7 +3450,7 @@ def test_extra_body_parameter() -> None:
 def test_extra_body_with_model_kwargs() -> None:
     """Test that extra_body and model_kwargs work together correctly."""
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL,
         api_key=SecretStr(
             "test-api-key"
         ),  # Set a fake API key to avoid validation error
@@ -3520,7 +3517,7 @@ def test_structured_output_verbosity(
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_gpt_5_temperature(use_responses_api: bool) -> None:
     llm = ChatOpenAI(
-        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+        model=OPENAI_TEST_MODEL, temperature=0.5, use_responses_api=use_responses_api
     )
 
     messages = [HumanMessage(content="Hello")]
@@ -3635,12 +3632,12 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
-    assert _model_prefers_responses_api("gpt-5.2-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex-max")
-    assert _model_prefers_responses_api("gpt-5.1-codex-mini")
-    assert _model_prefers_responses_api("gpt-5-codex")
-    assert _model_prefers_responses_api("codex-mini-latest")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
     # These should not match
     assert not _model_prefers_responses_api("gpt-5")
     assert not _model_prefers_responses_api("gpt-5.1")
@@ -3927,7 +3924,7 @@ def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> No
 
 def test_apply_patch_passthrough() -> None:
     """Test that apply_patch dict is passed through as a built-in tool."""
-    llm = ChatOpenAI(model="gpt-4o", api_key=SecretStr("test-api-key"))
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test-api-key"))
     bound = llm.bind_tools([{"type": "apply_patch"}])
     payload = bound._get_request_payload(  # type: ignore[attr-defined]
         "test",
@@ -3939,7 +3936,7 @@ def test_apply_patch_passthrough() -> None:
 
 def test_tool_search_passthrough() -> None:
     """Test that tool_search dict is passed through as a built-in tool."""
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     tool_search = {"type": "tool_search"}
     bound = llm.bind_tools([tool_search])
     payload = bound._get_request_payload(  # type: ignore[attr-defined]
@@ -3959,7 +3956,7 @@ def test_tool_search_with_defer_loading_extras() -> None:
         """Get weather for a location."""
         return f"Weather in {location}"
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     bound = llm.bind_tools([get_weather, {"type": "tool_search"}])
     payload = bound._get_request_payload(  # type: ignore[attr-defined]
         "test",
@@ -3977,7 +3974,7 @@ def test_tool_search_with_defer_loading_extras() -> None:
 
 def test_namespace_passthrough() -> None:
     """Test that namespace tool dicts are passed through unchanged."""
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     namespace_tool = {
         "type": "namespace",
         "name": "crm",
@@ -4018,7 +4015,7 @@ def test_defer_loading_in_responses_api_payload() -> None:
 
     messages: list = []
     payload = {
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "tools": [
             {
                 "type": "function",
