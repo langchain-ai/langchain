@@ -1,0 +1,25 @@
+.github/scripts/get_min_versions.py
+  s_aa6f7ce50e2eb6::t_ea125e15c217ff 199-200,204-214
+  s_aa6f7ce50e2eb6::t_785685d91028b8 201-203
+.github/workflows/check_release_deps.yml
+  s_aa6f7ce50e2eb6::t_4dba210eb3242f 13-18,23-24
+  s_aa6f7ce50e2eb6::t_ee35d661954101 1-12,19-22,25-71,75-98,101-102,109,112-114
+  s_aa6f7ce50e2eb6::t_c8a787afeb4864 99-100,103-108,110-111
+  s_aa6f7ce50e2eb6::t_841924efcf4bab 72-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "86247f479b1c0b3d3b8266dc2be954e6b51c63e7",
+  "prompts": {},
+  "sessions": {
+    "s_aa6f7ce50e2eb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c062225d-ff38-4da0-bb1f-d8a66607bda5",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
