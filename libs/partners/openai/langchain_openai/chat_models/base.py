@@ -130,6 +130,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
     _astream_with_chunk_timeout,
     _build_proxied_async_httpx_client,
@@ -1135,6 +1136,20 @@ class BaseChatOpenAI(BaseChatModel):
                 values.pop("temperature", None)
 
         return values
+
+    @model_validator(mode="after")
+    def _set_openai_chat_version(self) -> Self:
+        """Set package version in metadata.
+
+        Note: Subclasses that inherit from `BaseChatOpenAI` (e.g.
+        `ChatDeepSeek`, `ChatXAI`) must use a **unique** validator name
+        (e.g. `_set_deepseek_version`) instead of overriding this one. Pydantic
+        replaces same-named `model_validator` methods rather than chaining them,
+        so reusing `_set_openai_chat_version` would silently drop the parent's
+        `langchain-openai` version entry.
+        """
+        self._add_version("langchain-openai", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

@@ -90,3 +90,12 @@ async def test_acreate_generate_stream_raises_when_client_none() -> None:
         with pytest.raises(RuntimeError, match="async client is not initialized"):
             async for _ in llm._acreate_generate_stream("Hello"):
                 pass
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = OllamaLLM(model=MODEL_NAME)
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-ollama" in versions

@@ -4077,6 +4077,15 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     assert isinstance(exc_info.value, ContextOverflowError)
 
 
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatOpenAI()
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert "langchain-core" in versions
+    assert "langchain-openai" in versions
+
+
 def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> None:
     llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
     payload = llm._get_request_payload(
