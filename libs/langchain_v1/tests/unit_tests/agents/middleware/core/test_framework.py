@@ -37,12 +37,12 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_create_agent_invoke(
-    snapshot: SnapshotAssertion,
     sync_checkpointer: BaseCheckpointSaver[str],
 ) -> None:
     calls = []
 
     class NoopSeven(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopSeven.before_model")
 
@@ -54,10 +54,12 @@ def test_create_agent_invoke(
             calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopEight.before_model")
 
@@ -69,6 +71,7 @@ def test_create_agent_invoke(
             calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopEight.after_model")
 
@@ -144,6 +147,7 @@ def test_create_agent_jump(
     calls = []
 
     class NoopSeven(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopSeven.before_model")
 
@@ -155,11 +159,13 @@ def test_create_agent_jump(
             calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
@@ -172,6 +178,7 @@ def test_create_agent_jump(
             calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("NoopEight.after_model")
 
@@ -224,14 +231,17 @@ def test_agent_graph_with_jump_to_end_as_after_agent(snapshot: SnapshotAssertion
 
     class NoopZero(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
+        @override
         def before_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
     class NoopOne(AgentMiddleware):
+        @override
         def after_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
     class NoopTwo(AgentMiddleware):
+        @override
         def after_agent(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
@@ -386,6 +396,7 @@ def test_runtime_injected_into_middleware() -> None:
     """Test that the runtime is injected into the middleware."""
 
     class CustomMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             assert runtime is not None
 
@@ -397,6 +408,7 @@ def test_runtime_injected_into_middleware() -> None:
             assert request.runtime is not None
             return handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             assert runtime is not None
 
@@ -417,6 +429,7 @@ def test_state_tool(
     state: Annotated[CustomState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> str:
     """Test tool that accesses injected state."""
+    _ = tool_call_id
     assert "custom_state" in state
     return "success"
 
@@ -465,10 +478,12 @@ def test_injected_state_in_middleware_agent() -> None:
 
 def test_jump_to_is_ephemeral() -> None:
     class MyMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
@@ -505,9 +520,11 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     calls = []
 
     class MixedMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("MixedMiddleware.before_model")
 
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("MixedMiddleware.abefore_model")
 
@@ -553,6 +570,7 @@ async def test_create_agent_async_invoke() -> None:
     calls = []
 
     class AsyncMiddleware(AgentMiddleware):
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
@@ -565,6 +583,7 @@ async def test_create_agent_async_invoke() -> None:
             request.messages.append(HumanMessage("async middleware message"))
             return await handler(request)
 
+        @override
         async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
@@ -614,6 +633,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
@@ -625,10 +645,12 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
             calls.append("AsyncMiddlewareOne.awrap_model_call")
             return await handler(request)
 
+        @override
         async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddlewareOne.aafter_model")
 
     class AsyncMiddlewareTwo(AgentMiddleware):
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddlewareTwo.abefore_model")
 
@@ -640,6 +662,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
             calls.append("AsyncMiddlewareTwo.awrap_model_call")
             return await handler(request)
 
+        @override
         async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddlewareTwo.aafter_model")
 
@@ -667,11 +690,13 @@ async def test_create_agent_async_jump() -> None:
     calls = []
 
     class AsyncMiddlewareOne(AgentMiddleware):
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
     class AsyncMiddlewareTwo(AgentMiddleware):
         @hook_config(can_jump_to=["end"])
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             calls.append("AsyncMiddlewareTwo.abefore_model")
             return {"jump_to": "end"}
@@ -702,6 +727,7 @@ async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
     calls = []
 
     class MostlySyncMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("MostlySyncMiddleware.before_model")
 
@@ -721,10 +747,12 @@ async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
             calls.append("MostlySyncMiddleware.awrap_model_call")
             return await handler(request)
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("MostlySyncMiddleware.after_model")
 
     class AsyncMiddleware(AgentMiddleware):
+        @override
         async def abefore_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
@@ -736,6 +764,7 @@ async def test_create_agent_mixed_sync_async_middleware_async_invoke() -> None:
             calls.append("AsyncMiddleware.awrap_model_call")
             return await handler(request)
 
+        @override
         async def aafter_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
@@ -834,6 +863,7 @@ class TestAgentMiddlewareHooks:
         execution_log: list[str] = []
 
         class AsyncCustomMiddleware(AgentMiddleware):
+            @override
             async def abefore_agent(
                 self, state: AgentState[Any], runtime: Runtime
             ) -> dict[str, Any] | None:
@@ -841,6 +871,7 @@ class TestAgentMiddlewareHooks:
                     execution_log.append("hook_called")
                 return None
 
+            @override
             async def aafter_agent(
                 self, state: AgentState[Any], runtime: Runtime
             ) -> dict[str, Any] | None:
@@ -849,6 +880,7 @@ class TestAgentMiddlewareHooks:
                 return None
 
         class CustomMiddleware(AgentMiddleware):
+            @override
             def before_agent(
                 self, state: AgentState[Any], runtime: Runtime
             ) -> dict[str, Any] | None:
@@ -856,6 +888,7 @@ class TestAgentMiddlewareHooks:
                     execution_log.append("hook_called")
                 return None
 
+            @override
             def after_agent(
                 self, state: AgentState[Any], runtime: Runtime
             ) -> dict[str, Any] | None:

@@ -13,18 +13,26 @@ _MODEL = "claude-3-haiku-20240307"
 class TestAnthropicStandard(ChatModelUnitTests):
     """Use the standard chat model unit tests against the `ChatAnthropic` class."""
 
+    pytestmark = pytest.mark.filterwarnings(
+        "ignore:Unrecognized structured output method 'json_mode'. "
+        "Defaulting to 'json_schema' method.:UserWarning"
+    )
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": _MODEL}
+        return {"model": _MODEL, "base_url": "https://api.anthropic.com"}
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
-            {"ANTHROPIC_API_KEY": "test"},
+            {
+                "ANTHROPIC_API_KEY": "test",
+                "ANTHROPIC_API_URL": "https://api.anthropic.com",
+            },
             {"model": _MODEL},
             {"anthropic_api_key": "test"},
         )
@@ -36,7 +44,7 @@ def test_init_time_with_client(benchmark: BenchmarkFixture) -> None:
 
     def _init_in_loop_with_clients() -> None:
         for _ in range(10):
-            llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
+            llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
             _ = llm._client
             _ = llm._async_client
 

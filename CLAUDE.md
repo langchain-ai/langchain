@@ -44,7 +44,7 @@ This monorepo uses `uv` for dependency management. Local development uses editab
 
 Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
 
-Before running your tests, setup all packages by running:
+Before running your tests, set up all packages by running:
 
 ```bash
 # For all groups
@@ -73,29 +73,79 @@ make format
 uv run --group lint mypy .
 ```
 
+#### Environment and dependency management
+
+Use `uv` for all environment and dependency operations in this monorepo. Do not invoke `pip`, `poetry`, or `conda` directly.
+
+- Let `uv` manage the interpreter and virtual environments — `uv sync` and `uv run` operate without manual `source .venv/bin/activate`. Do not create ad-hoc virtual environments outside the package directory.
+- Each package targets its own supported Python range via its `pyproject.toml`; do not pin a global Python version. If you need an interpreter explicitly, defer to the package's `requires-python` rather than assuming system Python.
+- Install dependencies explicitly through `uv sync` (optionally `--group <name>` / `--all-groups`); never let them install implicitly.
+- Don't mix environments within a session, and don't add new dependencies unless strictly required — when you do, justify them (recent releases/commits, adoption).
+
 #### Key config files
 
 - pyproject.toml: Main workspace configuration with dependency groups
 - uv.lock: Locked dependencies for reproducible builds
 - Makefile: Development tasks
 
-#### Commit standards
+#### PR and commit titles
 
-Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes. Note that all commit/PR titles should be in lowercase with the exception of proper nouns/named entities. All PR titles should include a scope with no exceptions. For example:
+Follow Conventional Commits. See `.github/workflows/pr_lint.yml` for allowed types and scopes. All titles must include a scope with no exceptions — even for the main `langchain` package.
+
+- Start the text after `type(scope):` with a lowercase letter, unless the first word is a proper noun (e.g. `Azure`, `GitHub`, `OpenAI`) or a named entity (class, function, method, parameter, or variable name).
+- Wrap named entities in backticks so they render as code. Proper nouns are left unadorned.
+- Keep titles short and descriptive — save detail for the body.
+
+Examples:
 
 ```txt
 feat(langchain): add new chat completion feature
 fix(core): resolve type hinting issue in vector store
 chore(anthropic): update infrastructure dependencies
+feat(langchain): `ls_agent_type` tag on `create_agent` calls
+fix(openai): infer Azure chat profiles from model name
 ```
 
-Note how `feat(langchain)` includes a scope even though it is the main package and name of the repo.
+#### Branch naming
 
-#### Pull request guidelines
+Branches should be prefixed `<github-username>/<scope>/<short-description>`:
 
-- Always add a disclaimer to the PR description mentioning how AI agents are involved with the contribution.
-- Describe the "why" of the changes, why the proposed solution is the right one. Limit prose.
-- Highlight areas of the proposed changes that require careful review.
+- `<github-username>` — the author's GitHub login (e.g. `mdrxy`).
+- `<scope>` — the same scope used in the Conventional Commit title (`core`, `langchain`, partner name, `infra`, `docs`, etc.).
+- `<short-description>` — kebab-case, brief, no trailing slash.
+
+Examples:
+
+```txt
+mdrxy/anthropic/normalize-tool-call-ids
+mdrxy/core/vector-store-type-hints
+mdrxy/infra/agents-md-branch
+```
+
+#### PR descriptions
+
+The description *is* the summary — do not add a `# Summary` header.
+
+- When the PR closes an issue, lead with the closing keyword on its own line at the very top, followed by a horizontal rule and then the body:
+
+  ```txt
+  Closes #123
+
+  ---
+
+  <rest of description>
+  ```
+
+  Only `Closes`, `Fixes`, and `Resolves` auto-close the referenced issue on merge. `Related:` or similar labels are informational and do not close anything.
+
+- Explain the *why*: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
+- Write for readers who may be unfamiliar with this area of the codebase. Avoid insider shorthand and prefer language that is friendly to public viewers — this aids interpretability.
+- Do **not** cite line numbers; they go stale as soon as the file changes.
+- Rarely include full file paths or filenames. Reference the affected symbol, class, or subsystem by name instead.
+- Wrap class, function, method, parameter, and variable names in backticks.
+- Skip dedicated "Test plan" or "Testing" sections in most cases. Mention tests only when coverage is non-obvious, risky, or otherwise notable.
+- Call out areas of the change that require careful review.
+- Add a brief disclaimer noting AI-agent involvement in the contribution.
 
 ## Core development principles
 
@@ -193,6 +243,73 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Keep descriptions concise but clear
 - Ensure American English spelling (e.g., "behavior", not "behaviour")
 - Do NOT use Sphinx-style double backtick formatting (` ``code`` `). Use single backticks (`` `code` ``) for inline code references in docstrings and comments.
+
+#### Model references in docs and examples
+
+Always use the latest generally available (GA) models when referencing LLMs in docstrings and illustrative code snippets. Avoid preview or beta identifiers unless the model has no GA equivalent. Outdated model names signal stale code and confuse users.
+
+Before writing or updating model references, verify current model IDs against the provider's official docs. Do not rely on memorized or cached model names — they go stale quickly.
+
+Changing **shipped default parameter values** in code (e.g., a `model=` kwarg default in a class constructor) may constitute a breaking change — see "Maintain stable public interfaces" above. This guidance applies to documentation and examples, not code defaults.
+
+For model *profile data* (capability flags, context windows), use the `langchain-profiles` CLI described below.
+
+## Model profiles
+
+Model profiles are generated using the `langchain-profiles` CLI in `libs/model-profiles`. The `--data-dir` must point to the directory containing `profile_augmentations.toml`, not the top-level package directory.
+
+```bash
+# Run from libs/model-profiles
+cd libs/model-profiles
+
+# Refresh profiles for a partner in this repo
+uv run langchain-profiles refresh --provider openai --data-dir ../partners/openai/langchain_openai/data
+
+# Refresh profiles for a partner in an external repo (requires echo y to confirm)
+echo y | uv run langchain-profiles refresh --provider google --data-dir /path/to/langchain-google/libs/genai/langchain_google_genai/data
+```
+
+Example partners with profiles in this repo:
+
+- `libs/partners/openai/langchain_openai/data/` (provider: `openai`)
+- `libs/partners/anthropic/langchain_anthropic/data/` (provider: `anthropic`)
+- `libs/partners/perplexity/langchain_perplexity/data/` (provider: `perplexity`)
+
+The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-profiles` working directory.
+
+## CI/CD infrastructure
+
+### Release process
+
+Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+
+### PR labeling and linting
+
+**Title linting** (`.github/workflows/pr_lint.yml`)
+
+**Auto-labeling:**
+
+- `.github/workflows/pr_labeler.yml` – Unified PR labeler (size, file, title, external/internal, contributor tier)
+- `.github/workflows/pr_labeler_backfill.yml` – Manual backfill of PR labels on open PRs
+- `.github/workflows/auto-label-by-package.yml` – Issue labeling by package
+- `.github/workflows/tag-external-issues.yml` – Issue external/internal classification
+
+### Adding a new partner to CI
+
+When adding a new partner package, update these files:
+
+- `.github/ISSUE_TEMPLATE/*.yml` – Add to package dropdown
+- `.github/dependabot.yml` – Add dependency update entry
+- `.github/scripts/pr-labeler-config.json` – Add file rule and scope-to-label mapping
+- `.github/workflows/_release.yml` – Add API key secrets if needed
+- `.github/workflows/auto-label-by-package.yml` – Add package label
+- `.github/workflows/check_diffs.yml` – Add to change detection
+- `.github/workflows/integration_tests.yml` – Add integration test config
+- `.github/workflows/pr_lint.yml` – Add to allowed scopes
+
+## GitHub Actions & Workflows
+
+This repository require actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
 
 ## Additional resources
 

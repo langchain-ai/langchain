@@ -1,0 +1,114 @@
+# Validate that a release PR's declared dependencies are actually published on
+# PyPI *before* the package itself is released.
+#
+# WHY: `release(scope): x.y.z` PRs frequently bump intra-monorepo minimum pins
+# (e.g. `langchain-core>=1.4.4`). The regular PR test suite deliberately SKIPS
+# minimum-version resolution for langchain-core / langchain / langchain-text-splitters
+# (see `SKIP_IF_PULL_REQUEST` in `.github/scripts/get_min_versions.py`) because normal
+# feature PRs may bump those in lockstep with an as-yet-unpublished sibling release.
+#
+# For a `release` PR, though, every runtime dependency *should* already be on PyPI —
+# that is the convention (release `langchain-core` first, then downstream packages).
+# If a pin points at a version that does not exist yet, the published wheel's metadata
+# is unresolvable and `pip install <pkg>==x.y.z` breaks for end users. Without this
+# workflow, that is only caught at release-trigger time, when `get_min_versions.py`
+# resolves the pins against PyPI (its companion change in this PR now exits loudly on
+# an unpublished pin instead of emitting `pkg==None`). This workflow adds a second,
+# earlier guard: it shifts the same check left onto the release PR, so the author
+# finds out before merge rather than when the release job runs.
+#
+# HOW: resolve each changed package's runtime dependencies against real PyPI with
+# `uv pip compile --no-sources`, which ignores the editable `[tool.uv.sources]`
+# workspace overrides so intra-monorepo deps resolve from the index exactly as an
+# end user's installer would see them. This resolves from package index metadata and
+# does not build or run the PR's own project code.
+
+name: "🚀 Check Release Dependencies"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - "libs/**/pyproject.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  check-release-deps:
+    name: "✅ Verify release dependencies exist on PyPI"
+    # Only run for release PRs (`release(scope): x.y.z`). Other PRs may bump
+    # intra-monorepo pins ahead of a sibling release on purpose.
+    if: startsWith(github.event.pull_request.title, 'release')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: "🐍 Set up Python + uv"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: "3.12"
+          enable-cache: "false"
+
+      - name: "🔍 Resolve runtime dependencies against PyPI"
+        shell: bash
+        env:
+          # Passed via env (not inline interpolation) to keep PR-controlled
+          # values out of the shell command string.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # pyproject.toml manifests changed by this PR.
+          mapfile -t changed < <(
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- 'libs/**/pyproject.toml'
+          )
+
+          if [ "${#changed[@]}" -eq 0 ]; then
+            # The `paths:` filter should prevent this, so an empty list is
+            # surprising — surface it loudly rather than passing silently.
+            echo "::notice::No libs/**/pyproject.toml changed in this PR; nothing to validate."
+            exit 0
+          fi
+
+          failed=0
+          for manifest in "${changed[@]}"; do
+            pkg_dir="$(dirname "$manifest")"
+            echo "::group::Resolving ${manifest} against PyPI"
+            # --no-sources ignores [tool.uv.sources] editable workspace overrides,
+            # so intra-monorepo deps resolve from PyPI like an end-user install.
+            # --universal resolves across the full requires-python range, so deps
+            # gated behind Python-version markers are validated too.
+            if uv pip compile --no-sources --universal "$manifest" > /dev/null; then
+              echo "✅ ${pkg_dir}: all runtime dependencies resolve on PyPI"
+            else
+              echo "❌ ${pkg_dir}: a dependency pin is not satisfiable on PyPI"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            cat >&2 <<'EOF'
+
+          ┌──────────────────────────────────────────────────────────────────┐
+          │ One or more dependency pins could not be resolved from PyPI.       │
+          │ See the per-package resolver output above for the exact reason.    │
+          └──────────────────────────────────────────────────────────────────┘
+
+          Most likely, a `release(scope): x.y.z` PR pinned a dependency to a
+          version that is not yet published on PyPI. The released wheel's metadata
+          would then be unresolvable, breaking `pip install` for end users. Fix by:
+            • Releasing the dependency package first so the pinned version exists
+              on PyPI, then re-running this check; or
+            • Relaxing the version pin to a published version.
+
+          If the resolver output above shows a network/index error (rather than
+          "No solution found"), this may be a transient PyPI issue — re-run the job.
+          EOF
+            exit 1
+          fi

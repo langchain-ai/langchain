@@ -5,17 +5,54 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
 
 on:
   workflow_dispatch:
     inputs:
-      working-directory-force:
+      working-directory:
+        type: choice
+        description: "Library to test (select from dropdown)"
+        default: "all"
+        # Short names only — the `compute-matrix` job re-adds the `libs/` or
+        # `libs/partners/` prefix. When adding a new option, also update the
+        # `case` statement in `compute-matrix` if it isn't a partner package
+        # (partners are the default branch).
+        options:
+          - "all"
+          - "core"
+          - "langchain"
+          - "langchain_v1"
+          - "text-splitters"
+          - "standard-tests"
+          - "model-profiles"
+          - "anthropic"
+          - "aws"
+          - "chroma"
+          - "deepseek"
+          - "exa"
+          - "fireworks"
+          - "google-genai"
+          - "google-vertexai"
+          - "groq"
+          - "huggingface"
+          - "mistralai"
+          - "nomic"
+          - "ollama"
+          - "openai"
+          - "openrouter"
+          - "perplexity"
+          - "qdrant"
+          - "xai"
+      working-directory-override:
         type: string
-        description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
-      python-version-force:
+        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
+      exclude:
         type: string
-        description: "Python version to use - defaults to 3.10 and 3.13 in matrix - example value: 3.11"
+        description: "Comma-separated short names to drop from the 'all' run (e.g. openai,anthropic). Ignored unless dropdown is 'all' and no working-directory-override is set."
+      python-version-override:
+        type: string
+        description: "Python version override — defaults to 3.10 and 3.13 in matrix (e.g. 3.11)"
   schedule:
     - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -52,29 +89,63 @@ jobs:
         id: set-matrix
         env:
           DEFAULT_LIBS: ${{ env.DEFAULT_LIBS }}
-          WORKING_DIRECTORY_FORCE: ${{ github.event.inputs.working-directory-force || '' }}
-          PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
+          WORKING_DIRECTORY_OVERRIDE: ${{ github.event.inputs.working-directory-override || '' }}
+          WORKING_DIRECTORY_CHOICE: ${{ github.event.inputs.working-directory || 'all' }}
+          PYTHON_VERSION_OVERRIDE: ${{ github.event.inputs.python-version-override || '' }}
+          EXCLUDE: ${{ github.event.inputs.exclude || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
-          # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
+          # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
+          # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
           python_version='["3.10", "3.13"]'
           python_version_min_3_11='["3.11", "3.13"]'
           working_directory="$DEFAULT_LIBS"
-          if [ -n "$PYTHON_VERSION_FORCE" ]; then
-            python_version="[\"$PYTHON_VERSION_FORCE\"]"
-            # Bound forced version to >= 3.11 for packages requiring it
-            if [ "$(echo "$PYTHON_VERSION_FORCE >= 3.11" | bc -l)" -eq 1 ]; then
-              python_version_min_3_11="[\"$PYTHON_VERSION_FORCE\"]"
+          if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
+            python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
+            # Bound override version to >= 3.11 for packages requiring it
+            if [ "$(echo "$PYTHON_VERSION_OVERRIDE >= 3.11" | bc -l)" -eq 1 ]; then
+              python_version_min_3_11="[\"$PYTHON_VERSION_OVERRIDE\"]"
             else
               python_version_min_3_11='["3.11"]'
             fi
           fi
-          if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
-            working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
+          if [ -n "$WORKING_DIRECTORY_OVERRIDE" ]; then
+            working_directory="[\"$WORKING_DIRECTORY_OVERRIDE\"]"
+          elif [ "$WORKING_DIRECTORY_CHOICE" != "all" ]; then
+            # Map short dropdown name back to full path
+            case "$WORKING_DIRECTORY_CHOICE" in
+              core|langchain|langchain_v1|text-splitters|standard-tests|model-profiles)
+                working_directory="[\"libs/$WORKING_DIRECTORY_CHOICE\"]"
+                ;;
+              *)
+                working_directory="[\"libs/partners/$WORKING_DIRECTORY_CHOICE\"]"
+                ;;
+            esac
+          elif [ -n "$EXCLUDE" ]; then
+            # Only honored on the 'all' run (no override, dropdown left at 'all').
+            # Map each comma-separated short name to its full path (mirroring the
+            # case statement above), then subtract from the DEFAULT_LIBS array.
+            exclude_paths='[]'
+            IFS=',' read -ra exclude_names <<< "$EXCLUDE"
+            for name in "${exclude_names[@]}"; do
+              # Trim surrounding whitespace so "openai, anthropic" works.
+              name="${name#"${name%%[![:space:]]*}"}" # ltrim
+              name="${name%"${name##*[![:space:]]}"}" # rtrim
+              [ -z "$name" ] && continue
+              case "$name" in
+                core|langchain|langchain_v1|text-splitters|standard-tests|model-profiles)
+                  path="libs/$name"
+                  ;;
+                *)
+                  path="libs/partners/$name"
+                  ;;
+              esac
+              exclude_paths="$(jq -nc --argjson acc "$exclude_paths" --arg path "$path" '$acc + [$path]')"
+            done
+            working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
           matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
-          echo $matrix
+          echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
 
@@ -83,8 +154,17 @@ jobs:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.working-directory }}"
     runs-on: ubuntu-latest
+    # Scopes LangSmith tracing credentials (and any other env-scoped secrets)
+    environment: "Scheduled testing"
     needs: [compute-matrix]
     timeout-minutes: 30
+    # Serialize same-package shards across workflow runs so a per-package
+    # manual dispatch doesn't race the scheduled "all libs" run against the
+    # same live API credentials. Keyed per (working-directory, python-version)
+    # so the 3.10/3.13 matrix legs within one run still execute in parallel.
+    concurrency:
+      group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -92,26 +172,26 @@ jobs:
         working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: langchain
 
       # These libraries exist outside of the monorepo and need to be checked out separately
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
       - name: "🔐 Authenticate to Google Cloud"
         id: "auth"
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -134,15 +214,66 @@ jobs:
         # Partner packages use [tool.uv.sources] in their pyproject.toml to resolve
         # langchain-core/langchain to local editable installs, so `uv sync` automatically
         # tests against the versions from the current branch (not published releases).
-
-        # TODO: external google/aws don't have local resolution since they live in
-        # separate repos, so they pull `core`/`langchain_v1` from PyPI. We should update
-        # their dev groups to use git source dependencies pointing to the current
-        # branch's latest commit SHA to fully test against local langchain changes.
+        #
+        # External google/aws packages live in separate repos and don't declare
+        # [tool.uv.sources], so `uv sync` pulls langchain-* from PyPI. Overlay
+        # local editable installs after sync so integration tests exercise the
+        # current branch's langchain code. Matches the pattern used by the
+        # `test-dependents` job below for deepagents.
         run: |
           echo "Running scheduled tests, installing dependencies with uv..."
           cd langchain/${{ matrix.working-directory }}
           uv sync --group test --group test_integration
+
+          case "${{ matrix.working-directory }}" in
+            libs/partners/google-genai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/google-vertexai)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+              ;;
+            libs/partners/aws)
+              uv pip install \
+                -e $GITHUB_WORKSPACE/langchain/libs/core \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                -e $GITHUB_WORKSPACE/langchain/libs/langchain \
+                -e $GITHUB_WORKSPACE/langchain/libs/standard-tests \
+                -e $GITHUB_WORKSPACE/langchain/libs/partners/anthropic
+              ;;
+          esac
+
+      - name: "🧾 Build LangSmith Metadata"
+        # GHA expression values flow through intermediate env vars (injection
+        # hardening) and jq -nc builds the JSON, so quotes/newlines in any
+        # field can't corrupt the payload.
+        env:
+          GH_SHA: ${{ github.sha }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_WORKFLOW: ${{ github.workflow }}
+          GH_EVENT: ${{ github.event_name }}
+          GH_REF: ${{ github.ref }}
+          WORKING_DIRECTORY: ${{ matrix.working-directory }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          metadata=$(jq -nc \
+            --arg github_sha "$GH_SHA" \
+            --arg github_run_id "$GH_RUN_ID" \
+            --arg github_run_attempt "$GH_RUN_ATTEMPT" \
+            --arg github_run_url "$GH_RUN_URL" \
+            --arg github_workflow "$GH_WORKFLOW" \
+            --arg github_event "$GH_EVENT" \
+            --arg github_ref "$GH_REF" \
+            --arg working_directory "$WORKING_DIRECTORY" \
+            --arg python_version "$PYTHON_VERSION" \
+            '{github_sha: $github_sha, github_run_id: $github_run_id, github_run_attempt: $github_run_attempt, github_run_url: $github_run_url, github_workflow: $github_workflow, github_event: $github_event, github_ref: $github_ref, working_directory: $working_directory, python_version: $python_version}')
+          echo "LANGSMITH_METADATA=$metadata" >> "$GITHUB_ENV"
 
       - name: "🚀 Run Integration Tests"
         # WARNING: All secrets below are available to every matrix job regardless of
@@ -150,6 +281,12 @@ jobs:
         # any test file could technically access any key. Only use for trusted code.
         env:
           LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
+
+          # Route traces to one project with GitHub run metadata so failures link back to the originating Actions run.
+          LANGSMITH_TRACING: "true"
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
+          LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -181,7 +318,9 @@ jobs:
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
@@ -232,11 +371,11 @@ jobs:
             path: libs/deepagents
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           path: langchain
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}

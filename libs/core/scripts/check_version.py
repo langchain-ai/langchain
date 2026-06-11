@@ -33,31 +33,31 @@ def main() -> int:
     version_path = package_dir / "langchain_core" / "version.py"
 
     if not pyproject_path.exists():
-        print(f"Error: {pyproject_path} not found")  # noqa: T201
+        print(f"Error: {pyproject_path} not found")
         return 1
 
     if not version_path.exists():
-        print(f"Error: {version_path} not found")  # noqa: T201
+        print(f"Error: {version_path} not found")
         return 1
 
     pyproject_version = get_pyproject_version(pyproject_path)
     version_py_version = get_version_py_version(version_path)
 
     if pyproject_version is None:
-        print("Error: Could not find version in pyproject.toml")  # noqa: T201
+        print("Error: Could not find version in pyproject.toml")
         return 1
 
     if version_py_version is None:
-        print("Error: Could not find VERSION in langchain_core/version.py")  # noqa: T201
+        print("Error: Could not find VERSION in langchain_core/version.py")
         return 1
 
     if pyproject_version != version_py_version:
-        print("Error: Version mismatch detected!")  # noqa: T201
-        print(f"  pyproject.toml: {pyproject_version}")  # noqa: T201
-        print(f"  langchain_core/version.py: {version_py_version}")  # noqa: T201
+        print("Error: Version mismatch detected!")
+        print(f"  pyproject.toml: {pyproject_version}")
+        print(f"  langchain_core/version.py: {version_py_version}")
         return 1
 
-    print(f"Version check passed: {pyproject_version}")  # noqa: T201
+    print(f"Version check passed: {pyproject_version}")
     return 0
 
 
