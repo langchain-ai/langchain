@@ -7,27 +7,30 @@
 # (see `SKIP_IF_PULL_REQUEST` in `.github/scripts/get_min_versions.py`) because normal
 # feature PRs may bump those in lockstep with an as-yet-unpublished sibling release.
 #
-# For a `release` PR, though, every runtime dependency *should* already be on PyPI —
-# that is the convention (release `langchain-core` first, then downstream packages).
-# If a pin points at a version that does not exist yet, the published wheel's metadata
-# is unresolvable and `pip install <pkg>==x.y.z` breaks for end users. Without this
+# For a `release` PR, though, every runtime dependency should already be on PyPI
+# unless that dependency is another package version introduced by the same PR.
+# If a pin points at any other version that does not exist yet, the published wheel's
+# metadata is unresolvable and `pip install <pkg>==x.y.z` breaks for end users. Without this
 # workflow, that is only caught at release-trigger time, when `get_min_versions.py`
 # resolves the pins against PyPI (its companion change in this PR now exits loudly on
 # an unpublished pin instead of emitting `pkg==None`). This workflow adds a second,
 # earlier guard: it shifts the same check left onto the release PR, so the author
 # finds out before merge rather than when the release job runs.
 #
-# HOW: resolve each changed package's runtime dependencies against real PyPI with
-# `uv pip compile --no-sources`, which ignores the editable `[tool.uv.sources]`
-# workspace overrides so intra-monorepo deps resolve from the index exactly as an
-# end user's installer would see them. This resolves from package index metadata and
-# does not build or run the PR's own project code.
+# HOW: for each changed manifest, diff it against the PR base to find packages whose
+# own version is bumped by this PR, then resolve each package's runtime dependencies
+# against real PyPI with `uv pip compile --no-sources` — which ignores the editable
+# `[tool.uv.sources]` workspace overrides so intra-monorepo deps resolve from the index
+# exactly as an end user's installer would see them. Dependencies that a same-PR version
+# bump satisfies are stripped first (their wheels are not published until merge);
+# everything else must resolve. This reads package index, git, and TOML metadata only —
+# it does not build or run the PR's own project code.
 
 name: "🚀 Check Release Dependencies"
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
     paths:
       - "libs/**/pyproject.toml"
 
@@ -38,8 +41,11 @@ jobs:
   check-release-deps:
     name: "✅ Verify release dependencies exist on PyPI"
     # Only run for release PRs (`release(scope): x.y.z`). Other PRs may bump
-    # intra-monorepo pins ahead of a sibling release on purpose.
-    if: startsWith(github.event.pull_request.title, 'release')
+    # intra-monorepo pins ahead of a sibling release on purpose. Maintainers can
+    # acknowledge an unusual coordinated release with the bypass label.
+    if: >-
+      startsWith(github.event.pull_request.title, 'release') &&
+      !contains(github.event.pull_request.labels.*.name, 'release-deps: acknowledged')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -56,8 +62,8 @@ jobs:
       - name: "🔍 Resolve runtime dependencies against PyPI"
         shell: bash
         env:
-          # Passed via env (not inline interpolation) to keep PR-controlled
-          # values out of the shell command string.
+          # Sourced from env so the `${{ }}` expansion never lands in the `run:`
+          # block; the SHAs reach git only via list-form subprocess (no shell).
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -75,24 +81,183 @@ jobs:
             exit 0
           fi
 
+          tmp_dir="$(mktemp -d)"
+          trap 'rm -rf "$tmp_dir"' EXIT
+
+          # Step 1: detect packages whose own version is bumped by this PR. Their
+          # wheels are not on PyPI until merge, so dependencies the new version
+          # satisfies are stripped before resolving. Emits one TSV row per bump:
+          # `<canonical-name>\t<name>\t<new-version>`. `uv run --with packaging`
+          # guarantees the PEP 508/440 parser is available on the runner.
+          printf '%s\n' "${changed[@]}" > "$tmp_dir/changed.txt"
+          uv run -q --no-project --with packaging python - "$BASE_SHA" "$tmp_dir/changed.txt" "$tmp_dir/released.txt" <<'PY'
+          import subprocess
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          from packaging.utils import canonicalize_name
+
+          base_sha = sys.argv[1]
+          changed_path = Path(sys.argv[2])
+          released_path = Path(sys.argv[3])
+
+          def project_table(text: str) -> dict:
+              return tomllib.loads(text).get("project") or {}
+
+          released = []
+          for manifest in changed_path.read_text(encoding="utf-8").splitlines():
+              current = project_table(Path(manifest).read_text(encoding="utf-8"))
+              name, version = current.get("name"), current.get("version")
+              if name is None or version is None:
+                  # No static name/version (e.g. a dynamic version) — it cannot be
+                  # compared against the base, so cannot be a same-PR bump.
+                  print(f"::warning file={manifest}::no static project.name/version; skipping bump detection")
+                  continue
+              shown = subprocess.run(
+                  ["git", "show", f"{base_sha}:{manifest}"],
+                  capture_output=True,
+                  text=True,
+              )
+              if shown.returncode != 0:
+                  stderr = shown.stderr.strip()
+                  if "does not exist" in stderr or "exists on disk, but not in" in stderr:
+                      # New manifest: absent at the base ref, so not a version bump.
+                      continue
+                  print(f"::error file={manifest}::failed to read base manifest: {stderr}")
+                  sys.exit(1)
+              base = project_table(shown.stdout)
+              if base.get("name") == name and base.get("version") not in (None, version):
+                  released.append(f"{canonicalize_name(name)}\t{name}\t{version}")
+
+          released_path.write_text("".join(f"{row}\n" for row in released), encoding="utf-8")
+          PY
+
+          if [ -s "$tmp_dir/released.txt" ]; then
+            echo "The following package versions are introduced by this PR and may be referenced before PyPI publication:"
+            cut -f2- "$tmp_dir/released.txt" | sed 's/^/  - /'
+          else
+            echo "No package version bumps found in changed manifests."
+          fi
+
           failed=0
+          transient=0
           for manifest in "${changed[@]}"; do
             pkg_dir="$(dirname "$manifest")"
+            filtered_dir="$tmp_dir/${manifest//\//__}.dir"
+            mkdir -p "$filtered_dir"
+            filtered_manifest="$filtered_dir/pyproject.toml"
+            # Step 2: rebuild a resolver-equivalent manifest that drops only the
+            # dependencies a same-PR version bump satisfies. `[tool.uv]` keys that
+            # affect resolution (prerelease, constraint/override deps) are preserved
+            # — e.g. `langchain-fireworks` needs `prerelease = "allow"` to resolve
+            # its prerelease-only `fireworks-ai` pin. Skipped deps print here, before
+            # the resolver group opens, so the exclusions stay visible on a green run.
+          uv run -q --no-project --with packaging python - "$manifest" "$filtered_manifest" "$tmp_dir/released.txt" <<'PY'
+          import json
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          from packaging.requirements import InvalidRequirement, Requirement
+          from packaging.utils import canonicalize_name
+
+          manifest_path = Path(sys.argv[1])
+          filtered_path = Path(sys.argv[2])
+          released_path = Path(sys.argv[3])
+
+          released_versions = {}
+          for line in released_path.read_text(encoding="utf-8").splitlines():
+              canonical_name, _name, version = line.split("\t", maxsplit=2)
+              released_versions[canonical_name] = version
+
+          def is_same_pr_bump(dependency: str) -> bool:
+              try:
+                  requirement = Requirement(dependency)
+              except InvalidRequirement:
+                  # Keep anything we cannot parse so the resolver judges it.
+                  return False
+              version = released_versions.get(canonicalize_name(requirement.name))
+              if version is None:
+                  return False
+              # Strip only when the just-bumped version satisfies the pin; a pin to
+              # any other (still unpublished) version must keep resolving.
+              return requirement.specifier.contains(version, prereleases=True)
+
+          data = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+          project = data.get("project")
+          if project is None:
+              print(f"::error file={manifest_path}::no [project] table to resolve")
+              sys.exit(1)
+
+          filtered_dependencies, skipped_dependencies = [], []
+          for dependency in project.get("dependencies", []):
+              bucket = skipped_dependencies if is_same_pr_bump(dependency) else filtered_dependencies
+              bucket.append(dependency)
+
+          def toml_string(value: str) -> str:
+              return json.dumps(value)
+
+          lines = ["[project]"]
+          lines.append(f"name = {toml_string(project.get('name') or 'release-deps-check')}")
+          lines.append(f"version = {toml_string(project.get('version') or '0.0.0')}")
+          if "requires-python" in project:
+              lines.append(f"requires-python = {toml_string(project['requires-python'])}")
+          lines.append("dependencies = [")
+          lines += [f"    {toml_string(dependency)}," for dependency in filtered_dependencies]
+          lines.append("]")
+
+          # Preserve the `[tool.uv]` keys that change PyPI resolution. `[tool.uv.sources]`
+          # is intentionally dropped — `uv pip compile --no-sources` ignores it anyway.
+          tool_uv = (data.get("tool") or {}).get("uv") or {}
+          uv_lines = []
+          if isinstance(tool_uv.get("prerelease"), str):
+              uv_lines.append(f"prerelease = {toml_string(tool_uv['prerelease'])}")
+          for key in ("constraint-dependencies", "override-dependencies"):
+              values = tool_uv.get(key) or []
+              if values:
+                  uv_lines.append(f"{key} = [")
+                  uv_lines += [f"    {toml_string(value)}," for value in values]
+                  uv_lines.append("]")
+          if uv_lines:
+              lines.append("")
+              lines.append("[tool.uv]")
+              lines += uv_lines
+
+          filtered_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          if skipped_dependencies:
+              print("Ignoring dependencies satisfied by package versions introduced by this PR:")
+              for dependency in skipped_dependencies:
+                  print(f"  - {dependency}")
+          PY
+
             echo "::group::Resolving ${manifest} against PyPI"
             # --no-sources ignores [tool.uv.sources] editable workspace overrides,
             # so intra-monorepo deps resolve from PyPI like an end-user install.
             # --universal resolves across the full requires-python range, so deps
             # gated behind Python-version markers are validated too.
-            if uv pip compile --no-sources --universal "$manifest" > /dev/null; then
-              echo "✅ ${pkg_dir}: all runtime dependencies resolve on PyPI"
+            if uv pip compile --no-sources --universal "$filtered_manifest" > "$filtered_dir/compile.log" 2>&1; then
+              echo "✅ ${pkg_dir}: all runtime dependencies resolve on PyPI or are released by this PR"
             else
-              echo "❌ ${pkg_dir}: a dependency pin is not satisfiable on PyPI"
+              # Surface the resolver's reason (stdout+stderr were captured) and tell a
+              # likely-transient index/network error apart from a genuinely bad pin.
+              cat "$filtered_dir/compile.log"
+              if grep -qiE 'error sending request|failed to fetch|error trying to connect|connection|timed out|temporarily unavailable|status code (429|50[0-9])' "$filtered_dir/compile.log"; then
+                echo "❌ ${pkg_dir}: resolver hit a possible transient PyPI/index error"
+                transient=1
+              else
+                echo "❌ ${pkg_dir}: a dependency pin is not satisfiable on PyPI"
+              fi
               failed=1
             fi
             echo "::endgroup::"
           done
 
           if [ "$failed" -ne 0 ]; then
+            if [ "$transient" -ne 0 ]; then
+              echo "::warning::A failure looked like a network/index error rather than an unsatisfiable pin — re-running the job may clear it."
+            fi
             cat >&2 <<'EOF'
 
           ┌──────────────────────────────────────────────────────────────────┐
@@ -100,12 +265,20 @@ jobs:
           │ See the per-package resolver output above for the exact reason.    │
           └──────────────────────────────────────────────────────────────────┘
 
-          Most likely, a `release(scope): x.y.z` PR pinned a dependency to a
-          version that is not yet published on PyPI. The released wheel's metadata
-          would then be unresolvable, breaking `pip install` for end users. Fix by:
+          Dependencies on package versions introduced by this PR are ignored,
+          because coordinated release metadata may point at wheels that are not
+          published until this PR merges. Any remaining failure means the released
+          wheel metadata may be unresolvable for end users.
+
+          Fix by:
             • Releasing the dependency package first so the pinned version exists
               on PyPI, then re-running this check; or
             • Relaxing the version pin to a published version.
+
+          If this is an intentional coordinated release outside the detected
+          package version bumps, a maintainer may add the label
+          `release-deps: acknowledged` to bypass this check after reviewing the
+          install risk.
 
           If the resolver output above shows a network/index error (rather than
           "No solution found"), this may be a transient PyPI issue — re-run the job.
