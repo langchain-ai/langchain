@@ -9,8 +9,15 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -391,3 +398,48 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class _Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str
+    punchline: str
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    """Pydantic schema with `function_calling` parses into the Pydantic class."""
+    chain = chat_hugging_face.with_structured_output(_Joke)
+    parser = chain.steps[-1]
+    assert isinstance(parser, PydanticToolsParser)
+    assert parser.first_tool_only
+    assert parser.tools == [_Joke]
+
+
+@pytest.mark.parametrize("method", ["json_schema", "json_mode"])
+def test_with_structured_output_pydantic_json_methods(
+    chat_hugging_face: Any, method: str
+) -> None:
+    """Pydantic schema with JSON methods parses into the Pydantic class."""
+    chain = chat_hugging_face.with_structured_output(_Joke, method=method)
+    parser = chain.steps[-1]
+    assert isinstance(parser, PydanticOutputParser)
+    assert parser.pydantic_object is _Joke
+
+
+def test_with_structured_output_dict_schema_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    """Non-Pydantic schemas keep returning dicts via the JSON tools parser."""
+    schema = convert_to_openai_tool(_Joke)
+    chain = chat_hugging_face.with_structured_output(schema)
+    parser = chain.steps[-1]
+    assert isinstance(parser, JsonOutputKeyToolsParser)
+    assert parser.key_name == "_Joke"
+
+
+def test_with_structured_output_invalid_method(chat_hugging_face: Any) -> None:
+    with pytest.raises(ValueError, match="json_schema"):
+        chat_hugging_face.with_structured_output(_Joke, method="bad_method")
