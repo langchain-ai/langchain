@@ -1,0 +1,19 @@
+libs/core/tests/benchmarks/test_tool_schema_conversion.py
+  s_18f03536d17b21::t_fcfc3d339631c1 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "102ea1ab782de5e12555c8647666fabf0d70c21e",
+  "prompts": {},
+  "sessions": {
+    "s_18f03536d17b21": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f39b5519-3a19-4141-8e07-5ac88bb8b84e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
