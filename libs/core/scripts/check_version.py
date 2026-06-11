@@ -10,6 +10,9 @@ import re
 import sys
 from pathlib import Path
 
+# Matches the `langchain-core` version embedded in serialized model metadata,
+# e.g. `{'versions': {'langchain-core': '1.4.6'}}`. Intentionally broad: every such
+# occurrence in a snapshot is expected to track the released version.
 SNAPSHOT_VERSION_PATTERN = re.compile(r"langchain-core': '([^']+)'")
 
 
@@ -33,7 +36,9 @@ def get_snapshot_version_mismatches(
     """Find snapshot `langchain-core` version metadata that is out of date."""
     mismatches = []
     for snapshot_path in sorted(snapshots_dir.rglob("*.ambr")):
-        content = snapshot_path.read_text(encoding="utf-8")
+        # `errors="replace"` keeps a stray non-UTF-8 file from crashing the hook;
+        # the version strings we match are ASCII, so decoding is unaffected.
+        content = snapshot_path.read_text(encoding="utf-8", errors="replace")
         for match in SNAPSHOT_VERSION_PATTERN.finditer(content):
             version = match.group(1)
             if version == expected_version:
@@ -50,6 +55,8 @@ def main() -> int:
 
     pyproject_path = package_dir / "pyproject.toml"
     version_path = package_dir / "langchain_core" / "version.py"
+    # Scoped to this package's snapshots: only core's own `tests/` tree embeds
+    # `langchain-core` version metadata today.
     snapshots_dir = package_dir / "tests"
 
     if not pyproject_path.exists():
