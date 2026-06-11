@@ -6,8 +6,6 @@ import warnings
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
-
-# Needed as top level import for Pydantic schema generation on AgentState
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -18,6 +16,7 @@ from typing import (
     overload,
 )
 
+# Needed as top level import for Pydantic schema generation on AgentState
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -310,7 +309,7 @@ class ExtendedModelResponse(Generic[ResponseT]):
 
 
 ModelCallResult = ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]
-"""`TypeAlias` for model call handler return value.
+"""Return type for model call handlers.
 
 Middleware can return either:
 
@@ -823,6 +822,7 @@ _CallableReturningSystemMessage = (
     _SyncCallableReturningSystemMessage[ContextT] | _AsyncCallableReturningSystemMessage[ContextT]
 )
 
+# Sync/async signatures for `wrap_model_call` interception; see `@wrap_model_call`.
 _SyncCallableReturningModelResponse = Callable[
     [ModelRequest[ContextT], Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]]],
     ModelCallResult,
@@ -839,6 +839,7 @@ _CallableReturningModelResponse = (
     | _AsyncCallableReturningModelResponse[ContextT, ResponseT]
 )
 
+# Sync/async signatures for `wrap_tool_call` interception; see `@wrap_tool_call`.
 _SyncCallableReturningToolResponse = Callable[
     [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command[Any]]],
     ToolMessage | Command[Any],
@@ -1927,10 +1928,10 @@ def wrap_model_call(
                 _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest[ContextT],
                 handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-            ) -> ModelCallResult:
-                return await cast("_AsyncCallableReturningModelResponse[ContextT]", func)(
-                    request, handler
-                )
+            ) -> ModelCallResult[ResponseT]:
+                return await cast(
+                    "_AsyncCallableReturningModelResponse[ContextT, ResponseT]", func
+                )(request, handler)
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
@@ -1955,8 +1956,10 @@ def wrap_model_call(
             _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest[ContextT],
             handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-        ) -> ModelCallResult:
-            return cast("_SyncCallableReturningModelResponse[ContextT]", func)(request, handler)
+        ) -> ModelCallResult[ResponseT]:
+            return cast("_SyncCallableReturningModelResponse[ContextT, ResponseT]", func)(
+                request, handler
+            )
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
