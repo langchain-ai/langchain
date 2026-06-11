@@ -56,6 +56,10 @@ from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfileRegistry,
 )
+from langchain_core.language_models._compat_bridge import (
+    achunks_to_events,
+    chunks_to_events,
+)
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
@@ -149,11 +153,16 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.chat_models._stream_events import (
+    aconvert_openai_completions_stream,
+    convert_openai_completions_stream,
+)
 from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
     import httpx
     from langchain_core.language_models import ModelProfile
+    from langchain_protocol.protocol import MessagesData
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -1910,6 +1919,147 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk
                 )
             yield generation_chunk
+
+    def _stream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Emit OpenAI-native content-block events for the Chat Completions path.
+
+        Defers to the compat bridge for cases this converter does not yet
+        specialize: the Responses API, structured output (`response_format`),
+        and raw-header mode. Detected by core's `_iter_v2_events`.
+        """
+        # Responses API / structured output / raw headers: bridge over `_stream`,
+        # which (on `ChatOpenAI`) routes to the Responses path when applicable.
+        # `response_format` may arrive via call kwargs or be baked into
+        # `model_kwargs`; both fold into the payload, so check both.
+        if (
+            self._use_responses_api({**kwargs, **self.model_kwargs})
+            or kwargs.get("response_format") is not None
+            or self.model_kwargs.get("response_format") is not None
+            or self.include_response_headers
+        ):
+            # Forward kwargs untouched (as core's `_iter_v2_events` would):
+            # `_stream` handles `stream_usage` itself, and the Responses path
+            # rejects a stray `stream_usage` kwarg, so we must not inject one.
+            yield from chunks_to_events(
+                self._stream(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                ),
+                message_id=message_id,
+            )
+            return
+
+        self._ensure_sync_client_available()
+        kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(
+            kwargs.pop("stream_usage", None), **kwargs
+        )
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        try:
+            with self.client.create(**payload) as response:
+                for event in convert_openai_completions_stream(
+                    response,
+                    self._convert_chunk_to_generation_chunk,
+                    message_id=message_id,
+                ):
+                    if (
+                        run_manager is not None
+                        and event["event"] == "content-block-delta"
+                        and event["delta"].get("type") == "text-delta"
+                    ):
+                        # Text-only by design on the v3 events path: the events
+                        # themselves carry block/usage detail, so the legacy
+                        # `chunk=`/`logprobs=` callback args are not threaded.
+                        run_manager.on_llm_new_token(
+                            str(event["delta"].get("text", ""))
+                        )
+                    yield event
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
+
+    async def _astream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async twin of `_stream_chat_model_events`."""
+        if (
+            self._use_responses_api({**kwargs, **self.model_kwargs})
+            or kwargs.get("response_format") is not None
+            or self.model_kwargs.get("response_format") is not None
+            or self.include_response_headers
+        ):
+            # Forward kwargs untouched (as core's `_aiter_v2_events` would):
+            # `_astream` handles `stream_usage` itself, and the Responses path
+            # rejects a stray `stream_usage` kwarg, so we must not inject one.
+            async for event in achunks_to_events(
+                self._astream(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                ),
+                message_id=message_id,
+            ):
+                yield event
+            return
+
+        kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(
+            kwargs.pop("stream_usage", None), **kwargs
+        )
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        try:
+            response = await self.async_client.create(**payload)
+            async with response as stream:
+                # Mirror `_astream`: apply per-chunk stall protection before the
+                # converter consumes the stream.
+                timed_stream = _astream_with_chunk_timeout(
+                    stream,
+                    self.stream_chunk_timeout,
+                    model_name=self.model_name,
+                )
+                async for event in aconvert_openai_completions_stream(
+                    timed_stream,
+                    self._convert_chunk_to_generation_chunk,
+                    message_id=message_id,
+                ):
+                    if (
+                        run_manager is not None
+                        and event["event"] == "content-block-delta"
+                        and event["delta"].get("type") == "text-delta"
+                    ):
+                        # Text-only by design on the v3 events path: the events
+                        # themselves carry block/usage detail, so the legacy
+                        # `chunk=`/`logprobs=` callback args are not threaded.
+                        await run_manager.on_llm_new_token(
+                            str(event["delta"].get("text", ""))
+                        )
+                    yield event
+        except openai.BadRequestError as e:
+            _handle_openai_bad_request(e)
+        except openai.APIError as e:
+            _handle_openai_api_error(e)
 
     async def _agenerate(
         self,
