@@ -24,6 +24,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    message_chunk_to_message,
 )
 from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
@@ -1572,12 +1573,26 @@ def test_v1_streaming_tool_calls_in_content_blocks() -> None:
     assert len(aggregated.tool_call_chunks) == 1
     assert aggregated.tool_call_chunks[0]["name"] == "get_weather"
 
-    # content_blocks should include both the streamed text and tool_call_chunk
-    # blocks (text deltas must survive alongside tool calls through the merge).
+    # While still a chunk, content_blocks should include both the streamed text
+    # and the in-progress tool_call_chunk (text deltas must survive alongside
+    # tool calls through the merge).
     blocks = aggregated.content_blocks
     block_types = {b["type"] for b in blocks}
     assert "tool_call_chunk" in block_types
     assert "text" in block_types
+
+    # Once finalized into a non-chunk AIMessage, the in-progress tool_call_chunk
+    # resolves to a normalized v1 `tool_call` block with parsed args. This is
+    # the cross-provider view downstream consumers code against.
+    final = message_chunk_to_message(aggregated)
+    final_blocks = final.content_blocks
+    assert {"type": "text", "text": "Let me check the weather."} in final_blocks
+    assert {
+        "type": "tool_call",
+        "name": "get_weather",
+        "args": {"location": "SF"},
+        "id": "call_abc",
+    } in final_blocks
 
 
 def test_verbosity_parameter_payload() -> None:
