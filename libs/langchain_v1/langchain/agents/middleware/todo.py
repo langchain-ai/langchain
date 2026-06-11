@@ -1,6 +1,9 @@
 """Planning and task management middleware for agents."""
 
+import json
 from collections.abc import Awaitable, Callable
+from os import PathLike
+from pathlib import Path
 from typing import Annotated, Any, Literal, cast
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
@@ -205,6 +208,7 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
         *,
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+        todos_file: str | PathLike[str] | None = None,
     ) -> None:
         """Initialize the `TodoListMiddleware` with optional custom prompts.
 
@@ -212,21 +216,79 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
             system_prompt: Custom system prompt to guide the agent on using the todo
                 tool.
             tool_description: Custom description for the `write_todos` tool.
+            todos_file: Optional path to a JSON file for persisting todo state across
+                agent runs.
         """
         super().__init__()
         self.system_prompt = system_prompt
         self.tool_description = tool_description
+        self.todos_file = Path(todos_file) if todos_file is not None else None
 
         self.tools = [
             StructuredTool.from_function(
                 name="write_todos",
                 description=tool_description,
-                func=_write_todos,
-                coroutine=_awrite_todos,
+                func=self._write_todos,
+                coroutine=self._awrite_todos,
                 args_schema=WriteTodosInput,
                 infer_schema=False,
             )
         ]
+
+    def _load_todos(self) -> list[Todo] | None:
+        """Load todos from the configured persistence file."""
+        if self.todos_file is None or not self.todos_file.exists():
+            return None
+
+        data = json.loads(self.todos_file.read_text(encoding="utf-8"))
+        todos = data["todos"] if isinstance(data, dict) else data
+        return WriteTodosInput.model_validate({"todos": todos}).todos
+
+    def _save_todos(self, todos: list[Todo]) -> None:
+        """Save todos to the configured persistence file."""
+        if self.todos_file is None:
+            return
+
+        self.todos_file.parent.mkdir(parents=True, exist_ok=True)
+        temp_file = self.todos_file.with_name(f"{self.todos_file.name}.tmp")
+        temp_file.write_text(
+            json.dumps({"todos": todos}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        temp_file.replace(self.todos_file)
+
+    def _write_todos(
+        self, runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
+    ) -> Command[Any]:
+        """Create and manage a structured task list for your current work session."""
+        self._save_todos(todos)
+        return _write_todos(runtime, todos)
+
+    async def _awrite_todos(
+        self, runtime: ToolRuntime[ContextT, PlanningState[ResponseT]], todos: list[Todo]
+    ) -> Command[Any]:
+        """Create and manage a structured task list for your current work session."""
+        return self._write_todos(runtime, todos)
+
+    @override
+    def before_agent(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Load persisted todos before the agent starts if state has none."""
+        if "todos" in state:
+            return None
+
+        todos = self._load_todos()
+        if todos is None:
+            return None
+        return {"todos": todos}
+
+    @override
+    async def abefore_agent(
+        self, state: PlanningState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Load persisted todos before the agent starts if state has none."""
+        return self.before_agent(state, runtime)
 
     def wrap_model_call(
         self,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -20,6 +22,8 @@ from langchain.agents.middleware.types import AgentState, ModelRequest, ModelRes
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from langgraph.runtime import Runtime
 
 
@@ -295,6 +299,53 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
     assert tool.description == custom_tool_description
 
 
+def test_todo_middleware_loads_persisted_todos(tmp_path: Path) -> None:
+    """Test that TodoListMiddleware loads persisted todos before the agent starts."""
+    todos_file = tmp_path / "todos.json"
+    todos = [{"content": "Persisted task", "status": "in_progress"}]
+    todos_file.write_text(json.dumps({"todos": todos}), encoding="utf-8")
+
+    middleware = TodoListMiddleware(todos_file=todos_file)
+
+    result = middleware.before_agent({"messages": []}, _fake_runtime())
+
+    assert result == {"todos": todos}
+
+
+def test_todo_middleware_does_not_override_existing_todos(tmp_path: Path) -> None:
+    """Test that in-memory todo state takes precedence over persisted todos."""
+    todos_file = tmp_path / "todos.json"
+    todos_file.write_text(
+        json.dumps({"todos": [{"content": "Persisted task", "status": "pending"}]}),
+        encoding="utf-8",
+    )
+    state: PlanningState = {
+        "messages": [],
+        "todos": [{"content": "Current task", "status": "in_progress"}],
+    }
+    middleware = TodoListMiddleware(todos_file=todos_file)
+
+    result = middleware.before_agent(state, _fake_runtime())
+
+    assert result is None
+
+
+def test_todo_middleware_persists_todos_on_write(tmp_path: Path) -> None:
+    """Test that write_todos persists todo updates when a file is configured."""
+    todos_file = tmp_path / "nested" / "todos.json"
+    todos = [{"content": "Task 1", "status": "pending"}]
+    middleware = TodoListMiddleware(todos_file=todos_file)
+    runtime = cast(
+        "Any",
+        SimpleNamespace(tool_call_id="test_call", state={"messages": []}, context=None),
+    )
+
+    result = middleware._write_todos(runtime, todos)
+
+    assert result.update["todos"] == todos
+    assert json.loads(todos_file.read_text(encoding="utf-8")) == {"todos": todos}
+
+
 @pytest.mark.parametrize(
     ("todos", "expected_message"),
     [
@@ -411,6 +462,46 @@ def test_todo_middleware_agent_creation_with_middleware() -> None:
     # tool message (7)
     # ai message (8) - no tool calls
     assert len(result["messages"]) == 8
+
+
+def test_todo_middleware_agent_persists_todos(tmp_path: Path) -> None:
+    """Test that an agent persists todos when the middleware has a file."""
+    todos_file = tmp_path / "todos.json"
+    todos = [{"content": "Task 1", "status": "completed"}]
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "args": {"todos": todos},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [],
+        ]
+    )
+    middleware = TodoListMiddleware(todos_file=todos_file)
+    agent = create_agent(model=model, middleware=[middleware])
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    assert result["todos"] == todos
+    assert json.loads(todos_file.read_text(encoding="utf-8")) == {"todos": todos}
+
+
+def test_todo_middleware_agent_loads_persisted_todos(tmp_path: Path) -> None:
+    """Test that an agent loads persisted todos at the start of a run."""
+    todos_file = tmp_path / "todos.json"
+    todos = [{"content": "Persisted task", "status": "in_progress"}]
+    todos_file.write_text(json.dumps({"todos": todos}), encoding="utf-8")
+    model = FakeToolCallingModel(tool_calls=[[]])
+    middleware = TodoListMiddleware(todos_file=todos_file)
+    agent = create_agent(model=model, middleware=[middleware])
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    assert result["todos"] == todos
 
 
 def test_todo_middleware_custom_system_prompt_in_agent() -> None:
