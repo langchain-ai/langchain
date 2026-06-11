@@ -80,9 +80,25 @@ class EnsembleRetriever(BaseRetriever):
     @model_validator(mode="before")
     @classmethod
     def _set_weights(cls, values: dict[str, Any]) -> Any:
-        if not values.get("weights"):
+        weights = values.get("weights")
+
+        if not weights:
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
+            return values
+
+        retrievers = values["retrievers"]
+        if len(weights) != len(retrievers):
+            msg = (
+                "Length of weights must match number of retrievers "
+                f"(got {len(weights)} weights for {len(retrievers)} retrievers)."
+            )
+            raise ValueError(msg)
+
+        if not any(w > 0 for w in weights):
+            msg = "At least one ensemble weight must be greater than zero."
+            raise ValueError(msg)
+
         return values
 
     @override
@@ -278,7 +294,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=doc) if not isinstance(doc, Document) else doc
+                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc  # type: ignore[unreachable]
                 for doc in retriever_docs[i]
             ]
 

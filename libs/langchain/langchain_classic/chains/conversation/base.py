@@ -13,8 +13,12 @@ from langchain_classic.memory.buffer import ConversationBufferMemory
 
 @deprecated(
     since="0.2.7",
-    alternative="langchain_core.runnables.history.RunnableWithMessageHistory",
-    removal="1.0",
+    alternative="langchain.agents.create_agent",
+    removal="2.0.0",
+    addendum=(
+        "Build a conversational agent with `langchain.agents.create_agent` and "
+        "persist message history via a LangGraph checkpointer."
+    ),
 )
 class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
@@ -47,7 +51,7 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-5.5")
 
         chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(
@@ -85,7 +89,7 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-5.5")
 
         chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(

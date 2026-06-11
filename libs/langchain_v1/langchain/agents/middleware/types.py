@@ -36,6 +36,7 @@ from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
+    from langgraph.stream._mux import TransformerFactory
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -85,7 +86,9 @@ class ModelRequest(Generic[ContextT]):
     """Model request information for the agent.
 
     Type Parameters:
-        ContextT: The type of the runtime context. Defaults to `None` if not specified.
+        ContextT: The type of the runtime context.
+
+            Defaults to `None` if not specified.
     """
 
     model: BaseChatModel
@@ -112,7 +115,7 @@ class ModelRequest(Generic[ContextT]):
         runtime: Runtime[ContextT] | None = None,
         model_settings: dict[str, Any] | None = None,
     ) -> None:
-        """Initialize ModelRequest with backward compatibility for system_prompt.
+        """Initialize `ModelRequest` with backward compatibility for `system_prompt`.
 
         Args:
             model: The chat model to use.
@@ -124,7 +127,7 @@ class ModelRequest(Generic[ContextT]):
             runtime: Runtime context.
             model_settings: Additional model settings.
             system_message: System message instance (preferred).
-            system_prompt: System prompt string (deprecated, converted to SystemMessage).
+            system_prompt: System prompt string (deprecated, converted to `SystemMessage`).
 
         Raises:
             ValueError: If both `system_prompt` and `system_message` are provided.
@@ -240,7 +243,7 @@ class ModelRequest(Generic[ContextT]):
 
                 ```python
                 new_request = request.override(
-                    model=ChatOpenAI(model="gpt-4o"),
+                    model=ChatOpenAI(model="gpt-5.5"),
                     system_message=SystemMessage(content="New instructions"),
                 )
                 ```
@@ -387,6 +390,16 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
+
+    transformers: Sequence[TransformerFactory] = ()
+    """Stream transformer factories registered by the middleware.
+
+    Each entry is a scope-aware factory invoked as `factory(scope)` so every
+    invocation receives a fresh instance. Factories are merged with the
+    `transformers` argument of [`create_agent`][langchain.agents.create_agent]
+    at graph compile time, after the `ToolCallTransformer` and before any
+    user-supplied entries.
+    """
 
     @property
     def name(self) -> str:
@@ -1017,6 +1030,8 @@ def before_model(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command[Any] | None:
+                # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+                # cannot narrow this sync-or-async callable union.
                 return await cast("_AsyncCallableWithStateAndRuntime[StateT, ContextT]", func)(
                     state, runtime
                 )
@@ -1029,21 +1044,28 @@ def before_model(
                 "str", getattr(func, "__name__", "BeforeModelMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "abefore_model": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "abefore_model": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command[Any] | None:
+            # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+            # cannot narrow this sync-or-async callable union.
             return cast("_SyncCallableWithStateAndRuntime[StateT, ContextT]", func)(state, runtime)
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1053,15 +1075,20 @@ def before_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "before_model": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "before_model": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1179,6 +1206,8 @@ def after_model(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command[Any] | None:
+                # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+                # cannot narrow this sync-or-async callable union.
                 return await cast("_AsyncCallableWithStateAndRuntime[StateT, ContextT]", func)(
                     state, runtime
                 )
@@ -1189,21 +1218,28 @@ def after_model(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "aafter_model": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "aafter_model": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command[Any] | None:
+            # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+            # cannot narrow this sync-or-async callable union.
             return cast("_SyncCallableWithStateAndRuntime[StateT, ContextT]", func)(state, runtime)
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1213,15 +1249,20 @@ def after_model(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "after_model": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "after_model": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1372,6 +1413,8 @@ def before_agent(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command[Any] | None:
+                # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+                # cannot narrow this sync-or-async callable union.
                 return await cast("_AsyncCallableWithStateAndRuntime[StateT, ContextT]", func)(
                     state, runtime
                 )
@@ -1384,21 +1427,28 @@ def before_agent(
                 "str", getattr(func, "__name__", "BeforeAgentMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "abefore_agent": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "abefore_agent": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command[Any] | None:
+            # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+            # cannot narrow this sync-or-async callable union.
             return cast("_SyncCallableWithStateAndRuntime[StateT, ContextT]", func)(state, runtime)
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1408,15 +1458,20 @@ def before_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeAgentMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "before_agent": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "before_agent": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1535,6 +1590,8 @@ def after_agent(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command[Any] | None:
+                # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+                # cannot narrow this sync-or-async callable union.
                 return await cast("_AsyncCallableWithStateAndRuntime[StateT, ContextT]", func)(
                     state, runtime
                 )
@@ -1545,21 +1602,28 @@ def after_agent(
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "aafter_agent": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "aafter_agent": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command[Any] | None:
+            # `iscoroutinefunction` narrows `func` at runtime, but type checkers
+            # cannot narrow this sync-or-async callable union.
             return cast("_SyncCallableWithStateAndRuntime[StateT, ContextT]", func)(state, runtime)
 
         # Preserve can_jump_to metadata on the wrapped function
@@ -1569,15 +1633,20 @@ def after_agent(
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterAgentMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "after_agent": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "after_agent": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1677,15 +1746,20 @@ def dynamic_prompt(
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": AgentState,
-                    "tools": [],
-                    "awrap_model_call": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": AgentState,
+                        "tools": [],
+                        "awrap_model_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1714,16 +1788,21 @@ def dynamic_prompt(
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": AgentState,
-                "tools": [],
-                "wrap_model_call": wrapped,
-                "awrap_model_call": async_wrapped_from_sync,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": [],
+                    "wrap_model_call": wrapped,
+                    "awrap_model_call": async_wrapped_from_sync,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -1857,15 +1936,20 @@ def wrap_model_call(
                 "str", getattr(func, "__name__", "WrapModelCallMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "awrap_model_call": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware[StateT, ContextT]",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": state_schema or AgentState,
+                        "tools": tools or [],
+                        "awrap_model_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware[StateT, ContextT],
@@ -1876,15 +1960,20 @@ def wrap_model_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "wrap_model_call": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware[StateT, ContextT]",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "wrap_model_call": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)
@@ -2017,15 +2106,20 @@ def wrap_tool_call(
                 "str", getattr(func, "__name__", "WrapToolCallMiddleware")
             )
 
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": AgentState,
-                    "tools": tools or [],
-                    "awrap_tool_call": async_wrapped,
-                },
-            )()
+            # `type(...)` builds the correct middleware subclass at runtime, but
+            # type checkers cannot infer its generic `AgentMiddleware` parameters.
+            return cast(
+                "AgentMiddleware",
+                type(
+                    middleware_name,
+                    (AgentMiddleware,),
+                    {
+                        "state_schema": AgentState,
+                        "tools": tools or [],
+                        "awrap_tool_call": async_wrapped,
+                    },
+                )(),
+            )
 
         def wrapped(
             _self: AgentMiddleware,
@@ -2036,15 +2130,20 @@ def wrap_tool_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
 
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": AgentState,
-                "tools": tools or [],
-                "wrap_tool_call": wrapped,
-            },
-        )()
+        # `type(...)` builds the correct middleware subclass at runtime, but
+        # type checkers cannot infer its generic `AgentMiddleware` parameters.
+        return cast(
+            "AgentMiddleware",
+            type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": tools or [],
+                    "wrap_tool_call": wrapped,
+                },
+            )(),
+        )
 
     if func is not None:
         return decorator(func)

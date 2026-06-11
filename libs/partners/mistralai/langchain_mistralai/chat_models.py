@@ -7,7 +7,7 @@ import os
 import re
 import ssl
 import uuid
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable, Sequence  # noqa: TC003
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -44,6 +44,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
@@ -77,7 +81,7 @@ from langchain_mistralai._compat import _convert_from_v1_to_mistral
 from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator
     from contextlib import AbstractAsyncContextManager
 
 logger = logging.getLogger(__name__)
@@ -369,13 +373,65 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from text content blocks.
+
+    Mistral's chat completions endpoint rejects unknown fields on tool
+    message content blocks (e.g. the `id` that LangChain auto-generates on
+    `TextContentBlock`). For list content, keep only `type` and `text` on
+    text blocks; pass other blocks and non-list content through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
+            sanitized.append({"type": "text", "text": block["text"]})
+        else:
+            sanitized.append(block)
+    return sanitized
+
+
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Mistral chat completions wire format.
+
+    Walks list content and translates LangChain canonical v0/v1 multimodal
+    data blocks (e.g. `ImageContentBlock` with `url`, `base64`, or
+    `file_id`) into the OpenAI-compatible shape that Mistral accepts:
+    `{"type": "image_url", "image_url": {"url": "..."}}`. Strings and any
+    other dict blocks are returned unchanged so that already-translated wire
+    blocks (e.g. `text`, `image_url`) and Mistral-specific blocks
+    (`document_url`, `input_audio`) pass through; the API surfaces an error
+    for anything it doesn't understand.
+
+    Args:
+        content: The message content. Strings and non-list values pass
+            through unchanged; lists are walked block by block.
+
+    Returns:
+        The formatted content. List inputs return a new list with canonical
+        data-block translations applied; other inputs are returned as-is.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and is_data_content_block(block):
+            formatted.append(
+                convert_to_openai_data_block(block, api="chat/completions")
+            )
+            continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        return {"role": "user", "content": _format_message_content(message.content)}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls: list = []
@@ -447,7 +503,7 @@ def _convert_message_to_mistral_chat_message(
     if isinstance(message, ToolMessage):
         return {
             "role": "tool",
-            "content": message.content,
+            "content": _sanitize_chat_completions_content(message.content),
             "name": message.name,
             "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
                 message.tool_call_id
@@ -489,6 +545,14 @@ class ChatMistralAI(BaseChatModel):
     temperature: float = 0.7
 
     max_tokens: int | None = None
+
+    stop: list[str] | None = None
+    """Default stop sequences.
+
+    Generation stops when any of these strings is produced; the stop sequence itself
+    is not included in the output. Can be overridden per call via the `stop` argument.
+    Mistral accepts up to 4 stop sequences.
+    """
 
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -543,7 +607,7 @@ class ChatMistralAI(BaseChatModel):
         )
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
-        if ls_stop := stop or params.get("stop", None):
+        if ls_stop := stop or self.stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
@@ -646,12 +710,8 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model) or None
 
     def _generate(
         self,
@@ -697,12 +757,9 @@ class ChatMistralAI(BaseChatModel):
         self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict], dict[str, Any]]:
         params = self._client_params
-        if stop is not None or "stop" in params:
-            if "stop" in params:
-                params.pop("stop")
-            logger.warning(
-                "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
-            )
+        stop = stop if stop is not None else self.stop
+        if stop:
+            params["stop"] = stop
         message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 

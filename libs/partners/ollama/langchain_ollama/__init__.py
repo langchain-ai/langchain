@@ -15,13 +15,14 @@ service.
 
 from importlib import metadata
 from importlib.metadata import PackageNotFoundError
+from typing import NoReturn
 
 from langchain_ollama.chat_models import ChatOllama
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 
 
-def _raise_package_not_found_error() -> None:
+def _raise_package_not_found_error() -> NoReturn:
     raise PackageNotFoundError
 
 

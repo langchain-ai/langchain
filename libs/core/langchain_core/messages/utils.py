@@ -47,11 +47,13 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+    from langchain_core.tools import BaseTool
 
 try:
     from langchain_text_splitters import TextSplitter
@@ -304,10 +306,15 @@ def get_buffer_string(
         tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
         format: The output format. `'prefix'` uses `Role: content` format (default).
+            For multimodal messages, only string content and `text` blocks are
+            included; non-text blocks such as images, audio, and video are omitted.
 
-            `'xml'` uses XML-style `<message type='role'>` format with proper character
-            escaping, which is useful when message content may contain role-like
-            prefixes that could cause ambiguity.
+            `'xml'` uses XML-style `<message type='role'>` format with proper
+            character escaping, which is useful when message content may
+            contain role-like prefixes that could cause ambiguity.
+
+            Use `'xml'` when you need a structured representation of supported
+            multimodal content blocks.
 
     Returns:
         A single string concatenation of all input messages.
@@ -400,7 +407,7 @@ def get_buffer_string(
         # -> '</message>'
         ```
     """
-    if format not in ("prefix", "xml"):
+    if format not in {"prefix", "xml"}:
         msg = (
             f"Unrecognized format={format!r}. Supported formats are 'prefix' and 'xml'."
         )
@@ -505,7 +512,7 @@ def get_buffer_string(
     return message_separator.join(string_messages)
 
 
-def _message_from_dict(message: dict) -> BaseMessage:
+def _message_from_dict(message: dict[str, Any]) -> BaseMessage:
     type_ = message["type"]
     if type_ == "human":
         return HumanMessage(**message["data"])
@@ -537,7 +544,7 @@ def _message_from_dict(message: dict) -> BaseMessage:
     raise ValueError(msg)
 
 
-def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
+def messages_from_dict(messages: Sequence[dict[str, Any]]) -> list[BaseMessage]:
     """Convert a sequence of messages from dicts to `Message` objects.
 
     Args:
@@ -670,6 +677,28 @@ def _create_message_from_message_type(
     return message
 
 
+# Map of class names emitted in the `Serializable` constructor-envelope
+# (`{"lc": 1, "type": "constructor", "id": [..., "<ClassName>"],
+# "kwargs": {...}}`) to the message-type strings
+# `_create_message_from_message_type` accepts. Read by
+# `_convert_to_message`'s dict branch when unpacking that wire shape.
+# Kept as a hardcoded allowlist of strings rather than a class registry
+# lookup so dispatch never resolves to a class chosen by the caller.
+_LC_CONSTRUCTOR_NAME_TO_TYPE: dict[str, str] = {
+    "HumanMessage": "human",
+    "HumanMessageChunk": "human",
+    "AIMessage": "ai",
+    "AIMessageChunk": "ai",
+    "SystemMessage": "system",
+    "SystemMessageChunk": "system",
+    "FunctionMessage": "function",
+    "FunctionMessageChunk": "function",
+    "ToolMessage": "tool",
+    "ToolMessageChunk": "tool",
+    "RemoveMessage": "remove",
+}
+
+
 def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """Instantiate a `Message` from a variety of message formats.
 
@@ -679,6 +708,10 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     - `BaseMessage`
     - 2-tuple of (role string, template); e.g., (`'human'`, `'{user_input}'`)
     - dict: a message dict with role and content keys
+    - dict: the `Serializable` constructor-envelope wire shape
+        `{"lc": 1, "type": "constructor", "id": [..., "<ClassName>"],
+        "kwargs": {...}}` — unpacked structurally and routed through the
+        standard dict-with-type dispatch.
     - string: shorthand for (`'human'`, template); e.g., `'{user_input}'`
 
     Args:
@@ -705,6 +738,22 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 raise NotImplementedError(msg) from e
             message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
+        # `Serializable` constructor-envelope wire shape. Detect structurally, map
+        # the class name to a known message-type string via a hardcoded
+        # allowlist, and recurse with the canonical
+        # `{"type": ..., **kwargs}` shape — no `load()`, no dynamic
+        # class instantiation.
+        if (
+            message.get("lc") == 1
+            and message.get("type") == "constructor"
+            and isinstance(message.get("id"), list)
+            and message["id"]
+            and isinstance(message.get("kwargs"), dict)
+        ):
+            mapped = _LC_CONSTRUCTOR_NAME_TO_TYPE.get(message["id"][-1])
+            if mapped is not None:
+                return _convert_to_message({"type": mapped, **message["kwargs"]})
+
         msg_kwargs = message.copy()
         try:
             try:
@@ -872,9 +921,9 @@ def filter_messages(
 
         filter_messages(
             messages,
-            incl_names=("example_user", "example_assistant"),
-            incl_types=("system",),
-            excl_ids=("bar",),
+            include_names=("example_user", "example_assistant"),
+            include_types=("system",),
+            exclude_ids=("bar",),
         )
         ```
 
@@ -1083,7 +1132,7 @@ def trim_messages(
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int]
     | Callable[[BaseMessage], int]
-    | BaseLanguageModel
+    | BaseLanguageModel[Any]
     | Literal["approximate"],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
@@ -1223,7 +1272,7 @@ def trim_messages(
             messages,
             max_tokens=45,
             strategy="last",
-            token_counter=ChatOpenAI(model="gpt-4o"),
+            token_counter=ChatOpenAI(model="openai:gpt-5.5"),
             # Most chat models expect that chat history starts with either:
             # (1) a HumanMessage or
             # (2) a SystemMessage followed by a HumanMessage
@@ -1435,10 +1484,11 @@ def trim_messages(
         )
         raise ValueError(msg)
 
+    text_splitter_fn: Callable[[str], list[str]]
     if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
         text_splitter_fn = text_splitter.split_text
     elif text_splitter:
-        text_splitter_fn = cast("Callable", text_splitter)
+        text_splitter_fn = cast("Callable[[str], list[str]]", text_splitter)
     else:
         text_splitter_fn = _default_text_splitter
 
@@ -1479,7 +1529,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> dict: ...
+) -> dict[str, Any]: ...
 
 
 @overload
@@ -1489,7 +1539,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> list[dict]: ...
+) -> list[dict[str, Any]]: ...
 
 
 def convert_to_openai_messages(
@@ -1498,7 +1548,7 @@ def convert_to_openai_messages(
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
     pass_through_unknown_blocks: bool = True,
-) -> dict | list[dict]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Convert LangChain messages into OpenAI message dicts.
 
     Args:
@@ -1549,7 +1599,7 @@ def convert_to_openai_messages(
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "whats in this"},
+                    {"type": "text", "text": "what's in this"},
                     {
                         "type": "image_url",
                         "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
@@ -1568,15 +1618,15 @@ def convert_to_openai_messages(
                 ],
             ),
             ToolMessage("foobar", tool_call_id="1", name="bar"),
-            {"role": "assistant", "content": "thats nice"},
+            {"role": "assistant", "content": "that's nice"},
         ]
         oai_messages = convert_to_openai_messages(messages)
         # -> [
         #   {'role': 'system', 'content': 'foo'},
-        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
+        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'what's in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
         #   {'role': 'assistant', 'tool_calls': [{'type': 'function', 'id': '1','function': {'name': 'analyze', 'arguments': '{"baz": "buz"}'}}], 'content': ''},
         #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
-        #   {'role': 'assistant', 'content': 'thats nice'}
+        #   {'role': 'assistant', 'content': 'that's nice'}
         # ]
         ```
 
@@ -1587,7 +1637,7 @@ def convert_to_openai_messages(
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
-    oai_messages: list[dict] = []
+    oai_messages: list[dict[str, Any]] = []
 
     if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
@@ -1595,9 +1645,9 @@ def convert_to_openai_messages(
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
-        oai_msg: dict = {"role": _get_message_openai_role(message)}
-        tool_messages: list = []
-        content: str | list[dict]
+        oai_msg: dict[str, Any] = {"role": _get_message_openai_role(message)}
+        tool_messages: list[dict[str, Any]] = []
+        content: str | list[dict[str, Any]]
 
         if message.name:
             oai_msg["name"] = message.name
@@ -2167,7 +2217,7 @@ def _get_message_openai_role(message: BaseMessage) -> str:
     raise ValueError(msg)
 
 
-def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
+def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, Any]]:
     return [
         {
             "type": "function",
@@ -2189,6 +2239,7 @@ def count_tokens_approximately(
     count_name: bool = True,
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
+    tools: list[BaseTool | dict[str, Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2197,7 +2248,8 @@ def count_tokens_approximately(
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
     - For multimodal messages with images, applies a fixed token penalty per image
-      instead of counting base64-encoded characters.
+        instead of counting base64-encoded characters.
+    - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
         messages: List of messages to count tokens for.
@@ -2217,9 +2269,12 @@ def count_tokens_approximately(
             using the **most recent** AI message that has
             `usage_metadata['total_tokens']`. The scaling factor is:
             `AI_total_tokens / approx_tokens_up_to_that_AI_message`
+        tools: List of tools to include in the token count. Each tool can be either
+            a `BaseTool` instance or a dict representing a tool schema. `BaseTool`
+            instances are converted to OpenAI tool format before counting.
 
     Returns:
-        Approximate number of tokens in the messages.
+        Approximate number of tokens in the messages (and tools, if provided).
 
     Note:
         This is a simple approximation that may not match the exact token count used by
@@ -2240,6 +2295,14 @@ def count_tokens_approximately(
     last_ai_total_tokens: int | None = None
     approx_at_last_ai: float | None = None
 
+    # Count tokens for tools if provided
+    if tools:
+        tools_chars = 0
+        for tool in tools:
+            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
+            tools_chars += len(json.dumps(tool_dict))
+        token_count += math.ceil(tools_chars / chars_per_token)
+
     for message in converted_messages:
         message_chars = 0
 
@@ -2255,7 +2318,7 @@ def count_tokens_approximately(
                     block_type = block.get("type", "")
 
                     # Apply fixed penalty for image blocks
-                    if block_type in ("image", "image_url"):
+                    if block_type in {"image", "image_url"}:
                         token_count += tokens_per_image
                     # Count text blocks normally
                     elif block_type == "text":
@@ -2313,6 +2376,7 @@ def count_tokens_approximately(
 
     if (
         use_usage_metadata_scaling
+        and len(converted_messages) > 1
         and not invalid_model_provider
         and ai_model_provider is not None
         and last_ai_total_tokens is not None

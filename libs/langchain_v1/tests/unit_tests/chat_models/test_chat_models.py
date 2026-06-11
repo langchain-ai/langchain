@@ -1,17 +1,20 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest import mock
 
 import pytest
+from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _SUPPORTED_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
+
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 EXPECTED_ALL = [
     "init_chat_model",
@@ -33,7 +36,7 @@ def test_all_imports() -> None:
 @pytest.mark.parametrize(
     ("model_name", "model_provider"),
     [
-        ("gpt-4o", "openai"),
+        (OPENAI_TEST_MODEL, "openai"),
         ("claude-opus-4-1", "anthropic"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("mixtral-8x7b-32768", "groq"),
@@ -52,6 +55,12 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     assert llm1.dict() == llm2.dict()
 
 
+def test_init_chat_model_rejects_model_object() -> None:
+    """Passing a model object instead of a string should raise TypeError."""
+    with pytest.raises(TypeError, match="must be a string"):
+        init_chat_model(model=FakeChatModel())  # type: ignore[call-overload]
+
+
 def test_init_missing_dep() -> None:
     with pytest.raises(ImportError):
         init_chat_model("mixtral-8x7b-32768", model_provider="groq")
@@ -64,16 +73,14 @@ def test_init_unknown_provider() -> None:
 
 def test_supported_providers_is_sorted() -> None:
     """Test that supported providers are sorted alphabetically."""
-    assert list(_SUPPORTED_PROVIDERS) == sorted(_SUPPORTED_PROVIDERS.keys())
+    assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
 
 
 @pytest.mark.parametrize(
     ("model_name", "expected_provider"),
     [
-        ("gpt-4o", "openai"),
-        ("o1-mini", "openai"),
-        ("o3-mini", "openai"),
-        ("chatgpt-4o-latest", "openai"),
+        (OPENAI_TEST_MODEL, "openai"),
+        ("o3", "openai"),
         ("text-davinci-003", "openai"),
         ("claude-3-haiku-20240307", "anthropic"),
         ("command-r-plus", "cohere"),
@@ -81,7 +88,7 @@ def test_supported_providers_is_sorted() -> None:
         ("Accounts/Fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("gemini-1.5-pro", "google_vertexai"),
         ("gemini-2.5-pro", "google_vertexai"),
-        ("gemini-3-pro-preview", "google_vertexai"),
+        ("gemini-3.1-pro-preview", "google_vertexai"),
         ("amazon.titan-text-express-v1", "bedrock"),
         ("Amazon.Titan-Text-Express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
@@ -123,7 +130,7 @@ def test_configurable() -> None:
     model.get_num_tokens("hello")  # AttributeError!
 
     # This works - provides model at runtime
-    response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
+    response = model.invoke("Hello", config={"configurable": {"model": "gpt-5.5"}})
     ```
     """
     model = init_chat_model()
@@ -157,20 +164,20 @@ def test_configurable() -> None:
     # Can iteratively call declarative methods.
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"model": "gpt-4o"},
+        configurable={"model": OPENAI_TEST_MODEL},
     )
-    assert model_with_config.model_name == "gpt-4o"  # type: ignore[attr-defined]
+    assert model_with_config.model_name == OPENAI_TEST_MODEL  # type: ignore[attr-defined]
 
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
             "disabled_params": None,
-            "model_name": "gpt-4o",
+            "model_name": OPENAI_TEST_MODEL,
             "temperature": None,
             "model_kwargs": {},
             "openai_api_key": SecretStr("foo"),
@@ -185,6 +192,7 @@ def test_configurable() -> None:
             "reasoning_effort": None,
             "verbosity": None,
             "frequency_penalty": None,
+            "context_management": None,
             "include": None,
             "seed": None,
             "service_tier": None,
@@ -218,7 +226,7 @@ def test_configurable() -> None:
         "config": {
             "callbacks": None,
             "configurable": {},
-            "metadata": {"model": "gpt-4o"},
+            "metadata": {"model": OPENAI_TEST_MODEL},
             "recursion_limit": 25,
             "tags": ["foo"],
         },
@@ -226,6 +234,7 @@ def test_configurable() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -247,9 +256,9 @@ def test_configurable_with_default() -> None:
     Example:
     ```python
     # This creates a configurable model with default parameters (model)
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+    model = init_chat_model("gpt-5.5", configurable_fields="any", config_prefix="bar")
 
-    # This works immediately - uses default gpt-4o
+    # This works immediately - uses default gpt-5.5
     tokens = model.get_num_tokens("hello")
 
     # This also works - switches to Claude at runtime
@@ -258,7 +267,7 @@ def test_configurable_with_default() -> None:
     )
     ```
     """
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+    model = init_chat_model(OPENAI_TEST_MODEL, configurable_fields="any", config_prefix="bar")
     for method in (
         "invoke",
         "ainvoke",
@@ -276,7 +285,7 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"
+    assert model.model_name == OPENAI_TEST_MODEL
 
     model_with_tools = model.bind_tools(
         [{"name": "foo", "description": "foo", "parameters": {}}],
@@ -289,7 +298,7 @@ def test_configurable_with_default() -> None:
 
     assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
-    assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
+    expected: dict[str, Any] = {
         "name": None,
         "bound": {
             "name": None,
@@ -317,6 +326,7 @@ def test_configurable_with_default() -> None:
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
+            "output_config": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
@@ -324,7 +334,7 @@ def test_configurable_with_default() -> None:
         "config": {
             "callbacks": None,
             "configurable": {},
-            "metadata": {"bar_model": "claude-sonnet-4-5-20250929"},
+            "metadata": {},
             "recursion_limit": 25,
             "tags": ["foo"],
         },
@@ -332,6 +342,7 @@ def test_configurable_with_default() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    assert model_with_config.model_dump() == expected  # type: ignore[attr-defined]
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)

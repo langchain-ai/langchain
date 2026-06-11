@@ -37,14 +37,14 @@ class SelfAskOutputParser(AgentOutputParser):
 
     @override
     def parse(self, text: str) -> AgentAction | AgentFinish:
-        last_line = text.split("\n")[-1]
+        last_line = text.rsplit("\n", maxsplit=1)[-1]
         if not any(follow in last_line for follow in self.followups):
             if self.finish_string not in last_line:
                 msg = f"Could not parse output: {text}"
                 raise OutputParserException(msg)
             return AgentFinish({"output": last_line[len(self.finish_string) :]}, text)
 
-        after_colon = text.split(":")[-1].strip()
+        after_colon = text.rsplit(":", maxsplit=1)[-1].strip()
         return AgentAction("Intermediate Answer", after_colon, text)
 
     @property
