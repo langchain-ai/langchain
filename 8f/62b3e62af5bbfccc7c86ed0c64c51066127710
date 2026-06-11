@@ -1,0 +1,24 @@
+libs/langchain_v1/langchain/agents/middleware/types.py
+  s_0db1c324b2f524::t_ac2810ed390a81 312
+  s_0db1c324b2f524::t_0fa7febc3366ed 842
+  s_0db1c324b2f524::t_189c99a5d6e0c3 825
+  s_0db1c324b2f524::t_9e582b993c5e63 19
+  s_0db1c324b2f524::t_b036e310599397 1959-1962
+  s_0db1c324b2f524::t_56f8fbe2c3adbf 1931-1934
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8f62b3e62af5bbfccc7c86ed0c64c51066127710",
+  "prompts": {},
+  "sessions": {
+    "s_0db1c324b2f524": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b40cb44d-9ccf-4309-98cd-655d9f13def7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
