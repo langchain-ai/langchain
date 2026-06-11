@@ -155,7 +155,9 @@ from langchain_openai.chat_models._compat import (
 )
 from langchain_openai.chat_models._stream_events import (
     aconvert_openai_completions_stream,
+    aconvert_openai_responses_stream,
     convert_openai_completions_stream,
+    convert_openai_responses_stream,
 )
 from langchain_openai.data._profiles import _PROFILES
 
@@ -1929,22 +1931,24 @@ class BaseChatOpenAI(BaseChatModel):
         message_id: str | None = None,
         **kwargs: Any,
     ) -> Iterator[MessagesData]:
-        """Emit OpenAI-native content-block events for the Chat Completions path.
+        """Emit OpenAI-native content-block events for Completions and Responses.
 
-        Defers to the compat bridge for cases this converter does not yet
-        specialize: the Responses API, structured output (`response_format`),
-        and raw-header mode. Detected by core's `_iter_v2_events`.
+        The standard Completions and Responses API paths run through their
+        native converters. Structured output (`response_format`) and raw-header
+        mode still defer to the compat bridge over `_stream`, since those keep
+        the final-completion handling only `_stream` performs. Detected by
+        core's `_iter_v2_events`.
         """
-        # Responses API / structured output / raw headers: bridge over `_stream`,
-        # which (on `ChatOpenAI`) routes to the Responses path when applicable.
+        use_responses = self._use_responses_api({**kwargs, **self.model_kwargs})
         # `response_format` may arrive via call kwargs or be baked into
         # `model_kwargs`; both fold into the payload, so check both.
-        if (
-            self._use_responses_api({**kwargs, **self.model_kwargs})
-            or kwargs.get("response_format") is not None
+        has_response_format = (
+            kwargs.get("response_format") is not None
             or self.model_kwargs.get("response_format") is not None
-            or self.include_response_headers
-        ):
+        )
+        # Structured output and raw-header mode keep the post-loop /
+        # final-completion handling that only `_stream` performs — defer those.
+        if has_response_format or self.include_response_headers:
             # Forward kwargs untouched (as core's `_iter_v2_events` would):
             # `_stream` handles `stream_usage` itself, and the Responses path
             # rejects a stray `stream_usage` kwarg, so we must not inject one.
@@ -1957,6 +1961,35 @@ class BaseChatOpenAI(BaseChatModel):
                 ),
                 message_id=message_id,
             )
+            return
+        if use_responses:
+            self._ensure_sync_client_available()
+            kwargs["stream"] = True
+            payload = self._get_request_payload(messages, stop=stop, **kwargs)
+            try:
+                with self.root_client.responses.create(**payload) as response:
+                    for event in convert_openai_responses_stream(
+                        response,
+                        _convert_responses_chunk_to_generation_chunk,
+                        # Always None here: the `response_format` (structured
+                        # output) path is handled by the bridge branch above.
+                        schema=None,
+                        output_version=self.output_version,
+                        message_id=message_id,
+                    ):
+                        if (
+                            run_manager is not None
+                            and event["event"] == "content-block-delta"
+                            and event["delta"].get("type") == "text-delta"
+                        ):
+                            run_manager.on_llm_new_token(
+                                str(event["delta"].get("text", ""))
+                            )
+                        yield event
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
+            except openai.APIError as e:
+                _handle_openai_api_error(e)
             return
 
         self._ensure_sync_client_available()
@@ -2001,12 +2034,14 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[MessagesData]:
         """Async twin of `_stream_chat_model_events`."""
-        if (
-            self._use_responses_api({**kwargs, **self.model_kwargs})
-            or kwargs.get("response_format") is not None
+        use_responses = self._use_responses_api({**kwargs, **self.model_kwargs})
+        has_response_format = (
+            kwargs.get("response_format") is not None
             or self.model_kwargs.get("response_format") is not None
-            or self.include_response_headers
-        ):
+        )
+        # Structured output and raw-header mode keep the post-loop /
+        # final-completion handling that only `_astream` performs — defer those.
+        if has_response_format or self.include_response_headers:
             # Forward kwargs untouched (as core's `_aiter_v2_events` would):
             # `_astream` handles `stream_usage` itself, and the Responses path
             # rejects a stray `stream_usage` kwarg, so we must not inject one.
@@ -2020,6 +2055,42 @@ class BaseChatOpenAI(BaseChatModel):
                 message_id=message_id,
             ):
                 yield event
+            return
+        if use_responses:
+            kwargs["stream"] = True
+            payload = self._get_request_payload(messages, stop=stop, **kwargs)
+            try:
+                response = await self.root_async_client.responses.create(**payload)
+                async with response as stream:
+                    # Mirror `_astream_responses`: apply per-chunk stall
+                    # protection before the converter consumes the stream.
+                    timed_stream = _astream_with_chunk_timeout(
+                        stream,
+                        self.stream_chunk_timeout,
+                        model_name=self.model_name,
+                    )
+                    async for event in aconvert_openai_responses_stream(
+                        timed_stream,
+                        _convert_responses_chunk_to_generation_chunk,
+                        # Always None here: the `response_format` (structured
+                        # output) path is handled by the bridge branch above.
+                        schema=None,
+                        output_version=self.output_version,
+                        message_id=message_id,
+                    ):
+                        if (
+                            run_manager is not None
+                            and event["event"] == "content-block-delta"
+                            and event["delta"].get("type") == "text-delta"
+                        ):
+                            await run_manager.on_llm_new_token(
+                                str(event["delta"].get("text", ""))
+                            )
+                        yield event
+            except openai.BadRequestError as e:
+                _handle_openai_bad_request(e)
+            except openai.APIError as e:
+                _handle_openai_api_error(e)
             return
 
         kwargs["stream"] = True

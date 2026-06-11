@@ -46,7 +46,10 @@ from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
-from tests.unit_tests.chat_models.test_base import MockSyncContextManager
+from tests.unit_tests.chat_models.test_base import (
+    MockAsyncContextManager,
+    MockSyncContextManager,
+)
 
 MODEL = "gpt-5.4"
 
@@ -783,6 +786,12 @@ def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
 
     assert_valid_event_stream(events)
 
+    # `message-start` carries the stream's LangChain run id (threaded from core),
+    # not the provider response id and not an empty string.
+    assert events[0]["event"] == "message-start"
+    assert events[0]["id"]
+    assert not events[0]["id"].startswith("resp")
+
     reasoning_starts = [
         e
         for e in events
@@ -809,6 +818,46 @@ def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
     )
 
     # Finish events must carry the accumulated reasoning text.
+    reasoning_texts = [
+        cast("dict[str, Any]", f["content"])["reasoning"] for f in reasoning_finishes
+    ]
+    assert reasoning_texts == [
+        "reasoning block one",
+        "another reasoning block",
+        "more reasoning",
+        "still more reasoning",
+    ]
+
+
+async def test_aresponses_stream_events_v3_emits_reasoning_lifecycle() -> None:
+    """Async twin of `test_responses_stream_events_v3_emits_reasoning_lifecycle`.
+
+    Drives the native async Responses converter via `astream_events(version="v3")`
+    and asserts the same four reasoning `content-block-finish` events with their
+    accumulated text.
+    """
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_async_client", mock_client):
+        stream = await llm.astream_events("test", version="v3")
+        events = [e async for e in stream]
+
+    assert_valid_event_stream(events)
+
+    reasoning_finishes = [
+        e
+        for e in events
+        if e["event"] == "content-block-finish" and e["content"]["type"] == "reasoning"
+    ]
+    assert len(reasoning_finishes) == 4, (
+        f"expected 4 reasoning finish events, got {len(reasoning_finishes)}"
+    )
     reasoning_texts = [
         cast("dict[str, Any]", f["content"])["reasoning"] for f in reasoning_finishes
     ]
