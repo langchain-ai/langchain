@@ -1,13 +1,16 @@
-"""Check version consistency between `pyproject.toml` and `version.py`.
+"""Check version consistency between package metadata and generated artifacts.
 
 This script validates that the version defined in pyproject.toml matches the `VERSION`
-variable in `langchain_core/version.py`. Intended for use as a pre-commit hook to
-prevent version mismatches.
+variable in `langchain_core/version.py`. It also checks checked-in snapshots that embed
+`langchain-core` version metadata. Intended for use as a pre-commit hook to prevent
+version mismatches.
 """
 
 import re
 import sys
 from pathlib import Path
+
+SNAPSHOT_VERSION_PATTERN = re.compile(r"langchain-core': '([^']+)'")
 
 
 def get_pyproject_version(pyproject_path: Path) -> str | None:
@@ -24,6 +27,22 @@ def get_version_py_version(version_path: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def get_snapshot_version_mismatches(
+    snapshots_dir: Path, expected_version: str
+) -> list[tuple[Path, int, str]]:
+    """Find snapshot `langchain-core` version metadata that is out of date."""
+    mismatches = []
+    for snapshot_path in sorted(snapshots_dir.rglob("*.ambr")):
+        content = snapshot_path.read_text(encoding="utf-8")
+        for match in SNAPSHOT_VERSION_PATTERN.finditer(content):
+            version = match.group(1)
+            if version == expected_version:
+                continue
+            line_number = content.count("\n", 0, match.start()) + 1
+            mismatches.append((snapshot_path, line_number, version))
+    return mismatches
+
+
 def main() -> int:
     """Validate version consistency."""
     script_dir = Path(__file__).parent
@@ -31,6 +50,7 @@ def main() -> int:
 
     pyproject_path = package_dir / "pyproject.toml"
     version_path = package_dir / "langchain_core" / "version.py"
+    snapshots_dir = package_dir / "tests"
 
     if not pyproject_path.exists():
         print(f"Error: {pyproject_path} not found")
@@ -55,6 +75,17 @@ def main() -> int:
         print("Error: Version mismatch detected!")
         print(f"  pyproject.toml: {pyproject_version}")
         print(f"  langchain_core/version.py: {version_py_version}")
+        return 1
+
+    snapshot_mismatches = get_snapshot_version_mismatches(
+        snapshots_dir, pyproject_version
+    )
+    if snapshot_mismatches:
+        print("Error: Snapshot version mismatch detected!")
+        print(f"  expected langchain-core version: {pyproject_version}")
+        for snapshot_path, line_number, snapshot_version in snapshot_mismatches:
+            relative_path = snapshot_path.relative_to(package_dir)
+            print(f"  {relative_path}:{line_number}: {snapshot_version}")
         return 1
 
     print(f"Version check passed: {pyproject_version}")

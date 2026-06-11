@@ -23,7 +23,7 @@ classifiers = [
 version = "0.2.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.6,<2.0.0",
     "openrouter>=0.7.11,<1.0.0",
 ]
 
@@ -49,7 +49,7 @@ test = [
 ]
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
+dev = []
 typing = ["mypy>=2.1.0,<2.2.0"]
 
 

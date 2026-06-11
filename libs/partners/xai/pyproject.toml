@@ -24,7 +24,7 @@ version = "1.2.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-openai>=1.1.7,<2.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.6,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
@@ -50,8 +50,6 @@ test = [
     "docarray>=0.32.1,<1.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "syrupy>=5.0.0,<6.0.0",
-    "langchain-openai",
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
@@ -59,9 +57,8 @@ lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
     "mypy>=2.1.0,<2.2.0",
     "types-requests>=2.0.0,<3.0.0",
-    "langchain-core>=1.4.0,<2.0.0"
 ]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
+dev = []
 
 [tool.uv]
 constraint-dependencies = [
