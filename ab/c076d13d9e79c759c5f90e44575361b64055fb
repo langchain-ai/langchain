@@ -1,0 +1,21 @@
+libs/core/langchain_core/version.py
+  s_ad877f70453651::t_68ed6c9e867a32 3
+libs/core/pyproject.toml
+  s_ad877f70453651::t_68ed6c9e867a32 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "abc076d13d9e79c759c5f90e44575361b64055fb",
+  "prompts": {},
+  "sessions": {
+    "s_ad877f70453651": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4caa570b-cdd9-4bad-8f7c-dfb6fb983ec0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
