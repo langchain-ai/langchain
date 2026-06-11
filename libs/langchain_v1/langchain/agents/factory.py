@@ -714,6 +714,7 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+# No `response_format`: there is no structured output, so `ResponseT` resolves to `Any`.
 @overload
 def create_agent(
     model: str | BaseChatModel,
@@ -735,6 +736,7 @@ def create_agent(
 ) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]: ...
 
 
+# Raw-dict `response_format`: structured output is an untyped `dict[str, Any]`.
 @overload
 def create_agent(
     model: str | BaseChatModel,
@@ -758,6 +760,7 @@ def create_agent(
 ]: ...
 
 
+# Schema-typed `response_format`: `ResponseT` is inferred from the schema/type.
 @overload
 def create_agent(
     model: str | BaseChatModel,

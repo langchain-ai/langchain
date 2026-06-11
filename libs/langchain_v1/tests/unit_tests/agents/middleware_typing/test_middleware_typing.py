@@ -280,6 +280,43 @@ def test_create_agent_custom_state_without_response_format(
     assert agent is not None
 
 
+def test_create_agent_dict_response_format(fake_model: GenericFakeChatModel) -> None:
+    """A raw-dict `response_format` infers an untyped `dict` structured response."""
+    json_schema: dict[str, Any] = {"type": "json_schema", "schema": {}}
+    agent = create_agent(model=fake_model, response_format=json_schema)
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[
+                AgentState[dict[str, Any]],
+                None,
+                InputAgentState,
+                OutputAgentState[dict[str, Any]],
+            ],
+        )
+
+    assert agent is not None
+
+
+def test_create_agent_typed_response_format(fake_model: GenericFakeChatModel) -> None:
+    """A schema-typed `response_format` infers a matching `ResponseT`."""
+    agent = create_agent(model=fake_model, response_format=AnalysisResult)
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[
+                AgentState[AnalysisResult],
+                None,
+                InputAgentState,
+                OutputAgentState[AnalysisResult],
+            ],
+        )
+
+    assert agent is not None
+
+
 def test_create_agent_with_user_context(fake_model: GenericFakeChatModel) -> None:
     """Typed: context_schema=UserContext requires matching middleware."""
     agent: CompiledStateGraph[Any, UserContext, Any, Any] = create_agent(
