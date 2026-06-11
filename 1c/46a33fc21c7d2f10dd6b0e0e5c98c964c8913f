@@ -1,0 +1,20 @@
+libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+  s_5b4fb75557982d::t_f13578986cbdd9 1576-1578,1584-1595
+  s_5b4fb75557982d::t_ebaa11f9e2bf5a 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "1c46a33fc21c7d2f10dd6b0e0e5c98c964c8913f",
+  "prompts": {},
+  "sessions": {
+    "s_5b4fb75557982d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "31c1bbf5-772f-48a7-868b-9549bfa7eef3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
