@@ -51,7 +51,7 @@ class TestPerplexityResponsesStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "openai/gpt-5.5", "use_responses_api": True}
+        return {"model": "openai/gpt-5", "use_responses_api": True}
 
     @property
     def has_tool_choice(self) -> bool:
