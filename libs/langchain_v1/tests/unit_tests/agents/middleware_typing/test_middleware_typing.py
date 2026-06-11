@@ -9,7 +9,8 @@ Run type check: uv run --group typing mypy <this file>
 Run tests: uv run --group test pytest <this file> -v
 
 To see type errors being caught, run:
-  uv run --group typing mypy .../test_middleware_type_errors.py
+
+    uv run --group typing mypy .../test_middleware_type_errors.py
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
@@ -78,6 +79,7 @@ class SummaryResult(BaseModel):
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     """Middleware that doesn't specify type parameters - backwards compatible."""
 
+    @override
     def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
         return None
 
@@ -106,6 +108,7 @@ def backwards_compatible_decorator(
     state: AgentState[Any], runtime: Runtime[None]
 ) -> dict[str, Any] | None:
     """Decorator middleware without explicit type parameters."""
+    _ = (state, runtime)
     return None
 
 
@@ -116,6 +119,7 @@ def backwards_compatible_decorator(
 class UserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Middleware with correctly specified UserContext."""
 
+    @override
     def before_model(
         self, state: AgentState[Any], runtime: Runtime[UserContext]
     ) -> dict[str, Any] | None:
@@ -316,6 +320,7 @@ def test_create_agent_fully_typed(fake_model: GenericFakeChatModel) -> None:
 class AsyncUserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Async middleware with correctly typed ContextT."""
 
+    @override
     async def abefore_model(
         self, state: AgentState[Any], runtime: Runtime[UserContext]
     ) -> dict[str, Any] | None:

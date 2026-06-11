@@ -35,7 +35,7 @@ from langchain_openrouter.chat_models import (
     _wrap_messages_for_sdk,
 )
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 def _make_model(**kwargs: Any) -> ChatOpenRouter:
@@ -492,6 +492,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)
@@ -757,6 +758,11 @@ class TestMockedGenerate:
 class TestRequestPayload:
     """Tests verifying the exact dict sent to the SDK."""
 
+    @pytest.fixture(autouse=True)
+    def _clear_openrouter_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Clear env vars that would otherwise leak into tests via `from_env`."""
+        monkeypatch.delenv("OPENROUTER_SESSION_ID", raising=False)
+
     def test_message_format_in_payload(self) -> None:
         """Test that messages are formatted correctly in the SDK call."""
         model = _make_model(temperature=0)
@@ -825,6 +831,115 @@ class TestRequestPayload:
         assert call_kwargs["reasoning"] == {"effort": "high"}
         assert call_kwargs["provider"] == {"order": ["Anthropic"]}
         assert call_kwargs["route"] == "fallback"
+
+    def test_session_id_and_trace_in_payload(self) -> None:
+        """Test that session_id and trace are forwarded to the SDK."""
+        model = _make_model(
+            session_id="session-abc",
+            trace={"trace_id": "trace-1", "span_name": "summarize"},
+        )
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "session-abc"
+        assert call_kwargs["trace"] == {
+            "trace_id": "trace-1",
+            "span_name": "summarize",
+        }
+
+    def test_session_id_and_trace_omitted_when_unset(self) -> None:
+        """Test that session_id and trace are omitted when not configured."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert "session_id" not in call_kwargs
+        assert "trace" not in call_kwargs
+
+    def test_session_id_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that session_id falls back to OPENROUTER_SESSION_ID env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session-xyz")
+        model = _make_model()
+        assert model.session_id == "env-session-xyz"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "env-session-xyz"
+
+    def test_session_id_constructor_overrides_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that an explicit session_id wins over the env var."""
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "env-session")
+        model = _make_model(session_id="explicit-session")
+        assert model.session_id == "explicit-session"
+
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        call_kwargs = model.client.chat.send.call_args[1]
+        assert call_kwargs["session_id"] == "explicit-session"
+
+    def test_session_id_per_call_override(self) -> None:
+        """Test that a per-call session_id kwarg overrides the constructor value."""
+        model = _make_model(session_id="constructor-session")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", session_id="call-session")
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["session_id"] == "call-session"
+
+        # Per-call override must not mutate the constructor value, and the next
+        # call without the kwarg should fall back to the constructor's value.
+        assert model.session_id == "constructor-session"
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["session_id"] == "constructor-session"
+
+    def test_trace_per_call_override(self) -> None:
+        """Test that a per-call trace kwarg overrides the constructor value."""
+        constructor_trace = {"trace_id": "constructor-trace"}
+        call_trace = {"trace_id": "call-trace", "span_name": "summarize"}
+        model = _make_model(trace=constructor_trace)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hi", trace=call_trace)
+        first_call_kwargs = model.client.chat.send.call_args[1]
+        assert first_call_kwargs["trace"] == call_trace
+
+        assert model.trace == constructor_trace
+        model.invoke("Hi")
+        second_call_kwargs = model.client.chat.send.call_args[1]
+        assert second_call_kwargs["trace"] == constructor_trace
+
+    def test_empty_session_id_treated_as_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that empty `session_id` (constructor or env) is not forwarded."""
+        # Explicit empty string on the constructor.
+        model = _make_model(session_id="")
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+        model.invoke("Hi")
+        assert "session_id" not in model.client.chat.send.call_args[1]
+
+        # Empty string sourced from the env var.
+        monkeypatch.setenv("OPENROUTER_SESSION_ID", "")
+        env_model = _make_model()
+        env_model.client = MagicMock()
+        env_model.client.chat.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSE_DICT
+        )
+        env_model.invoke("Hi")
+        assert "session_id" not in env_model.client.chat.send.call_args[1]
 
 
 # ===========================================================================
@@ -1079,11 +1194,57 @@ class TestMessageConversion:
         assert result["content"] == "The answer is 42."
         assert result["reasoning"] == "Let me think about this..."
 
-    def test_ai_message_with_reasoning_details_to_dict(self) -> None:
-        """Test that reasoning_details is preserved when converting back to dict."""
+    def test_ai_message_with_fragmented_reasoning_details_merged(self) -> None:
+        """Fragmented `reasoning_details` are merged before serialization.
+
+        Float `index` values mirror what `ChatOpenRouter.stream()` produces
+        (the OpenRouter SDK coerces `index` via Pydantic). With float
+        `index`, `langchain_core.utils._merge.merge_lists` does not auto-merge
+        list entries (its index-match path requires `int`), so fragments
+        accumulate as separate list items and require this helper to merge
+        them before the next API turn.
+        """
         details = [
-            {"type": "reasoning.text", "text": "Step 1: analyze"},
-            {"type": "reasoning.text", "text": "Step 2: solve"},
+            {
+                "type": "reasoning.text",
+                "text": "The",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+            {
+                "type": "reasoning.text",
+                "text": " user wants",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+            {
+                "type": "reasoning.text",
+                "signature": "sig_abc123",
+                "format": "anthropic-claude-v1",
+                "index": 0.0,
+            },
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {
+                "type": "reasoning.text",
+                "text": "The user wants",
+                "format": "anthropic-claude-v1",
+                "signature": "sig_abc123",
+                "index": 0.0,
+            }
+        ]
+        assert "reasoning" not in result
+
+    def test_ai_message_distinct_reasoning_details_preserved(self) -> None:
+        """Distinct entries (different `index`) are not merged."""
+        details = [
+            {"type": "reasoning.text", "text": "First thought", "index": 0},
+            {"type": "reasoning.text", "text": "Second thought", "index": 1},
         ]
         msg = AIMessage(
             content="Answer",
@@ -1091,7 +1252,138 @@ class TestMessageConversion:
         )
         result = _convert_message_to_dict(msg)
         assert result["reasoning_details"] == details
-        assert "reasoning" not in result
+
+    def test_ai_message_unindexed_reasoning_details_not_merged(self) -> None:
+        """Entries without an `index` are passed through unchanged."""
+        details = [
+            {"type": "reasoning.text", "text": "First"},
+            {"type": "reasoning.text", "text": "Second"},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_interleaved_index_fragments_preserved(self) -> None:
+        """Only consecutive same-`index` runs merge; interleaved runs stay split."""
+        details = [
+            {"type": "reasoning.text", "text": "A", "index": 0},
+            {"type": "reasoning.text", "text": "B", "index": 1},
+            {"type": "reasoning.text", "text": "C", "index": 0},
+            {"type": "reasoning.text", "text": "D", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_fragment_metadata_preserved(self) -> None:
+        """Test that metadata from later fragments is preserved after merge."""
+        details = [
+            {"type": "reasoning.text", "text": "thinking...", "index": 0},
+            {
+                "type": "reasoning.text",
+                "text": " done",
+                "index": 0,
+                "signature": "sig_abc123",
+            },
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert len(result["reasoning_details"]) == 1
+        assert result["reasoning_details"][0]["text"] == "thinking... done"
+        assert result["reasoning_details"][0]["signature"] == "sig_abc123"
+
+    def test_streamed_reasoning_details_roundtrip_to_next_turn_payload(self) -> None:
+        """Test the chunk-merge-to-next-turn serialization path from issue #36400."""
+        chunk_dicts = [
+            {"choices": [{"delta": {"role": "assistant", "content": ""}, "index": 0}]},
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "text": "The",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "text": " user wants",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "reasoning_details": [
+                                {
+                                    "type": "reasoning.text",
+                                    "signature": "sig_abc123",
+                                    "format": "anthropic-claude-v1",
+                                    "index": 0.0,
+                                }
+                            ]
+                        },
+                        "index": 0,
+                    }
+                ]
+            },
+            {"choices": [{"delta": {"content": "Answer"}, "index": 0}]},
+        ]
+        chunks = [
+            _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+            for chunk in chunk_dicts
+        ]
+        merged_chunk = chunks[0]
+        for chunk in chunks[1:]:
+            merged_chunk = merged_chunk + chunk
+
+        assert len(merged_chunk.additional_kwargs["reasoning_details"]) == 3
+
+        msg = AIMessage(
+            content=merged_chunk.content,
+            additional_kwargs=merged_chunk.additional_kwargs,
+            response_metadata=merged_chunk.response_metadata,
+        )
+
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {
+                "type": "reasoning.text",
+                "text": "The user wants",
+                "format": "anthropic-claude-v1",
+                "signature": "sig_abc123",
+                "index": 0.0,
+            }
+        ]
 
     def test_ai_message_with_both_reasoning_fields_to_dict(self) -> None:
         """Test that both reasoning_content and reasoning_details are preserved."""
@@ -1334,11 +1626,11 @@ class TestCreateChatResult:
         model = _make_model()
         response = {
             **_SIMPLE_RESPONSE_DICT,
-            "model": "openai/gpt-4o",
+            "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
         assert result.llm_output is not None
-        assert result.llm_output["model_name"] == "openai/gpt-4o"
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_system_fingerprint_in_metadata(self) -> None:
         """Test that system_fingerprint is included in response_metadata."""

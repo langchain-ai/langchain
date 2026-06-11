@@ -3,13 +3,19 @@
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import TYPE_CHECKING, Any, Literal
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from unittest.mock import patch
 
 import pytest
+from langsmith.env import get_langchain_env_var_metadata
 from pydantic import model_validator
 from typing_extensions import Self, override
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -17,8 +23,14 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.chat_models import _generate_response_from_error
+from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
+    _normalize_messages,
+)
+from langchain_core.language_models.chat_models import (
+    SimpleChatModel,
+    _generate_response_from_error,
+)
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModel,
@@ -34,9 +46,11 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -78,6 +92,41 @@ def _content_blocks_equal_ignore_id(
             return False
 
     return True
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    model = FakeListChatModel(responses=["foo"])
+
+    expected = {"responses": ["foo"], "_type": "fake-list-chat-model"}
+    assert model.asdict() == expected
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert model.dict() == expected
+
+
+def test_base_chat_model_type_hints_resolve() -> None:
+    assert get_type_hints(BaseChatModel.asdict)["return"] == dict[str, Any]
+
+
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictChatModel(FakeListChatModel):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    model = CustomDictChatModel(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        with collect_runs() as cb:
+            assert model.invoke("hello").content == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
 
 
 @pytest.fixture
@@ -321,6 +370,20 @@ class FakeTracer(BaseTracer):
         self.traced_run_ids.append(run.id)
 
 
+class LangChainTracerRunCollector:
+    def __init__(self) -> None:
+        self.tracer = LangChainTracer()
+        self.runs: list[Run] = []
+
+    @contextmanager
+    def tracing_callback(self) -> Iterator[LangChainTracer]:
+        def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+            self.runs.append(run)
+
+        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+            yield self.tracer
+
+
 def test_pass_run_id() -> None:
     llm = FakeListChatModel(responses=["a", "b", "c"])
     cb = FakeTracer()
@@ -437,6 +500,26 @@ async def test_streaming_attribute_overrides_streaming_callback() -> None:
     model = StreamingModel(streaming=False)
     assert (
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+
+
+class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Minimal v2 handler marker for routing tests; records nothing."""
+
+
+async def test_streaming_attribute_overrides_v2_callback() -> None:
+    """`self.streaming=False` must opt out of the v2 event path too.
+
+    `_should_use_protocol_streaming` shares the `_streaming_disabled` opt-outs with
+    `_should_stream`, so an instance-level `streaming=False` takes
+    precedence over an attached `_V2StreamingCallbackHandler`.
+    """
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [_FakeV2Handler()]})
     ).content == "invoke"
 
 
@@ -1390,3 +1473,170 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["body"] is None
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+class FakeChatModelWithInvocationParams(SimpleChatModel):
+    """Fake chat model with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-chat-model-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _call(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return "test response"
+
+
+class FakeStreamingChatModelWithInvocationParams(FakeChatModelWithInvocationParams):
+    """Streaming counterpart for tracer metadata tests."""
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+    @override
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+
+def test_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
+
+    assert len(collector.runs) == 1
+    run = collector.runs[0]
+
+    # LangSmith injects environment-derived keys (e.g. `revision_id`,
+    # `LANGCHAIN_TESTS_USER_AGENT`, `LANGSMITH_*`) into run metadata. These vary
+    # by environment and are not the subject of this test, so strip them before
+    # the exact-equality comparison.
+    for env_key in get_langchain_env_var_metadata():
+        run.extra["metadata"].pop(env_key, None)
+
+    assert run.extra == {
+        "batch_size": 1,
+        "invocation_params": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "functions": [{"name": "test_function"}],
+            "messages": [{"content": "test", "role": "system"}],
+            "response_format": {"type": "json_object"},
+            "stop": None,
+            "temperature": 0.7,
+            "tools": [{"name": "test_tool"}],
+        },
+        "metadata": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "ls_integration": "langchain_chat_model",
+            "ls_model_type": "chat",
+            "ls_provider": "fakechatmodelwithinvocationparams",
+            "ls_temperature": 0.7,
+            "stop": None,
+            "temperature": 0.7,
+        },
+        "options": {"stop": None},
+        "runtime": run.extra["runtime"],
+    }
+    assert run.metadata == run.extra["metadata"]
+
+
+def test_stream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`stream_events(version="v3")` preserves filtered invocation params."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        _ = llm.stream_events(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+            version="v3",
+        ).output
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7
+
+
+async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`astream_events(version="v3")` preserves filtered invocation params."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        stream = await llm.astream_events(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+            version="v3",
+        )
+        _ = await stream
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7

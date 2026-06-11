@@ -40,11 +40,15 @@ jobs:
       - name: "📂 Get Changed Files"
         id: files
         uses: Ana06/get-changed-files@25f79e676e7ea1868813e21465014798211fad8c # v2.3.0
+        with:
+          format: json
       - name: "🔍 Analyze Changed Files"
         id: set-matrix
+        env:
+          ALL_CHANGED_FILES: ${{ steps.files.outputs.all }}
         run: |
           python -m pip install packaging requests
-          python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
+          python .github/scripts/check_diff.py "$ALL_CHANGED_FILES" >> $GITHUB_OUTPUT
     outputs:
       codspeed: ${{ steps.set-matrix.outputs.codspeed }}
 
@@ -77,7 +81,5 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             cd ${{ matrix.job-configs.working-directory }}
-            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ] || [ "${{ matrix.job-configs.working-directory }}" = "libs/langchain_v1" ]; then
-              uv run --no-sync pytest ./tests/benchmarks --codspeed
-            fi
+            uv run --no-sync pytest ./tests/benchmarks --codspeed
           mode: ${{ matrix.job-configs.codspeed-mode }}

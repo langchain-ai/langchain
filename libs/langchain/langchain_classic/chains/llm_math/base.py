@@ -23,12 +23,12 @@ from langchain_classic.chains.llm_math.prompt import PROMPT
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This class is deprecated and will be removed in langchain 1.0. "
-        "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.llm_math.base.LLMMathChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new agents with `create_agent` and bind a calculator/math tool. "
+        "See https://docs.langchain.com/oss/python/langchain/agents"
     ),
-    removal="1.0",
 )
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
