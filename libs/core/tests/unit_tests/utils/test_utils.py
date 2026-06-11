@@ -505,3 +505,32 @@ def test_merge_obj_tuple_raises() -> None:
     """Test `merge_obj` raises `ValueError` for tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj((1, 2), (3, 4))
+
+
+def test_merge_dicts_bool_coercion_raises_error() -> None:
+    """Verify that merging conflicting boolean values raises a TypeError with the correct message."""
+    dict_left = {"is_streaming": True}
+    dict_right = {"is_streaming": False}
+
+    with pytest.raises(TypeError) as exc_info:
+        merge_dicts(dict_left, dict_right)
+
+    expected_msg = (
+        "Additional kwargs key is_streaming already exists in left dict and "
+        "both values are bools. Merging bools by summing is not supported, "
+        "as it changes the type to int."
+    )
+    assert expected_msg in str(exc_info.value)
+
+
+def test_merge_dicts_bool_matching_values_allowed() -> None:
+    """Verify that merging identical boolean values handles safely without throwing exceptions."""
+    dict_left = {"is_streaming": True, "debug_mode": False}
+    dict_right = {"is_streaming": True, "debug_mode": False}
+
+    result = merge_dicts(dict_left, dict_right)
+
+    assert result["is_streaming"] is True
+    assert isinstance(result["is_streaming"], bool)
+    assert result["debug_mode"] is False
+    assert isinstance(result["debug_mode"], bool)
