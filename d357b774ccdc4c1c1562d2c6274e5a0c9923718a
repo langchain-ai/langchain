@@ -1,0 +1,20 @@
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_99ded4e73b35dd::t_131f5ecf55c580 19-22
+  s_99ded4e73b35dd::t_8c84e942a41526 14-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d357b774ccdc4c1c1562d2c6274e5a0c9923718a",
+  "prompts": {},
+  "sessions": {
+    "s_99ded4e73b35dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd290ddd-8437-4b06-be46-cfb7ba898408",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

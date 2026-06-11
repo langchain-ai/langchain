@@ -1,0 +1,29 @@
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_typing.py
+  s_8dcc81f6daba4e::t_4f6e226c15af2e 283-319
+libs/langchain_v1/langchain/agents/middleware/types.py
+  s_8dcc81f6daba4e::t_7e291a6958aa23 47,52
+libs/langchain_v1/langchain/agents/factory.py
+  s_8dcc81f6daba4e::t_fb816e70885af6 739
+  s_8dcc81f6daba4e::t_5b7aa73103f3d7 763
+  s_8dcc81f6daba4e::t_666551d5d24d7d 717
+libs/langchain_v1/langchain/agents/middleware/__init__.py
+  s_8dcc81f6daba4e::t_ad1b0922b89786 60
+  s_8dcc81f6daba4e::t_6b9d40aa26e56b 70
+  s_8dcc81f6daba4e::t_d6ac2204113a33 33,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "0f6274d604956929341c950e951e9ce0b055615e",
+  "prompts": {},
+  "sessions": {
+    "s_8dcc81f6daba4e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "028fa994-6dfe-4fce-b72b-c955e45122fe",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

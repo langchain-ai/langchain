@@ -1,0 +1,20 @@
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_typing.py
+  s_46ee4f24c14444::t_475c0df144b6d0 274-280
+  s_46ee4f24c14444::t_c9a26d0803b56e 24,31,34,77-82,265-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "948010c7c06363e6cc6b9356730d8d5e14e3f226",
+  "prompts": {},
+  "sessions": {
+    "s_46ee4f24c14444": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb507-d30d-7352-bd2e-c683981ccf25",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

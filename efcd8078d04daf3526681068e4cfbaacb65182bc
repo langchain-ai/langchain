@@ -1,0 +1,22 @@
+libs/langchain/langchain_classic/retrievers/ensemble.py
+  s_4d6a3f7751bf72::t_e248e4ea4141da 297
+libs/langchain/tests/unit_tests/retrievers/test_ensemble.py
+  s_4d6a3f7751bf72::t_80f9b27caf03e9 1-4,26-47
+  s_4d6a3f7751bf72::t_8a473cff6b4d0a 122-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "efcd8078d04daf3526681068e4cfbaacb65182bc",
+  "prompts": {},
+  "sessions": {
+    "s_4d6a3f7751bf72": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "809364cc-8257-4de5-ac9d-5b08641facbd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

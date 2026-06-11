@@ -1,0 +1,19 @@
+libs/core/langchain_core/documents/base.py
+  s_b6e0bc3cadf3a5::t_112080a8160d59 55,221,258
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "e3a9919b7cbc3694985c3746e2fa7fb03bbbaaf1",
+  "prompts": {},
+  "sessions": {
+    "s_b6e0bc3cadf3a5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb2e3-d63c-7c80-b8f2-9fd7cfeec627",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

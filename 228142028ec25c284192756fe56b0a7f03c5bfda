@@ -1,0 +1,39 @@
+libs/partners/openai/langchain_openai/chat_models/azure.py
+  h_9f69767fa5fabf 77,150,198,218,874,971,1004,1035,1069,1101,1129
+libs/langchain/tests/unit_tests/chat_models/test_base.py
+  h_9f69767fa5fabf 12-13,36,90,124,126,137,209,211,222,241
+libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py
+  s_98eeca14edb69b::t_01348baea5de20 5
+  s_98eeca14edb69b::t_d785000b4d43c5 292-293
+  s_98eeca14edb69b::t_f61ad255f967b8 287-291
+libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py
+  h_9f69767fa5fabf 17-18,39,82-83,133,167,169,180,229,259,261,270,288
+libs/partners/openai/langchain_openai/chat_models/base.py
+  h_9f69767fa5fabf 2039,2656,2736,3153
+libs/partners/openai/tests/unit_tests/llms/test_base.py
+  s_98eeca14edb69b::t_015e5f4a000085 11
+libs/langchain_v1/tests/unit_tests/agents/test_response_format.py
+  s_98eeca14edb69b::t_edc10f91d2ac5e 1012-1016
+  s_98eeca14edb69b::t_87ed0ff3e08137 953-960
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "228142028ec25c284192756fe56b0a7f03c5bfda",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_98eeca14edb69b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6e4eb3ce-0397-4fe8-ba7d-6389c6e510d4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

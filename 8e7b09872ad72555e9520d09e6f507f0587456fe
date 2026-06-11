@@ -1,0 +1,21 @@
+libs/model-profiles/pyproject.toml
+  s_ad877f70453651::t_964d0ac262e54f 24
+libs/model-profiles/uv.lock
+  s_ad877f70453651::t_964d0ac262e54f 597
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8e7b09872ad72555e9520d09e6f507f0587456fe",
+  "prompts": {},
+  "sessions": {
+    "s_ad877f70453651": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4caa570b-cdd9-4bad-8f7c-dfb6fb983ec0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

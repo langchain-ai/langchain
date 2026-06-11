@@ -1,0 +1,20 @@
+libs/core/langchain_core/language_models/chat_models.py
+  s_ab5cc987b28415::t_163dd89582ee4a 2127
+  s_ab5cc987b28415::t_d3cf1a9e7129ca 795,928,1971
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d1cc8b56e13492c3ab4fb93343631cc95d13f951",
+  "prompts": {},
+  "sessions": {
+    "s_ab5cc987b28415": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e9d98778-03bf-45b7-a10b-73febedd99dc",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

@@ -1,0 +1,93 @@
+libs/partners/fireworks/pyproject.toml
+  s_99ded4e73b35dd::t_d7b7d6f7f7d731 61
+  s_99ded4e73b35dd::t_192ce6d1e0b3a3 85
+libs/model-profiles/tests/unit_tests/test_cli.py
+  s_99ded4e73b35dd::t_debf95116f888e 215,276
+  s_99ded4e73b35dd::t_eef17bdce83cb0 217
+  s_99ded4e73b35dd::t_dcf6e5598d0b05 60,104,130,154,180,227
+  s_99ded4e73b35dd::t_4ef0b58b004848 20
+  s_99ded4e73b35dd::t_0256c0e512f890 219
+  s_99ded4e73b35dd::t_77520280fc7fa8 222
+  s_99ded4e73b35dd::t_6da6ec01f0a64f 278
+libs/standard-tests/pyproject.toml
+  s_99ded4e73b35dd::t_17f58547854f7e 59
+libs/langchain/pyproject.toml
+  s_99ded4e73b35dd::t_a0a7f5e557259a 100
+  s_99ded4e73b35dd::t_ea074ce6dc0604 137
+libs/core/pyproject.toml
+  s_99ded4e73b35dd::t_89ad9978845514 51
+libs/langchain_v1/pyproject.toml
+  s_99ded4e73b35dd::t_0261d0f31294f0 109,113
+  s_99ded4e73b35dd::t_08d96129928530 82
+libs/model-profiles/pyproject.toml
+  s_99ded4e73b35dd::t_02f6c0cc139190 79-83
+  s_99ded4e73b35dd::t_15791c9a600c35 68
+libs/core/langchain_core/tracers/langchain.py
+  s_99ded4e73b35dd::t_e966b8b9300543 36
+libs/partners/groq/pyproject.toml
+  s_99ded4e73b35dd::t_7b5a2f8ccc6a62 55
+  s_99ded4e73b35dd::t_bc34134de8fc05 67
+libs/core/langchain_core/language_models/llms.py
+  s_99ded4e73b35dd::t_61eece205cbfd3 1260
+libs/partners/groq/langchain_groq/_compat.py
+  s_99ded4e73b35dd::t_4b538d5d824dcd 12
+libs/partners/chroma/pyproject.toml
+  s_99ded4e73b35dd::t_991eeb17d3896b 60
+libs/partners/exa/pyproject.toml
+  s_99ded4e73b35dd::t_4d70d409e1bfb2 69
+  s_99ded4e73b35dd::t_659e8211907607 56
+libs/text-splitters/pyproject.toml
+  s_99ded4e73b35dd::t_0eb657648cb3ee 47
+libs/partners/anthropic/pyproject.toml
+  s_99ded4e73b35dd::t_929eecd35b482b 77
+  s_99ded4e73b35dd::t_d30683608ce99c 78
+  s_99ded4e73b35dd::t_833cdb5c1252e3 63
+libs/partners/deepseek/pyproject.toml
+  s_99ded4e73b35dd::t_25338bf0da1b98 66
+  s_99ded4e73b35dd::t_340d60c887f946 54
+libs/partners/perplexity/pyproject.toml
+  s_99ded4e73b35dd::t_f02aa0d806a784 76
+  s_99ded4e73b35dd::t_4a2d49edddb6d3 75
+  s_99ded4e73b35dd::t_ff176539412f2f 62
+libs/partners/nomic/pyproject.toml
+  s_99ded4e73b35dd::t_144742c4d5009d 94
+  s_99ded4e73b35dd::t_f3afca84b86a57 56
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_99ded4e73b35dd::t_6b5c2e9343d2cf 15
+libs/partners/huggingface/pyproject.toml
+  s_99ded4e73b35dd::t_0ebc8869fa9d30 71
+  s_99ded4e73b35dd::t_f4f9bea4f9d0b4 84
+libs/langchain/langchain_classic/smith/evaluation/string_run_evaluator.py
+  s_99ded4e73b35dd::t_1167a386a952d3 8
+  s_99ded4e73b35dd::t_e3997d15c947ae 67
+libs/partners/mistralai/pyproject.toml
+  s_99ded4e73b35dd::t_bed0f3017ec015 55
+  s_99ded4e73b35dd::t_c93b097a12cc68 66
+libs/partners/openrouter/pyproject.toml
+  s_99ded4e73b35dd::t_b6643086719399 64
+  s_99ded4e73b35dd::t_56d729aecdcece 53
+libs/partners/xai/pyproject.toml
+  s_99ded4e73b35dd::t_e8661b22512a51 60
+  s_99ded4e73b35dd::t_6e065959ff101e 81
+libs/partners/openai/pyproject.toml
+  s_99ded4e73b35dd::t_05d0ba88d7fbe8 69
+  s_99ded4e73b35dd::t_90aa4565deca78 83
+libs/partners/qdrant/pyproject.toml
+  s_99ded4e73b35dd::t_09be74966789f0 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f4a7b3bcbd201ec204461b14f282c7cd26ac32e5",
+  "prompts": {},
+  "sessions": {
+    "s_99ded4e73b35dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd290ddd-8437-4b06-be46-cfb7ba898408",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

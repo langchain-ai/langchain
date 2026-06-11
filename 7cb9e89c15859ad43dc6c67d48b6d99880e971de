@@ -1,0 +1,21 @@
+libs/langchain_v1/tests/unit_tests/agents/test_create_agent_tool_validation.py
+  s_aaa892b6ea7bb2::t_fa3820507b13e1 241-242,245-246,248-252,254-255,257-259,267,277,285-290,292,295,304-305,307,311-314
+  s_aaa892b6ea7bb2::t_ad417bdadd3f63 17,19-20
+  s_aaa892b6ea7bb2::t_f5f21a84709a2c 202-203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7cb9e89c15859ad43dc6c67d48b6d99880e971de",
+  "prompts": {},
+  "sessions": {
+    "s_aaa892b6ea7bb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ef8436d5-d153-40e9-b5bc-01d1e1fd4791",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

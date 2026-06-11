@@ -1,0 +1,21 @@
+libs/core/scripts/check_version.py
+  s_ad788c0b00bb39::t_4e14f3f0bd0a47 39-41
+  s_ad788c0b00bb39::t_c24b437346a0be 13-15
+  s_ad788c0b00bb39::t_07d2eb5996a5d2 58-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b202b7ee4f0f0b8a858f259a00cc1418e8e71ebe",
+  "prompts": {},
+  "sessions": {
+    "s_ad788c0b00bb39": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1149f3b-b353-437c-8eb4-fef265dd7eff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

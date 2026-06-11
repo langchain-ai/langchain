@@ -1,0 +1,27 @@
+libs/partners/mistralai/tests/unit_tests/test_chat_models.py
+  s_b036d970a595d8::t_f71ce996d4249b 538-539,541-542,545,548-562
+  s_b036d970a595d8::t_ce1ca3ffd14eb9 572
+  s_b036d970a595d8::t_774388502bd067 531-537,540,543-544,546-547,563-571,573-576
+libs/partners/mistralai/langchain_mistralai/chat_models.py
+  s_b036d970a595d8::t_64cf5ec0a2a906 761-762
+  s_b036d970a595d8::t_5a88b178d14536 550-551,555
+  s_b036d970a595d8::t_e955fcae99c394 552-554
+libs/partners/mistralai/tests/integration_tests/test_chat_models.py
+  s_b036d970a595d8::t_4d1659bd02ee54 202-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d25cf6602756f22496332d6407850394cc7891f3",
+  "prompts": {},
+  "sessions": {
+    "s_b036d970a595d8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bb2e41af-d442-41ba-9a68-22e19eb78026",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

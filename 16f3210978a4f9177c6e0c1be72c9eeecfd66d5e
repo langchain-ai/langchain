@@ -1,0 +1,20 @@
+libs/core/langchain_core/callbacks/manager.py
+  s_450625224ccbc6::t_87d5db1d2d8309 370-374
+  s_450625224ccbc6::t_28c1253f865425 266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "16f3210978a4f9177c6e0c1be72c9eeecfd66d5e",
+  "prompts": {},
+  "sessions": {
+    "s_450625224ccbc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e097982f-3093-424c-a4ec-25b46eac0f2b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

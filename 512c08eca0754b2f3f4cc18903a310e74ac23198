@@ -1,0 +1,20 @@
+libs/core/langchain_core/runnables/base.py
+  s_b2f01f254040af::t_0b49b75ba5b028 670-673,3351-3356
+  s_b2f01f254040af::t_7614ec2b9529b1 688-689,3373-3374
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "512c08eca0754b2f3f4cc18903a310e74ac23198",
+  "prompts": {},
+  "sessions": {
+    "s_b2f01f254040af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb318-d3ce-7702-912e-718491576e43",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

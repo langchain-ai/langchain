@@ -1,0 +1,59 @@
+libs/core/tests/unit_tests/runnables/__snapshots__/test_fallbacks.ambr
+  s_c9f1040187e476::t_9755c3b16d686a 87,131,271,284,325,338,350
+libs/langchain_v1/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 2463,2555,2574-2575
+libs/partners/exa/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 462,557,571,622
+libs/core/tests/unit_tests/runnables/__snapshots__/test_runnable.ambr
+  s_c9f1040187e476::t_9755c3b16d686a 100,230,349,460,851,887,1012,1112,1223,1252,1352,1462,1579,1702,1870,1943,13410,13613,13639-13640,13765,13777,13920,13941
+libs/partners/perplexity/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 479,581,654
+libs/partners/groq/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 380,473,484-485,536
+libs/partners/mistralai/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 415
+libs/core/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 1185,1204-1205
+libs/partners/anthropic/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 693
+libs/partners/qdrant/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 573,692,750
+libs/partners/xai/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 724,802,881,930
+libs/partners/openrouter/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 390,483,546
+libs/partners/huggingface/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 1116,1228,1246,1297
+libs/partners/ollama/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 314,407,419,470
+libs/partners/chroma/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 840,862,971
+libs/partners/fireworks/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 740,843,912
+libs/partners/nomic/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 428,525,539,590
+libs/partners/deepseek/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 436,561,640
+libs/partners/openai/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 668,778,857
+libs/text-splitters/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 1349-1350
+libs/standard-tests/uv.lock
+  s_c9f1040187e476::t_9755c3b16d686a 368,486
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "357aab2e7ffd29c7ee39cf01261536fd28670363",
+  "prompts": {},
+  "sessions": {
+    "s_c9f1040187e476": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb570-de71-78e3-b104-cda5658a6b1b",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+libs/langchain_v1/langchain/agents/factory.py
+  s_46ee4f24c14444::t_91b47c1789d255 745
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f49dadee1594438999a72b537c7f6b1744400193",
+  "prompts": {},
+  "sessions": {
+    "s_46ee4f24c14444": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb507-d30d-7352-bd2e-c683981ccf25",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

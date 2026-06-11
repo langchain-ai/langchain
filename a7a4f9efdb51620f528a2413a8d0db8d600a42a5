@@ -1,0 +1,14 @@
+libs/core/langchain_core/example_selectors/semantic_similarity.py
+  h_9f69767fa5fabf 36,39,42,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a7a4f9efdb51620f528a2413a8d0db8d600a42a5",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

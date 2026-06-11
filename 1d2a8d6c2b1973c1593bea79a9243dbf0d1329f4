@@ -1,0 +1,20 @@
+libs/langchain_v1/tests/integration_tests/agents/middleware/test_human_in_the_loop_integration.py
+  s_33592d15cae4e7::t_05fedc958a0f53 56
+  s_33592d15cae4e7::t_4be2da231b961a 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "1d2a8d6c2b1973c1593bea79a9243dbf0d1329f4",
+  "prompts": {},
+  "sessions": {
+    "s_33592d15cae4e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "87ae9d03-9aa4-4d3d-8c47-3f685362cd95",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
