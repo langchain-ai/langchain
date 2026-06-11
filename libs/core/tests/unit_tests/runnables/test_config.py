@@ -60,12 +60,12 @@ def test_ensure_config() -> None:
         "ensure_config should not modify the original config"
     )
     assert config is not arg
-    assert config["callbacks"] is not arg["callbacks"]
-    assert config["metadata"] is not arg["metadata"]
-    assert config["configurable"] is not arg["configurable"]
+    assert config.get("callbacks") is not arg["callbacks"]
+    assert config.get("metadata") is not arg["metadata"]
+    assert config.get("configurable") is not arg["configurable"]
     assert config == {
         "tags": ["tag1", "tag2"],
-        "metadata": {"foo": "bar"},
+        "metadata": {"foo": "bar", "baz": "qux", "something": "else"},
         "callbacks": [arg["callbacks"][0]],
         "recursion_limit": 100,
         "configurable": {"baz": "qux", "something": "else"},
@@ -98,12 +98,21 @@ def test_ensure_config_copies_model_to_metadata() -> None:
         }
     )
 
-    assert config["metadata"] == {
+    assert config.get("metadata") == {
         "nooverride": 18,
         "model": OPENAI_TEST_MODEL,
         "checkpoint_ns": "ns-1",
+        "thread_id": "th-123",
+        "checkpoint_id": "ckpt-1",
+        "task_id": "task-1",
+        "run_id": "run-456",
+        "assistant_id": "asst-789",
+        "graph_id": "graph-0",
+        "user_id": "uid-1",
+        "cron_id": "cron-1",
+        "langgraph_auth_user_id": "user-1",
     }
-    assert config["configurable"] == {
+    assert config.get("configurable") == {
         "thread_id": "th-123",
         "checkpoint_id": "ckpt-1",
         "checkpoint_ns": "ns-1",
@@ -137,12 +146,12 @@ def test_ensure_config_metadata_is_not_overridden_by_configurable_model() -> Non
         }
     )
 
-    assert config["metadata"] == {
+    assert config.get("metadata") == {
         "model": "from-metadata",
         "run_id": "from-metadata",
         "checkpoint_ns": "from-metadata",
     }
-    assert config["configurable"] == {
+    assert config.get("configurable") == {
         "model": "from-configurable",
         "run_id": None,
         "checkpoint_ns": "from-configurable",
@@ -160,8 +169,8 @@ def test_ensure_config_copies_top_level_model_to_metadata() -> None:
         )
     )
 
-    assert config["metadata"] == {"nooverride": 18, "model": OPENAI_TEST_MODEL}
-    assert config["configurable"] == {"model": OPENAI_TEST_MODEL}
+    assert config.get("metadata") == {"nooverride": 18, "model": OPENAI_TEST_MODEL}
+    assert config.get("configurable") == {"model": OPENAI_TEST_MODEL}
 
 
 def test_ensure_config_copies_top_level_checkpoint_ns_to_metadata() -> None:
@@ -175,8 +184,8 @@ def test_ensure_config_copies_top_level_checkpoint_ns_to_metadata() -> None:
         )
     )
 
-    assert config["metadata"] == {"nooverride": 18, "checkpoint_ns": "ns-1"}
-    assert config["configurable"] == {"checkpoint_ns": "ns-1"}
+    assert config.get("metadata") == {"nooverride": 18, "checkpoint_ns": "ns-1"}
+    assert config.get("configurable") == {"checkpoint_ns": "ns-1"}
 
 
 def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules() -> (
@@ -216,21 +225,9 @@ def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules
         )
     )
 
-    assert _get_langsmith_inheritable_metadata_from_config(config) == {
-        "something": "else",
-        "baz": "qux",
-        "thread_id": "th-123",
-        "checkpoint_id": "ckpt-1",
-        "task_id": "task-1",
-        "run_id": "run-456",
-        "assistant_id": "asst-789",
-        "graph_id": "graph-0",
-        "user_id": "uid-1",
-        "cron_id": "cron-1",
-        "langgraph_auth_user_id": "user-1",
-        "temperature": 0.5,
-        "streaming": True,
-    }
+    # Since ensure_config already promotes safe scalar configurables into metadata,
+    # _get_langsmith_inheritable_metadata_from_config returns None (nothing extra).
+    assert _get_langsmith_inheritable_metadata_from_config(config) is None
 
 
 async def test_merge_config_callbacks() -> None:
@@ -240,21 +237,21 @@ async def test_merge_config_callbacks() -> None:
     handlers: RunnableConfig = {"callbacks": [ConsoleCallbackHandler()]}
     other_handlers: RunnableConfig = {"callbacks": [StreamingStdOutCallbackHandler()]}
 
-    merged = merge_configs(manager, handlers)["callbacks"]
+    merged = merge_configs(manager, handlers).get("callbacks")
 
     assert isinstance(merged, CallbackManager)
     assert len(merged.handlers) == 2
     assert isinstance(merged.handlers[0], StdOutCallbackHandler)
     assert isinstance(merged.handlers[1], ConsoleCallbackHandler)
 
-    merged = merge_configs(handlers, manager)["callbacks"]
+    merged = merge_configs(handlers, manager).get("callbacks")
 
     assert isinstance(merged, CallbackManager)
     assert len(merged.handlers) == 2
     assert isinstance(merged.handlers[0], StdOutCallbackHandler)
     assert isinstance(merged.handlers[1], ConsoleCallbackHandler)
 
-    merged = merge_configs(handlers, other_handlers)["callbacks"]
+    merged = merge_configs(handlers, other_handlers).get("callbacks")
 
     assert isinstance(merged, list)
     assert len(merged) == 2
@@ -262,7 +259,7 @@ async def test_merge_config_callbacks() -> None:
     assert isinstance(merged[1], StreamingStdOutCallbackHandler)
 
     # Check that the original object wasn't mutated
-    merged = merge_configs(manager, handlers)["callbacks"]
+    merged = merge_configs(manager, handlers).get("callbacks")
 
     assert isinstance(merged, CallbackManager)
     assert len(merged.handlers) == 2
@@ -273,16 +270,16 @@ async def test_merge_config_callbacks() -> None:
         group_manager: RunnableConfig = {
             "callbacks": gm,
         }
-        merged = merge_configs(group_manager, handlers)["callbacks"]
+        merged = merge_configs(group_manager, handlers).get("callbacks")
         assert isinstance(merged, CallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], ConsoleCallbackHandler)
 
-        merged = merge_configs(handlers, group_manager)["callbacks"]
+        merged = merge_configs(handlers, group_manager).get("callbacks")
         assert isinstance(merged, CallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], ConsoleCallbackHandler)
-        merged = merge_configs(group_manager, manager)["callbacks"]
+        merged = merge_configs(group_manager, manager).get("callbacks")
         assert isinstance(merged, CallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], StdOutCallbackHandler)
@@ -291,16 +288,16 @@ async def test_merge_config_callbacks() -> None:
         group_manager = {
             "callbacks": gm,
         }
-        merged = merge_configs(group_manager, handlers)["callbacks"]
+        merged = merge_configs(group_manager, handlers).get("callbacks")
         assert isinstance(merged, AsyncCallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], ConsoleCallbackHandler)
 
-        merged = merge_configs(handlers, group_manager)["callbacks"]
+        merged = merge_configs(handlers, group_manager).get("callbacks")
         assert isinstance(merged, AsyncCallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], ConsoleCallbackHandler)
-        merged = merge_configs(group_manager, manager)["callbacks"]
+        merged = merge_configs(group_manager, manager).get("callbacks")
         assert isinstance(merged, AsyncCallbackManager)
         assert len(merged.handlers) == 1
         assert isinstance(merged.handlers[0], StdOutCallbackHandler)
@@ -400,13 +397,117 @@ class TestMergeMetadataDicts:
             cast("RunnableConfig", {"metadata": None}),
             {"metadata": {"versions": {"a": "1"}}},
         )
-        assert merged["metadata"] == {"versions": {"a": "1"}}
+        assert merged.get("metadata") == {"versions": {"a": "1"}}
 
     def test_three_config_merge_accumulates(self) -> None:
         c1: RunnableConfig = {"metadata": {"versions": {"a": "1"}}}
         c2: RunnableConfig = {"metadata": {"versions": {"b": "2"}}}
         c3: RunnableConfig = {"metadata": {"versions": {"c": "3"}}}
         merged = merge_configs(c1, c2, c3)
-        assert merged["metadata"] == {
+        assert merged.get("metadata") == {
             "versions": {"a": "1", "b": "2", "c": "3"},
         }
+
+
+class TestConfigurableToMetadataRegression:
+    """Regression tests for issue #37373: configurable scalars promoted to metadata."""
+
+    def test_session_id_promoted_to_metadata(self) -> None:
+        config = ensure_config({"configurable": {"session_id": "demo_session_123"}})
+        metadata = config.get("metadata", {})
+        assert metadata.get("session_id") == "demo_session_123"
+
+    def test_secret_looking_keys_not_promoted(self) -> None:
+        config = ensure_config(
+            {
+                "configurable": {
+                    "api_key": "sk-secret",
+                    "some_api_key": "sk-secret",
+                    "secret": "hidden",
+                    "my_secret": "hidden",
+                    "token": "tok-abc",
+                    "auth_token": "tok-abc",
+                    "password": "pass123",
+                    "db_password": "pass123",
+                    "__internal": "private",
+                }
+            }
+        )
+        metadata = config.get("metadata", {})
+        for key in (
+            "api_key",
+            "some_api_key",
+            "secret",
+            "my_secret",
+            "token",
+            "auth_token",
+            "password",
+            "db_password",
+            "__internal",
+        ):
+            assert key not in metadata
+
+    def test_non_scalar_values_not_promoted(self) -> None:
+        config = ensure_config(
+            {
+                "configurable": {
+                    "nested": {"a": 1},
+                    "items": [1, 2, 3],
+                    "pair": (1, 2),
+                    "callback": lambda: None,
+                    "session_id": "ok",
+                }
+            }
+        )
+        metadata = config.get("metadata", {})
+        assert "nested" not in metadata
+        assert "items" not in metadata
+        assert "pair" not in metadata
+        assert "callback" not in metadata
+        assert metadata.get("session_id") == "ok"
+
+    def test_existing_metadata_not_overridden(self) -> None:
+        config = ensure_config(
+            {
+                "configurable": {"session_id": "from_configurable"},
+                "metadata": {"session_id": "from_metadata"},
+            }
+        )
+        assert config.get("metadata", {}).get("session_id") == "from_metadata"
+
+
+def test_ensure_config_copies_safe_configurable_values_to_metadata() -> None:
+    config = ensure_config({"configurable": {"session_id": "abc"}})
+    assert config.get("metadata", {}).get("session_id") == "abc"
+
+
+def test_ensure_config_does_not_copy_secret_configurable_values_to_metadata() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "api_key": "secret",
+                "__secret_key": "secret",
+                "password": "secret",
+                "token": "secret",
+            }
+        }
+    )
+    metadata = config.get("metadata", {})
+    assert "api_key" not in metadata
+    assert "__secret_key" not in metadata
+    assert "password" not in metadata
+    assert "token" not in metadata
+
+
+def test_ensure_config_does_not_copy_nested_configurable_values_to_metadata() -> None:
+    config = ensure_config(
+        {
+            "configurable": {
+                "session": {"id": "abc"},
+                "items": ["abc"],
+            }
+        }
+    )
+    metadata = config.get("metadata", {})
+    assert "session" not in metadata
+    assert "items" not in metadata

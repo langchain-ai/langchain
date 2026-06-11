@@ -151,6 +151,19 @@ COPIABLE_KEYS = [
 # (which does not get traced)
 CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 
+_SECRET_KEY_SUFFIXES = ("api_key", "secret", "secret_key", "token", "password")
+
+
+def _is_promotable_configurable_key(key: str) -> bool:
+    """Return True if the configurable key is safe to promote into metadata."""
+    if key.startswith("__"):
+        return False
+    key_lower = key.lower()
+    for suffix in _SECRET_KEY_SUFFIXES:
+        if key_lower == suffix or key_lower.endswith("_" + suffix):
+            return False
+    return True
+
 
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
@@ -160,10 +173,10 @@ def _get_langsmith_inheritable_metadata_from_config(
     metadata = {
         key: value
         for key, value in configurable.items()
-        if not key.startswith("__")
-        and isinstance(value, (str, int, float, bool))
+        if isinstance(value, (str, int, float, bool))
         and key not in config.get("metadata", {})
         and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
+        and _is_promotable_configurable_key(key)
     }
     return metadata or None
 
@@ -291,20 +304,18 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
             )
         )
     if config is not None:
+        configurable = empty.get("configurable", {})  # type: ignore[attr-defined]
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
-                empty["configurable"][k] = v
-    for configurable_key in ("model", "checkpoint_ns"):
+                configurable[k] = v
+    metadata = empty.get("metadata", {})  # type: ignore[attr-defined]
+    for key, value in empty.get("configurable", {}).items():
         if (
-            isinstance(
-                configurable_value := empty.get("configurable", {}).get(
-                    configurable_key
-                ),
-                str,
-            )
-            and configurable_key not in empty["metadata"]
+            isinstance(value, (str, int, float, bool))
+            and key not in metadata
+            and _is_promotable_configurable_key(key)
         ):
-            empty["metadata"][configurable_key] = configurable_value
+            metadata[key] = value
     return empty
 
 

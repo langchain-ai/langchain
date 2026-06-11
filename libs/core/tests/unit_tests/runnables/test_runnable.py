@@ -1163,7 +1163,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             "callbacks": None,
             "recursion_limit": 25,
             "configurable": {"hello": "there", "__secret_key": "nahnah"},
-            "metadata": {"bye": "now"},
+            "metadata": {"bye": "now", "hello": "there"},
         },
     )
     spy.reset_mock()

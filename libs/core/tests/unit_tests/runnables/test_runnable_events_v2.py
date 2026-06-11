@@ -2910,3 +2910,30 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+async def test_astream_events_includes_safe_configurable_metadata() -> None:
+    """Regression test for #37373: safe scalar configurable values in metadata."""
+    runnable = RunnableLambda(lambda x: x)
+
+    events = await _collect_events(
+        runnable.astream_events(
+            "hello",
+            config={
+                "configurable": {
+                    "session_id": "demo_session_123",
+                    "api_key": "should-not-propagate",
+                    "__secret_key": "should-not-propagate",
+                    "nested": {"value": "should-not-propagate"},
+                }
+            },
+            version="v2",
+        )
+    )
+
+    for event in events:
+        metadata = event["metadata"]
+        assert metadata.get("session_id") == "demo_session_123"
+        assert "api_key" not in metadata
+        assert "__secret_key" not in metadata
+        assert "nested" not in metadata
