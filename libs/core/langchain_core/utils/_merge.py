@@ -68,6 +68,15 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], bool) and isinstance(right_v, bool):
+                msg = (
+                    f"Additional kwargs key {right_k} already exists in left dict and "
+                    "both values are bools. Merging bools by summing is not supported, "
+                    "as it changes the type to int. Please ensure that for key "
+                    f"{right_k}, only one of the dicts has a non-None value, or that "
+                    "all non-None values are the same."
+                )
+                raise TypeError(msg)
             elif isinstance(merged[right_k], int):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
