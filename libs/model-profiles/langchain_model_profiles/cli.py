@@ -12,7 +12,7 @@ from typing import Any, get_type_hints
 import httpx
 
 try:
-    import tomllib  # type: ignore[import-not-found]  # Python 3.11+
+    import tomllib  # Python 3.11+
 except ImportError:
     import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 

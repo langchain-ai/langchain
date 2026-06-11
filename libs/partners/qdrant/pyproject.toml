@@ -61,7 +61,7 @@ test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core>=1.4.0,<2.0.0"]
 typing = [
-    "mypy>=1.10.0,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "simsimd>=6.0.0,<7.0.0",
     "langchain-core>=1.4.0,<2.0.0"
 ]

@@ -51,7 +51,7 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = []
-typing = ["mypy>=1.10.0,<2.0.0"]
+typing = ["mypy>=2.1.0,<2.2.0"]
 
 
 [tool.uv]
@@ -63,7 +63,7 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.ruff.format]
 docstring-code-format = true

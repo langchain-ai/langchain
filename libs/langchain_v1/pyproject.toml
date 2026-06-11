@@ -79,7 +79,7 @@ lint = [
     "ruff>=0.15.0,<0.16.0",
 ]
 typing = [
-    "mypy>=1.20.0,<1.21.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
@@ -106,9 +106,11 @@ langchain-anthropic = { path = "../partners/anthropic", editable = true }
 line-length = 100
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
+
 exclude = [
     # Exclude agents tests except middleware_typing/ which has type-checked tests
     "tests/unit_tests/agents/middleware/",
