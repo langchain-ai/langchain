@@ -1386,7 +1386,12 @@ def test_output_version_compat() -> None:
 
 
 def test_convert_chunk_to_generation_chunk_v1_keeps_string_content() -> None:
-    """Verify _convert_chunk_to_generation_chunk with output_version='v1'."""
+    """v1 streaming keeps content as '' (not []) and stamps output_version.
+
+    Covers both the usage-only (empty-choices) chunk and a content-bearing
+    chunk carrying a tool-call delta; the latter pins the per-content-chunk
+    `output_version` propagation.
+    """
     llm = ChatOpenAI(model="gpt-4o", output_version="v1")
 
     # Empty-choices chunk (usage-only)
@@ -1449,6 +1454,22 @@ def test_v1_streaming_tool_calls_in_content_blocks() -> None:
                 {
                     "index": 0,
                     "delta": {"role": "assistant", "content": ""},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Text token streamed before the tool call
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"content": "Let me check the weather."},
                     "logprobs": None,
                     "finish_reason": None,
                 }
@@ -1551,10 +1572,12 @@ def test_v1_streaming_tool_calls_in_content_blocks() -> None:
     assert len(aggregated.tool_call_chunks) == 1
     assert aggregated.tool_call_chunks[0]["name"] == "get_weather"
 
-    # content_blocks should include tool_call_chunk blocks
+    # content_blocks should include both the streamed text and tool_call_chunk
+    # blocks (text deltas must survive alongside tool calls through the merge).
     blocks = aggregated.content_blocks
     block_types = {b["type"] for b in blocks}
     assert "tool_call_chunk" in block_types
+    assert "text" in block_types
 
 
 def test_verbosity_parameter_payload() -> None:

@@ -250,8 +250,9 @@ class AIMessage(BaseMessage):
         if self.response_metadata.get("output_version") == "v1" and isinstance(
             self.content, list
         ):
-            # Only short-circuit when content is already a list of ContentBlock
-            # dicts. See AIMessageChunk.content_blocks for full rationale.
+            # Only short-circuit when content is a list (assumed under v1 to
+            # already hold ContentBlock dicts; the cast is unchecked). See
+            # AIMessageChunk.content_blocks for full rationale.
             return cast("list[types.ContentBlock]", self.content)
 
         model_provider = self.response_metadata.get("model_provider")

@@ -496,6 +496,7 @@ def test_content_blocks_v1_string_content_falls_through() -> None:
     When output_version="v1" is set but content is a string (as in Chat
     Completions streaming), content_blocks must not short-circuit. It should
     fall through to the model_provider translator so tool calls are included.
+    Covers both `AIMessage` and `AIMessageChunk`.
     """
     # AIMessage with string content + tool_calls + v1 metadata
     msg = AIMessage(
@@ -531,6 +532,28 @@ def test_content_blocks_v1_string_content_falls_through() -> None:
     types_found = {b["type"] for b in blocks}
     assert "text" in types_found
     assert "tool_call_chunk" in types_found
+
+
+def test_content_blocks_v1_list_content_short_circuits() -> None:
+    """Test that content_blocks short-circuits when v1 content is already a list.
+
+    The `isinstance(self.content, list)` guard must preserve the fast path:
+    when content is already a list of `ContentBlock` dicts, `content_blocks`
+    returns it verbatim (the same object) without routing through the
+    translator. Covers both `AIMessage` and `AIMessageChunk`.
+    """
+    content: list = [
+        {"type": "text", "text": "Hello"},
+        {"type": "tool_call", "name": "foo", "args": {"a": 1}, "id": "tc_1"},
+    ]
+    for cls in (AIMessage, AIMessageChunk):
+        msg = cls(
+            content=content,
+            response_metadata={"output_version": "v1", "model_provider": "openai"},
+        )
+        # Short-circuit returns the stored content object itself; the translator
+        # would build and return a new list instead.
+        assert msg.content_blocks is msg.content
 
 
 def test_content_blocks_reasoning_extraction() -> None:
