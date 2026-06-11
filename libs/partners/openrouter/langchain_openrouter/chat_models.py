@@ -6,7 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -71,6 +71,9 @@ from typing_extensions import Self
 
 from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
+
+if TYPE_CHECKING:
+    from langchain_protocol.protocol import MessagesData
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
@@ -709,6 +712,72 @@ class ChatOpenRouter(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+
+    def _stream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Emit openrouter-native content-block protocol events.
+
+        Detected by `langchain-core`'s `_iter_v2_events`; powers
+        `stream_events(version="v3")`. Falls through to the compat bridge only
+        if this method is absent. `message_id` is threaded from the stream so
+        `message-start` matches the bridge's LangChain run id.
+        """
+        from langchain_openrouter._stream_events import (  # noqa: PLC0415
+            convert_openrouter_stream,
+        )
+
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
+        _strip_internal_kwargs(params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
+        raw = self.client.chat.send(messages=sdk_messages, **params)
+        for event in convert_openrouter_stream(raw, message_id=message_id):
+            if (
+                run_manager is not None
+                and event["event"] == "content-block-delta"
+                and event["delta"].get("type") == "text-delta"
+            ):
+                run_manager.on_llm_new_token(str(event["delta"].get("text", "")))
+            yield event
+
+    async def _astream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async twin of `_stream_chat_model_events`."""
+        from langchain_openrouter._stream_events import (  # noqa: PLC0415
+            aconvert_openrouter_stream,
+        )
+
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+        if self.stream_usage:
+            params["stream_options"] = {"include_usage": True}
+        _strip_internal_kwargs(params)
+        sdk_messages = _wrap_messages_for_sdk(message_dicts)
+        raw = await self.client.chat.send_async(messages=sdk_messages, **params)
+        async for event in aconvert_openrouter_stream(raw, message_id=message_id):
+            if (
+                run_manager is not None
+                and event["event"] == "content-block-delta"
+                and event["delta"].get("type") == "text-delta"
+            ):
+                await run_manager.on_llm_new_token(str(event["delta"].get("text", "")))
+            yield event
 
     #
     # Internal methods
