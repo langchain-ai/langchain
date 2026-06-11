@@ -26,6 +26,11 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      release-version:
+        required: false
+        type: string
+        default: ""
+        description: "Expected package version. If provided, must match pyproject.toml."
       allow-prereleases:
         required: false
         type: boolean
@@ -134,6 +139,81 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
+      - name: Check version
+        id: check-version
+        shell: python
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
+        env:
+          RELEASE_VERSION_INPUT: ${{ inputs.release-version }}
+        run: |
+          import os
+          import re
+          import sys
+          import tomllib
+          import urllib.error
+          import urllib.request
+
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+
+          pkg_name = data["project"]["name"]
+          version = data["project"]["version"]
+          requested_version = os.environ.get("RELEASE_VERSION_INPUT", "").strip()
+
+
+          def normalize(v):
+              # Lightweight PEP 440 comparison key: lowercase and drop the `-`,
+              # `_`, or `.` separators that precede a pre/post/dev segment so that
+              # e.g. `0.1.0-rc1` and `0.1.0rc1` compare equal. Full canonicalization
+              # lives in `packaging`, which isn't installed in this bare release step.
+              return re.sub(r"[-_.]+(?=[a-z])", "", v.lower())
+
+
+          if requested_version and normalize(requested_version) != normalize(version):
+              print(
+                  f"::error::Requested release version {requested_version!r} does "
+                  f"not match {pkg_name} pyproject.toml version {version!r}."
+              )
+              sys.exit(1)
+
+          # Query the per-version endpoint so PyPI applies PEP 440 normalization
+          # (e.g. `0.1.0-rc1` and `0.1.0rc1` resolve to the same release): HTTP 200
+          # means the version is already published, 404 means it's available
+          # (including the first-ever release of a new package). Only the status
+          # code is used, so a malicious or malformed response body can't mislead us.
+          url = f"https://pypi.org/pypi/{pkg_name}/{version}/json"
+          try:
+              with urllib.request.urlopen(url, timeout=10):
+                  already_published = True
+          except urllib.error.HTTPError as err:
+              if err.code == 404:
+                  already_published = False
+              else:
+                  # Fail closed: an unexpected status means we can't verify.
+                  print(
+                      f"::error::PyPI returned HTTP {err.code} checking whether "
+                      f"{pkg_name}=={version} exists; cannot verify, aborting."
+                  )
+                  sys.exit(1)
+          except urllib.error.URLError as err:
+              # Fail closed: if PyPI is unreachable we must not assume the version
+              # is free, or we risk re-publishing an existing release.
+              print(
+                  f"::error::Could not reach PyPI to verify {pkg_name}=={version} "
+                  f"({err.reason}); cannot verify, aborting."
+              )
+              sys.exit(1)
+
+          if already_published:
+              print(f"::error::{pkg_name}=={version} already exists on PyPI.")
+              sys.exit(1)
+
+          print(f"::notice::{pkg_name}=={version} is not yet on PyPI; proceeding.")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"pkg-name={pkg_name}\n")
+              f.write(f"version={version}\n")
+
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
       # (Release stage has trusted publishing and GitHub repo contents write access,
@@ -155,21 +235,6 @@ jobs:
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
-
-      - name: Check version
-        id: check-version
-        shell: python
-        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
-        run: |
-          import os
-          import tomllib
-          with open("pyproject.toml", "rb") as f:
-              data = tomllib.load(f)
-          pkg_name = data["project"]["name"]
-          version = data["project"]["version"]
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"pkg-name={pkg_name}\n")
-              f.write(f"version={version}\n")
   release-notes:
     name: 📝 Generate release notes
     # release-notes must run before publishing because its check-tags step
