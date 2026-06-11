@@ -215,12 +215,8 @@ max_input_tokens = 123
     spec.loader.exec_module(module)
 
     assert "custom-offline-model" in module._PROFILES
-    assert (
-        module._PROFILES["custom-offline-model"]["structured_output"] is True
-    )
-    assert (
-        module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123
-    )
+    assert module._PROFILES["custom-offline-model"]["structured_output"] is True
+    assert module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123
 
 
 def test_refresh_generates_sorted_profiles(
