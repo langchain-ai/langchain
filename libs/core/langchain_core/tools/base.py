@@ -9,7 +9,7 @@ import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -38,7 +38,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -390,6 +390,10 @@ content is normalized to the content of a `ToolMessage` with `status="error"`.
 _EMPTY_SET: frozenset[str] = frozenset()
 
 
+_TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
+"""Fields the memoized `tool_call_schema` is built from; reassignment clears it."""
+
+
 class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
     """Base class for all LangChain tools.
 
@@ -583,20 +587,41 @@ class ChildTool(BaseTool):
                 json_schema = input_schema.model_json_schema()
         return cast("dict[str, Any]", json_schema["properties"])
 
-    _tool_call_schema_memo: tuple[Any, str, str, ArgsSchema] | None = PrivateAttr(
-        default=None
-    )
-    """Memo for `tool_call_schema`: `(args_schema, name, description, schema)`.
+    _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
+    """Memoized `tool_call_schema` result.
 
     Building the subset model is expensive and returning a new class per access
     defeats pydantic's per-class `model_json_schema` cache, so agent loops would
     otherwise pay full schema generation for every tool on every model call.
-    The first three elements are the inputs the schema was built from; the memo
-    is bypassed when any of them has since been reassigned.
+    Cleared whenever `name`, `description`, or `args_schema` is reassigned (see
+    `__setattr__` and `model_copy`).
     """
 
+    @override
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Clear the tool-call schema memo when an input to it is reassigned."""
+        super().__setattr__(name, value)
+        if name in _TOOL_CALL_SCHEMA_FIELDS and self.__pydantic_private__ is not None:
+            self._tool_call_schema_memo = None
+
+    @override
+    def model_copy(
+        self, *, update: Mapping[str, Any] | None = None, deep: bool = False
+    ) -> Self:
+        """Copy the tool, clearing the schema memo if `update` affects it.
+
+        `model_copy` writes `update` directly to the copy's `__dict__` without
+        going through `__setattr__`, and private attributes (including the
+        memo) carry over to the copy, so the memo is cleared here when the
+        update touches one of the fields the schema is built from.
+        """
+        copied = super().model_copy(update=update, deep=deep)
+        if update and not _TOOL_CALL_SCHEMA_FIELDS.isdisjoint(update):
+            copied._tool_call_schema_memo = None  # noqa: SLF001
+        return copied
+
     def __getstate__(self) -> dict[Any, Any]:
-        """Drop the tool-call schema memo when pickling or copying.
+        """Drop the tool-call schema memo when pickling.
 
         The memoized subset model is a dynamically created class that cannot be
         pickled by reference; it is rebuilt lazily on next access.
@@ -631,13 +656,8 @@ class ChildTool(BaseTool):
 
             return self.args_schema
 
-        if (
-            (memo := self._tool_call_schema_memo) is not None
-            and memo[0] is self.args_schema
-            and memo[1] == self.name
-            and memo[2] == self.description
-        ):
-            return memo[3]
+        if (memo := self._tool_call_schema_memo) is not None:
+            return memo
 
         full_schema = self.get_input_schema()
         fields = []
@@ -647,12 +667,7 @@ class ChildTool(BaseTool):
         subset_model = _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
-        self._tool_call_schema_memo = (
-            self.args_schema,
-            self.name,
-            self.description,
-            subset_model,
-        )
+        self._tool_call_schema_memo = subset_model
         return subset_model
 
     @functools.cached_property

@@ -3912,3 +3912,16 @@ def test_tool_picklable_after_tool_call_schema_access() -> None:
     assert restored_schema.model_json_schema()["title"] == "memo_schema_tool"
     # Pickling must not clear the live instance's memo.
     assert tool.tool_call_schema is schema
+
+
+def test_tool_call_schema_memo_not_stale_after_model_copy() -> None:
+    """`model_copy(update=...)` bypasses `__setattr__`; the memo must still clear."""
+    tool = _MemoSchemaTool()
+    original_schema = tool.tool_call_schema
+
+    copied = tool.model_copy(update={"description": "Copied description."})
+    copied_schema = cast("type[BaseModel]", copied.tool_call_schema)
+    assert copied_schema.model_json_schema()["description"] == "Copied description."
+
+    # The original keeps its memo and is unaffected by the copy.
+    assert tool.tool_call_schema is original_schema
