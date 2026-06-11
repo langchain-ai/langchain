@@ -1,0 +1,19 @@
+.github/workflows/_release.yml
+  s_ad877f70453651::t_4f13341f5b95b5 150-211
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b1ba32a84c68c886d3dd9edd31e1e96096513ec7",
+  "prompts": {},
+  "sessions": {
+    "s_ad877f70453651": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4caa570b-cdd9-4bad-8f7c-dfb6fb983ec0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
