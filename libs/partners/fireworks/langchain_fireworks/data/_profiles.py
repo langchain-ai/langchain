@@ -36,6 +36,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/deepseek-v4-pro": {
         "name": "DeepSeek V4 Pro",
@@ -57,6 +58,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/glm-5p1": {
         "name": "GLM 5.1",
@@ -77,6 +79,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/gpt-oss-120b": {
         "name": "GPT OSS 120B",
@@ -97,6 +100,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/gpt-oss-20b": {
         "name": "GPT OSS 20B",
@@ -117,6 +121,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/kimi-k2p5": {
         "name": "Kimi K2.5",
@@ -137,6 +142,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/kimi-k2p6": {
         "name": "Kimi K2.6",
@@ -157,6 +163,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/minimax-m2p5": {
         "name": "MiniMax-M2.5",
@@ -177,6 +184,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/minimax-m2p7": {
         "name": "MiniMax-M2.7",
@@ -197,6 +205,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/models/qwen3p6-plus": {
         "name": "Qwen 3.6 Plus",
@@ -217,6 +226,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/routers/glm-5p1-fast": {
         "name": "GLM 5.1 Fast",
@@ -237,6 +247,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/routers/kimi-k2p6-fast": {
         "name": "Kimi K2.6 Fast",
@@ -257,6 +268,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "accounts/fireworks/routers/kimi-k2p6-turbo": {
         "name": "Kimi K2.6 Turbo",
@@ -277,5 +289,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
 }
