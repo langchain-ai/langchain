@@ -1,0 +1,23 @@
+libs/core/langchain_core/tools/base.py
+  s_18f03536d17b21::t_8cffb3b5f638c5 41,590-591,596-597,600-603,605-619,621-622,624,659-660,670
+  s_18f03536d17b21::t_b1997eb1e56b86 12,393-396,604
+  s_18f03536d17b21::t_a46910895ab220 620
+libs/core/tests/unit_tests/test_tools.py
+  s_18f03536d17b21::t_0453949a40ccab 3915-3927
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "303dc9c745bdaf7da1c48afd2d71caa04c673359",
+  "prompts": {},
+  "sessions": {
+    "s_18f03536d17b21": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f39b5519-3a19-4141-8e07-5ac88bb8b84e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
