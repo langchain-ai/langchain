@@ -6,7 +6,10 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+
+if TYPE_CHECKING:
+    from langchain_protocol.protocol import MessagesData
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -1368,6 +1371,70 @@ class ChatPerplexity(BaseChatModel):
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
+
+    def _stream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Emit Perplexity-native content-block protocol events.
+
+        Detected by `langchain-core`'s `_iter_v2_events`; powers
+        `stream_events(version="v3")`. Falls through to the compat bridge
+        only if this method is absent. `message_id` is threaded from the
+        stream so `message-start` matches the bridge's LangChain run id.
+        """
+        from langchain_perplexity._stream_events import convert_perplexity_stream
+
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        params.pop("stream", None)
+        if stop:
+            params["stop_sequences"] = stop
+        raw = self.client.chat.completions.create(
+            messages=message_dicts, stream=True, **params
+        )
+        for event in convert_perplexity_stream(raw, message_id=message_id):
+            if (
+                run_manager is not None
+                and event["event"] == "content-block-delta"
+                and event["delta"].get("type") == "text-delta"
+            ):
+                run_manager.on_llm_new_token(str(event["delta"].get("text", "")))
+            yield event
+
+    async def _astream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async twin of `_stream_chat_model_events`."""
+        from langchain_perplexity._stream_events import aconvert_perplexity_stream
+
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        params.pop("stream", None)
+        if stop:
+            params["stop_sequences"] = stop
+        raw = await self.async_client.chat.completions.create(
+            messages=message_dicts, stream=True, **params
+        )
+        async for event in aconvert_perplexity_stream(raw, message_id=message_id):
+            if (
+                run_manager is not None
+                and event["event"] == "content-block-delta"
+                and event["delta"].get("type") == "text-delta"
+            ):
+                await run_manager.on_llm_new_token(str(event["delta"].get("text", "")))
+            yield event
 
     def _generate(
         self,
