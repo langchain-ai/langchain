@@ -1,0 +1,40 @@
+libs/partners/deepseek/langchain_deepseek/chat_models.py
+  s_2addad4b7b30d0::t_c18938ae5ad02d 232
+libs/core/langchain_core/language_models/base.py
+  s_2addad4b7b30d0::t_3bc18236c7b9b4 149-150
+  s_2addad4b7b30d0::t_e64a6c1ab01f93 141-148,151-157
+  s_2addad4b7b30d0::t_22c082f62e0b0b 226-228
+libs/partners/xai/langchain_xai/chat_models.py
+  s_2addad4b7b30d0::t_37efcbcc1bdf8a 476
+libs/core/tests/unit_tests/language_models/chat_models/test_base.py
+  s_2addad4b7b30d0::t_f28ea42a050ad4 1404-1417,1423-1440
+  s_2addad4b7b30d0::t_09a979af846200 1443-1457,1459-1490
+  s_2addad4b7b30d0::t_aa7e0c1e1dd892 7
+  s_2addad4b7b30d0::t_b1250dde24cbc9 31
+libs/partners/openai/tests/unit_tests/test_check_version.py
+  s_2addad4b7b30d0::t_5b396afe8fea03 1-62
+.github/workflows/check_versions.yml
+  s_2addad4b7b30d0::t_203ce72377b8d2 37-39,41-47
+  s_2addad4b7b30d0::t_3821f52cab7ff3 40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d452370bb89cf77c92e22c5e8484cc365093e1ee",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_2addad4b7b30d0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41016fac-badc-417e-b061-90e94757b85b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
