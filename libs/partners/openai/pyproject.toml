@@ -66,7 +66,7 @@ test_integration = [
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
 typing = [
-    "mypy>=1.17.1,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-tqdm>=4.66.0.5,<5.0.0.0",
     "langchain-core>=1.4.3,<2.0.0"
 ]
@@ -80,7 +80,7 @@ langchain = { path = "../../langchain_v1", editable = true }
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true

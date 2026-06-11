@@ -24,6 +24,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    message_chunk_to_message,
 )
 from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
@@ -1383,6 +1384,215 @@ def test_minimal_reasoning_effort_payload(
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True
+
+
+def test_convert_chunk_to_generation_chunk_v1_keeps_string_content() -> None:
+    """v1 streaming keeps content as '' (not []) and stamps output_version.
+
+    Covers both the usage-only (empty-choices) chunk and a content-bearing
+    chunk carrying a tool-call delta; the latter pins the per-content-chunk
+    `output_version` propagation.
+    """
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    # Empty-choices chunk (usage-only)
+    empty_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+    }
+    gen = llm._convert_chunk_to_generation_chunk(empty_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert gen.message.content == ""  # NOT []
+    assert gen.message.response_metadata.get("output_version") == "v1"
+
+    # Content-bearing chunk with tool_call delta
+    tool_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_abc",
+                            "function": {"name": "get_weather", "arguments": ""},
+                        }
+                    ],
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(tool_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert isinstance(gen.message.content, str)
+    assert gen.message.response_metadata.get("output_version") == "v1"
+    assert gen.message.response_metadata.get("model_provider") == "openai"
+
+
+def test_v1_streaming_tool_calls_in_content_blocks() -> None:
+    """End-to-end: streaming chunks with tool calls produce correct content_blocks."""
+    stream_chunks: list[dict[str, Any]] = [
+        # Initial empty-choices chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": ""},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Text token streamed before the tool call
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"content": "Let me check the weather."},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call start
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": "call_abc",
+                                "function": {
+                                    "name": "get_weather",
+                                    "arguments": '{"loc',
+                                },
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call args continuation
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "function": {"arguments": 'ation": "SF"}'},
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Finish
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "logprobs": None,
+                    "finish_reason": "tool_calls",
+                }
+            ],
+            "usage": None,
+        },
+        # Usage chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        },
+    ]
+
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    aggregated: AIMessageChunk | None = None
+    for raw_chunk in stream_chunks:
+        gen = llm._convert_chunk_to_generation_chunk(raw_chunk, AIMessageChunk, None)
+        if gen is None:
+            continue
+        chunk = cast(AIMessageChunk, gen.message)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+
+    assert aggregated is not None
+    # Tool calls should be present
+    assert len(aggregated.tool_call_chunks) == 1
+    assert aggregated.tool_call_chunks[0]["name"] == "get_weather"
+
+    # While still a chunk, content_blocks should include both the streamed text
+    # and the in-progress tool_call_chunk (text deltas must survive alongside
+    # tool calls through the merge).
+    blocks = aggregated.content_blocks
+    block_types = {b["type"] for b in blocks}
+    assert "tool_call_chunk" in block_types
+    assert "text" in block_types
+
+    # Once finalized into a non-chunk AIMessage, the in-progress tool_call_chunk
+    # resolves to a normalized v1 `tool_call` block with parsed args. This is
+    # the cross-provider view downstream consumers code against.
+    final = message_chunk_to_message(aggregated)
+    final_blocks = final.content_blocks
+    assert {"type": "text", "text": "Let me check the weather."} in final_blocks
+    assert {
+        "type": "tool_call",
+        "name": "get_weather",
+        "args": {"location": "SF"},
+        "id": "call_abc",
+    } in final_blocks
 
 
 def test_verbosity_parameter_payload() -> None:

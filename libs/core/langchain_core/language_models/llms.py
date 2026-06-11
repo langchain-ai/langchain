@@ -952,7 +952,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
                 "list[builtins.dict[str, Any] | None]",
@@ -1225,7 +1224,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
                 "list[builtins.dict[str, Any] | None]",
@@ -1259,7 +1257,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    cast("Callbacks", callbacks),
+                    callbacks,
                     self.callbacks,
                     self.verbose,
                     cast("list[str]", tags),

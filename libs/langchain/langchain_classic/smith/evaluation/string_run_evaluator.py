@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, cast
+from typing import Any
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -64,9 +64,7 @@ class LLMStringRunMapper(StringRunMapper):
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
             if isinstance(messages[0], dict):
-                chat_messages = _get_messages_from_run_dict(
-                    cast("list[dict]", messages)
-                )
+                chat_messages = _get_messages_from_run_dict(messages)
             elif isinstance(messages[0], list):
                 # Runs from Tracer have messages as a list of lists of dicts
                 chat_messages = _get_messages_from_run_dict(messages[0])

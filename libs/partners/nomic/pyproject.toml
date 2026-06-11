@@ -53,7 +53,7 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
-    "mypy>=1.18.1,<1.19.0",
+    "mypy>=2.1.0,<2.2.0",
     "langchain-core>=1.4.0,<2.0.0"
 ]
 dev = ["langchain-core>=1.4.0,<2.0.0"]
@@ -91,7 +91,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 ban-relative-imports = "all"
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.coverage.run]
 omit = ["tests/*"]

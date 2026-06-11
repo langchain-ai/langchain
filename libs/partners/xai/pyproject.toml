@@ -57,7 +57,7 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
-    "mypy>=1.10.0,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-requests>=2.0.0,<3.0.0",
     "langchain-core>=1.4.0,<2.0.0"
 ]
@@ -78,7 +78,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 langchain-openai = { path = "../openai", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -44,10 +44,12 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ExtendedModelResponse",
+    "InputAgentState",
     "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "OutputAgentState",
     "ResponseT",
     "StateT_co",
     "ToolCallRequest",
@@ -350,17 +352,23 @@ class AgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 
 
-class _InputAgentState(TypedDict):  # noqa: PYI049
+class InputAgentState(TypedDict):
     """Input state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage | dict[str, Any]], add_messages]]
 
 
-class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
+class OutputAgentState(TypedDict, Generic[ResponseT]):
     """Output state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     structured_response: NotRequired[ResponseT]
+
+
+# Deprecated aliases kept for backwards compatibility with external consumers that
+# imported the previously private names. Remove in a future release.
+_InputAgentState = InputAgentState
+_OutputAgentState = OutputAgentState
 
 
 StateT = TypeVar("StateT", bound=AgentState[Any], default=AgentState[Any])
