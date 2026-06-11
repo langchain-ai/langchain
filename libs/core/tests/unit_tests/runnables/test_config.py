@@ -24,6 +24,8 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 
 def test_ensure_config() -> None:
     run_id = str(uuid.uuid4())
@@ -83,7 +85,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
                 "run_id": "run-456",
                 "assistant_id": "asst-789",
                 "graph_id": "graph-0",
-                "model": "gpt-4o",
+                "model": OPENAI_TEST_MODEL,
                 "user_id": "uid-1",
                 "cron_id": "cron-1",
                 "langgraph_auth_user_id": "user-1",
@@ -97,7 +99,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
 
     assert config["metadata"] == {
         "nooverride": 18,
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "checkpoint_ns": "ns-1",
     }
     assert config["configurable"] == {
@@ -108,7 +110,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
         "run_id": "run-456",
         "assistant_id": "asst-789",
         "graph_id": "graph-0",
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "user_id": "uid-1",
         "cron_id": "cron-1",
         "langgraph_auth_user_id": "user-1",
@@ -151,14 +153,14 @@ def test_ensure_config_copies_top_level_model_to_metadata() -> None:
         cast(
             "RunnableConfig",
             {
-                "model": "gpt-4o",
+                "model": OPENAI_TEST_MODEL,
                 "metadata": {"nooverride": 18},
             },
         )
     )
 
-    assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
-    assert config["configurable"] == {"model": "gpt-4o"}
+    assert config["metadata"] == {"nooverride": 18, "model": OPENAI_TEST_MODEL}
+    assert config["configurable"] == {"model": OPENAI_TEST_MODEL}
 
 
 def test_ensure_config_copies_top_level_checkpoint_ns_to_metadata() -> None:

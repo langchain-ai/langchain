@@ -8,6 +8,8 @@ from langchain_openai.llms.base import _stream_response_to_generation_chunk
 
 os.environ["OPENAI_API_KEY"] = "foo"
 
+OPENAI_LLM_TEST_MODEL = "gpt-3.5-turbo-instruct"
+
 
 def test_openai_model_param() -> None:
     llm = OpenAI(model="foo")
@@ -62,7 +64,7 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct"])
+@pytest.mark.parametrize("model", [OPENAI_LLM_TEST_MODEL])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
 

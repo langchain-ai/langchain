@@ -24,6 +24,8 @@ from langchain_core.prompts import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tracers import log_stream
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 
 class NonBoolObj:
     def __bool__(self) -> bool:
@@ -544,7 +546,7 @@ class TestDumpdEscapesLcKeyInPlainDicts:
         msg = AIMessage(
             content="Hello",
             additional_kwargs={"tool_calls": []},
-            response_metadata={"model": "gpt-4"},
+            response_metadata={"model": OPENAI_TEST_MODEL},
         )
         serialized = dumpd(msg)
         assert serialized["kwargs"]["content"] == "Hello"
@@ -1064,7 +1066,7 @@ class TestMessagesAllowlistTier:
             "lc": 1,
             "type": "constructor",
             "id": ["langchain", "chat_models", "openai", "ChatOpenAI"],
-            "kwargs": {"model": "gpt-4"},
+            "kwargs": {"model": OPENAI_TEST_MODEL},
         }
         with pytest.raises(ValueError, match="not allowed"):
             load(serialized, allowed_objects="messages")

@@ -10,6 +10,10 @@ from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
 
+AZURE_PROFILE_TEST_MODEL = "gpt-5.5"
+AZURE_PROFILE_TEST_MODEL_NAME = "GPT-5.5"
+AZURE_PROFILE_TEST_MAX_INPUT_TOKENS = 1_050_000
+
 
 def test_initialize_azure_openai() -> None:
     llm = AzureChatOpenAI(  # type: ignore[call-arg]
@@ -48,20 +52,20 @@ def test_initialize_more() -> None:
 
 def test_profile_resolves_from_model_name() -> None:
     llm = AzureChatOpenAI(
-        model="gpt-4o",
+        model=AZURE_PROFILE_TEST_MODEL,
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
         api_version="2023-05-15",
     )
 
     assert llm.profile
-    assert llm.profile["name"] == "GPT-4o"
-    assert llm.profile["max_input_tokens"] == 128_000
+    assert llm.profile["name"] == AZURE_PROFILE_TEST_MODEL_NAME
+    assert llm.profile["max_input_tokens"] == AZURE_PROFILE_TEST_MAX_INPUT_TOKENS
 
 
 def test_profile_resolves_from_model_name_with_custom_deployment_alias() -> None:
     llm = AzureChatOpenAI(
-        model="gpt-4o",
+        model=AZURE_PROFILE_TEST_MODEL,
         azure_deployment="35-turbo-dev",
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
@@ -69,26 +73,26 @@ def test_profile_resolves_from_model_name_with_custom_deployment_alias() -> None
     )
 
     assert llm.profile
-    assert llm.profile["name"] == "GPT-4o"
+    assert llm.profile["name"] == AZURE_PROFILE_TEST_MODEL_NAME
 
 
 def test_profile_prefers_model_name_over_known_deployment_name() -> None:
     llm = AzureChatOpenAI(
-        model="gpt-4o",
-        azure_deployment="gpt-4",
+        model=AZURE_PROFILE_TEST_MODEL,
+        azure_deployment=AZURE_PROFILE_TEST_MODEL,
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
         api_version="2023-05-15",
     )
 
     assert llm.profile
-    assert llm.profile["name"] == "GPT-4o"
+    assert llm.profile["name"] == AZURE_PROFILE_TEST_MODEL_NAME
 
 
 def test_profile_falls_back_to_deployment_name_with_unknown_model() -> None:
     llm = AzureChatOpenAI(
         model="unknown-model",
-        azure_deployment="gpt-4o",
+        azure_deployment=AZURE_PROFILE_TEST_MODEL,
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
         api_version="2023-05-15",
@@ -99,19 +103,19 @@ def test_profile_falls_back_to_deployment_name_with_unknown_model() -> None:
 
 def test_profile_resolves_from_deployment_name_without_model() -> None:
     llm = AzureChatOpenAI(
-        azure_deployment="gpt-4o",
+        azure_deployment=AZURE_PROFILE_TEST_MODEL,
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
         api_version="2023-05-15",
     )
 
     assert llm.profile
-    assert llm.profile["name"] == "GPT-4o"
+    assert llm.profile["name"] == AZURE_PROFILE_TEST_MODEL_NAME
 
 
 def test_profile_respects_explicit_profile() -> None:
     llm = AzureChatOpenAI(
-        model="gpt-4o",
+        model=AZURE_PROFILE_TEST_MODEL,
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),
         api_version="2023-05-15",
@@ -176,7 +180,7 @@ def test_structured_output_old_model() -> None:
 
 def test_max_completion_tokens_in_payload() -> None:
     llm = AzureChatOpenAI(
-        azure_deployment="o1-mini",
+        azure_deployment="gpt-5-nano",
         api_version="2024-12-01-preview",
         azure_endpoint="my-base-url",
         api_key=SecretStr("test"),

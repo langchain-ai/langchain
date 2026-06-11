@@ -28,7 +28,7 @@ from langchain_openai.chat_models._client_utils import (
     _astream_with_chunk_timeout,
 )
 
-MODEL = "gpt-5.4"
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 
 class _FakeSource:
@@ -156,7 +156,7 @@ def test_invalid_stream_chunk_timeout_env_degrades_safely(
     """Garbage env var -> model init succeeds with the 120s default."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "not-a-float")
-    model = ChatOpenAI(model=MODEL)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert model.stream_chunk_timeout == 120.0
 
 
@@ -166,7 +166,7 @@ def test_stream_chunk_timeout_env_kill_switch_zero(
     """Env-var kill-switch: `_S=0` should disable the wrapper on the model."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "0")
-    model = ChatOpenAI(model=MODEL)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert model.stream_chunk_timeout == 0.0
 
 
@@ -175,18 +175,18 @@ def test_stream_chunk_timeout_kwarg_none_disables(
 ) -> None:
     """Constructor kwarg opt-out: `stream_chunk_timeout=None` persists."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=None)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL, stream_chunk_timeout=None)
     assert model.stream_chunk_timeout is None
 
 
 def test_stream_chunk_timeout_error_has_structured_attrs() -> None:
     """Structured payload mirrors the log `extra=`; no message-regex needed."""
-    err = StreamChunkTimeoutError(0.5, model_name=MODEL, chunks_received=3)
+    err = StreamChunkTimeoutError(0.5, model_name=OPENAI_TEST_MODEL, chunks_received=3)
     assert err.timeout_s == 0.5
-    assert err.model_name == "gpt-5.4"
+    assert err.model_name == OPENAI_TEST_MODEL
     assert err.chunks_received == 3
     text = str(err)
-    assert "gpt-5.4" in text
+    assert OPENAI_TEST_MODEL in text
     assert "chunks_received=3" in text
 
 
@@ -224,7 +224,7 @@ def test_invalid_stream_chunk_timeout_env_emits_warning(
     caplog.set_level(
         logging.WARNING, logger="langchain_openai.chat_models._client_utils"
     )
-    ChatOpenAI(model=MODEL)
+    ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert any(
         "LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S" in r.getMessage()
         for r in caplog.records
@@ -242,7 +242,7 @@ def test_negative_stream_chunk_timeout_env_rejected(
     caplog.set_level(
         logging.WARNING, logger="langchain_openai.chat_models._client_utils"
     )
-    model = ChatOpenAI(model=MODEL)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert model.stream_chunk_timeout == 120.0
     assert any(
         "negative" in r.getMessage().lower()
@@ -263,7 +263,7 @@ def test_negative_stream_chunk_timeout_kwarg_rejected(
     """
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     caplog.set_level(logging.WARNING, logger="langchain_openai.chat_models.base")
-    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=-10)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL, stream_chunk_timeout=-10)
     assert model.stream_chunk_timeout == 120.0
     assert any(
         "negative" in r.getMessage().lower()
@@ -278,7 +278,7 @@ def test_zero_stream_chunk_timeout_kwarg_preserved(
 ) -> None:
     """`stream_chunk_timeout=0` is the documented opt-out and must persist."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    model = ChatOpenAI(model=MODEL, stream_chunk_timeout=0)
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL, stream_chunk_timeout=0)
     assert model.stream_chunk_timeout == 0
 
 
@@ -360,13 +360,13 @@ async def test_astream_integration_raises_stream_chunk_timeout_error(
     wouldn't catch that regression.
     """
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    llm = ChatOpenAI(model=MODEL, stream_chunk_timeout=0.05)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stream_chunk_timeout=0.05)
     fake_chunks = [
         {
             "id": "c1",
             "object": "chat.completion.chunk",
             "created": 1,
-            "model": "gpt-4o",
+            "model": OPENAI_TEST_MODEL,
             "choices": [
                 {
                     "index": 0,
@@ -388,7 +388,7 @@ async def test_astream_integration_raises_stream_chunk_timeout_error(
     ):
         async for _ in llm.astream("hello"):
             pass
-    assert exc_info.value.model_name == MODEL
+    assert exc_info.value.model_name == OPENAI_TEST_MODEL
 
 
 def test_stream_sync_not_wrapped_by_chunk_timeout(
@@ -401,13 +401,13 @@ def test_stream_sync_not_wrapped_by_chunk_timeout(
     Completion without error proves the contract.
     """
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    llm = ChatOpenAI(model=MODEL, stream_chunk_timeout=0.01)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stream_chunk_timeout=0.01)
     fake_chunks = [
         {
             "id": "c1",
             "object": "chat.completion.chunk",
             "created": 1,
-            "model": "gpt-4o",
+            "model": OPENAI_TEST_MODEL,
             "choices": [
                 {
                     "index": 0,
@@ -420,7 +420,7 @@ def test_stream_sync_not_wrapped_by_chunk_timeout(
             "id": "c2",
             "object": "chat.completion.chunk",
             "created": 1,
-            "model": "gpt-4o",
+            "model": OPENAI_TEST_MODEL,
             "choices": [
                 {"index": 0, "delta": {}, "finish_reason": "stop"},
             ],

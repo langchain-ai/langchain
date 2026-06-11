@@ -2036,7 +2036,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         allow_fetching_images: bool = True,
     ) -> int:
-        """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
+        """Calculate num tokens for supported OpenAI chat models.
 
         !!! warning
             You must have the `pillow` installed if you want to count image tokens if
@@ -2653,7 +2653,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -2733,7 +2733,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -3150,7 +3150,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "prompt_tokens": 28,
                 "total_tokens": 33,
             },
-            "model_name": "gpt-4o",
+            "model_name": "gpt-4.1-mini",
             "system_fingerprint": "fp_319be4768e",
             "finish_reason": "stop",
             "logprobs": None,

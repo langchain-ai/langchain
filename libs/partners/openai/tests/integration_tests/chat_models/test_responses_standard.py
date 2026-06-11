@@ -49,7 +49,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
         llm = ChatOpenAI(
-            model="o4-mini",
+            model="gpt-5-nano",
             reasoning={"effort": "medium", "summary": "auto"},
             use_responses_api=True,
         )
