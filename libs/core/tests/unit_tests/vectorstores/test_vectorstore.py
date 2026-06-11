@@ -292,3 +292,49 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+# --- Regression tests for #37673 ---
+# VectorStore.add_texts / aadd_texts exhausted generator inputs before the fix.
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+def test_add_texts_with_generator_input(vs_class: type[VectorStore]) -> None:
+    """Regression test: add_texts must not exhaust a generator before building docs.
+
+    Before the fix, `texts_` was used for validation/length checks but the zip
+    still iterated the original `texts` iterable — which was already exhausted for
+    generators — resulting in zero documents being added.
+    """
+    store = vs_class()
+    ids = store.add_texts(text for text in ["alpha", "beta", "gamma"])
+    assert len(ids) == 3
+    docs = store.get_by_ids(ids)
+    assert [doc.page_content for doc in docs] == ["alpha", "beta", "gamma"]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+def test_add_texts_generator_with_metadatas(vs_class: type[VectorStore]) -> None:
+    """Generator input with explicit metadatas must produce all documents."""
+    store = vs_class()
+    metadatas = [{"i": 0}, {"i": 1}]
+    ids = store.add_texts(
+        (text for text in ["x", "y"]),
+        metadatas=metadatas,
+    )
+    assert len(ids) == 2
+    docs = store.get_by_ids(ids)
+    assert docs[0].page_content == "x"
+    assert docs[0].metadata == {"i": 0}
+    assert docs[1].page_content == "y"
+    assert docs[1].metadata == {"i": 1}
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+async def test_aadd_texts_with_generator_input(vs_class: type[VectorStore]) -> None:
+    """Async regression: aadd_texts must not exhaust a generator before building docs."""
+    store = vs_class()
+    ids = await store.aadd_texts(text for text in ["alpha", "beta", "gamma"])
+    assert len(ids) == 3
+    docs = await store.aget_by_ids(ids)
+    assert [doc.page_content for doc in docs] == ["alpha", "beta", "gamma"]
