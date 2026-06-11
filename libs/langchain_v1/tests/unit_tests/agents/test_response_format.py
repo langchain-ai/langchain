@@ -686,6 +686,41 @@ class TestResponseFormatAsToolStrategy:
 
 
 class TestResponseFormatAsProviderStrategy:
+    class RecordingModel(FakeToolCallingModel):
+        bind_kwargs: list[dict[str, Any]] = Field(default_factory=list)
+        bind_tools_calls: list[list[Any]] = Field(default_factory=list)
+
+        def bind(self, **kwargs: Any) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bind_kwargs.append(kwargs)
+            return super().bind(**kwargs)
+
+        def bind_tools(
+            self,
+            tools: Sequence[
+                dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+            ],
+            *,
+            tool_choice: str | None = None,
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bind_tools_calls.append(list(tools))
+            return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
+    def test_provider_strategy_without_tools_uses_bind(self) -> None:
+        """Test ProviderStrategy with no tools skips bind_tools."""
+        model = self.RecordingModel(structured_response=EXPECTED_WEATHER_PYDANTIC)
+
+        agent = create_agent(
+            model, [], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert model.bind_tools_calls == []
+        assert len(model.bind_kwargs) == 1
+        assert "response_format" in model.bind_kwargs[0]
+        assert "tools" not in model.bind_kwargs[0]
+
     def test_pydantic_model(self) -> None:
         """Test response_format as ProviderStrategy with Pydantic model."""
         tool_calls = [
