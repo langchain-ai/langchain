@@ -547,6 +547,12 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: int | None = None
 
     stop: list[str] | None = None
+    """Default stop sequences.
+
+    Generation stops when any of these strings is produced; the stop sequence itself
+    is not included in the output. Can be overridden per call via the `stop` argument.
+    Mistral accepts up to 4 stop sequences.
+    """
 
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
@@ -752,12 +758,8 @@ class ChatMistralAI(BaseChatModel):
     ) -> tuple[list[dict], dict[str, Any]]:
         params = self._client_params
         stop = stop if stop is not None else self.stop
-        if stop is not None or "stop" in params:
-            if "stop" in params:
-                params.pop("stop")
-            logger.warning(
-                "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
-            )
+        if stop:
+            params["stop"] = stop
         message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 
