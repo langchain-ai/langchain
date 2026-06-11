@@ -1,0 +1,31 @@
+libs/partners/perplexity/langchain_perplexity/chat_models.py
+  s_333b03f0a3d0f4::t_65a4ceb1c0e2ec 607-670
+  s_333b03f0a3d0f4::t_d2940fe19ab232 8-11
+libs/partners/perplexity/tests/unit_tests/test_stream_events.py
+  s_333b03f0a3d0f4::t_8dadcd8e4058d8 237-238,259-267
+  s_333b03f0a3d0f4::t_33a12c6172eceb 307-365
+  s_333b03f0a3d0f4::t_510ecbba7aa2bc 152-153,158-159
+  s_333b03f0a3d0f4::t_4a8626aa4c019e 1-73,78-82,85-151,154-157,160-191,193-194,197-236,239-252,256-258,268-300,304-306
+  s_333b03f0a3d0f4::t_9b185100663e13 192,195-196
+  s_333b03f0a3d0f4::t_2dfc175a933da4 253-255,301-303
+  s_333b03f0a3d0f4::t_1048404fdb974a 74-77,83-84
+libs/partners/perplexity/langchain_perplexity/_stream_events.py
+  s_333b03f0a3d0f4::t_d492108934404c 83-85,88,90-92
+  s_333b03f0a3d0f4::t_8d253ff309db2f 1-82,86-87,89,93-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "ad9d3257978359a164150c3d382e9301629413d4",
+  "prompts": {},
+  "sessions": {
+    "s_333b03f0a3d0f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "348a2811-4930-470f-bcd5-154f557327dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
