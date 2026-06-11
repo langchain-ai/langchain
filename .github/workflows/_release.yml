@@ -208,7 +208,6 @@ jobs:
               print(f"::error::{pkg_name}=={version} already exists on PyPI.")
               sys.exit(1)
 
-          print(f"::notice::{pkg_name}=={version} is not yet on PyPI; proceeding.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"pkg-name={pkg_name}\n")
