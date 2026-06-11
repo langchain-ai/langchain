@@ -12,6 +12,7 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -19,7 +20,7 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
-from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
@@ -65,6 +66,7 @@ __all__ = [
     "ModelRetryMiddleware",
     "PIIDetectionError",
     "PIIMiddleware",
+    "ProviderToolSearchMiddleware",
     "RedactionRule",
     "Runtime",
     "ShellToolMiddleware",
@@ -73,6 +75,7 @@ __all__ = [
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolRetryMiddleware",
+    "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",

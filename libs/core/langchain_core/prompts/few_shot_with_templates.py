@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
+from langchain_core._api import deprecated
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
@@ -18,7 +19,7 @@ from langchain_core.prompts.string import (
 class FewShotPromptWithTemplates(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    examples: list[dict] | None = None
+    examples: list[dict[str, Any]] | None = None
     """Examples to format into the prompt.
 
     Either this or `example_selector` should be provided.
@@ -62,7 +63,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: dict) -> Any:
+    def check_examples_and_selector(cls, values: dict[str, Any]) -> Any:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples")
         example_selector = values.get("example_selector")
@@ -105,14 +106,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         extra="forbid",
     )
 
-    def _get_examples(self, **kwargs: Any) -> list[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         if self.examples is not None:
             return self.examples
         if self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
         raise ValueError
 
-    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         if self.examples is not None:
             return self.examples
         if self.example_selector is not None:
@@ -215,6 +216,12 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot_with_templates"
 
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save the prompt to a file.
 
