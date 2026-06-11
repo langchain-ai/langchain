@@ -724,7 +724,7 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
+                result_dict = result.model_dump()
             else:
                 msg = (
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"

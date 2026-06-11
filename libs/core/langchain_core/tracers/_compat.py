@@ -33,7 +33,7 @@ def run_to_dict(run: Run, **kwargs: Any) -> dict[str, Any]:
     """
     if _RUN_IS_PYDANTIC_V2:
         return run.model_dump(**kwargs)
-    return run.dict(**kwargs)  # type: ignore[deprecated]
+    return run.model_dump(**kwargs)  # type: ignore[deprecated]
 
 
 def run_copy(run: Run, **kwargs: Any) -> Run:
@@ -77,7 +77,7 @@ def pydantic_to_dict(obj: Any, **kwargs: Any) -> dict[str, Any]:
     """
     if _RUN_IS_PYDANTIC_V2:
         return obj.model_dump(**kwargs)  # type: ignore[no-any-return]
-    return obj.dict(**kwargs)  # type: ignore[no-any-return]
+    return obj.model_dump(**kwargs)  # type: ignore[no-any-return]
 
 
 def pydantic_copy(obj: T, **kwargs: Any) -> T:
