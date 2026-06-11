@@ -47,7 +47,7 @@ import logging
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -96,6 +96,9 @@ from langchain_ollama._utils import (
     validate_model,
 )
 from langchain_ollama._version import __version__
+
+if TYPE_CHECKING:
+    from langchain_protocol.protocol import MessagesData
 
 log = logging.getLogger(__name__)
 
@@ -1307,6 +1310,45 @@ class ChatOllama(BaseChatModel):
                 )
             yield chunk
 
+    def _stream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Emit Ollama-native content-block protocol events.
+
+        Detected by `langchain-core`'s `_iter_v2_events`; powers
+        `stream_events(version="v3")`. Surfaces `thinking` as reasoning blocks,
+        which the compat-bridge path does not. `message_id` is threaded from the
+        stream so `message-start` matches the bridge's LangChain run id.
+        """
+        # Local import avoids a circular import: `_stream_events` imports
+        # `_get_usage_metadata_from_generation_info` from this module.
+        from langchain_ollama._stream_events import (  # noqa: PLC0415
+            convert_ollama_stream,
+        )
+
+        reasoning = kwargs.get("reasoning", self.reasoning)
+        for event in convert_ollama_stream(
+            self._create_chat_stream(messages, stop, **kwargs),
+            _get_tool_calls_from_response,
+            reasoning=reasoning,
+            message_id=message_id,
+        ):
+            if run_manager is not None and event["event"] == "content-block-delta":
+                # Widen to a plain dict for the optional `delta` access: TypedDict
+                # union narrowing on the discriminator differs across `ty`
+                # versions, so neither a typed key access nor a typed cast is
+                # portable here.
+                delta = cast("dict[str, Any]", event).get("delta") or {}
+                if delta.get("type") == "text-delta":
+                    run_manager.on_llm_new_token(str(delta.get("text", "")))
+            yield event
+
     async def _aiterate_over_stream(
         self,
         messages: list[BaseMessage],
@@ -1388,6 +1430,37 @@ class ChatOllama(BaseChatModel):
                     verbose=self.verbose,
                 )
             yield chunk
+
+    async def _astream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async twin of `_stream_chat_model_events`."""
+        # Local import avoids a circular import: `_stream_events` imports
+        # `_get_usage_metadata_from_generation_info` from this module.
+        from langchain_ollama._stream_events import (  # noqa: PLC0415
+            aconvert_ollama_stream,
+        )
+
+        reasoning = kwargs.get("reasoning", self.reasoning)
+        async for event in aconvert_ollama_stream(
+            self._acreate_chat_stream(messages, stop, **kwargs),
+            _get_tool_calls_from_response,
+            reasoning=reasoning,
+            message_id=message_id,
+        ):
+            if run_manager is not None and event["event"] == "content-block-delta":
+                # See sync twin: widen to a plain dict for the optional `delta`
+                # access (portable across `ty` TypedDict-narrowing differences).
+                delta = cast("dict[str, Any]", event).get("delta") or {}
+                if delta.get("type") == "text-delta":
+                    await run_manager.on_llm_new_token(str(delta.get("text", "")))
+            yield event
 
     async def _agenerate(
         self,
