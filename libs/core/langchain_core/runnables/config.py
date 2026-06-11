@@ -399,7 +399,7 @@ def patch_config(
 def _merge_metadata_dicts(
     base: Mapping[str, Any], incoming: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Merge two metadata dicts with one extra level of depth.
+    """Merge two metadata dicts one level deep (not a recursive deep merge).
 
     If both sides have a `Mapping` value for the same key, the inner mappings
     are merged (last-writer-wins within). Non-mapping values use

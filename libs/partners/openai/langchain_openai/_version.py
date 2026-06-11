@@ -1,3 +1,3 @@
 """Version information for `langchain-openai`."""
 
-__version__ = "1.1.11"
+__version__ = "1.3.0"

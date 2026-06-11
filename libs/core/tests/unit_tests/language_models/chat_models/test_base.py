@@ -52,6 +52,7 @@ from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.version import VERSION
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -1712,6 +1713,7 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             "ls_temperature": 0.7,
             "stop": None,
             "temperature": 0.7,
+            "versions": {"langchain-core": VERSION},
         },
         "options": {"stop": None},
         "runtime": run.extra["runtime"],
