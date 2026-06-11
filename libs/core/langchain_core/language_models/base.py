@@ -138,6 +138,23 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
+@cache
+def _get_langchain_version() -> str | None:
+    """Return the installed `langchain` version, or `None` if not installed.
+
+    Cached because `importlib.metadata.version` performs a filesystem lookup and
+    `model_post_init` runs on every `BaseLanguageModel` instantiation. `langchain`
+    is an optional sibling package, so its absence is expected and not an error.
+    """
+    from importlib.metadata import PackageNotFoundError  # noqa: PLC0415
+    from importlib.metadata import version as pkg_version  # noqa: PLC0415
+
+    try:
+        return pkg_version("langchain")
+    except PackageNotFoundError:
+        return None
+
+
 class BaseLanguageModel(
     RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
@@ -206,12 +223,9 @@ class BaseLanguageModel(
 
         self._add_version("langchain-core", VERSION)
 
-        try:
-            from importlib.metadata import version as pkg_version  # noqa: PLC0415
-
-            self._add_version("langchain", pkg_version("langchain"))
-        except Exception:  # noqa: S110
-            pass
+        langchain_version = _get_langchain_version()
+        if langchain_version is not None:
+            self._add_version("langchain", langchain_version)
 
     def _add_version(self, pkg: str, version: str) -> None:
         """Record a package version in `metadata.versions` for tracing.

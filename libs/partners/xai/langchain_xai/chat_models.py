@@ -473,7 +473,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _set_xai_version(self) -> Self:
         """Set package version in metadata.
 
-        Named uniquely to avoid shadowing `BaseChatOpenAI._set_version`;
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_openai_chat_version`;
         Pydantic replaces same-named validators rather than chaining them.
         """
         self._add_version("langchain-xai", __version__)

@@ -34,9 +34,17 @@ jobs:
 
           for dir in libs/core libs/langchain_v1 libs/partners/*; do
             [ -f "$dir/Makefile" ] || continue
-            grep -q '^check_version:' "$dir/Makefile" || continue
-            echo "--- $dir ---"
-            make -C "$dir" check_version || FAILED=1
+            if grep -q '^check_version:' "$dir/Makefile"; then
+              echo "--- $dir ---"
+              make -C "$dir" check_version || FAILED=1
+            elif find "$dir" -maxdepth 2 -name '_version.py' -not -path '*/tests/*' \
+                | grep -q .; then
+              # A package ships a _version.py but has no way to verify it stays
+              # in sync with pyproject.toml. Don't let it pass unchecked.
+              echo "--- $dir ---"
+              echo "Error: $dir has a _version.py but no 'check_version' Makefile target"
+              FAILED=1
+            fi
           done
 
           if [ "$FAILED" -ne 0 ]; then

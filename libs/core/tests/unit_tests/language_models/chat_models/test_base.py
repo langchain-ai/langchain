@@ -4,6 +4,7 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
 from typing import TYPE_CHECKING, Any, Literal, get_type_hints
 from unittest.mock import patch
 
@@ -27,6 +28,7 @@ from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
     _normalize_messages,
 )
+from langchain_core.language_models.base import _get_langchain_version
 from langchain_core.language_models.chat_models import (
     SimpleChatModel,
     _generate_response_from_error,
@@ -1398,32 +1400,94 @@ def test_add_version_with_non_dict_versions() -> None:
 
 def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     """When `langchain` is installed, its version appears in metadata."""
-    monkeypatch.setattr(
-        "importlib.metadata.version",
-        lambda pkg: (
-            "1.2.13"
-            if pkg == "langchain"
-            else (_ for _ in ()).throw(Exception(f"not found: {pkg}"))
-        ),
-    )
-    llm = FakeListChatModel(responses=["x"])
-    assert llm.metadata is not None
-    assert llm.metadata["versions"]["langchain"] == "1.2.13"
-    assert "langchain-core" in llm.metadata["versions"]
+
+    def _fake_version(pkg: str) -> str:
+        if pkg == "langchain":
+            return "1.2.13"
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _fake_version)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert llm.metadata["versions"]["langchain"] == "1.2.13"
+        assert "langchain-core" in llm.metadata["versions"]
+    finally:
+        _get_langchain_version.cache_clear()
 
 
 def test_langchain_version_missing_when_not_installed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """When `langchain` is not installed, metadata.versions has no entry."""
-    monkeypatch.setattr(
-        "importlib.metadata.version",
-        lambda pkg: (_ for _ in ()).throw(Exception(f"not found: {pkg}")),
-    )
-    llm = FakeListChatModel(responses=["x"])
+    """When `langchain` is not installed, metadata.versions has no entry.
+
+    The lookup raises `PackageNotFoundError` (the real not-installed signal), which
+    `_get_langchain_version` must swallow without dropping the rest of the dict.
+    """
+
+    def _raise_not_found(pkg: str) -> str:
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert "langchain" not in llm.metadata["versions"]
+        assert "langchain-core" in llm.metadata["versions"]
+    finally:
+        _get_langchain_version.cache_clear()
+
+
+def test_version_validator_coexists_with_core_seed() -> None:
+    """A `model_validator(mode="after")` calling `_add_version` keeps the core seed.
+
+    Mirrors the real partner pattern (a validator, not a `model_post_init`
+    override) and confirms the validator-added entry and the core-seeded
+    `langchain-core` entry accumulate rather than clobber one another.
+    """
+
+    class _ValidatorVersionedModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_fake_version(self) -> Self:
+            self._add_version("langchain-fake", "0.1.0")
+            return self
+
+    llm = _ValidatorVersionedModel(responses=["x"])
     assert llm.metadata is not None
-    assert "langchain" not in llm.metadata["versions"]
-    assert "langchain-core" in llm.metadata["versions"]
+    versions = llm.metadata["versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-fake"] == "0.1.0"
+
+
+def test_subclass_unique_validator_names_accumulate() -> None:
+    """Parent and child uniquely-named validators must both contribute entries.
+
+    Regression guard for the documented Pydantic footgun: same-named
+    `model_validator` methods *replace* rather than chain across a class
+    hierarchy. As long as each layer uses a unique validator name, a subclass
+    must not silently drop its parent's version entry.
+    """
+
+    class _ParentModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_parent_version(self) -> Self:
+            self._add_version("langchain-parent", "1.0.0")
+            return self
+
+    class _ChildModel(_ParentModel):
+        @model_validator(mode="after")
+        def _set_child_version(self) -> Self:
+            self._add_version("langchain-child", "2.0.0")
+            return self
+
+    llm = _ChildModel(responses=["x"])
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-parent"] == "1.0.0"
+    assert versions["langchain-child"] == "2.0.0"
 
 
 def test_model_profiles() -> None:
