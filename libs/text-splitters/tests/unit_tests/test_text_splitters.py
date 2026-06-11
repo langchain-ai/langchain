@@ -53,6 +53,26 @@ def bar():
 """
 
 
+def test_no_heavy_imports_on_package_load() -> None:
+    """Ensure importing the package does not eagerly load heavy dependencies."""
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    script = (
+        "import langchain_text_splitters; import sys; "
+        "heavy = ['nltk', 'spacy', 'sentence_transformers', 'konlpy', 'torch']; "
+        "loaded = [p for p in heavy if p in sys.modules]; "
+        "print(','.join(loaded))"
+    )
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-c", script], capture_output=True, text=True, check=True
+    )
+    loaded = [p for p in result.stdout.strip().split(",") if p]
+    assert not loaded, (
+        f"Heavy packages imported at langchain_text_splitters load time: {loaded}"
+    )
+
+
 def test_character_text_splitter() -> None:
     """Test splitting by character count."""
     text = "foo bar baz 123"
