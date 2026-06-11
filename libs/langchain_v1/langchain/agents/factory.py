@@ -742,7 +742,7 @@ def create_agent(
     *,
     system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
-    response_format: ResponseFormat[dict[str, Any]] | dict[str, Any] | None = None,
+    response_format: dict[str, Any],
     state_schema: type[AgentState[dict[str, Any]]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
