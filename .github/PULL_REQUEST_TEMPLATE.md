@@ -1,6 +1,8 @@
 Fixes #
 
-<!-- Replace everything above this line with a 1-2 sentence description of your change. Keep the "Fixes #xx" keyword and update the issue number. -->
+---
+
+<!-- Keep the `Fixes #xx` keyword at the very top and update the issue number — this auto-closes the issue on merge. Replace this comment with a 1-2 sentence description of your change. No `# Summary` header; the description is the summary. -->
 
 Read the full contributing guidelines: https://docs.langchain.com/oss/python/contributing/overview
 
@@ -20,7 +22,7 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
 2. PR description:
 
-  - Write 1-2 sentences summarizing the change.
+  - Write 1-2 sentences that make the change easy to understand: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
   - The `Fixes #xx` line at the top is **required** for external contributions — update the issue number and keep the keyword. This links your PR to the approved issue and auto-closes it on merge.
   - If there are any breaking changes, please clearly describe them.
   - If this PR depends on another PR being merged first, please include "Depends on #PR_NUMBER" in the description.

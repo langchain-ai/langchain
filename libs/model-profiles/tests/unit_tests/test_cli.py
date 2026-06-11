@@ -1,16 +1,23 @@
 """Tests for CLI functionality."""
 
 import importlib.util
+import warnings
 from pathlib import Path
+from typing import Any, get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
+from langchain_core.language_models.model_profile import ModelProfile
 
-from langchain_model_profiles.cli import _model_data_to_profile, refresh
+from langchain_model_profiles.cli import (
+    _model_data_to_profile,
+    _warn_undeclared_profile_keys,
+    refresh,
+)
 
 
 @pytest.fixture
-def mock_models_dev_response() -> dict:
+def mock_models_dev_response() -> dict[str, Any]:
     """Create a mock response from models.dev API."""
     return {
         "anthropic": {
@@ -50,7 +57,7 @@ def mock_models_dev_response() -> dict:
 
 
 def test_refresh_generates_profiles_file(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh command generates _profiles.py with merged data."""
     data_dir = tmp_path / "data"
@@ -94,7 +101,7 @@ pdf_inputs = true
 
 
 def test_refresh_raises_error_for_missing_provider(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh exits with error for non-existent provider."""
     data_dir = tmp_path / "data"
@@ -120,7 +127,7 @@ def test_refresh_raises_error_for_missing_provider(
 
 
 def test_refresh_works_without_augmentations(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh works even without augmentations file."""
     data_dir = tmp_path / "data"
@@ -144,7 +151,7 @@ def test_refresh_works_without_augmentations(
 
 
 def test_refresh_aborts_when_user_declines_external_directory(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh aborts when user declines writing to external directory."""
     data_dir = tmp_path / "data"
@@ -170,7 +177,7 @@ def test_refresh_aborts_when_user_declines_external_directory(
 
 
 def test_refresh_includes_models_defined_only_in_augmentations(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Ensure models that only exist in augmentations are emitted."""
     data_dir = tmp_path / "data"
@@ -205,19 +212,15 @@ max_input_tokens = 123
     assert spec
     assert spec.loader
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
 
-    assert "custom-offline-model" in module._PROFILES  # type: ignore[attr-defined]
-    assert (
-        module._PROFILES["custom-offline-model"]["structured_output"] is True  # type: ignore[index]
-    )
-    assert (
-        module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123  # type: ignore[index]
-    )
+    assert "custom-offline-model" in module._PROFILES
+    assert module._PROFILES["custom-offline-model"]["structured_output"] is True
+    assert module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123
 
 
 def test_refresh_generates_sorted_profiles(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that profiles are sorted alphabetically by model ID."""
     data_dir = tmp_path / "data"
@@ -266,9 +269,9 @@ def test_refresh_generates_sorted_profiles(
     assert spec
     assert spec.loader
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
 
-    model_ids = list(module._PROFILES.keys())  # type: ignore[attr-defined]
+    model_ids = list(module._PROFILES.keys())
     assert model_ids == sorted(model_ids), f"Profile keys are not sorted: {model_ids}"
 
 
@@ -364,3 +367,104 @@ def test_model_data_to_profile_text_modalities() -> None:
     profile = _model_data_to_profile(image_gen_model)
     assert profile["text_inputs"] is True
     assert profile["text_outputs"] is False
+
+
+def test_model_data_to_profile_keys_subset_of_model_profile() -> None:
+    """All CLI-emitted profile keys must be declared in `ModelProfile`."""
+    # Build a model_data dict with every possible field populated so
+    # _model_data_to_profile includes all keys it can emit.
+    model_data = {
+        "id": "test-model",
+        "name": "Test Model",
+        "status": "active",
+        "release_date": "2025-01-01",
+        "last_updated": "2025-01-01",
+        "open_weights": True,
+        "reasoning": True,
+        "tool_call": True,
+        "tool_choice": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": True,
+        "image_url_inputs": True,
+        "image_tool_message": True,
+        "pdf_tool_message": True,
+        "pdf_inputs": True,
+        "limit": {"context": 100000, "output": 4096},
+        "modalities": {
+            "input": ["text", "image", "audio", "video", "pdf"],
+            "output": ["text", "image", "audio", "video"],
+        },
+    }
+
+    profile = _model_data_to_profile(model_data)
+    declared_fields = set(get_type_hints(ModelProfile).keys())
+    emitted_fields = set(profile.keys())
+    extra = emitted_fields - declared_fields
+
+    assert not extra, (
+        f"CLI emits profile keys not declared in ModelProfile: {sorted(extra)}. "
+        f"Add these fields to langchain_core.language_models.model_profile."
+        f"ModelProfile and release langchain-core before refreshing partner "
+        f"profiles."
+    )
+
+
+class TestWarnUndeclaredProfileKeys:
+    """Tests for _warn_undeclared_profile_keys."""
+
+    def test_warns_on_undeclared_keys(self) -> None:
+        """Extra keys across profiles trigger a single warning."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"max_input_tokens": 100, "future_key": True},
+            "model-b": {"another_key": "val"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        assert len(w) == 1
+        assert "another_key" in str(w[0].message)
+        assert "future_key" in str(w[0].message)
+
+    def test_silent_on_declared_keys_only(self) -> None:
+        """No warning when all keys are declared in ModelProfile."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"max_input_tokens": 100, "tool_calling": True},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        assert len(w) == 0
+
+    def test_silent_when_langchain_core_not_installed(self) -> None:
+        """Gracefully skips when langchain-core is not importable."""
+        import sys
+
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"unknown": True},
+        }
+        with (
+            patch.dict(
+                sys.modules,
+                {"langchain_core.language_models.model_profile": None},
+            ),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            _warn_undeclared_profile_keys(profiles)
+
+        undeclared_warnings = [x for x in w if "not declared" in str(x.message)]
+        assert len(undeclared_warnings) == 0
+
+    def test_survives_get_type_hints_failure(self) -> None:
+        """Gracefully handles TypeError from get_type_hints."""
+        profiles: dict[str, dict[str, Any]] = {
+            "model-a": {"unknown": True},
+        }
+        with patch(
+            "langchain_model_profiles.cli.get_type_hints",
+            side_effect=TypeError("broken"),
+        ):
+            _warn_undeclared_profile_keys(profiles)

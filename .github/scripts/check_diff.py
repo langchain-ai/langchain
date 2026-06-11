@@ -33,14 +33,19 @@ LANGCHAIN_DIRS = [
     "libs/model-profiles",
 ]
 
+# Packages with VCR cassette-backed integration tests.
+# These get a playback-only CI check to catch stale cassettes.
+VCR_PACKAGES = {
+    "libs/partners/openai",
+}
+
 # When set to True, we are ignoring core dependents
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
 IGNORE_CORE_DEPENDENTS = False
 
-# ignored partners are removed from dependents
-# but still run if directly edited
+# Ignored partners are removed from dependents but still run if directly edited
 IGNORED_PARTNERS = [
     # remove huggingface from dependents because of CI instability
     # specifically in huggingface jobs
@@ -127,12 +132,23 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.13"]
-    elif dir_ == "libs/core":
+        # CPU simulation (<1% variance, Valgrind-based) is the default.
+        # Partners with heavy SDK inits use walltime instead to keep CI fast.
+        CODSPEED_WALLTIME_DIRS = {
+            "libs/core",
+            "libs/partners/fireworks",  # ~328s under simulation
+            "libs/partners/openai",  # 6 benchmarks, ~6 min under simulation
+        }
+        mode = "walltime" if dir_ in CODSPEED_WALLTIME_DIRS else "simulation"
+        return [
+            {
+                "working-directory": dir_,
+                "python-version": "3.13",
+                "codspeed-mode": mode,
+            }
+        ]
+    if dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    # custom logic for specific directories
-    elif dir_ in {"libs/partners/chroma"}:
-        py_versions = ["3.10", "3.13"]
     else:
         py_versions = ["3.10", "3.14"]
 
@@ -210,6 +226,14 @@ def _get_configs_for_multi_dirs(
         dirs = list(dirs_to_run["extended-test"])
     elif job == "codspeed":
         dirs = list(dirs_to_run["codspeed"])
+    elif job == "vcr-tests":
+        # Only run VCR tests for packages that have cassettes and are affected
+        all_affected = set(
+            add_dependents(
+                dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+            )
+        )
+        dirs = [d for d in VCR_PACKAGES if d in all_affected]
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -218,8 +242,42 @@ def _get_configs_for_multi_dirs(
     ]
 
 
+def _get_changed_files(args: list[str]) -> list[str]:
+    """Parse changed files from command-line arguments.
+
+    Args:
+        args: Either a legacy list of filename arguments or a single JSON array
+            produced by `Ana06/get-changed-files` with `format: json`.
+
+    Returns:
+        List of changed files.
+
+    Raises:
+        ValueError: If a single argument looks like JSON but is not a string array.
+    """
+    if len(args) != 1:
+        return args
+
+    value = args[0].strip()
+    if not value.startswith("[") or not value.endswith("]"):
+        return args
+
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as e:
+        msg = "Expected changed files JSON to be a list of strings."
+        raise ValueError(msg) from e
+
+    if not isinstance(parsed, list) or not all(
+        isinstance(file, str) for file in parsed
+    ):
+        msg = "Expected changed files JSON to be a list of strings."
+        raise ValueError(msg)
+    return parsed
+
+
 if __name__ == "__main__":
-    files = sys.argv[1:]
+    files = _get_changed_files(sys.argv[1:])
 
     dirs_to_run: Dict[str, set] = {
         "lint": set(),
@@ -258,6 +316,8 @@ if __name__ == "__main__":
 
         if file.startswith("libs/core"):
             dirs_to_run["codspeed"].add("libs/core")
+        if file.startswith("libs/langchain_v1"):
+            dirs_to_run["codspeed"].add("libs/langchain_v1")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -290,8 +350,13 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
-                # Skip codspeed for partners without benchmarks or in IGNORED_PARTNERS
-                if partner_dir not in IGNORED_PARTNERS:
+                # Only add to codspeed if the partner has benchmarks and is not ignored
+                if (
+                    partner_dir not in IGNORED_PARTNERS
+                    and os.path.isdir(
+                        f"libs/partners/{partner_dir}/tests/benchmarks"
+                    )
+                ):
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
@@ -324,6 +389,7 @@ if __name__ == "__main__":
             "dependencies",
             "test-pydantic",
             "codspeed",
+            "vcr-tests",
         ]
     }
 

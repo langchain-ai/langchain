@@ -93,7 +93,7 @@ async def _collect_events(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(x: int) -> dict:
+    def foo(x: int) -> dict[str, int]:
         """Foo."""
         _ = x
         return {"x": 5}
@@ -1097,12 +1097,14 @@ async def test_event_streaming_with_tools() -> None:
         return "world"
 
     @tool
-    def with_parameters(x: int, y: str) -> dict:
+    def with_parameters(x: int, y: str) -> dict[str, Any]:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+    def with_parameters_and_callbacks(
+        x: int, y: str, callbacks: Callbacks
+    ) -> dict[str, Any]:
         """A tool that does nothing."""
         _ = callbacks
         return {"x": x, "y": y}
@@ -2843,7 +2845,7 @@ async def test_tool_error_event_includes_tool_call_id() -> None:
     """Test that on_tool_error event includes tool_call_id when provided."""
 
     @tool
-    def failing_tool(x: int) -> str:  # noqa: ARG001
+    def failing_tool(x: int) -> str:
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)
@@ -2883,7 +2885,7 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     """Test that on_tool_error event has tool_call_id=None when not provided."""
 
     @tool
-    def failing_tool_no_id(x: int) -> str:  # noqa: ARG001
+    def failing_tool_no_id(x: int) -> str:
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)

@@ -214,7 +214,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             raise ValueError(msg)
 
         if not isinstance(tokenizer, PreTrainedTokenizerBase):
-            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
+            # unreachable: transformers absent -> PreTrainedTokenizerBase is Any
+            # unused-ignore: transformers present -> branch is reachable
+            msg = (  # type: ignore[unreachable, unused-ignore]
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
             raise ValueError(msg)  # noqa: TRY004
 
         def _huggingface_tokenizer_length(text: str) -> int:
