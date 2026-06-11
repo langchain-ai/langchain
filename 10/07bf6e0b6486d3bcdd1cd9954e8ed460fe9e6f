@@ -1,0 +1,19 @@
+libs/partners/fireworks/tests/unit_tests/test_stream_events.py
+  s_333b03f0a3d0f4::t_e844a2841afbc3 186-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "1007bf6e0b6486d3bcdd1cd9954e8ed460fe9e6f",
+  "prompts": {},
+  "sessions": {
+    "s_333b03f0a3d0f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "348a2811-4930-470f-bcd5-154f557327dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
