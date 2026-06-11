@@ -732,15 +732,15 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         )
         raise ValueError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> dict:
         """Dictionary representation of chain.
 
         Expects `Chain._chain_type` property to be implemented and for memory to be
             null.
 
         Args:
-            **kwargs: Keyword arguments passed to default `pydantic.BaseModel.dict`
-                method.
+            **kwargs: Keyword arguments passed to default
+                `pydantic.BaseModel.model_dump` method.
 
         Returns:
             A dictionary representation of the chain.
