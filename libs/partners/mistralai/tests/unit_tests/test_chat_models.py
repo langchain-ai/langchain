@@ -16,6 +16,7 @@ from langchain_core.messages import (
     InvalidToolCall,
     SystemMessage,
     ToolCall,
+    ToolMessage,
 )
 from pydantic import SecretStr
 
@@ -24,10 +25,30 @@ from langchain_mistralai.chat_models import (  # type: ignore[import]
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
+    _format_message_content,
     _is_valid_mistral_tool_call_id,
+    _sanitize_chat_completions_content,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Mistral's chat completions endpoint returns 422 with `extra_forbidden`
+    on `messages[*].tool.content.list[...].text.id` if not stripped.
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="abc12345",
+    )
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [{"type": "text", "text": "foo"}]
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
 
 
 def test_mistralai_model_param() -> None:
@@ -69,12 +90,12 @@ def test_mistralai_initialization_baseurl(
         ("MISTRAL_BASE_URL"),
     ],
 )
-def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
+def test_mistralai_initialization_baseurl_env(
+    env_var_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test ChatMistralAI initialization."""
     # Verify that ChatMistralAI can be initialized using env variable
-    import os
-
-    os.environ[env_var_name] = "boo"
+    monkeypatch.setenv(env_var_name, "boo")
     model = ChatMistralAI(model="test")  # type: ignore[call-arg]
     assert model.endpoint == "boo"
 
@@ -111,6 +132,180 @@ def test_convert_message_to_mistral_chat_message(
     assert result == expected
 
 
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("hello", "hello"),
+        ("", ""),
+        (None, None),
+        ([], []),
+    ],
+)
+def test_format_message_content_passthrough_non_list(
+    content: Any, expected: Any
+) -> None:
+    """Strings, None, and empty lists pass through `_format_message_content`."""
+    assert _format_message_content(content) == expected
+
+
+@pytest.mark.parametrize(
+    ("block", "expected"),
+    [
+        (
+            {"type": "image", "url": "https://example.com/img.png"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/img.png"},
+            },
+        ),
+        (
+            {"type": "image", "base64": "abc123", "mime_type": "image/jpeg"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,abc123"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/v0.png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/v0.png"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "v0data",
+                "mime_type": "image/png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,v0data"},
+            },
+        ),
+    ],
+)
+def test_format_message_content_translates_image_blocks(
+    block: dict, expected: dict
+) -> None:
+    """v0 and v1 canonical image blocks translate to Mistral's `image_url` shape."""
+    assert _format_message_content([block]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "text", "text": "hello"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+        {"type": "image_url", "image_url": "https://example.com/img.png"},
+    ],
+)
+def test_format_message_content_passthrough_known_blocks(block: dict) -> None:
+    """Already-translated wire blocks and text blocks pass through unchanged."""
+    assert _format_message_content([block]) == [block]
+
+
+@pytest.mark.parametrize(
+    "block_type",
+    ["tool_use", "thinking", "reasoning_content", "document_url", "input_audio"],
+)
+def test_format_message_content_passes_unknown_blocks_through(block_type: str) -> None:
+    """Non-canonical blocks pass through; the Mistral API validates them."""
+    blocks = [
+        {"type": "text", "text": "kept"},
+        {"type": block_type, "data": "anything"},
+    ]
+    assert _format_message_content(blocks) == blocks
+
+
+def test_format_message_content_preserves_order_for_mixed_blocks() -> None:
+    """Multiple text + image blocks retain their order — vision prompts depend on it."""
+    blocks: list[Any] = [
+        {"type": "text", "text": "first"},
+        {"type": "image", "url": "https://example.com/a.png"},
+        {"type": "text", "text": "between"},
+        {"type": "image", "base64": "xyz", "mime_type": "image/png"},
+        "trailing string",
+    ]
+    expected = [
+        {"type": "text", "text": "first"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+        {"type": "text", "text": "between"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,xyz"}},
+        "trailing string",
+    ]
+    assert _format_message_content(blocks) == expected
+
+
+def test_format_message_content_image_missing_mime_type_raises() -> None:
+    """Base64 image without `mime_type` raises via the core translator."""
+    with pytest.raises(ValueError, match="mime_type"):
+        _format_message_content([{"type": "image", "base64": "abc"}])
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What is in this image?"},
+                    {"type": "image", "url": "https://example.com/img.png"},
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What is in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.com/img.png"},
+                    },
+                ],
+            },
+        ),
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image",
+                        "base64": "abc123",
+                        "mime_type": "image/png",
+                    },
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,abc123"},
+                    },
+                ],
+            },
+        ),
+    ],
+)
+def test_convert_human_message_with_images(
+    message: BaseMessage, expected: dict
+) -> None:
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result == expected
+
+
+def test_convert_human_message_with_string_content_unchanged() -> None:
+    """Plain string `HumanMessage` content is not wrapped or modified."""
+    result = _convert_message_to_mistral_chat_message(HumanMessage(content="hi"))
+    assert result == {"role": "user", "content": "hi"}
+
+
 def _make_completion_response_from_token(token: str) -> dict:
     return {
         "id": "abc123",
@@ -144,8 +339,11 @@ async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        self.last_token = token
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
+        if isinstance(token, str):
+            self.last_token = token
 
 
 @patch(
@@ -315,17 +513,65 @@ def test_tool_id_conversion() -> None:
 
 def test_extra_kwargs() -> None:
     # Check that foo is saved in extra_kwargs.
-    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_stop_stored_as_field() -> None:
+    """`stop` is a first-class field, not routed into `model_kwargs`."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm.stop == ["END"]
+    assert "stop" not in llm.model_kwargs
+
+
+def test_create_message_dicts_sends_instance_stop() -> None:
+    """Instance-level `stop` is forwarded to the request params."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert params["stop"] == ["END"]
+
+
+def test_create_message_dicts_per_call_stop_overrides_instance() -> None:
+    """A per-call `stop` (including an empty list) overrides the instance value."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    # A non-empty per-call value wins over the instance default.
+    _, params = llm._create_message_dicts([HumanMessage("hi")], ["STOP"])
+    assert params["stop"] == ["STOP"]
+
+    # An explicit empty list overrides the instance default and is treated as
+    # "no stop sequences", so it is omitted from the request rather than sent
+    # as an empty array (which the API would reject).
+    _, params = llm._create_message_dicts([HumanMessage("hi")], [])
+    assert "stop" not in params
+
+
+def test_create_message_dicts_omits_stop_when_unset() -> None:
+    """No `stop` field and no per-call value means `stop` is not sent."""
+    llm = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert "stop" not in params
+
+
+def test_get_ls_params_stop_precedence() -> None:
+    """`_get_ls_params` records instance `stop` and lets a per-call value win."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm._get_ls_params().get("ls_stop") == ["END"]
+    assert llm._get_ls_params(stop=["STOP"]).get("ls_stop") == ["STOP"]
+
+    # Without an instance default and no per-call value, `ls_stop` is omitted.
+    llm_no_stop = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    assert "ls_stop" not in llm_no_stop._get_ls_params()
 
 
 def test_retry_with_failure_then_success() -> None:

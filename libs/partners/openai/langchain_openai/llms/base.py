@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 import openai
 import tiktoken
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,6 +22,7 @@ from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openai._version import __version__
+from langchain_openai.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +97,8 @@ class BaseOpenAI(BaseLLM):
             `OPENAI_API_KEY`.
         openai_api_base:
             Base URL path for API requests, leave blank if not using a proxy or
-            service emulator.
+            service emulator. Falls back to env var `OPENAI_API_BASE`, then to
+            `OPENAI_BASE_URL` (read by the underlying SDK client).
         openai_organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
@@ -208,7 +211,14 @@ class BaseOpenAI(BaseLLM):
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    emulator.
+
+    Resolution order (first match wins):
+
+    1. Explicit `base_url` (or `openai_api_base`) kwarg.
+    2. Env var `OPENAI_API_BASE` (read by LangChain at init).
+    3. Env var `OPENAI_BASE_URL` (read by the underlying `openai` SDK client).
+    """
 
     openai_organization: str | None = Field(
         alias="organization",
@@ -663,41 +673,48 @@ class BaseOpenAI(BaseLLM):
         )
 
     @staticmethod
+    @deprecated(
+        since="1.2",
+        removal="2.0",
+        alternative=(
+            "the model profile's `max_input_tokens` field "
+            "(e.g. `ChatOpenAI(model=...).profile['max_input_tokens']`)"
+        ),
+    )
     def modelname_to_contextsize(modelname: str) -> int:
-        """Calculate the maximum number of tokens possible to generate for a model.
+        """Return the maximum input context size for a model.
+
+        Prefers the model's profile (`max_input_tokens`) and falls back to a
+        mapping of legacy models that have no profile.
+
+        !!! warning "Changed in 1.2"
+
+            Now returns `max_input_tokens` from the model profile, which is the
+            input context window. Earlier releases returned a hand-maintained
+            number that for some newer models (e.g. `gpt-5`) reflected the
+            *total* context (input + output). Callers using the result as an
+            input-token budget are unaffected; callers using it as a combined
+            input+output budget should switch to the profile fields directly.
 
         Args:
             modelname: The modelname we want to know the context size for.
 
         Returns:
-            The maximum context size
+            The maximum input context size.
 
         Example:
             ```python
             max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
             ```
         """
-        model_token_mapping = {
-            "gpt-5.2": 400_000,
-            "gpt-5.2-2025-12-11": 400_000,
-            "gpt-5.1": 400_000,
-            "gpt-5.1-2025-11-13": 400_000,
-            "gpt-5": 400_000,
-            "gpt-5-2025-08-07": 400_000,
-            "gpt-5-mini": 400_000,
-            "gpt-5-mini-2025-08-07": 400_000,
-            "gpt-5-nano": 400_000,
-            "gpt-5-nano-2025-08-07": 400_000,
-            "gpt-4o-mini": 128_000,
-            "gpt-4o": 128_000,
-            "gpt-4o-2024-05-13": 128_000,
-            "gpt-4": 8192,
+        # Legacy models without a model profile.
+        legacy_token_mapping = {
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,
             "gpt-4-32k": 32768,
             "gpt-4-32k-0314": 32768,
             "gpt-4-32k-0613": 32768,
-            "gpt-3.5-turbo": 4096,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-3.5-turbo-0301": 4096,
             "gpt-3.5-turbo-0613": 4096,
             "gpt-3.5-turbo-16k": 16385,
@@ -720,15 +737,27 @@ class BaseOpenAI(BaseLLM):
 
         # handling finetuned models
         if "ft-" in modelname:
-            modelname = modelname.split(":")[0]
+            modelname = modelname.split(":", maxsplit=1)[0]
 
-        context_size = model_token_mapping.get(modelname)
+        profile = _PROFILES.get(modelname)
+        context_size = profile.get("max_input_tokens") if profile else None
+        if profile is not None and context_size is None:
+            logger.warning(
+                "Profile for model %s is missing `max_input_tokens`; "
+                "falling back to legacy mapping.",
+                modelname,
+            )
+        if context_size is None:
+            context_size = legacy_token_mapping.get(modelname)
 
         if context_size is None:
-            raise ValueError(
-                f"Unknown model: {modelname}. Please provide a valid OpenAI model name."
-                "Known models are: " + ", ".join(model_token_mapping.keys())
+            known = sorted({*_PROFILES.keys(), *legacy_token_mapping.keys()})
+            msg = (
+                f"Unknown model: {modelname}. Please provide a valid OpenAI model "
+                "name, or read `max_input_tokens` from the model profile directly. "
+                "Known models are: " + ", ".join(known)
             )
+            raise ValueError(msg)
 
         return context_size
 

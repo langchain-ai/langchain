@@ -1,4 +1,4 @@
-"""Integration tests for ShellToolMiddleware with create_agent."""
+"""Integration tests for `ShellToolMiddleware` with `create_agent`."""
 
 from __future__ import annotations
 

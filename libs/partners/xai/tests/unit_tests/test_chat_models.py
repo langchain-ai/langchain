@@ -24,11 +24,6 @@ def test_initialization() -> None:
     ChatXAI(model=MODEL_NAME)
 
 
-def test_profile() -> None:
-    model = ChatXAI(model="grok-4")
-    assert model.profile
-
-
 def test_xai_model_param() -> None:
     llm = ChatXAI(model="foo")
     assert llm.model_name == "foo"
@@ -53,12 +48,14 @@ def test_chat_xai_invalid_streaming_params() -> None:
 def test_chat_xai_extra_kwargs() -> None:
     """Test extra kwargs to chat xai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors

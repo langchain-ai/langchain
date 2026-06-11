@@ -106,7 +106,7 @@ class ChatOpenRouter(BaseChatModel):
 
         | Param | Type | Description |
         | ----- | ---- | ----------- |
-        | `model` | `str` | Model name, e.g. `'openai/gpt-4o-mini'`. |
+        | `model` | `str` | Model name |
         | `temperature` | `float | None` | Sampling temperature. |
         | `max_tokens` | `int | None` | Max tokens to generate. |
 
@@ -119,6 +119,9 @@ class ChatOpenRouter(BaseChatModel):
         | `timeout` | `int | None` | Timeout in milliseconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
+        | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
+        | `session_id` | `str | None` | Group related requests for observability. |
+        | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -155,24 +158,45 @@ class ChatOpenRouter(BaseChatModel):
     app_url: str | None = Field(
         default_factory=from_env(
             "OPENROUTER_APP_URL",
-            default="https://docs.langchain.com/oss",
+            default="https://docs.langchain.com",
         ),
     )
     """Application URL for OpenRouter attribution.
 
     Maps to `HTTP-Referer` header.
 
+    Defaults to LangChain docs URL. Set this to your app's URL to get
+    attribution for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
     """
 
     app_title: str | None = Field(
-        default_factory=from_env("OPENROUTER_APP_TITLE", default="langchain"),
+        default_factory=from_env("OPENROUTER_APP_TITLE", default="LangChain"),
     )
     """Application title for OpenRouter attribution.
 
     Maps to `X-Title` header.
 
+    Defaults to `'LangChain'`. Set this to your app's name to get attribution
+    for API usage in the OpenRouter dashboard.
+
     See https://openrouter.ai/docs/app-attribution for details.
+    """
+
+    app_categories: list[str] | None = Field(
+        default=None,
+    )
+    """Marketplace categories for OpenRouter attribution.
+
+    Maps to `X-OpenRouter-Categories` header. Pass a list of lowercase,
+    hyphen-separated category strings (max 30 characters each),
+    e.g. `['cli-agent', 'programming-app']`.
+
+    Only recognized categories are accepted (unrecognized values are silently
+    dropped by OpenRouter).
+
+    See https://openrouter.ai/docs/app-attribution for recognized categories.
     """
 
     request_timeout: int | None = Field(default=None, alias="timeout")
@@ -181,7 +205,8 @@ class ChatOpenRouter(BaseChatModel):
     max_retries: int = 2
     """Maximum number of retries.
 
-    Controls the retry backoff window via the SDK's `max_elapsed_time`.
+    Each unit adds ~150 seconds to the backoff window via the SDK's
+    `max_elapsed_time` (e.g. `max_retries=2` allows up to ~300 s).
 
     Set to `0` to disable retries.
     """
@@ -270,6 +295,42 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
+    session_id: str | None = Field(
+        default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
+    )
+    """Identifier used by OpenRouter to group related requests together.
+
+    Useful any time multiple requests should share an observability
+    grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
+    run). Equivalent to setting the `x-session-id` HTTP header on the
+    underlying request. OpenRouter rejects values longer than 128
+    characters.
+
+    Falls back to the `OPENROUTER_SESSION_ID` environment variable when
+    unset, so callers can group all requests from a process without
+    threading the value through application code. Empty strings are
+    treated as unset.
+
+    Example: `"conv-2026-04-30-abc"`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
+    trace: dict[str, Any] | None = None
+    """Trace metadata for observability tools (e.g. Langfuse, LangSmith).
+
+    Forwarded by OpenRouter to configured broadcast destinations. Common
+    keys include `trace_id`, `trace_name`, `span_name`, `generation_name`,
+    and `parent_span_id`; see the OpenRouter broadcast docs for the
+    current full set. Unknown keys are forwarded as custom metadata.
+
+    No environment-variable fallback — set per-call or on the constructor.
+
+    Example: `{"trace_id": "abc-123", "span_name": "summarize"}`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -302,6 +363,54 @@ class ChatOpenRouter(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
+    def _build_client(self) -> Any:
+        """Build and return an `openrouter.OpenRouter` SDK client.
+
+        Returns:
+            An `openrouter.OpenRouter` SDK client instance.
+        """
+        import openrouter  # noqa: PLC0415
+        from openrouter.utils import (  # noqa: PLC0415
+            BackoffStrategy,
+            RetryConfig,
+        )
+
+        client_kwargs: dict[str, Any] = {
+            "api_key": self.openrouter_api_key.get_secret_value(),  # type: ignore[union-attr]
+        }
+        if self.openrouter_api_base:
+            client_kwargs["server_url"] = self.openrouter_api_base
+        extra_headers: dict[str, str] = {}
+        if self.app_url:
+            extra_headers["HTTP-Referer"] = self.app_url
+        if self.app_title:
+            extra_headers["X-Title"] = self.app_title
+        if self.app_categories:
+            extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        if extra_headers:
+            import httpx  # noqa: PLC0415
+
+            client_kwargs["client"] = httpx.Client(
+                headers=extra_headers, follow_redirects=True
+            )
+            client_kwargs["async_client"] = httpx.AsyncClient(
+                headers=extra_headers, follow_redirects=True
+            )
+        if self.request_timeout is not None:
+            client_kwargs["timeout_ms"] = self.request_timeout
+        if self.max_retries > 0:
+            client_kwargs["retry_config"] = RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(
+                    initial_interval=500,
+                    max_interval=60000,
+                    exponent=1.5,
+                    max_elapsed_time=self.max_retries * 150_000,
+                ),
+                retry_connection_errors=True,
+            )
+        return openrouter.OpenRouter(**client_kwargs)
+
     @model_validator(mode="after")
     def _set_openrouter_version(self) -> Self:
         """Set package version in metadata."""
@@ -320,41 +429,15 @@ class ChatOpenRouter(BaseChatModel):
 
         if not self.client:
             try:
-                import openrouter  # noqa: PLC0415
-                from openrouter.utils import (  # noqa: PLC0415
-                    BackoffStrategy,
-                    RetryConfig,
-                )
+                import openrouter  # noqa: PLC0415, F401
+
+                self.client = self._build_client()
             except ImportError as e:
                 msg = (
                     "Could not import the `openrouter` Python SDK. "
                     "Please install it with: pip install openrouter"
                 )
                 raise ImportError(msg) from e
-
-            client_kwargs: dict[str, Any] = {
-                "api_key": self.openrouter_api_key.get_secret_value(),
-            }
-            if self.openrouter_api_base:
-                client_kwargs["server_url"] = self.openrouter_api_base
-            if self.app_url:
-                client_kwargs["http_referer"] = self.app_url
-            if self.app_title:
-                client_kwargs["x_title"] = self.app_title
-            if self.request_timeout is not None:
-                client_kwargs["timeout_ms"] = self.request_timeout
-            if self.max_retries > 0:
-                client_kwargs["retry_config"] = RetryConfig(
-                    strategy="backoff",
-                    backoff=BackoffStrategy(
-                        initial_interval=500,
-                        max_interval=60000,
-                        exponent=1.5,
-                        max_elapsed_time=self.max_retries * 150_000,
-                    ),
-                    retry_connection_errors=True,
-                )
-            self.client = openrouter.OpenRouter(**client_kwargs)
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
@@ -665,6 +748,10 @@ class ChatOpenRouter(BaseChatModel):
             params["route"] = self.route
         if self.plugins is not None:
             params["plugins"] = self.plugins
+        if self.session_id:
+            params["session_id"] = self.session_id
+        if self.trace is not None:
+            params["trace"] = self.trace
         return params
 
     def _create_message_dicts(
@@ -933,7 +1020,7 @@ def _wrap_messages_for_sdk(
 ) -> list[dict[str, Any]] | list[Any]:
     """Wrap message dicts as SDK Pydantic models when file blocks are present.
 
-    The OpenRouter Python SDK (v0.6.0) does not include `file` in its
+    The OpenRouter Python SDK does not include `file` in its
     `ChatMessageContentItem` discriminated union, so Pydantic validation
     rejects file content blocks even though the OpenRouter **API** supports
     them. Using `model_construct` on the SDK's message classes bypasses
@@ -955,21 +1042,30 @@ def _wrap_messages_for_sdk(
     try:
         from openrouter import components  # noqa: PLC0415
     except ImportError:
+        warnings.warn(
+            "Could not import openrouter.components; file content blocks "
+            "will be sent as raw dicts which may cause validation errors.",
+            stacklevel=2,
+        )
         return message_dicts
 
     role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.UserMessage,
-        "system": components.SystemMessage,
-        "assistant": components.AssistantMessage,
-        "tool": components.ToolResponseMessage,
-        "developer": components.DeveloperMessage,
+        "user": components.ChatUserMessage,
+        "system": components.ChatSystemMessage,
+        "assistant": components.ChatAssistantMessage,
+        "tool": components.ChatToolMessage,
+        "developer": components.ChatDeveloperMessage,
     }
 
     wrapped: list[Any] = []
     for msg in message_dicts:
         model_cls = role_to_model.get(msg.get("role", ""))
         if model_cls is None:
-            # Unknown role — pass dict through and hope for the best.
+            warnings.warn(
+                f"Unknown message role {msg.get('role')!r} encountered during "
+                f"SDK wrapping; passing raw dict to the API.",
+                stacklevel=2,
+            )
             wrapped.append(msg)
             continue
         wrapped.append(model_cls.model_construct(**msg))
@@ -1077,6 +1173,86 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
+def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
+    """Merge a run of consecutive same-`(type, index)` reasoning fragments."""
+    merged_entry: dict[str, Any] = {}
+    text_parts: list[str] = []
+    has_text = False
+    for frag in run:
+        for k, v in frag.items():
+            if k == "text":
+                has_text = True
+                if v:
+                    text_parts.append(v)
+            elif v is not None:
+                merged_entry[k] = v
+    if has_text:
+        merged_entry["text"] = "".join(text_parts)
+    return merged_entry
+
+
+def _merge_reasoning_details(
+    details: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge fragmented `reasoning_details` from streaming chunk concatenation.
+
+    During streaming, `AIMessageChunk.__add__` list-concatenates
+    `reasoning_details` in `additional_kwargs`, fragmenting a single entry
+    into many. When serialized back to the API via
+    `_convert_message_to_dict`, these fragments cause
+    `BadRequestResponseError` on multi-turn conversations (the provider
+    rejects the malformed thinking block with `Invalid signature`).
+
+    Streaming deltas tag each fragment with the `index` of the entry it
+    belongs to in the original (non-streamed) array, so this function groups
+    consecutive entries by `(type, index)` and merges each group into one.
+    Entries without an `index` are preserved as-is, since non-streaming
+    responses can legitimately contain multiple entries.
+
+    Within a merged group, `text` values are concatenated in order. Other
+    metadata fields (e.g. `format`, `signature`) use last-non-`None`-wins
+    semantics, which preserves stable provider metadata without concatenating
+    repeated strings — Anthropic-style reasoning streams emit a single
+    signature-bearing fragment at the end of the block.
+
+    A list with zero or one items passes through unchanged.
+    """
+    if not isinstance(details, list) or len(details) <= 1:
+        return details
+
+    merged: list[dict[str, Any]] = []
+    i = 0
+    while i < len(details):
+        entry = details[i]
+        # Without an index we cannot distinguish streaming fragments from
+        # distinct non-streaming entries, so leave them alone. Same for any
+        # non-dict items that may have slipped in upstream.
+        if not isinstance(entry, dict) or entry.get("index") is None:
+            merged.append(entry)
+            i += 1
+            continue
+
+        entry_type = entry.get("type", "")
+        entry_index = entry["index"]
+        run = [entry]
+        i += 1
+        while i < len(details):
+            nxt = details[i]
+            if (
+                isinstance(nxt, dict)
+                and nxt.get("type", "") == entry_type
+                and nxt.get("index") == entry_index
+            ):
+                run.append(nxt)
+                i += 1
+            else:
+                break
+
+        merged.append(entry if len(run) == 1 else _merge_reasoning_run(run))
+
+    return merged
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Convert a LangChain message to an OpenRouter-compatible dict payload.
 
@@ -1128,14 +1304,15 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
             ):
                 message_dict["content"] = None
         # Preserve reasoning content for multi-turn conversations (e.g.
-        # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
-        # optional structured details in "reasoning_details".
+        # tool-calling loops). OpenRouter stores reasoning text in `reasoning`
+        # and structured fragment details in `reasoning_details`; the latter
+        # is merged before serialization to undo streaming fragmentation.
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = message.additional_kwargs[
-                "reasoning_details"
-            ]
+            message_dict["reasoning_details"] = _merge_reasoning_details(
+                message.additional_kwargs["reasoning_details"]
+            )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
@@ -1342,13 +1519,16 @@ def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
     Returns:
         Usage metadata with input/output token details.
     """
+    _input = token_usage.get("prompt_tokens")
     input_tokens = int(
-        token_usage.get("prompt_tokens") or token_usage.get("input_tokens") or 0
+        _input if _input is not None else (token_usage.get("input_tokens") or 0)
     )
+    _output = token_usage.get("completion_tokens")
     output_tokens = int(
-        token_usage.get("completion_tokens") or token_usage.get("output_tokens") or 0
+        _output if _output is not None else (token_usage.get("output_tokens") or 0)
     )
-    total_tokens = int(token_usage.get("total_tokens") or input_tokens + output_tokens)
+    _total = token_usage.get("total_tokens")
+    total_tokens = int(_total if _total is not None else input_tokens + output_tokens)
 
     input_details_dict = (
         token_usage.get("prompt_tokens_details")
