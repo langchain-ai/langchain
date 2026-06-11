@@ -1,0 +1,30 @@
+libs/partners/fireworks/langchain_fireworks/_stream_events.py
+  s_333b03f0a3d0f4::t_9780cf6ab9191e 1-98,100-136,138-160
+  s_333b03f0a3d0f4::t_8ff1638c9e8fae 99,137
+libs/partners/fireworks/langchain_fireworks/chat_models.py
+  s_333b03f0a3d0f4::t_44845239122759 11
+  s_333b03f0a3d0f4::t_a509afba8aac65 107-109
+  s_333b03f0a3d0f4::t_1cb1e6cc5879f2 1122-1137,1139-1168,1170-1189
+  s_333b03f0a3d0f4::t_e845ff4716cc9f 1138
+  s_333b03f0a3d0f4::t_82a499898b67d9 1169
+libs/partners/fireworks/tests/unit_tests/test_stream_events.py
+  s_333b03f0a3d0f4::t_22522ba7ec2e39 1-115,117-313
+  s_333b03f0a3d0f4::t_2cfe6e3faa2949 116
+  s_333b03f0a3d0f4::t_79ad27311bbe8f 314-317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "5d804a4dcfc7751baf0fb8cdf9b55cd35e560651",
+  "prompts": {},
+  "sessions": {
+    "s_333b03f0a3d0f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "348a2811-4930-470f-bcd5-154f557327dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
