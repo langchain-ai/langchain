@@ -21,15 +21,17 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from typing_extensions import TypedDict, override
+from typing_extensions import TypedDict, assert_type, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    InputAgentState,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
     ResponseT,
     before_model,
 )
@@ -70,6 +72,12 @@ class SummaryResult(BaseModel):
 
     summary: str
     key_points: list[str]
+
+
+class CustomAgentState(AgentState[Any]):
+    """Custom state schema without a structured response format."""
+
+    user_id: str
 
 
 # =============================================================================
@@ -251,6 +259,24 @@ def test_create_agent_no_context_schema(fake_model: GenericFakeChatModel) -> Non
         ],
         # No context_schema - backwards compatible
     )
+    assert agent is not None
+
+
+def test_create_agent_custom_state_without_response_format(
+    fake_model: GenericFakeChatModel,
+) -> None:
+    """Custom state without response_format should not infer dict structured output."""
+    agent = create_agent(
+        model=fake_model,
+        state_schema=CustomAgentState,
+    )
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]],
+        )
+
     assert agent is not None
 
 
