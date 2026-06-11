@@ -1,0 +1,25 @@
+libs/partners/anthropic/pyproject.toml
+  s_99ded4e73b35dd::t_f33b5818f5bdd7 77-81
+libs/partners/perplexity/pyproject.toml
+  s_99ded4e73b35dd::t_f33b5818f5bdd7 75-77
+libs/core/pyproject.toml
+  s_99ded4e73b35dd::t_f33b5818f5bdd7 93-96
+libs/model-profiles/pyproject.toml
+  s_99ded4e73b35dd::t_f33b5818f5bdd7 83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "287b093170260af85089da69cd3df03131a97ad9",
+  "prompts": {},
+  "sessions": {
+    "s_99ded4e73b35dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd290ddd-8437-4b06-be46-cfb7ba898408",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
