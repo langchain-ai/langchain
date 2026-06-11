@@ -1,0 +1,36 @@
+libs/partners/groq/langchain_groq/_stream_events.py
+  s_dfc29189803279::t_e6ed5a895b1819 1-50,54-55,58-151
+  s_dfc29189803279::t_b46561cfb5783c 51-53
+  s_dfc29189803279::t_8f0bcd20f7e7cc 56-57
+libs/partners/groq/langchain_groq/chat_models.py
+  s_dfc29189803279::t_8d7b1ce6a0cf28 9
+  s_dfc29189803279::t_37aa753fb02a7f 77-79
+  s_dfc29189803279::t_32a0feb468f99c 768-783,785-807,809-821
+  s_dfc29189803279::t_5b94f29d1bf78c 784
+  s_dfc29189803279::t_6353d1f82657fb 808
+libs/partners/groq/tests/unit_tests/test_stream_events.py
+  s_dfc29189803279::t_efb00b83fc71bf 1-2,4,6-8,14-117,121-132
+  s_dfc29189803279::t_98f3a0563f6190 3,5,9,11-13
+  s_dfc29189803279::t_d9613e65b534cc 10
+  s_dfc29189803279::t_b46561cfb5783c 118-120,224-226
+  s_dfc29189803279::t_397680d28b696b 133-134,210-223,227-238
+  s_dfc29189803279::t_72ec2371cc8cd6 135-143,149-209
+  s_dfc29189803279::t_232d349ae71f49 144-148
+  s_dfc29189803279::t_ece689d6e2eceb 239-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7b4ffd5ea27d4037bf0fd8d1ecc0bb930096d56a",
+  "prompts": {},
+  "sessions": {
+    "s_dfc29189803279": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ea023ad-b7d3-454e-84ad-5e583878265b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
