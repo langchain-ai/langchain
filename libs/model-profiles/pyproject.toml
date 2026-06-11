@@ -80,6 +80,7 @@ langchain = { path = "../langchain_v1", editable = true }
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
+warn_unreachable = true
 
 [tool.ruff.format]
 docstring-code-format = true

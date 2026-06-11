@@ -74,6 +74,11 @@ langchain = { path = "../../langchain_v1", editable = true }
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 [tool.mypy]
+# `pydantic.mypy` is required here (and on perplexity): this package's code is
+# authored against the plugin and reports many errors without it. It is
+# intentionally NOT enabled on the other partner packages, where it adds no real
+# coverage and instead false-flags the public alias-based constructor API
+# (e.g. `Chat...(model=...)`, `...(api_key=...)`) used in their tests.
 plugins = ["pydantic.mypy"]
 disallow_untyped_defs = true
 

@@ -72,6 +72,9 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
+# `pydantic.mypy` is required here (code is authored against it). See the longer
+# note in `langchain-anthropic`'s pyproject.toml for why the other partners
+# intentionally omit this plugin.
 plugins = ["pydantic.mypy"]
 disallow_untyped_defs = true
 [[tool.mypy.overrides]]

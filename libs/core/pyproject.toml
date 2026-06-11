@@ -90,6 +90,10 @@ langchain-text-splitters = { path = "../text-splitters" }
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
+# `warn_unreachable` is intentionally NOT enabled here (unlike the other strict
+# libs). Under mypy 2.x it false-flags intentional defensive runtime checks as
+# unreachable — most notably the SSRF / IP-policy guards in
+# `langchain_core/_security/` — which we do not want to delete or blanket-ignore.
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false
