@@ -196,4 +196,20 @@ if __name__ == "__main__":
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file, versions_for, python_version)
 
+    # A `None` value means no *published* version on PyPI satisfies the declared
+    # constraint, e.g. a `release(...)` PR bumped a minimum pin to a version that
+    # has not shipped yet. Emitting `pkg==None` would be passed verbatim to
+    # `uv pip install` in the release workflow's minimum-version test step,
+    # producing a cryptic install failure, so fail loudly here instead.
+    unresolved = [lib for lib, version in min_versions.items() if version is None]
+    if unresolved:
+        print(
+            "ERROR: no published version on PyPI satisfies the declared constraint "
+            f"for: {', '.join(sorted(unresolved))}. A release likely pinned a "
+            "dependency to a version that is not yet published. Release the "
+            "dependency first, or relax the pin.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))
