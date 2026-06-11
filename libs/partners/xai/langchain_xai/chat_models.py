@@ -603,6 +603,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         return rtn
 
+    @property
+    def _stream_event_provider(self) -> str:
+        return "xai"
+
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,

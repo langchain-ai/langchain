@@ -339,6 +339,10 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         return rtn
 
+    @property
+    def _stream_event_provider(self) -> str:
+        return "deepseek"
+
     def _convert_chunk_to_generation_chunk(
         self,
         chunk: dict,

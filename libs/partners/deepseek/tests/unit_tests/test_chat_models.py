@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 from typing import Any, Literal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
+from typing_extensions import Self
 
 from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
 
@@ -447,3 +449,63 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-deepseek" in versions
     assert "langchain-openai" in versions
+
+
+class _MockSyncContextManager:
+    """Minimal context manager yielding OpenAI-shaped completions chunks."""
+
+    def __init__(self, chunks: list[dict[str, Any]]) -> None:
+        self._chunks = iter(chunks)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return
+
+    def __iter__(self) -> Self:
+        return self
+
+    def __next__(self) -> dict[str, Any]:
+        return next(self._chunks)
+
+
+def test_deepseek_stream_events_v3_provider_label() -> None:
+    """DeepSeek's native v3 stream labels `model_provider` as 'deepseek'."""
+    # Minimal OpenAI-shaped completions chunks (deepseek uses the openai client).
+    chunks: list[dict[str, Any]] = [
+        {
+            "id": "x",
+            "model": MODEL_NAME,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": "hi"},
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        {
+            "id": "x",
+            "model": MODEL_NAME,
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+            "usage": None,
+        },
+    ]
+
+    llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("x"))
+    mock_client = MagicMock()
+
+    def mock_create(*_args: Any, **_kwargs: Any) -> _MockSyncContextManager:
+        return _MockSyncContextManager(chunks)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events: list[Any] = list(llm.stream_events("hi", version="v3"))
+
+    assert_valid_event_stream(events)
+    assert events[0]["event"] == "message-start"
+    assert events[0]["metadata"]["provider"] == "deepseek"
+    assert events[-1]["event"] == "message-finish"
+    assert events[-1]["metadata"]["model_provider"] == "deepseek"

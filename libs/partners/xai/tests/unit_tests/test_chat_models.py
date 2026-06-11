@@ -1,4 +1,6 @@
 import json
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -12,7 +14,9 @@ from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from pydantic import SecretStr
+from typing_extensions import Self
 
 from langchain_xai import ChatXAI
 
@@ -171,3 +175,65 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-xai" in versions
     assert "langchain-openai" in versions
+
+
+class _MockSyncContextManager:
+    """Minimal context manager yielding OpenAI-shaped completions chunks."""
+
+    def __init__(self, chunks: list) -> None:
+        self._chunks = iter(chunks)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return
+
+    def __iter__(self) -> Self:
+        return self
+
+    def __next__(self) -> dict:
+        return next(self._chunks)
+
+
+def test_xai_stream_events_v3_provider_label() -> None:
+    """xai's native v3 stream labels `model_provider` as 'xai'."""
+    # `grok-4` takes the Chat Completions path (not Responses), so the
+    # inherited native hook calls `self.client.create(**payload)`.
+    chunks = [
+        {
+            "id": "x",
+            "model": MODEL_NAME,
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": "hi"},
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        {
+            "id": "x",
+            "model": MODEL_NAME,
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+            "usage": None,
+        },
+    ]
+
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("x"))
+    assert llm._use_responses_api({}) is False
+    mock_client = MagicMock()
+
+    def mock_create(*_args: Any, **_kwargs: Any) -> _MockSyncContextManager:
+        return _MockSyncContextManager(chunks)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events: list[Any] = list(llm.stream_events("hi", version="v3"))
+
+    assert_valid_event_stream(events)
+    assert events[0]["event"] == "message-start"
+    assert events[0]["metadata"]["provider"] == "xai"
+    assert events[-1]["event"] == "message-finish"
+    assert events[-1]["metadata"]["model_provider"] == "xai"
