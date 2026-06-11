@@ -1,0 +1,21 @@
+libs/text-splitters/uv.lock
+  s_99ded4e73b35dd::t_43358330c837cd 1191
+libs/core/uv.lock
+  s_99ded4e73b35dd::t_43358330c837cd 998,1002,1049,1073-1074,1082,1092-1103,1106,1129-1130,1135,1145,1151,1172-1173,1183,1190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a4ff3a4981b3760b42b76af6a53afe41c78b6f8d",
+  "prompts": {},
+  "sessions": {
+    "s_99ded4e73b35dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd290ddd-8437-4b06-be46-cfb7ba898408",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
