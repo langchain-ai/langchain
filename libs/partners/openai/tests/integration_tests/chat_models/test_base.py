@@ -1278,6 +1278,7 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
         model="gpt-4o-mini",
         temperature=0,
         output_version="v1",
+        stream_usage=False,
     )
     with_tool = llm.bind_tools([_Person], tool_choice="_Person")
     prompt = "Extract: Erick is 27 years old."
