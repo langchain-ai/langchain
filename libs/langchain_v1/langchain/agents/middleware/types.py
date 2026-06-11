@@ -365,6 +365,12 @@ class OutputAgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[ResponseT]
 
 
+# Deprecated aliases kept for backwards compatibility with external consumers that
+# imported the previously private names. Remove in a future release.
+_InputAgentState = InputAgentState
+_OutputAgentState = OutputAgentState
+
+
 StateT = TypeVar("StateT", bound=AgentState[Any], default=AgentState[Any])
 StateT_co = TypeVar("StateT_co", bound=AgentState[Any], default=AgentState[Any], covariant=True)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState[Any], contravariant=True)
