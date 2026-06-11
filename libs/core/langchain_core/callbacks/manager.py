@@ -263,7 +263,7 @@ async def _achat_model_start_fallback(
     Catches `NotImplementedError` and triggers the `on_llm_start` fallback.
     This covers async handlers invoked from a **sync** `handle_event` call,
     where the coroutine is collected into `coros` and executed later by
-    `_run_coros`.  Without this wrapper the `NotImplementedError` would be
+    `_run_coros`. Without this wrapper the `NotImplementedError` would be
     caught generically by `_run_coros` and the trace would be lost.
     """
     try:
@@ -367,6 +367,11 @@ def handle_event(
 
 
 def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
+    # Note: exceptions raised by these coroutines are always logged and swallowed
+    # here, regardless of the handler's `raise_error` setting. Async-handler errors
+    # driven through sync `handle_event` therefore never propagate, unlike errors
+    # from sync handlers (which honor `raise_error`). This is a pre-existing
+    # asymmetry between the sync and async callback paths.
     if hasattr(asyncio, "Runner"):
         # Python 3.11+
         # Run the coroutines in a new event loop, taking care to
