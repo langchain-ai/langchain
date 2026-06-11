@@ -1,0 +1,21 @@
+libs/core/tests/unit_tests/runnables/test_config.py
+  s_8246997c8aeef9::t_554d52db7e7557 386-387,389-392
+libs/core/langchain_core/runnables/config.py
+  s_8246997c8aeef9::t_554d52db7e7557 432-433
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "df1512a13668ad8bdaf4de99e501e8c99499ddec",
+  "prompts": {},
+  "sessions": {
+    "s_8246997c8aeef9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb51c-42de-7de2-975f-c8bf5fef1708",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
