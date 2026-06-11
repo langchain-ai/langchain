@@ -84,9 +84,13 @@ class VectorStore(ABC):
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
+            # Reuse the materialized sequence so one-shot iterables such as generators
+            # are not exhausted before the documents are constructed.
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                for text, metadata_, id_ in zip(
+                    texts_, metadatas_, ids_, strict=False
+                )
             ]
             if ids is not None:
                 # For backward compatibility
@@ -224,9 +228,13 @@ class VectorStore(ABC):
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
 
+            # Reuse the materialized sequence so one-shot iterables such as generators
+            # are not exhausted before the documents are constructed.
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                for text, metadata_, id_ in zip(
+                    texts_, metadatas_, ids_, strict=False
+                )
             ]
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
