@@ -8,7 +8,6 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
-    UsageInfo,
     _finalize_block,
     _isolate_usage,
     achunks_to_events,
@@ -32,6 +31,7 @@ if TYPE_CHECKING:
         ServerToolCall,
         TextContentBlock,
         ToolCall,
+        UsageInfo,
     )
 
 
