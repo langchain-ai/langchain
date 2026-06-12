@@ -19,6 +19,7 @@ from langchain_core.runnables.base import (
     Runnable,
     RunnableParallel,
     RunnableSerializable,
+    _get_schema_field_definition,
 )
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -435,6 +436,10 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     @override
     def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        # The return type stays `TypeBaseModel` (rather than narrowing to
+        # `type[BaseModel]` as `RunnableParallel.get_output_schema` does) because
+        # the fallback branches return the mapper's output schema or delegate to
+        # `super().get_output_schema()`, either of which may be a Pydantic v1 model.
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
         if not issubclass(map_input_schema, RootModel) and not issubclass(
@@ -443,10 +448,10 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             fields = {}
 
             for name, field_info in get_fields(map_input_schema).items():
-                fields[name] = (field_info.annotation, field_info.default)
+                fields[name] = _get_schema_field_definition(field_info)
 
             for name, field_info in get_fields(map_output_schema).items():
-                fields[name] = (field_info.annotation, field_info.default)
+                fields[name] = _get_schema_field_definition(field_info)
 
             return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):

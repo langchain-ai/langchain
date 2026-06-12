@@ -21,6 +21,7 @@ from freezegun import freeze_time
 from packaging import version
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
@@ -92,7 +93,11 @@ from langchain_core.tracers import (
 )
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import PYDANTIC_VERSION, TypeBaseModel
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+    TypeBaseModel,
+    model_validate,
+)
 from langchain_core.version import VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
@@ -5822,11 +5827,7 @@ def test_runnable_typed_dict_schema() -> None:
         other=other_runnable,
     )
     assert (
-        repr(
-            cast("BaseModel", parallel.input_schema).model_validate(
-                {"foo": "Y", "bar": "Z"}
-            )
-        )
+        repr(model_validate(parallel.input_schema, {"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
 
@@ -5923,3 +5924,63 @@ def test_runnable_branch_v1_input_schema() -> None:
     assert branch.get_input_jsonschema()["properties"] == {
         "a": {"title": "A", "type": "integer"}
     }
+
+
+def test_runnable_parallel_preserves_v1_default_factory() -> None:
+    """A v1 `default_factory` field keeps its factory in the derived schema.
+
+    Regression test for `_get_schema_field_definition`: without the dedicated
+    `default_factory` branch the factory is dropped and the field defaults to
+    `None` instead of producing the factory's value.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        items: list[int] = FieldV1(default_factory=list)
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    # The factory field is optional, so only `a` is required.
+    assert schema.model_json_schema()["required"] == ["a"]
+
+    # The factory runs when omitted, yielding `[]` rather than `None`.
+    assert schema.model_validate({"a": 1}).model_dump() == {"a": 1, "items": []}
+
+
+def test_runnable_sequence_v1_output_schema_with_assign() -> None:
+    """A sequence ending in `RunnableAssign` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) and translated required v1 fields as optional.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableAssign(
+        RunnableParallel(bar=RunnableLambda(lambda _: "bar"))
+    )
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a", "bar"}
+    # The required v1 field survives as required rather than becoming optional.
+    assert "a" in schema["required"]
+
+
+def test_runnable_sequence_v1_output_schema_with_pick() -> None:
+    """A sequence ending in `RunnablePick` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) for the `RunnablePick` branch.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        b: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnablePick(["a"])
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a"}
+    assert "a" in schema["required"]

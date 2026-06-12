@@ -38,6 +38,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
+from pydantic.fields import FieldInfo
 from typing_extensions import override
 
 from langchain_core._api import beta_decorator
@@ -3009,12 +3010,12 @@ def _seq_output_schema(
                 "RunnableSequenceOutput",
                 field_definitions={
                     **{
-                        k: (v.annotation, v.default)
+                        k: _get_schema_field_definition(v)
                         for k, v in get_fields(prev_output_schema).items()
                     },
                     **{
-                        k: (v.annotation, v.default)
-                        for k, v in mapper_output_schema.model_fields.items()
+                        k: _get_schema_field_definition(v)
+                        for k, v in get_fields(mapper_output_schema).items()
                     },
                 },
             )
@@ -3026,30 +3027,34 @@ def _seq_output_schema(
                 return create_model_v2(
                     "RunnableSequenceOutput",
                     field_definitions={
-                        k: (v.annotation, v.default)
+                        k: _get_schema_field_definition(v)
                         for k, v in get_fields(prev_output_schema).items()
                         if k in last.keys
                     },
                 )
             field = get_fields(prev_output_schema)[last.keys]
             return create_model_v2(
-                "RunnableSequenceOutput", root=(field.annotation, field.default)
+                "RunnableSequenceOutput", root=_get_schema_field_definition(field)
             )
 
     return last.get_output_schema(config)
 
 
-def _get_schema_field_definition(field: Any) -> tuple[Any, Any]:
-    """Convert a pydantic field to a field definition for `create_model_v2`."""
-    if hasattr(field, "is_required"):
+def _get_schema_field_definition(field: FieldInfo | ModelField) -> tuple[Any, Any]:
+    """Convert a Pydantic field to a field definition for `create_model_v2`.
+
+    Handles both Pydantic v2 (`FieldInfo`) and v1 (`ModelField`) fields. v1
+    required fields carry a `None` default with `required=True`, so they must be
+    translated to the `...` sentinel rather than passed through as optional.
+    """
+    if isinstance(field, FieldInfo):
         return (field.annotation, field.default)
 
-    v1_field = cast("ModelField", field)
-    if v1_field.required:
-        return (v1_field.annotation, ...)
-    if v1_field.default_factory is not None:
-        return (v1_field.annotation, Field(default_factory=v1_field.default_factory))
-    return (v1_field.annotation, v1_field.default)
+    if field.required:
+        return (field.annotation, ...)
+    if field.default_factory is not None:
+        return (field.annotation, Field(default_factory=field.default_factory))
+    return (field.annotation, field.default)
 
 
 _RUNNABLE_SEQUENCE_MIN_STEPS = 2

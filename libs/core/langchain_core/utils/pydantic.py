@@ -368,6 +368,28 @@ def model_json_schema(model: TypeBaseModel) -> dict[str, Any]:
     raise TypeError(msg)
 
 
+def model_validate(model: TypeBaseModel, obj: Any) -> PydanticBaseModel:
+    """Validate `obj` against a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`parse_obj`) or v2
+    (`model_validate`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class to validate against.
+        obj: The object to validate.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_validate(obj)
+    if issubclass(model, BaseModelV1):
+        return model.parse_obj(obj)
+    msg = f"Expected a Pydantic model. Got {model}"
+    raise TypeError(msg)
+
+
 _SchemaConfig = ConfigDict(
     arbitrary_types_allowed=True, frozen=True, protected_namespaces=()
 )
