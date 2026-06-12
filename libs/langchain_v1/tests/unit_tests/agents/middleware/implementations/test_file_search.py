@@ -33,7 +33,7 @@ class TestFilesystemGrepSearch:
     def test_ripgrep_command_uses_literal_pattern(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Ensure ripgrep receives pattern after ``--`` to avoid option parsing."""
+        """Ensure ripgrep receives pattern after `--` to avoid option parsing."""
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
         middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)

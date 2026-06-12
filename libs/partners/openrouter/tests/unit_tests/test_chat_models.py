@@ -2638,7 +2638,7 @@ class TestFormatMessageContent:
         assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
 
     def test_video_base64_source_type_format(self) -> None:
-        """Test video block using ``source_type`` + ``data`` keys."""
+        """Test video block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "video",
             "source_type": "base64",
@@ -2713,7 +2713,7 @@ class TestFormatMessageContent:
         }
 
     def test_file_base64_source_type_format(self) -> None:
-        """Test file block using ``source_type`` + ``data`` keys."""
+        """Test file block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "file",
             "source_type": "base64",
@@ -2782,7 +2782,7 @@ class TestFormatMessageContent:
 
 
 class TestWrapMessagesForSdk:
-    """Tests for ``_wrap_messages_for_sdk`` SDK validation bypass."""
+    """Tests for `_wrap_messages_for_sdk` SDK validation bypass."""
 
     def test_no_file_blocks_returns_dicts(self) -> None:
         """Messages without file blocks should be returned as plain dicts."""
@@ -2795,7 +2795,7 @@ class TestWrapMessagesForSdk:
         assert result is msgs
 
     def test_has_file_content_blocks_detection(self) -> None:
-        """Test ``_has_file_content_blocks`` detects file blocks correctly."""
+        """Test `_has_file_content_blocks` detects file blocks correctly."""
         assert not _has_file_content_blocks([{"role": "user", "content": "plain text"}])
         assert not _has_file_content_blocks(
             [

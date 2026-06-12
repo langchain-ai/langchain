@@ -27,7 +27,7 @@ def _make_resource(
     with_prlimit: bool,
     has_rlimit_as: bool = True,
 ) -> Any:
-    """Create a fake ``resource`` module for testing."""
+    """Create a fake `resource` module for testing."""
 
     class _BaseResource:
         RLIMIT_CPU = 0
