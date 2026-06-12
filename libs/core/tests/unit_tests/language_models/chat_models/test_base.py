@@ -45,6 +45,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
@@ -574,6 +575,20 @@ class FakeChatModelStartTracer(FakeTracer):
         )
 
 
+class FakeChatModelStartContentBlocksTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.content_blocks: list[list[dict[str, Any]]] = []
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        _, messages = args
+        self.content_blocks.append(messages[0][0].content_blocks)
+        return super().on_chat_model_start(
+            *args,
+            **kwargs,
+        )
+
+
 def test_trace_images_in_openai_format() -> None:
     """Test that images are traced in OpenAI Chat Completions format."""
     llm = ParrotFakeChatModel()
@@ -645,6 +660,32 @@ def test_trace_pdfs() -> None:
             ]
         ]
     ]
+
+
+def test_trace_v1_file_block_content_blocks_in_callback() -> None:
+    llm = ParrotFakeChatModel()
+    tracer = FakeChatModelStartContentBlocksTracer()
+    file_block = types.create_file_block(
+        base64="<base64 string>",
+        mime_type="application/pdf",
+        id="block-1",
+    )
+
+    llm.invoke(
+        [HumanMessage(content_blocks=[file_block])],
+        config={"callbacks": [tracer]},
+    )
+
+    assert _content_blocks_equal_ignore_id(
+        tracer.content_blocks[0],
+        [
+            {
+                "type": "file",
+                "base64": "<base64 string>",
+                "mime_type": "application/pdf",
+            }
+        ],
+    )
 
 
 def test_content_block_transformation_v0_to_v1_image() -> None:

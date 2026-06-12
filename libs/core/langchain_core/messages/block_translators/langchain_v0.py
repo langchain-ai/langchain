@@ -80,6 +80,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_image_block(
                     url=block["url"],
                     mime_type=block.get("mime_type"),
@@ -105,6 +106,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_image_block(
                     base64=block["data"],
                     mime_type=block.get("mime_type"),
@@ -148,6 +150,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_audio_block(
                     url=block["url"],
                     mime_type=block.get("mime_type"),
@@ -175,6 +178,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_audio_block(
                     base64=block["data"],
                     mime_type=block.get("mime_type"),
@@ -219,6 +223,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_file_block(
                     url=block["url"],
                     mime_type=block.get("mime_type"),
@@ -245,6 +250,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_file_block(
                     base64=block["data"],
                     mime_type=block.get("mime_type"),
@@ -276,6 +282,7 @@ def _convert_legacy_v0_content_block_to_v1(
             known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
+                extras.pop("id", None)
                 return types.create_plaintext_block(
                     # In v0, URL points to the text file content
                     # TODO: attribute this claim
