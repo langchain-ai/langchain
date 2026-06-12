@@ -19,7 +19,9 @@ from uuid import UUID
 import pytest
 from freezegun import freeze_time
 from packaging import version
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
@@ -90,7 +92,7 @@ from langchain_core.tracers import (
 )
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from langchain_core.utils.pydantic import PYDANTIC_VERSION, TypeBaseModel
 from langchain_core.version import VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
@@ -5827,3 +5829,97 @@ def test_runnable_typed_dict_schema() -> None:
         )
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
+
+
+class _RunnableWithInputSchema(Runnable[Any, Any]):
+    def __init__(self, input_schema: TypeBaseModel) -> None:
+        self._input_schema = input_schema
+
+    @property
+    @override
+    def InputType(self) -> Any:
+        return self._input_schema
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        _ = config
+        return self._input_schema
+
+    @override
+    def invoke(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return input
+
+
+def test_runnable_parallel_preserves_required_v1_input_fields() -> None:
+    class InputModel(BaseModelV1):
+        a: int
+        b: int = 2
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    assert schema.model_json_schema()["required"] == ["a"]
+    with pytest.raises(ValidationError):
+        schema.model_validate({})
+
+    model = schema.model_validate({"a": 1})
+    assert model.model_dump() == {"a": 1, "b": 2}
+
+
+def test_runnable_parallel_uses_base_schema_for_v1_root_model() -> None:
+    class InputModel(BaseModelV1):
+        __root__: dict[str, int]
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = parallel.input_schema
+    assert schema is InputModel
+    assert schema.schema() == {
+        "additionalProperties": {"type": "integer"},
+        "title": "InputModel",
+        "type": "object",
+    }
+    assert schema.parse_obj({"a": 1}).__root__ == {"a": 1}
+    with pytest.raises(ValidationErrorV1):
+        schema.parse_obj({"a": "not an int"})
+
+
+def test_runnable_sequence_v1_input_schema() -> None:
+    """A `RunnableSequence` exposes a Pydantic v1 first-step input schema.
+
+    Regression test: deriving the sequence schema previously assumed Pydantic v2.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableLambda(lambda x: x)
+
+    assert sequence.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }
+
+
+def test_runnable_branch_v1_input_schema() -> None:
+    """A `RunnableBranch` exposes a Pydantic v1 input schema.
+
+    Regression test: `get_input_schema` previously assumed Pydantic v2 when
+    inspecting each branch's schema.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    branch = RunnableBranch(
+        (lambda _: True, _RunnableWithInputSchema(InputModel)),
+        _RunnableWithInputSchema(InputModel),
+    )
+
+    assert branch.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }

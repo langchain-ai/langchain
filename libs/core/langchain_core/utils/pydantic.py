@@ -347,6 +347,27 @@ def get_fields(
     raise TypeError(msg)
 
 
+def model_json_schema(model: TypeBaseModel) -> dict[str, Any]:
+    """Return the JSON schema of a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`schema`) or v2
+    (`model_json_schema`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_json_schema()
+    if issubclass(model, BaseModelV1):
+        return model.schema()
+    msg = f"Expected a Pydantic model. Got {model}"
+    raise TypeError(msg)
+
+
 _SchemaConfig = ConfigDict(
     arbitrary_types_allowed=True, frozen=True, protected_namespaces=()
 )

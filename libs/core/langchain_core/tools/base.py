@@ -65,6 +65,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
+    model_json_schema,
 )
 
 if TYPE_CHECKING:
@@ -576,10 +577,8 @@ class ChildTool(BaseTool):
             input_schema = self.tool_call_schema
             if isinstance(input_schema, dict):
                 json_schema = input_schema
-            elif issubclass(input_schema, BaseModel):
-                json_schema = input_schema.model_json_schema()
             else:
-                json_schema = input_schema.schema()
+                json_schema = model_json_schema(input_schema)
         return cast("dict[str, Any]", json_schema["properties"])
 
     @property

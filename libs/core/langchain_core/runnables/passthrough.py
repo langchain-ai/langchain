@@ -445,7 +445,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             for name, field_info in get_fields(map_input_schema).items():
                 fields[name] = (field_info.annotation, field_info.default)
 
-            for name, field_info in map_output_schema.model_fields.items():
+            for name, field_info in get_fields(map_output_schema).items():
                 fields[name] = (field_info.annotation, field_info.default)
 
             return create_model_v2("RunnableAssignOutput", field_definitions=fields)

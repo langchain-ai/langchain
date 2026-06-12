@@ -97,9 +97,16 @@ from langchain_core.tracers.root_listeners import (
 )
 from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import TypeBaseModel, create_model_v2, get_fields
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    create_model_v2,
+    get_fields,
+    model_json_schema,
+)
 
 if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
@@ -437,10 +444,7 @@ class Runnable(ABC, Generic[Input, Output]):
         !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
-        schema = self.get_input_schema(config)
-        if issubclass(schema, BaseModel):
-            return schema.model_json_schema()
-        return schema.schema()
+        return model_json_schema(self.get_input_schema(config))
 
     @property
     def output_schema(self) -> TypeBaseModel:
@@ -519,10 +523,7 @@ class Runnable(ABC, Generic[Input, Output]):
         !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
-        schema = self.get_output_schema(config)
-        if issubclass(schema, BaseModel):
-            return schema.model_json_schema()
-        return schema.schema()
+        return model_json_schema(self.get_output_schema(config))
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -3038,6 +3039,19 @@ def _seq_output_schema(
     return last.get_output_schema(config)
 
 
+def _get_schema_field_definition(field: Any) -> tuple[Any, Any]:
+    """Convert a pydantic field to a field definition for `create_model_v2`."""
+    if hasattr(field, "is_required"):
+        return (field.annotation, field.default)
+
+    v1_field = cast("ModelField", field)
+    if v1_field.required:
+        return (v1_field.annotation, ...)
+    if v1_field.default_factory is not None:
+        return (v1_field.annotation, Field(default_factory=v1_field.default_factory))
+    return (v1_field.annotation, v1_field.default)
+
+
 _RUNNABLE_SEQUENCE_MIN_STEPS = 2
 
 
@@ -4003,16 +4017,20 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             for s in self.steps__.values()
         ):
             for step in self.steps__.values():
-                fields = get_fields(step.get_input_schema(config))
+                step_input_schema = step.get_input_schema(config)
+                fields = get_fields(step_input_schema)
                 root_field = fields.get("root")
                 if root_field is not None and root_field.annotation != Any:
                     return super().get_input_schema(config)
+                root_field = fields.get("__root__")
+                if root_field is not None and root_field.annotation != Any:
+                    return step_input_schema
 
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),
                 field_definitions={
-                    k: (v.annotation, v.default)
+                    k: _get_schema_field_definition(v)
                     for step in self.steps__.values()
                     for k, v in get_fields(step.get_input_schema(config)).items()
                     if k != "__root__"
@@ -4035,6 +4053,9 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         """
         fields = {k: (v.OutputType, ...) for k, v in self.steps__.items()}
+        # The return type is narrowed to `type[BaseModel]` (rather than the base
+        # class's `TypeBaseModel`) because this override always builds the schema
+        # with `create_model_v2`, so it is guaranteed to be a Pydantic v2 model.
         return create_model_v2(self.get_name("Output"), field_definitions=fields)
 
     @property
