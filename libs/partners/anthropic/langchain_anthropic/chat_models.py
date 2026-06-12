@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -1457,12 +1461,14 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            stream_state: dict = {}
             for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stream_state=stream_state,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1494,12 +1500,14 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            stream_state: dict = {}
             async for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stream_state=stream_state,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1516,6 +1524,7 @@ class ChatAnthropic(BaseChatModel):
         stream_usage: bool = True,
         coerce_content_to_string: bool,
         block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+        stream_state: dict | None = None,
     ) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
         """Convert Anthropic streaming event to `AIMessageChunk`.
 
@@ -1529,6 +1538,10 @@ class ChatAnthropic(BaseChatModel):
                 content like tool calls and citations are maintained.
             block_start_event: Previous content block start event, used for tracking
                 tool use blocks and maintaining context across related events.
+            stream_state: Mutable per-stream dict used to carry information that
+                only appears once (e.g. `service_tier`, `inference_geo` on
+                `message_start.message.usage`) so the final `message_delta` chunk
+                can attach it to `usage_metadata` and `response_metadata`.
 
         Returns:
             Tuple with
@@ -1552,6 +1565,21 @@ class ChatAnthropic(BaseChatModel):
                 response_metadata: dict[str, Any] = {"model_name": event.message.model}
             else:
                 response_metadata = {}
+
+            # `service_tier` and `inference_geo` only appear on the full `Usage`
+            # object delivered with `message_start`; the streaming `MessageDeltaUsage`
+            # doesn't carry them. Stash on stream_state so the final `message_delta`
+            # chunk can surface them via response_metadata + usage_metadata. We
+            # avoid putting them on the message_start chunk's response_metadata
+            # because string fields concatenate when AIMessageChunks merge.
+            start_usage = getattr(event.message, "usage", None)
+            start_service_tier = getattr(start_usage, "service_tier", None)
+            start_inference_geo = getattr(start_usage, "inference_geo", None)
+            if stream_state is not None:
+                if isinstance(start_service_tier, str):
+                    stream_state["service_tier"] = start_service_tier
+                if isinstance(start_inference_geo, str):
+                    stream_state["inference_geo"] = start_inference_geo
 
             message_chunk = AIMessageChunk(
                 content="" if coerce_content_to_string else [],
@@ -1665,11 +1693,21 @@ class ChatAnthropic(BaseChatModel):
 
         # Process final usage metadata and completion info
         elif event.type == "message_delta" and stream_usage:
-            usage_metadata = _create_usage_metadata(event.usage)
+            tier_from_start = (stream_state or {}).get("service_tier")
+            geo_from_start = (stream_state or {}).get("inference_geo")
+            usage_metadata = _create_usage_metadata(
+                event.usage,
+                service_tier=tier_from_start,
+                inference_geo=geo_from_start,
+            )
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
             }
+            if tier_from_start:
+                response_metadata["service_tier"] = tier_from_start
+            if geo_from_start:
+                response_metadata["inference_geo"] = geo_from_start
             if context_management := getattr(event, "context_management", None):
                 response_metadata["context_management"] = (
                     context_management.model_dump()
@@ -1731,6 +1769,13 @@ class ChatAnthropic(BaseChatModel):
         response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
+        usage_obj = getattr(data, "usage", None)
+        service_tier = getattr(usage_obj, "service_tier", None)
+        inference_geo = getattr(usage_obj, "inference_geo", None)
+        if isinstance(service_tier, str):
+            response_metadata["service_tier"] = service_tier
+        if isinstance(inference_geo, str):
+            response_metadata["inference_geo"] = inference_geo
         if (
             len(content) == 1
             and content[0]["type"] == "text"
@@ -2317,16 +2362,61 @@ def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str,
     return {"type": "json_schema", "schema": json_schema}
 
 
-def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
+def _create_usage_metadata(
+    anthropic_usage: BaseModel,
+    *,
+    service_tier: str | None = None,
+    inference_geo: str | None = None,
+) -> UsageMetadata:
     """Create LangChain `UsageMetadata` from Anthropic `Usage` data.
 
     Note:
         Anthropic's `input_tokens` excludes cached tokens, so we manually add
         `cache_read` and `cache_creation` tokens to get the true total.
+
+    Args:
+        anthropic_usage: The Anthropic `Usage` / `MessageDeltaUsage` object.
+        service_tier: Override for `anthropic_usage.service_tier`. Streaming chunks
+            (`MessageDeltaUsage`) don't carry this field, so it must be threaded
+            from the `message_start` event.
+        inference_geo: Override for `anthropic_usage.inference_geo`. Same streaming
+            caveat as `service_tier`.
     """
+    base_non_cache_input = getattr(anthropic_usage, "input_tokens", 0) or 0
+
+    if service_tier is None:
+        service_tier = getattr(anthropic_usage, "service_tier", None)
+    if inference_geo is None:
+        inference_geo = getattr(anthropic_usage, "inference_geo", None)
+
+    # Only break tokens out when the value carries a non-default pricing
+    # multiplier. `standard`/`global` are default rates; `priority` is ~1.5x;
+    # `batch` is half-price; `us` is 1.1x on every category.
+    if service_tier not in {"priority", "batch"}:
+        service_tier = None
+    if inference_geo != "us":
+        inference_geo = None
+
+    # Build a combined prefix that encodes geo and tier together. When set, every
+    # bucket in input_token_details / output_token_details is renamed with this
+    # prefix so the cost engine can read the multiplier off the key while the
+    # buckets stay mutually exclusive (their values sum to input_tokens /
+    # output_tokens).
+    prefix_parts: list[str] = []
+    if inference_geo:
+        prefix_parts.append(f"inference_geo_{inference_geo}")
+    if service_tier:
+        prefix_parts.append(service_tier)
+    bare_prefix = "_".join(prefix_parts)
+    key_prefix = f"{bare_prefix}_" if bare_prefix else ""
+
     input_token_details: dict = {
-        "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
-        "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
+        f"{key_prefix}cache_read": getattr(
+            anthropic_usage, "cache_read_input_tokens", None
+        ),
+        f"{key_prefix}cache_creation": getattr(
+            anthropic_usage, "cache_creation_input_tokens", None
+        ),
     }
 
     # Add cache TTL information if provided (5-minute and 1-hour ephemeral cache)
@@ -2341,25 +2431,38 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             cache_creation = cache_creation.model_dump()
         for k in cache_creation_keys:
             specific_cache_creation_tokens += cache_creation.get(k, 0)
-            input_token_details[k] = cache_creation.get(k)
+            input_token_details[f"{key_prefix}{k}"] = cache_creation.get(k)
         if not isinstance(specific_cache_creation_tokens, int):
             specific_cache_creation_tokens = 0
         if specific_cache_creation_tokens > 0:
             # Remove generic key to avoid double counting cache creation tokens
-            input_token_details["cache_creation"] = 0
+            input_token_details[f"{key_prefix}cache_creation"] = 0
 
     # Calculate total input tokens: Anthropic's `input_tokens` excludes cached tokens,
     # so we need to add them back to get the true total input token count
-    input_tokens = (
-        (getattr(anthropic_usage, "input_tokens", 0) or 0)  # Base input tokens
-        + (input_token_details["cache_read"] or 0)  # Tokens read from cache
-        + (
-            specific_cache_creation_tokens or input_token_details["cache_creation"] or 0
-        )  # Tokens used to create cache
+    cache_read_total = input_token_details[f"{key_prefix}cache_read"] or 0
+    cache_creation_total = (
+        specific_cache_creation_tokens
+        or input_token_details[f"{key_prefix}cache_creation"]
+        or 0
     )
+    input_tokens = base_non_cache_input + cache_read_total + cache_creation_total
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    output_token_details: dict = {}
+
+    if bare_prefix:
+        # Non-cache base input gets a bare bucket so all input_token_details keys
+        # together partition input_tokens. Same for output_tokens — Anthropic
+        # doesn't currently split output further (no reasoning sub-bucket), so
+        # the bare bucket equals output_tokens.
+        input_token_details[bare_prefix] = base_non_cache_input
+        output_token_details[bare_prefix] = output_tokens
+
+    output_details_filtered = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    metadata: UsageMetadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2367,3 +2470,6 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+    if output_details_filtered:
+        metadata["output_token_details"] = OutputTokenDetails(**output_details_filtered)
+    return metadata
