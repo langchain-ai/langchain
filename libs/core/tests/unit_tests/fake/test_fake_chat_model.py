@@ -5,6 +5,7 @@ from itertools import cycle
 from typing import Any, cast
 from uuid import UUID
 
+import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
@@ -141,6 +142,12 @@ async def test_generic_fake_chat_model_stream() -> None:
     )
 
 
+# This test verifies the legacy `astream_log(diff=False)` run-log state shape,
+# so it must call `astream_log` rather than the replacement `astream` API.
+@pytest.mark.filterwarnings(
+    "ignore:astream_log is deprecated. Use astream instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
 async def test_generic_fake_chat_model_astream_log() -> None:
     """Test streaming."""
     infinite_cycle = cycle([AIMessage(content="hello goodbye")])
