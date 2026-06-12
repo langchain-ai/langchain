@@ -39,6 +39,12 @@ on:
           transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
           in by an alpha langgraph) resolve. Use only when the release itself
           is a prerelease and at least one dep is also a prerelease."
+      skip-prior-published-package-checks:
+        required: false
+        type: string
+        default: "none"
+        description: "Prior published partner check to skip for core releases:
+          none, anthropic, openai, or all."
   workflow_dispatch:
     inputs:
       working-directory:
@@ -95,6 +101,16 @@ on:
           transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
           in by an alpha langgraph) resolve. Use only when the release itself
           is a prerelease and at least one dep is also a prerelease."
+      skip-prior-published-package-checks:
+        required: false
+        type: choice
+        default: none
+        description: "Prior published partner check to skip for core releases"
+        options:
+          - none
+          - anthropic
+          - openai
+          - all
 
 env:
   PYTHON_VERSION: "3.11"
@@ -588,8 +604,19 @@ jobs:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
+      - name: Skip prior published ${{ matrix.partner }} check
+        if: >-
+          startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') &&
+          (inputs.skip-prior-published-package-checks == matrix.partner ||
+          inputs.skip-prior-published-package-checks == 'all')
+        run: |
+          echo "Skipping prior published ${{ matrix.partner }} check as requested."
+
       - name: Test against ${{ matrix.partner }}
-        if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
+        if: >-
+          startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') &&
+          inputs.skip-prior-published-package-checks != matrix.partner &&
+          inputs.skip-prior-published-package-checks != 'all'
         env:
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
