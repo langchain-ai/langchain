@@ -18,7 +18,7 @@ uv add langchain-huggingface
 > install the `[full]` extra which includes `sentence-transformers>=5.2.0` and `transformers>=5.0.0`:
 >
 > ```bash
-> uv add langchain-huggingface[full]
+> uv add "langchain-huggingface[full]"
 > ```
 >
 > **Migrating from `langchain-community`?** Note that `langchain-community` accepted
@@ -49,5 +49,5 @@ For detailed information on how to contribute, see the [Contributing Guide](http
 
 ## Resources
 
-- [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+- [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards
