@@ -2221,6 +2221,43 @@ class Runnable(ABC, Generic[Input, Output]):
                 [RunnableGenerator(_generate)]
             )
             print("".join(runnable.stream({})))  # foo bar
+
+            # Fallbacks can also recover parser failures locally before using
+            # model-based retry or fixing parsers.
+
+            from langchain_core.output_parsers import PydanticOutputParser
+            from langchain_core.runnables import RunnableLambda
+            from pydantic import BaseModel
+
+
+            class SQLQuery(BaseModel):
+                query: str
+
+
+            def extract_sql(text: str) -> SQLQuery:
+                start = text.find("```sql")
+                if start == -1:
+                    msg = "No SQL code block found."
+                    raise ValueError(msg)
+                start += len("```sql")
+                end = text.find("```", start)
+                if end == -1:
+                    msg = "No closing code block found."
+                    raise ValueError(msg)
+                return SQLQuery(query=text[start:end].strip())
+
+
+            parser = PydanticOutputParser(pydantic_object=SQLQuery).with_fallbacks(
+                [RunnableLambda(extract_sql)]
+            )
+
+            parser.invoke(
+                '''Here is the query:
+            ```sql
+            SELECT * FROM users;
+            ```'''
+            )
+            # SQLQuery(query="SELECT * FROM users;")
             ```
 
         Args:

@@ -16,6 +16,7 @@ from langchain_core.language_models import (
 )
 from langchain_core.load import dumps
 from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
@@ -99,6 +100,40 @@ async def test_fallbacks_async(runnable_name: str, request: Any) -> None:
     assert await runnable.ainvoke("hello") == "bar"
     assert await runnable.abatch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(await runnable.ainvoke("hello")) == list("bar")
+
+
+def test_parser_fallback_can_recover_locally() -> None:
+    """Test local parser recovery before escalating to model-based retries."""
+
+    class SQLQuery(BaseModel):
+        query: str
+
+    def extract_sql(text: str) -> SQLQuery:
+        start = text.find("```sql")
+        if start == -1:
+            msg = "No SQL code block found."
+            raise ValueError(msg)
+        start += len("```sql")
+        end = text.find("```", start)
+        if end == -1:
+            msg = "No closing code block found."
+            raise ValueError(msg)
+        return SQLQuery(query=text[start:end].strip())
+
+    parser = PydanticOutputParser[SQLQuery](
+        pydantic_object=SQLQuery
+    ).with_fallbacks([RunnableLambda(extract_sql)])
+
+    result = parser.invoke(
+        """Here is the query:
+
+```sql
+SELECT name FROM users WHERE id = 1;
+```
+"""
+    )
+
+    assert result == SQLQuery(query="SELECT name FROM users WHERE id = 1;")
 
 
 def _runnable(inputs: dict[str, Any]) -> str:
