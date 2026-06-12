@@ -818,7 +818,7 @@ def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
     llm = ChatOllama(model=MODEL_NAME)
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-ollama" in versions
 
