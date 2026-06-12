@@ -497,9 +497,7 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     return metadata
 
 
-def _accumulate_usage(
-    current: UsageInfo | None, delta: UsageMetadata
-) -> UsageInfo:
+def _accumulate_usage(current: UsageInfo | None, delta: UsageMetadata) -> UsageInfo:
     """Sum usage counts and merge detail dicts across chunks.
 
     `delta` is a chunk's `usage_metadata`; `current` is the running total.
