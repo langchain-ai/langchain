@@ -183,7 +183,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             # for absolute patterns. (A `~` pattern is never expanduser'd by glob,
             # and any escape that slips through is dropped by the per-match
             # containment check below.)
-            if ".." in pattern or pattern.startswith("/"):
+            if pattern.startswith("/") or any(part == ".." for part in pattern.split("/")):
                 return "No files found"
 
             # Use pathlib glob
