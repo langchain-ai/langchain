@@ -1,0 +1,19 @@
+libs/core/tests/unit_tests/language_models/test_compat_bridge.py
+  s_d16f3ca9add5b5::t_c2c81a9fd9541b 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "e7cdffa08fa8931c63227f878260082b3527082f",
+  "prompts": {},
+  "sessions": {
+    "s_d16f3ca9add5b5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aef4295d-d17b-4b56-b493-7314fe522f29",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
