@@ -211,6 +211,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             path: str = "/",
             include: str | None = None,
             output_mode: Literal["files_with_matches", "content", "count"] = "files_with_matches",
+            *,
+            case_insensitive: bool = False,
         ) -> str:
             """Fast content search tool that works with any codebase size.
 
@@ -226,6 +228,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                     - `'files_with_matches'`: Only file paths containing matches
                     - `'content'`: Matching lines with `file:line:content` format
                     - `'count'`: Count of matches per file
+
+                case_insensitive: Whether to perform case-insensitive matching.
 
             Returns:
                 Search results formatted according to `output_mode`.
@@ -248,11 +252,15 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                     subprocess.CalledProcessError,
                     subprocess.TimeoutExpired,
                 ):
-                    results = self._ripgrep_search(pattern, path, include)
+                    results = self._ripgrep_search(
+                        pattern, path, include, case_insensitive=case_insensitive
+                    )
 
             # Python fallback if ripgrep failed or is disabled
             if results is None:
-                results = self._python_search(pattern, path, include)
+                results = self._python_search(
+                    pattern, path, include, case_insensitive=case_insensitive
+                )
 
             if not results:
                 return "No matches found"
@@ -289,7 +297,12 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         return full_path
 
     def _ripgrep_search(
-        self, pattern: str, base_path: str, include: str | None
+        self,
+        pattern: str,
+        base_path: str,
+        include: str | None,
+        *,
+        case_insensitive: bool = False,
     ) -> dict[str, list[tuple[int, str]]]:
         """Search using ripgrep subprocess."""
         try:
@@ -302,6 +315,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
         # Build ripgrep command
         cmd = ["rg", "--json"]
+
+        if case_insensitive:
+            cmd.append("-i")
 
         if include:
             # Convert glob pattern to ripgrep glob
@@ -319,7 +335,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             # Fallback to Python search if ripgrep unavailable or times out
-            return self._python_search(pattern, base_path, include)
+            return self._python_search(
+                pattern, base_path, include, case_insensitive=case_insensitive
+            )
 
         # Parse ripgrep JSON output
         results: dict[str, list[tuple[int, str]]] = {}
@@ -346,7 +364,12 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         return results
 
     def _python_search(
-        self, pattern: str, base_path: str, include: str | None
+        self,
+        pattern: str,
+        base_path: str,
+        include: str | None,
+        *,
+        case_insensitive: bool = False,
     ) -> dict[str, list[tuple[int, str]]]:
         """Search using Python regex (fallback)."""
         try:
@@ -357,7 +380,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
-        regex = re.compile(pattern)
+        flags = re.IGNORECASE if case_insensitive else 0
+        regex = re.compile(pattern, flags)
         results: dict[str, list[tuple[int, str]]] = {}
 
         # Walk directory tree without following symlinked directories so traversal
