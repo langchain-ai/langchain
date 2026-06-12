@@ -8,6 +8,7 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
+    UsageInfo,
     _finalize_block,
     _isolate_usage,
     achunks_to_events,
@@ -109,7 +110,7 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
 
 
 def test_isolate_usage_present() -> None:
-    usage = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+    usage: UsageInfo = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
     result = _isolate_usage(usage)
     assert result is not None
     assert result["input_tokens"] == 10
@@ -126,7 +127,7 @@ def test_isolate_usage_preserves_token_details() -> None:
     `input_tokens` already includes cached tokens; without the detail
     dicts, tracers price every input token at the uncached rate.
     """
-    usage = {
+    usage: UsageInfo = {
         "input_tokens": 100,
         "output_tokens": 5,
         "total_tokens": 105,
