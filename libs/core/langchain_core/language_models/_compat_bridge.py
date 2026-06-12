@@ -53,29 +53,11 @@ from langchain_protocol.protocol import (
     TextContentBlock,
     ToolCall,
     ToolCallChunk,
-)
-from langchain_protocol.protocol import (
-    UsageInfo as _ProtocolUsageInfo,
+    UsageInfo,
 )
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.utils._merge import merge_dicts
-
-
-class UsageInfo(_ProtocolUsageInfo):
-    """Protocol `UsageInfo` extended with LangChain's typed token-detail fields.
-
-    The wire protocol's `UsageInfo` declares only the flat token counts. LangChain
-    standardizes finer-grained breakdowns on `UsageMetadata` that providers populate
-    — `input_token_details` (e.g. `cache_read`, `cache_creation`, `audio`) and
-    `output_token_details` (e.g. `reasoning`, `audio`). Declaring them here keeps the
-    streaming-event usage payload aligned with non-streaming `UsageMetadata` and
-    properly typed, rather than riding along as untyped keys behind a `cast`.
-    """
-
-    input_token_details: NotRequired[InputTokenDetails]
-    output_token_details: NotRequired[OutputTokenDetails]
-
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -88,13 +70,8 @@ if TYPE_CHECKING:
         ReasoningDelta,
         TextDelta,
     )
-    from typing_extensions import NotRequired
 
-    from langchain_core.messages.ai import (
-        InputTokenDetails,
-        OutputTokenDetails,
-        UsageMetadata,
-    )
+    from langchain_core.messages.ai import UsageMetadata
     from langchain_core.outputs import ChatGenerationChunk
 
 
