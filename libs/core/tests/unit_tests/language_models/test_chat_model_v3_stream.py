@@ -1362,3 +1362,120 @@ class TestBedrockConverseToolCallArgs:
         ]
         assert len(text_blocks) == 1
         assert text_blocks[0]["text"] == "Hello Boston!"
+
+
+class _CachedUsageModel(BaseChatModel):
+    """Replays an Anthropic-shaped usage split across stream chunks.
+
+    Anthropic reports input tokens (with `input_token_details` carrying
+    `cache_read` / `cache_creation`) on the opening chunk and output
+    tokens on the terminal chunk; `input_tokens` already includes the
+    cached portions.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "cached-usage-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="Hello",
+                usage_metadata={
+                    "input_tokens": 100,
+                    "output_tokens": 0,
+                    "total_tokens": 100,
+                    "input_token_details": {"cache_read": 90, "cache_creation": 7},
+                },
+            )
+        )
+        yield ChatGenerationChunk(message=AIMessageChunk(content=" world"))
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 5,
+                    "total_tokens": 5,
+                    "output_token_details": {"reasoning": 3},
+                },
+            )
+        )
+
+
+_EXPECTED_CACHED_USAGE = {
+    "input_tokens": 100,
+    "output_tokens": 5,
+    "total_tokens": 105,
+    "input_token_details": {"cache_read": 90, "cache_creation": 7},
+    "output_token_details": {"reasoning": 3},
+}
+
+
+class TestUsageTokenDetails:
+    """Regression: v3 streaming must not drop usage token detail dicts.
+
+    Providers fold cache reads/writes into `input_tokens` and break them
+    out in `input_token_details`; dropping the details makes tracers
+    (e.g. LangSmith) price every input token at the uncached rate.
+    """
+
+    def test_stream_events_v3_output_preserves_token_details(self) -> None:
+        model = _CachedUsageModel()
+        stream = model.stream_events("hi", version="v3")
+        for _ in stream:
+            pass
+        assert stream.output.usage_metadata == _EXPECTED_CACHED_USAGE
+
+    def test_stream_events_v3_on_llm_end_preserves_token_details(self) -> None:
+        end_usages: list[Any] = []
+
+        class RecordingHandler(BaseCallbackHandler):
+            def on_llm_end(self, response: Any, **_: Any) -> None:
+                end_usages.append(response.generations[0][0].message.usage_metadata)
+
+        model = _CachedUsageModel()
+        stream = model.stream_events(
+            "hi", config={"callbacks": [RecordingHandler()]}, version="v3"
+        )
+        for _ in stream:
+            pass
+        assert end_usages == [_EXPECTED_CACHED_USAGE]
+
+    @pytest.mark.asyncio
+    async def test_astream_events_v3_on_llm_end_preserves_token_details(self) -> None:
+        end_usages: list[Any] = []
+
+        class RecordingHandler(AsyncCallbackHandler):
+            async def on_llm_end(self, response: Any, **_: Any) -> None:
+                end_usages.append(response.generations[0][0].message.usage_metadata)
+
+        model = _CachedUsageModel()
+        stream = await model.astream_events(
+            "hi", config={"callbacks": [RecordingHandler()]}, version="v3"
+        )
+        async for _ in stream:
+            pass
+        # `on_llm_end` fires from the producer task; let it run to completion.
+        for _ in range(20):
+            if end_usages:
+                break
+            await asyncio.sleep(0)
+        assert end_usages == [_EXPECTED_CACHED_USAGE]
