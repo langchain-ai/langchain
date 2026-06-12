@@ -412,7 +412,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.6"
+version = "1.4.7"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -571,10 +571,9 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
-test = [{ name = "langchain-core", editable = "../../core" }]
+test = []
 test-integration = []
 typing = [
-    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]

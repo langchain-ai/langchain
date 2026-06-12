@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 # Matches the `langchain-core` version embedded in serialized model metadata,
-# e.g. `{'versions': {'langchain-core': '1.4.6'}}`. Intentionally broad: every such
+# e.g. `{'versions': {'langchain-core': '1.4.7'}}`. Intentionally broad: every such
 # occurrence in a snapshot is expected to track the released version.
 SNAPSHOT_VERSION_PATTERN = re.compile(r"langchain-core': '([^']+)'")
 
