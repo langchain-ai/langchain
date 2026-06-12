@@ -62,6 +62,33 @@ class TestPathValidation:
         with pytest.raises(ValueError, match="Path must start with"):
             _validate_path("/other/notes.txt", allowed_prefixes=["/memories"])
 
+    def test_prefix_boundary_bypass_blocked(self) -> None:
+        """Test that sibling directories sharing a textual prefix are rejected.
+
+        Regression test: a raw `str.startswith` check is not segment-aware, so a
+        path like `/memories2/evil.txt` would slip past a `/memories` prefix even
+        though it lives outside the intended directory.
+        """
+        # Sibling directory sharing the textual prefix must be rejected.
+        with pytest.raises(ValueError, match="Path must start with"):
+            _validate_path("/memories2/evil.txt", allowed_prefixes=["/memories"])
+
+        # A genuine descendant of the prefix is accepted.
+        assert (
+            _validate_path("/memories/ok.txt", allowed_prefixes=["/memories"])
+            == "/memories/ok.txt"
+        )
+
+        # The prefix directory itself is accepted (exact match).
+        assert (
+            _validate_path("/memories", allowed_prefixes=["/memories"]) == "/memories"
+        )
+
+    def test_prefix_boundary_traversal_still_blocked(self) -> None:
+        """Test that traversal within an allowed prefix is still rejected."""
+        with pytest.raises(ValueError, match="Path traversal not allowed"):
+            _validate_path("/memories/../escape", allowed_prefixes=["/memories"])
+
 
 class TestTextEditorMiddleware:
     """Test text editor middleware functionality."""

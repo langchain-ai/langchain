@@ -93,6 +93,31 @@ class AnthropicToolsState(AgentState):
     """Virtual file system for memory tools."""
 
 
+def _is_within_allowed_prefix(normalized: str, prefixes: Sequence[str]) -> bool:
+    """Check whether a normalized path lies within an allowed prefix directory.
+
+    Uses a segment-boundary comparison rather than a raw string prefix test so
+    that sibling directories sharing a textual prefix cannot escape the allowed
+    directory. For example, with prefix `/memories` the path `/memories2/evil.txt`
+    is rejected because it is not the prefix itself nor a descendant of it.
+
+    Args:
+        normalized: A normalized, forward-slash, absolute-style path.
+        prefixes: Allowed path prefixes to compare against.
+
+    Returns:
+        `True` if `normalized` exactly equals one of the prefix directories or is
+        contained within one of them, `False` otherwise.
+    """
+    for prefix in prefixes:
+        # Normalize the prefix the same way the path was normalized so the
+        # comparison is consistent (drop any trailing slash for the boundary).
+        prefix_dir = prefix.rstrip("/")
+        if normalized == prefix_dir or normalized.startswith(f"{prefix_dir}/"):
+            return True
+    return False
+
+
 def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) -> str:
     """Validate and normalize file path for security.
 
@@ -122,8 +147,8 @@ def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) 
         normalized = f"/{normalized}"
 
     # Check allowed prefixes if specified
-    if allowed_prefixes is not None and not any(
-        normalized.startswith(prefix) for prefix in allowed_prefixes
+    if allowed_prefixes is not None and not _is_within_allowed_prefix(
+        normalized, allowed_prefixes
     ):
         msg = f"Path must start with one of {allowed_prefixes}: {path}"
         raise ValueError(msg)
@@ -847,14 +872,11 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         # Check allowed prefixes
         virtual_path = "/" + str(full_path.relative_to(self.root_path))
-        if self.allowed_prefixes:
-            allowed = any(
-                virtual_path.startswith(prefix) or virtual_path == prefix.rstrip("/")
-                for prefix in self.allowed_prefixes
-            )
-            if not allowed:
-                msg = f"Path must start with one of: {self.allowed_prefixes}"
-                raise ValueError(msg)
+        if self.allowed_prefixes and not _is_within_allowed_prefix(
+            virtual_path, self.allowed_prefixes
+        ):
+            msg = f"Path must start with one of: {self.allowed_prefixes}"
+            raise ValueError(msg)
 
         return full_path
 
