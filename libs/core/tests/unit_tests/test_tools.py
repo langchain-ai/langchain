@@ -75,7 +75,11 @@ from langchain_core.utils.pydantic import (
     create_model_v2,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
+from tests.unit_tests.pydantic_utils import (
+    _normalize_schema,
+    _schema,
+    skip_if_no_pydantic_v1,
+)
 
 try:
     from langgraph.prebuilt import ToolRuntime  # type: ignore[import-not-found]
@@ -2163,6 +2167,7 @@ def test_args_schema_explicitly_typed() -> None:
     }
 
 
+@skip_if_no_pydantic_v1
 def test_get_input_jsonschema_v1_args_schema() -> None:
     """`get_input_jsonschema()` works for a tool with a Pydantic v1 `args_schema`.
 
@@ -2189,6 +2194,7 @@ def test_get_input_jsonschema_v1_args_schema() -> None:
     }
 
 
+@skip_if_no_pydantic_v1
 def test_v1_args_schema_excludes_injected_args() -> None:
     """A Pydantic v1 `args_schema` must not expose injected args via `.args`.
 
@@ -2215,6 +2221,7 @@ def test_v1_args_schema_excludes_injected_args() -> None:
     assert "injected" not in tool.args
 
 
+@skip_if_no_pydantic_v1
 def test_convert_runnable_to_tool_v1_input_schema() -> None:
     """`convert_runnable_to_tool` works for a runnable with a v1 input schema.
 
