@@ -247,7 +247,12 @@ class AIMessage(BaseMessage):
         first before falling back to best-effort parsing. For details, see the property
         on `BaseMessage`.
         """
-        if self.response_metadata.get("output_version") == "v1":
+        if self.response_metadata.get("output_version") == "v1" and isinstance(
+            self.content, list
+        ):
+            # Only short-circuit when content is a list (assumed under v1 to
+            # already hold ContentBlock dicts; the cast is unchecked). See
+            # AIMessageChunk.content_blocks for full rationale.
             return cast("list[types.ContentBlock]", self.content)
 
         model_provider = self.response_metadata.get("model_provider")
@@ -440,7 +445,16 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
         """Return standard, typed `ContentBlock` dicts from the message."""
-        if self.response_metadata.get("output_version") == "v1":
+        if self.response_metadata.get("output_version") == "v1" and isinstance(
+            self.content, list
+        ):
+            # Only short-circuit when content is already a list of ContentBlock
+            # dicts. Some streaming implementations keep content as a string
+            # even when output_version="v1" is set (e.g., OpenAI Chat
+            # Completions), so it must fall through to the model_provider
+            # translator which builds ContentBlock dicts from tool_calls /
+            # tool_call_chunks. Without this guard, string content would be
+            # returned directly, silently dropping tool calls.
             return cast("list[types.ContentBlock]", self.content)
 
         model_provider = self.response_metadata.get("model_provider")

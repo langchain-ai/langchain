@@ -1076,7 +1076,6 @@ test = [
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
 ]
 test-integration = [
-    { name = "langchain-core", editable = "../../core" },
     { name = "langchain-text-splitters", editable = "../../text-splitters" },
     { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -1114,7 +1113,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.5"
+version = "1.4.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1193,7 +1192,6 @@ full = [
 [package.dev-dependencies]
 dev = [
     { name = "ipykernel" },
-    { name = "langchain-core" },
 ]
 lint = [
     { name = "ruff" },
@@ -1201,7 +1199,6 @@ lint = [
 test = [
     { name = "langchain" },
     { name = "langchain-community" },
-    { name = "langchain-core" },
     { name = "langchain-tests" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1214,7 +1211,6 @@ test = [
     { name = "transformers" },
 ]
 typing = [
-    { name = "langchain-core" },
     { name = "mypy" },
 ]
 
@@ -1229,15 +1225,11 @@ requires-dist = [
 provides-extras = ["full"]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=6.29.2,<7.0.0" },
-    { name = "langchain-core", editable = "../../core" },
-]
+dev = [{ name = "ipykernel", specifier = ">=6.29.2,<7.0.0" }]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "langchain", editable = "../../langchain_v1" },
     { name = "langchain-community" },
-    { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
@@ -1251,10 +1243,7 @@ test = [
     { name = "transformers", specifier = ">=5.0.0,<6.0.0" },
 ]
 test-integration = []
-typing = [
-    { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
-]
+typing = [{ name = "mypy", specifier = ">=2.1.0,<2.2.0" }]
 
 [[package]]
 name = "langchain-protocol"
@@ -1305,10 +1294,9 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
-test = [{ name = "langchain-core", editable = "../../core" }]
+test = []
 test-integration = []
 typing = [
-    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]

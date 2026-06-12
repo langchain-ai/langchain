@@ -130,6 +130,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
     _astream_with_chunk_timeout,
     _build_proxied_async_httpx_client,
@@ -1137,6 +1138,20 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     @model_validator(mode="after")
+    def _set_openai_chat_version(self) -> Self:
+        """Set package version in metadata.
+
+        Note: Subclasses that inherit from `BaseChatOpenAI` (e.g.
+        `ChatDeepSeek`, `ChatXAI`) must use a **unique** validator name
+        (e.g. `_set_deepseek_version`) instead of overriding this one. Pydantic
+        replaces same-named `model_validator` methods rather than chaining them,
+        so reusing `_set_openai_chat_version` would silently drop the parent's
+        `langchain-openai` version entry.
+        """
+        self._add_version("langchain-openai", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n is not None and self.n < 1:
@@ -1357,8 +1372,14 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            # Keep content as "" (the default) rather than converting to [].
+            # Chat Completions content deltas are normalized to strings in
+            # _convert_delta_to_message_chunk. Starting with [] causes
+            # merge_content to silently drop string content (empty list is
+            # falsy, so no merge branch applies). The empty list also triggers
+            # the content_blocks isinstance(list) short-circuit, which would
+            # return [] and miss tool_call_chunks.
             if self.output_version == "v1":
-                generation_chunk.message.content = []
                 generation_chunk.message.response_metadata["output_version"] = "v1"
 
             return generation_chunk
@@ -1389,6 +1410,9 @@ class BaseChatOpenAI(BaseChatModel):
             message_chunk.usage_metadata = usage_metadata
 
         message_chunk.response_metadata["model_provider"] = "openai"
+        # Propagate output_version so content_blocks can detect v1 mode.
+        if self.output_version == "v1":
+            message_chunk.response_metadata["output_version"] = "v1"
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )

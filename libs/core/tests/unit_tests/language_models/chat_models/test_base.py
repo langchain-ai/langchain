@@ -4,6 +4,7 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
 from typing import TYPE_CHECKING, Any, Literal, get_type_hints
 from unittest.mock import patch
 
@@ -27,6 +28,7 @@ from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
     _normalize_messages,
 )
+from langchain_core.language_models.base import _get_langchain_version
 from langchain_core.language_models.chat_models import (
     SimpleChatModel,
     _generate_response_from_error,
@@ -52,6 +54,7 @@ from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.version import VERSION
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -61,6 +64,7 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 if TYPE_CHECKING:
     from langchain_core.outputs.llm_result import LLMResult
+    from langchain_core.runnables.config import RunnableConfig
 
 
 def _content_blocks_equal_ignore_id(
@@ -1305,6 +1309,187 @@ def test_get_ls_params() -> None:
     assert ls_params["ls_stop"] == ["stop"]
 
 
+class _VersionedFakeModel(FakeListChatModel):
+    """Fake model that adds a version via `_add_version`."""
+
+    def model_post_init(self, _context: Any, /) -> None:
+        super().model_post_init(_context)
+        self._add_version("langchain-fake", "0.1.0")
+
+
+def test_user_versions_metadata_survives_merge() -> None:
+    """User-provided versions metadata should be deep-merged with model versions.
+
+    Regression test: the `add_metadata` deep-merge in `CallbackManager`
+    must preserve both user-provided and model-provided versions dicts.
+    """
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert run_metadata["versions"]["my-app"] == "2.0"
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+async def test_user_versions_metadata_survives_merge_async() -> None:
+    """Async variant: user-provided versions metadata deep-merged with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        await llm.ainvoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+def test_user_versions_metadata_survives_merge_stream() -> None:
+    """Stream variant: user-provided versions metadata deep-merged with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        for _ in llm.stream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+async def test_user_versions_metadata_survives_merge_astream() -> None:
+    """Async stream variant: user-provided versions metadata deep-merged."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        async for _ in llm.astream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["versions"]
+        assert "langchain-core" in run_metadata["versions"]
+
+
+def test_add_version_with_none_metadata() -> None:
+    """Model constructed with metadata=None should still get versions."""
+    llm = FakeListChatModel(responses=["x"], metadata=None)
+    assert llm.metadata is not None
+    assert "langchain-core" in llm.metadata["versions"]
+
+
+def test_add_version_with_non_dict_versions() -> None:
+    """Non-dict `versions` value is silently replaced with a warning."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        llm = FakeListChatModel(responses=["x"], metadata={"versions": "garbage"})
+        assert any("expected a dict" in str(warning.message) for warning in w)
+    assert llm.metadata is not None
+    assert isinstance(llm.metadata["versions"], dict)
+    assert "langchain-core" in llm.metadata["versions"]
+
+
+def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When `langchain` is installed, its version appears in metadata."""
+
+    def _fake_version(pkg: str) -> str:
+        if pkg == "langchain":
+            return "1.2.13"
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _fake_version)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert llm.metadata["versions"]["langchain"] == "1.2.13"
+        assert "langchain-core" in llm.metadata["versions"]
+    finally:
+        _get_langchain_version.cache_clear()
+
+
+def test_langchain_version_missing_when_not_installed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When `langchain` is not installed, metadata.versions has no entry.
+
+    The lookup raises `PackageNotFoundError` (the real not-installed signal), which
+    `_get_langchain_version` must swallow without dropping the rest of the dict.
+    """
+
+    def _raise_not_found(pkg: str) -> str:
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert "langchain" not in llm.metadata["versions"]
+        assert "langchain-core" in llm.metadata["versions"]
+    finally:
+        _get_langchain_version.cache_clear()
+
+
+def test_version_validator_coexists_with_core_seed() -> None:
+    """A `model_validator(mode="after")` calling `_add_version` keeps the core seed.
+
+    Mirrors the real partner pattern (a validator, not a `model_post_init`
+    override) and confirms the validator-added entry and the core-seeded
+    `langchain-core` entry accumulate rather than clobber one another.
+    """
+
+    class _ValidatorVersionedModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_fake_version(self) -> Self:
+            self._add_version("langchain-fake", "0.1.0")
+            return self
+
+    llm = _ValidatorVersionedModel(responses=["x"])
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-fake"] == "0.1.0"
+
+
+def test_subclass_unique_validator_names_accumulate() -> None:
+    """Parent and child uniquely-named validators must both contribute entries.
+
+    Regression guard for the documented Pydantic footgun: same-named
+    `model_validator` methods *replace* rather than chain across a class
+    hierarchy. As long as each layer uses a unique validator name, a subclass
+    must not silently drop its parent's version entry.
+    """
+
+    class _ParentModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_parent_version(self) -> Self:
+            self._add_version("langchain-parent", "1.0.0")
+            return self
+
+    class _ChildModel(_ParentModel):
+        @model_validator(mode="after")
+        def _set_child_version(self) -> Self:
+            self._add_version("langchain-child", "2.0.0")
+            return self
+
+    llm = _ChildModel(responses=["x"])
+    assert llm.metadata is not None
+    versions = llm.metadata["versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-parent"] == "1.0.0"
+    assert versions["langchain-child"] == "2.0.0"
+
+
 def test_model_profiles() -> None:
     model = GenericFakeChatModel(messages=iter([]))
     assert model.profile is None
@@ -1592,6 +1777,7 @@ def test_invocation_params_passed_to_tracer_metadata() -> None:
             "ls_temperature": 0.7,
             "stop": None,
             "temperature": 0.7,
+            "versions": {"langchain-core": VERSION},
         },
         "options": {"stop": None},
         "runtime": run.extra["runtime"],

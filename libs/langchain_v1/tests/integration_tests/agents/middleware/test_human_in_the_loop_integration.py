@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
     from langgraph.graph.state import CompiledStateGraph
 
-    from langchain.agents.middleware.types import _InputAgentState
+    from langchain.agents.middleware.types import InputAgentState
 
 
 def _get_model(provider: str) -> Any:
@@ -53,7 +53,7 @@ def test_hitl_reject_does_not_retry(provider: str) -> None:
     the interrupt. So a completed run with no new `__interrupt__` is a reliable signal
     that the model honored the guidance and did not retry.
     """
-    agent: CompiledStateGraph[Any, Any, _InputAgentState, Any] = create_agent(
+    agent: CompiledStateGraph[Any, Any, InputAgentState, Any] = create_agent(
         model=_get_model(provider),
         tools=[get_weather],
         middleware=[

@@ -459,7 +459,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.5"
+version = "1.4.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -529,15 +529,11 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
-dev = [
-    { name = "langchain-core" },
-]
 lint = [
     { name = "ruff" },
 ]
 test = [
     { name = "freezegun" },
-    { name = "langchain-core" },
     { name = "langchain-tests" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -548,7 +544,6 @@ test = [
     { name = "syrupy" },
 ]
 typing = [
-    { name = "langchain-core" },
     { name = "mypy" },
 ]
 
@@ -559,11 +554,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "langchain-core", editable = "../../core" }]
+dev = []
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
-    { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.3.0,<2.0.0" },
@@ -574,10 +568,7 @@ test = [
     { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
 ]
 test-integration = []
-typing = [
-    { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
-]
+typing = [{ name = "mypy", specifier = ">=2.1.0,<2.2.0" }]
 
 [[package]]
 name = "langchain-protocol"
@@ -628,10 +619,9 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
-test = [{ name = "langchain-core", editable = "../../core" }]
+test = []
 test-integration = []
 typing = [
-    { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
