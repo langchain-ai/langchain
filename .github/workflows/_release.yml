@@ -155,6 +155,32 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
+      - name: Summarize release bypasses
+        if: >-
+          inputs.dangerous-nonmaster-release || inputs.allow-prereleases ||
+          inputs.skip-prior-published-package-checks != 'none'
+        env:
+          ALLOW_PRERELEASES: ${{ inputs.allow-prereleases }}
+          DANGEROUS_NONMASTER_RELEASE: ${{ inputs.dangerous-nonmaster-release }}
+          SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS: ${{ inputs.skip-prior-published-package-checks }}
+        run: |
+          echo "::warning::Release bypass input(s) enabled. See job summary."
+          {
+            echo "## ⚠️ Release bypasses enabled"
+            echo
+            echo "One or more release safety bypasses were selected for this run:"
+            echo
+            if [ "$DANGEROUS_NONMASTER_RELEASE" = "true" ]; then
+              echo "- \`dangerous-nonmaster-release\`: release jobs may run from a non-\`master\` ref."
+            fi
+            if [ "$ALLOW_PRERELEASES" = "true" ]; then
+              echo "- \`allow-prereleases\`: install checks use \`--prerelease=allow\`."
+            fi
+            if [ -n "$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS" ] && [ "$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS" != "none" ]; then
+              echo "- \`skip-prior-published-package-checks\`: \`$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Check version
         id: check-version
         shell: python
