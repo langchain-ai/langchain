@@ -76,5 +76,5 @@ class GenerationChunk(Generation):
                 text=self.text + other.text,
                 generation_info=generation_info or None,
             )
-        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"
+        msg = f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'"  # type: ignore[unreachable]
         raise TypeError(msg)

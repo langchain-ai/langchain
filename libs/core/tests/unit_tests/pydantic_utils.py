@@ -108,7 +108,7 @@ def _schema(obj: Any) -> dict[str, Any]:
     raise TypeError(msg)
 
 
-def _remove_additionalproperties(schema: dict[str, Any]) -> dict[str, Any]:
+def _remove_additionalproperties(schema: Any) -> Any:
     """Remove `"additionalProperties": True` from dicts in the schema.
 
     Pydantic 2.11 and later versions include `"additionalProperties": True` when

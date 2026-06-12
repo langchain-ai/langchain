@@ -685,7 +685,7 @@ class ChildTool(BaseTool):
                 elif issubclass(input_args, BaseModelV1):
                     input_args.parse_obj({key_: tool_input})
                 else:
-                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"  # type: ignore[unreachable]
                     raise TypeError(msg)
             return tool_input
 
@@ -728,7 +728,7 @@ class ChildTool(BaseTool):
                 result_dict = result_v1.dict()
                 result = result_v1
             else:
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
@@ -873,7 +873,7 @@ class ChildTool(BaseTool):
             # the callback manager.
             return (), tool_input.copy()
         # This code path is not expected to be reachable.
-        msg = f"Invalid tool input type: {type(tool_input)}"
+        msg = f"Invalid tool input type: {type(tool_input)}"  # type: ignore[unreachable]
         raise TypeError(msg)
 
     def run(
@@ -1172,7 +1172,7 @@ def _handle_validation_error(
     elif callable(flag):
         content = flag(e)
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )

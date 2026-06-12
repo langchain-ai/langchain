@@ -189,7 +189,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     result: list[tuple[Any, CompatBlock]] = []
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
-            continue
+            continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
         if explicit_idx is None:
             # No source-side identity. Bucket by (sentinel, block type,

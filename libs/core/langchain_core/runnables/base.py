@@ -1651,7 +1651,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 **kwargs,
             )
         else:
-            msg = f"Unsupported version: {version!r}. Expected 'v1', 'v2', or 'v3'."
+            msg = f"Unsupported version: {version!r}. Expected 'v1', 'v2', or 'v3'."  # type: ignore[unreachable]
             raise NotImplementedError(msg)
 
         async with aclosing(event_stream):
@@ -4930,7 +4930,7 @@ class RunnableLambda(Runnable[Input, Output]):
             self.func = cast("Callable[[Input], Output]", func)
             func_for_name = func
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "Expected a callable type for `func`."
                 f"Instead got an unsupported type: {type(func)}"
             )
@@ -5718,7 +5718,7 @@ class RunnableEachBase(RunnableSerializable[Sequence[Input], list[Output]]):
     async def _astream_events_unsupported_v1_v2(self) -> AsyncIterator[StreamEvent]:
         msg = "RunnableEach does not support astream_events yet."
         raise NotImplementedError(msg)
-        yield  # makes this an async generator (never reached)
+        yield  # type: ignore[unreachable] # makes this an async generator (never reached)
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):

@@ -647,7 +647,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(tcc))
                 chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -662,7 +662,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_block_delta_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -677,7 +677,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
                 legacy_chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -692,7 +692,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_chunk_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -715,7 +715,7 @@ class _ChatModelStreamBase:
             tcc = cast("ToolCallChunk", block)
             idx = data.get("index")
             if idx is None:
-                idx = tcc.get("index", len(self._tool_call_chunks))
+                idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
             fallback_chunk_block: ToolCallChunk = {
                 "type": "tool_call_chunk",
