@@ -384,7 +384,9 @@ def _get_key(
             if scope in (0, False):
                 return scope
 
-            resolved_scope = scope
+            resolved_scope: Literal[False, 0] | Mapping[str, Any] | Sequence[Any] = (
+                scope
+            )
             # For every dot separated key
             for child in key.split("."):
                 # Return an empty string if falsy, with two exceptions

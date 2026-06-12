@@ -321,7 +321,7 @@ def draw_mermaid_png(
             proxies=proxies,
         )
     else:
-        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
+        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])  # type: ignore[unreachable]
         msg = (
             f"Invalid draw method: {draw_method}. "
             f"Supported draw methods are: {supported_methods}"

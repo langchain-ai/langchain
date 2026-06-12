@@ -356,7 +356,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
     if not isinstance(message.content, list):
         # Unexpected content type, attempt to represent as text
-        return [{"type": "text", "text": str(message.content)}]
+        return [{"type": "text", "text": str(message.content)}]  # type: ignore[unreachable]
 
     converted_blocks: list[types.ContentBlock] = []
 
@@ -485,7 +485,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 converted_blocks.append({"type": "non_standard", "value": item})
         else:
             # Non-dict, non-string content
-            converted_blocks.append({"type": "non_standard", "value": item})
+            converted_blocks.append({"type": "non_standard", "value": item})  # type: ignore[unreachable]
 
     grounding_metadata = message.response_metadata.get("grounding_metadata")
     if grounding_metadata:

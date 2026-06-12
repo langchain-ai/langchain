@@ -349,7 +349,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        error_msg = (
+        error_msg = (  # type: ignore[unreachable]
             f"Unsupported tool call schema: {tool.tool_call_schema}. "
             "Tool call schema must be a JSON schema dict or a Pydantic model."
         )

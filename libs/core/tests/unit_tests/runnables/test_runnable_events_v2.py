@@ -621,9 +621,7 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        if sys.version_info >= (3, 11):
-            return model.invoke(value)
-        return model.invoke(value, config)
+        return model.invoke(value, config if sys.version_info >= (3, 11) else None)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -737,9 +735,9 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        if sys.version_info >= (3, 11):
-            return await model.ainvoke(value)
-        return await model.ainvoke(value, config)
+        return await model.ainvoke(
+            value, config if sys.version_info >= (3, 11) else None
+        )
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(

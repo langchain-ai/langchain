@@ -705,7 +705,7 @@ async def _astream_log_implementation(
         callbacks.add_handler(stream, inherit=True)
         config["callbacks"] = callbacks
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )

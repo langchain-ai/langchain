@@ -343,7 +343,7 @@ def get_fields(
         return model.model_fields
     if issubclass(model, BaseModelV1):
         return model.__fields__
-    msg = f"Expected a Pydantic model. Got {model}"
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
     raise TypeError(msg)
 
 
@@ -364,7 +364,7 @@ def model_json_schema(model: TypeBaseModel) -> dict[str, Any]:
         return model.model_json_schema()
     if issubclass(model, BaseModelV1):
         return model.schema()
-    msg = f"Expected a Pydantic model. Got {model}"
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
     raise TypeError(msg)
 
 
@@ -386,7 +386,7 @@ def model_validate(model: TypeBaseModel, obj: Any) -> PydanticBaseModel:
         return model.model_validate(obj)
     if issubclass(model, BaseModelV1):
         return model.parse_obj(obj)
-    msg = f"Expected a Pydantic model. Got {model}"
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
     raise TypeError(msg)
 
 
@@ -444,11 +444,7 @@ def _create_root_model(
         base_class_attributes["root"] = default_
     with warnings.catch_warnings():
         try:
-            if (
-                isinstance(type_, type)
-                and not isinstance(type_, GenericAlias)
-                and issubclass(type_, BaseModelV1)
-            ):
+            if isinstance(type_, type) and issubclass(type_, BaseModelV1):
                 warnings.filterwarnings(
                     action="ignore", category=PydanticDeprecationWarning
                 )

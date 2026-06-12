@@ -168,7 +168,8 @@ class TestChatModelStream:
 
     def test_finish(self) -> None:
         stream = ChatModelStream()
-        assert not stream.done
+        done = stream.done
+        assert not done
         usage = UsageInfo(input_tokens=10, output_tokens=5, total_tokens=15)
         stream._finish(MessageFinishData(event="message-finish", usage=usage))
         assert stream.done
