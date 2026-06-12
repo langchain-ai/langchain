@@ -646,16 +646,40 @@ jobs:
         env:
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          # Identify latest tag, excluding pre-releases
-          LATEST_PACKAGE_TAG="$(
-            git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
-            | awk '{print $2}' \
-            | sed 's|refs/tags/||' \
-            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
-            | sort -Vr \
-            | head -n 1
+          PACKAGE_NAME="langchain-${{ matrix.partner }}"
+
+          # Identify the latest non-yanked published package release, excluding pre-releases.
+          LATEST_PACKAGE_VERSION="$(python - <<'PY'
+          import json
+          import re
+          import sys
+          import urllib.request
+
+          package_name = "langchain-${{ matrix.partner }}"
+          url = f"https://pypi.org/pypi/{package_name}/json"
+          with urllib.request.urlopen(url) as response:
+              data = json.load(response)
+
+          versions: list[tuple[int, int, int, str]] = []
+          for version, files in data["releases"].items():
+              if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+                  continue
+              if not files or all(file.get("yanked", False) for file in files):
+                  continue
+              versions.append((*map(int, version.split(".")), version))
+
+          if not versions:
+              print(f"No non-yanked final releases found for {package_name}", file=sys.stderr)
+              sys.exit(1)
+
+          print(max(versions)[3])
+          PY
           )"
-          echo "Latest package tag: $LATEST_PACKAGE_TAG"
+          LATEST_PACKAGE_TAG="$PACKAGE_NAME==$LATEST_PACKAGE_VERSION"
+          echo "Latest non-yanked package tag: $LATEST_PACKAGE_TAG"
+
+          # Ensure the PyPI release maps to a source tag before running tests.
+          git ls-remote --exit-code --tags origin "refs/tags/$LATEST_PACKAGE_TAG"
 
           # Shallow-fetch just that single tag
           git fetch --depth=1 origin tag "$LATEST_PACKAGE_TAG"
