@@ -1334,6 +1334,67 @@ def test_md_header_text_splitter_1() -> None:
     assert output == expected_output
 
 
+def test_md_header_text_splitter_include_line_numbers() -> None:
+    """Test markdown splitter adds source line ranges to aggregated chunks."""
+    markdown_document = (
+        "# Foo\n\n"
+        "    ## Bar\n\n"
+        "Hi this is Jim\n\n"
+        "Hi this is Joe\n\n"
+        " ## Baz\n\n"
+        " Hi this is Molly"
+    )
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        include_line_numbers=True,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+    expected_output = [
+        Document(
+            page_content="Hi this is Jim  \nHi this is Joe",
+            metadata={
+                "Header 1": "Foo",
+                "Header 2": "Bar",
+                "start_line": 5,
+                "end_line": 7,
+            },
+        ),
+        Document(
+            page_content="Hi this is Molly",
+            metadata={
+                "Header 1": "Foo",
+                "Header 2": "Baz",
+                "start_line": 11,
+                "end_line": 11,
+            },
+        ),
+    ]
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_line_numbers_each_line() -> None:
+    """Test markdown splitter adds source line ranges when returning each line."""
+    markdown_document = "# Foo\nalpha\nbeta"
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[("#", "Header 1")],
+        include_line_numbers=True,
+        return_each_line=True,
+    )
+
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert output == [
+        Document(
+            page_content="alpha\nbeta",
+            metadata={"Header 1": "Foo", "start_line": 2, "end_line": 3},
+        ),
+    ]
+
+
 def test_md_header_text_splitter_2() -> None:
     """Test markdown splitter by header: Case 2."""
     markdown_document = (
@@ -1458,6 +1519,30 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
         ),
     ]
     assert output == expected_output
+
+
+def test_md_header_text_splitter_line_numbers_preserve_headers() -> None:
+    """Test line ranges include headers when headers are preserved."""
+    markdown_document = "# Foo\n\n## Bar\n\nBody"
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[("#", "Header 1"), ("##", "Header 2")],
+        include_line_numbers=True,
+        strip_headers=False,
+    )
+
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert output == [
+        Document(
+            page_content="# Foo  \n## Bar  \nBody",
+            metadata={
+                "Header 1": "Foo",
+                "Header 2": "Bar",
+                "start_line": 1,
+                "end_line": 5,
+            },
+        ),
+    ]
 
 
 def test_md_header_text_splitter_preserve_headers_2() -> None:

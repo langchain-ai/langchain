@@ -29,6 +29,7 @@ class MarkdownHeaderTextSplitter:
         return_each_line: bool = False,  # noqa: FBT001,FBT002
         strip_headers: bool = True,  # noqa: FBT001,FBT002
         custom_header_patterns: dict[str, int] | None = None,
+        include_line_numbers: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Create a new `MarkdownHeaderTextSplitter`.
 
@@ -41,6 +42,8 @@ class MarkdownHeaderTextSplitter:
 
                 For example: `{"**": 1, "***": 2}` to treat `**Header**` as level 1 and
                 `***Header***` as level 2 headers.
+            include_line_numbers: Whether to add one-indexed `start_line` and
+                `end_line` metadata for each returned chunk.
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -53,6 +56,7 @@ class MarkdownHeaderTextSplitter:
         self.strip_headers = strip_headers
         # Custom header patterns with their levels
         self.custom_header_patterns = custom_header_patterns or {}
+        self.include_line_numbers = include_line_numbers
 
     def _is_custom_header(self, line: str, sep: str) -> bool:
         """Check if line matches a custom header pattern.
@@ -105,6 +109,7 @@ class MarkdownHeaderTextSplitter:
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
+                aggregated_chunks[-1]["end_line"] = line["end_line"]
             elif (
                 aggregated_chunks
                 and aggregated_chunks[-1]["metadata"] != line["metadata"]
@@ -122,14 +127,25 @@ class MarkdownHeaderTextSplitter:
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
                 # and update the last line's metadata
                 aggregated_chunks[-1]["metadata"] = line["metadata"]
+                aggregated_chunks[-1]["end_line"] = line["end_line"]
             else:
                 # Otherwise, append the current line to the aggregated list
                 aggregated_chunks.append(line)
 
         return [
-            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            Document(
+                page_content=chunk["content"],
+                metadata=self._metadata_with_line_range(chunk),
+            )
             for chunk in aggregated_chunks
         ]
+
+    def _metadata_with_line_range(self, chunk: LineType) -> dict[str, str | int]:
+        metadata: dict[str, str | int] = chunk["metadata"].copy()
+        if self.include_line_numbers:
+            metadata["start_line"] = chunk["start_line"]
+            metadata["end_line"] = chunk["end_line"]
+        return metadata
 
     def split_text(self, text: str) -> list[Document]:
         """Split markdown file.
@@ -148,6 +164,8 @@ class MarkdownHeaderTextSplitter:
 
         # Content and metadata of the chunk currently being processed
         current_content: list[str] = []
+        current_start_line: int | None = None
+        current_end_line: int | None = None
 
         current_metadata: dict[str, str] = {}
 
@@ -160,7 +178,7 @@ class MarkdownHeaderTextSplitter:
 
         opening_fence = ""
 
-        for line in lines:
+        for line_number, line in enumerate(lines, start=1):
             stripped_line = line.strip()
             # Remove all non-printable characters from the string, keeping only visible
             # text.
@@ -178,6 +196,9 @@ class MarkdownHeaderTextSplitter:
                 opening_fence = ""
 
             if in_code_block:
+                if current_start_line is None:
+                    current_start_line = line_number
+                current_end_line = line_number
                 current_content.append(stripped_line)
                 continue
 
@@ -240,25 +261,39 @@ class MarkdownHeaderTextSplitter:
                             {
                                 "content": "\n".join(current_content),
                                 "metadata": current_metadata.copy(),
+                                "start_line": current_start_line or line_number,
+                                "end_line": current_end_line or line_number,
                             }
                         )
                         current_content.clear()
+                        current_start_line = None
+                        current_end_line = None
 
                     if not self.strip_headers:
+                        if current_start_line is None:
+                            current_start_line = line_number
+                        current_end_line = line_number
                         current_content.append(stripped_line)
 
                     break
             else:
                 if stripped_line:
+                    if current_start_line is None:
+                        current_start_line = line_number
+                    current_end_line = line_number
                     current_content.append(stripped_line)
                 elif current_content:
                     lines_with_metadata.append(
                         {
                             "content": "\n".join(current_content),
                             "metadata": current_metadata.copy(),
+                            "start_line": current_start_line or line_number,
+                            "end_line": current_end_line or line_number,
                         }
                     )
                     current_content.clear()
+                    current_start_line = None
+                    current_end_line = None
 
             current_metadata = initial_metadata.copy()
 
@@ -267,6 +302,8 @@ class MarkdownHeaderTextSplitter:
                 {
                     "content": "\n".join(current_content),
                     "metadata": current_metadata,
+                    "start_line": current_start_line or len(lines),
+                    "end_line": current_end_line or len(lines),
                 }
             )
 
@@ -275,7 +312,10 @@ class MarkdownHeaderTextSplitter:
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         return [
-            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            Document(
+                page_content=chunk["content"],
+                metadata=self._metadata_with_line_range(chunk),
+            )
             for chunk in lines_with_metadata
         ]
 
@@ -285,6 +325,8 @@ class LineType(TypedDict):
 
     metadata: dict[str, str]
     content: str
+    start_line: int
+    end_line: int
 
 
 class HeaderType(TypedDict):
