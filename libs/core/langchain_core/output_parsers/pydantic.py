@@ -72,7 +72,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The parsed Pydantic object.
         """
         try:
-            json_object = super().parse_result(result)
+            json_object = super().parse_result(result, partial=partial)
             return self._parse_obj(json_object)
         except OutputParserException:
             if partial:
