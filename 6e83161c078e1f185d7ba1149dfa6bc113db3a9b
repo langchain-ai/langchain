@@ -1,0 +1,52 @@
+libs/core/langchain_core/tools/base.py
+  s_04fc023d6e3474::t_1b529e140b3cbf 581
+  s_04fc023d6e3474::t_a07dc1e18eba07 68
+libs/core/langchain_core/runnables/passthrough.py
+  s_04fc023d6e3474::t_fe88641c2f19ae 448
+libs/core/tests/unit_tests/test_tools.py
+  s_04fc023d6e3474::t_3ba1256744475b 2166-2217
+  s_04fc023d6e3474::t_167706ac8d8c74 43,53
+  s_04fc023d6e3474::t_55aad6d215eee3 73
+  s_04fc023d6e3474::t_7d95a0bad6fb9d 2218-2248
+libs/core/langchain_core/runnables/base.py
+  s_04fc023d6e3474::t_200f5f622cb6f3 447
+  s_04fc023d6e3474::t_e4682b0975a0be 526
+  s_04fc023d6e3474::t_3a53e017ca666f 100-105
+  s_c36faf24e86089::t_6fd5846dee98b0 4020-4021,4025-4027
+  s_c36faf24e86089::t_4d65075aaefdea 108-109,3042-3052
+  s_04fc023d6e3474::t_a915685204c8ef 4056-4058
+  s_c36faf24e86089::t_8519b88cbd209f 4033
+libs/core/tests/unit_tests/runnables/test_runnable.py
+  s_04fc023d6e3474::t_7b66f7c8e992d8 5871
+  s_c36faf24e86089::t_45a9e13508b133 5838-5842
+  s_04fc023d6e3474::t_5b58bca5acbd9c 5890-5925
+  s_c36faf24e86089::t_c9a23c5a8fd4fd 5832-5837,5843-5870,5872-5879,5883,5885-5886
+  s_c36faf24e86089::t_09ac1c60052ab3 22-23,95
+  s_c36faf24e86089::t_23a6ff567b90da 24,5880-5882,5884,5887-5889
+libs/core/langchain_core/utils/pydantic.py
+  s_04fc023d6e3474::t_60357fd2730097 350-370
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "6e83161c078e1f185d7ba1149dfa6bc113db3a9b",
+  "prompts": {},
+  "sessions": {
+    "s_04fc023d6e3474": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1f5d46e3-af1a-47df-9700-14759d40997b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    },
+    "s_c36faf24e86089": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb949-4c6c-7523-9431-61e07d8f7b88",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

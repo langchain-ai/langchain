@@ -1,0 +1,35 @@
+libs/core/langchain_core/utils/pydantic.py
+  s_94b99246ca5088::t_147286f7887a22 371-392
+libs/core/tests/unit_tests/utils/test_pydantic.py
+  s_94b99246ca5088::t_106520ff5333d6 17-18
+  s_94b99246ca5088::t_6a0ac9d40fa679 158-207
+libs/core/langchain_core/runnables/base.py
+  s_94b99246ca5088::t_d5a90d0770239d 3013,3017-3018,3030,3037
+  s_94b99246ca5088::t_c71636efcc1166 3043-3050,3053-3057
+  s_94b99246ca5088::t_5f2feec0706d07 41
+libs/core/langchain_core/runnables/passthrough.py
+  s_94b99246ca5088::t_d3bb1bf06d2117 439-442,451,454
+  s_94b99246ca5088::t_55cf27f46a5c60 22
+libs/core/tests/unit_tests/runnables/test_runnable.py
+  s_94b99246ca5088::t_0abe1d33eed48b 5927-5932,5935-5946,5949-5986
+  s_94b99246ca5088::t_7815a75b645f60 96-100
+  s_94b99246ca5088::t_175d1e6489d36a 24
+  s_94b99246ca5088::t_9cf9407f0652d6 5830
+  s_94b99246ca5088::t_58359ca13dcac8 5933-5934,5947-5948
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "eacb547c34d8facb1ebc2c9bc3601c653a22cd45",
+  "prompts": {},
+  "sessions": {
+    "s_94b99246ca5088": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "906521b9-a212-4e0b-a74c-ff868d5fd5fb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
