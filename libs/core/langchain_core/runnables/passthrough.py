@@ -11,7 +11,7 @@ from typing import (
     Any,
 )
 
-from pydantic import BaseModel, RootModel
+from pydantic import RootModel
 from typing_extensions import override
 
 from langchain_core.runnables.base import (
@@ -19,6 +19,7 @@ from langchain_core.runnables.base import (
     Runnable,
     RunnableParallel,
     RunnableSerializable,
+    _get_schema_field_definition,
 )
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -34,7 +35,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import atee
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.utils.pydantic import TypeBaseModel, create_model_v2, get_fields
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Mapping
@@ -425,7 +426,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         map_input_schema = self.mapper.get_input_schema(config)
         if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
@@ -434,9 +435,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        # The return type stays `TypeBaseModel` (rather than narrowing to
+        # `type[BaseModel]` as `RunnableParallel.get_output_schema` does) because
+        # the fallback branches return the mapper's output schema or delegate to
+        # `super().get_output_schema()`, either of which may be a Pydantic v1 model.
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
         if not issubclass(map_input_schema, RootModel) and not issubclass(
@@ -444,11 +447,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         ):
             fields = {}
 
-            for name, field_info in map_input_schema.model_fields.items():
-                fields[name] = (field_info.annotation, field_info.default)
+            for name, field_info in get_fields(map_input_schema).items():
+                fields[name] = _get_schema_field_definition(field_info)
 
-            for name, field_info in map_output_schema.model_fields.items():
-                fields[name] = (field_info.annotation, field_info.default)
+            for name, field_info in get_fields(map_output_schema).items():
+                fields[name] = _get_schema_field_definition(field_info)
 
             return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):

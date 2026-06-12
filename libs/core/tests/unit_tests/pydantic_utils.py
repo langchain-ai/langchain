@@ -1,8 +1,17 @@
+import sys
 from inspect import isclass
 from typing import Any
 
+import pytest
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
+
+# pydantic.v1 models cannot be exercised under the compatibility shim on
+# Python 3.14+, so v1-specific tests are skipped there.
+skip_if_no_pydantic_v1 = pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 
 
 # Function to replace allOf with $ref

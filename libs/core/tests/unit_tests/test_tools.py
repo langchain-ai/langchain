@@ -40,6 +40,7 @@ from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
+    Runnable,
     RunnableConfig,
     RunnableLambda,
     ensure_config,
@@ -49,6 +50,7 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    convert_runnable_to_tool,
     tool,
 )
 from langchain_core.tools.base import (
@@ -68,11 +70,16 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
+    TypeBaseModel,
     _create_subset_model,
     create_model_v2,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
+from tests.unit_tests.pydantic_utils import (
+    _normalize_schema,
+    _schema,
+    skip_if_no_pydantic_v1,
+)
 
 try:
     from langgraph.prebuilt import ToolRuntime  # type: ignore[import-not-found]
@@ -1964,7 +1971,7 @@ def test_tool_inherited_injected_arg() -> None:
             return y
 
     tool_ = InheritedInjectedArgTool()
-    assert tool_.get_input_schema().model_json_schema() == {
+    assert tool_.get_input_jsonschema() == {
         "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
@@ -2138,7 +2145,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.get_input_schema().model_json_schema() == {
+    assert tool.get_input_jsonschema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -2158,6 +2165,92 @@ def test_args_schema_explicitly_typed() -> None:
         "title": "some_tool",
         "type": "object",
     }
+
+
+@skip_if_no_pydantic_v1
+def test_get_input_jsonschema_v1_args_schema() -> None:
+    """`get_input_jsonschema()` works for a tool with a Pydantic v1 `args_schema`.
+
+    Regression test: previously this raised `AttributeError` because a Pydantic
+    v1 model does not implement `model_json_schema`.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        args_schema: type[BaseModelV1] = FooV1
+
+        @override
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description", args_schema=FooV1)
+
+    assert tool.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "string"},
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_v1_args_schema_excludes_injected_args() -> None:
+    """A Pydantic v1 `args_schema` must not expose injected args via `.args`.
+
+    Injected arguments are supplied by the framework rather than the model, so
+    they must be hidden from the tool-call schema regardless of the `args_schema`
+    Pydantic version. Previously a v1 `args_schema` bypassed `tool_call_schema`
+    and leaked injected arguments into `.args`.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+        injected: Annotated[str, InjectedToolArg()] = "default"
+
+    class SomeTool(BaseTool):
+        args_schema: type[BaseModelV1] = FooV1
+
+        @override
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description", args_schema=FooV1)
+
+    assert set(tool.args) == {"a"}
+    assert "injected" not in tool.args
+
+
+@skip_if_no_pydantic_v1
+def test_convert_runnable_to_tool_v1_input_schema() -> None:
+    """`convert_runnable_to_tool` works for a runnable with a v1 input schema.
+
+    Regression test: deriving the tool schema from the runnable previously
+    assumed a Pydantic v2 input schema and raised on v1.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+
+    class V1InputRunnable(Runnable[Any, Any]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return FooV1
+
+        @override
+        def invoke(
+            self,
+            input: Any,
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> Any:
+            return input
+
+    tool = convert_runnable_to_tool(V1InputRunnable())
+
+    assert set(tool.args) == {"a"}
 
 
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
@@ -2784,7 +2877,7 @@ def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> N
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,
@@ -2822,7 +2915,7 @@ def test_simple_tool_args_schema_dict() -> None:
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,
