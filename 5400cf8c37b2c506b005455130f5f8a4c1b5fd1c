@@ -1,0 +1,21 @@
+libs/core/pyproject.toml
+  s_d16f3ca9add5b5::t_782bc60eb207ca 35
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_d16f3ca9add5b5::t_3d106ab67edfb8 56,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "5400cf8c37b2c506b005455130f5f8a4c1b5fd1c",
+  "prompts": {},
+  "sessions": {
+    "s_d16f3ca9add5b5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aef4295d-d17b-4b56-b493-7314fe522f29",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
