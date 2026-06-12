@@ -1,0 +1,21 @@
+libs/langchain_v1/pyproject.toml
+  s_80edcf5b91cc65::t_9b23936a2a074e 24
+libs/langchain_v1/langchain/__init__.py
+  s_80edcf5b91cc65::t_46f6391e656d9c 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "3f9c40bfc74df0234d3bcc22dbe5bba4958084a9",
+  "prompts": {},
+  "sessions": {
+    "s_80edcf5b91cc65": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58d30cb6-7221-4830-a38b-678ad0094b0c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
