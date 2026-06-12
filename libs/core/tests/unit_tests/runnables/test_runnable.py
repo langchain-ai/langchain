@@ -2162,7 +2162,7 @@ async def test_prompt_with_llm(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakelist",
-                        "versions": {"langchain-core": VERSION},
+                        "lc_versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2377,7 +2377,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
-                        "versions": {"langchain-core": VERSION},
+                        "lc_versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",

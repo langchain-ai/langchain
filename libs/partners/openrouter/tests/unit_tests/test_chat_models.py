@@ -278,7 +278,7 @@ class TestChatOpenRouterInstantiation:
         """Test that metadata reports the correct version info."""
         model = _make_model()
         assert model.metadata is not None
-        versions = model.metadata["versions"]
+        versions = model.metadata["lc_versions"]
         assert "langchain-core" in versions
         assert "langchain-openrouter" in versions
 

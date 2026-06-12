@@ -229,7 +229,7 @@ def test_metadata_versions() -> None:
 
     llm = ChatPerplexity(model="test")
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-perplexity" in versions
     assert versions["langchain-perplexity"] == __version__

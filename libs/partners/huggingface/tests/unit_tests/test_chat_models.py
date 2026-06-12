@@ -334,7 +334,7 @@ def test_metadata_versions(chat_hugging_face: Any) -> None:
     from langchain_huggingface._version import __version__
 
     assert chat_hugging_face.metadata is not None
-    versions = chat_hugging_face.metadata["versions"]
+    versions = chat_hugging_face.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-huggingface" in versions
     assert versions["langchain-huggingface"] == __version__
