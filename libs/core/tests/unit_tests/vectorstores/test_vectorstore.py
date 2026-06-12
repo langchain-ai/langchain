@@ -292,3 +292,68 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+def test_add_texts_generator_input(vs_class: type[VectorStore]) -> None:
+    """add_texts must handle generator inputs without exhausting them early.
+
+    The base implementation materialises non-list/tuple iterables into texts_
+    for the metadata length-check, but must then build Documents from that
+    already-materialised sequence — not from the original (now-exhausted)
+    generator.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/37673.
+    """
+    store = vs_class()
+
+    # Plain generator — will be exhausted after the first iteration.
+    ids = store.add_texts(text for text in ["alpha", "beta", "gamma"])
+
+    assert len(ids) == 3
+    docs = store.get_by_ids(ids)
+    assert [d.page_content for d in docs] == ["alpha", "beta", "gamma"]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+def test_add_texts_generator_with_metadatas(vs_class: type[VectorStore]) -> None:
+    """add_texts with a generator input and explicit metadatas must work correctly."""
+    store = vs_class()
+
+    metadatas = [{"src": "a"}, {"src": "b"}]
+    ids = store.add_texts((t for t in ["x", "y"]), metadatas=metadatas)
+
+    assert len(ids) == 2
+    docs = store.get_by_ids(ids)
+    assert [d.page_content for d in docs] == ["x", "y"]
+    assert [d.metadata for d in docs] == metadatas
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+async def test_aadd_texts_generator_input(vs_class: type[VectorStore]) -> None:
+    """aadd_texts must handle generator inputs without exhausting them early.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/37673.
+    """
+    store = vs_class()
+
+    ids = await store.aadd_texts(text for text in ["alpha", "beta", "gamma"])
+
+    assert len(ids) == 3
+    docs = await store.aget_by_ids(ids)
+    assert [d.page_content for d in docs] == ["alpha", "beta", "gamma"]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddDocumentsVectorstore])
+async def test_aadd_texts_generator_with_metadatas(vs_class: type[VectorStore]) -> None:
+    """aadd_texts with a generator input and explicit metadatas must work correctly."""
+    store = vs_class()
+
+    metadatas = [{"src": "a"}, {"src": "b"}]
+    ids = await store.aadd_texts((t for t in ["x", "y"]), metadatas=metadatas)
+
+    assert len(ids) == 2
+    docs = await store.aget_by_ids(ids)
+    assert [d.page_content for d in docs] == ["x", "y"]
+    assert [d.metadata for d in docs] == metadatas
+
