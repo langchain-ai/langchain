@@ -34,6 +34,16 @@ from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
+# This module intentionally exercises `astream_events(version="v1")` and the
+# history wrapper to preserve compatibility coverage for those deprecated paths.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:astream_events version='v1' is deprecated. Use version='v2' or "
+    "astream instead.:langchain_core._api.deprecation.LangChainDeprecationWarning",
+    "ignore:RunnableWithMessageHistory is deprecated. Use LangGraph's built-in "
+    "persistence instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning",
+)
+
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run IDs from events."""
@@ -78,7 +88,7 @@ def _assert_events_equal_allow_superset_metadata(
 async def test_event_stream_with_simple_function_tool() -> None:
     """Test the event stream with a function and tool."""
 
-    def foo(_: int) -> dict:
+    def foo(_: int) -> dict[str, Any]:
         """Foo."""
         return {"x": 5}
 
@@ -1076,12 +1086,14 @@ async def test_event_streaming_with_tools() -> None:
         return "world"
 
     @tool
-    def with_parameters(x: int, y: str) -> dict:
+    def with_parameters(x: int, y: str) -> dict[str, Any]:
         """A tool that does nothing."""
         return {"x": x, "y": y}
 
     @tool
-    def with_parameters_and_callbacks(x: int, y: str, callbacks: Callbacks) -> dict:
+    def with_parameters_and_callbacks(
+        x: int, y: str, callbacks: Callbacks
+    ) -> dict[str, Any]:
         """A tool that does nothing."""
         _ = callbacks
         return {"x": x, "y": y}

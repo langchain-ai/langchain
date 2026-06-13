@@ -7,7 +7,15 @@ import asyncio
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -388,6 +396,38 @@ def patch_config(
     return config
 
 
+def _merge_metadata_dicts(
+    base: Mapping[str, Any], incoming: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Merge metadata dicts, accumulating only `lc_versions` nested mappings.
+
+    Metadata generally uses last-writer-wins semantics. The LangChain-owned
+    `lc_versions` key is the only nested mapping that accumulates across merges
+    so package versions from core, `langchain`, and partner packages coexist.
+
+    Args:
+        base: The base metadata dict.
+
+            Values here are kept unless overridden by `incoming`.
+        incoming: The metadata dict to merge on top.
+
+            Its values take precedence on conflict.
+
+    Returns:
+        A new merged dict.
+    """
+    merged = {**base, **incoming}
+    base_versions = base.get("lc_versions")
+    incoming_versions = incoming.get("lc_versions")
+    if isinstance(base_versions, Mapping) and isinstance(incoming_versions, Mapping):
+        merged["lc_versions"] = {**base_versions, **incoming_versions}
+    elif isinstance(incoming_versions, Mapping):
+        merged["lc_versions"] = {**incoming_versions}
+    elif "lc_versions" not in incoming and isinstance(base_versions, Mapping):
+        merged["lc_versions"] = {**base_versions}
+    return merged
+
+
 def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
@@ -403,10 +443,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base["metadata"] = {
-                    **base.get("metadata", {}),
-                    **(config.get("metadata") or {}),
-                }
+                base["metadata"] = _merge_metadata_dicts(
+                    base.get("metadata", {}),
+                    config.get("metadata") or {},
+                )
             elif key == "tags":
                 base["tags"] = sorted(
                     set(base.get("tags", []) + (config.get("tags") or [])),

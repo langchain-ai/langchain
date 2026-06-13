@@ -1,9 +1,9 @@
 """Regression tests for subagent stream event propagation.
 
-Reproduces a bug where `create_agent` set ``ls_agent_type`` inside the
-parent agent's ``configurable`` and, as a side effect, ``updates``,
-``values``, and ``custom`` stream events from sub-agents invoked through
-tools were dropped during ``stream(..., subgraphs=True)``.
+Reproduces a bug where `create_agent` set `ls_agent_type` inside the
+parent agent's `configurable` and, as a side effect, `updates`,
+`values`, and `custom` stream events from sub-agents invoked through
+tools were dropped during `stream(..., subgraphs=True)`.
 """
 
 from __future__ import annotations
@@ -46,8 +46,8 @@ def _make_parent_agent(call_subagent_tool) -> object:
 def test_subagent_updates_emitted_when_streaming_with_subgraphs() -> None:
     """`updates` events from a tool-invoked sub-agent must be streamed.
 
-    Without the fix, the parent agent's ``configurable`` overrode the
-    streaming machinery's per-run state, suppressing ``updates`` events
+    Without the fix, the parent agent's `configurable` overrode the
+    streaming machinery's per-run state, suppressing `updates` events
     from any sub-graph invoked inside a tool.
     """
     call_subagent_tool = _make_subagent_caller_tool()

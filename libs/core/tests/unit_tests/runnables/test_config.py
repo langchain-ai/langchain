@@ -17,12 +17,15 @@ from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
+    _merge_metadata_dicts,
     _set_config_context,
     ensure_config,
     merge_configs,
     run_in_executor,
 )
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
+
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 
 def test_ensure_config() -> None:
@@ -83,7 +86,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
                 "run_id": "run-456",
                 "assistant_id": "asst-789",
                 "graph_id": "graph-0",
-                "model": "gpt-4o",
+                "model": OPENAI_TEST_MODEL,
                 "user_id": "uid-1",
                 "cron_id": "cron-1",
                 "langgraph_auth_user_id": "user-1",
@@ -97,7 +100,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
 
     assert config["metadata"] == {
         "nooverride": 18,
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "checkpoint_ns": "ns-1",
     }
     assert config["configurable"] == {
@@ -108,7 +111,7 @@ def test_ensure_config_copies_model_to_metadata() -> None:
         "run_id": "run-456",
         "assistant_id": "asst-789",
         "graph_id": "graph-0",
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "user_id": "uid-1",
         "cron_id": "cron-1",
         "langgraph_auth_user_id": "user-1",
@@ -151,14 +154,14 @@ def test_ensure_config_copies_top_level_model_to_metadata() -> None:
         cast(
             "RunnableConfig",
             {
-                "model": "gpt-4o",
+                "model": OPENAI_TEST_MODEL,
                 "metadata": {"nooverride": 18},
             },
         )
     )
 
-    assert config["metadata"] == {"nooverride": 18, "model": "gpt-4o"}
-    assert config["configurable"] == {"model": "gpt-4o"}
+    assert config["metadata"] == {"nooverride": 18, "model": OPENAI_TEST_MODEL}
+    assert config["configurable"] == {"model": OPENAI_TEST_MODEL}
 
 
 def test_ensure_config_copies_top_level_checkpoint_ns_to_metadata() -> None:
@@ -320,3 +323,94 @@ async def test_run_in_executor() -> None:
 
     with pytest.raises(RuntimeError):
         await run_in_executor(None, raises_stop_iter)
+
+
+class TestMergeMetadataDicts:
+    """Tests for _merge_metadata_dicts `lc_versions` merge behavior."""
+
+    def test_lc_versions_preserves_both_nested_dicts(self) -> None:
+        base = {"lc_versions": {"langchain-core": "0.3.1"}, "user_id": "abc"}
+        incoming = {"lc_versions": {"langchain-anthropic": "1.3.3"}, "run": "x"}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {
+            "lc_versions": {
+                "langchain-core": "0.3.1",
+                "langchain-anthropic": "1.3.3",
+            },
+            "user_id": "abc",
+            "run": "x",
+        }
+
+    def test_last_writer_wins_within_lc_versions(self) -> None:
+        base = {"lc_versions": {"pkg": "1.0"}}
+        incoming = {"lc_versions": {"pkg": "2.0"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"lc_versions": {"pkg": "2.0"}}
+
+    def test_generic_nested_metadata_replaces(self) -> None:
+        base = {"versions": {"app": "1.0"}, "nested": {"a": "1"}}
+        incoming = {"versions": {"plugin": "2.0"}, "nested": {"b": "2"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"versions": {"plugin": "2.0"}, "nested": {"b": "2"}}
+
+    def test_non_dict_overwrites_lc_versions_dict(self) -> None:
+        base = {"lc_versions": {"nested": "value"}}
+        incoming = {"lc_versions": "flat"}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"lc_versions": "flat"}
+
+    def test_lc_versions_dict_overwrites_non_dict(self) -> None:
+        base = {"lc_versions": "flat"}
+        incoming = {"lc_versions": {"nested": "value"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert result == {"lc_versions": {"nested": "value"}}
+
+    def test_no_mutation_of_lc_versions_inputs(self) -> None:
+        base = {"lc_versions": {"a": "1"}}
+        incoming = {"lc_versions": {"b": "2"}}
+        base_copy = {"lc_versions": {"a": "1"}}
+        incoming_copy = {"lc_versions": {"b": "2"}}
+        result = _merge_metadata_dicts(base, incoming)
+        assert base == base_copy
+        assert incoming == incoming_copy
+        assert result["lc_versions"] is not base["lc_versions"]
+        assert result["lc_versions"] is not incoming["lc_versions"]
+
+    def test_non_overlapping_lc_versions_dict_is_copied(self) -> None:
+        base = {"lc_versions": {"a": "1"}, "extras": {"x": "y"}}
+        result = _merge_metadata_dicts(base, {})
+        assert result["lc_versions"] is not base["lc_versions"]
+        assert result["lc_versions"] == {"a": "1"}
+        assert result["extras"] is base["extras"]
+
+    def test_both_empty(self) -> None:
+        assert _merge_metadata_dicts({}, {}) == {}
+
+    def test_empty_base(self) -> None:
+        incoming = {"lc_versions": {"pkg": "1.0"}}
+        result = _merge_metadata_dicts({}, incoming)
+        assert result == {"lc_versions": {"pkg": "1.0"}}
+        assert result["lc_versions"] is not incoming["lc_versions"]
+
+        result["lc_versions"]["new"] = "2.0"
+        assert incoming == {"lc_versions": {"pkg": "1.0"}}
+
+    def test_empty_incoming(self) -> None:
+        result = _merge_metadata_dicts({"lc_versions": {"pkg": "1.0"}}, {})
+        assert result == {"lc_versions": {"pkg": "1.0"}}
+
+    def test_merge_configs_with_none_metadata(self) -> None:
+        merged = merge_configs(
+            cast("RunnableConfig", {"metadata": None}),
+            {"metadata": {"lc_versions": {"a": "1"}}},
+        )
+        assert merged["metadata"] == {"lc_versions": {"a": "1"}}
+
+    def test_three_config_merge_accumulates_lc_versions(self) -> None:
+        c1: RunnableConfig = {"metadata": {"lc_versions": {"a": "1"}}}
+        c2: RunnableConfig = {"metadata": {"lc_versions": {"b": "2"}}}
+        c3: RunnableConfig = {"metadata": {"lc_versions": {"c": "3"}}}
+        merged = merge_configs(c1, c2, c3)
+        assert merged["metadata"] == {
+            "lc_versions": {"a": "1", "b": "2", "c": "3"},
+        }

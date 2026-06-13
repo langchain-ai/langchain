@@ -35,6 +35,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "MiniMaxAI/MiniMax-M2.5": {
         "name": "MiniMax-M2.5",
@@ -55,6 +56,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "MiniMaxAI/MiniMax-M2.7": {
         "name": "MiniMax-M2.7",
@@ -76,6 +78,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-235B-A22B-Thinking-2507": {
         "name": "Qwen3-235B-A22B-Thinking-2507",
@@ -96,6 +99,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
         "name": "Qwen3-Coder-480B-A35B-Instruct",
@@ -116,6 +120,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Coder-Next": {
         "name": "Qwen3-Coder-Next",
@@ -136,6 +141,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Embedding-4B": {
         "name": "Qwen 3 Embedding 4B",
@@ -156,6 +162,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Embedding-8B": {
         "name": "Qwen 3 Embedding 8B",
@@ -176,6 +183,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Next-80B-A3B-Instruct": {
         "name": "Qwen3-Next-80B-A3B-Instruct",
@@ -196,6 +204,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3-Next-80B-A3B-Thinking": {
         "name": "Qwen3-Next-80B-A3B-Thinking",
@@ -216,6 +225,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "Qwen/Qwen3.5-397B-A17B": {
         "name": "Qwen3.5-397B-A17B",
@@ -236,6 +246,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "XiaomiMiMo/MiMo-V2-Flash": {
         "name": "MiMo-V2-Flash",
@@ -256,6 +267,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-ai/DeepSeek-R1-0528": {
         "name": "DeepSeek-R1-0528",
@@ -276,6 +288,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-ai/DeepSeek-V3.2": {
         "name": "DeepSeek-V3.2",
@@ -296,6 +309,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-ai/DeepSeek-V4-Pro": {
         "name": "DeepSeek V4 Pro",
@@ -317,6 +331,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/Kimi-K2-Instruct": {
         "name": "Kimi-K2-Instruct",
@@ -337,6 +352,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/Kimi-K2-Instruct-0905": {
         "name": "Kimi-K2-Instruct-0905",
@@ -357,6 +373,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/Kimi-K2-Thinking": {
         "name": "Kimi-K2-Thinking",
@@ -377,6 +394,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/Kimi-K2.5": {
         "name": "Kimi-K2.5",
@@ -397,6 +415,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/Kimi-K2.6": {
         "name": "Kimi-K2.6",
@@ -417,6 +436,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "zai-org/GLM-4.7": {
         "name": "GLM-4.7",
@@ -437,6 +457,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "zai-org/GLM-4.7-Flash": {
         "name": "GLM-4.7-Flash",
@@ -457,6 +478,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "zai-org/GLM-5": {
         "name": "GLM-5",
@@ -477,6 +499,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "zai-org/GLM-5.1": {
         "name": "GLM-5.1",
@@ -497,5 +520,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
 }

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 class OldStyleMiddleware1(AgentMiddleware):
     """Middleware with no type parameters at all - most common old pattern."""
 
+    @override
     def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
         # Simple middleware that just logs or does something
         return None
@@ -106,6 +107,7 @@ class OldStyleMiddleware4(AgentMiddleware[AgentState[Any], MyContext]):
 @before_model
 def old_style_decorator(state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
     """Decorator middleware - old pattern."""
+    _ = (state, runtime)
     return None
 
 

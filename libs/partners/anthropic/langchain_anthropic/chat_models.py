@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import datetime
+import hashlib
 import json
 import re
 import warnings
@@ -55,7 +56,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -237,6 +238,51 @@ def _format_image(url: str) -> dict:
     )
 
 
+_TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+"""Anthropic requires `tool_use`/`tool_result` IDs to match this pattern."""
+
+
+def _normalize_tool_call_id(tool_call_id: str | None) -> str | None:
+    """Map a tool-call ID to an Anthropic-compatible form if needed.
+
+    Anthropic rejects `tool_use`/`tool_result` IDs that don't match
+    `^[a-zA-Z0-9_-]+$`. IDs minted by other providers can violate this when a
+    thread is replayed across providers (e.g. Fireworks/Kimi emits
+    `functions.write_todos:0`, whose `.` and `:` are invalid). Valid IDs are
+    returned unchanged; invalid ones are hashed deterministically so that a
+    rewritten `tool_use.id` and its paired `tool_use_id` resolve to the same
+    value, both within a request and across turns.
+
+    Empty and `None` IDs are passed through unchanged so that a genuinely
+    malformed request surfaces as a clear error from Anthropic rather than
+    being masked by a synthesized ID.
+
+    Args:
+        tool_call_id: The tool-call ID to normalize.
+
+    Returns:
+        The original ID if it is empty, `None`, or already valid; otherwise a
+            deterministic Anthropic-compatible replacement.
+    """
+    if not tool_call_id or _TOOL_CALL_ID_PATTERN.match(tool_call_id):
+        return tool_call_id
+    digest = hashlib.sha256(tool_call_id.encode()).hexdigest()
+    return f"toolu_{digest[:24]}"
+
+
+def _normalize_block_tool_use_id(block: dict) -> dict:
+    """Return `block` with its `tool_use_id` normalized, if it carries one.
+
+    Mirrors `_normalize_tool_call_id` for `tool_result`-style content blocks so
+    that a `tool_use_id` arriving pre-structured (e.g. on a `ToolMessage` whose
+    content is already a list of `tool_result` blocks) stays consistent with its
+    paired, normalized `tool_use.id`. A no-op for already-valid IDs.
+    """
+    if "tool_use_id" in block:
+        return {**block, "tool_use_id": _normalize_tool_call_id(block["tool_use_id"])}
+    return block
+
+
 def _merge_messages(
     messages: Sequence[BaseMessage],
 ) -> list[SystemMessage | AIMessage | HumanMessage]:
@@ -272,7 +318,7 @@ def _merge_messages(
                 tool_result: dict = {
                     "type": "tool_result",
                     "content": tool_content,
-                    "tool_use_id": curr.tool_call_id,
+                    "tool_use_id": _normalize_tool_call_id(curr.tool_call_id),
                     "is_error": curr.status == "error",
                 }
                 if cache_ctrl:
@@ -516,7 +562,7 @@ def _format_messages(
                                 type="tool_use",
                                 name=block["name"],
                                 input=args,
-                                id=block["id"],
+                                id=cast("str", _normalize_tool_call_id(block["id"])),
                             )
                             if caller := block.get("caller"):
                                 tool_use_block["caller"] = caller
@@ -595,24 +641,30 @@ def _format_messages(
                     ):
                         # Tool search results with tool_reference blocks
                         content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in (
-                                    "type",
-                                    "content",
-                                    "tool_use_id",
-                                    "cache_control",
-                                )
-                            },
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
                         )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])],
                         )[1][0]["content"]
-                        content.append({**block, "content": tool_content})
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {**block, "content": tool_content},
+                            ),
+                        )
                     elif block["type"] in (
                         "code_execution_tool_result",
                         "bash_code_execution_tool_result",
@@ -622,19 +674,21 @@ def _format_messages(
                         "web_fetch_tool_result",
                     ):
                         content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in (
-                                    "type",
-                                    "content",
-                                    "tool_use_id",
-                                    "is_error",  # for mcp_tool_result
-                                    "cache_control",
-                                    "retrieved_at",  # for web_fetch_tool_result
-                                )
-                            },
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "is_error",  # for mcp_tool_result
+                                        "cache_control",
+                                        "retrieved_at",  # for web_fetch_tool_result
+                                    )
+                                },
+                            ),
                         )
                     else:
                         content.append(block)
@@ -662,8 +716,13 @@ def _format_messages(
                 for block in content
                 if cast("dict", block)["type"] == "tool_use"
             ]
+            # `tool_use_ids` are already normalized via the branches above, so
+            # compare against the normalized tool-call ID to avoid emitting a
+            # duplicate `tool_use` block when the original ID was rewritten.
             missing_tool_calls = [
-                tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
+                tc
+                for tc in message.tool_calls
+                if _normalize_tool_call_id(tc["id"]) not in tool_use_ids
             ]
             cast("list", content).extend(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
@@ -1108,6 +1167,12 @@ class ChatAnthropic(BaseChatModel):
         """Build model kwargs."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="after")
+    def _set_anthropic_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-anthropic", __version__)
+        return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
@@ -2224,7 +2289,7 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
             type="tool_use",
             name=tool_call["name"],
             input=tool_call["args"],
-            id=cast("str", tool_call["id"]),
+            id=cast("str", _normalize_tool_call_id(tool_call["id"])),
         )
         for tool_call in tool_calls
     ]

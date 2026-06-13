@@ -21,7 +21,7 @@ test_watch:
 
 # integration tests are run without the --disable-socket flag to allow network calls
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto --timeout=30 $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable --timeout=30 $(TEST_FILE)
 
 ######################
 # LINTING AND FORMATTING
@@ -55,6 +55,9 @@ format format_diff:
 check_imports: $(shell find langchain_deepseek -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
@@ -62,6 +65,7 @@ check_imports: $(shell find langchain_deepseek -name '*.py')
 help:
 	@echo '----'
 	@echo 'check_imports				- check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

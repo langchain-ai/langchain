@@ -69,6 +69,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -409,6 +410,12 @@ class ChatOpenRouter(BaseChatModel):
                 retry_connection_errors=True,
             )
         return openrouter.OpenRouter(**client_kwargs)
+
+    @model_validator(mode="after")
+    def _set_openrouter_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-openrouter", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -1468,7 +1475,7 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
 
 
 def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict[str, Any]:
-    """Convert a LangChain ``ToolCall`` to an OpenRouter tool call dict.
+    """Convert a LangChain `ToolCall` to an OpenRouter tool call dict.
 
     Serializes `args` (a dict) via `json.dumps`.
     """

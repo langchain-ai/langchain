@@ -69,8 +69,8 @@ PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
 IS_PYDANTIC_V1 = False
 IS_PYDANTIC_V2 = True
 
-PydanticBaseModel = BaseModel
-TypeBaseModel = type[BaseModel]
+PydanticBaseModel = BaseModel | BaseModelV1
+TypeBaseModel = type[BaseModel] | type[BaseModelV1]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -126,7 +126,9 @@ def is_basemodel_instance(obj: Any) -> bool:
 
 
 # How to type hint this?
-def pre_init(func: Callable) -> Any:
+def pre_init(
+    func: Callable[[Any, dict[str, Any]], Any],
+) -> Callable[[Any, dict[str, Any]], Any]:
     """Decorator to run a function before model initialization.
 
     Args:
@@ -202,9 +204,9 @@ class _IgnoreUnserializable(GenerateJsonSchema):
 def _create_subset_model_v1(
     name: str,
     model: type[BaseModelV1],
-    field_names: list,
+    field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
@@ -233,7 +235,7 @@ def _create_subset_model_v2(
     model: type[BaseModel],
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a Pydantic model with a subset of the model fields."""
@@ -283,9 +285,9 @@ def _create_subset_model(
     model: TypeBaseModel,
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create subset model using the same pydantic version as the input model.
 
     Returns:
@@ -341,6 +343,49 @@ def get_fields(
         return model.model_fields
     if issubclass(model, BaseModelV1):
         return model.__fields__
+    msg = f"Expected a Pydantic model. Got {model}"
+    raise TypeError(msg)
+
+
+def model_json_schema(model: TypeBaseModel) -> dict[str, Any]:
+    """Return the JSON schema of a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`schema`) or v2
+    (`model_json_schema`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_json_schema()
+    if issubclass(model, BaseModelV1):
+        return model.schema()
+    msg = f"Expected a Pydantic model. Got {model}"
+    raise TypeError(msg)
+
+
+def model_validate(model: TypeBaseModel, obj: Any) -> PydanticBaseModel:
+    """Validate `obj` against a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`parse_obj`) or v2
+    (`model_validate`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class to validate against.
+        obj: The object to validate.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_validate(obj)
+    if issubclass(model, BaseModelV1):
+        return model.parse_obj(obj)
     msg = f"Expected a Pydantic model. Got {model}"
     raise TypeError(msg)
 

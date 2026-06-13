@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.4.0"
+version = "1.4.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -48,7 +48,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 lint = ["ruff>=0.15.0,<0.16.0"]
 typing = [
-    "mypy>=1.19.1,<1.20.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
     "langchain-text-splitters>=1.0.0,<2.0.0",
@@ -72,7 +72,7 @@ test = [
     "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
     "pytest-benchmark",
     "pytest-codspeed",
 ]
@@ -90,6 +90,10 @@ langchain-text-splitters = { path = "../text-splitters" }
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
+# `warn_unreachable` is intentionally NOT enabled here (unlike the other strict
+# libs). Under mypy 2.x it false-flags intentional defensive runtime checks as
+# unreachable — most notably the SSRF / IP-policy guards in
+# `langchain_core/_security/` — which we do not want to delete or blanket-ignore.
 
 # TODO: activate for 'strict' checking
 disallow_any_generics = false

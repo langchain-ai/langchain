@@ -4,6 +4,7 @@ import json
 import logging
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -19,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 def _validate_path(path: Path) -> None:
-    """Reject absolute paths and ``..`` traversal components.
+    """Reject absolute paths and `..` traversal components.
 
     Args:
         path: The path to validate.
 
     Raises:
-        ValueError: If the path is absolute or contains ``..`` components.
+        ValueError: If the path is absolute or contains `..` components.
     """
     if path.is_absolute():
         msg = (
@@ -52,16 +53,16 @@ def _validate_path(path: Path) -> None:
     "prompts and `load`/`loads` to deserialize them.",
 )
 def load_prompt_from_config(
-    config: dict, *, allow_dangerous_paths: bool = False
-) -> BasePromptTemplate:
+    config: dict[str, Any], *, allow_dangerous_paths: bool = False
+) -> BasePromptTemplate[str]:
     """Load prompt from config dict.
 
     Args:
         config: Dict containing the prompt configuration.
-        allow_dangerous_paths: If ``False`` (default), file paths in the
-            config (such as ``template_path``, ``examples``, and
-            ``example_prompt_path``) are validated to reject absolute paths
-            and directory traversal (``..``) sequences. Set to ``True`` only
+        allow_dangerous_paths: If `False` (default), file paths in the
+            config (such as `template_path`, `examples`, and
+            `example_prompt_path`) are validated to reject absolute paths
+            and directory traversal (`..`) sequences. Set to `True` only
             if you trust the source of the config.
 
     Returns:
@@ -83,8 +84,8 @@ def load_prompt_from_config(
 
 
 def _load_template(
-    var_name: str, config: dict, *, allow_dangerous_paths: bool = False
-) -> dict:
+    var_name: str, config: dict[str, Any], *, allow_dangerous_paths: bool = False
+) -> dict[str, Any]:
     """Load template from the path if applicable."""
     # Check if template_path exists in config.
     if f"{var_name}_path" in config:
@@ -109,7 +110,9 @@ def _load_template(
     return config
 
 
-def _load_examples(config: dict, *, allow_dangerous_paths: bool = False) -> dict:
+def _load_examples(
+    config: dict[str, Any], *, allow_dangerous_paths: bool = False
+) -> dict[str, Any]:
     """Load examples if necessary."""
     if isinstance(config["examples"], list):
         pass
@@ -132,7 +135,7 @@ def _load_examples(config: dict, *, allow_dangerous_paths: bool = False) -> dict
     return config
 
 
-def _load_output_parser(config: dict) -> dict:
+def _load_output_parser(config: dict[str, Any]) -> dict[str, Any]:
     """Load output parser."""
     if config_ := config.get("output_parser"):
         if output_parser_type := config_.get("_type") != "default":
@@ -143,7 +146,7 @@ def _load_output_parser(config: dict) -> dict:
 
 
 def _load_few_shot_prompt(
-    config: dict, *, allow_dangerous_paths: bool = False
+    config: dict[str, Any], *, allow_dangerous_paths: bool = False
 ) -> FewShotPromptTemplate:
     """Load the "few shot" prompt from the config."""
     # Load the suffix and prefix templates.
@@ -178,7 +181,7 @@ def _load_few_shot_prompt(
 
 
 def _load_prompt(
-    config: dict, *, allow_dangerous_paths: bool = False
+    config: dict[str, Any], *, allow_dangerous_paths: bool = False
 ) -> PromptTemplate:
     """Load the prompt template from config."""
     # Load the template from disk if necessary.
@@ -212,16 +215,16 @@ def load_prompt(
     encoding: str | None = None,
     *,
     allow_dangerous_paths: bool = False,
-) -> BasePromptTemplate:
+) -> BasePromptTemplate[str]:
     """Unified method for loading a prompt from LangChainHub or local filesystem.
 
     Args:
         path: Path to the prompt file.
         encoding: Encoding of the file.
-        allow_dangerous_paths: If ``False`` (default), file paths referenced
-            inside the loaded config (such as ``template_path``, ``examples``,
-            and ``example_prompt_path``) are validated to reject absolute paths
-            and directory traversal (``..``) sequences. Set to ``True`` only
+        allow_dangerous_paths: If `False` (default), file paths referenced
+            inside the loaded config (such as `template_path`, `examples`,
+            and `example_prompt_path`) are validated to reject absolute paths
+            and directory traversal (`..`) sequences. Set to `True` only
             if you trust the source of the config.
 
     Returns:
@@ -247,7 +250,7 @@ def _load_prompt_from_file(
     encoding: str | None = None,
     *,
     allow_dangerous_paths: bool = False,
-) -> BasePromptTemplate:
+) -> BasePromptTemplate[str]:
     """Load prompt from file."""
     # Convert file to a Path object.
     file_path = Path(file)
@@ -266,7 +269,7 @@ def _load_prompt_from_file(
 
 
 def _load_chat_prompt(
-    config: dict,
+    config: dict[str, Any],
     *,
     allow_dangerous_paths: bool = False,  # noqa: ARG001
 ) -> ChatPromptTemplate:
@@ -282,7 +285,7 @@ def _load_chat_prompt(
     return ChatPromptTemplate.from_template(template=template, **config)
 
 
-type_to_loader_dict: dict[str, Callable[..., BasePromptTemplate]] = {
+type_to_loader_dict: dict[str, Callable[..., BasePromptTemplate[str]]] = {
     "prompt": _load_prompt,
     "few_shot": _load_few_shot_prompt,
     "chat": _load_chat_prompt,

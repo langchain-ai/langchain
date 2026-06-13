@@ -27,7 +27,7 @@ test_watch:
 
 # integration tests are run without the --disable-socket flag to allow network calls
 integration_test:
-	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest -v --tb=short -n auto $(TEST_FILE)
+	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 
 # CI integration tests - disabled until ollama service is configured in CI
 
@@ -60,6 +60,9 @@ format format_diff:
 check_imports: $(shell find langchain_ollama -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
@@ -67,6 +70,7 @@ check_imports: $(shell find langchain_ollama -name '*.py')
 help:
 	@echo '----'
 	@echo 'check_imports				- check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

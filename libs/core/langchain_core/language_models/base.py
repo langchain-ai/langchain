@@ -138,6 +138,30 @@ def _get_verbosity() -> bool:
     return get_verbose()
 
 
+@cache
+def _get_langchain_version() -> str | None:
+    """Return the installed `langchain` version, or `None` if not installed.
+
+    Cached because `importlib.metadata.version` performs a filesystem lookup and
+    `model_post_init` runs on every `BaseLanguageModel` instantiation. `langchain`
+    is an optional sibling package, so its absence is expected and not an error.
+    """
+    from importlib.metadata import PackageNotFoundError  # noqa: PLC0415
+    from importlib.metadata import version as pkg_version  # noqa: PLC0415
+
+    try:
+        return pkg_version("langchain")
+    except PackageNotFoundError:
+        return None
+
+
+# Warm the cache at import time, while we're guaranteed to be on the synchronous
+# import path and outside any event loop. Otherwise the first model constructed
+# inside async code would run the blocking `os.stat` (via `importlib.metadata`)
+# on the event loop, tripping blocking-I/O detectors like blockbuster.
+_get_langchain_version()
+
+
 class BaseLanguageModel(
     RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
 ):
@@ -178,6 +202,75 @@ class BaseLanguageModel(
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    def model_post_init(self, _context: Any, /) -> None:
+        """Pydantic V2 lifecycle hook called automatically after `__init__`.
+
+        Seeds `metadata["lc_versions"]` with the installed `langchain-core`
+        (and `langchain`, if installed) versions so that every LLM trace
+        carries the package versions that produced it.
+
+        Partner packages should **not** override this method. Instead, they
+        should define a `@model_validator(mode="after")` that calls
+        `_add_version` to append their own version to the same dict.
+
+        !!! warning "Validator naming"
+
+            Each subclass's validator **must** have a unique name. Pydantic
+            replaces — rather than chains — same-named `model_validator` methods
+            in child classes. For example, a `BaseChatOpenAI` subclass should
+            use `_set_<partner>_version`, not `_set_version`, to avoid silently
+            dropping the parent's entry.
+
+        Args:
+            _context: Pydantic validation context (typically `None`).
+        """
+        super().model_post_init(_context)
+        from langchain_core.version import VERSION  # noqa: PLC0415
+
+        self._add_version("langchain-core", VERSION)
+
+        langchain_version = _get_langchain_version()
+        if langchain_version is not None:
+            self._add_version("langchain", langchain_version)
+
+    def _add_version(self, pkg: str, version: str) -> None:
+        """Record a package version in `metadata.lc_versions` for tracing.
+
+        Each layer in the class hierarchy (core -> langchain -> partner)
+        calls this so that the resulting metadata dict accumulates *all*
+        package versions involved in an invocation.
+
+        Example resulting metadata:
+
+        ```python
+        {
+            "lc_versions": {
+                "langchain-core": "1.x.x",
+                "langchain": "1.x.x",
+                "langchain-openai": "1.x.x",
+            }
+        }
+        ```
+
+        Args:
+            pkg: Package name (e.g., `'langchain-openai'`).
+            version: Installed version string.
+        """
+        if self.metadata is None:
+            self.metadata = {}
+        existing = self.metadata.get("lc_versions")
+        if existing is not None and not isinstance(existing, Mapping):
+            warnings.warn(
+                f"metadata['lc_versions'] expected a dict, got "
+                f"{type(existing).__name__}; overwriting with package version dict",
+                stacklevel=2,
+            )
+            existing = None
+        self.metadata["lc_versions"] = {
+            **(existing if isinstance(existing, Mapping) else {}),
+            pkg: version,
+        }
 
     @field_validator("verbose", mode="before")
     def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
@@ -294,8 +387,8 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: dict | type, **kwargs: Any
-    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
+        self, schema: dict[str, Any] | type, **kwargs: Any
+    ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
@@ -356,7 +449,7 @@ class BaseLanguageModel(
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence | None = None,
+        tools: Sequence[Any] | None = None,
     ) -> int:
         """Get the number of tokens in the messages.
 

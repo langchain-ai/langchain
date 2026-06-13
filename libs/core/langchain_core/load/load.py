@@ -54,6 +54,16 @@ The `allowed_objects` parameter controls which classes can be deserialized:
     classes outside the allowlist, but does not sandbox the allowed classes
     themselves or constrain their constructor kwargs.
 
+    For example, an untrusted manifest could deserialize a chat model whose
+    `base_url` (or `endpoint_url`) points at an attacker-controlled host. Any
+    request that model makes is then directed there — a Server-Side Request
+    Forgery (SSRF) vector. This is *expected behavior*: deserialization
+    faithfully reconstructs the configuration carried by the manifest, custom
+    endpoints included, and LangChain does not special-case or strip such
+    kwargs. The mitigation is to **only deserialize manifests you trust**,
+    and for untrusted input to restrict `allowed_objects` to `'messages'`
+    or an explicit list of classes that take no endpoint configuration.
+
 Import paths are also validated against trusted namespaces before any module is
 imported.
 
@@ -120,7 +130,6 @@ from langchain_core.load.mapping import (
     SERIALIZABLE_MAPPING,
 )
 from langchain_core.load.serializable import Serializable
-from langchain_core.load.validators import CLASS_INIT_VALIDATORS
 
 DEFAULT_NAMESPACES = [
     "langchain",
@@ -431,9 +440,7 @@ class Reviver:
         # - Explicit list -> compute from those classes
         if allowed_objects in ("all", "core", "messages"):
             self.allowed_class_paths: set[tuple[str, ...]] | None = (
-                _get_default_allowed_class_paths(
-                    cast("Literal['all', 'core', 'messages']", allowed_objects)
-                ).copy()
+                _get_default_allowed_class_paths(allowed_objects).copy()
             )
             # Add paths from additional_import_mappings to the defaults
             if self.additional_import_mappings:
@@ -542,12 +549,8 @@ class Reviver:
             # as json.loads will do that for us.
             kwargs = value.get("kwargs", {})
 
-            # Run class-specific validators before the general init_validator.
-            # These run before importing to fail fast on security violations.
-            if mapping_key in CLASS_INIT_VALIDATORS:
-                CLASS_INIT_VALIDATORS[mapping_key](mapping_key, kwargs)
-
-            # Also run general init_validator (e.g., jinja2 blocking)
+            # Run the init_validator (e.g., jinja2 blocking) before importing
+            # to fail fast on security violations.
             if self.init_validator is not None:
                 self.init_validator(mapping_key, kwargs)
 
@@ -591,10 +594,13 @@ def loads(
 
         A serialized payload may carry constructor kwargs that affect runtime
         behavior (custom `base_url`, headers, model name, etc.), so it should be
-        treated as executable configuration rather than plain text. If the
-        source is untrusted, avoid calling `loads()` on it; if you must, pass
-        `allowed_objects='messages'` or an explicit list of message classes.
-        See the module-level threat model for details.
+        treated as executable configuration rather than plain text. For example,
+        deserializing a model whose `base_url` points at an attacker-controlled
+        host can result in Server-Side Request Forgery (SSRF); this is expected
+        behavior, since `loads()` faithfully reconstructs the configuration in
+        the manifest. If the source is untrusted, avoid calling `loads()` on it;
+        if you must, pass `allowed_objects='messages'` or an explicit list of
+        message classes. See the module-level threat model for details.
 
     Args:
         text: The string to load.
@@ -700,10 +706,13 @@ def load(
 
         A serialized payload may carry constructor kwargs that affect runtime
         behavior (custom `base_url`, headers, model name, etc.), so it should be
-        treated as executable configuration rather than plain text. If the
-        source is untrusted, avoid calling `load()` on it; if you must, pass
-        `allowed_objects='messages'` or an explicit list of message classes.
-        See the module-level threat model for details.
+        treated as executable configuration rather than plain text. For example,
+        deserializing a model whose `base_url` points at an attacker-controlled
+        host can result in Server-Side Request Forgery (SSRF); this is expected
+        behavior, since `load()` faithfully reconstructs the configuration in
+        the manifest. If the source is untrusted, avoid calling `load()` on it;
+        if you must, pass `allowed_objects='messages'` or an explicit list of
+        message classes. See the module-level threat model for details.
 
     Args:
         obj: The object to load.

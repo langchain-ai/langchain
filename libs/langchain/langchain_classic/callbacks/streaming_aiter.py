@@ -39,9 +39,12 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
         self.done.clear()
 
     @override
-    async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        if token is not None and token != "":
-            self.queue.put_nowait(token)
+    async def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
+        token_str = token if isinstance(token, str) else str(token)
+        if token_str != "":
+            self.queue.put_nowait(token_str)
 
     @override
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:

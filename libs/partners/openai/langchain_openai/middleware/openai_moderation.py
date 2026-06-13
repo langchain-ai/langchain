@@ -22,7 +22,7 @@ DEFAULT_VIOLATION_TEMPLATE = (
 
 
 class OpenAIModerationError(RuntimeError):
-    """Raised when OpenAI flags content and `exit_behavior` is set to ``"error"``."""
+    """Raised when OpenAI flags content and `exit_behavior` is set to `"error"`."""
 
     def __init__(
         self,

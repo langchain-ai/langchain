@@ -15,7 +15,7 @@ test tests:
 	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto --retries 3 --retry-delay 2 $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable --retries 3 --retry-delay 2 $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
@@ -53,6 +53,9 @@ format format_diff:
 check_imports: $(shell find langchain_fireworks -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
@@ -60,6 +63,7 @@ check_imports: $(shell find langchain_fireworks -name '*.py')
 help:
 	@echo '----'
 	@echo 'check_imports				- check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

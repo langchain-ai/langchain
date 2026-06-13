@@ -23,7 +23,7 @@ classifiers = [
 version = "0.2.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
     "openrouter>=0.7.11,<1.0.0",
 ]
 
@@ -45,12 +45,12 @@ test = [
     "pytest-watcher>=0.6.3,<1.0.0",
     "pytest-timeout>=2.4.0,<3.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
-    "langchain-tests>=1.0.0,<2.0.0",
+    "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
-typing = ["mypy>=1.19.1,<2.0.0"]
+dev = []
+typing = ["mypy>=2.1.0,<2.2.0"]
 
 
 [tool.uv]
@@ -61,7 +61,7 @@ langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.ruff.format]
 docstring-code-format = true

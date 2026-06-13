@@ -13,7 +13,7 @@ To help you ship LangChain apps to production faster, check out [LangSmith](http
 ## Quick Install
 
 ```bash
-pip install langchain-core
+uv add langchain-core
 ```
 
 ## 🤔 What is this?
@@ -45,3 +45,8 @@ See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Ve
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
 For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).
+
+## Resources
+
+- [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
+- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards

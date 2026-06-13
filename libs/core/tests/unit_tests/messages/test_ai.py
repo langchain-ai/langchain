@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -355,11 +355,11 @@ def test_content_blocks() -> None:
     assert chunk.content_blocks == chunk.tool_calls
 
     # test v1 content
-    chunk_1.content = cast("str | list[str | dict]", chunk_1.content_blocks)
+    chunk_1.content = cast("list[str | dict[str, Any]]", chunk_1.content_blocks)
     assert len(chunk_1.content) == 1
     chunk_1.content[0]["extras"] = {"baz": "qux"}  # type: ignore[index]
     chunk_1.response_metadata["output_version"] = "v1"
-    chunk_2.content = cast("str | list[str | dict]", chunk_2.content_blocks)
+    chunk_2.content = cast("list[str | dict[str, Any]]", chunk_2.content_blocks)
 
     chunk = chunk_1 + chunk_2 + chunk_3
     assert chunk.content == [
@@ -379,8 +379,12 @@ def test_content_blocks() -> None:
     standard_content_2: list[types.ContentBlock] = [
         {"type": "non_standard", "index": 0, "value": {"foo": "baz"}}
     ]
-    chunk_1 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_1))
-    chunk_2 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_2))
+    chunk_1 = AIMessageChunk(
+        content=cast("list[str | dict[str, Any]]", standard_content_1)
+    )
+    chunk_2 = AIMessageChunk(
+        content=cast("list[str | dict[str, Any]]", standard_content_2)
+    )
     merged_chunk = chunk_1 + chunk_2
     assert merged_chunk.content == [
         {"type": "non_standard", "index": 0, "value": {"foo": "bar baz"}},
@@ -467,8 +471,12 @@ def test_content_blocks() -> None:
         }
     ]
     standard_content_2 = [{"type": "non_standard", "value": {"foo": "bar"}, "index": 0}]
-    chunk_1 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_1))
-    chunk_2 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_2))
+    chunk_1 = AIMessageChunk(
+        content=cast("list[str | dict[str, Any]]", standard_content_1)
+    )
+    chunk_2 = AIMessageChunk(
+        content=cast("list[str | dict[str, Any]]", standard_content_2)
+    )
     merged_chunk = chunk_1 + chunk_2
     assert merged_chunk.content == [
         {
@@ -480,6 +488,72 @@ def test_content_blocks() -> None:
             "extras": {"foo": "bar"},
         }
     ]
+
+
+def test_content_blocks_v1_string_content_falls_through() -> None:
+    """Test that content_blocks falls through to translator when content is a string.
+
+    When output_version="v1" is set but content is a string (as in Chat
+    Completions streaming), content_blocks must not short-circuit. It should
+    fall through to the model_provider translator so tool calls are included.
+    Covers both `AIMessage` and `AIMessageChunk`.
+    """
+    # AIMessage with string content + tool_calls + v1 metadata
+    msg = AIMessage(
+        content="Hello",
+        tool_calls=[
+            create_tool_call(name="foo", args={"a": 1}, id="tc_1"),
+        ],
+        response_metadata={
+            "output_version": "v1",
+            "model_provider": "openai",
+        },
+    )
+    blocks = msg.content_blocks
+    assert isinstance(blocks, list)
+    # Should contain a text block and a tool_call block, not the raw string
+    types_found = {b["type"] for b in blocks}
+    assert "text" in types_found
+    assert "tool_call" in types_found
+
+    # AIMessageChunk with string content + tool_call_chunks + v1 metadata
+    chunk = AIMessageChunk(
+        content="Hello",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="foo", args='{"a": 1}', id="tc_1", index=0),
+        ],
+        response_metadata={
+            "output_version": "v1",
+            "model_provider": "openai",
+        },
+    )
+    blocks = chunk.content_blocks
+    assert isinstance(blocks, list)
+    types_found = {b["type"] for b in blocks}
+    assert "text" in types_found
+    assert "tool_call_chunk" in types_found
+
+
+def test_content_blocks_v1_list_content_short_circuits() -> None:
+    """Test that content_blocks short-circuits when v1 content is already a list.
+
+    The `isinstance(self.content, list)` guard must preserve the fast path:
+    when content is already a list of `ContentBlock` dicts, `content_blocks`
+    returns it verbatim (the same object) without routing through the
+    translator. Covers both `AIMessage` and `AIMessageChunk`.
+    """
+    content: list = [
+        {"type": "text", "text": "Hello"},
+        {"type": "tool_call", "name": "foo", "args": {"a": 1}, "id": "tc_1"},
+    ]
+    for cls in (AIMessage, AIMessageChunk):
+        msg = cls(
+            content=content,
+            response_metadata={"output_version": "v1", "model_provider": "openai"},
+        )
+        # Short-circuit returns the stored content object itself; the translator
+        # would build and return a new list instead.
+        assert msg.content_blocks is msg.content
 
 
 def test_content_blocks_reasoning_extraction() -> None:
