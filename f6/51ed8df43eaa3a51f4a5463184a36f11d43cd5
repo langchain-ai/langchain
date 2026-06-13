@@ -1,0 +1,20 @@
+libs/partners/openai/tests/integration_tests/chat_models/conftest.py
+  s_b6c326ea2a7168::t_eed66e41db79dd 26,31-37,45,48-51
+  s_b6c326ea2a7168::t_588d13676a27ff 27-30,38-44,46-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f651ed8df43eaa3a51f4a5463184a36f11d43cd5",
+  "prompts": {},
+  "sessions": {
+    "s_b6c326ea2a7168": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90c1ecab-1b97-49e2-9548-bc242aa4a4a0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
