@@ -10,10 +10,11 @@ import json
 import os
 from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
-from typing import Any, Literal, Self, overload
+from typing import Any, Literal, overload
 
 import httpx
 import pytest
+from typing_extensions import Self
 
 from langchain_openai import chatgpt_oauth as oauth_module
 from langchain_openai.chatgpt_oauth import (
