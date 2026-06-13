@@ -348,6 +348,30 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
     assert unstructured_tool_input.run("foo") == "foo"
 
 
+def test_decorator_no_infer_schema_uses_description_then_docstring() -> None:
+    """`infer_schema=False` honors `description`, falling back to the docstring."""
+
+    @tool(description="Explicit description", infer_schema=False)
+    def with_description(tool_input: str) -> str:
+        """Docstring ignored when description is given."""
+        return tool_input
+
+    assert with_description.description == "Explicit description"
+
+    @tool(infer_schema=False)
+    def with_docstring(tool_input: str) -> str:
+        """Docstring used as the description."""
+        return tool_input
+
+    assert with_docstring.description == "Docstring used as the description."
+
+    with pytest.raises(ValueError, match="docstring"):
+
+        @tool(infer_schema=False)
+        def missing_both(tool_input: str) -> str:
+            return tool_input
+
+
 def test_structured_tool_types_parsed() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
 
