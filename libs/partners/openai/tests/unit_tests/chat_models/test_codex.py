@@ -59,6 +59,24 @@ class FakeTokenProvider:
         return token.access_token
 
 
+class AsyncOnlyTokenProvider(FakeTokenProvider):
+    """Provider whose async path never delegates to sync `get_token`.
+
+    Lets a test prove an async code path stayed off the event loop: any stray
+    sync `get_token()` would bump `calls`, which the async path must leave
+    untouched.
+    """
+
+    async def aget_token(self) -> _ChatGPTToken:
+        self.async_calls += 1
+        return _ChatGPTToken(
+            access_token=self.access_token,
+            refresh_token="rt",
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            account_id=self.account_id,
+        )
+
+
 def _build_model(**overrides: Any) -> _ChatOpenAICodex:
     provider = overrides.pop("token_provider", None) or FakeTokenProvider()
     return _ChatOpenAICodex(
@@ -469,38 +487,36 @@ def test_caller_headers_win_over_codex_defaults() -> None:
     assert headers[ACCOUNT_ID_HEADER] == "acct-1"
 
 
-async def test_agenerate_primes_async_token_cache(
+async def test_agenerate_builds_codex_headers_without_sync_token_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`_agenerate` must call `aget_token` so refresh doesn't block the loop."""
-    provider = FakeTokenProvider()
+    """`_agenerate` must not call sync `get_token` on the event loop."""
+    provider = AsyncOnlyTokenProvider(account_id="acct-async")
     model = _build_model(token_provider=provider)
+    kwargs_seen: dict[str, Any] = {}
 
-    async def _fake_super_agenerate(*_a: Any, **_k: Any) -> Any:
+    async def _fake_super_agenerate(*_a: Any, **kwargs: Any) -> Any:
+        kwargs_seen.update(kwargs)
         return "sentinel"
 
     monkeypatch.setattr(ChatOpenAI, "_agenerate", _fake_super_agenerate)
-    before = provider.async_calls
+    before_sync = provider.calls
+    before_async = provider.async_calls
     result = await model._agenerate([HumanMessage("hi")])
+
     assert result == "sentinel"
-    assert provider.async_calls == before + 1
+    assert provider.async_calls == before_async + 1
+    assert provider.calls == before_sync
+    assert kwargs_seen["_codex_headers"] == {
+        ACCOUNT_ID_HEADER: "acct-async",
+        ORIGINATOR_HEADER: ORIGINATOR_VALUE,
+    }
 
 
 async def test_astream_builds_codex_headers_without_sync_token_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """`_astream` must not call sync `get_token` on the event loop."""
-
-    class AsyncOnlyTokenProvider(FakeTokenProvider):
-        async def aget_token(self) -> _ChatGPTToken:
-            self.async_calls += 1
-            return _ChatGPTToken(
-                access_token=self.access_token,
-                refresh_token="rt",
-                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-                account_id=self.account_id,
-            )
-
     provider = AsyncOnlyTokenProvider(account_id="acct-async")
     model = _build_model(token_provider=provider)
     kwargs_seen: dict[str, Any] = {}
@@ -521,6 +537,32 @@ async def test_astream_builds_codex_headers_without_sync_token_read(
         ACCOUNT_ID_HEADER: "acct-async",
         ORIGINATOR_HEADER: ORIGINATOR_VALUE,
     }
+
+
+async def test_astream_empty_headers_skip_sync_token_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An accountless token yields `{}` headers — still no sync read on the loop.
+
+    Guards the deliberate `is not None` check in `_get_request_payload`: an
+    explicitly-built empty dict must be honored as-is, not treated as falsy and
+    routed back through the blocking sync `get_token()`.
+    """
+    provider = AsyncOnlyTokenProvider(account_id=None)
+    model = _build_model(token_provider=provider, originator=None)
+    kwargs_seen: dict[str, Any] = {}
+
+    async def _fake_super_astream(*_a: Any, **kwargs: Any) -> Any:
+        kwargs_seen.update(kwargs)
+        yield "chunk"
+
+    monkeypatch.setattr(ChatOpenAI, "_astream", _fake_super_astream)
+    before_sync = provider.calls
+    received = [chunk async for chunk in model._astream([HumanMessage("hi")])]
+
+    assert received == ["chunk"]
+    assert provider.calls == before_sync
+    assert kwargs_seen["_codex_headers"] == {}
 
 
 def test_callable_api_key_returns_provider_token() -> None:

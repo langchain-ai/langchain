@@ -55,6 +55,15 @@ env var.
 """
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+_CODEX_HEADERS_KWARG = "_codex_headers"
+"""Private kwarg used to hand pre-built Codex headers to `_get_request_payload`.
+
+The async `_agenerate`/`_astream` paths build the headers from a token fetched
+off the event loop (via `aget_token`) and pass them through this kwarg so the
+sync payload builder doesn't fall back to `_codex_headers_sync` — which would
+acquire a thread + cross-process file lock on the loop. Leading underscore keeps
+it out of the public surface; it is popped before the payload reaches the SDK.
+"""
 EXPERIMENTAL_UNOFFICIAL_WARNING = (
     "`_ChatOpenAICodex` is experimental and unofficial. It uses ChatGPT "
     "subscription OAuth against Codex endpoints and must only be used where "
@@ -438,7 +447,7 @@ class _ChatOpenAICodex(ChatOpenAI):
         way `_convert_input` only runs once (inside super) instead of once
         here and again there.
         """
-        codex_headers = kwargs.pop("_codex_headers", None)
+        codex_headers = kwargs.pop(_CODEX_HEADERS_KWARG, None)
         payload_input: LanguageModelInput = input_
         if _maybe_has_system_messages(input_):
             messages = self._convert_input(input_).to_messages()
@@ -466,6 +475,12 @@ class _ChatOpenAICodex(ChatOpenAI):
         # silently overwriting it would hide a programming error).
         if payload.get("instructions") is None:
             payload["instructions"] = self.instructions
+        # An async caller may have already built the headers off the event loop
+        # and passed them through `_codex_headers`. Honor them verbatim — the
+        # `is not None` check (not truthiness) is deliberate: an explicit empty
+        # dict means "no headers, already decided async" and must NOT trigger a
+        # sync `get_token()` (which blocks the loop on a file lock). Only the
+        # purely-sync path, where the kwarg is absent, reads the token here.
         headers = (
             codex_headers if codex_headers is not None else self._codex_headers_sync()
         )
@@ -478,9 +493,13 @@ class _ChatOpenAICodex(ChatOpenAI):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        # Prime the cache via async refresh so the sync header build that
-        # happens inside `super()._agenerate` does not block the event loop.
-        await self.token_provider.aget_token()
+        # Fetch the token off the event loop and build the headers here, then
+        # hand them to the sync payload builder via `_codex_headers`. This keeps
+        # `_get_request_payload` (run on the loop inside `super()._agenerate`)
+        # from falling back to the sync `get_token()`, which would acquire a
+        # thread + cross-process file lock on the loop.
+        token = await self.token_provider.aget_token()
+        kwargs[_CODEX_HEADERS_KWARG] = self._build_headers(token.account_id)
         return await super()._agenerate(
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
@@ -492,8 +511,10 @@ class _ChatOpenAICodex(ChatOpenAI):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        # Build the headers from a token fetched off the event loop (see
+        # `_agenerate` for why) and pass them to the sync payload builder.
         token = await self.token_provider.aget_token()
-        kwargs["_codex_headers"] = self._build_headers(token.account_id)
+        kwargs[_CODEX_HEADERS_KWARG] = self._build_headers(token.account_id)
         async for chunk in super()._astream(
             messages, stop=stop, run_manager=run_manager, **kwargs
         ):
