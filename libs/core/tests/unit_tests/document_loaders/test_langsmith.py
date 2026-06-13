@@ -2,6 +2,7 @@ import datetime
 import uuid
 from unittest.mock import MagicMock, patch
 
+import pytest
 from langsmith.schemas import Example
 
 from langchain_core.document_loaders import LangSmithLoader
@@ -11,6 +12,13 @@ from langchain_core.tracers._compat import pydantic_to_dict
 
 def test_init() -> None:
     LangSmithLoader(api_key="secret")
+
+
+def test_init_with_client_and_client_kwargs_raises() -> None:
+    client = MagicMock()
+
+    with pytest.raises(ValueError, match="Received both `client` and `client_kwargs`"):
+        LangSmithLoader(client=client, api_key="secret")
 
 
 EXAMPLES = [
@@ -60,3 +68,15 @@ def test_lazy_load() -> None:
         )
     actual = list(loader.lazy_load())
     assert expected == actual
+
+
+@patch("langsmith.Client.list_examples", MagicMock(return_value=iter(EXAMPLES[:1])))
+def test_lazy_load_with_missing_content_key_raises() -> None:
+    loader = LangSmithLoader(
+        api_key="dummy",
+        dataset_id="mock",
+        content_key="first.third",
+    )
+
+    with pytest.raises(KeyError, match=r"Could not resolve content_key 'first\.third'"):
+        list(loader.lazy_load())
