@@ -22,6 +22,7 @@ import contextlib
 import hashlib
 import html
 import http.server
+import ipaddress
 import json
 import logging
 import os
@@ -58,14 +59,19 @@ DEFAULT_REFRESH_SKEW = timedelta(minutes=5)
 DEFAULT_STORE_PATH = Path.home() / ".langchain" / "chatgpt-auth.json"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatGPTToken:
     """A ChatGPT OAuth token bundle.
 
-    `expires_at` is timezone-aware UTC. Optional fields are populated when
-    decodable from the `id_token` JWT. Secret-bearing fields (`access_token`,
-    `refresh_token`, `id_token`) are excluded from the default `repr` so the
-    token does not leak into logs or tracebacks.
+    `expires_at` is timezone-aware. The JWT-derived optionals (`account_id`,
+    `plan_type`, `user_id`) are populated when decodable from the `id_token`;
+    `id_token` itself is the raw token, not derived from it. Secret-bearing
+    fields (`access_token`, `refresh_token`, `id_token`) are excluded from the
+    default `repr` so the token does not leak into logs or tracebacks.
+
+    Instances are frozen: the constructor invariants below hold for the life of
+    the object, which matters because providers cache and share a single token
+    and replace it wholesale on refresh rather than mutating fields in place.
     """
 
     access_token: str = field(repr=False)
@@ -171,6 +177,14 @@ def _extract_chatgpt_claims(id_token: str | None) -> dict[str, str | None]:
         out["account_id"] = auth.get("chatgpt_account_id")
         out["plan_type"] = auth.get("chatgpt_plan_type")
         out["user_id"] = auth.get("chatgpt_user_id")
+    if out["account_id"] is None:
+        # A present-but-unparseable id_token (or one missing the namespaced
+        # auth claim) silently drops the `ChatGPT-Account-Id` header, which
+        # surfaces later as an opaque backend rejection. Leave a breadcrumb.
+        logger.debug(
+            "No `chatgpt_account_id` claim extracted from the ChatGPT "
+            "id_token; the `ChatGPT-Account-Id` header will be omitted."
+        )
     return out
 
 
@@ -434,8 +448,8 @@ async def _apost_form(
 class FileChatGPTOAuthTokenProvider:
     """File-backed `ChatGPTOAuthTokenProvider`.
 
-    Stores tokens at `path` (default: `~/.langchain/chatgpt-auth.json`) with
-    private permissions and refreshes them on read when they are within
+    Stores tokens at `path` (defaults to `DEFAULT_STORE_PATH`) with private
+    permissions and refreshes them on read when they are within
     `refresh_skew` of expiry. Refresh token rotation is preserved across
     writes: if the OAuth response omits `refresh_token`, the existing one is
     reused.
@@ -560,7 +574,14 @@ class FileChatGPTOAuthTokenProvider:
         return existing
 
     def get_token(self) -> ChatGPTToken:
-        """Return a fresh token, refreshing on disk if needed."""
+        """Return a fresh token, refreshing on disk if needed.
+
+        Raises:
+            FileNotFoundError: No token store exists at `self.path`; run
+                `login_chatgpt()` first.
+            ChatGPTOAuthRefreshError: The stored refresh token was rejected
+                (e.g. revoked or expired); re-run `login_chatgpt()`.
+        """
         with self._lock, _file_lock(self.path):
             existing = self._load_existing_before_refresh()
             if not existing.is_expired(skew=self.refresh_skew):
@@ -577,6 +598,12 @@ class FileChatGPTOAuthTokenProvider:
         refresh runs synchronously inside that worker thread; this avoids
         nesting event loops while still keeping the cross-process lock
         held for the entire refresh + write window.
+
+        Raises:
+            FileNotFoundError: No token store exists at `self.path`; run
+                `login_chatgpt()` first.
+            ChatGPTOAuthRefreshError: The stored refresh token was rejected
+                (e.g. revoked or expired); re-run `login_chatgpt()`.
         """
         return await asyncio.to_thread(self._aget_token_locked_blocking)
 
@@ -638,6 +665,15 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path != self.callback_path:
+            # Surface path mismatches: otherwise a misconfigured
+            # `callback_path` looks identical to "still waiting" and only
+            # ends in a generic timeout. (Path only — never the query, which
+            # carries the auth code.)
+            logger.debug(
+                "Ignoring callback request for unexpected path %r (expected %r).",
+                parsed.path,
+                self.callback_path,
+            )
             self.send_response(404)
             self.end_headers()
             return
@@ -773,6 +809,37 @@ def _wait_for_callback(
     raise TimeoutError(msg)
 
 
+def _validate_loopback_host(host: str) -> None:
+    """Reject non-loopback callback hosts.
+
+    The callback server receives the OAuth authorization `code` in the request
+    URL. Binding it to a non-loopback interface (e.g. `0.0.0.0`) would expose
+    that code on the local network, so only loopback hosts are permitted —
+    RFC 8252 §8.3 expects a loopback redirect for native-app PKCE flows.
+
+    Args:
+        host: The callback host passed to `login_chatgpt`.
+
+    Raises:
+        ValueError: `host` is not `localhost` or a loopback IP address.
+    """
+    if host == "localhost":
+        return
+    try:
+        is_loopback = ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        # Not an IP literal and not `localhost`; can't prove it's loopback.
+        is_loopback = False
+    if not is_loopback:
+        msg = (
+            f"`host={host!r}` is not a loopback address. The OAuth callback "
+            "server receives the authorization code in the request URL, so it "
+            "must bind to a loopback interface (`localhost`, `127.0.0.1`, or "
+            "`::1`) to avoid exposing the code on the network."
+        )
+        raise ValueError(msg)
+
+
 def login_chatgpt(
     *,
     store_path: Path | None = None,
@@ -786,15 +853,16 @@ def login_chatgpt(
 ) -> FileChatGPTOAuthTokenProvider:
     """Run the ChatGPT OAuth 2.0 Authorization Code Flow with PKCE.
 
-    Starts a localhost callback server, opens a browser to the OpenAI
-    authorize endpoint, exchanges the returned code for tokens, and
+    Starts a loopback callback server, optionally opens a browser to the
+    OpenAI authorize endpoint (when `open_browser=True`; the URL is always
+    printed as a fallback), exchanges the returned code for tokens, and
     persists them via `FileChatGPTOAuthTokenProvider`.
 
     Args:
         store_path: Where to persist the token. Defaults to
-            `~/.langchain/chatgpt-auth.json`.
+            `DEFAULT_STORE_PATH`.
         client_id: OAuth client ID (defaults to Codex/ChatGPT client).
-        host: Local callback host.
+        host: Local callback host. Must be a loopback address.
         port: Local callback port.
         callback_path: Local callback path.
         scope: OAuth scope string.
@@ -805,10 +873,18 @@ def login_chatgpt(
         A `FileChatGPTOAuthTokenProvider` ready for use by
             `ChatOpenAICodex`.
 
+    Raises:
+        ValueError: `host` is not a loopback address.
+        RuntimeError: The callback server could not bind, the `state` did not
+            match (CSRF), the provider returned an OAuth error, or no
+            authorization code was returned.
+        TimeoutError: No callback was received within `timeout` seconds.
+
     See Also:
         `login_chatgpt_device`: Headless fallback for environments without a
             browser or the ability to bind a localhost callback port.
     """
+    _validate_loopback_host(host)
     redirect_uri = f"http://{host}:{port}{callback_path}"
     state = secrets.token_urlsafe(32)
     verifier, challenge = _generate_pkce_pair()
@@ -886,13 +962,19 @@ def login_chatgpt_device(
     `CHATGPT_DEVICE_REDIRECT_URI`.
 
     Args:
-        store_path: Where to persist the token.
-        client_id: OAuth client ID.
+        store_path: Where to persist the token. Defaults to
+            `DEFAULT_STORE_PATH`.
+        client_id: OAuth client ID (defaults to Codex/ChatGPT client).
         poll_interval: Seconds between polls.
         timeout: Total seconds to wait.
 
     Returns:
         A configured `FileChatGPTOAuthTokenProvider`.
+
+    Raises:
+        RuntimeError: The device-code response was missing required fields, or
+            device authorization failed with a terminal error.
+        TimeoutError: Authorization was not completed within `timeout` seconds.
 
     See Also:
         `login_chatgpt`: Browser-based loopback flow preferred when a local

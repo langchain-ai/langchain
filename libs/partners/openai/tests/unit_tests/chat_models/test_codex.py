@@ -108,6 +108,18 @@ def test_explicit_base_url_matching_codex_endpoint_is_accepted() -> None:
     assert model.openai_api_base == CHATGPT_CODEX_BASE_URL
 
 
+@pytest.mark.parametrize("field", ["api_key", "openai_api_key"])
+def test_explicit_api_key_is_rejected(field: str) -> None:
+    """Reject a caller-supplied `api_key` / `openai_api_key`.
+
+    Auth is owned by `token_provider`; a caller-supplied key would silently
+    win over the OAuth bearer, so it must fail loudly rather than leave the
+    model in a conflicting state.
+    """
+    with pytest.raises(ValueError, match=r"manages authentication via"):
+        _build_model(**{field: "sk-should-not-be-allowed"})
+
+
 def test_request_payload_injects_account_id_and_originator_headers() -> None:
     provider = FakeTokenProvider(account_id="acct-42")
     model = _build_model(token_provider=provider)

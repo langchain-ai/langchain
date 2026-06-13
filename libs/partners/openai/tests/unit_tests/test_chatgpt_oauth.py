@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import dataclasses
 import hashlib
 import json
 import os
@@ -26,6 +27,7 @@ from langchain_openai.chatgpt_oauth import (
     _generate_pkce_pair,
     _serialize_token,
     _token_from_response,
+    _validate_loopback_host,
     _wait_for_callback,
     decode_jwt_claims,
     login_chatgpt,
@@ -315,6 +317,46 @@ def test_chatgpt_token_rejects_empty_or_naive_fields() -> None:
             access_token="at",
             refresh_token="rt",
             expires_at=datetime(2030, 1, 1),  # noqa: DTZ001
+        )
+
+
+def test_chatgpt_token_is_frozen() -> None:
+    """The token's construction-time invariants must hold for its lifetime.
+
+    Providers cache and share a single instance, so post-construction mutation
+    (which would bypass `__post_init__`) must be impossible.
+    """
+    token = ChatGPTToken(
+        access_token="at",
+        refresh_token="rt",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    )
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        token.access_token = ""  # type: ignore[misc]
+
+
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1", "127.0.0.2", "::1"])
+def test_validate_loopback_host_accepts_loopback(host: str) -> None:
+    # Loopback hosts pass validation (no exception raised).
+    _validate_loopback_host(host)
+
+
+@pytest.mark.parametrize(
+    "host",
+    ["0.0.0.0", "10.0.0.5", "example.com", "192.168.1.10"],  # noqa: S104
+)
+def test_validate_loopback_host_rejects_non_loopback(host: str) -> None:
+    with pytest.raises(ValueError, match="loopback"):
+        _validate_loopback_host(host)
+
+
+def test_login_chatgpt_rejects_non_loopback_host(tmp_path: Path) -> None:
+    """A non-loopback `host` must fail before the callback server binds."""
+    with pytest.raises(ValueError, match="loopback"):
+        login_chatgpt(
+            store_path=tmp_path / "x.json",
+            host="0.0.0.0",  # noqa: S104
+            open_browser=False,
         )
 
 

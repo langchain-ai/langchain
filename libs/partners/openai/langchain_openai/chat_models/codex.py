@@ -172,6 +172,13 @@ These are the wire-level constraints the Codex backend imposes:
 `AIMessage` projection (see `ChatOpenAI.output_version`) that never
 appears in the request payload, so callers can pick `"v0"`, `"v1"`, or
 `"responses/v1"` freely.
+
+`base_url` (and its `openai_api_base` alias) is also pinned — to
+`CHATGPT_CODEX_BASE_URL` — under the same raise-don't-rewrite contract.
+It is enforced separately in the validator rather than listed here
+because a caller-controlled endpoint combined with the OAuth bearer
+token would be a token-exfiltration vector; see the validator for the
+rationale.
 """
 
 
@@ -337,7 +344,22 @@ class ChatOpenAICodex(ChatOpenAI):
             )
             raise TypeError(msg)
 
-        values.setdefault("api_key", _SyncTokenCallable(provider))
+        # The OAuth `token_provider` is the sole auth source: its access token
+        # is wired into the OpenAI SDK as `api_key` below. A caller-supplied
+        # `api_key` (or its `openai_api_key` alias) would silently win over the
+        # OAuth bearer, leaving the model in a conflicting state — so reject it
+        # (raise-don't-rewrite, mirroring the `base_url` handling above). An
+        # `OPENAI_API_KEY` env var is not consulted: the field's default
+        # factory never runs because `api_key` is always set here.
+        for key in ("api_key", "openai_api_key"):
+            if values.get(key) is not None:
+                msg = (
+                    f"`ChatOpenAICodex` manages authentication via "
+                    f"`token_provider`; drop the explicit `{key}=`. Use "
+                    "`ChatOpenAI` if you want API-key authentication."
+                )
+                raise ValueError(msg)
+        values["api_key"] = _SyncTokenCallable(provider)
         return values
 
     def _codex_headers_sync(self) -> dict[str, str]:
