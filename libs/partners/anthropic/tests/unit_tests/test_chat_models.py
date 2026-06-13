@@ -3378,3 +3378,129 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+# ---------- http_client / http_async_client injection ----------
+
+
+def test_http_client_injection_threads_into_sync_sdk() -> None:
+    """When ``http_client`` is provided, it is passed verbatim to
+    ``anthropic.Client(...)`` and the default helper is NOT invoked.
+    """
+    import httpx
+
+    custom_client = httpx.Client(timeout=httpx.Timeout(60.0, read=180.0))
+
+    with (
+        patch("langchain_anthropic.chat_models.anthropic.Client") as mock_client_cls,
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client"
+        ) as mock_default,
+    ):
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest",
+            anthropic_api_key="test-key",  # type: ignore[arg-type]
+            http_client=custom_client,
+        )
+        # Touch the cached_property so the SDK constructor is invoked.
+        _ = llm._client
+
+        mock_default.assert_not_called()
+        mock_client_cls.assert_called_once()
+        _, kwargs = mock_client_cls.call_args
+        assert kwargs["http_client"] is custom_client
+
+    custom_client.close()
+
+
+def test_http_async_client_injection_threads_into_async_sdk() -> None:
+    """When ``http_async_client`` is provided, it is passed verbatim to
+    ``anthropic.AsyncClient(...)`` and the default helper is NOT invoked.
+    """
+    import httpx
+
+    custom_async_client = httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=180.0))
+
+    with (
+        patch(
+            "langchain_anthropic.chat_models.anthropic.AsyncClient"
+        ) as mock_async_client_cls,
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client"
+        ) as mock_default,
+    ):
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest",
+            anthropic_api_key="test-key",  # type: ignore[arg-type]
+            http_async_client=custom_async_client,
+        )
+        _ = llm._async_client
+
+        mock_default.assert_not_called()
+        mock_async_client_cls.assert_called_once()
+        _, kwargs = mock_async_client_cls.call_args
+        assert kwargs["http_client"] is custom_async_client
+
+
+def test_default_path_preserves_existing_behavior_byte_identical() -> None:
+    """When neither ``http_client`` nor ``http_async_client`` is provided,
+    the default ``_get_default_*_httpx_client`` helpers are still invoked
+    and their returned client is forwarded to the SDK constructor.
+    """
+    # Sync default path
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client"
+        ) as mock_sync_default,
+        patch("langchain_anthropic.chat_models.anthropic.Client") as mock_client_cls,
+    ):
+        mock_sync_default.return_value = MagicMock(name="default_sync_client")
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest",
+            anthropic_api_key="test-key",  # type: ignore[arg-type]
+        )
+        _ = llm._client
+        assert mock_sync_default.called
+        _, kwargs = mock_client_cls.call_args
+        assert kwargs["http_client"] is mock_sync_default.return_value
+
+    # Async default path
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client"
+        ) as mock_async_default,
+        patch(
+            "langchain_anthropic.chat_models.anthropic.AsyncClient"
+        ) as mock_async_client_cls,
+    ):
+        mock_async_default.return_value = MagicMock(name="default_async_client")
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest",
+            anthropic_api_key="test-key",  # type: ignore[arg-type]
+        )
+        _ = llm._async_client
+        assert mock_async_default.called
+        _, kwargs = mock_async_client_cls.call_args
+        assert kwargs["http_client"] is mock_async_default.return_value
+
+
+def test_http_clients_are_excluded_from_model_dump() -> None:
+    """``httpx.Client`` instances are not serializable; they must not leak into
+    ``model_dump``.
+    """
+    import httpx
+
+    custom_sync = httpx.Client()
+    custom_async = httpx.AsyncClient()
+    try:
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest",
+            anthropic_api_key="test-key",  # type: ignore[arg-type]
+            http_client=custom_sync,
+            http_async_client=custom_async,
+        )
+        dump = llm.model_dump()
+        assert "http_client" not in dump
+        assert "http_async_client" not in dump
+    finally:
+        custom_sync.close()

@@ -974,6 +974,36 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    http_client: Any = Field(default=None, exclude=True)
+    """Optional ``httpx.Client`` to use for **synchronous** Anthropic API calls.
+
+    If not provided, ``ChatAnthropic`` will build a default ``httpx.Client`` internally
+    using ``base_url``, ``timeout``, and ``anthropic_proxy``.
+
+    When supplied, the caller owns the client's lifecycle and is responsible for
+    configuring its ``timeout``, ``limits``, ``transport``, ``proxies``, and
+    ``follow_redirects``. This enables advanced use cases such as per-request
+    inter-chunk read-idle timeouts via ``httpx.Timeout(read=...)`` on streaming
+    responses.
+
+    Excluded from ``model_dump`` because ``httpx.Client`` is not serializable.
+    """
+
+    http_async_client: Any = Field(default=None, exclude=True)
+    """Optional ``httpx.AsyncClient`` to use for **asynchronous** Anthropic API calls.
+
+    If not provided, ``ChatAnthropic`` will build a default ``httpx.AsyncClient``
+    internally using ``base_url``, ``timeout``, and ``anthropic_proxy``.
+
+    When supplied, the caller owns the client's lifecycle and is responsible for
+    configuring its ``timeout``, ``limits``, ``transport``, ``proxies``, and
+    ``follow_redirects``. This is the relevant knob for ``ainvoke`` / ``astream``,
+    where inter-chunk read-idle timeouts (e.g. ``httpx.Timeout(read=180.0)``) detect
+    dead streams that ``default_request_timeout`` (a total-budget timeout) cannot.
+
+    Excluded from ``model_dump`` because ``httpx.AsyncClient`` is not serializable.
+    """
+
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
@@ -1204,12 +1234,16 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_httpx_client(**http_client_params)
+        if self.http_client is not None:
+            # Adopter-supplied client takes ownership of timeout/transport/limits.
+            http_client = self.http_client
+        else:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
@@ -1219,12 +1253,16 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
-        http_client_params = {"base_url": client_params["base_url"]}
-        if "timeout" in client_params:
-            http_client_params["timeout"] = client_params["timeout"]
-        if self.anthropic_proxy:
-            http_client_params["anthropic_proxy"] = self.anthropic_proxy
-        http_client = _get_default_async_httpx_client(**http_client_params)
+        if self.http_async_client is not None:
+            # Adopter-supplied client takes ownership of timeout/transport/limits.
+            http_client = self.http_async_client
+        else:
+            http_client_params = {"base_url": client_params["base_url"]}
+            if "timeout" in client_params:
+                http_client_params["timeout"] = client_params["timeout"]
+            if self.anthropic_proxy:
+                http_client_params["anthropic_proxy"] = self.anthropic_proxy
+            http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
             "http_client": http_client,
