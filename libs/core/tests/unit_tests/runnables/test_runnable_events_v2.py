@@ -56,6 +56,14 @@ from tests.unit_tests.runnables.test_runnable_events_v1 import (
 )
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
+# The v2 event tests include a compatibility case for `RunnableWithMessageHistory`,
+# so constructing that deprecated wrapper is expected in this module.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:RunnableWithMessageHistory is deprecated. Use LangGraph's built-in "
+    "persistence instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
+
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run IDs from events."""
