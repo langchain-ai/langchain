@@ -6,12 +6,14 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, NoReturn, cast
 
+import groq
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -86,6 +88,28 @@ _STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+class GroqContextOverflowError(groq.BadRequestError, ContextOverflowError):
+    """`BadRequestError` raised when input exceeds Groq's context limit."""
+
+
+def _handle_groq_invalid_request(e: groq.BadRequestError) -> NoReturn:
+    """Promote context-length errors to `GroqContextOverflowError`.
+
+    Groq surfaces an over-long prompt as a 400 `BadRequestError` whose body
+    carries `"code": "context_length_exceeded"`. The SDK does not expose that
+    code as an attribute, so it is matched against the stringified error (which
+    includes the JSON body) as well, with `"reduce the length"` from the message
+    as a secondary signal.
+    """
+    if (
+        getattr(e, "code", None) == "context_length_exceeded"
+        or "context_length_exceeded" in str(e)
+        or "reduce the length" in str(e)
+    ):
+        raise GroqContextOverflowError(str(e), response=e.response, body=e.body) from e
+    raise e
 
 
 class ChatGroq(BaseChatModel):
@@ -630,7 +654,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        try:
+            response = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         return self._create_chat_result(response, params)
 
     async def _agenerate(
@@ -651,7 +678,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        try:
+            response = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         return self._create_chat_result(response, params)
 
     def _stream(
@@ -665,8 +695,12 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
+        try:
+            stream = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -717,10 +751,12 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
+        try:
+            stream = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
