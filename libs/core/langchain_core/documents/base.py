@@ -308,11 +308,15 @@ class Document(BaseMedia):
 
     type: Literal["Document"] = "Document"
 
-    def __init__(self, page_content: str, **kwargs: Any) -> None:
-        """Pass page_content in as positional or named arg."""
+    def __init__(
+        self, page_content: str | None = None, /, **kwargs: Any
+    ) -> None:
+        """Pass `page_content` in as a positional or named argument."""
         # my-py is complaining that page_content is not defined on the base class.
         # Here, we're relying on pydantic base class to handle the validation.
-        super().__init__(page_content=page_content, **kwargs)  # type: ignore[call-arg,unused-ignore]
+        if page_content is not None:
+            kwargs["page_content"] = page_content
+        super().__init__(**kwargs)  # type: ignore[call-arg,unused-ignore]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

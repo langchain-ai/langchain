@@ -69,8 +69,13 @@ class AgentAction(Serializable):
 
     # Override init to support instantiation by position for backward compat.
     def __init__(
-        self, tool: str, tool_input: str | dict[Any, Any], log: str, **kwargs: Any
-    ):
+        self,
+        tool: str | None = None,
+        tool_input: str | dict[Any, Any] | None = None,
+        log: str | None = None,
+        /,
+        **kwargs: Any,
+    ) -> None:
         """Create an `AgentAction`.
 
         Args:
@@ -78,7 +83,13 @@ class AgentAction(Serializable):
             tool_input: The input to pass in to the `Tool`.
             log: Additional information to log about the action.
         """
-        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
+        if tool is not None:
+            kwargs["tool"] = tool
+        if tool_input is not None:
+            kwargs["tool_input"] = tool_input
+        if log is not None:
+            kwargs["log"] = log
+        super().__init__(**kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -166,9 +177,19 @@ class AgentFinish(Serializable):
     """
     type: Literal["AgentFinish"] = "AgentFinish"
 
-    def __init__(self, return_values: dict[Any, Any], log: str, **kwargs: Any):
-        """Override init to support instantiation by position for backward compat."""
-        super().__init__(return_values=return_values, log=log, **kwargs)
+    def __init__(
+        self,
+        return_values: dict[Any, Any] | None = None,
+        log: str | None = None,
+        /,
+        **kwargs: Any,
+    ) -> None:
+        """Support both positional and keyword initialization paths."""
+        if return_values is not None:
+            kwargs["return_values"] = return_values
+        if log is not None:
+            kwargs["log"] = log
+        super().__init__(**kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
