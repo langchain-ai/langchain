@@ -23,6 +23,32 @@ import pytest
 from langchain_openai import chatgpt_oauth
 
 
+@pytest.fixture(autouse=True)
+def _clear_openai_base_url_env(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Strip ambient OpenAI endpoint env vars for VCR tests only.
+
+    `ChatOpenAI` only default-enables `stream_usage` when no custom base URL is
+    configured (see the `OPENAI_BASE_URL` / `OPENAI_API_BASE` handling at
+    construction time). A developer whose shell exports one of these vars (e.g.
+    pointing at a gateway) would otherwise see `stream_usage` silently dropped,
+    so the request body omits `stream_options` and no longer matches the
+    recorded cassette's `json_body` — VCR then attempts a live call and fails
+    with `APIConnectionError`.
+
+    Scoped to `@pytest.mark.vcr` tests: cassettes are recorded against the
+    canonical `api.openai.com` host, so cassette playback (and re-recording)
+    must ignore an ambient gateway endpoint. Live integration tests (no
+    cassette) are left untouched so a developer can still route them through a
+    gateway via these env vars.
+    """
+    if request.node.get_closest_marker("vcr") is None:
+        return
+    for name in ("OPENAI_BASE_URL", "OPENAI_API_BASE"):
+        monkeypatch.delenv(name, raising=False)
+
+
 def _vcr_record_mode(config: pytest.Config) -> str | None:
     """Return pytest-recording's configured record mode, if available."""
     for option in ("record_mode", "--record-mode"):
