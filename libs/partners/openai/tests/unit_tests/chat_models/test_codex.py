@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import ChatMessage, HumanMessage, SystemMessage
 
 from langchain_openai import ChatOpenAICodex
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -298,6 +298,20 @@ def test_system_message_is_lifted_into_top_level_instructions() -> None:
         entry.get("role") == "user" and "hi" in str(entry.get("content"))
         for entry in input_messages
     )
+
+
+@pytest.mark.parametrize("role", ["system", "developer"])
+def test_chat_message_instruction_roles_are_lifted(role: str) -> None:
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload(
+        [
+            ChatMessage(content=f"from-{role}", role=role),
+            HumanMessage("hi"),
+        ]
+    )
+    assert payload["instructions"] == f"from-{role}"
+    assert all(entry.get("role") != role for entry in payload["input"])
+    assert [entry.get("role") for entry in payload["input"]] == ["user"]
 
 
 def test_back_to_back_system_messages_join_in_input_order() -> None:

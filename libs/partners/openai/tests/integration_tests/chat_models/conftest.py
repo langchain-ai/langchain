@@ -16,10 +16,23 @@ leaves non-Codex tests in the directory untouched.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import pytest
 
 from langchain_openai import chatgpt_oauth
+
+
+def _vcr_record_mode(config: pytest.Config) -> str | None:
+    """Return pytest-recording's configured record mode, if available."""
+    for option in ("record_mode", "--record-mode"):
+        try:
+            value: Any = config.getoption(option, default=None)
+        except ValueError:
+            continue
+        if value is not None:
+            return str(value)
+    return None
 
 
 @pytest.fixture(autouse=True)
@@ -28,6 +41,8 @@ def _fake_codex_oauth_token(
 ) -> None:
     """Stub `FileChatGPTOAuthTokenProvider` token reads for Codex VCR tests."""
     if "codex" not in request.module.__name__:
+        return
+    if _vcr_record_mode(request.config) != "none":
         return
 
     fake_token = chatgpt_oauth.ChatGPTToken(

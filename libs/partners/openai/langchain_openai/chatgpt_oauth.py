@@ -388,6 +388,31 @@ def _post_form(
     return resp.json()
 
 
+_DEVICE_POLL_PENDING_ERRORS = frozenset({"authorization_pending", "slow_down"})
+
+
+def _post_device_poll_form(
+    url: str,
+    data: dict[str, str],
+    *,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    """POST a device-code poll and return expected pending error payloads."""
+    with httpx.Client(timeout=timeout) as client:
+        resp = client.post(
+            url,
+            data=data,
+            headers={"Accept": "application/json"},
+        )
+    if resp.status_code < 400:
+        return resp.json()
+    error_code, _ = _parse_oauth_error(resp)
+    if error_code in _DEVICE_POLL_PENDING_ERRORS:
+        return resp.json()
+    _raise_for_oauth_response(url, resp)
+    return resp.json()
+
+
 async def _apost_form(
     url: str,
     data: dict[str, str],
@@ -524,10 +549,20 @@ class FileChatGPTOAuthTokenProvider:
             raise FileNotFoundError(msg)
         return existing
 
+    def _load_existing_before_refresh(self) -> ChatGPTToken:
+        existing = self._load_existing()
+        if not existing.is_expired(skew=self.refresh_skew):
+            return existing
+        disk_token = self._read_from_disk()
+        if disk_token is not None:
+            self._cached = disk_token
+            return disk_token
+        return existing
+
     def get_token(self) -> ChatGPTToken:
         """Return a fresh token, refreshing on disk if needed."""
         with self._lock, _file_lock(self.path):
-            existing = self._load_existing()
+            existing = self._load_existing_before_refresh()
             if not existing.is_expired(skew=self.refresh_skew):
                 self._cached = existing
                 return existing
@@ -547,7 +582,7 @@ class FileChatGPTOAuthTokenProvider:
 
     def _aget_token_locked_blocking(self) -> ChatGPTToken:
         with self._lock, _file_lock(self.path):
-            existing = self._load_existing()
+            existing = self._load_existing_before_refresh()
             if not existing.is_expired(skew=self.refresh_skew):
                 self._cached = existing
                 return existing
@@ -889,7 +924,7 @@ def login_chatgpt_device(
     authorization_code: str | None = None
     current_interval = poll_interval
     while time.monotonic() < deadline:
-        poll = _post_form(
+        poll = _post_device_poll_form(
             CHATGPT_DEVICE_TOKEN_URL,
             {"client_id": client_id, "device_code": device_code},
         )

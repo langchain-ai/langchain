@@ -15,7 +15,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import BaseMessage, ChatMessage, SystemMessage
 from pydantic import Field, model_validator
 
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -46,6 +46,7 @@ env var.
 """
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+_INSTRUCTION_ROLES = frozenset({"system", "developer"})
 
 
 def _default_originator() -> str:
@@ -64,18 +65,18 @@ def _maybe_has_system_messages(input_: Any) -> bool:
     if isinstance(input_, str):
         return False
     if isinstance(input_, BaseMessage):
-        return isinstance(input_, SystemMessage)
+        return _is_instruction_message(input_)
     if isinstance(input_, (list, tuple)):
         for item in input_:
-            if isinstance(item, SystemMessage):
+            if isinstance(item, BaseMessage) and _is_instruction_message(item):
                 return True
-            if isinstance(item, dict) and item.get("role") in ("system", "developer"):
+            if isinstance(item, dict) and item.get("role") in _INSTRUCTION_ROLES:
                 return True
             if (
                 isinstance(item, tuple)
                 and item
                 and isinstance(item[0], str)
-                and item[0] in ("system", "developer")
+                and item[0] in _INSTRUCTION_ROLES
             ):
                 return True
         return False
@@ -83,27 +84,34 @@ def _maybe_has_system_messages(input_: Any) -> bool:
     return True
 
 
-def _flatten_system_message_content(system_messages: list[SystemMessage]) -> str:
-    """Join `SystemMessage` content into a single `instructions` string.
+def _is_instruction_message(message: BaseMessage) -> bool:
+    return isinstance(message, SystemMessage) or (
+        isinstance(message, ChatMessage) and message.role in _INSTRUCTION_ROLES
+    )
 
-    Codex rejects `SystemMessage` entries in the input list, so their
-    content is lifted into the top-level `instructions` field. Content
-    that uses list-of-content-blocks form is accepted only when every
-    block is `{"type": "text", ...}`; anything else cannot be flattened
-    into the string-typed `instructions` field.
+
+def _flatten_system_message_content(system_messages: list[BaseMessage]) -> str:
+    """Join system/developer message content into a single `instructions` string.
+
+    Codex rejects system-role entries in the input list, so their content
+    is lifted into the top-level `instructions` field. Content that uses
+    list-of-content-blocks form is accepted only when every block is
+    `{"type": "text", ...}`; anything else cannot be flattened into the
+    string-typed `instructions` field.
 
     Raises:
-        ValueError: A `SystemMessage` carries a non-text content block.
+        ValueError: A system/developer message carries a non-text content block.
     """
     parts: list[str] = []
     for index, message in enumerate(system_messages):
+        message_name = type(message).__name__
         content = message.content
         if isinstance(content, str):
             parts.append(content)
             continue
         if not isinstance(content, list):
             msg = (
-                f"`SystemMessage` at index {index} has unsupported content "
+                f"`{message_name}` at index {index} has unsupported content "
                 f"type {type(content).__name__!r}; only `str` and "
                 "list-of-text-blocks are accepted by `ChatOpenAICodex`."
             )
@@ -112,7 +120,7 @@ def _flatten_system_message_content(system_messages: list[SystemMessage]) -> str
         for block_index, block in enumerate(content):
             if not isinstance(block, dict) or block.get("type") != "text":
                 msg = (
-                    f"`SystemMessage` at index {index} contains a "
+                    f"`{message_name}` at index {index} contains a "
                     f"non-text content block at position {block_index} "
                     "(Codex `instructions` is a string field — only "
                     '`{"type": "text", "text": "..."}` blocks can be '
@@ -124,7 +132,7 @@ def _flatten_system_message_content(system_messages: list[SystemMessage]) -> str
             text_value = block.get("text", "")
             if not isinstance(text_value, str):
                 msg = (
-                    f"`SystemMessage` at index {index} has a text block "
+                    f"`{message_name}` at index {index} has a text block "
                     f"at position {block_index} whose `text` is not a "
                     "string."
                 )
@@ -377,9 +385,9 @@ class ChatOpenAICodex(ChatOpenAI):
         payload_input: LanguageModelInput = input_
         if _maybe_has_system_messages(input_):
             messages = self._convert_input(input_).to_messages()
-            system_messages = [m for m in messages if isinstance(m, SystemMessage)]
+            system_messages = [m for m in messages if _is_instruction_message(m)]
             if system_messages:
-                non_system = [m for m in messages if not isinstance(m, SystemMessage)]
+                non_system = [m for m in messages if not _is_instruction_message(m)]
                 lifted = _flatten_system_message_content(system_messages)
                 explicit = kwargs.get("instructions")
                 if explicit is not None:
