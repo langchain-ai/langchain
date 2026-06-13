@@ -4,15 +4,21 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import Runtime
+from langgraph.store.memory import InMemoryStore
+from langgraph.types import Command
 
+from langchain.agents import create_agent
 from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.types import AgentState, ToolCallRequest
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -1019,3 +1025,542 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
     assert req.runtime.store is runtime.store
+
+
+# ---------------------------------------------------------------------------
+# interrupt_after (post-execution) tests
+# ---------------------------------------------------------------------------
+
+_INTERRUPT_PATH = "langchain.agents.middleware.human_in_the_loop.interrupt"
+
+
+def _make_tool_request(
+    tool_call: ToolCall,
+    *,
+    store: Any = None,
+    state: AgentState[Any] | None = None,
+) -> ToolCallRequest:
+    """Build a `ToolCallRequest` with a `ToolRuntime` for `wrap_tool_call` tests."""
+    request_state = state if state is not None else AgentState[Any](messages=[])
+    runtime = ToolRuntime(
+        state=request_state,
+        context=None,
+        config={},
+        stream_writer=lambda _: None,
+        tool_call_id=tool_call["id"],
+        store=store,
+    )
+    return ToolCallRequest(tool_call=tool_call, tool=None, state=request_state, runtime=runtime)
+
+
+def test_interrupt_after_validation_rejects_before_decisions() -> None:
+    """`interrupt_after` tools may only allow accept/replace decisions."""
+    with pytest.raises(ValueError, match="may only contain"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "test_tool": InterruptOnConfig(allowed_decisions=["approve"], interrupt_after=True)
+            }
+        )
+
+
+def test_before_interrupt_validation_rejects_after_decisions() -> None:
+    """Before-execution tools may not use accept/replace decisions."""
+    with pytest.raises(ValueError, match="require `interrupt_after=True`"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"test_tool": InterruptOnConfig(allowed_decisions=["accept"])}
+        )
+
+
+def test_after_model_skips_interrupt_after_tools() -> None:
+    """`after_model` must not interrupt before an `interrupt_after` tool executes."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {"x": 1}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+
+    with patch(_INTERRUPT_PATH, side_effect=AssertionError("should not interrupt")):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is None
+
+
+def test_wrap_tool_call_after_accept_keeps_result() -> None:
+    """Accepting keeps the executed tool result unchanged."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {"x": 1},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+    executed = ToolMessage(content="bus ack: job-42", name="test_tool", tool_call_id="1")
+
+    def handler(_req: ToolCallRequest) -> ToolMessage:
+        return executed
+
+    with patch(_INTERRUPT_PATH, return_value={"decisions": [{"type": "accept"}]}):
+        result = middleware.wrap_tool_call(request, handler)
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == "bus ack: job-42"
+
+
+def test_wrap_tool_call_after_replace_substitutes_content() -> None:
+    """Replacing returns a new `ToolMessage` with the provided content."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {"x": 1},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+
+    def handler(_req: ToolCallRequest) -> ToolMessage:
+        return ToolMessage(content="placeholder", name="test_tool", tool_call_id="1")
+
+    decision = {"decisions": [{"type": "replace", "message": "final result from worker"}]}
+    with patch(_INTERRUPT_PATH, return_value=decision):
+        result = middleware.wrap_tool_call(request, handler)
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == "final result from worker"
+    assert result.status == "success"
+    assert result.tool_call_id == "1"
+    assert result.name == "test_tool"
+
+
+def test_wrap_tool_call_passthrough_for_unconfigured_tool() -> None:
+    """Tools without an `interrupt_after` config execute without interrupting."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "configured_tool": InterruptOnConfig(allowed_decisions=["accept"], interrupt_after=True)
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "other_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+    sentinel = ToolMessage(content="ran", name="other_tool", tool_call_id="1")
+
+    with patch(_INTERRUPT_PATH, side_effect=AssertionError("should not interrupt")):
+        result = middleware.wrap_tool_call(request, lambda _req: sentinel)
+
+    assert result is sentinel
+
+
+def test_wrap_tool_call_passthrough_for_before_interrupt_tool() -> None:
+    """Before-execution tools pass through `wrap_tool_call` (handled in `after_model`)."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": InterruptOnConfig(allowed_decisions=["approve"])}
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+    sentinel = ToolMessage(content="ran", name="test_tool", tool_call_id="1")
+
+    with patch(_INTERRUPT_PATH, side_effect=AssertionError("should not interrupt")):
+        result = middleware.wrap_tool_call(request, lambda _req: sentinel)
+
+    assert result is sentinel
+
+
+def test_wrap_tool_call_after_respects_when_predicate() -> None:
+    """A falsy `when` predicate skips the post-execution interrupt."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"],
+                interrupt_after=True,
+                when=lambda _req: False,
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+    sentinel = ToolMessage(content="ran", name="test_tool", tool_call_id="1")
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(_INTERRUPT_PATH, side_effect=AssertionError("should not interrupt")),
+    ):
+        result = middleware.wrap_tool_call(request, lambda _req: sentinel)
+
+    assert result is sentinel
+
+
+def test_wrap_tool_call_after_rejects_disallowed_decision() -> None:
+    """A decision not in `allowed_decisions` raises a `ValueError`."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(allowed_decisions=["accept"], interrupt_after=True)
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+
+    def handler(_req: ToolCallRequest) -> ToolMessage:
+        return ToolMessage(content="ran", name="test_tool", tool_call_id="1")
+
+    decision = {"decisions": [{"type": "replace", "message": "nope"}]}
+    with (
+        patch(_INTERRUPT_PATH, return_value=decision),
+        pytest.raises(ValueError, match="is not allowed for tool"),
+    ):
+        middleware.wrap_tool_call(request, handler)
+
+
+def test_wrap_tool_call_after_caches_result_across_interrupt() -> None:
+    """A configured store serves the tool result on resume without re-executing."""
+    store = InMemoryStore()
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call, store=store)
+    calls = {"n": 0}
+
+    def handler(_req: ToolCallRequest) -> ToolMessage:
+        calls["n"] += 1
+        return ToolMessage(content=f"run-{calls['n']}", name="test_tool", tool_call_id="1")
+
+    class _HaltError(Exception):
+        """Stand-in for the GraphInterrupt raised when the agent halts."""
+
+    # First pass: the tool runs and the agent halts at the interrupt.
+    with (
+        patch(_INTERRUPT_PATH, side_effect=_HaltError()),
+        pytest.raises(_HaltError),
+    ):
+        middleware.wrap_tool_call(request, handler)
+
+    assert calls["n"] == 1
+    assert store.get(middleware._cache_namespace, "1") is not None
+
+    # Resume: the cached result is reused, so the tool is not invoked again.
+    with patch(_INTERRUPT_PATH, return_value={"decisions": [{"type": "accept"}]}):
+        result = middleware.wrap_tool_call(request, handler)
+
+    assert calls["n"] == 1
+    assert isinstance(result, ToolMessage)
+    assert result.content == "run-1"
+    assert store.get(middleware._cache_namespace, "1") is None
+
+
+async def test_awrap_tool_call_after_replace_substitutes_content() -> None:
+    """The async path executes the tool and applies the replace decision."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call)
+
+    async def handler(_req: ToolCallRequest) -> ToolMessage:
+        return ToolMessage(content="placeholder", name="test_tool", tool_call_id="1")
+
+    decision = {"decisions": [{"type": "replace", "message": "async final"}]}
+    with patch(_INTERRUPT_PATH, return_value=decision):
+        result = await middleware.awrap_tool_call(request, handler)
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == "async final"
+
+
+async def test_awrap_tool_call_after_caches_result_across_interrupt() -> None:
+    """The async path reuses a cached result on resume without re-executing."""
+    store = InMemoryStore()
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": InterruptOnConfig(
+                allowed_decisions=["accept", "replace"], interrupt_after=True
+            )
+        }
+    )
+    tool_call: ToolCall = {
+        "name": "test_tool",
+        "args": {},
+        "id": "1",
+        "type": "tool_call",
+    }
+    request = _make_tool_request(tool_call, store=store)
+    calls = {"n": 0}
+
+    async def handler(_req: ToolCallRequest) -> ToolMessage:
+        calls["n"] += 1
+        return ToolMessage(content=f"run-{calls['n']}", name="test_tool", tool_call_id="1")
+
+    class _HaltError(Exception):
+        """Stand-in for the GraphInterrupt raised when the agent halts."""
+
+    with (
+        patch(_INTERRUPT_PATH, side_effect=_HaltError()),
+        pytest.raises(_HaltError),
+    ):
+        await middleware.awrap_tool_call(request, handler)
+
+    assert calls["n"] == 1
+
+    with patch(_INTERRUPT_PATH, return_value={"decisions": [{"type": "accept"}]}):
+        result = await middleware.awrap_tool_call(request, handler)
+
+    assert calls["n"] == 1
+    assert isinstance(result, ToolMessage)
+    assert result.content == "run-1"
+
+
+# ---------------------------------------------------------------------------
+# End-to-end tests: real interrupt/resume through `create_agent`
+# ---------------------------------------------------------------------------
+
+
+def test_e2e_interrupt_after_replace_with_real_resume() -> None:
+    """Drive a full interrupt/resume cycle through `create_agent`.
+
+    Uses a real checkpointer + store so the interrupt and resume are handled by
+    LangGraph (not a mock). Verifies the agent halts after the tool executes, the
+    replaced content reaches the model, the tool is not re-invoked on resume, and the
+    run completes.
+    """
+    calls = {"n": 0}
+
+    @tool
+    def submit_job(payload: str) -> str:
+        """Submit a job to the event bus."""
+        calls["n"] += 1
+        return f"queued:{payload}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="submit_job", args={"payload": "abc"}, id="call-1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[submit_job],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "submit_job": InterruptOnConfig(
+                        allowed_decisions=["accept", "replace"], interrupt_after=True
+                    )
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+        store=InMemoryStore(),
+    )
+    config = {"configurable": {"thread_id": "e2e-replace"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("Run the job")]}, config)
+    assert "__interrupt__" in interrupted, "Expected an interrupt after the tool executed"
+    assert calls["n"] == 1, "Tool should have executed exactly once before halting"
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "replace", "message": "worker result"}]}),
+        config,
+    )
+
+    assert "__interrupt__" not in final, "Agent should complete after resume"
+    assert calls["n"] == 1, "Tool must not be re-invoked on resume (store-backed cache)"
+
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "worker result"
+    assert tool_messages[0].status == "success"
+    assert tool_messages[0].tool_call_id == "call-1"
+
+
+def test_e2e_interrupt_after_accept_with_real_resume() -> None:
+    """Accepting on resume keeps the executed tool result and completes the run."""
+    calls = {"n": 0}
+
+    @tool
+    def submit_job(payload: str) -> str:
+        """Submit a job to the event bus."""
+        calls["n"] += 1
+        return f"queued:{payload}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="submit_job", args={"payload": "abc"}, id="call-1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[submit_job],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "submit_job": InterruptOnConfig(
+                        allowed_decisions=["accept", "replace"], interrupt_after=True
+                    )
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+        store=InMemoryStore(),
+    )
+    config = {"configurable": {"thread_id": "e2e-accept"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("Run the job")]}, config)
+    assert "__interrupt__" in interrupted
+    assert calls["n"] == 1
+
+    final = agent.invoke(Command(resume={"decisions": [{"type": "accept"}]}), config)
+
+    assert "__interrupt__" not in final
+    assert calls["n"] == 1
+
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "queued:abc"
+
+
+def test_e2e_interrupt_after_payload_structure() -> None:
+    """The interrupt payload surfaces the executed result for review."""
+
+    @tool
+    def submit_job(payload: str) -> str:
+        """Submit a job to the event bus."""
+        return f"queued:{payload}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="submit_job", args={"payload": "abc"}, id="call-1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[submit_job],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "submit_job": InterruptOnConfig(
+                        allowed_decisions=["accept", "replace"], interrupt_after=True
+                    )
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+        store=InMemoryStore(),
+    )
+    config = {"configurable": {"thread_id": "e2e-payload"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("Run the job")]}, config)
+
+    interrupts = interrupted["__interrupt__"]
+    assert len(interrupts) == 1
+    hitl_request = interrupts[0].value
+    action_requests = hitl_request["action_requests"]
+    assert len(action_requests) == 1
+    assert action_requests[0]["name"] == "submit_job"
+    assert action_requests[0]["args"] == {"payload": "abc"}
+    assert "queued:abc" in action_requests[0]["description"]
+    assert hitl_request["review_configs"][0]["allowed_decisions"] == ["accept", "replace"]
+
+
+def test_e2e_interrupt_after_without_store_still_works() -> None:
+    """Without a store the flow still completes (idempotency is the only trade-off)."""
+    calls = {"n": 0}
+
+    @tool
+    def submit_job(payload: str) -> str:
+        """Submit a job to the event bus."""
+        calls["n"] += 1
+        return f"queued:{payload}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="submit_job", args={"payload": "abc"}, id="call-1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[submit_job],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "submit_job": InterruptOnConfig(
+                        allowed_decisions=["accept", "replace"], interrupt_after=True
+                    )
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "e2e-no-store"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("Run the job")]}, config)
+    assert "__interrupt__" in interrupted
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "replace", "message": "worker result"}]}),
+        config,
+    )
+    assert "__interrupt__" not in final
+    # Without a store the tool re-executes on resume (documented trade-off): the
+    # node re-runs from the start before the cached human decision is applied.
+    assert calls["n"] == 2
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "worker result"

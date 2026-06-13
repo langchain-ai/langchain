@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.config import get_config
@@ -20,9 +20,10 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
 
 class Action(TypedDict):
@@ -48,7 +49,13 @@ class ActionRequest(TypedDict):
     """The description of the action to be reviewed."""
 
 
-DecisionType = Literal["approve", "edit", "reject", "respond"]
+DecisionType = Literal["approve", "edit", "reject", "respond", "accept", "replace"]
+
+_BEFORE_DECISIONS: frozenset[DecisionType] = frozenset({"approve", "edit", "reject", "respond"})
+"""Decisions valid when interrupting before a tool executes."""
+
+_AFTER_DECISIONS: frozenset[DecisionType] = frozenset({"accept", "replace"})
+"""Decisions valid when interrupting after a tool executes."""
 
 
 class ReviewConfig(TypedDict):
@@ -123,7 +130,40 @@ class RespondDecision(TypedDict):
     """Content of the synthetic `ToolMessage` returned to the model."""
 
 
-Decision = ApproveDecision | EditDecision | RejectDecision | RespondDecision
+class AcceptDecision(TypedDict):
+    """Response when a human accepts a tool result produced after execution.
+
+    Used with `interrupt_after` tools: the tool has already executed and the
+    human keeps its result unchanged.
+    """
+
+    type: Literal["accept"]
+    """The type of response when a human accepts the executed tool result."""
+
+
+class ReplaceDecision(TypedDict):
+    """Response when a human replaces a tool result produced after execution.
+
+    Used with `interrupt_after` tools: the tool has already executed (for example,
+    a request was posted to an event bus) and the human supplies the final result
+    that should be returned to the model in place of the executed result.
+    """
+
+    type: Literal["replace"]
+    """The type of response when a human replaces the executed tool result."""
+
+    message: str
+    """Content of the `ToolMessage` returned to the model in place of the result."""
+
+
+Decision = (
+    ApproveDecision
+    | EditDecision
+    | RejectDecision
+    | RespondDecision
+    | AcceptDecision
+    | ReplaceDecision
+)
 
 
 class HITLResponse(TypedDict):
@@ -212,6 +252,23 @@ class InterruptOnConfig(TypedDict):
         ```
     """
 
+    interrupt_after: NotRequired[bool]
+    """Whether to interrupt *after* the tool executes instead of before.
+
+    Defaults to `False`, which interrupts before execution (the tool call is
+    reviewed and approved/edited/rejected before it runs).
+
+    When `True`, the tool runs first and the agent halts immediately afterwards,
+    surfacing the executed result for review. This is useful for long-running work
+    that is delegated elsewhere (for example, posting a request to an event bus and
+    resuming once an external worker produces the result).
+
+    `interrupt_after` tools must restrict `allowed_decisions` to `"accept"` and/or
+    `"replace"`. To avoid re-running the tool on resume, configure a `store` on the
+    agent (or make the tool idempotent); the middleware caches the executed result
+    in the store across the interrupt.
+    """
+
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
@@ -256,9 +313,44 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                         allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
             elif tool_config.get("allowed_decisions"):
+                self._validate_allowed_decisions(tool_name, tool_config)
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
+
+    _cache_namespace = ("__hitl_after_tool_cache__",)
+    """Store namespace used to cache executed results for `interrupt_after` tools."""
+
+    @staticmethod
+    def _validate_allowed_decisions(tool_name: str, config: InterruptOnConfig) -> None:
+        """Ensure `allowed_decisions` matches the interrupt timing for a tool.
+
+        Args:
+            tool_name: Name of the tool being configured.
+            config: The tool's interrupt configuration.
+
+        Raises:
+            ValueError: If the decisions are incompatible with the interrupt timing.
+        """
+        allowed = set(config["allowed_decisions"])
+        if config.get("interrupt_after"):
+            invalid = allowed - _AFTER_DECISIONS
+            if invalid:
+                msg = (
+                    f"Tool '{tool_name}' sets `interrupt_after=True`, so "
+                    f"`allowed_decisions` may only contain {sorted(_AFTER_DECISIONS)}. "
+                    f"Got invalid decisions: {sorted(invalid)}."
+                )
+                raise ValueError(msg)
+        else:
+            invalid = allowed & _AFTER_DECISIONS
+            if invalid:
+                msg = (
+                    f"Tool '{tool_name}' interrupts before execution, so "
+                    f"`allowed_decisions` may only contain {sorted(_BEFORE_DECISIONS)}. "
+                    f"Decisions {sorted(invalid)} require `interrupt_after=True`."
+                )
+                raise ValueError(msg)
 
     def _create_action_and_config(
         self,
@@ -412,6 +504,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if (config := self.interrupt_on.get(tool_call["name"])) is not None:
+                # `interrupt_after` tools are handled post-execution in `wrap_tool_call`.
+                if config.get("interrupt_after"):
+                    continue
                 if not self._should_interrupt(tool_call, config, state, runtime):
                     continue
                 action_request, review_config = self._create_action_and_config(
@@ -483,3 +578,234 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             Updated message with the revised tool calls.
         """
         return self.after_model(state, runtime)
+
+    def _build_after_hitl_request(
+        self,
+        request: ToolCallRequest,
+        config: InterruptOnConfig,
+        result: ToolMessage | Command[Any],
+    ) -> HITLRequest:
+        """Build the interrupt request surfaced after a tool executes.
+
+        Args:
+            request: The tool call request that was executed.
+            config: The tool's interrupt configuration.
+            result: The result produced by executing the tool.
+
+        Returns:
+            A `HITLRequest` describing the executed action for human review.
+        """
+        tool_call = request.tool_call
+        tool_name = tool_call["name"]
+        tool_args = tool_call["args"]
+        result_content = result.content if isinstance(result, ToolMessage) else str(result)
+
+        description_value = config.get("description")
+        if callable(description_value):
+            description = description_value(
+                tool_call, request.state, cast("Runtime[ContextT]", request.runtime)
+            )
+        elif description_value is not None:
+            description = description_value
+        else:
+            description = (
+                f"{self.description_prefix}\n\nTool: {tool_name}\n"
+                f"Args: {tool_args}\nResult: {result_content}"
+            )
+
+        action_request = ActionRequest(
+            name=tool_name,
+            args=tool_args,
+            description=description,
+        )
+        review_config = ReviewConfig(
+            action_name=tool_name,
+            allowed_decisions=config["allowed_decisions"],
+        )
+        return HITLRequest(action_requests=[action_request], review_configs=[review_config])
+
+    @staticmethod
+    def _process_after_decision(
+        decision: Decision,
+        tool_call: ToolCall,
+        config: InterruptOnConfig,
+        result: ToolMessage | Command[Any],
+    ) -> ToolMessage | Command[Any]:
+        """Apply a post-execution decision to an executed tool result.
+
+        Args:
+            decision: The human decision for the executed tool.
+            tool_call: The tool call that was executed.
+            config: The tool's interrupt configuration.
+            result: The result produced by executing the tool.
+
+        Returns:
+            The result to return to the model: the executed result for `accept`, or a
+            replacement `ToolMessage` for `replace`.
+
+        Raises:
+            ValueError: If the decision type is not allowed for this tool.
+        """
+        allowed_decisions = config["allowed_decisions"]
+
+        if decision["type"] == "accept" and "accept" in allowed_decisions:
+            return result
+        if decision["type"] == "replace" and "replace" in allowed_decisions:
+            return ToolMessage(
+                content=decision["message"],
+                name=tool_call["name"],
+                tool_call_id=tool_call["id"],
+                status="success",
+            )
+        msg = (
+            f"Unexpected human decision: {decision}. "
+            f"Decision type '{decision.get('type')}' "
+            f"is not allowed for tool '{tool_call['name']}'. "
+            f"Expected one of {allowed_decisions} based on the tool's configuration."
+        )
+        raise ValueError(msg)
+
+    def _execute_with_cache(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Execute the tool, caching `ToolMessage` results to survive the interrupt.
+
+        When a `store` is available, the executed result is persisted before the
+        interrupt and reused on resume so the tool is not invoked twice. Without a
+        store, the tool is executed directly and will re-run on resume.
+        """
+        store = request.runtime.store
+        if store is None:
+            return handler(request)
+
+        key = cast("str", request.tool_call["id"])
+        if (item := store.get(self._cache_namespace, key)) is not None:
+            cached = item.value.get("tool_message")
+            if cached is not None:
+                return ToolMessage.model_validate(cached)
+
+        result = handler(request)
+        if isinstance(result, ToolMessage):
+            store.put(self._cache_namespace, key, {"tool_message": result.model_dump()})
+        return result
+
+    async def _aexecute_with_cache(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Async variant of `_execute_with_cache`."""
+        store = request.runtime.store
+        if store is None:
+            return await handler(request)
+
+        key = cast("str", request.tool_call["id"])
+        if (item := await store.aget(self._cache_namespace, key)) is not None:
+            cached = item.value.get("tool_message")
+            if cached is not None:
+                return ToolMessage.model_validate(cached)
+
+        result = await handler(request)
+        if isinstance(result, ToolMessage):
+            await store.aput(self._cache_namespace, key, {"tool_message": result.model_dump()})
+        return result
+
+    def _clear_cache(self, request: ToolCallRequest) -> None:
+        """Remove a cached result once the post-execution decision is applied."""
+        store = request.runtime.store
+        if store is not None:
+            store.delete(self._cache_namespace, cast("str", request.tool_call["id"]))
+
+    async def _aclear_cache(self, request: ToolCallRequest) -> None:
+        """Async variant of `_clear_cache`."""
+        store = request.runtime.store
+        if store is not None:
+            await store.adelete(self._cache_namespace, cast("str", request.tool_call["id"]))
+
+    @staticmethod
+    def _validate_decisions_count(decisions: list[Decision]) -> Decision:
+        """Validate that exactly one decision was returned for a single tool call."""
+        if (decisions_len := len(decisions)) != 1:
+            msg = (
+                f"Number of human decisions ({decisions_len}) does not match "
+                f"number of executed tool calls (1)."
+            )
+            raise ValueError(msg)
+        return decisions[0]
+
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Interrupt after a tool executes for tools configured with `interrupt_after`.
+
+        Tools without `interrupt_after` pass straight through to the handler. For
+        `interrupt_after` tools, the tool runs first and the agent then halts via
+        `interrupt`, surfacing the executed result so a human (or external system) can
+        accept it or replace its content before the result reaches the model.
+
+        Args:
+            request: The tool call request to execute.
+            handler: Callable that executes the tool.
+
+        Returns:
+            The (possibly replaced) `ToolMessage` or `Command` to return to the model.
+        """
+        config = self.interrupt_on.get(request.tool_call["name"])
+        if (
+            config is None
+            or not config.get("interrupt_after")
+            or not self._should_interrupt(
+                request.tool_call,
+                config,
+                request.state,
+                cast("Runtime[ContextT]", request.runtime),
+            )
+        ):
+            return handler(request)
+
+        result = self._execute_with_cache(request, handler)
+        hitl_request = self._build_after_hitl_request(request, config, result)
+        decision = self._validate_decisions_count(interrupt(hitl_request)["decisions"])
+        final = self._process_after_decision(decision, request.tool_call, config, result)
+        self._clear_cache(request)
+        return final
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Async trigger for interrupting after a tool executes.
+
+        See `wrap_tool_call` for behavior details.
+
+        Args:
+            request: The tool call request to execute.
+            handler: Async callable that executes the tool.
+
+        Returns:
+            The (possibly replaced) `ToolMessage` or `Command` to return to the model.
+        """
+        config = self.interrupt_on.get(request.tool_call["name"])
+        if (
+            config is None
+            or not config.get("interrupt_after")
+            or not self._should_interrupt(
+                request.tool_call,
+                config,
+                request.state,
+                cast("Runtime[ContextT]", request.runtime),
+            )
+        ):
+            return await handler(request)
+
+        result = await self._aexecute_with_cache(request, handler)
+        hitl_request = self._build_after_hitl_request(request, config, result)
+        decision = self._validate_decisions_count(interrupt(hitl_request)["decisions"])
+        final = self._process_after_decision(decision, request.tool_call, config, result)
+        await self._aclear_cache(request)
+        return final
