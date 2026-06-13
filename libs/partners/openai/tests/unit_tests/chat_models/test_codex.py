@@ -72,8 +72,9 @@ def test_experimental_unofficial_warning_is_emitted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(codex_module, "_experimental_warning_emitted", False)
-    with pytest.warns(UserWarning, match="experimental and unofficial"):
+    with pytest.warns(UserWarning, match="experimental and unofficial") as warning:
         _build_model()
+    assert warning[0].filename == __file__
     assert "applicable OpenAI terms" in EXPERIMENTAL_UNOFFICIAL_WARNING
 
 

@@ -78,7 +78,7 @@ def _warn_experimental_unofficial() -> None:
     if _experimental_warning_emitted:
         return
     _experimental_warning_emitted = True
-    warnings.warn(EXPERIMENTAL_UNOFFICIAL_WARNING, UserWarning, stacklevel=3)
+    warnings.warn(EXPERIMENTAL_UNOFFICIAL_WARNING, UserWarning, stacklevel=5)
 
 
 def _maybe_has_system_messages(input_: Any) -> bool:
