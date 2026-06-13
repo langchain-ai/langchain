@@ -438,6 +438,7 @@ class _ChatOpenAICodex(ChatOpenAI):
         way `_convert_input` only runs once (inside super) instead of once
         here and again there.
         """
+        codex_headers = kwargs.pop("_codex_headers", None)
         payload_input: LanguageModelInput = input_
         if _maybe_has_system_messages(input_):
             messages = self._convert_input(input_).to_messages()
@@ -465,7 +466,10 @@ class _ChatOpenAICodex(ChatOpenAI):
         # silently overwriting it would hide a programming error).
         if payload.get("instructions") is None:
             payload["instructions"] = self.instructions
-        return self._merge_codex_headers(payload, self._codex_headers_sync())
+        headers = (
+            codex_headers if codex_headers is not None else self._codex_headers_sync()
+        )
+        return self._merge_codex_headers(payload, headers)
 
     async def _agenerate(
         self,
@@ -488,7 +492,8 @@ class _ChatOpenAICodex(ChatOpenAI):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        await self.token_provider.aget_token()
+        token = await self.token_provider.aget_token()
+        kwargs["_codex_headers"] = self._build_headers(token.account_id)
         async for chunk in super()._astream(
             messages, stop=stop, run_manager=run_manager, **kwargs
         ):
