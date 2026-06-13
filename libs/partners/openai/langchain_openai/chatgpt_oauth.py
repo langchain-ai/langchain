@@ -1,17 +1,26 @@
-"""ChatGPT OAuth helpers for `ChatOpenAICodex`.
+"""ChatGPT OAuth helpers for `_ChatOpenAICodex`.
 
 Implements OAuth 2.0 Authorization Code Flow with PKCE against the OpenAI
 auth endpoints used by Codex/ChatGPT subscription auth, plus a small file-backed
 token store and refresh logic.
 
 These helpers exist to keep login and token management *separate* from model
-invocation. `ChatOpenAICodex` only consumes a `ChatGPTOAuthTokenProvider`.
+invocation. `_ChatOpenAICodex` only consumes a `_ChatGPTOAuthTokenProvider`.
 
 !!! warning
+
     This is provider-specific subscription auth and is independent from the
     standard OpenAI API-key flow used by `ChatOpenAI`. Refresh-token rotation
     against `~/.codex/auth.json` can break Codex CLI / VS Code sessions, so
     the default store lives at `~/.langchain/chatgpt-auth.json`.
+
+!!! warning "Experimental and unofficial"
+
+    These helpers are not an official OpenAI API integration. Use them only
+    where your OpenAI account, workspace, plan, and applicable OpenAI terms
+    permit ChatGPT-authenticated Codex access. You are responsible for ensuring
+    your implementation complies with OpenAI's terms, usage policies, account
+    restrictions, rate limits, and safeguards.
 """
 
 from __future__ import annotations
@@ -60,7 +69,7 @@ DEFAULT_STORE_PATH = Path.home() / ".langchain" / "chatgpt-auth.json"
 
 
 @dataclass(frozen=True)
-class ChatGPTToken:
+class _ChatGPTToken:
     """A ChatGPT OAuth token bundle.
 
     `expires_at` is timezone-aware. The JWT-derived optionals (`account_id`,
@@ -99,7 +108,7 @@ class ChatGPTToken:
         return datetime.now(timezone.utc) >= (self.expires_at - skew)
 
 
-class ChatGPTOAuthRefreshError(RuntimeError):
+class _ChatGPTOAuthRefreshError(RuntimeError):
     """Raised when a refresh-token grant fails irrecoverably.
 
     Typically signals that the stored refresh token has been revoked or has
@@ -109,14 +118,14 @@ class ChatGPTOAuthRefreshError(RuntimeError):
 
 
 @runtime_checkable
-class ChatGPTOAuthTokenProvider(Protocol):
-    """Refresh-aware token source consumed by `ChatOpenAICodex`."""
+class _ChatGPTOAuthTokenProvider(Protocol):  # noqa: PYI046
+    """Refresh-aware token source consumed by `_ChatOpenAICodex`."""
 
-    def get_token(self) -> ChatGPTToken:
+    def get_token(self) -> _ChatGPTToken:
         """Return a current token, refreshing if necessary."""
         ...
 
-    async def aget_token(self) -> ChatGPTToken:
+    async def aget_token(self) -> _ChatGPTToken:
         """Async variant of `get_token`.
 
         Implementations must offer the same locking and refresh guarantees
@@ -194,13 +203,13 @@ def _expires_at_from_response(payload: dict[str, Any]) -> datetime:
         expires_in = int(raw) if raw is not None else 0
     except (TypeError, ValueError) as exc:
         msg = f"OAuth token response had invalid `expires_in`: {raw!r}"
-        raise ChatGPTOAuthRefreshError(msg) from exc
+        raise _ChatGPTOAuthRefreshError(msg) from exc
     if expires_in <= 0:
         msg = (
             "OAuth token response had missing or non-positive `expires_in`; "
             "refusing to store an immediately-expired token."
         )
-        raise ChatGPTOAuthRefreshError(msg)
+        raise _ChatGPTOAuthRefreshError(msg)
     return datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
 
@@ -208,11 +217,11 @@ def _token_from_response(
     payload: dict[str, Any],
     *,
     fallback_refresh_token: str | None = None,
-) -> ChatGPTToken:
-    """Build a `ChatGPTToken` from an OAuth token-endpoint response."""
+) -> _ChatGPTToken:
+    """Build a `_ChatGPTToken` from an OAuth token-endpoint response."""
     if not payload.get("access_token"):
         msg = "OAuth token response did not include an `access_token`."
-        raise ChatGPTOAuthRefreshError(msg)
+        raise _ChatGPTOAuthRefreshError(msg)
     id_token = payload.get("id_token")
     claims = _extract_chatgpt_claims(id_token)
     refresh_token = payload.get("refresh_token") or fallback_refresh_token
@@ -221,8 +230,8 @@ def _token_from_response(
             "OAuth token response did not include a `refresh_token` and no "
             "prior refresh token was available; re-run `login_chatgpt()`."
         )
-        raise ChatGPTOAuthRefreshError(msg)
-    return ChatGPTToken(
+        raise _ChatGPTOAuthRefreshError(msg)
+    return _ChatGPTToken(
         access_token=payload["access_token"],
         refresh_token=refresh_token,
         expires_at=_expires_at_from_response(payload),
@@ -233,7 +242,7 @@ def _token_from_response(
     )
 
 
-def _serialize_token(token: ChatGPTToken) -> dict[str, Any]:
+def _serialize_token(token: _ChatGPTToken) -> dict[str, Any]:
     return {
         "access_token": token.access_token,
         "refresh_token": token.refresh_token,
@@ -245,7 +254,7 @@ def _serialize_token(token: ChatGPTToken) -> dict[str, Any]:
     }
 
 
-def _deserialize_token(data: dict[str, Any]) -> ChatGPTToken:
+def _deserialize_token(data: dict[str, Any]) -> _ChatGPTToken:
     expires_at_raw = data.get("expires_at")
     if isinstance(expires_at_raw, str):
         expires_at = datetime.fromisoformat(expires_at_raw)
@@ -256,7 +265,7 @@ def _deserialize_token(data: dict[str, Any]) -> ChatGPTToken:
     else:
         msg = "Stored token is missing `expires_at`."
         raise ValueError(msg)
-    return ChatGPTToken(
+    return _ChatGPTToken(
         access_token=data["access_token"],
         refresh_token=data["refresh_token"],
         expires_at=expires_at,
@@ -380,7 +389,7 @@ def _raise_for_oauth_response(url: str, resp: httpx.Response) -> None:
             "ChatGPT refresh token is no longer valid (`invalid_grant`). "
             "Re-run `login_chatgpt()` to obtain a new token."
         )
-        raise ChatGPTOAuthRefreshError(msg)
+        raise _ChatGPTOAuthRefreshError(msg)
     msg = f"OAuth request to {url} failed with status {resp.status_code}: {excerpt}"
     raise RuntimeError(msg)
 
@@ -445,8 +454,8 @@ async def _apost_form(
 
 
 @dataclass
-class FileChatGPTOAuthTokenProvider:
-    """File-backed `ChatGPTOAuthTokenProvider`.
+class _FileChatGPTOAuthTokenProvider:
+    """File-backed `_ChatGPTOAuthTokenProvider`.
 
     Stores tokens at `path` (defaults to `DEFAULT_STORE_PATH`) with private
     permissions and refreshes them on read when they are within
@@ -465,22 +474,22 @@ class FileChatGPTOAuthTokenProvider:
     token_url: str = CHATGPT_TOKEN_URL
     refresh_skew: timedelta = DEFAULT_REFRESH_SKEW
     timeout: float = 30.0
-    _cached: ChatGPTToken | None = field(default=None, init=False, repr=False)
+    _cached: _ChatGPTToken | None = field(default=None, init=False, repr=False)
     _lock: threading.Lock = field(
         default_factory=threading.Lock, init=False, repr=False
     )
 
     @classmethod
-    def from_default_store(cls) -> FileChatGPTOAuthTokenProvider:
+    def from_default_store(cls) -> _FileChatGPTOAuthTokenProvider:
         """Construct a provider with all defaults (path, client ID, etc.).
 
-        Equivalent to `FileChatGPTOAuthTokenProvider()`; the alias exists as
+        Equivalent to `_FileChatGPTOAuthTokenProvider()`; the alias exists as
         a discoverable entry point for callers reading the default-path
         contract from the module docstring.
         """
         return cls()
 
-    def _read_from_disk(self) -> ChatGPTToken | None:
+    def _read_from_disk(self) -> _ChatGPTToken | None:
         """Return the stored token, or `None` if no store exists.
 
         Raises `RuntimeError` (rather than returning `None`) if the file
@@ -517,10 +526,10 @@ class FileChatGPTOAuthTokenProvider:
             )
             raise RuntimeError(msg) from exc
 
-    def _write_to_disk(self, token: ChatGPTToken) -> None:
+    def _write_to_disk(self, token: _ChatGPTToken) -> None:
         _atomic_write_private_json(self.path, _serialize_token(token))
 
-    def save(self, token: ChatGPTToken) -> None:
+    def save(self, token: _ChatGPTToken) -> None:
         """Persist `token` to disk and cache it in memory."""
         with self._lock, _file_lock(self.path):
             self._write_to_disk(token)
@@ -535,13 +544,13 @@ class FileChatGPTOAuthTokenProvider:
 
     def _apply_refresh_response(
         self, response: dict[str, Any], previous_refresh: str
-    ) -> ChatGPTToken:
+    ) -> _ChatGPTToken:
         token = _token_from_response(response, fallback_refresh_token=previous_refresh)
         self._write_to_disk(token)
         self._cached = token
         return token
 
-    def _refresh_sync(self, existing: ChatGPTToken) -> ChatGPTToken:
+    def _refresh_sync(self, existing: _ChatGPTToken) -> _ChatGPTToken:
         logger.debug(
             "Refreshing ChatGPT access token (refresh_token=%s).",
             _redact(existing.refresh_token),
@@ -553,7 +562,7 @@ class FileChatGPTOAuthTokenProvider:
         )
         return self._apply_refresh_response(response, existing.refresh_token)
 
-    def _load_existing(self) -> ChatGPTToken:
+    def _load_existing(self) -> _ChatGPTToken:
         existing = self._cached or self._read_from_disk()
         if existing is None:
             msg = (
@@ -563,7 +572,7 @@ class FileChatGPTOAuthTokenProvider:
             raise FileNotFoundError(msg)
         return existing
 
-    def _load_existing_before_refresh(self) -> ChatGPTToken:
+    def _load_existing_before_refresh(self) -> _ChatGPTToken:
         existing = self._load_existing()
         if not existing.is_expired(skew=self.refresh_skew):
             return existing
@@ -573,13 +582,13 @@ class FileChatGPTOAuthTokenProvider:
             return disk_token
         return existing
 
-    def get_token(self) -> ChatGPTToken:
+    def get_token(self) -> _ChatGPTToken:
         """Return a fresh token, refreshing on disk if needed.
 
         Raises:
             FileNotFoundError: No token store exists at `self.path`; run
                 `login_chatgpt()` first.
-            ChatGPTOAuthRefreshError: The stored refresh token was rejected
+            _ChatGPTOAuthRefreshError: The stored refresh token was rejected
                 (e.g. revoked or expired); re-run `login_chatgpt()`.
         """
         with self._lock, _file_lock(self.path):
@@ -589,7 +598,7 @@ class FileChatGPTOAuthTokenProvider:
                 return existing
             return self._refresh_sync(existing)
 
-    async def aget_token(self) -> ChatGPTToken:
+    async def aget_token(self) -> _ChatGPTToken:
         """Async variant of `get_token` with the same locking guarantees.
 
         The thread lock and cross-process file lock are acquired off the
@@ -602,12 +611,12 @@ class FileChatGPTOAuthTokenProvider:
         Raises:
             FileNotFoundError: No token store exists at `self.path`; run
                 `login_chatgpt()` first.
-            ChatGPTOAuthRefreshError: The stored refresh token was rejected
+            _ChatGPTOAuthRefreshError: The stored refresh token was rejected
                 (e.g. revoked or expired); re-run `login_chatgpt()`.
         """
         return await asyncio.to_thread(self._aget_token_locked_blocking)
 
-    def _aget_token_locked_blocking(self) -> ChatGPTToken:
+    def _aget_token_locked_blocking(self) -> _ChatGPTToken:
         with self._lock, _file_lock(self.path):
             existing = self._load_existing_before_refresh()
             if not existing.is_expired(skew=self.refresh_skew):
@@ -850,13 +859,13 @@ def login_chatgpt(
     scope: str = DEFAULT_SCOPE,
     open_browser: bool = True,
     timeout: float = 300.0,
-) -> FileChatGPTOAuthTokenProvider:
+) -> _FileChatGPTOAuthTokenProvider:
     """Run the ChatGPT OAuth 2.0 Authorization Code Flow with PKCE.
 
     Starts a loopback callback server, optionally opens a browser to the
     OpenAI authorize endpoint (when `open_browser=True`; the URL is always
     printed as a fallback), exchanges the returned code for tokens, and
-    persists them via `FileChatGPTOAuthTokenProvider`.
+    persists them via `_FileChatGPTOAuthTokenProvider`.
 
     Args:
         store_path: Where to persist the token. Defaults to
@@ -870,8 +879,8 @@ def login_chatgpt(
         timeout: Seconds to wait for the callback.
 
     Returns:
-        A `FileChatGPTOAuthTokenProvider` ready for use by
-            `ChatOpenAICodex`.
+        A `_FileChatGPTOAuthTokenProvider` ready for use by
+            `_ChatOpenAICodex`.
 
     Raises:
         ValueError: `host` is not a loopback address.
@@ -940,7 +949,7 @@ def login_chatgpt(
         },
     )
     token = _token_from_response(response)
-    provider = FileChatGPTOAuthTokenProvider(
+    provider = _FileChatGPTOAuthTokenProvider(
         path=store_path or DEFAULT_STORE_PATH, client_id=client_id
     )
     provider.save(token)
@@ -953,7 +962,7 @@ def login_chatgpt_device(
     client_id: str = CHATGPT_CLIENT_ID,
     poll_interval: float = 5.0,
     timeout: float = 600.0,
-) -> FileChatGPTOAuthTokenProvider:
+) -> _FileChatGPTOAuthTokenProvider:
     """Run the ChatGPT device-code OAuth flow.
 
     This is the headless fallback for environments without a browser. The
@@ -969,7 +978,7 @@ def login_chatgpt_device(
         timeout: Total seconds to wait.
 
     Returns:
-        A configured `FileChatGPTOAuthTokenProvider`.
+        A configured `_FileChatGPTOAuthTokenProvider`.
 
     Raises:
         RuntimeError: The device-code response was missing required fields, or
@@ -1037,7 +1046,7 @@ def login_chatgpt_device(
         },
     )
     token = _token_from_response(response)
-    provider = FileChatGPTOAuthTokenProvider(
+    provider = _FileChatGPTOAuthTokenProvider(
         path=store_path or DEFAULT_STORE_PATH, client_id=client_id
     )
     provider.save(token)
@@ -1048,10 +1057,6 @@ __all__ = [
     "CHATGPT_AUTHORIZE_URL",
     "CHATGPT_CLIENT_ID",
     "CHATGPT_TOKEN_URL",
-    "ChatGPTOAuthRefreshError",
-    "ChatGPTOAuthTokenProvider",
-    "ChatGPTToken",
-    "FileChatGPTOAuthTokenProvider",
     "decode_jwt_claims",
     "login_chatgpt",
     "login_chatgpt_device",

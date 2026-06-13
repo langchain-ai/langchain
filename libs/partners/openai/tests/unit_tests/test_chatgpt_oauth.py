@@ -20,11 +20,11 @@ from langchain_openai import chatgpt_oauth as oauth_module
 from langchain_openai.chatgpt_oauth import (
     CHATGPT_AUTH_CLAIMS_NAMESPACE,
     CHATGPT_TOKEN_URL,
-    ChatGPTOAuthRefreshError,
-    ChatGPTToken,
-    FileChatGPTOAuthTokenProvider,
     _build_authorize_url,
     _CallbackHandler,
+    _ChatGPTOAuthRefreshError,
+    _ChatGPTToken,
+    _FileChatGPTOAuthTokenProvider,
     _generate_pkce_pair,
     _serialize_token,
     _token_from_response,
@@ -103,7 +103,7 @@ def test_token_from_response_extracts_claims_and_falls_back_to_existing_refresh(
 
 def test_token_is_expired_uses_skew() -> None:
     now = datetime.now(timezone.utc)
-    token = ChatGPTToken(
+    token = _ChatGPTToken(
         access_token="x",
         refresh_token="y",
         expires_at=now + timedelta(minutes=1),
@@ -114,8 +114,8 @@ def test_token_is_expired_uses_skew() -> None:
 
 def test_file_provider_persists_token_with_private_perms(tmp_path: Path) -> None:
     store = tmp_path / "chatgpt-auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
-    token = ChatGPTToken(
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
+    token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -133,7 +133,7 @@ def test_file_provider_persists_token_with_private_perms(tmp_path: Path) -> None
     assert raw["access_token"] == "at"
     assert raw["account_id"] == "acct-1"
 
-    fresh = FileChatGPTOAuthTokenProvider(path=store)
+    fresh = _FileChatGPTOAuthTokenProvider(path=store)
     reloaded = fresh.get_token()
     assert reloaded.access_token == "at"
     assert reloaded.account_id == "acct-1"
@@ -144,8 +144,8 @@ def test_file_provider_get_token_does_not_refresh_when_valid(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
-    valid_token = ChatGPTToken(
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
+    valid_token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -166,8 +166,8 @@ def test_file_provider_get_token_refreshes_when_expired(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
-    expired = ChatGPTToken(
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
+    expired = _ChatGPTToken(
         access_token="old-at",
         refresh_token="old-rt",
         expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
@@ -210,19 +210,19 @@ def test_file_provider_reloads_expired_cached_token_before_refresh(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
-    expired = ChatGPTToken(
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
+    expired = _ChatGPTToken(
         access_token="old-at",
         refresh_token="old-rt",
         expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
     )
     provider.save(expired)
-    rotated = ChatGPTToken(
+    rotated = _ChatGPTToken(
         access_token="rotated-at",
         refresh_token="rotated-rt",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
     )
-    FileChatGPTOAuthTokenProvider(path=store).save(rotated)
+    _FileChatGPTOAuthTokenProvider(path=store).save(rotated)
 
     def _explode(*args: Any, **kwargs: Any) -> dict[str, Any]:
         msg = "should use disk token instead of refreshing stale cache"
@@ -236,13 +236,13 @@ def test_file_provider_reloads_expired_cached_token_before_refresh(
 
 
 def test_file_provider_raises_when_no_token_exists(tmp_path: Path) -> None:
-    provider = FileChatGPTOAuthTokenProvider(path=tmp_path / "missing.json")
+    provider = _FileChatGPTOAuthTokenProvider(path=tmp_path / "missing.json")
     with pytest.raises(FileNotFoundError):
         provider.get_token()
 
 
 def test_serialize_roundtrip_preserves_fields() -> None:
-    token = ChatGPTToken(
+    token = _ChatGPTToken(
         access_token="a",
         refresh_token="b",
         expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
@@ -286,7 +286,7 @@ def test_pkce_pair_challenge_is_s256_of_verifier() -> None:
 
 
 def test_chatgpt_token_repr_does_not_leak_secrets() -> None:
-    token = ChatGPTToken(
+    token = _ChatGPTToken(
         access_token="super-secret-at",
         refresh_token="super-secret-rt",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -302,19 +302,19 @@ def test_chatgpt_token_repr_does_not_leak_secrets() -> None:
 
 def test_chatgpt_token_rejects_empty_or_naive_fields() -> None:
     with pytest.raises(ValueError, match="access_token"):
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="",
             refresh_token="rt",
             expires_at=datetime.now(timezone.utc),
         )
     with pytest.raises(ValueError, match="refresh_token"):
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="at",
             refresh_token="",
             expires_at=datetime.now(timezone.utc),
         )
     with pytest.raises(ValueError, match="timezone-aware"):
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="at",
             refresh_token="rt",
             expires_at=datetime(2030, 1, 1),  # noqa: DTZ001
@@ -327,7 +327,7 @@ def test_chatgpt_token_is_frozen() -> None:
     Providers cache and share a single instance, so post-construction mutation
     (which would bypass `__post_init__`) must be impossible.
     """
-    token = ChatGPTToken(
+    token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -362,7 +362,7 @@ def test_login_chatgpt_rejects_non_loopback_host(tmp_path: Path) -> None:
 
 
 def test_token_from_response_raises_on_missing_expires_in() -> None:
-    with pytest.raises(ChatGPTOAuthRefreshError, match="expires_in"):
+    with pytest.raises(_ChatGPTOAuthRefreshError, match="expires_in"):
         _token_from_response(
             {"access_token": "a", "refresh_token": "b"},
             fallback_refresh_token=None,
@@ -370,7 +370,7 @@ def test_token_from_response_raises_on_missing_expires_in() -> None:
 
 
 def test_token_from_response_raises_on_missing_refresh_token() -> None:
-    with pytest.raises(ChatGPTOAuthRefreshError, match="refresh_token"):
+    with pytest.raises(_ChatGPTOAuthRefreshError, match="refresh_token"):
         _token_from_response(
             {"access_token": "a", "expires_in": 3600},
             fallback_refresh_token=None,
@@ -378,7 +378,7 @@ def test_token_from_response_raises_on_missing_refresh_token() -> None:
 
 
 def test_token_from_response_raises_on_missing_access_token() -> None:
-    with pytest.raises(ChatGPTOAuthRefreshError, match="access_token"):
+    with pytest.raises(_ChatGPTOAuthRefreshError, match="access_token"):
         _token_from_response(
             {"expires_in": 3600, "refresh_token": "rt"},
             fallback_refresh_token=None,
@@ -388,7 +388,7 @@ def test_token_from_response_raises_on_missing_access_token() -> None:
 def test_corrupt_token_store_raises_actionable_error(tmp_path: Path) -> None:
     store = tmp_path / "auth.json"
     store.write_text("{not valid json")
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     with pytest.raises(RuntimeError, match="not valid JSON"):
         provider.get_token()
 
@@ -396,7 +396,7 @@ def test_corrupt_token_store_raises_actionable_error(tmp_path: Path) -> None:
 def test_missing_expires_at_in_store_raises_actionable_error(tmp_path: Path) -> None:
     store = tmp_path / "auth.json"
     store.write_text(json.dumps({"access_token": "at", "refresh_token": "rt"}))
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     with pytest.raises(RuntimeError, match="missing required"):
         provider.get_token()
 
@@ -406,9 +406,9 @@ def test_invalid_grant_refresh_raises_typed_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     provider.save(
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="old-at",
             refresh_token="old-rt",
             expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
@@ -417,10 +417,10 @@ def test_invalid_grant_refresh_raises_typed_error(
 
     def _fake_post(*_: Any, **__: Any) -> dict[str, Any]:
         msg = "ChatGPT refresh token is no longer valid (`invalid_grant`)."
-        raise ChatGPTOAuthRefreshError(msg)
+        raise _ChatGPTOAuthRefreshError(msg)
 
     monkeypatch.setattr("langchain_openai.chatgpt_oauth._post_form", _fake_post)
-    with pytest.raises(ChatGPTOAuthRefreshError, match="invalid_grant"):
+    with pytest.raises(_ChatGPTOAuthRefreshError, match="invalid_grant"):
         provider.get_token()
     # The on-disk token must be preserved so a follow-up `login_chatgpt()`
     # is the only thing needed.
@@ -434,9 +434,9 @@ def test_refresh_failure_preserves_stored_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     provider.save(
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="keep-at",
             refresh_token="keep-rt",
             expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
@@ -460,9 +460,9 @@ def test_aget_token_refreshes_when_expired(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     provider.save(
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="old-at",
             refresh_token="old-rt",
             expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
@@ -487,9 +487,9 @@ def test_aget_access_token_returns_access_string(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     store = tmp_path / "auth.json"
-    provider = FileChatGPTOAuthTokenProvider(path=store)
+    provider = _FileChatGPTOAuthTokenProvider(path=store)
     provider.save(
-        ChatGPTToken(
+        _ChatGPTToken(
             access_token="at-x",
             refresh_token="rt",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -517,7 +517,7 @@ def test_token_is_expired_uses_skew_with_frozen_clock(
             return frozen if tz is None else frozen.astimezone(tz)
 
     monkeypatch.setattr("langchain_openai.chatgpt_oauth.datetime", _FrozenDatetime)
-    token = ChatGPTToken(
+    token = _ChatGPTToken(
         access_token="x",
         refresh_token="y",
         expires_at=frozen + timedelta(minutes=1),
@@ -540,7 +540,7 @@ def test_raise_for_oauth_response_detects_invalid_grant() -> None:
     resp = _make_response(
         400, {"error": "invalid_grant", "error_description": "revoked"}
     )
-    with pytest.raises(ChatGPTOAuthRefreshError, match="invalid_grant"):
+    with pytest.raises(_ChatGPTOAuthRefreshError, match="invalid_grant"):
         _raise_for_oauth_response(CHATGPT_TOKEN_URL, resp)
 
 

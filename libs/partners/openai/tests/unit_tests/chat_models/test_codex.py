@@ -1,4 +1,4 @@
-"""Unit tests for `ChatOpenAICodex`."""
+"""Unit tests for `_ChatOpenAICodex`."""
 # ruff: noqa: S106, S107
 
 from __future__ import annotations
@@ -9,22 +9,24 @@ from typing import Any
 import pytest
 from langchain_core.messages import ChatMessage, HumanMessage, SystemMessage
 
-from langchain_openai import ChatOpenAICodex
+import langchain_openai.chat_models.codex as codex_module
 from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.chat_models.codex import (
     ACCOUNT_ID_HEADER,
     CHATGPT_CODEX_BASE_URL,
     DEFAULT_INSTRUCTIONS,
+    EXPERIMENTAL_UNOFFICIAL_WARNING,
     ORIGINATOR_ENV_VAR,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
+    _ChatOpenAICodex,
     _SyncTokenCallable,
 )
-from langchain_openai.chatgpt_oauth import ChatGPTToken
+from langchain_openai.chatgpt_oauth import _ChatGPTToken
 
 
 class FakeTokenProvider:
-    """Minimal `ChatGPTOAuthTokenProvider` for tests."""
+    """Minimal `_ChatGPTOAuthTokenProvider` for tests."""
 
     def __init__(
         self,
@@ -36,16 +38,16 @@ class FakeTokenProvider:
         self.calls = 0
         self.async_calls = 0
 
-    def get_token(self) -> ChatGPTToken:
+    def get_token(self) -> _ChatGPTToken:
         self.calls += 1
-        return ChatGPTToken(
+        return _ChatGPTToken(
             access_token=self.access_token,
             refresh_token="rt",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             account_id=self.account_id,
         )
 
-    async def aget_token(self) -> ChatGPTToken:
+    async def aget_token(self) -> _ChatGPTToken:
         self.async_calls += 1
         return self.get_token()
 
@@ -57,13 +59,23 @@ class FakeTokenProvider:
         return token.access_token
 
 
-def _build_model(**overrides: Any) -> ChatOpenAICodex:
+def _build_model(**overrides: Any) -> _ChatOpenAICodex:
     provider = overrides.pop("token_provider", None) or FakeTokenProvider()
-    return ChatOpenAICodex(
+    return _ChatOpenAICodex(
         model=overrides.pop("model", "gpt-5.2-codex"),
         token_provider=provider,
         **overrides,
     )
+
+
+def test_experimental_unofficial_warning_is_emitted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(codex_module, "_experimental_warning_emitted", False)
+    with pytest.warns(UserWarning, match="experimental and unofficial") as warning:
+        _build_model()
+    assert warning[0].filename == __file__
+    assert "applicable OpenAI terms" in EXPERIMENTAL_UNOFFICIAL_WARNING
 
 
 def test_defaults_route_to_chatgpt_codex_backend() -> None:
@@ -203,12 +215,12 @@ def test_request_payload_pulls_fresh_account_id_each_call() -> None:
 
 def test_invalid_token_provider_rejected() -> None:
     with pytest.raises(TypeError):
-        ChatOpenAICodex(model="gpt-5.2-codex", token_provider="not-a-provider")
+        _ChatOpenAICodex(model="gpt-5.2-codex", token_provider="not-a-provider")
 
 
 def test_conflicting_use_responses_api_raises() -> None:
     with pytest.raises(ValueError, match="use_responses_api"):
-        ChatOpenAICodex(
+        _ChatOpenAICodex(
             model="gpt-5.2-codex",
             token_provider=FakeTokenProvider(),
             use_responses_api=False,
@@ -223,7 +235,7 @@ def test_explicit_output_version_is_respected(output_version: str) -> None:
     choice, `output_version` never appears in the outbound payload (it's
     consumed entirely by the response projection layer).
     """
-    model = ChatOpenAICodex(
+    model = _ChatOpenAICodex(
         model="gpt-5.2-codex",
         token_provider=FakeTokenProvider(),
         output_version=output_version,
@@ -235,7 +247,7 @@ def test_explicit_output_version_is_respected(output_version: str) -> None:
 
 def test_conflicting_store_raises() -> None:
     with pytest.raises(ValueError, match="store"):
-        ChatOpenAICodex(
+        _ChatOpenAICodex(
             model="gpt-5.2-codex",
             token_provider=FakeTokenProvider(),
             store=True,
@@ -244,7 +256,7 @@ def test_conflicting_store_raises() -> None:
 
 def test_conflicting_streaming_raises() -> None:
     with pytest.raises(ValueError, match="streaming"):
-        ChatOpenAICodex(
+        _ChatOpenAICodex(
             model="gpt-5.2-codex",
             token_provider=FakeTokenProvider(),
             streaming=False,
@@ -296,7 +308,7 @@ def test_system_message_is_lifted_into_top_level_instructions() -> None:
     """`SystemMessage` content overrides the constructor `instructions`.
 
     Codex rejects `SystemMessage` chat turns (400 "System messages are
-    not allowed"), so `ChatOpenAICodex` lifts their content into the
+    not allowed"), so `_ChatOpenAICodex` lifts their content into the
     top-level `instructions` field and strips them from the input list.
     """
     model = _build_model(instructions="model-level")
@@ -527,7 +539,7 @@ def test_ls_params_uses_codex_provider_tag() -> None:
 
 
 def test_is_not_serializable_due_to_live_token_provider() -> None:
-    assert ChatOpenAICodex.is_lc_serializable() is False
+    assert _ChatOpenAICodex.is_lc_serializable() is False
 
 
 def test_sync_token_callable_delegates() -> None:

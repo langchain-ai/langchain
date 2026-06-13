@@ -1,10 +1,17 @@
-# Recording `ChatOpenAICodex` VCR cassettes
+# Recording `_ChatOpenAICodex` VCR cassettes
 
-`ChatOpenAICodex` authenticates with a ChatGPT subscription OAuth bundle, so
+`_ChatOpenAICodex` authenticates with a ChatGPT subscription OAuth bundle, so
 its integration tests cannot run in PR CI without a live login. The workflow
 below records cassettes once locally with a real token, scrubs OAuth secrets
 before they hit disk, and commits the cassettes so CI replays them through
 `_test_vcr.yml` (the `vcr-tests` job in `check_diffs.yml`).
+
+> [!WARNING]
+> `_ChatOpenAICodex` is experimental and unofficial. Use it only where your
+> OpenAI account, workspace, plan, and applicable OpenAI terms permit
+> ChatGPT-authenticated Codex access. You are responsible for ensuring your
+> implementation complies with OpenAI's terms, usage policies, account
+> restrictions, rate limits, and safeguards.
 
 ## Prerequisites
 
@@ -20,7 +27,7 @@ before they hit disk, and commits the cassettes so CI replays them through
    The default store is `~/.langchain/chatgpt-auth.json`. It is intentionally
    distinct from `~/.codex/auth.json` so the Codex CLI / VS Code session is
    not invalidated by refresh-token rotation here.
-3. An integration test that instantiates `ChatOpenAICodex` and is marked
+3. An integration test that instantiates `_ChatOpenAICodex` and is marked
    `@pytest.mark.vcr`. Tests written against the API-key `ChatOpenAI` will
    not exercise the Codex backend — only Codex-specific tests should be
    passed to the script.

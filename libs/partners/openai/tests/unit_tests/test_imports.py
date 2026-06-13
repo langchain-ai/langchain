@@ -4,7 +4,6 @@ EXPECTED_ALL = [
     "__version__",
     "OpenAI",
     "ChatOpenAI",
-    "ChatOpenAICodex",
     "OpenAIEmbeddings",
     "AzureOpenAI",
     "AzureChatOpenAI",

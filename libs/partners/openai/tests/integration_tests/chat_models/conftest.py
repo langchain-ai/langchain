@@ -1,7 +1,7 @@
 """Shared fixtures for chat-model integration tests.
 
-The `ChatOpenAICodex` integration tests run under VCR cassette playback in
-CI (`make test_vcr`), but its `FileChatGPTOAuthTokenProvider` still tries
+The `_ChatOpenAICodex` integration tests run under VCR cassette playback in
+CI (`make test_vcr`), but its `_FileChatGPTOAuthTokenProvider` still tries
 to read `~/.langchain/chatgpt-auth.json` from disk on every request to
 build the `Authorization` header. CI has no such file, so every Codex
 test would fail with `FileNotFoundError` before VCR ever replays the
@@ -65,13 +65,13 @@ def _vcr_record_mode(config: pytest.Config) -> str | None:
 def _fake_codex_oauth_token(
     request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Stub `FileChatGPTOAuthTokenProvider` token reads for Codex VCR tests."""
+    """Stub `_FileChatGPTOAuthTokenProvider` token reads for Codex VCR tests."""
     if "codex" not in request.module.__name__:
         return
     if _vcr_record_mode(request.config) != "none":
         return
 
-    fake_token = chatgpt_oauth.ChatGPTToken(
+    fake_token = chatgpt_oauth._ChatGPTToken(
         access_token="vcr-fake-access-token",  # noqa: S106
         refresh_token="vcr-fake-refresh-token",  # noqa: S106
         expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
@@ -79,38 +79,38 @@ def _fake_codex_oauth_token(
     )
 
     def _get_token(
-        self: chatgpt_oauth.FileChatGPTOAuthTokenProvider,
-    ) -> chatgpt_oauth.ChatGPTToken:
+        self: chatgpt_oauth._FileChatGPTOAuthTokenProvider,
+    ) -> chatgpt_oauth._ChatGPTToken:
         return fake_token
 
     async def _aget_token(
-        self: chatgpt_oauth.FileChatGPTOAuthTokenProvider,
-    ) -> chatgpt_oauth.ChatGPTToken:
+        self: chatgpt_oauth._FileChatGPTOAuthTokenProvider,
+    ) -> chatgpt_oauth._ChatGPTToken:
         return fake_token
 
     def _get_access_token(
-        self: chatgpt_oauth.FileChatGPTOAuthTokenProvider,
+        self: chatgpt_oauth._FileChatGPTOAuthTokenProvider,
     ) -> str:
         return fake_token.access_token
 
     async def _aget_access_token(
-        self: chatgpt_oauth.FileChatGPTOAuthTokenProvider,
+        self: chatgpt_oauth._FileChatGPTOAuthTokenProvider,
     ) -> str:
         return fake_token.access_token
 
     monkeypatch.setattr(
-        chatgpt_oauth.FileChatGPTOAuthTokenProvider, "get_token", _get_token
+        chatgpt_oauth._FileChatGPTOAuthTokenProvider, "get_token", _get_token
     )
     monkeypatch.setattr(
-        chatgpt_oauth.FileChatGPTOAuthTokenProvider, "aget_token", _aget_token
+        chatgpt_oauth._FileChatGPTOAuthTokenProvider, "aget_token", _aget_token
     )
     monkeypatch.setattr(
-        chatgpt_oauth.FileChatGPTOAuthTokenProvider,
+        chatgpt_oauth._FileChatGPTOAuthTokenProvider,
         "get_access_token",
         _get_access_token,
     )
     monkeypatch.setattr(
-        chatgpt_oauth.FileChatGPTOAuthTokenProvider,
+        chatgpt_oauth._FileChatGPTOAuthTokenProvider,
         "aget_access_token",
         _aget_access_token,
     )
