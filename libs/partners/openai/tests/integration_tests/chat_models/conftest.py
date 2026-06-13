@@ -15,6 +15,7 @@ leaves non-Codex tests in the directory untouched.
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -59,6 +60,17 @@ def _vcr_record_mode(config: pytest.Config) -> str | None:
         if value is not None:
             return str(value)
     return None
+
+
+@pytest.fixture(autouse=True)
+def _skip_codex_live_ci(request: pytest.FixtureRequest) -> None:
+    """Skip Codex tests in CI unless they are replaying VCR cassettes."""
+    if "codex" not in request.module.__name__:
+        return
+    if _vcr_record_mode(request.config) == "none":
+        return
+    if os.getenv("CI"):
+        pytest.skip("Codex tests require VCR playback in CI.")
 
 
 @pytest.fixture(autouse=True)
