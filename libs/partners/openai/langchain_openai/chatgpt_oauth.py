@@ -8,10 +8,19 @@ These helpers exist to keep login and token management *separate* from model
 invocation. `ChatOpenAICodex` only consumes a `ChatGPTOAuthTokenProvider`.
 
 !!! warning
+
     This is provider-specific subscription auth and is independent from the
     standard OpenAI API-key flow used by `ChatOpenAI`. Refresh-token rotation
     against `~/.codex/auth.json` can break Codex CLI / VS Code sessions, so
     the default store lives at `~/.langchain/chatgpt-auth.json`.
+
+!!! warning "Experimental and unofficial"
+
+    These helpers are not an official OpenAI API integration. Use them only
+    where your OpenAI account, workspace, plan, and applicable OpenAI terms
+    permit ChatGPT-authenticated Codex access. You are responsible for ensuring
+    your implementation complies with OpenAI's terms, usage policies, account
+    restrictions, rate limits, and safeguards.
 """
 
 from __future__ import annotations

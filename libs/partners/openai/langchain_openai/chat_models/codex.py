@@ -1,4 +1,4 @@
-"""`ChatOpenAICodex`: OAuth-backed chat model for ChatGPT subscription auth.
+"""`ChatOpenAICodex`: experimental OAuth-backed chat model.
 
 Wraps `ChatOpenAI` to target the ChatGPT codex backend
 (`https://chatgpt.com/backend-api/codex`) and supplies refresh-aware
@@ -6,12 +6,21 @@ Wraps `ChatOpenAI` to target the ChatGPT codex backend
 `ChatGPTOAuthTokenProvider`.
 
 The standard `ChatOpenAI` (API-key) flow is untouched.
+
+!!! warning "Experimental and unofficial"
+
+    `ChatOpenAICodex` is not an official OpenAI API integration. Use it only
+    where your OpenAI account, workspace, plan, and applicable OpenAI terms
+    permit ChatGPT-authenticated Codex access. You are responsible for ensuring
+    your implementation complies with OpenAI's terms, usage policies, account
+    restrictions, rate limits, and safeguards.
 """
 
 from __future__ import annotations
 
 import logging
 import os
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.chat_models import LangSmithParams
@@ -46,12 +55,30 @@ env var.
 """
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+EXPERIMENTAL_UNOFFICIAL_WARNING = (
+    "`ChatOpenAICodex` is experimental and unofficial. It uses ChatGPT "
+    "subscription OAuth against Codex endpoints and must only be used where "
+    "permitted by your OpenAI account, workspace, plan, and applicable OpenAI "
+    "terms and policies. You are responsible for implementing and operating "
+    "it responsibly, including respecting OpenAI's usage policies, rate "
+    "limits, and safeguards."
+)
+_experimental_warning_emitted = False
 _INSTRUCTION_ROLES = frozenset({"system", "developer"})
 
 
 def _default_originator() -> str:
     """Resolve the `originator` header default, honoring the env-var override."""
     return os.environ.get(ORIGINATOR_ENV_VAR) or ORIGINATOR_VALUE
+
+
+def _warn_experimental_unofficial() -> None:
+    """Warn once that `ChatOpenAICodex` is experimental and unofficial."""
+    global _experimental_warning_emitted
+    if _experimental_warning_emitted:
+        return
+    _experimental_warning_emitted = True
+    warnings.warn(EXPERIMENTAL_UNOFFICIAL_WARNING, UserWarning, stacklevel=3)
 
 
 def _maybe_has_system_messages(input_: Any) -> bool:
@@ -183,7 +210,13 @@ rationale.
 
 
 class ChatOpenAICodex(ChatOpenAI):
-    """`ChatOpenAI` variant authed by a ChatGPT OAuth subscription.
+    """Experimental `ChatOpenAI` variant authed by ChatGPT OAuth.
+
+    This integration is unofficial and should only be used where your OpenAI
+    account, workspace, plan, and applicable OpenAI terms permit
+    ChatGPT-authenticated Codex access. Users are responsible for implementing
+    and operating it in compliance with OpenAI's terms, usage policies, account
+    restrictions, rate limits, and safeguards.
 
     Routes requests to `https://chatgpt.com/backend-api/codex` and forces
     the wire-level fields the Codex backend requires
@@ -305,6 +338,7 @@ class ChatOpenAICodex(ChatOpenAI):
     @classmethod
     def _apply_codex_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Apply Codex-specific defaults before the parent validator runs."""
+        _warn_experimental_unofficial()
         if not isinstance(values, dict):
             return values
         for key, forced in _FORCED_VALUES.items():

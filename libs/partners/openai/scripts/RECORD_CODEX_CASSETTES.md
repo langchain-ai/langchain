@@ -6,6 +6,13 @@ below records cassettes once locally with a real token, scrubs OAuth secrets
 before they hit disk, and commits the cassettes so CI replays them through
 `_test_vcr.yml` (the `vcr-tests` job in `check_diffs.yml`).
 
+> [!WARNING]
+> `ChatOpenAICodex` is experimental and unofficial. Use it only where your
+> OpenAI account, workspace, plan, and applicable OpenAI terms permit
+> ChatGPT-authenticated Codex access. You are responsible for ensuring your
+> implementation complies with OpenAI's terms, usage policies, account
+> restrictions, rate limits, and safeguards.
+
 ## Prerequisites
 
 1. A ChatGPT subscription (Plus / Pro / Team / Enterprise) — required for

@@ -9,12 +9,14 @@ from typing import Any
 import pytest
 from langchain_core.messages import ChatMessage, HumanMessage, SystemMessage
 
+import langchain_openai.chat_models.codex as codex_module
 from langchain_openai import ChatOpenAICodex
 from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.chat_models.codex import (
     ACCOUNT_ID_HEADER,
     CHATGPT_CODEX_BASE_URL,
     DEFAULT_INSTRUCTIONS,
+    EXPERIMENTAL_UNOFFICIAL_WARNING,
     ORIGINATOR_ENV_VAR,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
@@ -64,6 +66,15 @@ def _build_model(**overrides: Any) -> ChatOpenAICodex:
         token_provider=provider,
         **overrides,
     )
+
+
+def test_experimental_unofficial_warning_is_emitted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(codex_module, "_experimental_warning_emitted", False)
+    with pytest.warns(UserWarning, match="experimental and unofficial"):
+        _build_model()
+    assert "applicable OpenAI terms" in EXPERIMENTAL_UNOFFICIAL_WARNING
 
 
 def test_defaults_route_to_chatgpt_codex_backend() -> None:
