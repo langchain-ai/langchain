@@ -9,8 +9,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -402,3 +404,36 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class _AnswerSchema(BaseModel):
+    answer: str
+
+
+@pytest.mark.parametrize("method", ["json_schema", "json_mode"])
+def test_with_structured_output_pydantic_uses_pydantic_parser(
+    chat_hugging_face: Any, method: str
+) -> None:
+    """A Pydantic schema should be parsed with `PydanticOutputParser`.
+
+    Regression test for #32197: `json_schema` and `json_mode` previously always used
+    `JsonOutputParser`, so a `dict` was returned even though the docstring promises a
+    Pydantic instance when `schema` is a Pydantic class.
+    """
+    runnable = chat_hugging_face.with_structured_output(_AnswerSchema, method=method)
+
+    assert isinstance(runnable.last, PydanticOutputParser)
+
+
+def test_with_structured_output_dict_uses_json_parser(chat_hugging_face: Any) -> None:
+    """A non-Pydantic (dict) schema should keep using `JsonOutputParser`."""
+    dict_schema = {
+        "title": "AnswerSchema",
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+    }
+    runnable = chat_hugging_face.with_structured_output(
+        dict_schema, method="json_schema"
+    )
+
+    assert isinstance(runnable.last, JsonOutputParser)
