@@ -1,6 +1,6 @@
 from langchain_openai.chat_models import __all__
 
-EXPECTED_ALL = ["ChatOpenAI", "AzureChatOpenAI", "ChatOpenAICodex"]
+EXPECTED_ALL = ["ChatOpenAI", "AzureChatOpenAI"]
 
 
 def test_all_imports() -> None:

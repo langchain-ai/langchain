@@ -1,15 +1,15 @@
-"""`ChatOpenAICodex`: experimental OAuth-backed chat model.
+"""`_ChatOpenAICodex`: experimental OAuth-backed chat model.
 
 Wraps `ChatOpenAI` to target the ChatGPT codex backend
 (`https://chatgpt.com/backend-api/codex`) and supplies refresh-aware
 `Authorization` and `ChatGPT-Account-Id` headers from a
-`ChatGPTOAuthTokenProvider`.
+`_ChatGPTOAuthTokenProvider`.
 
 The standard `ChatOpenAI` (API-key) flow is untouched.
 
 !!! warning "Experimental and unofficial"
 
-    `ChatOpenAICodex` is not an official OpenAI API integration. Use it only
+    `_ChatOpenAICodex` is not an official OpenAI API integration. Use it only
     where your OpenAI account, workspace, plan, and applicable OpenAI terms
     permit ChatGPT-authenticated Codex access. You are responsible for ensuring
     your implementation complies with OpenAI's terms, usage policies, account
@@ -29,8 +29,8 @@ from pydantic import Field, model_validator
 
 from langchain_openai.chat_models.base import ChatOpenAI
 from langchain_openai.chatgpt_oauth import (
-    ChatGPTOAuthTokenProvider,
-    FileChatGPTOAuthTokenProvider,
+    _ChatGPTOAuthTokenProvider,
+    _FileChatGPTOAuthTokenProvider,
 )
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ env var.
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
 EXPERIMENTAL_UNOFFICIAL_WARNING = (
-    "`ChatOpenAICodex` is experimental and unofficial. It uses ChatGPT "
+    "`_ChatOpenAICodex` is experimental and unofficial. It uses ChatGPT "
     "subscription OAuth against Codex endpoints and must only be used where "
     "permitted by your OpenAI account, workspace, plan, and applicable OpenAI "
     "terms and policies. You are responsible for implementing and operating "
@@ -73,7 +73,7 @@ def _default_originator() -> str:
 
 
 def _warn_experimental_unofficial() -> None:
-    """Warn once that `ChatOpenAICodex` is experimental and unofficial."""
+    """Warn once that `_ChatOpenAICodex` is experimental and unofficial."""
     global _experimental_warning_emitted
     if _experimental_warning_emitted:
         return
@@ -140,7 +140,7 @@ def _flatten_system_message_content(system_messages: list[BaseMessage]) -> str:
             msg = (
                 f"`{message_name}` at index {index} has unsupported content "
                 f"type {type(content).__name__!r}; only `str` and "
-                "list-of-text-blocks are accepted by `ChatOpenAICodex`."
+                "list-of-text-blocks are accepted by `_ChatOpenAICodex`."
             )
             raise ValueError(msg)
         text_parts: list[str] = []
@@ -175,14 +175,14 @@ DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenA
 The Codex backend rejects any request missing a top-level `instructions`
 value (400 `Instructions are required`), so this constant keeps zero-config
 construction working. **Most callers should override it** with their own
-prompt — see `ChatOpenAICodex.instructions` for the resolution rules.
+prompt — see `_ChatOpenAICodex.instructions` for the resolution rules.
 """
 _FORCED_VALUES: dict[str, Any] = {
     "use_responses_api": True,
     "store": False,
     "streaming": True,
 }
-"""Values forced onto every `ChatOpenAICodex` instance.
+"""Values forced onto every `_ChatOpenAICodex` instance.
 
 These are the wire-level constraints the Codex backend imposes:
 
@@ -209,7 +209,7 @@ rationale.
 """
 
 
-class ChatOpenAICodex(ChatOpenAI):
+class _ChatOpenAICodex(ChatOpenAI):
     """Experimental `ChatOpenAI` variant authed by ChatGPT OAuth.
 
     This integration is unofficial and should only be used where your OpenAI
@@ -229,15 +229,15 @@ class ChatOpenAICodex(ChatOpenAI):
 
     Example:
         ```python
-        from langchain_openai import ChatOpenAICodex
+        from langchain_openai.chat_models.codex import _ChatOpenAICodex
         from langchain_openai.chatgpt_oauth import login_chatgpt
 
         # One-time setup. The returned provider writes to the default store
-        # at `~/.langchain/chatgpt-auth.json`, which `ChatOpenAICodex` also
+        # at `~/.langchain/chatgpt-auth.json`, which `_ChatOpenAICodex` also
         # reads from by default — so subsequent constructions need no
         # explicit `token_provider`.
         login_chatgpt()
-        model = ChatOpenAICodex(
+        model = _ChatOpenAICodex(
             model="gpt-5.5",
             instructions="You are a senior Python reviewer. Be terse.",
         )
@@ -254,7 +254,7 @@ class ChatOpenAICodex(ChatOpenAI):
 
     !!! note
 
-        Token storage is handled by `FileChatGPTOAuthTokenProvider`, which
+        Token storage is handled by `_FileChatGPTOAuthTokenProvider`, which
         defaults to `~/.langchain/chatgpt-auth.json` so it does not collide
         with the Codex CLI / VS Code session at `~/.codex/auth.json`.
 
@@ -270,8 +270,8 @@ class ChatOpenAICodex(ChatOpenAI):
     token_provider: Any = Field(default=None, exclude=True)
     """Refresh-aware ChatGPT OAuth token provider.
 
-    Must implement the `ChatGPTOAuthTokenProvider` protocol. If `None`, a
-    `FileChatGPTOAuthTokenProvider` rooted at the default store path is
+    Must implement the `_ChatGPTOAuthTokenProvider` protocol. If `None`, a
+    `_FileChatGPTOAuthTokenProvider` rooted at the default store path is
     constructed.
     """
 
@@ -280,14 +280,14 @@ class ChatOpenAICodex(ChatOpenAI):
 
     Identifies the client making the request. Defaults to `"langchain"` so
     OpenAI telemetry attributes calls to this package. Downstream consumers
-    (e.g., a framework built on top of `ChatOpenAICodex`) can override this
+    (e.g., a framework built on top of `_ChatOpenAICodex`) can override this
     to identify themselves instead, or set `None` to suppress the header.
 
     Resolution order (first match wins):
 
     1. Per-call `extra_headers={"originator": "..."}` (always trumps the
         field; pass an explicit value to override on a single call).
-    2. Constructor / kwarg value (`ChatOpenAICodex(originator="my-app")`).
+    2. Constructor / kwarg value (`_ChatOpenAICodex(originator="my-app")`).
     3. The `LANGCHAIN_CODEX_ORIGINATOR` env var, if set and non-empty.
     4. `ORIGINATOR_VALUE` (`"langchain"`).
 
@@ -303,7 +303,7 @@ class ChatOpenAICodex(ChatOpenAI):
     field is missing or empty (400 `Instructions are required`) **and**
     rejects any `SystemMessage` entry in the input list
     (400 `System messages are not allowed`). To bridge those constraints
-    transparently, `ChatOpenAICodex` resolves `instructions` per call with
+    transparently, `_ChatOpenAICodex` resolves `instructions` per call with
     this precedence (highest wins):
 
     1. Explicit `instructions=` kwarg on `invoke` / `stream`.
@@ -317,7 +317,7 @@ class ChatOpenAICodex(ChatOpenAI):
     between calls — useful for switching persona / tooling mid-conversation:
 
     ```python
-    model = ChatOpenAICodex(
+    model = _ChatOpenAICodex(
         model="gpt-5.5",
         instructions="You are a senior Python reviewer. Be terse.",
     )
@@ -345,7 +345,7 @@ class ChatOpenAICodex(ChatOpenAI):
             supplied = values.get(key)
             if supplied is not None and supplied != forced:
                 msg = (
-                    f"`ChatOpenAICodex` requires `{key}={forced!r}`; "
+                    f"`_ChatOpenAICodex` requires `{key}={forced!r}`; "
                     f"got `{key}={supplied!r}`. Use `ChatOpenAI` if you "
                     "need to customize this."
                 )
@@ -360,7 +360,7 @@ class ChatOpenAICodex(ChatOpenAI):
             supplied = values.get(key)
             if supplied is not None and supplied != CHATGPT_CODEX_BASE_URL:
                 msg = (
-                    f"`ChatOpenAICodex` requires `{key}={CHATGPT_CODEX_BASE_URL!r}`; "
+                    f"`_ChatOpenAICodex` requires `{key}={CHATGPT_CODEX_BASE_URL!r}`; "
                     f"got `{key}={supplied!r}`. Use `ChatOpenAI` if you need to "
                     "target a different endpoint."
                 )
@@ -369,12 +369,12 @@ class ChatOpenAICodex(ChatOpenAI):
 
         provider = values.get("token_provider")
         if provider is None:
-            provider = FileChatGPTOAuthTokenProvider.from_default_store()
+            provider = _FileChatGPTOAuthTokenProvider.from_default_store()
             values["token_provider"] = provider
-        if not isinstance(provider, ChatGPTOAuthTokenProvider):
+        if not isinstance(provider, _ChatGPTOAuthTokenProvider):
             msg = (
                 "`token_provider` must implement the "
-                "`ChatGPTOAuthTokenProvider` protocol."
+                "`_ChatGPTOAuthTokenProvider` protocol."
             )
             raise TypeError(msg)
 
@@ -388,7 +388,7 @@ class ChatOpenAICodex(ChatOpenAI):
         for key in ("api_key", "openai_api_key"):
             if values.get(key) is not None:
                 msg = (
-                    f"`ChatOpenAICodex` manages authentication via "
+                    f"`_ChatOpenAICodex` manages authentication via "
                     f"`token_provider`; drop the explicit `{key}=`. Use "
                     "`ChatOpenAI` if you want API-key authentication."
                 )
@@ -507,7 +507,7 @@ class ChatOpenAICodex(ChatOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """`ChatOpenAICodex` is not serializable (holds a live token provider)."""
+        """`_ChatOpenAICodex` is not serializable (holds a live token provider)."""
         return False
 
 
@@ -521,11 +521,11 @@ class _SyncTokenCallable:
 
     __slots__ = ("_provider",)
 
-    def __init__(self, provider: ChatGPTOAuthTokenProvider) -> None:
+    def __init__(self, provider: _ChatGPTOAuthTokenProvider) -> None:
         self._provider = provider
 
     def __call__(self) -> str:
         return self._provider.get_access_token()
 
 
-__all__ = ["ChatOpenAICodex"]
+__all__: list[str] = []

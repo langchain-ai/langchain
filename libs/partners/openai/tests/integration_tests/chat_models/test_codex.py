@@ -1,11 +1,11 @@
-"""Integration tests for `ChatOpenAICodex`.
+"""Integration tests for `_ChatOpenAICodex`.
 
 These tests exercise the ChatGPT subscription OAuth path against the
 `https://chatgpt.com/backend-api/codex` endpoint. They are recorded with
 VCR (cassettes live alongside, under `tests/cassettes/`) so CI replays
 them in `--record-mode=none` without a live token.
 
-`ChatOpenAICodex` forces `use_responses_api=True`, `store=False`, and
+`_ChatOpenAICodex` forces `use_responses_api=True`, `store=False`, and
 `streaming=True` at the wire level (`output_version` is a client-side
 projection and is *not* forced). The cassettes here are recorded with a
 single `output_version` for stability; per-projection coverage already
@@ -35,7 +35,8 @@ from langchain_core.tools import tool
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAICodex, custom_tool
+from langchain_openai import custom_tool
+from langchain_openai.chat_models.codex import _ChatOpenAICodex
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Iterator
@@ -101,7 +102,7 @@ async def _aaggregate(stream: AsyncIterator[BaseMessage]) -> AIMessageChunk:
 
 
 def test_codex_invoke() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke("Say hi in one word.")
     _check_response(response)
 
@@ -109,12 +110,12 @@ def test_codex_invoke() -> None:
 def test_codex_invoke_lifts_system_message_into_instructions() -> None:
     """`SystemMessage` content is lifted into top-level `instructions`.
 
-    Codex rejects `SystemMessage` chat turns; `ChatOpenAICodex` works
+    Codex rejects `SystemMessage` chat turns; `_ChatOpenAICodex` works
     around this by moving the `SystemMessage` content into the
     `instructions` field and stripping it from the input list. The model
     should respect the lifted instruction (here: respond with HELLO).
     """
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke(
         [
             SystemMessage("Respond with exactly one word: HELLO. No punctuation."),
@@ -127,7 +128,7 @@ def test_codex_invoke_lifts_system_message_into_instructions() -> None:
 
 def test_codex_invoke_with_instructions_override() -> None:
     """Per-call `instructions=` overrides the constructor value for one call."""
-    llm = ChatOpenAICodex(
+    llm = _ChatOpenAICodex(
         model=MODEL_NAME, instructions="You are an English assistant."
     )
     response = llm.invoke(
@@ -141,30 +142,30 @@ def test_codex_invoke_with_instructions_override() -> None:
 
 
 async def test_codex_invoke_async() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = await llm.ainvoke("Say hi in one word.")
     _check_response(response)
 
 
 def test_codex_stream() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     _check_response(_aggregate(llm.stream("Count to three.")))
 
 
 async def test_codex_stream_async() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     _check_response(await _aaggregate(llm.astream("Count to three.")))
 
 
 def test_codex_stream_events_v3() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     stream = cast("ChatModelStream", llm.stream_events("Count to three.", version="v3"))
     response = stream.output
     _check_response(response)
 
 
 async def test_codex_stream_events_v3_async() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     stream = await cast(
         "Awaitable[AsyncChatModelStream]",
         llm.astream_events("Count to three.", version="v3"),
@@ -180,7 +181,7 @@ async def test_codex_stream_events_v3_async() -> None:
 
 def test_codex_multi_turn_no_tools() -> None:
     """Pass full chat history (the backend is stateless for this client)."""
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     first = llm.invoke("My name is Bobo.")
     assert isinstance(first, AIMessage)
     second = llm.invoke(
@@ -205,7 +206,7 @@ def test_codex_function_calling() -> None:
         """Return x * y."""
         return x * y
 
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     bound = llm.bind_tools([multiply])
 
     ai_msg = cast(AIMessage, bound.invoke("What is 5 times 4?"))
@@ -227,7 +228,7 @@ def test_codex_agent_loop() -> None:
         """Get the weather for a location."""
         return "It's sunny."
 
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     bound = llm.bind_tools([get_weather])
 
     user_msg = HumanMessage("What is the weather in San Francisco, CA?")
@@ -247,7 +248,7 @@ def test_codex_agent_loop_streaming() -> None:
         """Get the weather for a location."""
         return "It's sunny."
 
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     bound = llm.bind_tools([get_weather])
 
     user_msg = HumanMessage("What is the weather in San Francisco, CA?")
@@ -266,9 +267,9 @@ def test_codex_custom_tool() -> None:
         """Execute Python code and return the result."""
         return "27"
 
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS).bind_tools(
-        [execute_code]
-    )
+    llm = _ChatOpenAICodex(
+        model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS
+    ).bind_tools([execute_code])
 
     input_message = {
         "role": "user",
@@ -288,7 +289,7 @@ def test_codex_custom_tool() -> None:
 
 def test_codex_reasoning() -> None:
     """`reasoning={'effort': 'low'}` produces a reasoning block in content."""
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke("What is 2 + 2?", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
     block_types = [
@@ -299,7 +300,7 @@ def test_codex_reasoning() -> None:
 
 def test_codex_reasoning_summary_streaming() -> None:
     """`reasoning.summary='auto'` carries a populated summary list."""
-    llm = ChatOpenAICodex(
+    llm = _ChatOpenAICodex(
         model=MODEL_NAME,
         instructions=TERSE_INSTRUCTIONS,
         reasoning={"effort": "medium", "summary": "auto"},
@@ -347,7 +348,7 @@ class FooDict(TypedDict):
 
 
 def test_codex_structured_output_pydantic() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke("Say hi.", response_format=Foo)
     parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
@@ -355,7 +356,7 @@ def test_codex_structured_output_pydantic() -> None:
 
 
 def test_codex_structured_output_typed_dict() -> None:
-    llm = ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
+    llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke("Say hi.", response_format=FooDict)
     parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]

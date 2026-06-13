@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests for `ChatOpenAICodex`.
+"""Standard LangChain interface tests for `_ChatOpenAICodex`.
 
 Drives the full `ChatModelIntegrationTests` suite against the Codex
 backend. The module-level `pytestmark = pytest.mark.vcr` makes every
@@ -23,7 +23,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
-from langchain_openai import ChatOpenAICodex
+from langchain_openai.chat_models.codex import _ChatOpenAICodex
 
 pytestmark = pytest.mark.vcr
 
@@ -42,7 +42,7 @@ class TestChatOpenAICodexStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
-        return ChatOpenAICodex
+        return _ChatOpenAICodex
 
     @property
     def chat_model_params(self) -> dict:
@@ -120,7 +120,7 @@ class TestChatOpenAICodexStandard(ChatModelIntegrationTests):
     # -- Helpers used by the shared suite ---------------------------------
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        llm = ChatOpenAICodex(
+        llm = _ChatOpenAICodex(
             model=MODEL_NAME,
             instructions=TERSE_INSTRUCTIONS,
             reasoning={"effort": "medium", "summary": "auto"},
@@ -148,7 +148,7 @@ class TestChatOpenAICodexStandard(ChatModelIntegrationTests):
         super().test_structured_few_shot_examples(model, my_adder_tool)
 
 
-def _invoke(llm: ChatOpenAICodex, prompt: str, stream: bool) -> AIMessage:
+def _invoke(llm: _ChatOpenAICodex, prompt: str, stream: bool) -> AIMessage:
     if stream:
         full = None
         for chunk in llm.stream(prompt):
