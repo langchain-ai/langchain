@@ -687,6 +687,7 @@ class _AstreamEventsCallbackHandler(
                 "event": "on_tool_start",
                 "data": {
                     "input": inputs or {},
+                    "tool_call_id": kwargs.get("tool_call_id"),
                 },
                 "name": name_,
                 "tags": tags or [],
