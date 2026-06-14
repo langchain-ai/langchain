@@ -206,7 +206,7 @@ class BaseLanguageModel(
     def model_post_init(self, _context: Any, /) -> None:
         """Pydantic V2 lifecycle hook called automatically after `__init__`.
 
-        Seeds `metadata["versions"]` with the installed `langchain-core`
+        Seeds `metadata["lc_versions"]` with the installed `langchain-core`
         (and `langchain`, if installed) versions so that every LLM trace
         carries the package versions that produced it.
 
@@ -235,7 +235,7 @@ class BaseLanguageModel(
             self._add_version("langchain", langchain_version)
 
     def _add_version(self, pkg: str, version: str) -> None:
-        """Record a package version in `metadata.versions` for tracing.
+        """Record a package version in `metadata.lc_versions` for tracing.
 
         Each layer in the class hierarchy (core -> langchain -> partner)
         calls this so that the resulting metadata dict accumulates *all*
@@ -245,7 +245,7 @@ class BaseLanguageModel(
 
         ```python
         {
-            "versions": {
+            "lc_versions": {
                 "langchain-core": "1.x.x",
                 "langchain": "1.x.x",
                 "langchain-openai": "1.x.x",
@@ -259,15 +259,15 @@ class BaseLanguageModel(
         """
         if self.metadata is None:
             self.metadata = {}
-        existing = self.metadata.get("versions")
+        existing = self.metadata.get("lc_versions")
         if existing is not None and not isinstance(existing, Mapping):
             warnings.warn(
-                f"metadata['versions'] expected a dict, got "
+                f"metadata['lc_versions'] expected a dict, got "
                 f"{type(existing).__name__}; overwriting with package version dict",
                 stacklevel=2,
             )
             existing = None
-        self.metadata["versions"] = {
+        self.metadata["lc_versions"] = {
             **(existing if isinstance(existing, Mapping) else {}),
             pkg: version,
         }

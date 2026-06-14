@@ -45,7 +45,7 @@ def _assert_no_secret_leak(payload: Any) -> None:
     serialized = dumps(payload)
 
     # Deserialize with secrets_from_env=True (the dangerous setting)
-    deserialized = load(serialized, secrets_from_env=True)
+    deserialized = load(serialized, allowed_objects="core", secrets_from_env=True)
 
     # Re-serialize to string
     reserialized = dumps(deserialized)
@@ -198,7 +198,7 @@ class TestPydanticModelTopLevel:
         msg = AIMessage(content=[], additional_kwargs={"parsed": payload})
         gen = ChatGeneration(message=msg)
         _assert_no_secret_leak(gen)
-        round_trip = load(dumpd(gen))
+        round_trip = load(dumpd(gen), allowed_objects="core")
         assert MyModel(**(round_trip.message.additional_kwargs["parsed"])) == payload
 
     def test_pydantic_model_with_nested_secret(self) -> None:
@@ -280,7 +280,7 @@ class TestRoundTrip:
         )
 
         serialized = dumpd(msg)
-        deserialized = load(serialized, secrets_from_env=True)
+        deserialized = load(serialized, allowed_objects="core", secrets_from_env=True)
 
         # The secret-like dict should be preserved as a plain dict
         assert deserialized.additional_kwargs["data"] == MALICIOUS_SECRET_DICT
@@ -307,7 +307,7 @@ class TestRoundTrip:
         payload = {"data": MALICIOUS_SECRET_DICT}
 
         serialized = dumpd(payload)
-        deserialized = load(serialized, secrets_from_env=True)
+        deserialized = load(serialized, allowed_objects="core", secrets_from_env=True)
 
         # The secret-like dict should be preserved as a plain dict
         assert deserialized["data"] == MALICIOUS_SECRET_DICT
@@ -421,7 +421,6 @@ def test_allowed_objects() -> None:
     # Core object
     msg = AIMessage(content="foo")
     serialized = dumpd(msg)
-    assert load(serialized) == msg
     assert load(serialized, allowed_objects=[AIMessage]) == msg
     assert load(serialized, allowed_objects="core") == msg
 

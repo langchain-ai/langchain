@@ -55,10 +55,10 @@ test = [
     "syrupy>=5.0.0,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2,<2.0.0",
-    "langchain-core>=1.4.6,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
-test_integration = ["langchain-core>=1.4.6,<2.0.0"]
+test_integration = ["langchain-core>=1.4.7,<2.0.0"]
 
 lint = [
     "ruff>=0.15.0,<0.16.0",

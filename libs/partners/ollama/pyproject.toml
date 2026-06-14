@@ -24,7 +24,7 @@ version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "ollama>=0.6.1,<1.0.0",
-    "langchain-core>=1.4.6,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
 [project.urls]

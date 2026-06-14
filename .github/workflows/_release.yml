@@ -39,6 +39,17 @@ on:
           transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
           in by an alpha langgraph) resolve. Use only when the release itself
           is a prerelease and at least one dep is also a prerelease."
+      # `workflow_call` callers must pass an exact lowercase value: `none` or a
+      # partner name from the `test-prior-published-packages-against-new-core`
+      # matrix (or `all`). Unrecognized values fail safe (the check still runs).
+      # Keep this list in sync with that matrix and the `workflow_dispatch`
+      # `options` below.
+      skip-prior-published-package-checks:
+        required: false
+        type: string
+        default: "none"
+        description: "Prior published partner check to skip for core releases:
+          none, anthropic, openai, or all."
   workflow_dispatch:
     inputs:
       working-directory:
@@ -95,6 +106,16 @@ on:
           transitive prerelease deps (e.g. langgraph-checkpoint>=4.1.0a3 pulled
           in by an alpha langgraph) resolve. Use only when the release itself
           is a prerelease and at least one dep is also a prerelease."
+      skip-prior-published-package-checks:
+        required: false
+        type: choice
+        default: none
+        description: "Prior published partner check to skip for core releases"
+        options:
+          - none
+          - anthropic
+          - openai
+          - all
 
 env:
   PYTHON_VERSION: "3.11"
@@ -138,6 +159,32 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
+
+      - name: Summarize release bypasses
+        if: >-
+          inputs.dangerous-nonmaster-release || inputs.allow-prereleases ||
+          inputs.skip-prior-published-package-checks != 'none'
+        env:
+          ALLOW_PRERELEASES: ${{ inputs.allow-prereleases }}
+          DANGEROUS_NONMASTER_RELEASE: ${{ inputs.dangerous-nonmaster-release }}
+          SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS: ${{ inputs.skip-prior-published-package-checks }}
+        run: |
+          echo "::warning::Release bypass input(s) enabled. See job summary."
+          {
+            echo "## ⚠️ Release bypasses enabled"
+            echo
+            echo "One or more release safety bypasses were selected for this run:"
+            echo
+            if [ "$DANGEROUS_NONMASTER_RELEASE" = "true" ]; then
+              echo "- \`dangerous-nonmaster-release\`: release jobs may run from a non-\`master\` ref."
+            fi
+            if [ "$ALLOW_PRERELEASES" = "true" ]; then
+              echo "- \`allow-prereleases\`: install checks use \`--prerelease=allow\`."
+            fi
+            if [ -n "$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS" ] && [ "$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS" != "none" ]; then
+              echo "- \`skip-prior-published-package-checks\`: \`$SKIP_PRIOR_PUBLISHED_PACKAGE_CHECKS\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check version
         id: check-version
@@ -547,6 +594,9 @@ jobs:
       contents: read
     strategy:
       matrix:
+        # When adding a partner, also update the `skip-prior-published-package-checks`
+        # input (the `workflow_dispatch` `options` list and the `workflow_call`
+        # description) so the per-partner skip remains selectable.
         partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
     env:
@@ -588,32 +638,95 @@ jobs:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
+      - name: Skip prior published ${{ matrix.partner }} check
+        if: >-
+          startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') &&
+          (inputs.skip-prior-published-package-checks == matrix.partner ||
+          inputs.skip-prior-published-package-checks == 'all')
+        run: |
+          echo "Skipping prior published ${{ matrix.partner }} check as requested."
+
       - name: Test against ${{ matrix.partner }}
-        if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
+        if: >-
+          startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') &&
+          inputs.skip-prior-published-package-checks != matrix.partner &&
+          inputs.skip-prior-published-package-checks != 'all'
         env:
+          PARTNER: ${{ matrix.partner }}
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
-          # Identify latest tag, excluding pre-releases
-          LATEST_PACKAGE_TAG="$(
-            git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
-            | awk '{print $2}' \
-            | sed 's|refs/tags/||' \
-            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
-            | sort -Vr \
-            | head -n 1
+          PACKAGE_NAME="langchain-$PARTNER"
+
+          # Identify the latest non-yanked published package release, excluding pre-releases.
+          # Fail closed (matching the `Check version` step) so a PyPI outage or a
+          # missing release aborts with a clear message rather than an empty version.
+          LATEST_PACKAGE_VERSION="$(PACKAGE_NAME="$PACKAGE_NAME" python - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.request
+
+          package_name = os.environ["PACKAGE_NAME"]
+          url = f"https://pypi.org/pypi/{package_name}/json"
+          try:
+              with urllib.request.urlopen(url, timeout=10) as response:
+                  data = json.load(response)
+          except urllib.error.HTTPError as err:
+              print(
+                  f"::error::PyPI returned HTTP {err.code} listing {package_name} "
+                  f"releases; cannot determine latest version, aborting.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          except urllib.error.URLError as err:
+              print(
+                  f"::error::Could not reach PyPI to list {package_name} releases "
+                  f"({err.reason}); cannot determine latest version, aborting.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          versions: list[tuple[int, int, int, str]] = []
+          for version, files in data["releases"].items():
+              if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+                  continue
+              if not files or all(file.get("yanked", False) for file in files):
+                  continue
+              versions.append((*map(int, version.split(".")), version))
+
+          if not versions:
+              print(f"::error::No non-yanked final releases found for {package_name}", file=sys.stderr)
+              sys.exit(1)
+
+          print(max(versions)[3])
+          PY
           )"
-          echo "Latest package tag: $LATEST_PACKAGE_TAG"
+
+          # Belt-and-suspenders: a bare assignment masks the heredoc's exit status
+          # in some shells, so guard explicitly rather than relying on `set -e`.
+          if [ -z "$LATEST_PACKAGE_VERSION" ]; then
+            echo "::error::Could not determine latest published $PACKAGE_NAME version; aborting."
+            exit 1
+          fi
+
+          LATEST_PACKAGE_TAG="$PACKAGE_NAME==$LATEST_PACKAGE_VERSION"
+          echo "Latest non-yanked package tag: $LATEST_PACKAGE_TAG"
+
+          # Ensure the PyPI release maps to a source tag before running tests.
+          git ls-remote --exit-code --tags origin "refs/tags/$LATEST_PACKAGE_TAG"
 
           # Shallow-fetch just that single tag
           git fetch --depth=1 origin tag "$LATEST_PACKAGE_TAG"
 
           # Checkout the latest package files
-          rm -rf $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}/*
+          rm -rf "$GITHUB_WORKSPACE/libs/partners/$PARTNER"/*
           rm -rf $GITHUB_WORKSPACE/libs/standard-tests/*
           cd $GITHUB_WORKSPACE/libs/
           git checkout "$LATEST_PACKAGE_TAG" -- standard-tests/
-          git checkout "$LATEST_PACKAGE_TAG" -- partners/${{ matrix.partner }}/
-          cd partners/${{ matrix.partner }}
+          git checkout "$LATEST_PACKAGE_TAG" -- "partners/$PARTNER/"
+          cd "partners/$PARTNER"
 
           # Print as a sanity check
           echo "Version number from pyproject.toml: "
