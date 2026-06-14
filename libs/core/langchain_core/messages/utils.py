@@ -772,7 +772,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             msg_type, msg_content, **msg_kwargs
         )
     else:
-        msg = f"Unsupported message type: {type(message)}"
+        msg = f"Unsupported message type: {type(message)}"  # type: ignore[unreachable]
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise NotImplementedError(msg)
 
@@ -1477,7 +1477,7 @@ def trim_messages(
         else:
             list_token_counter = actual_token_counter
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(actual_token_counter)}."
@@ -1512,7 +1512,7 @@ def trim_messages(
             end_on=end_on,
             text_splitter=text_splitter_fn,
         )
-    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."  # type: ignore[unreachable]
     raise ValueError(msg)
 
 
@@ -2329,10 +2329,10 @@ def count_tokens_approximately(
                         message_chars += len(repr(block))
                 else:
                     # Fallback for unexpected block types
-                    message_chars += len(repr(block))
+                    message_chars += len(repr(block))  # type: ignore[unreachable]
         else:
             # Fallback for other content types
-            content = repr(message.content)
+            content = repr(message.content)  # type: ignore[unreachable]
             message_chars += len(content)
 
         if (

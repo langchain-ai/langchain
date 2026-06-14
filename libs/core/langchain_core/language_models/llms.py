@@ -151,7 +151,7 @@ def _resolve_cache(*, cache: BaseCache | bool | None) -> BaseCache | None:
     elif cache is False:
         llm_cache = None
     else:
-        msg = f"Unsupported cache value {cache}"
+        msg = f"Unsupported cache value {cache}"  # type: ignore[unreachable]
         raise ValueError(msg)
     return llm_cache
 
@@ -325,7 +325,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return StringPromptValue(text=model_input)
         if isinstance(model_input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(model_input))
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
@@ -906,7 +906,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 input prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "Argument 'prompts' is expected to be of type list[str], received"
                 f" argument of type {type(prompts)}."
             )

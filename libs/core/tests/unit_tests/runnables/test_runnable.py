@@ -3826,7 +3826,8 @@ def _empty_mapper_assign() -> RunnableAssign:
         async for _ in it:
             pass
         return
-        yield  # pragma: no cover  # make this an async generator function
+        # make this an async generator function
+        yield  # type: ignore[unreachable]  # pragma: no cover
 
     return RunnablePassthrough.assign(foo=RunnableGenerator(empty_gen, aempty_gen))
 

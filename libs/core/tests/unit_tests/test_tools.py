@@ -73,6 +73,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
     create_model_v2,
+    model_json_schema,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import (
@@ -98,7 +99,7 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict[str, Any]:
         return tool_schema.model_json_schema()
     if issubclass(tool_schema, BaseModelV1):
         return tool_schema.schema()
-    return {}
+    return {}  # type: ignore[unreachable]
 
 
 def test_unnamed_decorator() -> None:
@@ -2091,13 +2092,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     }
 
     input_schema = tool.get_input_schema()
-    if issubclass(input_schema, BaseModel):
-        input_json_schema = input_schema.model_json_schema()
-    elif issubclass(input_schema, BaseModelV1):
-        input_json_schema = input_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    input_json_schema = model_json_schema(input_schema)
 
     assert input_json_schema == {
         "properties": {
@@ -2268,14 +2263,9 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast("type[BaseModel]", foo_tool.args_schema)
-    if issubclass(args_schema, BaseModel):
-        args_json_schema = args_schema.model_json_schema()
-    elif issubclass(args_schema, BaseModelV1):
-        args_json_schema = args_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    args_schema = cast("TypeBaseModel", foo_tool.args_schema)
+    args_json_schema = model_json_schema(args_schema)
+
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2287,13 +2277,8 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    if issubclass(input_schema, BaseModel):
-        input_json_schema = input_schema.model_json_schema()
-    elif issubclass(input_schema, BaseModelV1):
-        input_json_schema = input_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    input_json_schema = model_json_schema(input_schema)
+
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2364,20 +2349,21 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     if use_v1_namespace:
         if sys.version_info >= (3, 14):
             pytest.skip("pydantic.v1 namespace not supported with Python 3.14+")
+        else:
 
-        class ModelA(BaseModelV1, Generic[A], extra="allow"):
-            a: A
+            class ModelA(BaseModelV1, Generic[A], extra="allow"):
+                a: A
 
-        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
-            pass
+            class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+                pass
 
     else:
 
-        class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef, unused-ignore]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef, unused-ignore]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):

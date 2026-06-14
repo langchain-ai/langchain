@@ -321,7 +321,7 @@ def _compute_allowed_class_paths(
         if not isinstance(allowed_obj, type) or not issubclass(
             allowed_obj, Serializable
         ):
-            msg = "allowed_objects must contain Serializable subclasses."
+            msg = "allowed_objects must contain Serializable subclasses."  # type: ignore[unreachable]
             raise TypeError(msg)
 
         class_path = tuple(allowed_obj.lc_id())

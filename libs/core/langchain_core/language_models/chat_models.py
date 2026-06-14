@@ -453,7 +453,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return StringPromptValue(text=model_input)
         if isinstance(model_input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(model_input))
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
@@ -1223,7 +1223,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             async with start_lock:
                 if stream._producer_task is not None:  # noqa: SLF001
-                    return
+                    return  # type: ignore[unreachable]
 
                 (run_manager,) = await callback_manager.on_chat_model_start(
                     self._serialized,

@@ -178,7 +178,7 @@ class _EmptyStreamModel(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         del messages, stop, run_manager, kwargs
         if False:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))  # type: ignore[unreachable]
 
     async def _astream(
         self,
@@ -189,7 +189,7 @@ class _EmptyStreamModel(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         del messages, stop, run_manager, kwargs
         if False:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))  # type: ignore[unreachable]
 
 
 class TestCallbacks:

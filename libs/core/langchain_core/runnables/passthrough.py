@@ -487,7 +487,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         return {
@@ -516,7 +516,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         return {
@@ -570,7 +570,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # consume passthrough stream
             for chunk in for_passthrough:
                 if not isinstance(chunk, dict):
-                    msg = "The input to RunnablePassthrough.assign() must be a dict."
+                    msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
                     raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
@@ -623,7 +623,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         # consume passthrough stream
         async for chunk in for_passthrough:
             if not isinstance(chunk, dict):
-                msg = "The input to RunnablePassthrough.assign() must be a dict."
+                msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
                 raise ValueError(msg)  # noqa: TRY004
 
             # remove mapper keys from passthrough chunk, to be overwritten by map output
@@ -749,7 +749,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
 
     def _pick(self, value: dict[str, Any]) -> Any:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
