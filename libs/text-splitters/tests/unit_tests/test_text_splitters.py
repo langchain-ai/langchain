@@ -3052,6 +3052,124 @@ def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
 
 @pytest.mark.requires("bs4")
 @pytest.mark.requires("lxml")
+def test_html_section_splitter_does_not_expose_title_sentinel() -> None:
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <p>Intro before header.</p>
+                <h1>Header</h1>
+                <p>Body.</p>
+            </body>
+            </html>"""
+
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert docs[0].page_content == "Intro before header."
+    assert docs[0].metadata == {}
+    assert docs[1].metadata == {"Header 1": "Header"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_uses_parent_title_when_available() -> None:
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <p>Intro before header.</p>
+                <h1>Header</h1>
+                <p>Body.</p>
+            </body>
+            </html>"""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.create_documents(
+        [html_string], metadatas=[{"Title": "Parent title", "source": "example"}]
+    )
+
+    assert docs[0].metadata == {
+        "Header 1": "Parent title",
+        "Title": "Parent title",
+        "source": "example",
+    }
+    assert docs[1].metadata == {
+        "Header 1": "Header",
+        "Title": "Parent title",
+        "source": "example",
+    }
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_create_documents_without_parent_title() -> None:
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <p>Intro before header.</p>
+                <h1>Header</h1>
+                <p>Body.</p>
+            </body>
+            </html>"""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.create_documents(
+        [html_string], metadatas=[{"source": "example"}]
+    )
+
+    assert docs[0].metadata == {"source": "example"}
+    assert docs[1].metadata == {"Header 1": "Header", "source": "example"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_create_documents_without_configured_h1() -> None:
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <p>Intro before header.</p>
+                <h2>Header</h2>
+                <p>Body.</p>
+            </body>
+            </html>"""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h2", "Header 2")])
+
+    docs = sec_splitter.create_documents(
+        [html_string], metadatas=[{"Title": "Parent title", "source": "example"}]
+    )
+
+    assert docs[0].metadata == {"Title": "Parent title", "source": "example"}
+    assert docs[1].metadata == {
+        "Header 2": "Header",
+        "Title": "Parent title",
+        "source": "example",
+    }
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_copies_metadata_per_chunk() -> None:
+    html_string = """<!DOCTYPE html>
+            <html>
+            <body>
+                <h1>First</h1>
+                <p>First body.</p>
+                <h1>Second</h1>
+                <p>Second body.</p>
+            </body>
+            </html>"""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.create_documents(
+        [html_string], metadatas=[{"nested": {"value": "original"}}]
+    )
+    docs[0].metadata["nested"]["value"] = "changed"
+
+    assert docs[1].metadata["nested"] == {"value": "original"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_happy_path_splitting_based_on_header_with_font_size() -> None:
     # arrange
     html_string = """<!DOCTYPE html>

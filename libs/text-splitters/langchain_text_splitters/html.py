@@ -21,6 +21,9 @@ from typing_extensions import override
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
+_HTML_TITLE_SENTINEL = "#TITLE#"
+_MISSING = object()
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
@@ -432,16 +435,38 @@ class HTMLSectionSplitter:
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text):
-                metadata = copy.deepcopy(metadatas_[i])
-
-                for key in chunk.metadata:
-                    if chunk.metadata[key] == "#TITLE#":
-                        chunk.metadata[key] = metadata["Title"]
-                metadata = {**metadata, **chunk.metadata}
-                new_doc = Document(page_content=chunk.page_content, metadata=metadata)
+            file_content = self.convert_possible_tags_to_header(text)
+            for section in self.split_html_by_headers(file_content):
+                base_metadata = copy.deepcopy(metadatas_[i])
+                section_metadata = self._section_metadata(
+                    section,
+                    document_title=base_metadata.get("Title", _MISSING),
+                )
+                metadata = {**base_metadata, **section_metadata}
+                new_doc = Document(
+                    page_content=cast("str", section["content"]), metadata=metadata
+                )
                 documents.append(new_doc)
         return documents
+
+    def _section_metadata(
+        self,
+        section: dict[str, str | None],
+        *,
+        document_title: object = _MISSING,
+    ) -> dict[str, object]:
+        tag_name = section["tag_name"]
+        header = section["header"]
+        if tag_name is None or header is None:
+            return {}
+        metadata_key = self.headers_to_split_on.get(str(tag_name))
+        if metadata_key is None:
+            return {}
+        if header == _HTML_TITLE_SENTINEL:
+            if document_title is _MISSING:
+                return {}
+            header = document_title
+        return {metadata_key: header}
 
     def split_html_by_headers(self, html_doc: str) -> list[dict[str, str | None]]:
         """Split an HTML document into sections based on specified header tags.
@@ -479,7 +504,7 @@ class HTMLSectionSplitter:
 
         for i, header in enumerate(headers):
             if i == 0:
-                current_header = "#TITLE#"
+                current_header = _HTML_TITLE_SENTINEL
                 current_header_tag = "h1"
                 section_content: list[str] = []
             else:
@@ -557,11 +582,7 @@ class HTMLSectionSplitter:
         return [
             Document(
                 cast("str", section["content"]),
-                metadata={
-                    self.headers_to_split_on[str(section["tag_name"])]: section[
-                        "header"
-                    ]
-                },
+                metadata=self._section_metadata(section),
             )
             for section in sections
         ]
