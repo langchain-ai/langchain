@@ -2320,6 +2320,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def _dict_for_compat(self) -> builtins.dict[str, Any]:
         """Return the chat model dictionary while preserving deprecated overrides."""
+        if type(self).dict is BaseChatModel.dict:
+            return self.asdict()
         with suppress_langchain_deprecation_warning():
             return self.dict()
 

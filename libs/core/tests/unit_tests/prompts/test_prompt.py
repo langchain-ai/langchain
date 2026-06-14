@@ -1,6 +1,7 @@
 """Test functionality related to prompts."""
 
 import re
+import warnings
 from tempfile import NamedTemporaryFile
 from typing import Any, Literal
 from unittest import mock
@@ -26,6 +27,14 @@ def test_asdict_replaces_deprecated_dict() -> None:
     assert prompt_dict["_type"] == "prompt"
     with pytest.warns(LangChainDeprecationWarning, match="asdict"):
         assert prompt.dict() == prompt_dict
+
+
+def test_dict_for_compat_uses_asdict_without_deprecation_warning() -> None:
+    prompt = PromptTemplate.from_template("This is a {foo} test.")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        assert prompt._dict_for_compat() == prompt.asdict()
 
 
 def test_prompt_valid() -> None:

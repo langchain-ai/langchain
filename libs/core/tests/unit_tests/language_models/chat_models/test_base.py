@@ -111,6 +111,14 @@ def test_base_chat_model_type_hints_resolve() -> None:
     assert get_type_hints(BaseChatModel.asdict)["return"] == dict[str, Any]
 
 
+def test_dict_for_compat_uses_asdict_without_deprecation_warning() -> None:
+    model = FakeListChatModel(responses=["foo"])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        assert model._dict_for_compat() == model.asdict()
+
+
 def test_invoke_preserves_deprecated_dict_override() -> None:
     """Invoking should preserve `dict()` overrides until `dict()` is removed."""
 

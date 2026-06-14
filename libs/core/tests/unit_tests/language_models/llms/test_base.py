@@ -38,6 +38,14 @@ def test_base_llm_type_hints_resolve() -> None:
     assert get_type_hints(BaseLLM.asdict)["return"] == dict[str, Any]
 
 
+def test_dict_for_compat_uses_asdict_without_deprecation_warning() -> None:
+    llm = FakeListLLM(responses=["foo"])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        assert llm._dict_for_compat() == llm.asdict()
+
+
 def test_invoke_preserves_deprecated_dict_override() -> None:
     """Invoking should preserve `dict()` overrides until `dict()` is removed."""
 
