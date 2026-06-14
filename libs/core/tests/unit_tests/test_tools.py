@@ -3946,3 +3946,29 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+def test_tool_infer_schema_false_description() -> None:
+    """Test that description and docstring fallbacks work when infer_schema=False."""
+
+    @tool(description="Explicit description", infer_schema=False)
+    def my_tool_with_desc(query: str) -> str:
+        """My tool docstring."""
+        return query
+
+    assert my_tool_with_desc.description == "Explicit description"
+
+    @tool(infer_schema=False)
+    def my_tool_with_docstring(query: str) -> str:
+        """My tool docstring."""
+        return query
+
+    assert my_tool_with_docstring.description == "My tool docstring."
+
+    with pytest.raises(
+        ValueError,
+        match="Either 'description' or a function docstring must be provided",
+    ):
+        @tool(infer_schema=False)
+        def my_tool_no_desc(query: str) -> str:
+            return query
