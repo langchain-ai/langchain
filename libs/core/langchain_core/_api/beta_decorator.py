@@ -148,6 +148,11 @@ def beta(
             _name = _name or (obj.fget and obj.fget.__qualname__) or "<property>"
             old_doc = obj.__doc__
 
+            # `obj.fget`/`fset`/`fdel` are typed `Callable | None`, so the `and`
+            # short-circuits guard the calls for the type checker. Each wrapper is
+            # only installed when its accessor is truthy (see `finalize` below), so
+            # the guards never short-circuit at runtime — do not "simplify" them
+            # away or mypy's `warn_unreachable` will flag the accessor as `None`.
             def _fget(instance: Any) -> Any:
                 if instance is not None:
                     emit_warning()
