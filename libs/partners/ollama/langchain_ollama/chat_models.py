@@ -738,6 +738,17 @@ class ChatOllama(BaseChatModel):
     For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
+    # Retry configuration
+    max_retries: int | None = None
+    """Optional maximum number of retry attempts for transient client errors.
+
+    If None (default) no retries are performed. If set to an integer N, the client
+    will attempt the request up to N times (initial attempt + N-1 retries).
+    """
+
+    retry_backoff: float | None = 0.5
+    """Base backoff in seconds used for exponential backoff between retry attempts."""
+
     _client: Client = PrivateAttr()
     """The client to use for making requests."""
 
@@ -1095,25 +1106,73 @@ class ChatOllama(BaseChatModel):
 
         return ollama_messages
 
-    async def _acreate_chat_stream(
-        self,
-        messages: list[BaseMessage],
-        stop: list[str] | None = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[Mapping[str, Any] | str]:
+    async def _async_client_chat_with_retries(self, **chat_params: Any) -> AsyncIterator[Mapping[str, Any] | str] | Any:
+        """Call the async client chat with optional retries.
+
+        Retries are applied to the initial call that obtains either an iterator
+        (for streaming) or a single response (non-streaming). Mid-stream errors are
+        propagated to the caller.
+        """
         if not self._async_client:
             msg = (
                 "Ollama async client is not initialized. "
                 "Make sure the model was properly constructed."
             )
             raise RuntimeError(msg)
+        retries = int(self.max_retries) if self.max_retries else 0
+        backoff = float(self.retry_backoff or 0.5)
+        attempt = 0
+        while True:
+            try:
+                result = await self._async_client.chat(**chat_params)
+                return result
+            except Exception as e:
+                attempt += 1
+                if attempt > retries:
+                    raise
+                await __import__("asyncio").sleep(backoff * (2 ** (attempt - 1)))
+
+    def _client_chat_with_retries(self, **chat_params: Any) -> Iterator[Mapping[str, Any] | str] | Any:
+        """Call the sync client chat with optional retries.
+
+        Retries are applied to the initial call that obtains either an iterator
+        (for streaming) or a single response (non-streaming). Mid-stream errors are
+        propagated to the caller.
+        """
+        if not self._client:
+            msg = (
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
+        retries = int(self.max_retries) if self.max_retries else 0
+        backoff = float(self.retry_backoff or 0.5)
+        attempt = 0
+        while True:
+            try:
+                result = self._client.chat(**chat_params)
+                return result
+            except Exception as e:
+                attempt += 1
+                if attempt > retries:
+                    raise
+                import time
+
+                time.sleep(backoff * (2 ** (attempt - 1)))
+
+    async def _acreate_chat_stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[Mapping[str, Any] | str]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            async for part in await self._async_client.chat(**chat_params):
+            async for part in await self._async_client_chat_with_retries(**chat_params):
                 yield part
         else:
-            yield await self._async_client.chat(**chat_params)
+            yield await self._async_client_chat_with_retries(**chat_params)
 
     def _create_chat_stream(
         self,
@@ -1121,18 +1180,13 @@ class ChatOllama(BaseChatModel):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[Mapping[str, Any] | str]:
-        if not self._client:
-            msg = (
-                "Ollama sync client is not initialized. "
-                "Make sure the model was properly constructed."
-            )
-            raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
-            yield from self._client.chat(**chat_params)
+            for part in self._client_chat_with_retries(**chat_params):
+                yield part
         else:
-            yield self._client.chat(**chat_params)
+            yield self._client_chat_with_retries(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
