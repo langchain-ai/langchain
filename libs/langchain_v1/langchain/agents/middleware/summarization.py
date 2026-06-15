@@ -799,7 +799,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         # Format messages to avoid token inflation from metadata when str() is called on
         # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        formatted_messages = get_buffer_string(trimmed_messages, format='xml')
 
         try:
             response = self.model.invoke(
@@ -825,7 +825,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         # Format messages to avoid token inflation from metadata when str() is called on
         # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        formatted_messages = get_buffer_string(trimmed_messages, format='xml')
 
         try:
             response = await self.model.ainvoke(
