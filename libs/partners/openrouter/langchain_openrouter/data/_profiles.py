@@ -2687,7 +2687,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "name": "MiniMax-M3",
         "release_date": "2026-06-01",
         "last_updated": "2026-06-01",
-        "open_weights": False,
+        "open_weights": True,
         "max_input_tokens": 524288,
         "max_output_tokens": 512000,
         "text_inputs": True,
