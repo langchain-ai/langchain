@@ -244,6 +244,36 @@ def _format_content_block_xml(block: dict[str, Any]) -> str | None:
     return None
 
 
+def _format_content_block_prefix(block: dict[str, Any]) -> str | None:
+    """Format a multimodal content block as human-readable text for prefix format.
+
+    Returns `None` for text/reasoning blocks (text is sourced from `message.text`),
+    base64-encoded media, and block types without a human-readable reference.
+    """
+    block_type = block.get("type", "")
+
+    if block_type in {"text", "reasoning"} or _has_base64_data(block):
+        return None
+
+    # OpenAI-style image_url blocks
+    if block_type == "image_url":
+        image_url = block.get("image_url", {})
+        if isinstance(image_url, dict):
+            url = image_url.get("url", "")
+            if url and not url.startswith("data:"):
+                return f"[image: {url}]"
+        return None
+
+    # Standard image/audio/video blocks (URL or file_id, base64 already filtered)
+    if block_type in {"image", "audio", "video"}:
+        ref = block.get("url") or block.get("file_id")
+        if ref:
+            return f"[{block_type}: {ref}]"
+        return None
+
+    return None
+
+
 def _get_message_type_str(
     m: BaseMessage,
     human_prefix: str,
@@ -306,8 +336,9 @@ def get_buffer_string(
         tool_prefix: The prefix to prepend to contents of `ToolMessage`s.
         message_separator: The separator to use between messages.
         format: The output format. `'prefix'` uses `Role: content` format (default).
-            For multimodal messages, only string content and `text` blocks are
-            included; non-text blocks such as images, audio, and video are omitted.
+            For multimodal messages, `text` blocks are included as-is and
+            non-base64 image, audio, and video blocks are appended as a
+            human-readable reference (e.g. `[image: <url>]`).
 
             `'xml'` uses XML-style `<message type='role'>` format with proper
             character escaping, which is useful when message content may
@@ -495,7 +526,17 @@ def get_buffer_string(
                     f"<message type={quoteattr(msg_type)}>{joined_content}</message>"
                 )
         else:  # format == "prefix"
-            content = m.text
+            content: str = m.text
+            if not isinstance(m.content, str):
+                media_parts = [
+                    formatted
+                    for block in m.content
+                    if isinstance(block, dict)
+                    and (formatted := _format_content_block_prefix(block))
+                ]
+                if media_parts:
+                    joined_media = " ".join(media_parts)
+                    content = f"{content} {joined_media}" if content else joined_media
             message = f"{role}: {content}"
             tool_info = ""
             if isinstance(m, AIMessage):
