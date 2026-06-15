@@ -103,7 +103,9 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
                 stack.pop()
             else:
                 # Mismatched closing character; the input is malformed.
-                return None
+                raise OutputParserException(
+                    f"Mismatched closing character '{char}' in JSON string"
+                )
 
         # Append the processed character to the new string.
         new_chars.append(new_char)
@@ -126,7 +128,10 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         try:
             return json.loads("".join(new_chars + stack), strict=strict)
         except json.JSONDecodeError:
-            # If we still can't parse the string as JSON,
+            # If we still can't parse, raise an exception with details
+            raise OutputParserException(
+                f"Failed to parse JSON: {s}"
+            ) from Nonee the string as JSON,
             # try removing the last character
             new_chars.pop()
 
