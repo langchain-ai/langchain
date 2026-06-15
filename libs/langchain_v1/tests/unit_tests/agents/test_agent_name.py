@@ -121,6 +121,8 @@ def test_lc_agent_name_in_stream_metadata() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
             metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     assert len(metadata_with_agent_name) > 0
@@ -157,6 +159,8 @@ def test_lc_agent_name_in_stream_metadata_multiple_iterations() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
             metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     # Should have metadata entries for messages from both iterations
@@ -178,6 +182,8 @@ async def test_lc_agent_name_in_astream_metadata() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
             metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     assert len(metadata_with_agent_name) > 0
@@ -214,6 +220,8 @@ async def test_lc_agent_name_in_astream_metadata_multiple_iterations() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
             metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     # Should have metadata entries for messages from both iterations

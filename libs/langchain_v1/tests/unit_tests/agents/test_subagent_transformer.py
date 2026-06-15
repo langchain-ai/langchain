@@ -39,6 +39,8 @@ def test_subagents_surfaces_named_subagent() -> None:
     def call_weather(city: str) -> str:
         """Call the weather agent."""
         result = weather_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
         return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
@@ -86,6 +88,8 @@ async def test_subagents_surfaces_named_subagent_async() -> None:
     async def call_weather(city: str) -> str:
         """Call the weather agent."""
         result = await weather_agent.ainvoke({"messages": [HumanMessage(f"weather in {city}")]})
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
         return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
@@ -149,6 +153,8 @@ def test_unnamed_inner_agent_surfaces_with_inherited_name() -> None:
     def call_weather(city: str) -> str:
         """Call an unnamed inner agent."""
         result = inner_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
         return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
@@ -184,6 +190,8 @@ def test_same_name_nested_agent_surfaced() -> None:
     def call_weather(city: str) -> str:
         """Call a same-named inner agent."""
         result = inner_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
         return cast("str", result["messages"][-1].text)
 
     # The parent agent shares the inner agent's name.
