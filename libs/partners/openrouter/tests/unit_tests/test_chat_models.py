@@ -1044,6 +1044,50 @@ class TestBindTools:
         tools = bound.kwargs["tools"]
         assert "strict" not in tools[0]["function"]
 
+    def test_bind_tools_server_tool_passthrough(self) -> None:
+        """Test that OpenRouter server-tool dicts are forwarded unchanged."""
+        model = _make_model()
+        server_tool = {"type": "openrouter:fusion"}
+        bound = model.bind_tools([server_tool])
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["tools"] == [server_tool]
+
+    def test_bind_tools_server_tool_with_parameters_passthrough(self) -> None:
+        """Test that server-tool `parameters` are preserved."""
+        model = _make_model()
+        server_tool = {
+            "type": "openrouter:fusion",
+            "parameters": {"analysis_models": ["~openai/gpt-latest"]},
+        }
+        bound = model.bind_tools([server_tool])
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["tools"][0] == server_tool
+
+    def test_bind_tools_mixes_server_tool_and_function(self) -> None:
+        """Test mixing a server tool with a regular function tool."""
+        model = _make_model()
+        bound = model.bind_tools([{"type": "openrouter:fusion"}, GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        tools = bound.kwargs["tools"]
+        assert tools[0] == {"type": "openrouter:fusion"}
+        assert tools[1]["type"] == "function"
+        assert tools[1]["function"]["name"] == "GetWeather"
+
+    def test_bind_tools_server_tool_required_choice(self) -> None:
+        """Test that tool_choice='required' works with a server tool."""
+        model = _make_model()
+        bound = model.bind_tools(
+            [{"type": "openrouter:fusion"}], tool_choice="required"
+        )
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["tool_choice"] == "required"
+
+    def test_bind_tools_server_tool_bool_true_raises(self) -> None:
+        """Test that tool_choice=True with a server tool raises a clear error."""
+        model = _make_model()
+        with pytest.raises(ValueError, match="cannot target an OpenRouter server tool"):
+            model.bind_tools([{"type": "openrouter:fusion"}], tool_choice=True)
+
 
 # ===========================================================================
 # with_structured_output tests

@@ -845,7 +845,10 @@ class ChatOpenRouter(BaseChatModel):
             tools: A list of tool definitions to bind to this chat model.
 
                 Supports any tool definition handled by
-                `langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`,
+                plus OpenRouter server-tool dicts (e.g.
+                `{"type": "openrouter:fusion"}`), which are forwarded to the
+                API unchanged.
             tool_choice: Which tool to require the model to call.
             strict: If `True`, model output is guaranteed to exactly match the
                 JSON Schema provided in the tool definition.
@@ -854,8 +857,11 @@ class ChatOpenRouter(BaseChatModel):
                 the model.
             **kwargs: Any additional parameters.
         """
-        formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
+        formatted_tools: list[dict[str, Any]] = [
+            cast("dict[str, Any]", tool)
+            if _is_openrouter_server_tool(tool)
+            else convert_to_openai_tool(tool, strict=strict)
+            for tool in tools
         ]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
@@ -869,6 +875,12 @@ class ChatOpenRouter(BaseChatModel):
                     msg = (
                         "tool_choice can only be True when there is one tool. Received "
                         f"{len(tools)} tools."
+                    )
+                    raise ValueError(msg)
+                if _is_openrouter_server_tool(formatted_tools[0]):
+                    msg = (
+                        "tool_choice=True cannot target an OpenRouter server tool. "
+                        'Use tool_choice="required" to force server-tool use.'
                     )
                     raise ValueError(msg)
                 tool_name = formatted_tools[0]["function"]["name"]
@@ -996,6 +1008,19 @@ class ChatOpenRouter(BaseChatModel):
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
+def _is_openrouter_server_tool(tool: Any) -> bool:
+    """Return `True` for OpenRouter server-tool dicts (e.g. `openrouter:fusion`).
+
+    Server tools run entirely on OpenRouter's side and are identified by a
+    `type` such as `openrouter:fusion` or `openrouter:web_search`. They are not
+    OpenAI-style function tools, so they must be forwarded to the API unchanged
+    rather than passed through `convert_to_openai_tool`.
+    """
+    return isinstance(tool, dict) and str(tool.get("type", "")).startswith(
+        "openrouter:"
+    )
 
 
 def _strip_internal_kwargs(params: dict[str, Any]) -> None:
