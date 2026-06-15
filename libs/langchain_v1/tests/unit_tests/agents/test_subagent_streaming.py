@@ -18,7 +18,6 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
-    from langgraph.typing import ContextT
 
     from langchain.agents.middleware import InputAgentState, OutputAgentState
 
@@ -34,14 +33,18 @@ def _make_subagent_caller_tool() -> BaseTool:
     def call_subagent(query: str) -> str:
         """Delegate the query to a sub-agent."""
         result = subagent.invoke({"messages": [HumanMessage(query)]})
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
         return cast("str", result["messages"][-1].text)
 
     return call_subagent
 
 
+# Return type mirrors `create_agent`'s overload; the context slot is unparameterized
+# here, so it resolves to `None` (the `ContextT` default).
 def _make_parent_agent(
     call_subagent_tool: BaseTool,
-) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]:
+) -> CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]]:
     parent_tool_calls: list[list[ToolCall]] = [
         [{"args": {"query": "hi"}, "id": "call_1", "name": "call_subagent"}],
         [],
