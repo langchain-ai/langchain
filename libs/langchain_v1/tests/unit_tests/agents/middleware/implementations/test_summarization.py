@@ -1761,6 +1761,90 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
     )
 
 
+class PromptCapturingModel(BaseChatModel):
+    """Mock model that captures the prompt input passed to invoke/ainvoke."""
+
+    captured_inputs: list[LanguageModelInput] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "prompt-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_formats_messages_as_xml(use_async: bool) -> None:  # noqa: FBT001
+    """Test that summary creation formats messages with `get_buffer_string` XML format.
+
+    XML formatting disambiguates message boundaries when content itself contains
+    role-like prefixes, so the summary prompt should receive the `format='xml'`
+    representation rather than the default `Role: content` prefix format.
+    """
+    model = PromptCapturingModel()
+    model.captured_inputs = []  # Reset for this test
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    messages: list[AnyMessage] = [
+        HumanMessage(content="What is the weather in NYC?"),
+        AIMessage(
+            content="Let me check.",
+            tool_calls=[{"name": "get_weather", "args": {"city": "NYC"}, "id": "call_123"}],
+        ),
+        ToolMessage(content="72F and sunny", tool_call_id="call_123", name="get_weather"),
+    ]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    assert len(model.captured_inputs) == 1
+    prompt = model.captured_inputs[0]
+    assert isinstance(prompt, str)
+
+    # The prompt embeds the XML-formatted message buffer, not the default prefix format.
+    expected_xml = get_buffer_string(messages, format="xml")
+    assert expected_xml in prompt
+    assert '<message type="human">' in prompt
+    assert '<message type="ai">' in prompt
+    assert '<message type="tool">' in prompt
+    # The default prefix format ("Human: ...") should not be used.
+    assert "Human: What is the weather" not in prompt
+
+
 @pytest.mark.requires("langchain_anthropic")
 def test_usage_metadata_trigger() -> None:
     model = init_chat_model("anthropic:claude-sonnet-4-5")
