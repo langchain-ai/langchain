@@ -9,6 +9,7 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 
 from langchain.agents import AgentState, create_agent
+from langchain.agents.middleware import InputAgentState
 from langchain.tools import InjectedState
 from langchain.tools import tool as dec_tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -35,6 +36,9 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     """
 
     class TestState(AgentState[Any]):
+        secret_data: str
+
+    class TestInputState(InputAgentState):
         secret_data: str
 
     @dec_tool
@@ -66,10 +70,10 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test message")],
-            "secret_data": "sensitive_secret_123",
-        }
+        TestInputState(
+            messages=[HumanMessage("Test message")],
+            secret_data="sensitive_secret_123",  # noqa: S106
+        )
     )
 
     tool_messages = [m for m in result["messages"] if m.type == "tool"]
@@ -94,6 +98,9 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
     """
 
     class TestState(AgentState[Any]):
+        internal_data: str
+
+    class TestInputState(InputAgentState):
         internal_data: str
 
     @dec_tool
@@ -126,10 +133,9 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Test async")],
-            "internal_data": "secret_internal_value_xyz",
-        }
+        TestInputState(
+            messages=[HumanMessage("Test async")], internal_data="secret_internal_value_xyz"
+        )
     )
 
     tool_messages = [m for m in result["messages"] if m.type == "tool"]
@@ -342,6 +348,9 @@ def test_create_agent_error_only_model_controllable_params() -> None:
     class StateWithSecrets(AgentState[Any]):
         password: str
 
+    class InputStateWithSecrets(InputAgentState):
+        password: str
+
     @dec_tool
     def secure_tool(
         username: str,
@@ -381,10 +390,10 @@ def test_create_agent_error_only_model_controllable_params() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Create account")],
-            "password": "super_secret_password_12345",
-        }
+        InputStateWithSecrets(
+            messages=[HumanMessage("Create account")],
+            password="super_secret_password_12345",  # noqa: S106
+        )
     )
 
     tool_messages = [m for m in result["messages"] if m.type == "tool"]
