@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import os
 import re
 import subprocess
 from contextlib import suppress
@@ -18,6 +19,25 @@ from typing import Literal
 from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+
+
+def _is_within_root(candidate: Path, root: Path) -> bool:
+    """Return True iff `candidate` resolves to a path inside `root` (symlinks resolved).
+
+    Args:
+        candidate: The path to check. It is resolved (following symlinks and
+            normalizing `..`) before the containment check.
+        root: The allowed root directory. Also resolved before comparison.
+
+    Returns:
+        `True` if the fully resolved `candidate` lies inside the resolved `root`,
+        using path-segment boundaries; `False` otherwise (including on resolution
+        errors).
+    """
+    try:
+        return candidate.resolve().is_relative_to(root.resolve())
+    except (OSError, ValueError):
+        return False
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
@@ -157,10 +177,21 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             if not base_full.exists() or not base_full.is_dir():
                 return "No files found"
 
+            # Reject glob patterns that could escape the root before expanding them.
+            # `Path.glob` expands a `..` pattern like "../../etc/passwd" against the
+            # base directory and yields paths outside the allowed root, and raises
+            # for absolute patterns. (A `~` pattern is never expanduser'd by glob,
+            # and any escape that slips through is dropped by the per-match
+            # containment check below.)
+            if pattern.startswith("/") or any(part == ".." for part in pattern.split("/")):
+                return "No files found"
+
             # Use pathlib glob
             matching: list[tuple[str, str]] = []
             for match in base_full.glob(pattern):
-                if match.is_file():
+                # Re-check containment after resolving so an in-root symlink that
+                # points outside the root is never enumerated.
+                if match.is_file() and _is_within_root(match, self.root_path):
                     # Convert to virtual path
                     virtual_path = "/" + str(match.relative_to(self.root_path))
                     stat = match.stat()
@@ -297,6 +328,10 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 data = json.loads(line)
                 if data["type"] == "match":
                     path = data["data"]["path"]["text"]
+                    # Defense in depth: drop any result whose resolved path lies
+                    # outside the root (e.g. surfaced via an in-root symlink).
+                    if not _is_within_root(Path(path), self.root_path):
+                        continue
                     # Convert to virtual path
                     virtual_path = "/" + str(Path(path).relative_to(self.root_path))
                     line_num = data["data"]["line_number"]
@@ -325,31 +360,40 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         regex = re.compile(pattern)
         results: dict[str, list[tuple[int, str]]] = {}
 
-        # Walk directory tree
-        for file_path in base_full.rglob("*"):
-            if not file_path.is_file():
-                continue
+        # Walk directory tree without following symlinked directories so traversal
+        # cannot leave the root via a symlinked subdirectory.
+        for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
+            for name in files:
+                file_path = Path(walk_root) / name
 
-            # Check include filter
-            if include and not _match_include_pattern(file_path.name, include):
-                continue
+                # Re-check containment after resolving so an in-root symlinked file
+                # pointing outside the root is never read.
+                if not _is_within_root(file_path, self.root_path):
+                    continue
 
-            # Skip files that are too large
-            if file_path.stat().st_size > self.max_file_size_bytes:
-                continue
+                if not file_path.is_file():
+                    continue
 
-            try:
-                content = file_path.read_text()
-            except (UnicodeDecodeError, PermissionError):
-                continue
+                # Check include filter
+                if include and not _match_include_pattern(file_path.name, include):
+                    continue
 
-            # Search content
-            for line_num, line in enumerate(content.splitlines(), 1):
-                if regex.search(line):
-                    virtual_path = "/" + str(file_path.relative_to(self.root_path))
-                    if virtual_path not in results:
-                        results[virtual_path] = []
-                    results[virtual_path].append((line_num, line))
+                # Skip files that are too large
+                if file_path.stat().st_size > self.max_file_size_bytes:
+                    continue
+
+                try:
+                    content = file_path.read_text()
+                except (UnicodeDecodeError, PermissionError):
+                    continue
+
+                # Search content
+                for line_num, line in enumerate(content.splitlines(), 1):
+                    if regex.search(line):
+                        virtual_path = "/" + str(file_path.relative_to(self.root_path))
+                        if virtual_path not in results:
+                            results[virtual_path] = []
+                        results[virtual_path].append((line_num, line))
 
         return results
 

@@ -30,6 +30,8 @@ except ImportError:
 else:
     skip_openai_integration_tests = "OPENAI_API_KEY" not in os.environ
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 AGENT_PROMPT = "You are an HR assistant."
 
 
@@ -133,7 +135,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
         )
 
         model = ChatOpenAI(
-            model="gpt-4o",
+            model=OPENAI_TEST_MODEL,
             temperature=0,
             http_client=http_client,
         )

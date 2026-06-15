@@ -223,13 +223,25 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
     patcher.assert_called_once()
 
 
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    from langchain_perplexity._version import __version__
+
+    llm = ChatPerplexity(model="test")
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-perplexity" in versions
+    assert versions["langchain-perplexity"] == __version__
+
+
 def test_profile() -> None:
     model = ChatPerplexity(model="sonar")
     assert model.profile
 
 
 def test_convert_tool_message_to_dict() -> None:
-    """A ToolMessage serializes to a ``tool``-role dict so tool results can be
+    """A ToolMessage serializes to a `tool`-role dict so tool results can be
     fed back to the model in a client-side tool-calling loop."""
     llm = ChatPerplexity(model="test", api_key="test")
     message = ToolMessage(content="result text", tool_call_id="call_123")
@@ -241,7 +253,7 @@ def test_convert_tool_message_to_dict() -> None:
 
 
 def test_convert_ai_message_with_tool_calls_to_dict() -> None:
-    """``AIMessage.tool_calls`` are serialized rather than dropped."""
+    """`AIMessage.tool_calls` are serialized rather than dropped."""
     llm = ChatPerplexity(model="test", api_key="test")
     message = AIMessage(
         content="",
@@ -594,7 +606,7 @@ def test_convert_responses_stream_event_aggregates_multiple_tool_calls() -> None
     `call_id`/`id` are intentionally omitted so that `index` (derived from each
     event's `output_index`) is the *only* thing separating the two calls. This
     keeps the test sensitive to the indexing logic: with a hardcoded
-    ``index=0`` the chunks would merge into one corrupted call. Real streams
+    `index=0` the chunks would merge into one corrupted call. Real streams
     always carry a unique `call_id`, which would keep the calls distinct on its
     own, so this payload isolates the mechanism rather than mirroring the wire
     format.

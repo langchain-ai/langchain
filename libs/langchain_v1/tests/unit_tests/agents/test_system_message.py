@@ -25,6 +25,8 @@ from langgraph.runtime import Runtime
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 
 def _make_request(
     system_message: SystemMessage | None = None,
@@ -319,7 +321,7 @@ class TestCreateAgentSystemMessage:
             SystemMessage(
                 content="You are a helpful assistant",
                 additional_kwargs={"role": "system_admin", "priority": "high"},
-                response_metadata={"model": "gpt-4", "temperature": 0.7},
+                response_metadata={"model": OPENAI_TEST_MODEL, "temperature": 0.7},
             ),
             SystemMessage(
                 content=[
@@ -387,7 +389,7 @@ class TestSystemMessageUpdateViaMiddleware:
             runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -433,7 +435,7 @@ class TestSystemMessageUpdateViaMiddleware:
             runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -605,7 +607,7 @@ class TestCacheControlPreservation:
             runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -695,9 +697,9 @@ class TestMetadataMerging:
             # response_metadata merging
             (
                 "response_metadata",
-                {"model": "gpt-4", "region": "us-east"},
+                {"model": OPENAI_TEST_MODEL, "region": "us-east"},
                 {"tokens": 100, "region": "eu-west"},
-                {"model": "gpt-4", "tokens": 100, "region": "eu-west"},
+                {"model": OPENAI_TEST_MODEL, "tokens": 100, "region": "eu-west"},
             ),
         ],
         ids=["additional_kwargs", "response_metadata"],
@@ -739,7 +741,7 @@ class TestMetadataMerging:
             runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -794,27 +796,21 @@ class TestDynamicSystemPromptMiddleware:
             == "You are a helpful assistant. Region: EU"
         )
 
-    def test_middleware_can_use_system_message_with_metadata(self) -> None:
-        """Test middleware creating SystemMessage with additional metadata."""
+    def test_system_message_with_metadata(self) -> None:
+        """Test creating a `SystemMessage` with additional metadata."""
+        system_message = SystemMessage(
+            content="You are a helpful assistant",
+            additional_kwargs={"temperature": 0.7, "model": OPENAI_TEST_MODEL},
+            response_metadata={"region": "us-east"},
+        )
 
-        def metadata_middleware(request: ModelRequest) -> SystemMessage:
-            """Return SystemMessage with metadata."""
-            return SystemMessage(
-                content="You are a helpful assistant",
-                additional_kwargs={"temperature": 0.7, "model": "gpt-4"},
-                response_metadata={"region": "us-east"},
-            )
-
-        request = _make_request()
-        new_system_message = metadata_middleware(request)
-
-        assert len(new_system_message.content_blocks) == 1
-        assert new_system_message.content_blocks[0].get("text") == "You are a helpful assistant"
-        assert new_system_message.additional_kwargs == {
+        assert len(system_message.content_blocks) == 1
+        assert system_message.content_blocks[0].get("text") == "You are a helpful assistant"
+        assert system_message.additional_kwargs == {
             "temperature": 0.7,
-            "model": "gpt-4",
+            "model": OPENAI_TEST_MODEL,
         }
-        assert new_system_message.response_metadata == {"region": "us-east"}
+        assert system_message.response_metadata == {"region": "us-east"}
 
     def test_middleware_handles_none_system_message(self) -> None:
         """Test middleware creating new SystemMessage when none exists."""
@@ -832,29 +828,23 @@ class TestDynamicSystemPromptMiddleware:
         assert len(new_system_message.content_blocks) == 1
         assert new_system_message.content_blocks[0].get("text") == "Default system prompt"
 
-    def test_middleware_with_content_blocks(self) -> None:
-        """Test middleware creating SystemMessage with content blocks."""
+    def test_system_message_with_content_blocks(self) -> None:
+        """Test creating a `SystemMessage` with content blocks."""
+        system_message = SystemMessage(
+            content=[
+                {"type": "text", "text": "Base instructions"},
+                {
+                    "type": "text",
+                    "text": "Cached instructions",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ]
+        )
 
-        def content_blocks_middleware(request: ModelRequest) -> SystemMessage:
-            """Create SystemMessage with content blocks including cache control."""
-            return SystemMessage(
-                content=[
-                    {"type": "text", "text": "Base instructions"},
-                    {
-                        "type": "text",
-                        "text": "Cached instructions",
-                        "cache_control": {"type": "ephemeral"},
-                    },
-                ]
-            )
-
-        request = _make_request()
-        new_system_message = content_blocks_middleware(request)
-
-        assert isinstance(new_system_message.content_blocks, list)
-        assert len(new_system_message.content_blocks) == 2
-        assert new_system_message.content_blocks[0].get("text") == "Base instructions"
-        assert new_system_message.content_blocks[1].get("cache_control") == {"type": "ephemeral"}
+        assert isinstance(system_message.content_blocks, list)
+        assert len(system_message.content_blocks) == 2
+        assert system_message.content_blocks[0].get("text") == "Base instructions"
+        assert system_message.content_blocks[1].get("cache_control") == {"type": "ephemeral"}
 
 
 class TestSystemMessageMiddlewareIntegration:
@@ -912,7 +902,7 @@ class TestSystemMessageMiddlewareIntegration:
         base_message = SystemMessage(
             content="Base prompt",
             additional_kwargs={"key1": "value1", "key2": "value2"},
-            response_metadata={"model": "gpt-4"},
+            response_metadata={"model": OPENAI_TEST_MODEL},
         )
 
         def preserving_middleware(request: ModelRequest) -> ModelRequest:
@@ -935,7 +925,7 @@ class TestSystemMessageMiddlewareIntegration:
             "key1": "value1",
             "key2": "value2",
         }
-        assert new_request.system_message.response_metadata == {"model": "gpt-4"}
+        assert new_request.system_message.response_metadata == {"model": OPENAI_TEST_MODEL}
 
     def test_backward_compatibility_with_string_system_prompt(self) -> None:
         """Test that middleware still works with string system prompts."""

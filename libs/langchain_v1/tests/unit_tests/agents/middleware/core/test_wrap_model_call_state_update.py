@@ -12,6 +12,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.errors import InvalidUpdateError
 from langgraph.types import Command
+from typing_extensions import override
 
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
@@ -221,6 +222,7 @@ class TestBackwardsCompatibility:
         """Existing middleware returning AIMessage works identically."""
 
         class ShortCircuitMiddleware(AgentMiddleware):
+            @override
             def wrap_model_call(
                 self,
                 request: ModelRequest,

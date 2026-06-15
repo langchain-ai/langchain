@@ -36,6 +36,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "aion-labs/aion-1.0": {
         "name": "Aion-1.0",
@@ -57,6 +58,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "aion-labs/aion-1.0-mini": {
         "name": "Aion-1.0-Mini",
@@ -78,6 +80,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "aion-labs/aion-2.0": {
         "name": "Aion-2.0",
@@ -99,6 +102,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "aion-labs/aion-rp-llama-3.1-8b": {
         "name": "Aion-RP 1.0 (8B)",
@@ -120,6 +124,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "allenai/olmo-3-32b-think": {
         "name": "Olmo 3 32B Think",
@@ -141,6 +146,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "amazon/nova-2-lite-v1": {
         "name": "Nova 2 Lite",
@@ -163,6 +169,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "amazon/nova-lite-v1": {
         "name": "Nova Lite 1.0",
@@ -184,6 +191,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "amazon/nova-micro-v1": {
         "name": "Nova Micro 1.0",
@@ -205,6 +213,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "amazon/nova-premier-v1": {
         "name": "Nova Premier 1.0",
@@ -226,6 +235,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "amazon/nova-pro-v1": {
         "name": "Nova Pro 1.0",
@@ -247,6 +257,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthracite-org/magnum-v4-72b": {
         "name": "Magnum v4 72B",
@@ -268,6 +279,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-3-haiku": {
         "name": "Claude 3 Haiku",
@@ -289,6 +301,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-3.5-haiku": {
         "name": "Claude 3.5 Haiku",
@@ -310,6 +323,30 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
+    },
+    "anthropic/claude-fable-5": {
+        "name": "Claude Fable 5",
+        "release_date": "2026-06-09",
+        "last_updated": "2026-06-09",
+        "open_weights": False,
+        "max_input_tokens": 1000000,
+        "max_output_tokens": 128000,
+        "text_inputs": True,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "pdf_inputs": True,
+        "video_inputs": False,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": False,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-haiku-4.5": {
         "name": "Claude Haiku 4.5 (latest)",
@@ -332,6 +369,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4": {
         "name": "Claude Opus 4",
@@ -354,6 +392,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.1": {
         "name": "Claude Opus 4.1 (latest)",
@@ -376,6 +415,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.5": {
         "name": "Claude Opus 4.5 (latest)",
@@ -398,6 +438,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.6": {
         "name": "Claude Opus 4.6",
@@ -420,6 +461,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.6-fast": {
         "name": "Claude Opus 4.6 (Fast)",
@@ -442,6 +484,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.7": {
         "name": "Claude Opus 4.7",
@@ -464,6 +507,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.7-fast": {
         "name": "Claude Opus 4.7 (Fast)",
@@ -486,6 +530,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.8": {
         "name": "Claude Opus 4.8",
@@ -508,6 +553,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-opus-4.8-fast": {
         "name": "Claude Opus 4.8 (Fast)",
@@ -530,6 +576,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-sonnet-4": {
         "name": "Claude Sonnet 4",
@@ -552,6 +599,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-sonnet-4.5": {
         "name": "Claude Sonnet 4.5 (latest)",
@@ -574,6 +622,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "anthropic/claude-sonnet-4.6": {
         "name": "Claude Sonnet 4.6",
@@ -596,6 +645,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "arcee-ai/coder-large": {
         "name": "Coder Large",
@@ -617,27 +667,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
-    },
-    "arcee-ai/maestro-reasoning": {
-        "name": "Maestro Reasoning",
-        "release_date": "2025-05-05",
-        "last_updated": "2025-05-05",
-        "open_weights": False,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 32000,
-        "text_inputs": True,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": False,
-        "tool_calling": False,
-        "structured_output": False,
-        "attachment": False,
-        "temperature": True,
+        "tool_call_streaming": True,
     },
     "arcee-ai/trinity-large-thinking": {
         "name": "Trinity Large Thinking",
@@ -659,6 +689,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "arcee-ai/trinity-mini": {
         "name": "Trinity Mini",
@@ -680,6 +711,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "arcee-ai/virtuoso-large": {
         "name": "Virtuoso Large",
@@ -701,6 +733,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "baidu/ernie-4.5-vl-424b-a47b": {
         "name": "ERNIE 4.5 VL 424B A47B ",
@@ -722,6 +755,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "bytedance-seed/seed-1.6": {
         "name": "Seed 1.6",
@@ -743,6 +777,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "bytedance-seed/seed-1.6-flash": {
         "name": "Seed 1.6 Flash",
@@ -764,6 +799,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "bytedance-seed/seed-2.0-lite": {
         "name": "Seed-2.0-Lite",
@@ -785,6 +821,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "bytedance-seed/seed-2.0-mini": {
         "name": "Seed-2.0-Mini",
@@ -806,6 +843,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "bytedance/ui-tars-1.5-7b": {
         "name": "UI-TARS 7B ",
@@ -827,6 +865,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
         "name": "Uncensored (free)",
@@ -848,6 +887,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "cohere/command-a": {
         "name": "Command A",
@@ -869,6 +909,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "cohere/command-r-08-2024": {
         "name": "Command R",
@@ -890,6 +931,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "cohere/command-r-plus-08-2024": {
         "name": "Command R+",
@@ -911,11 +953,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "cohere/command-r7b-12-2024": {
         "name": "Command R7B",
-        "release_date": "2024-02-27",
-        "last_updated": "2024-02-27",
+        "release_date": "2024-12-02",
+        "last_updated": "2024-12-02",
         "open_weights": True,
         "max_input_tokens": 128000,
         "max_output_tokens": 4000,
@@ -932,6 +975,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepcogito/cogito-v2.1-671b": {
         "name": "Cogito v2.1 671B",
@@ -953,6 +997,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-chat": {
         "name": "DeepSeek Chat",
@@ -974,6 +1019,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-chat-v3-0324": {
         "name": "DeepSeek V3 0324",
@@ -995,6 +1041,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-chat-v3.1": {
         "name": "DeepSeek V3.1",
@@ -1016,6 +1063,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-r1": {
         "name": "DeepSeek-R1",
@@ -1037,6 +1085,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-r1-0528": {
         "name": "R1 0528",
@@ -1058,14 +1107,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-r1-distill-llama-70b": {
         "name": "R1 Distill Llama 70B",
         "release_date": "2025-01-23",
         "last_updated": "2025-01-23",
         "open_weights": True,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 16384,
+        "max_input_tokens": 8192,
+        "max_output_tokens": 8192,
         "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,
@@ -1079,6 +1129,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-r1-distill-qwen-32b": {
         "name": "R1 Distill Qwen 32B",
@@ -1100,6 +1151,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-v3.1-terminus": {
         "name": "DeepSeek V3.1 Terminus",
@@ -1121,6 +1173,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-v3.2": {
         "name": "DeepSeek V3.2",
@@ -1142,6 +1195,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-v3.2-exp": {
         "name": "DeepSeek V3.2 Exp",
@@ -1163,14 +1217,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-v4-flash": {
         "name": "DeepSeek V4 Flash",
         "release_date": "2026-04-24",
         "last_updated": "2026-04-24",
         "open_weights": True,
-        "max_input_tokens": 1048576,
-        "max_output_tokens": 131072,
+        "max_input_tokens": 1000000,
+        "max_output_tokens": 65536,
         "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,
@@ -1184,6 +1239,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek/deepseek-v4-pro": {
         "name": "DeepSeek V4 Pro",
@@ -1205,6 +1261,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "essentialai/rnj-1-instruct": {
         "name": "Rnj 1 Instruct",
@@ -1226,11 +1283,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-flash": {
         "name": "Gemini 2.5 Flash",
-        "release_date": "2025-03-20",
-        "last_updated": "2025-06-05",
+        "release_date": "2025-06-17",
+        "last_updated": "2025-06-17",
         "open_weights": False,
         "max_input_tokens": 1048576,
         "max_output_tokens": 65535,
@@ -1248,6 +1306,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-flash-image": {
         "name": "Nano Banana",
@@ -1269,6 +1328,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-flash-lite": {
         "name": "Gemini 2.5 Flash-Lite",
@@ -1291,6 +1351,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-flash-lite-preview-09-2025": {
         "name": "Gemini 2.5 Flash Lite Preview 09-2025",
@@ -1313,11 +1374,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-pro": {
         "name": "Gemini 2.5 Pro",
-        "release_date": "2025-03-20",
-        "last_updated": "2025-06-05",
+        "release_date": "2025-06-17",
+        "last_updated": "2025-06-17",
         "open_weights": False,
         "max_input_tokens": 1048576,
         "max_output_tokens": 65536,
@@ -1335,6 +1397,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-pro-preview": {
         "name": "Gemini 2.5 Pro Preview 06-05",
@@ -1357,6 +1420,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-2.5-pro-preview-05-06": {
         "name": "Gemini 2.5 Pro Preview 05-06",
@@ -1379,6 +1443,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3-flash-preview": {
         "name": "Gemini 3 Flash Preview",
@@ -1401,6 +1466,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3-pro-image-preview": {
         "name": "Nano Banana Pro",
@@ -1422,6 +1488,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.1-flash-image-preview": {
         "name": "Nano Banana 2",
@@ -1443,6 +1510,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.1-flash-lite": {
         "name": "Gemini 3.1 Flash Lite",
@@ -1465,6 +1533,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.1-flash-lite-preview": {
         "name": "Gemini 3.1 Flash Lite Preview",
@@ -1487,6 +1556,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.1-pro-preview": {
         "name": "Gemini 3.1 Pro Preview",
@@ -1509,6 +1579,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.1-pro-preview-customtools": {
         "name": "Gemini 3.1 Pro Preview Custom Tools",
@@ -1531,6 +1602,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemini-3.5-flash": {
         "name": "Gemini 3.5 Flash",
@@ -1553,6 +1625,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-2-27b-it": {
         "name": "Gemma 2 27B",
@@ -1574,6 +1647,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-3-12b-it": {
         "name": "Gemma 3 12B",
@@ -1595,6 +1669,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-3-27b-it": {
         "name": "Gemma 3 27B",
@@ -1616,6 +1691,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-3-4b-it": {
         "name": "Gemma 3 4B",
@@ -1637,6 +1713,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-3n-e4b-it": {
         "name": "Gemma 3n 4B",
@@ -1658,6 +1735,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-4-26b-a4b-it": {
         "name": "Gemma 4 26B A4B IT",
@@ -1679,6 +1757,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-4-26b-a4b-it:free": {
         "name": "Gemma 4 26B A4B  (free)",
@@ -1700,14 +1779,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-4-31b-it": {
         "name": "Gemma 4 31B IT",
         "release_date": "2026-04-02",
         "last_updated": "2026-04-02",
         "open_weights": True,
-        "max_input_tokens": 256000,
-        "max_output_tokens": 8192,
+        "max_input_tokens": 262144,
+        "max_output_tokens": 262144,
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
@@ -1721,6 +1801,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/gemma-4-31b-it:free": {
         "name": "Gemma 4 31B (free)",
@@ -1742,6 +1823,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/lyria-3-clip-preview": {
         "name": "Lyria 3 Clip Preview",
@@ -1763,6 +1845,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "google/lyria-3-pro-preview": {
         "name": "Lyria 3 Pro Preview",
@@ -1784,6 +1867,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "gryphe/mythomax-l2-13b": {
         "name": "MythoMax 13B",
@@ -1805,6 +1889,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "ibm-granite/granite-4.0-h-micro": {
         "name": "Granite 4.0 Micro",
@@ -1826,6 +1911,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "ibm-granite/granite-4.1-8b": {
         "name": "Granite 4.1 8B",
@@ -1847,6 +1933,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inception/mercury-2": {
         "name": "Mercury 2",
@@ -1868,6 +1955,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inclusionai/ling-2.6-1t": {
         "name": "Ling-2.6-1T",
@@ -1889,6 +1977,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inclusionai/ling-2.6-flash": {
         "name": "Ling-2.6-flash",
@@ -1910,6 +1999,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inclusionai/ring-2.6-1t": {
         "name": "Ring-2.6-1T",
@@ -1931,6 +2021,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inflection/inflection-3-pi": {
         "name": "Inflection 3 Pi",
@@ -1952,6 +2043,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "inflection/inflection-3-productivity": {
         "name": "Inflection 3 Productivity",
@@ -1973,6 +2065,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "kwaipilot/kat-coder-pro-v2": {
         "name": "KAT-Coder-Pro V2",
@@ -1994,6 +2087,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "liquid/lfm-2-24b-a2b": {
         "name": "LFM2-24B-A2B",
@@ -2015,6 +2109,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "liquid/lfm-2.5-1.2b-instruct:free": {
         "name": "LFM2.5-1.2B-Instruct (free)",
@@ -2036,6 +2131,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "liquid/lfm-2.5-1.2b-thinking:free": {
         "name": "LFM2.5-1.2B-Thinking (free)",
@@ -2057,6 +2153,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mancer/weaver": {
         "name": "Weaver (alpha)",
@@ -2078,6 +2175,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3-70b-instruct": {
         "name": "Llama 3 70B Instruct",
@@ -2099,6 +2197,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3-8b-instruct": {
         "name": "Llama 3 8B Instruct",
@@ -2120,6 +2219,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.1-70b-instruct": {
         "name": "Llama 3.1 70B Instruct",
@@ -2141,6 +2241,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.1-8b-instruct": {
         "name": "Llama 3.1 8B Instruct",
@@ -2162,6 +2263,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.2-11b-vision-instruct": {
         "name": "Llama 3.2 11B Vision Instruct",
@@ -2183,6 +2285,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.2-1b-instruct": {
         "name": "Llama 3.2 1B Instruct",
@@ -2204,6 +2307,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.2-3b-instruct": {
         "name": "Llama 3.2 3B Instruct",
@@ -2225,6 +2329,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.2-3b-instruct:free": {
         "name": "Llama 3.2 3B Instruct (free)",
@@ -2246,6 +2351,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.3-70b-instruct": {
         "name": "Llama-3.3-70B-Instruct",
@@ -2267,6 +2373,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-3.3-70b-instruct:free": {
         "name": "Llama 3.3 70B Instruct (free)",
@@ -2288,6 +2395,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-4-maverick": {
         "name": "Llama 4 Maverick",
@@ -2309,6 +2417,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-4-scout": {
         "name": "Llama 4 Scout",
@@ -2330,27 +2439,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
-    },
-    "meta-llama/llama-guard-3-8b": {
-        "name": "Llama Guard 3 8B",
-        "release_date": "2025-02-12",
-        "last_updated": "2025-02-12",
-        "open_weights": True,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 131072,
-        "text_inputs": True,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": False,
-        "tool_calling": False,
-        "structured_output": False,
-        "attachment": False,
-        "temperature": True,
+        "tool_call_streaming": True,
     },
     "meta-llama/llama-guard-4-12b": {
         "name": "Llama Guard 4 12B",
@@ -2372,6 +2461,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "microsoft/phi-4": {
         "name": "Phi 4",
@@ -2393,6 +2483,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "microsoft/phi-4-mini-instruct": {
         "name": "Phi 4 Mini Instruct",
@@ -2414,6 +2505,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "microsoft/wizardlm-2-8x22b": {
         "name": "WizardLM-2 8x22B",
@@ -2435,6 +2527,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-01": {
         "name": "MiniMax-01",
@@ -2456,6 +2549,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m1": {
         "name": "MiniMax M1",
@@ -2477,6 +2571,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m2": {
         "name": "MiniMax-M2",
@@ -2498,6 +2593,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m2-her": {
         "name": "MiniMax M2-her",
@@ -2519,6 +2615,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m2.1": {
         "name": "MiniMax-M2.1",
@@ -2540,6 +2637,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m2.5": {
         "name": "MiniMax-M2.5",
@@ -2561,6 +2659,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m2.7": {
         "name": "MiniMax-M2.7",
@@ -2568,7 +2667,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "last_updated": "2026-03-18",
         "open_weights": True,
         "max_input_tokens": 196608,
-        "max_output_tokens": 196608,
+        "max_output_tokens": 131072,
         "text_inputs": True,
         "image_inputs": False,
         "audio_inputs": False,
@@ -2582,12 +2681,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "minimax/minimax-m3": {
         "name": "MiniMax-M3",
         "release_date": "2026-06-01",
         "last_updated": "2026-06-01",
-        "open_weights": False,
+        "open_weights": True,
         "max_input_tokens": 524288,
         "max_output_tokens": 512000,
         "text_inputs": True,
@@ -2600,9 +2700,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/codestral-2508": {
         "name": "Codestral 2508",
@@ -2625,6 +2726,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/devstral-2512": {
         "name": "Devstral 2",
@@ -2648,6 +2750,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/ministral-14b-2512": {
         "name": "Ministral 3 14B 2512",
@@ -2669,6 +2772,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/ministral-3b-2512": {
         "name": "Ministral 3 3B 2512",
@@ -2690,6 +2794,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/ministral-8b-2512": {
         "name": "Ministral 3 8B 2512",
@@ -2711,6 +2816,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-large": {
         "name": "Mistral Large",
@@ -2733,6 +2839,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-large-2407": {
         "name": "Mistral Large 2407",
@@ -2755,6 +2862,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-large-2512": {
         "name": "Mistral Large 3",
@@ -2777,6 +2885,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-medium-3": {
         "name": "Mistral Medium 3",
@@ -2799,6 +2908,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-medium-3-5": {
         "name": "Mistral Medium 3.5",
@@ -2821,6 +2931,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-medium-3.1": {
         "name": "Mistral Medium 3.1",
@@ -2843,6 +2954,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-nemo": {
         "name": "Mistral Nemo",
@@ -2864,6 +2976,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-saba": {
         "name": "Saba",
@@ -2886,6 +2999,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-small-24b-instruct-2501": {
         "name": "Mistral Small 3",
@@ -2907,6 +3021,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-small-2603": {
         "name": "Mistral Small 4",
@@ -2928,6 +3043,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-small-3.1-24b-instruct": {
         "name": "Mistral Small 3.1 24B",
@@ -2949,6 +3065,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mistral-small-3.2-24b-instruct": {
         "name": "Mistral Small 3.2 24B",
@@ -2970,6 +3087,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/mixtral-8x22b-instruct": {
         "name": "Mixtral 8x22B Instruct",
@@ -2992,6 +3110,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "mistralai/voxtral-small-24b-2507": {
         "name": "Voxtral Small 24B 2507",
@@ -3014,6 +3133,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/kimi-k2": {
         "name": "Kimi K2 0711",
@@ -3035,6 +3155,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/kimi-k2-0905": {
         "name": "Kimi K2 0905",
@@ -3056,6 +3177,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/kimi-k2-thinking": {
         "name": "Kimi K2 Thinking",
@@ -3077,13 +3199,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/kimi-k2.5": {
         "name": "Kimi K2.5",
         "release_date": "2026-01",
         "last_updated": "2026-01",
         "open_weights": True,
-        "max_input_tokens": 262144,
+        "max_input_tokens": 256000,
         "max_output_tokens": 262144,
         "text_inputs": True,
         "image_inputs": True,
@@ -3098,6 +3221,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "moonshotai/kimi-k2.6": {
         "name": "Kimi K2.6",
@@ -3119,11 +3243,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
-    "moonshotai/kimi-k2.6:free": {
-        "name": "Kimi K2.6 (free)",
-        "release_date": "2026-04-21",
-        "last_updated": "2026-04-21",
+    "moonshotai/kimi-k2.7-code": {
+        "name": "Kimi K2.7 Code",
+        "release_date": "2026-06-12",
+        "last_updated": "2026-06-12",
         "open_weights": True,
         "max_input_tokens": 262144,
         "max_output_tokens": 262144,
@@ -3137,9 +3262,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": True,
-        "temperature": False,
+        "temperature": True,
+        "tool_call_streaming": True,
     },
     "morph/morph-v3-fast": {
         "name": "Morph V3 Fast",
@@ -3161,6 +3287,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "morph/morph-v3-large": {
         "name": "Morph V3 Large",
@@ -3182,6 +3309,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nex-agi/nex-n2-pro:free": {
         "name": "Nex-N2-Pro (free)",
@@ -3203,6 +3331,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nousresearch/hermes-3-llama-3.1-405b": {
         "name": "Hermes 3 405B Instruct",
@@ -3224,6 +3353,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nousresearch/hermes-3-llama-3.1-405b:free": {
         "name": "Hermes 3 405B Instruct (free)",
@@ -3245,6 +3375,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nousresearch/hermes-3-llama-3.1-70b": {
         "name": "Hermes 3 70B Instruct",
@@ -3266,6 +3397,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nousresearch/hermes-4-405b": {
         "name": "Hermes 4 405B",
@@ -3287,6 +3419,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nousresearch/hermes-4-70b": {
         "name": "Hermes 4 70B",
@@ -3308,6 +3441,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/llama-3.3-nemotron-super-49b-v1.5": {
         "name": "Llama 3.3 Nemotron Super 49B v1.5",
@@ -3329,6 +3463,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-nano-30b-a3b": {
         "name": "Nemotron 3 Nano 30B A3B",
@@ -3347,9 +3482,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-nano-30b-a3b:free": {
         "name": "Nemotron 3 Nano 30B A3B (free)",
@@ -3371,6 +3507,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": {
         "name": "Nemotron 3 Nano Omni (free)",
@@ -3392,6 +3529,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-super-120b-a12b": {
         "name": "Nemotron 3 Super 120B A12B",
@@ -3410,9 +3548,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-super-120b-a12b:free": {
         "name": "Nemotron 3 Super (free)",
@@ -3434,6 +3573,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-ultra-550b-a55b": {
         "name": "Nemotron 3 Ultra 550B A55B",
@@ -3455,6 +3595,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3-ultra-550b-a55b:free": {
         "name": "Nemotron 3 Ultra (free)",
@@ -3476,6 +3617,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-3.5-content-safety:free": {
         "name": "Nemotron 3.5 Content Safety (free)",
@@ -3497,6 +3639,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-nano-12b-v2-vl:free": {
         "name": "Nemotron Nano 12B 2 VL (free)",
@@ -3518,27 +3661,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
-    },
-    "nvidia/nemotron-nano-9b-v2": {
-        "name": "Nemotron Nano 9B v2",
-        "release_date": "2025-08-18",
-        "last_updated": "2025-08-18",
-        "open_weights": True,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 16384,
-        "text_inputs": True,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": True,
-        "tool_calling": True,
-        "structured_output": False,
-        "attachment": False,
-        "temperature": True,
+        "tool_call_streaming": True,
     },
     "nvidia/nemotron-nano-9b-v2:free": {
         "name": "Nemotron Nano 9B V2 (free)",
@@ -3560,6 +3683,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-3.5-turbo": {
         "name": "GPT-3.5-turbo",
@@ -3581,6 +3705,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-3.5-turbo-0613": {
         "name": "GPT-3.5 Turbo (older v0613)",
@@ -3602,6 +3727,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-3.5-turbo-16k": {
         "name": "GPT-3.5 Turbo 16k",
@@ -3623,6 +3749,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-3.5-turbo-instruct": {
         "name": "GPT-3.5 Turbo Instruct",
@@ -3644,6 +3771,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4": {
         "name": "GPT-4",
@@ -3665,6 +3793,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4-turbo": {
         "name": "GPT-4 Turbo",
@@ -3686,6 +3815,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4-turbo-preview": {
         "name": "GPT-4 Turbo Preview",
@@ -3707,6 +3837,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4.1": {
         "name": "GPT-4.1",
@@ -3729,6 +3860,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4.1-mini": {
         "name": "GPT-4.1 mini",
@@ -3751,6 +3883,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4.1-nano": {
         "name": "GPT-4.1 nano",
@@ -3773,6 +3906,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o": {
         "name": "GPT-4o",
@@ -3795,6 +3929,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-2024-05-13": {
         "name": "GPT-4o (2024-05-13)",
@@ -3817,6 +3952,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-2024-08-06": {
         "name": "GPT-4o (2024-08-06)",
@@ -3839,6 +3975,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-2024-11-20": {
         "name": "GPT-4o (2024-11-20)",
@@ -3861,6 +3998,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-mini": {
         "name": "GPT-4o mini",
@@ -3883,6 +4021,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-mini-2024-07-18": {
         "name": "GPT-4o-mini (2024-07-18)",
@@ -3905,6 +4044,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-mini-search-preview": {
         "name": "GPT-4o-mini Search Preview",
@@ -3926,6 +4066,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-4o-search-preview": {
         "name": "GPT-4o Search Preview",
@@ -3947,6 +4088,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5": {
         "name": "GPT-5",
@@ -3969,6 +4111,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-chat": {
         "name": "GPT-5 Chat",
@@ -3991,6 +4134,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-codex": {
         "name": "GPT-5-Codex",
@@ -4012,6 +4156,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-image": {
         "name": "GPT-5 Image",
@@ -4034,6 +4179,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-image-mini": {
         "name": "GPT-5 Image Mini",
@@ -4056,6 +4202,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-mini": {
         "name": "GPT-5 Mini",
@@ -4078,6 +4225,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-nano": {
         "name": "GPT-5 Nano",
@@ -4100,6 +4248,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5-pro": {
         "name": "GPT-5 Pro",
@@ -4122,6 +4271,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.1": {
         "name": "GPT-5.1",
@@ -4144,6 +4294,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.1-chat": {
         "name": "GPT-5.1 Chat",
@@ -4166,6 +4317,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.1-codex": {
         "name": "GPT-5.1 Codex",
@@ -4187,6 +4339,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.1-codex-max": {
         "name": "GPT-5.1 Codex Max",
@@ -4208,6 +4361,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.1-codex-mini": {
         "name": "GPT-5.1 Codex mini",
@@ -4229,6 +4383,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.2": {
         "name": "GPT-5.2",
@@ -4251,6 +4406,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.2-chat": {
         "name": "GPT-5.2 Chat",
@@ -4273,6 +4429,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.2-codex": {
         "name": "GPT-5.2 Codex",
@@ -4294,6 +4451,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.2-pro": {
         "name": "GPT-5.2 Pro",
@@ -4316,6 +4474,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.3-chat": {
         "name": "GPT-5.3 Chat",
@@ -4338,6 +4497,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.3-codex": {
         "name": "GPT-5.3 Codex",
@@ -4360,6 +4520,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.4": {
         "name": "GPT-5.4",
@@ -4382,6 +4543,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.4-image-2": {
         "name": "GPT-5.4 Image 2",
@@ -4404,6 +4566,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.4-mini": {
         "name": "GPT-5.4 mini",
@@ -4426,6 +4589,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.4-nano": {
         "name": "GPT-5.4 nano",
@@ -4448,6 +4612,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.4-pro": {
         "name": "GPT-5.4 Pro",
@@ -4470,6 +4635,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.5": {
         "name": "GPT-5.5",
@@ -4492,6 +4658,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-5.5-pro": {
         "name": "GPT-5.5 Pro",
@@ -4514,6 +4681,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-audio": {
         "name": "GPT Audio",
@@ -4535,6 +4703,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-audio-mini": {
         "name": "GPT Audio Mini",
@@ -4556,6 +4725,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-chat-latest": {
         "name": "GPT Chat Latest",
@@ -4578,6 +4748,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/gpt-oss-120b": {
         "name": "gpt-oss-120b",
@@ -4599,6 +4770,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-oss-120b:free": {
         "name": "gpt-oss-120b (free)",
@@ -4620,6 +4792,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-oss-20b": {
         "name": "gpt-oss-20b",
@@ -4641,6 +4814,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-oss-20b:free": {
         "name": "gpt-oss-20b (free)",
@@ -4662,6 +4836,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/gpt-oss-safeguard-20b": {
         "name": "gpt-oss-safeguard-20b",
@@ -4683,6 +4858,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/o1": {
         "name": "o1",
@@ -4705,6 +4881,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o1-pro": {
         "name": "o1-pro",
@@ -4727,6 +4904,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o3": {
         "name": "o3",
@@ -4749,6 +4927,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o3-deep-research": {
         "name": "o3-deep-research",
@@ -4771,6 +4950,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/o3-mini": {
         "name": "o3-mini",
@@ -4793,6 +4973,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o3-mini-high": {
         "name": "o3 Mini High",
@@ -4815,6 +4996,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o3-pro": {
         "name": "o3-pro",
@@ -4837,6 +5019,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o4-mini": {
         "name": "o4-mini",
@@ -4859,6 +5042,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openai/o4-mini-deep-research": {
         "name": "o4-mini-deep-research",
@@ -4881,6 +5065,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openai/o4-mini-high": {
         "name": "o4 Mini High",
@@ -4903,6 +5088,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openrouter/auto": {
         "name": "Auto Router",
@@ -4925,6 +5111,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openrouter/bodybuilder": {
         "name": "Body Builder (beta)",
@@ -4946,6 +5133,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openrouter/free": {
         "name": "Free Models Router",
@@ -4967,11 +5155,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openrouter/fusion": {
         "name": "Fusion",
-        "release_date": "2026-05-12",
-        "last_updated": "2026-05-12",
+        "release_date": "2026-06-13",
+        "last_updated": "2026-06-13",
         "open_weights": False,
         "max_input_tokens": 128000,
         "max_output_tokens": 128000,
@@ -4988,6 +5177,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "openrouter/owl-alpha": {
         "name": "Owl Alpha",
@@ -5010,6 +5200,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "openrouter/pareto-code": {
         "name": "Pareto Code Router",
@@ -5031,6 +5222,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "perceptron/perceptron-mk1": {
         "name": "Perceptron Mk1",
@@ -5052,6 +5244,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "perplexity/sonar": {
         "name": "Sonar",
@@ -5073,6 +5266,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "perplexity/sonar-deep-research": {
         "name": "Sonar Deep Research",
@@ -5094,6 +5288,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "perplexity/sonar-pro": {
         "name": "Sonar Pro",
@@ -5115,6 +5310,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "perplexity/sonar-pro-search": {
         "name": "Sonar Pro Search",
@@ -5136,6 +5332,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "perplexity/sonar-reasoning-pro": {
         "name": "Sonar Reasoning Pro",
@@ -5157,6 +5354,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "poolside/laguna-m.1:free": {
         "name": "Laguna M.1 (free)",
@@ -5178,6 +5376,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "poolside/laguna-xs.2:free": {
         "name": "Laguna XS.2 (free)",
@@ -5199,6 +5398,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "prime-intellect/intellect-3": {
         "name": "INTELLECT-3",
@@ -5220,6 +5420,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-2.5-72b-instruct": {
         "name": "Qwen2.5 72B Instruct",
@@ -5241,6 +5442,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-2.5-7b-instruct": {
         "name": "Qwen2.5 7B Instruct",
@@ -5262,6 +5464,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-2.5-coder-32b-instruct": {
         "name": "Qwen2.5 Coder 32B Instruct",
@@ -5283,6 +5486,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-plus": {
         "name": "Qwen Plus",
@@ -5304,6 +5508,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-plus-2025-07-28": {
         "name": "Qwen Plus 0728",
@@ -5325,6 +5530,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen-plus-2025-07-28:thinking": {
         "name": "Qwen Plus 0728 (thinking)",
@@ -5346,14 +5552,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen2.5-vl-72b-instruct": {
         "name": "Qwen2.5 VL 72B Instruct",
         "release_date": "2025-02-01",
         "last_updated": "2025-02-01",
         "open_weights": True,
-        "max_input_tokens": 32000,
-        "max_output_tokens": 8192,
+        "max_input_tokens": 128000,
+        "max_output_tokens": 128000,
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
@@ -5367,6 +5574,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-14b": {
         "name": "Qwen3 14B",
@@ -5388,6 +5596,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-235b-a22b": {
         "name": "Qwen3 235B-A22B",
@@ -5409,6 +5618,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-235b-a22b-2507": {
         "name": "Qwen3 235B A22B Instruct 2507",
@@ -5430,6 +5640,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-235b-a22b-thinking-2507": {
         "name": "Qwen3 235B A22B Thinking 2507",
@@ -5451,6 +5662,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-30b-a3b": {
         "name": "Qwen3 30B A3B",
@@ -5472,6 +5684,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-30b-a3b-instruct-2507": {
         "name": "Qwen3 30B A3B Instruct 2507",
@@ -5493,6 +5706,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-30b-a3b-thinking-2507": {
         "name": "Qwen3 30B A3B Thinking 2507",
@@ -5514,6 +5728,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-32b": {
         "name": "Qwen3 32B",
@@ -5535,6 +5750,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-8b": {
         "name": "Qwen3 8B",
@@ -5556,6 +5772,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder": {
         "name": "Qwen3 Coder 480B A35B",
@@ -5577,6 +5794,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
         "name": "Qwen3-Coder 30B-A3B Instruct",
@@ -5598,6 +5816,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder-flash": {
         "name": "Qwen3 Coder Flash",
@@ -5619,6 +5838,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder-next": {
         "name": "Qwen3 Coder Next",
@@ -5640,6 +5860,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder-plus": {
         "name": "Qwen3 Coder Plus",
@@ -5661,6 +5882,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-coder:free": {
         "name": "Qwen3 Coder 480B A35B (free)",
@@ -5682,6 +5904,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-max": {
         "name": "Qwen3 Max",
@@ -5703,6 +5926,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-max-thinking": {
         "name": "Qwen3 Max Thinking",
@@ -5724,6 +5948,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-next-80b-a3b-instruct": {
         "name": "Qwen3-Next 80B-A3B Instruct",
@@ -5745,6 +5970,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-next-80b-a3b-instruct:free": {
         "name": "Qwen3 Next 80B A3B Instruct (free)",
@@ -5766,6 +5992,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-next-80b-a3b-thinking": {
         "name": "Qwen3-Next 80B-A3B (Thinking)",
@@ -5787,6 +6014,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-235b-a22b-instruct": {
         "name": "Qwen3 VL 235B A22B Instruct",
@@ -5808,6 +6036,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {
         "name": "Qwen3 VL 235B A22B Thinking",
@@ -5829,6 +6058,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-30b-a3b-instruct": {
         "name": "Qwen3 VL 30B A3B Instruct",
@@ -5850,6 +6080,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-30b-a3b-thinking": {
         "name": "Qwen3 VL 30B A3B Thinking",
@@ -5871,6 +6102,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-32b-instruct": {
         "name": "Qwen3 VL 32B Instruct",
@@ -5892,6 +6124,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-8b-instruct": {
         "name": "Qwen3 VL 8B Instruct",
@@ -5913,6 +6146,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3-vl-8b-thinking": {
         "name": "Qwen3 VL 8B Thinking",
@@ -5934,6 +6168,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-122b-a10b": {
         "name": "Qwen3.5 122B-A10B",
@@ -5955,6 +6190,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-27b": {
         "name": "Qwen3.5 27B",
@@ -5976,6 +6212,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-35b-a3b": {
         "name": "Qwen3.5 35B-A3B",
@@ -5997,6 +6234,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-397b-a17b": {
         "name": "Qwen3.5 397B-A17B",
@@ -6018,6 +6256,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-9b": {
         "name": "Qwen3.5-9B",
@@ -6039,6 +6278,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-flash-02-23": {
         "name": "Qwen3.5-Flash",
@@ -6060,6 +6300,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-plus-02-15": {
         "name": "Qwen3.5 Plus 2026-02-15",
@@ -6081,6 +6322,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.5-plus-20260420": {
         "name": "Qwen3.5 Plus 2026-04-20",
@@ -6102,32 +6344,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.6-27b": {
         "name": "Qwen3.6 27B",
         "release_date": "2026-04-22",
         "last_updated": "2026-04-22",
-        "open_weights": True,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 131072,
-        "text_inputs": True,
-        "image_inputs": True,
-        "audio_inputs": False,
-        "video_inputs": True,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": True,
-        "tool_calling": True,
-        "structured_output": True,
-        "attachment": True,
-        "temperature": True,
-    },
-    "qwen/qwen3.6-35b-a3b": {
-        "name": "Qwen3.6 35B-A3B",
-        "release_date": "2026-04-17",
-        "last_updated": "2026-04-17",
         "open_weights": True,
         "max_input_tokens": 262140,
         "max_output_tokens": 262140,
@@ -6144,6 +6366,29 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
+    },
+    "qwen/qwen3.6-35b-a3b": {
+        "name": "Qwen3.6 35B-A3B",
+        "release_date": "2026-04-17",
+        "last_updated": "2026-04-17",
+        "open_weights": True,
+        "max_input_tokens": 262144,
+        "max_output_tokens": 262144,
+        "text_inputs": True,
+        "image_inputs": True,
+        "audio_inputs": False,
+        "video_inputs": True,
+        "text_outputs": True,
+        "image_outputs": False,
+        "audio_outputs": False,
+        "video_outputs": False,
+        "reasoning_output": True,
+        "tool_calling": True,
+        "structured_output": True,
+        "attachment": True,
+        "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.6-flash": {
         "name": "Qwen3.6 Flash",
@@ -6165,6 +6410,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.6-max-preview": {
         "name": "Qwen3.6 Max Preview",
@@ -6186,6 +6432,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.6-plus": {
         "name": "Qwen3.6 Plus",
@@ -6207,6 +6454,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.7-max": {
         "name": "Qwen3.7 Max",
@@ -6228,6 +6476,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "qwen/qwen3.7-plus": {
         "name": "Qwen3.7 Plus",
@@ -6249,6 +6498,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "rekaai/reka-edge": {
         "name": "Reka Edge",
@@ -6270,6 +6520,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "rekaai/reka-flash-3": {
         "name": "Reka Flash 3",
@@ -6291,6 +6542,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "relace/relace-apply-3": {
         "name": "Relace Apply 3",
@@ -6312,6 +6564,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "relace/relace-search": {
         "name": "Relace Search",
@@ -6333,6 +6586,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "sao10k/l3-lunaris-8b": {
         "name": "Llama 3 8B Lunaris",
@@ -6354,6 +6608,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "sao10k/l3.1-70b-hanami-x1": {
         "name": "Llama 3.1 70B Hanami x1",
@@ -6375,6 +6630,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "sao10k/l3.1-euryale-70b": {
         "name": "Llama 3.1 Euryale 70B v2.2",
@@ -6396,6 +6652,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "sao10k/l3.3-euryale-70b": {
         "name": "Llama 3.3 Euryale 70B",
@@ -6417,6 +6674,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "stepfun/step-3.5-flash": {
         "name": "Step 3.5 Flash",
@@ -6438,6 +6696,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "stepfun/step-3.7-flash": {
         "name": "Step 3.7 Flash",
@@ -6459,6 +6718,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "switchpoint/router": {
         "name": "Switchpoint Router",
@@ -6480,6 +6740,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "tencent/hunyuan-a13b-instruct": {
         "name": "Hunyuan A13B Instruct",
@@ -6501,6 +6762,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "tencent/hy3-preview": {
         "name": "Hy3 preview",
@@ -6522,6 +6784,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "thedrummer/cydonia-24b-v4.1": {
         "name": "Cydonia 24B V4.1",
@@ -6543,6 +6806,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "thedrummer/rocinante-12b": {
         "name": "Rocinante 12B",
@@ -6564,6 +6828,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "thedrummer/skyfall-36b-v2": {
         "name": "Skyfall 36B V2",
@@ -6585,6 +6850,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "thedrummer/unslopnemo-12b": {
         "name": "UnslopNemo 12B",
@@ -6606,6 +6872,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "undi95/remm-slerp-l2-13b": {
         "name": "ReMM SLERP 13B",
@@ -6627,6 +6894,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "upstage/solar-pro-3": {
         "name": "Solar Pro 3",
@@ -6648,6 +6916,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "writer/palmyra-x5": {
         "name": "Palmyra X5",
@@ -6669,6 +6938,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "x-ai/grok-4.20": {
         "name": "Grok 4.20",
@@ -6691,6 +6961,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "x-ai/grok-4.20-multi-agent": {
         "name": "Grok 4.20 Multi-Agent",
@@ -6713,6 +6984,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "x-ai/grok-4.3": {
         "name": "Grok 4.3",
@@ -6734,6 +7006,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "x-ai/grok-build-0.1": {
         "name": "Grok Build 0.1",
@@ -6755,6 +7028,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "xiaomi/mimo-v2-flash": {
         "name": "MiMo-V2-Flash",
@@ -6776,6 +7050,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "xiaomi/mimo-v2.5": {
         "name": "MiMo-V2.5",
@@ -6797,6 +7072,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "xiaomi/mimo-v2.5-pro": {
         "name": "MiMo-V2.5-Pro",
@@ -6818,27 +7094,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
-    },
-    "z-ai/glm-4-32b": {
-        "name": "GLM 4 32B ",
-        "release_date": "2025-07-24",
-        "last_updated": "2025-07-24",
-        "open_weights": False,
-        "max_input_tokens": 128000,
-        "max_output_tokens": 128000,
-        "text_inputs": True,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": False,
-        "tool_calling": True,
-        "structured_output": False,
-        "attachment": False,
-        "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.5": {
         "name": "GLM-4.5",
@@ -6860,6 +7116,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.5-air": {
         "name": "GLM-4.5-Air",
@@ -6878,30 +7135,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": False,
         "temperature": True,
-    },
-    "z-ai/glm-4.5-air:free": {
-        "name": "GLM 4.5 Air (free)",
-        "release_date": "2025-07-28",
-        "last_updated": "2025-07-28",
-        "open_weights": True,
-        "max_input_tokens": 131072,
-        "max_output_tokens": 96000,
-        "text_inputs": True,
-        "image_inputs": False,
-        "audio_inputs": False,
-        "video_inputs": False,
-        "text_outputs": True,
-        "image_outputs": False,
-        "audio_outputs": False,
-        "video_outputs": False,
-        "reasoning_output": True,
-        "tool_calling": True,
-        "structured_output": False,
-        "attachment": False,
-        "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.5v": {
         "name": "GLM-4.5V",
@@ -6923,6 +7160,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.6": {
         "name": "GLM-4.6",
@@ -6944,6 +7182,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.6v": {
         "name": "GLM-4.6V",
@@ -6951,7 +7190,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "last_updated": "2025-12-08",
         "open_weights": True,
         "max_input_tokens": 131072,
-        "max_output_tokens": 24000,
+        "max_output_tokens": 32768,
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
@@ -6965,6 +7204,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.7": {
         "name": "GLM-4.7",
@@ -6986,6 +7226,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-4.7-flash": {
         "name": "GLM-4.7-Flash",
@@ -7007,6 +7248,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-5": {
         "name": "GLM-5",
@@ -7028,13 +7270,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-5-turbo": {
         "name": "GLM-5-Turbo",
         "release_date": "2026-03-16",
         "last_updated": "2026-03-16",
         "open_weights": False,
-        "max_input_tokens": 202752,
+        "max_input_tokens": 262144,
         "max_output_tokens": 131072,
         "text_inputs": True,
         "image_inputs": False,
@@ -7049,6 +7292,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "z-ai/glm-5.1": {
         "name": "GLM-5.1",
@@ -7070,27 +7314,30 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
-    "z-ai/glm-5v-turbo": {
-        "name": "GLM-5V-Turbo",
-        "release_date": "2026-04-01",
-        "last_updated": "2026-04-01",
+    "~anthropic/claude-fable-latest": {
+        "name": "Claude Fable Latest",
+        "release_date": "2026-06-09",
+        "last_updated": "2026-06-09",
         "open_weights": False,
-        "max_input_tokens": 202752,
-        "max_output_tokens": 131072,
+        "max_input_tokens": 1000000,
+        "max_output_tokens": 128000,
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
-        "video_inputs": True,
+        "pdf_inputs": True,
+        "video_inputs": False,
         "text_outputs": True,
         "image_outputs": False,
         "audio_outputs": False,
         "video_outputs": False,
         "reasoning_output": True,
         "tool_calling": True,
-        "structured_output": False,
+        "structured_output": True,
         "attachment": True,
-        "temperature": True,
+        "temperature": False,
+        "tool_call_streaming": True,
     },
     "~anthropic/claude-haiku-latest": {
         "name": "Anthropic Claude Haiku Latest",
@@ -7113,6 +7360,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "~anthropic/claude-opus-latest": {
         "name": "Claude Opus Latest",
@@ -7135,6 +7383,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "~anthropic/claude-sonnet-latest": {
         "name": "Anthropic Claude Sonnet Latest",
@@ -7157,6 +7406,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "~google/gemini-flash-latest": {
         "name": "Google Gemini Flash Latest",
@@ -7179,6 +7429,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "~google/gemini-pro-latest": {
         "name": "Google Gemini Pro Latest",
@@ -7201,6 +7452,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "~moonshotai/kimi-latest": {
         "name": "MoonshotAI Kimi Latest",
@@ -7222,6 +7474,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "~openai/gpt-latest": {
         "name": "OpenAI GPT Latest",
@@ -7244,6 +7497,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "~openai/gpt-mini-latest": {
         "name": "OpenAI GPT Mini Latest",
@@ -7266,5 +7520,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
 }

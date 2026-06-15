@@ -29,19 +29,17 @@ LangChain is a framework for building agents and LLM-powered applications. It he
 ## Quickstart
 
 ```bash
-pip install langchain
-# or
 uv add langchain
 ```
 
 ```python
 from langchain.chat_models import init_chat_model
 
-model = init_chat_model("openai:gpt-5.4")
+model = init_chat_model("openai:gpt-5.5")
 result = model.invoke("Hello, world!")
 ```
 
-If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), our framework for building controllable agent workflows.
+If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://github.com/langchain-ai/langgraph), our framework for building controllable agent workflows.
 
 For an equivalent JS/TS library, check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
@@ -71,16 +69,12 @@ LangChain helps developers build applications powered by LLMs through a standard
 
 ---
 
-## Documentation
+## Resources
 
-- [docs.langchain.com](https://docs.langchain.com/oss/python/langchain/overview) – Comprehensive documentation, including conceptual overviews and guides
-- [reference.langchain.com/python](https://reference.langchain.com/python) – API reference docs for LangChain packages
-- [Chat LangChain](https://chat.langchain.com/) – Chat with the LangChain documentation and get answers to your questions
-
-**Discussions**: Visit the [LangChain Forum](https://forum.langchain.com) to connect with the community and share all of your technical questions, ideas, and feedback.
-
-## Additional resources
-
-- [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) – Learn how to contribute to LangChain projects and find good first issues.
-- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) – Our community guidelines and standards for participation.
-- [LangChain Academy](https://academy.langchain.com/) – Comprehensive, free courses on LangChain libraries and products, made by the LangChain team.
+- [Documentation](https://docs.langchain.com/oss/python/langchain/overview) — conceptual overviews and guides
+- [LangChain ecosystem overview](https://docs.langchain.com/oss/python/concepts/products) — how LangChain, LangGraph, and Deep Agents fit together
+- [API reference](https://reference.langchain.com/python) — complete reference for all public classes, functions, and types
+- [Discussions](https://forum.langchain.com/c/oss-product-help-lc-and-lg/langchain/14) — community forum for technical questions, ideas, and feedback
+- [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
+- [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview) — how to contribute and find good first issues
+- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards

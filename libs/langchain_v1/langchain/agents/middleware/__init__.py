@@ -12,6 +12,7 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -29,9 +30,11 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ExtendedModelResponse,
+    InputAgentState,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
     ToolCallRequest,
     after_agent,
     after_model,
@@ -54,6 +57,7 @@ __all__ = [
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
+    "InputAgentState",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
@@ -63,8 +67,10 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
+    "OutputAgentState",
     "PIIDetectionError",
     "PIIMiddleware",
+    "ProviderToolSearchMiddleware",
     "RedactionRule",
     "Runtime",
     "ShellToolMiddleware",

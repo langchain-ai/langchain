@@ -1,0 +1,4 @@
+provider = "huggingface"
+
+[overrides]
+tool_call_streaming = true

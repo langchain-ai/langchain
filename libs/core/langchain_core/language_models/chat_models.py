@@ -67,6 +67,7 @@ from langchain_core.messages.block_translators.openai import (
 )
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
     PydanticToolsParser,
 )
 from langchain_core.outputs import (
@@ -90,7 +91,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
@@ -99,7 +100,6 @@ if TYPE_CHECKING:
 
     from langchain_protocol.protocol import MessagesData
 
-    from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
@@ -108,7 +108,7 @@ if TYPE_CHECKING:
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
-        metadata: dict = {}
+        metadata: dict[str, Any] = {}
         if hasattr(response, "json"):
             try:
                 metadata["body"] = response.json()
@@ -248,7 +248,9 @@ async def agenerate_from_stream(
     return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
-def _format_ls_structured_output(ls_structured_output_format: dict | None) -> dict:
+def _format_ls_structured_output(
+    ls_structured_output_format: dict[str, Any] | None,
+) -> dict[str, Any]:
     if ls_structured_output_format:
         try:
             ls_structured_output_format_dict = {
@@ -451,7 +453,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return StringPromptValue(text=model_input)
         if isinstance(model_input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(model_input))
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
@@ -790,9 +792,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                                 index += 1
                             if "index" not in block:
                                 block["index"] = index
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
                     yielded = True
@@ -804,7 +804,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     and isinstance(chunk.message, AIMessageChunk)
                     and not chunk.message.chunk_position
                 ):
-                    empty_content: str | list = (
+                    empty_content: str | list[str | dict[str, Any]] = (
                         "" if isinstance(chunk.message.content, str) else []
                     )
                     msg_chunk = AIMessageChunk(
@@ -925,9 +925,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
-                await run_manager.on_llm_new_token(
-                    cast("str", chunk.message.content), chunk=chunk
-                )
+                await run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
                 yielded = True
@@ -938,7 +936,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 msg_chunk = AIMessageChunk(
@@ -1225,7 +1223,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             async with start_lock:
                 if stream._producer_task is not None:  # noqa: SLF001
-                    return
+                    return  # type: ignore[unreachable]
 
                 (run_manager,) = await callback_manager.on_chat_model_start(
                     self._serialized,
@@ -1372,11 +1370,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     # --- Custom methods ---
 
     def _combine_llm_outputs(
-        self, _llm_outputs: list[builtins.dict | None], /
-    ) -> builtins.dict:
+        self, _llm_outputs: list[builtins.dict[str, Any] | None], /
+    ) -> builtins.dict[str, Any]:
         return {}
 
-    def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
+    def _convert_cached_generations(
+        self, cache_val: list[Generation]
+    ) -> list[ChatGeneration]:
         """Convert cached Generation objects to ChatGeneration objects.
 
         Handle case where cache contains Generation objects instead of
@@ -1466,7 +1466,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> builtins.dict:
+    ) -> builtins.dict[str, Any]:
         params = self._dict_for_compat()
         params["stop"] = stop
         return {**params, **kwargs}
@@ -1968,9 +1968,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
 
@@ -1980,7 +1978,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 chunk = ChatGenerationChunk(
@@ -2126,7 +2124,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     await run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
+                        chunk.message.content, chunk=chunk
                     )
                 chunks.append(chunk)
                 yielded = True
@@ -2137,7 +2135,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 and isinstance(chunk.message, AIMessageChunk)
                 and not chunk.message.chunk_position
             ):
-                empty_content: str | list = (
+                empty_content: str | list[str | dict[str, Any]] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 chunk = ChatGenerationChunk(
@@ -2339,7 +2337,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[builtins.dict[str, Any] | type | Callable | BaseTool],
+        tools: Sequence[builtins.dict[str, Any] | type | Callable[..., Any] | BaseTool],
         *,
         tool_choice: str | None = None,
         **kwargs: Any,
@@ -2519,10 +2517,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 "schema": schema,
             },
         )
+        output_parser: JsonOutputToolsParser
         if isinstance(schema, type) and is_basemodel_subclass(schema):
-            output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
-            )
+            output_parser = PydanticToolsParser(tools=[schema], first_tool_only=True)
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]
             output_parser = JsonOutputKeyToolsParser(
@@ -2679,7 +2676,7 @@ class SimpleChatModel(BaseChatModel):
 
 def _gen_info_and_msg_metadata(
     generation: ChatGeneration | ChatGenerationChunk,
-) -> dict:
+) -> dict[str, Any]:
     return {
         **(generation.generation_info or {}),
         **generation.message.response_metadata,

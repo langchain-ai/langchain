@@ -37,6 +37,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "grok-4.20-0309-reasoning": {
         "name": "Grok 4.20 (Reasoning)",
@@ -59,6 +60,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "grok-4.20-multi-agent-0309": {
         "name": "Grok 4.20 Multi-Agent",
@@ -81,6 +83,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "grok-4.3": {
         "name": "Grok 4.3",
@@ -103,6 +106,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "grok-build-0.1": {
         "name": "Grok Build 0.1",
@@ -125,6 +129,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "grok-imagine-image": {
         "name": "Grok Imagine Image",
@@ -146,6 +151,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "grok-imagine-image-quality": {
         "name": "Grok Imagine Image Quality",
@@ -167,6 +173,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
     "grok-imagine-video": {
         "name": "Grok Imagine Video",
@@ -188,5 +195,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "tool_call_streaming": True,
     },
 }

@@ -113,6 +113,12 @@ class ModelProfile(TypedDict, total=False):
     tool_choice: bool
     """Whether the model supports [tool choice](https://docs.langchain.com/oss/python/langchain/models#forcing-tool-calls)."""
 
+    tool_call_streaming: bool
+    """Whether the model returns properly structured `tool_call_chunks` when streaming.
+
+    Only meaningful when `tool_calling` is `True`.
+    """
+
     # --- Structured output ---
     structured_output: bool
     """Whether the model supports native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)."""
@@ -137,7 +143,7 @@ def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
         profile: The model profile dict to check for undeclared keys.
     """
     if not isinstance(profile, dict):
-        return
+        return  # type: ignore[unreachable]
 
     try:
         declared = frozenset(get_type_hints(ModelProfile).keys())

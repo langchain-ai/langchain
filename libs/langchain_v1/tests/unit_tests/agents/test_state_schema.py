@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from typing_extensions import NotRequired, Required
+from typing_extensions import NotRequired, Required, override
 
 from langchain.agents import create_agent, factory
 from langchain.agents.middleware.types import (
@@ -127,6 +127,7 @@ def test_state_schema_with_middleware() -> None:
     class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
+        @override
         def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append(state["middleware_data"])
             return {}
