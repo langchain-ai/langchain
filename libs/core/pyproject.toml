@@ -92,9 +92,6 @@ strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
 
-# TODO: activate for 'strict' checking
-disallow_any_generics = false
-
 [tool.ruff.format]
 docstring-code-format = true
 
