@@ -3956,9 +3956,14 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         """
         merged = {**steps__} if steps__ is not None else {}
+        name = kwargs.pop("name", None)
+        if not isinstance(name, str) and name is not None:
+            merged["name"] = name
+            name = None
+
         merged.update(kwargs)
         super().__init__(
-            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
+            name=name, steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
     @classmethod
