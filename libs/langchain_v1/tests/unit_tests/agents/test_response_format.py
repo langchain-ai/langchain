@@ -905,7 +905,7 @@ class TestSupportsProviderStrategy:
     """Unit tests for `_supports_provider_strategy`."""
 
     @staticmethod
-    def _make_structured_model(model_name: str):
+    def _make_structured_model(model_name: str) -> GenericFakeChatModel:
         class GeminiTestChatModel(GenericFakeChatModel):
             model_name: str
 

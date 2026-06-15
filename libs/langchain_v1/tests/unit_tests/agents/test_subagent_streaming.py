@@ -8,14 +8,22 @@ tools were dropped during `stream(..., subgraphs=True)`.
 
 from __future__ import annotations
 
-from langchain_core.messages import HumanMessage, ToolCall
-from langchain_core.tools import tool
+from typing import TYPE_CHECKING, Any, cast
 
-from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage, ToolCall
+from langchain_core.tools import BaseTool, tool
+
+from langchain.agents import AgentState, create_agent
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
+if TYPE_CHECKING:
+    from langgraph.graph.state import CompiledStateGraph
+    from langgraph.typing import ContextT
 
-def _make_subagent_caller_tool():
+    from langchain.agents.middleware import InputAgentState, OutputAgentState
+
+
+def _make_subagent_caller_tool() -> BaseTool:
     """Build a subagent and a tool that invokes it."""
     subagent = create_agent(
         model=FakeToolCallingModel(tool_calls=[[]]),
@@ -26,12 +34,14 @@ def _make_subagent_caller_tool():
     def call_subagent(query: str) -> str:
         """Delegate the query to a sub-agent."""
         result = subagent.invoke({"messages": [HumanMessage(query)]})
-        return result["messages"][-1].text
+        return cast("str", result["messages"][-1].text)
 
     return call_subagent
 
 
-def _make_parent_agent(call_subagent_tool) -> object:
+def _make_parent_agent(
+    call_subagent_tool: BaseTool,
+) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]:
     parent_tool_calls: list[list[ToolCall]] = [
         [{"args": {"query": "hi"}, "id": "call_1", "name": "call_subagent"}],
         [],
