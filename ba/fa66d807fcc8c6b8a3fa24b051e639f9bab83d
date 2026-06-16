@@ -1,0 +1,19 @@
+README.md
+  s_a680de160778bd::t_ad680e41362d14 77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "bafa66d807fcc8c6b8a3fa24b051e639f9bab83d",
+  "prompts": {},
+  "sessions": {
+    "s_a680de160778bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "959955a7-98f7-448d-9766-824b3f948075",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

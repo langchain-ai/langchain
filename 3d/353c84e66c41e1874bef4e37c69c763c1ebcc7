@@ -1,0 +1,62 @@
+libs/partners/anthropic/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/partners/deepseek/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/partners/mistralai/README.md
+  s_a680de160778bd::t_9b9f988d414d34 32
+libs/langchain_v1/README.md
+  s_a680de160778bd::t_9b9f988d414d34 43
+libs/partners/perplexity/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/text-splitters/README.md
+  s_a680de160778bd::t_9b9f988d414d34 40
+libs/model-profiles/README.md
+  s_a680de160778bd::t_9b9f988d414d34 47
+libs/partners/nomic/README.md
+  s_a680de160778bd::t_9b9f988d414d34 26
+libs/partners/openai/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/partners/ollama/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/partners/fireworks/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+libs/core/README.md
+  s_a680de160778bd::t_9b9f988d414d34 51
+libs/langchain/README.md
+  s_a680de160778bd::t_9b9f988d414d34 41
+libs/partners/huggingface/README.md
+  s_a680de160778bd::t_5c67ad7bf7d8bf 21
+  s_a680de160778bd::t_9b9f988d414d34 52
+libs/partners/chroma/README.md
+  s_a680de160778bd::t_9b9f988d414d34 26
+libs/partners/groq/README.md
+  s_a680de160778bd::t_9b9f988d414d34 32
+README.md
+  s_a680de160778bd::t_403ba4df65e6c4 78
+  s_a680de160778bd::t_c58f37954955aa 75
+  s_a680de160778bd::t_9c1f92959ad48c 77
+libs/partners/exa/README.md
+  s_a680de160778bd::t_9b9f988d414d34 26
+libs/partners/qdrant/README.md
+  s_a680de160778bd::t_9b9f988d414d34 26
+libs/partners/openrouter/README.md
+  s_a680de160778bd::t_9b9f988d414d34 34
+libs/partners/xai/README.md
+  s_a680de160778bd::t_9b9f988d414d34 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "3d353c84e66c41e1874bef4e37c69c763c1ebcc7",
+  "prompts": {},
+  "sessions": {
+    "s_a680de160778bd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "959955a7-98f7-448d-9766-824b3f948075",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

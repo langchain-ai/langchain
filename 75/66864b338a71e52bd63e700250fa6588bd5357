@@ -1,0 +1,22 @@
+.github/workflows/_release.yml
+  s_7592a05493d2be::t_b744aab7db5001 42-46
+  s_7592a05493d2be::t_8afea0617f9dc2 597-599
+  s_7592a05493d2be::t_c034b726e67bff 655,658,661-663,665,668,671,673-689,700,706-713,729
+  s_7592a05493d2be::t_091402c8c3d79f 724,728
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7566864b338a71e52bd63e700250fa6588bd5357",
+  "prompts": {},
+  "sessions": {
+    "s_7592a05493d2be": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8078dbbe-e6b4-466e-a3c8-5492bf7108a7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

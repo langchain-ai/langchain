@@ -1,0 +1,39 @@
+libs/partners/openai/langchain_openai/chatgpt_oauth.py
+  s_8ac6183fb19ef0::t_6b7b29e0ee38d1 577-584
+  s_8ac6183fb19ef0::t_8ebb1a7aaa3bc9 180-187
+  s_8ac6183fb19ef0::t_5903a8a7caa5aa 673
+  s_8ac6183fb19ef0::t_478854936d611b 668-672,674-676
+  s_8ac6183fb19ef0::t_17e8bb7624b458 25
+  s_8ac6183fb19ef0::t_099675cf174716 965-967,974-977
+  s_8ac6183fb19ef0::t_c3294e3f2d0b27 62,66-74
+  s_8ac6183fb19ef0::t_b3735adfc9c40c 812-842,856-858,863,865,876-882,887
+  s_8ac6183fb19ef0::t_edb1d49ff72fc1 451-452
+  s_8ac6183fb19ef0::t_6e014af4267e36 601-606
+libs/partners/openai/tests/unit_tests/test_chatgpt_oauth.py
+  s_8ac6183fb19ef0::t_d1074a10056dc4 7
+  s_8ac6183fb19ef0::t_5903a8a7caa5aa 345-346
+  s_8ac6183fb19ef0::t_702e7f25d418df 340-341
+  s_8ac6183fb19ef0::t_f19afe26de8b92 30
+  s_8ac6183fb19ef0::t_090d862c8ef0c3 323-339,342-344,347-362
+libs/partners/openai/langchain_openai/chat_models/codex.py
+  s_8ac6183fb19ef0::t_bbf5c6f96538c5 175-181
+  s_8ac6183fb19ef0::t_a264e9e2c3c31e 347-362
+libs/partners/openai/tests/unit_tests/chat_models/test_codex.py
+  s_8ac6183fb19ef0::t_fe398c3d5271c3 111-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b155dd9ae86960c413baad7c9f2ef12119e678d0",
+  "prompts": {},
+  "sessions": {
+    "s_8ac6183fb19ef0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ad47cc0-96ed-41dd-b825-b2826756db9e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
