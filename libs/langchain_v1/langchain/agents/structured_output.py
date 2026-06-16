@@ -439,7 +439,11 @@ class ProviderStrategyBinding(Generic[SchemaT]):
                 if c.get("type") == "text" and "text" in c:
                     parts.append(str(c["text"]))
                 elif "content" in c and isinstance(c["content"], str):
-                    parts.append(c["content"])
+                    text = str(c["content"])
+                    if "phase" in c:
+                        phase_items[c["phase"]] = text
+                    else:
+                        parts.append(text)
             else:
                 parts.append(str(c))
         return "".join(parts)
