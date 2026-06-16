@@ -1144,6 +1144,49 @@ def test__create_usage_metadata_responses() -> None:
     )
 
 
+def test__create_usage_metadata_service_tier_no_token_details() -> None:
+    """Service tier set but `cached_tokens`/`reasoning_tokens` missing.
+
+    Regression test for a `TypeError` raised when `service_tier` is `"priority"`
+    or `"flex"` but the response omits `prompt_tokens_details` /
+    `completion_tokens_details` (so `cached_tokens` / `reasoning_tokens` resolve
+    to `None`). The service-tier subtraction must treat the missing value as 0
+    rather than attempting `int - None`.
+    """
+    usage_metadata = {
+        "prompt_tokens": 100,
+        "completion_tokens": 10,
+        "total_tokens": 110,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result == UsageMetadata(
+        input_tokens=100,
+        output_tokens=10,
+        total_tokens=110,
+        input_token_details={"priority": 100},
+        output_token_details={"priority": 10},
+    )
+
+
+def test__create_usage_metadata_responses_service_tier_no_token_details() -> None:
+    """Responses variant of the service-tier `None`-arithmetic regression test."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "output_tokens": 10,
+        "total_tokens": 110,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="priority"
+    )
+    assert result == UsageMetadata(
+        input_tokens=100,
+        output_tokens=10,
+        total_tokens=110,
+        input_token_details={"priority": 100},
+        output_token_details={"priority": 10},
+    )
+
+
 def test__resize_caps_dimensions_preserving_ratio() -> None:
     """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
     assert _resize(2048, 4096) == (768, 1536)
