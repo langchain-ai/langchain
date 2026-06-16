@@ -99,7 +99,7 @@ class Tool(BaseTool):
     def _run(
         self,
         *args: Any,
-        config: RunnableConfig,
+        runnable_config: RunnableConfig,
         run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -118,7 +118,7 @@ class Tool(BaseTool):
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
-                kwargs[config_param] = config
+                kwargs[config_param] = runnable_config
             return self.func(*args, **kwargs)
         msg = "Tool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -126,7 +126,7 @@ class Tool(BaseTool):
     async def _arun(
         self,
         *args: Any,
-        config: RunnableConfig,
+        runnable_config: RunnableConfig,
         run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -145,13 +145,13 @@ class Tool(BaseTool):
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
-                kwargs[config_param] = config
+                kwargs[config_param] = runnable_config
             return await self.coroutine(*args, **kwargs)
 
         # NOTE: this code is unreachable since _arun is only called if coroutine is not
         # None.
         return await super()._arun(
-            *args, config=config, run_manager=run_manager, **kwargs
+            *args, runnable_config=runnable_config, run_manager=run_manager, **kwargs
         )
 
     # TODO: this is for backwards compatibility, remove in future
