@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -64,8 +64,15 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._stream_events import (
+    aconvert_anthropic_stream,
+    convert_anthropic_stream,
+)
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
+
+if TYPE_CHECKING:
+    from langchain_protocol.protocol import ContentBlockDelta, MessagesData
 
 _message_type_lookups = {
     "human": "user",
@@ -874,6 +881,13 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     raise
 
 
+def _delta_text_for_callback(delta: ContentBlockDelta) -> str:
+    """Text increment to report via `on_llm_new_token` (empty for non-text)."""
+    if delta.get("type") == "text-delta":
+        return cast("str", delta.get("text", ""))
+    return ""
+
+
 class ChatAnthropic(BaseChatModel):
     """Anthropic (Claude) chat models.
 
@@ -1506,6 +1520,74 @@ class ChatAnthropic(BaseChatModel):
                     if run_manager and isinstance(msg.content, str):
                         await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
+
+    def _stream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> Iterator[MessagesData]:
+        """Emit Anthropic-native content-block protocol events.
+
+        Detected by `langchain-core`'s `_iter_v2_events`; powers
+        `stream_events(version="v3")`. Falls through to the compat bridge
+        only if this method is absent. `message_id` is threaded from the
+        stream so `message-start` matches the bridge's LangChain run id.
+        """
+        if stream_usage is None:
+            stream_usage = self.stream_usage
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        try:
+            raw = self._create(payload)
+            for event in convert_anthropic_stream(
+                raw,
+                self._make_message_chunk_from_anthropic_event,
+                stream_usage=stream_usage,
+                message_id=message_id,
+            ):
+                if run_manager is not None and event["event"] == "content-block-delta":
+                    token = _delta_text_for_callback(event["delta"])
+                    if token:
+                        run_manager.on_llm_new_token(token)
+                yield event
+        except anthropic.BadRequestError as e:
+            _handle_anthropic_bad_request(e)
+
+    async def _astream_chat_model_events(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
+        message_id: str | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[MessagesData]:
+        """Async twin of `_stream_chat_model_events`."""
+        if stream_usage is None:
+            stream_usage = self.stream_usage
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        try:
+            raw = await self._acreate(payload)
+            async for event in aconvert_anthropic_stream(
+                raw,
+                self._make_message_chunk_from_anthropic_event,
+                stream_usage=stream_usage,
+                message_id=message_id,
+            ):
+                if run_manager is not None and event["event"] == "content-block-delta":
+                    token = _delta_text_for_callback(event["delta"])
+                    if token:
+                        await run_manager.on_llm_new_token(token)
+                yield event
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
 
