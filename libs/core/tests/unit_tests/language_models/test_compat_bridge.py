@@ -9,7 +9,7 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
-    _to_protocol_usage,
+    _isolate_usage,
     achunks_to_events,
     amessage_to_events,
     chunks_to_events,
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         ServerToolCall,
         TextContentBlock,
         ToolCall,
+        UsageInfo,
     )
 
 
@@ -108,16 +109,38 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
-def test_to_protocol_usage_present() -> None:
-    usage = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
-    result = _to_protocol_usage(usage)
+def test_isolate_usage_present() -> None:
+    usage: UsageInfo = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+    result = _isolate_usage(usage)
     assert result is not None
     assert result["input_tokens"] == 10
     assert result["output_tokens"] == 20
 
 
-def test_to_protocol_usage_none() -> None:
-    assert _to_protocol_usage(None) is None
+def test_isolate_usage_none() -> None:
+    assert _isolate_usage(None) is None
+
+
+def test_isolate_usage_preserves_token_details() -> None:
+    """Cache / reasoning breakdowns must survive into the emitted event.
+
+    `input_tokens` already includes cached tokens; without the detail
+    dicts, tracers price every input token at the uncached rate.
+    """
+    usage: UsageInfo = {
+        "input_tokens": 100,
+        "output_tokens": 5,
+        "total_tokens": 105,
+        "input_token_details": {"cache_read": 90, "cache_creation": 7},
+        "output_token_details": {"reasoning": 3},
+    }
+    result = cast("dict[str, Any]", _isolate_usage(usage))
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 90, "cache_creation": 7}
+    assert result["output_token_details"] == {"reasoning": 3}
+    # Detail dicts are copied, not aliased — a consumer mutating the emitted
+    # event must not reach back into the source message's usage_metadata.
+    assert result["input_token_details"] is not usage["input_token_details"]
 
 
 # ---------------------------------------------------------------------------
