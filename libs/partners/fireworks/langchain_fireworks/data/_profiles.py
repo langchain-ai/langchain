@@ -84,7 +84,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "accounts/fireworks/models/gpt-oss-120b": {
         "name": "GPT OSS 120B",
         "release_date": "2025-08-05",
-        "last_updated": "2025-08-05",
+        "last_updated": "2026-06-15",
         "open_weights": True,
         "max_input_tokens": 131072,
         "max_output_tokens": 32768,
