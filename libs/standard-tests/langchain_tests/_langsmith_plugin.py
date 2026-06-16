@@ -23,7 +23,6 @@ import sys
 import warnings
 from typing import TYPE_CHECKING, Any
 
-import pytest
 from langsmith.run_helpers import tracing_context
 
 if TYPE_CHECKING:
@@ -84,8 +83,22 @@ def _langsmith_ci_cm() -> Iterator[None]:
         yield
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _langsmith_ci_context() -> Iterator[None]:
-    """Apply `LANGSMITH_TAGS`/`LANGSMITH_METADATA` to traces in this session."""
-    with _langsmith_ci_cm():
-        yield
+_langsmith_ci_context: contextlib.ExitStack | None = None
+
+
+def pytest_configure() -> None:
+    """Apply `LANGSMITH_TAGS`/`LANGSMITH_METADATA` to traces."""
+    global _langsmith_ci_context  # noqa: PLW0603
+
+    if _langsmith_ci_context is None:
+        _langsmith_ci_context = contextlib.ExitStack()
+        _langsmith_ci_context.enter_context(_langsmith_ci_cm())
+
+
+def pytest_unconfigure() -> None:
+    """Restore the previous LangSmith tracing context."""
+    global _langsmith_ci_context  # noqa: PLW0603
+
+    if _langsmith_ci_context is not None:
+        _langsmith_ci_context.close()
+        _langsmith_ci_context = None

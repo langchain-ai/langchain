@@ -129,22 +129,23 @@ class TestContextManager:
 
 
 class TestPluginDiscovery:
-    """End-to-end: the `pytest11` entry point wires up the autouse fixture."""
+    """End-to-end: the `pytest11` entry point wires up the plugin hooks."""
 
-    def test_autouse_fixture_applies_env_in_subprocess(
+    def test_plugin_hooks_apply_env_in_subprocess(
         self, pytester: pytest.Pytester, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("GITHUB_ACTIONS", "true")
         monkeypatch.setenv("LANGSMITH_TAGS", "discovered,from-entrypoint")
         monkeypatch.delenv("LANGSMITH_METADATA", raising=False)
-        pytester.makepyfile(
+        pytester.makeconftest(
             dedent("""
                 from langsmith.run_helpers import get_tracing_context
 
-                def test_tags_visible_via_autouse_fixture():
+                def pytest_runtest_setup(item):
                     ctx = get_tracing_context()
                     assert ctx["tags"] == ["discovered", "from-entrypoint"]
             """),
         )
+        pytester.makepyfile("def test_tags_visible_before_test_setup(): pass")
         result = pytester.runpytest_subprocess("-q")
         result.assert_outcomes(passed=1)
