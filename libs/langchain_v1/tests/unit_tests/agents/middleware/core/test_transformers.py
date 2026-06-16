@@ -60,7 +60,7 @@ def test_middleware_transformer_registered_on_compiled_graph() -> None:
 
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    assert "middleware_marker" in run._mux.extensions  # type: ignore[attr-defined]
+    assert "middleware_marker" in run._mux.extensions
     # Drain to close the run cleanly.
     list(run.tool_calls)
 
@@ -80,7 +80,7 @@ def test_middleware_and_user_transformers_compose_in_order() -> None:
 
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    transformers = run._mux._transformers  # type: ignore[attr-defined]
+    transformers = run._mux._transformers
     tool_call_idx = next(
         i for i, t in enumerate(transformers) if isinstance(t, ToolCallTransformer)
     )
@@ -119,7 +119,7 @@ def test_transformers_from_multiple_middleware_preserve_middleware_order() -> No
 
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    transformers = run._mux._transformers  # type: ignore[attr-defined]
+    transformers = run._mux._transformers
     idx_a = next(i for i, t in enumerate(transformers) if isinstance(t, _MarkerA))
     idx_b = next(i for i, t in enumerate(transformers) if isinstance(t, _MarkerB))
     assert idx_a < idx_b
@@ -136,7 +136,7 @@ def test_middleware_without_transformers_does_not_affect_registry() -> None:
     agent = create_agent(model=FakeToolCallingModel(), tools=[], middleware=[_Middleware()])
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    transformers = run._mux._transformers  # type: ignore[attr-defined]
+    transformers = run._mux._transformers
     assert any(isinstance(t, ToolCallTransformer) for t in transformers)
     assert not any(isinstance(t, _MiddlewareMarker) for t in transformers)
 
