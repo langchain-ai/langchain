@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Protocol
+import re
+import fnmatch
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.config import get_config
@@ -248,17 +250,84 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
         """
         super().__init__()
-        resolved_configs: dict[str, InterruptOnConfig] = {}
+        # Exact matches (unchanged behavior)
+        resolved_exact: dict[str, InterruptOnConfig] = {}
+        # Pattern configs: list of tuples (key, compiled_or_pattern, config, kind)
+        # kind is 'glob' or 're'
+        pattern_configs: list[tuple[str, Any, InterruptOnConfig, str]] = []
+
         for tool_name, tool_config in interrupt_on.items():
+            # Normalize config (bool -> InterruptOnConfig or skip)
+            config: InterruptOnConfig | None = None
             if isinstance(tool_config, bool):
                 if tool_config is True:
-                    resolved_configs[tool_name] = InterruptOnConfig(
+                    config = InterruptOnConfig(
                         allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
-            elif tool_config.get("allowed_decisions"):
-                resolved_configs[tool_name] = tool_config
-        self.interrupt_on = resolved_configs
+                else:
+                    # False => auto-approved; don't register
+                    config = None
+            elif isinstance(tool_config, dict) and tool_config.get("allowed_decisions"):
+                config = tool_config
+            else:
+                # Unknown/empty config -> skip
+                config = None
+
+            if config is None:
+                continue
+
+            # Determine key type: regex (prefix 're:'), glob (contains wildcard), or exact
+            if isinstance(tool_name, str) and tool_name.startswith("re:"):
+                pattern = tool_name[3:]
+                try:
+                    compiled = re.compile(pattern)
+                except re.error:
+                    # If regex fails to compile, treat as literal exact key
+                    resolved_exact[tool_name] = config
+                    continue
+                pattern_configs.append((tool_name, compiled, config, "re"))
+            elif isinstance(tool_name, str) and any(ch in tool_name for ch in "*?[]"):
+                pattern_configs.append((tool_name, tool_name, config, "glob"))
+            else:
+                resolved_exact[tool_name] = config
+
+        # Preserve old public attribute for backwards compatibility (exact-only)
+        self.interrupt_on = resolved_exact
+        # Store pattern configs separately (preserve registration order)
+        self._pattern_interrupt_on = pattern_configs
         self.description_prefix = description_prefix
+
+    def _resolve_config_for(self, tool_name: str) -> InterruptOnConfig | None:
+        """Resolve InterruptOnConfig for a tool name.
+
+        Precedence: exact match (self.interrupt_on) first, then pattern configs in
+        registration order. Patterns support:
+
+        - regex: keys registered with the prefix "re:" (compiled with re.compile)
+        - glob: keys containing wildcard characters (*, ?, [ or ])
+
+        Returns the first matching InterruptOnConfig or None if no match.
+        """
+        # Exact match first
+        if tool_name in self.interrupt_on:
+            return self.interrupt_on[tool_name]
+
+        # Pattern matching in registration order
+        for _key, pattern, config, kind in getattr(self, "_pattern_interrupt_on", []):
+            if kind == "glob":
+                # pattern is the glob pattern string
+                if fnmatch.fnmatchcase(tool_name, pattern):
+                    return config
+            elif kind == "re":
+                # pattern is a compiled regex
+                try:
+                    if pattern.search(tool_name):
+                        return config
+                except re.error:
+                    # If the compiled pattern unexpectedly errors, skip
+                    continue
+        return None
+
 
     def _create_action_and_config(
         self,
@@ -410,8 +479,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         review_configs: list[ReviewConfig] = []
         interrupt_indices: list[int] = []
 
+        # Map tool_name -> resolved config for later decision processing
+        resolved_for_name: dict[str, InterruptOnConfig] = {}
+
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
+            config = self._resolve_config_for(tool_call["name"])
+            if config is not None:
                 if not self._should_interrupt(tool_call, config, state, runtime):
                     continue
                 action_request, review_config = self._create_action_and_config(
@@ -420,6 +493,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 action_requests.append(action_request)
                 review_configs.append(review_config)
                 interrupt_indices.append(idx)
+                # store resolved config for later use
+                resolved_for_name[tool_call["name"]] = config
 
         # If no interrupts needed, return early
         if not action_requests:
@@ -450,7 +525,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if idx in interrupt_indices:
                 # This was an interrupt tool call - process the decision
-                config = self.interrupt_on[tool_call["name"]]
+                config = resolved_for_name.get(tool_call["name"]) or self._resolve_config_for(
+                    tool_call["name"]
+                )
                 decision = decisions[decision_idx]
                 decision_idx += 1
 
