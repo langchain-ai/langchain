@@ -35,6 +35,7 @@ def test_langchain_openai_embeddings_dimensions() -> None:
     assert len(output[0]) == 128
 
 
+@pytest.mark.vcr
 def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
     embedding = OpenAIEmbeddings()
@@ -49,6 +50,7 @@ def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     assert np.allclose(lc_output, direct_output, atol=0.001)
 
 
+@pytest.mark.vcr
 async def test_langchain_openai_embeddings_equivalent_to_raw_async() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
     embedding = OpenAIEmbeddings()
