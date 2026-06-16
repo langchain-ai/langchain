@@ -437,7 +437,7 @@ class HTMLSectionSplitter:
 
                 for key in chunk.metadata:
                     if chunk.metadata[key] == "#TITLE#":
-                        chunk.metadata[key] = metadata["Title"]
+                        chunk.metadata[key] = metadata.get("Title", "")
                 metadata = {**metadata, **chunk.metadata}
                 new_doc = Document(page_content=chunk.page_content, metadata=metadata)
                 documents.append(new_doc)
@@ -558,9 +558,11 @@ class HTMLSectionSplitter:
             Document(
                 cast("str", section["content"]),
                 metadata={
-                    self.headers_to_split_on[str(section["tag_name"])]: section[
-                        "header"
-                    ]
+                    self.headers_to_split_on[str(section["tag_name"])]: (
+                        ""
+                        if section["header"] == "#TITLE#"
+                        else section["header"]
+                    )
                 },
             )
             for section in sections
