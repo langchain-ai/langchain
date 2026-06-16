@@ -6,12 +6,18 @@ the steady state with the `tool_call_schema` memo populated; the cold benchmark
 measures first-time conversion including subset-model creation.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import pytest
 from pydantic import BaseModel, Field, create_model
-from pytest_benchmark.fixture import BenchmarkFixture
 
 from langchain_core.tools import StructuredTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import BenchmarkFixture
 
 _NUM_TOOLS = 20
 _NUM_FIELDS = 8
@@ -20,7 +26,7 @@ _NUM_FIELDS = 8
 def _make_tools(num_tools: int) -> list[StructuredTool]:
     tools = []
     for i in range(num_tools):
-        fields: dict = {
+        fields: dict[str, Any] = {
             f"param_{j}": (
                 str | None,
                 Field(default=None, description=f"Parameter {j} of action {i}."),
