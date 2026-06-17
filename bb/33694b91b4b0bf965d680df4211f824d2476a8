@@ -1,0 +1,19 @@
+libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py
+  s_22d2eee75e9b4c::t_834382ecc08be0 47-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "bb33694b91b4b0bf965d680df4211f824d2476a8",
+  "prompts": {},
+  "sessions": {
+    "s_22d2eee75e9b4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "978aea56-c8c7-4153-bb63-8ab710f98f92",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
