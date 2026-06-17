@@ -44,8 +44,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     - **System message**: Tags the last content block of the system message
         with `cache_control` so static system prompt content is cached.
-    - **Tools**: Tags tool definitions with `cache_control` so tool schemas
-        are cached across turns.
+    - **Tools**: Tags the last tool definition with `cache_control`. Because
+        tool definitions are sent as one contiguous block, a single trailing
+        breakpoint caches the entire tool set across turns.
     - **`model_settings`**: Passes `cache_control` to the chat model. The chat
         model/provider then applies the correct message-tail and
         provider-specific behavior at request time.
