@@ -4004,3 +4004,32 @@ def test_tool_call_schema_memo_not_stale_after_model_copy() -> None:
 
     # The original keeps its memo and is unaffected by the copy.
     assert tool.tool_call_schema is original_schema
+
+
+def test_tool_call_schema_json_schema_cached() -> None:
+    """`model_json_schema()` is cached on the memoized subset model class."""
+    tool = _MemoSchemaTool()
+    schema_cls = cast("type[BaseModel]", tool.tool_call_schema)
+
+    first = schema_cls.model_json_schema()
+    second = schema_cls.model_json_schema()
+    assert first is second  # same dict object, not a regenerate
+
+    # Non-default arguments bypass the cache and delegate to pydantic.
+    by_alias_off = schema_cls.model_json_schema(by_alias=False)
+    assert by_alias_off is not first
+
+
+def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> None:
+    """Reassigning an input field creates a fresh class with a fresh cache."""
+    tool = _MemoSchemaTool()
+    old_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    old_schema = old_cls.model_json_schema()
+
+    tool.description = "New description for cache test."
+    new_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    assert new_cls is not old_cls
+
+    new_schema = new_cls.model_json_schema()
+    assert new_schema is not old_schema
+    assert new_schema["description"] == "New description for cache test."

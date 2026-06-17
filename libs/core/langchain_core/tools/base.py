@@ -395,6 +395,36 @@ _TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
 """Fields the memoized `tool_call_schema` is built from; reassignment clears it."""
 
 
+def _patch_json_schema_cache(model_cls: type) -> None:
+    """Patch ``model_json_schema`` (or ``schema`` for pydantic v1) to cache.
+
+    Pydantic regenerates the full JSON-schema dict on every
+    ``model_json_schema()`` call — there is no per-class cache.  When the
+    model class is stable (memoized on a ``BaseTool`` instance), this patch
+    caches the dict on the class so repeated calls return instantly.
+
+    Only calls with all-default arguments are cached; any explicit arguments
+    bypass the cache and delegate to the original method.
+    """
+    method_name = (
+        "model_json_schema" if hasattr(model_cls, "model_json_schema") else "schema"
+    )
+    orig = getattr(model_cls, method_name)
+
+    @classmethod  # type: ignore[override]
+    def _cached_json_schema(cls: type, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        if not args and not kwargs:
+            cached = cls.__dict__.get("_json_schema_cache")
+            if cached is not None:
+                return cached
+        result = orig(*args, **kwargs)
+        if not args and not kwargs:
+            cls._json_schema_cache = result  # type: ignore[attr-defined]
+        return result
+
+    setattr(model_cls, method_name, _cached_json_schema)
+
+
 class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
     """Base class for all LangChain tools.
 
@@ -589,9 +619,12 @@ class ChildTool(BaseTool):
     _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
     """Memoized `tool_call_schema` result.
 
-    Building the subset model is expensive and returning a new class per access
-    defeats pydantic's per-class `model_json_schema` cache, so agent loops would
-    otherwise pay full schema generation for every tool on every model call.
+    Building the subset model is expensive, and pydantic does not cache
+    `model_json_schema()` per class, so agent loops would otherwise pay full
+    schema generation for every tool on every model call. The subset model
+    class is memoized here and its `model_json_schema`/`schema` method is
+    patched to cache the generated dict, so both costs are paid only once per
+    tool instance.
     Cleared whenever `name`, `description`, or `args_schema` is reassigned (see
     `__setattr__` and `model_copy`).
     """
@@ -644,7 +677,9 @@ class ChildTool(BaseTool):
 
             The returned model class is memoized per tool instance (invalidated
             when `name`, `description`, or `args_schema` is reassigned) so
-            repeated access does not regenerate the class.
+            repeated access does not regenerate the class. The class's
+            `model_json_schema` method is also patched to cache the generated
+            schema dict, since pydantic does not cache it per class.
         """
         if isinstance(self.args_schema, dict):
             if self.description:
@@ -666,6 +701,7 @@ class ChildTool(BaseTool):
         subset_model = _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
+        _patch_json_schema_cache(subset_model)
         self._tool_call_schema_memo = subset_model
         return subset_model
 
