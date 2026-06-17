@@ -411,18 +411,17 @@ def _patch_json_schema_cache(model_cls: type) -> None:
     )
     orig = getattr(model_cls, method_name)
 
-    @classmethod  # type: ignore[override]
     def _cached_json_schema(cls: type, *args: Any, **kwargs: Any) -> dict[str, Any]:
         if not args and not kwargs:
             cached = cls.__dict__.get("_json_schema_cache")
             if cached is not None:
-                return cached
+                return cast("dict[str, Any]", cached)
         result = orig(*args, **kwargs)
         if not args and not kwargs:
             cls._json_schema_cache = result  # type: ignore[attr-defined]
-        return result
+        return cast("dict[str, Any]", result)
 
-    setattr(model_cls, method_name, _cached_json_schema)
+    setattr(model_cls, method_name, classmethod(_cached_json_schema))
 
 
 class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
