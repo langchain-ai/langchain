@@ -489,7 +489,7 @@ class InMemoryVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(
@@ -504,7 +504,7 @@ class InMemoryVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(

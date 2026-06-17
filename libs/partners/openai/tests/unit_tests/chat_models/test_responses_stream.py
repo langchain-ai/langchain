@@ -770,7 +770,7 @@ def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
     (`content-block-start` / `content-block-delta` / `content-block-finish`)
     for every reasoning block observed on the wire, not just text blocks.
     """
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True, output_version="v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:

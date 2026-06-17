@@ -130,6 +130,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
     _astream_with_chunk_timeout,
     _build_proxied_async_httpx_client,
@@ -192,6 +193,7 @@ WellKnownTools = (
     "mcp",
     "image_generation",
     "tool_search",
+    "apply_patch",
 )
 
 
@@ -1136,6 +1138,20 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     @model_validator(mode="after")
+    def _set_openai_chat_version(self) -> Self:
+        """Set package version in metadata.
+
+        Note: Subclasses that inherit from `BaseChatOpenAI` (e.g.
+        `ChatDeepSeek`, `ChatXAI`) must use a **unique** validator name
+        (e.g. `_set_deepseek_version`) instead of overriding this one. Pydantic
+        replaces same-named `model_validator` methods rather than chaining them,
+        so reusing `_set_openai_chat_version` would silently drop the parent's
+        `langchain-openai` version entry.
+        """
+        self._add_version("langchain-openai", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n is not None and self.n < 1:
@@ -1356,8 +1372,14 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            # Keep content as "" (the default) rather than converting to [].
+            # Chat Completions content deltas are normalized to strings in
+            # _convert_delta_to_message_chunk. Starting with [] causes
+            # merge_content to silently drop string content (empty list is
+            # falsy, so no merge branch applies). The empty list also triggers
+            # the content_blocks isinstance(list) short-circuit, which would
+            # return [] and miss tool_call_chunks.
             if self.output_version == "v1":
-                generation_chunk.message.content = []
                 generation_chunk.message.response_metadata["output_version"] = "v1"
 
             return generation_chunk
@@ -1388,6 +1410,9 @@ class BaseChatOpenAI(BaseChatModel):
             message_chunk.usage_metadata = usage_metadata
 
         message_chunk.response_metadata["model_provider"] = "openai"
+        # Propagate output_version so content_blocks can detect v1 mode.
+        if self.output_version == "v1":
+            message_chunk.response_metadata["output_version"] = "v1"
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -2035,7 +2060,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         allow_fetching_images: bool = True,
     ) -> int:
-        """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
+        """Calculate num tokens for supported OpenAI chat models.
 
         !!! warning
             You must have the `pillow` installed if you want to count image tokens if
@@ -2652,7 +2677,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -2732,7 +2757,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -3149,7 +3174,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "prompt_tokens": 28,
                 "total_tokens": 33,
             },
-            "model_name": "gpt-4o",
+            "model_name": "gpt-4.1-mini",
             "system_fingerprint": "fp_319be4768e",
             "finish_reason": "stop",
             "logprobs": None,
@@ -4490,6 +4515,8 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_approval_request",
                             "tool_search_call",
                             "tool_search_output",
+                            "apply_patch_call",
+                            "apply_patch_call_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4535,7 +4562,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response", "tool_search_output")
+                non_message_item_types = (
+                    "mcp_approval_response",
+                    "tool_search_output",
+                    "apply_patch_call_output",
+                )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4704,6 +4735,8 @@ def _construct_lc_result_from_responses_api(
             "image_generation_call",
             "tool_search_call",
             "tool_search_output",
+            "apply_patch_call",
+            "apply_patch_call_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4958,6 +4991,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "image_generation_call",
         "tool_search_call",
         "tool_search_output",
+        "apply_patch_call",
+        "apply_patch_call_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")

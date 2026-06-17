@@ -5,8 +5,10 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core._api import suppress_langchain_deprecation_warning
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -103,6 +105,25 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
         few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
         loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
+
+
+def test_save_preserves_deprecated_dict_override(tmp_path: Path) -> None:
+    """Saving should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictPrompt(PromptTemplate):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_save_param"] = "custom"
+            return data
+
+    prompt = CustomDictPrompt(input_variables=["name"], template="Hello {name}")
+    output_path = tmp_path / "prompt.json"
+
+    with suppress_langchain_deprecation_warning():
+        prompt.save(output_path)
+
+    assert json.loads(output_path.read_text())["custom_save_param"] == "custom"
 
 
 def test_loading_with_template_as_file() -> None:

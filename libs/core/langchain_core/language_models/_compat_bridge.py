@@ -71,6 +71,7 @@ if TYPE_CHECKING:
         TextDelta,
     )
 
+    from langchain_core.messages.ai import UsageMetadata
     from langchain_core.outputs import ChatGenerationChunk
 
 
@@ -189,7 +190,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     result: list[tuple[Any, CompatBlock]] = []
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
-            continue
+            continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
         if explicit_idx is None:
             # No source-side identity. Bucket by (sentinel, block type,
@@ -473,34 +474,52 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     return metadata
 
 
-def _accumulate_usage(
-    current: dict[str, Any] | None, delta: Any
-) -> dict[str, Any] | None:
-    """Sum usage counts and merge detail dicts across chunks."""
-    if not isinstance(delta, dict):
-        return current
-    if current is None:
-        return dict(delta)
-    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
-        if key in delta:
-            current[key] = current.get(key, 0) + delta[key]
-    for detail_key in ("input_token_details", "output_token_details"):
-        if detail_key in delta and isinstance(delta[detail_key], dict):
-            if detail_key not in current:
-                current[detail_key] = {}
-            current[detail_key].update(delta[detail_key])
-    return current
+def _accumulate_usage(current: UsageInfo | None, delta: UsageMetadata) -> UsageInfo:
+    """Sum usage counts and merge detail dicts across chunks.
+
+    `delta` is a chunk's `usage_metadata`; `current` is the running total.
+    Both sides are read and written by literal key so the typed shape is
+    preserved end to end — no `dict[str, Any]` detour.
+    """
+    new: UsageInfo = current if current is not None else {}
+    if "input_tokens" in delta:
+        new["input_tokens"] = new.get("input_tokens", 0) + delta["input_tokens"]
+    if "output_tokens" in delta:
+        new["output_tokens"] = new.get("output_tokens", 0) + delta["output_tokens"]
+    if "total_tokens" in delta:
+        new["total_tokens"] = new.get("total_tokens", 0) + delta["total_tokens"]
+    input_details = delta.get("input_token_details")
+    if input_details:
+        merged_input = new.get("input_token_details", {})
+        merged_input.update(input_details)
+        new["input_token_details"] = merged_input
+    output_details = delta.get("output_token_details")
+    if output_details:
+        merged_output = new.get("output_token_details", {})
+        merged_output.update(output_details)
+        new["output_token_details"] = merged_output
+    return new
 
 
-def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
-    """Convert accumulated usage to the protocol's `UsageInfo` shape."""
-    if usage is None:
+def _isolate_usage(usage: UsageInfo | None) -> UsageInfo | None:
+    """Copy usage for the event so consumers can't mutate the source message.
+
+    The replay path (`message_to_events`) feeds the live `msg.usage_metadata`,
+    so the emitted event must not share its dicts: copy the top level plus the
+    nested `input_token_details` / `output_token_details` to de-alias it. The
+    streaming accumulator already owns the dicts it builds, so the copy is a
+    harmless no-op on that path.
+    """
+    if not usage:
         return None
-    result: dict[str, Any] = {}
-    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
-        if key in usage:
-            result[key] = usage[key]
-    return cast("UsageInfo", result) if result else None
+    result: UsageInfo = usage.copy()
+    input_details = result.get("input_token_details")
+    if input_details is not None:
+        result["input_token_details"] = input_details.copy()
+    output_details = result.get("output_token_details")
+    if output_details is not None:
+        result["output_token_details"] = output_details.copy()
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -524,7 +543,7 @@ def _build_message_start(
 
 def _build_message_finish(
     *,
-    usage: dict[str, Any] | None,
+    usage: UsageInfo | None,
     response_metadata: dict[str, Any] | None,
     additional_kwargs: dict[str, Any] | None = None,
 ) -> MessageFinishData:
@@ -533,7 +552,7 @@ def _build_message_finish(
     # `stop_reason` now rides inside `metadata` alongside other
     # response metadata. Pass it through unchanged.
     finish_data: dict[str, Any] = {"event": "message-finish"}
-    usage_info = _to_protocol_usage(usage)
+    usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
@@ -592,7 +611,7 @@ def chunks_to_events(
     started = False
     blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
-    usage: dict[str, Any] | None = None
+    usage: UsageInfo | None = None
     response_metadata: dict[str, Any] = {}
     additional_kwargs: dict[str, Any] = {}
 
@@ -683,7 +702,7 @@ async def achunks_to_events(
     started = False
     blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
-    usage: dict[str, Any] | None = None
+    usage: UsageInfo | None = None
     response_metadata: dict[str, Any] = {}
     additional_kwargs: dict[str, Any] = {}
 

@@ -35,7 +35,7 @@ from langchain_openrouter.chat_models import (
     _wrap_messages_for_sdk,
 )
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 def _make_model(**kwargs: Any) -> ChatOpenRouter:
@@ -274,6 +274,14 @@ class TestChatOpenRouterInstantiation:
         ls_params = model._get_ls_params()
         assert ls_params["ls_stop"] == ["END", "STOP"]
 
+    def test_metadata_versions(self) -> None:
+        """Test that metadata reports the correct version info."""
+        model = _make_model()
+        assert model.metadata is not None
+        versions = model.metadata["lc_versions"]
+        assert "langchain-core" in versions
+        assert "langchain-openrouter" in versions
+
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""
         model = _make_model()
@@ -492,6 +500,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)
@@ -1625,11 +1634,11 @@ class TestCreateChatResult:
         model = _make_model()
         response = {
             **_SIMPLE_RESPONSE_DICT,
-            "model": "openai/gpt-4o",
+            "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
         assert result.llm_output is not None
-        assert result.llm_output["model_name"] == "openai/gpt-4o"
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_system_fingerprint_in_metadata(self) -> None:
         """Test that system_fingerprint is included in response_metadata."""
@@ -2629,7 +2638,7 @@ class TestFormatMessageContent:
         assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
 
     def test_video_base64_source_type_format(self) -> None:
-        """Test video block using ``source_type`` + ``data`` keys."""
+        """Test video block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "video",
             "source_type": "base64",
@@ -2704,7 +2713,7 @@ class TestFormatMessageContent:
         }
 
     def test_file_base64_source_type_format(self) -> None:
-        """Test file block using ``source_type`` + ``data`` keys."""
+        """Test file block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "file",
             "source_type": "base64",
@@ -2773,7 +2782,7 @@ class TestFormatMessageContent:
 
 
 class TestWrapMessagesForSdk:
-    """Tests for ``_wrap_messages_for_sdk`` SDK validation bypass."""
+    """Tests for `_wrap_messages_for_sdk` SDK validation bypass."""
 
     def test_no_file_blocks_returns_dicts(self) -> None:
         """Messages without file blocks should be returned as plain dicts."""
@@ -2786,7 +2795,7 @@ class TestWrapMessagesForSdk:
         assert result is msgs
 
     def test_has_file_content_blocks_detection(self) -> None:
-        """Test ``_has_file_content_blocks`` detects file blocks correctly."""
+        """Test `_has_file_content_blocks` detects file blocks correctly."""
         assert not _has_file_content_blocks([{"role": "user", "content": "plain text"}])
         assert not _has_file_content_blocks(
             [

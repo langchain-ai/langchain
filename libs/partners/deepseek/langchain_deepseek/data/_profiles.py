@@ -35,6 +35,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-reasoner": {
         "name": "DeepSeek Reasoner",
@@ -55,6 +56,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": True,
         "attachment": True,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-v4-flash": {
         "name": "DeepSeek V4 Flash",
@@ -76,6 +78,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
     "deepseek-v4-pro": {
         "name": "DeepSeek V4 Pro",
@@ -97,5 +100,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": True,
+        "tool_call_streaming": True,
     },
 }

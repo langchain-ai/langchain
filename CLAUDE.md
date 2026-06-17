@@ -138,7 +138,7 @@ The description *is* the summary — do not add a `# Summary` header.
 
   Only `Closes`, `Fixes`, and `Resolves` auto-close the referenced issue on merge. `Related:` or similar labels are informational and do not close anything.
 
-- Explain the *why*: the motivation and why this solution is the right one. Limit prose.
+- Explain the *why*: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
 - Write for readers who may be unfamiliar with this area of the codebase. Avoid insider shorthand and prefer language that is friendly to public viewers — this aids interpretability.
 - Do **not** cite line numbers; they go stale as soon as the file changes.
 - Rarely include full file paths or filenames. Reference the affected symbol, class, or subsystem by name instead.

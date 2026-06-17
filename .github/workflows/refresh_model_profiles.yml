@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   refresh-profiles:
+    if: github.repository_owner == 'langchain-ai'
     uses: ./.github/workflows/_refresh_model_profiles.yml
     with:
       providers: >-

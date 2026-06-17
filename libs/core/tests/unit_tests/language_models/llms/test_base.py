@@ -1,9 +1,11 @@
+import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import Any
+from typing import Any, get_type_hints
 
 import pytest
 from typing_extensions import override
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -21,6 +23,41 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    llm = FakeListLLM(responses=["foo"])
+
+    expected = {"responses": ["foo"], "_type": "fake-list"}
+    assert llm.asdict() == expected
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert llm.dict() == expected
+
+
+def test_base_llm_type_hints_resolve() -> None:
+    assert get_type_hints(BaseLLM.asdict)["return"] == dict[str, Any]
+
+
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictLLM(FakeListLLM):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    llm = CustomDictLLM(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        with collect_runs() as cb:
+            assert llm.invoke("hello") == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
 
 
 def test_batch() -> None:

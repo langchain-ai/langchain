@@ -47,11 +47,11 @@ class TestChatOpenRouter(ChatModelIntegrationTests):
 
     @property
     def model_override_value(self) -> str:
-        return "openai/gpt-4o"
+        return "openai/gpt-4.1-mini"
 
 
 AUDIO_MODEL = "google/gemini-2.5-flash"
-REASONING_MODEL = "openai/o3-mini"
+REASONING_MODEL = "openai/gpt-5-nano"
 
 
 class TestChatOpenRouterMultiModal(ChatModelIntegrationTests):
@@ -99,7 +99,7 @@ class TestChatOpenRouterMultiModal(ChatModelIntegrationTests):
 
     @property
     def model_override_value(self) -> str:
-        return "openai/gpt-4o"
+        return "openai/gpt-4.1-mini"
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
         """Invoke a reasoning model to exercise reasoning token tracking."""
