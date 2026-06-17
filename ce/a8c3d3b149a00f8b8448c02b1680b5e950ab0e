@@ -1,0 +1,21 @@
+libs/langchain_v1/tests/unit_tests/agents/test_subagent_streaming.py
+  s_cdaf9015f0d7da::t_49f8c96e6d7e99 43-44
+  s_cdaf9015f0d7da::t_ea0af05d70fc95 36-37
+  s_cdaf9015f0d7da::t_4d06282b7078a8 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "cea8c3d3b149a00f8b8448c02b1680b5e950ab0e",
+  "prompts": {},
+  "sessions": {
+    "s_cdaf9015f0d7da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "437cf901-15de-4984-8513-33b64cb91e47",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}

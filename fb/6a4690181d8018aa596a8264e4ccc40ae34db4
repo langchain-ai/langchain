@@ -1,0 +1,21 @@
+libs/langchain_v1/tests/unit_tests/agents/test_agent_name.py
+  s_cdaf9015f0d7da::t_9bb914977d8e17 124-125,162-163,185-186,223-224
+libs/langchain_v1/tests/unit_tests/agents/test_subagent_transformer.py
+  s_cdaf9015f0d7da::t_fb88d92b39c39f 42-43,91-92,156-157,193-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "fb6a4690181d8018aa596a8264e4ccc40ae34db4",
+  "prompts": {},
+  "sessions": {
+    "s_cdaf9015f0d7da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "437cf901-15de-4984-8513-33b64cb91e47",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
