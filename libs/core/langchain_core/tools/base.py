@@ -396,11 +396,11 @@ _TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
 
 
 def _patch_json_schema_cache(model_cls: type) -> None:
-    """Patch ``model_json_schema`` (or ``schema`` for pydantic v1) to cache.
+    """Patch `model_json_schema` (or `schema` for pydantic v1) to cache.
 
     Pydantic regenerates the full JSON-schema dict on every
-    ``model_json_schema()`` call — there is no per-class cache.  When the
-    model class is stable (memoized on a ``BaseTool`` instance), this patch
+    `model_json_schema()` call — there is no per-class cache.  When the
+    model class is stable (memoized on a `BaseTool` instance), this patch
     caches the dict on the class so repeated calls return instantly.
 
     Only calls with all-default arguments are cached; any explicit arguments
