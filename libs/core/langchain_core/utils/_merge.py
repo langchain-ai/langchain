@@ -68,6 +68,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], bool):
+                merged[right_k] = right_v
             elif isinstance(merged[right_k], int):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:

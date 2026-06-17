@@ -129,6 +129,8 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        ({"a": True}, {"a": False}, {"a": False}),
+        ({"a": False}, {"a": True}, {"a": True}),
     ],
 )
 def test_merge_dicts(
@@ -146,6 +148,24 @@ def test_merge_dicts(
         # no mutation
         assert left == left_copy
         assert right == right_copy
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        ({"a": True}, {"a": False}, False),
+        ({"a": False}, {"a": True}, True),
+    ],
+)
+def test_merge_dicts_bool(
+    left: dict[str, Any], right: dict[str, Any], *, expected: bool
+) -> None:
+    """Differing booleans merge last-wins and stay `bool`, never coerced to `int`.
+    `bool` is a subclass of `int`, so a plain `==` assertion cannot catch the
+    regression (`1 == True`); the type must be checked explicitly.
+    """
+    actual = merge_dicts(left, right)["a"]
+    assert actual is expected
+    assert type(actual) is bool
 
 
 @pytest.mark.parametrize(
