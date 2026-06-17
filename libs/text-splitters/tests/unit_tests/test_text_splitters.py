@@ -2998,6 +2998,40 @@ def test_decode_returns_no_chunks() -> None:
 
 @pytest.mark.requires("bs4")
 @pytest.mark.requires("lxml")
+def test_html_section_splitter_omits_title_sentinel_before_first_header() -> None:
+    html_string = (
+        "<html><body><p>Intro before header.</p><h1>Header</h1>"
+        "<p>Body.</p></body></html>"
+    )
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.split_text(html_string)
+
+    assert docs[0].page_content == "Intro before header."
+    assert docs[0].metadata == {}
+    assert docs[1].metadata == {"Header 1": "Header"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_split_documents_handles_missing_title() -> None:
+    html_string = (
+        "<html><body><p>Intro before header.</p><h1>Header</h1>"
+        "<p>Body.</p></body></html>"
+    )
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.split_documents(
+        [Document(page_content=html_string, metadata={"source": "example"})]
+    )
+
+    assert docs[0].page_content == "Intro before header."
+    assert docs[0].metadata == {"source": "example"}
+    assert docs[1].metadata == {"source": "example", "Header 1": "Header"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
 def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:
     # arrange
     html_string = """<!DOCTYPE html>

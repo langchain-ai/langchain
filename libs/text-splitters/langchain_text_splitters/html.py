@@ -365,6 +365,8 @@ class HTMLSectionSplitter:
     Requires lxml package.
     """
 
+    _TITLE_PLACEHOLDER = "#TITLE#"
+
     def __init__(
         self,
         headers_to_split_on: list[tuple[str, str]],
@@ -432,12 +434,8 @@ class HTMLSectionSplitter:
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text):
+            for chunk in self._split_text_with_metadata(text, metadatas_[i]):
                 metadata = copy.deepcopy(metadatas_[i])
-
-                for key in chunk.metadata:
-                    if chunk.metadata[key] == "#TITLE#":
-                        chunk.metadata[key] = metadata["Title"]
                 metadata = {**metadata, **chunk.metadata}
                 new_doc = Document(page_content=chunk.page_content, metadata=metadata)
                 documents.append(new_doc)
@@ -479,7 +477,7 @@ class HTMLSectionSplitter:
 
         for i, header in enumerate(headers):
             if i == 0:
-                current_header = "#TITLE#"
+                current_header = self._TITLE_PLACEHOLDER
                 current_header_tag = "h1"
                 section_content: list[str] = []
             else:
@@ -551,20 +549,39 @@ class HTMLSectionSplitter:
             A list of split `Document` objects.
         """
         file_content = file.getvalue()
-        file_content = self.convert_possible_tags_to_header(file_content)
+        return self._split_text_with_metadata(file_content)
+
+    def _split_text_with_metadata(
+        self, text: str, metadata: dict[Any, Any] | None = None
+    ) -> list[Document]:
+        file_content = self.convert_possible_tags_to_header(text)
         sections = self.split_html_by_headers(file_content)
 
         return [
             Document(
                 cast("str", section["content"]),
-                metadata={
-                    self.headers_to_split_on[str(section["tag_name"])]: section[
-                        "header"
-                    ]
-                },
+                metadata=self._section_metadata(section, metadata),
             )
             for section in sections
         ]
+
+    def _section_metadata(
+        self,
+        section: dict[str, str | None],
+        metadata: dict[Any, Any] | None = None,
+    ) -> dict[str, Any]:
+        header = section["header"]
+        tag_name = str(section["tag_name"])
+
+        if header == self._TITLE_PLACEHOLDER:
+            if metadata is None or "Title" not in metadata:
+                return {}
+            header_name = self.headers_to_split_on.get(tag_name)
+            if header_name is None:
+                return {}
+            return {header_name: metadata["Title"]}
+
+        return {self.headers_to_split_on[tag_name]: header}
 
 
 @beta()
