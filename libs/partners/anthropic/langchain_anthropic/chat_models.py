@@ -1553,9 +1553,43 @@ class ChatAnthropic(BaseChatModel):
             else:
                 response_metadata = {}
 
+            # The API can deliver pre-completed content blocks directly on the
+            # ``message_start`` event, with no following ``content_block_*``
+            # events. This happens with Anthropic programmatic tool calling
+            # (code execution): the follow-up turn arrives as a ``message_start``
+            # carrying finished ``tool_use`` blocks, immediately followed by
+            # ``message_stop``. Recover those blocks here so they aren't dropped,
+            # which otherwise yields an empty ``AIMessage`` after aggregation.
+            # See https://github.com/langchain-ai/langchain/issues/34406.
+            content: str | list = "" if coerce_content_to_string else []
+            tool_call_chunks = []
+            start_content = getattr(event.message, "content", None)
+            if not coerce_content_to_string and start_content:
+                content = []
+                for idx, block in enumerate(start_content):
+                    block_dict = (
+                        block.model_dump()
+                        if hasattr(block, "model_dump")
+                        else dict(block)
+                    )
+                    if block_dict.get("caller") is None:
+                        block_dict.pop("caller", None)
+                    block_dict["index"] = idx
+                    content.append(block_dict)
+                    if block_dict.get("type") == "tool_use":
+                        tool_call_chunks.append(
+                            create_tool_call_chunk(
+                                index=idx,
+                                id=block_dict.get("id"),
+                                name=block_dict.get("name"),
+                                args=json.dumps(block_dict.get("input", {})),
+                            )
+                        )
+
             message_chunk = AIMessageChunk(
-                content="" if coerce_content_to_string else [],
+                content=content,
                 response_metadata=response_metadata,
+                tool_call_chunks=tool_call_chunks,
             )
 
         elif (

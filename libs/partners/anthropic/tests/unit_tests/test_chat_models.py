@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import warnings
 from collections.abc import Callable
@@ -3378,3 +3379,87 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+def test_message_start_with_precompleted_content_blocks() -> None:
+    """Recover content blocks delivered on ``message_start`` (regression #34406).
+
+    With Anthropic programmatic tool calling (code execution), a follow-up turn
+    can arrive as a ``message_start`` event whose ``message.content`` already
+    holds finished ``tool_use`` blocks, immediately followed by ``message_stop``
+    with no intervening ``content_block_*`` events. Previously the
+    ``message_start`` handler always produced an empty chunk, so the aggregated
+    ``AIMessage`` came back empty with no tool calls.
+    """
+    from anthropic.types import RawMessageStartEvent, ToolUseBlock
+
+    msg = Message(
+        id="msg_1",
+        content=[
+            ToolUseBlock(
+                id="toolu_1",
+                input={"expression": "2 + 2"},
+                name="calculate",
+                type="tool_use",
+            ),
+        ],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason="tool_use",
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=5),
+        type="message",
+    )
+    event = RawMessageStartEvent(message=msg, type="message_start")
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+
+    assert chunk is not None
+    # The tool_use block must survive instead of being dropped.
+    assert isinstance(chunk.content, list)
+    assert len(chunk.content) == 1
+    block = cast("dict[str, Any]", chunk.content[0])
+    assert block["type"] == "tool_use"
+    assert block["id"] == "toolu_1"
+    assert block["index"] == 0
+    # And it must surface as a tool call chunk so aggregation yields a tool call.
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "calculate"
+    assert tool_call_chunk["id"] == "toolu_1"
+    assert json.loads(tool_call_chunk["args"]) == {"expression": "2 + 2"}
+
+
+def test_message_start_without_content_stays_empty() -> None:
+    """A normal ``message_start`` (empty content) must still yield an empty chunk."""
+    from anthropic.types import RawMessageStartEvent
+
+    msg = Message(
+        id="msg_1",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    event = RawMessageStartEvent(message=msg, type="message_start")
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        event,
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+
+    assert chunk is not None
+    assert chunk.content == []
+    assert chunk.tool_call_chunks == []
