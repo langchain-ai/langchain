@@ -16,4 +16,4 @@ class FutureModel(BaseModel):
     """Model whose raw `__annotations__` values are unresolved strings."""
 
     metadata: dict[str, Any] | None = None
-    tagged: Annotated[dict, "extra"] | None = None
+    tagged: Annotated[dict[str, Any], "extra"] | None = None

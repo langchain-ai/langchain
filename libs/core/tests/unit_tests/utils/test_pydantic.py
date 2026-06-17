@@ -145,7 +145,9 @@ def test_create_subset_model_v2_resolves_string_annotations() -> None:
 def test_create_subset_model_v2_preserves_annotated_extras() -> None:
     """Test that `Annotated` metadata survives string annotation resolution."""
     subset_model = _create_subset_model_v2("Sub", FutureModel, ["tagged"])
-    assert subset_model.__annotations__ == {"tagged": Annotated[dict, "extra"] | None}
+    assert subset_model.__annotations__ == {
+        "tagged": Annotated[dict[str, Any], "extra"] | None
+    }
 
 
 class LocalRegistry:
