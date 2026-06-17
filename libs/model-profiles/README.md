@@ -42,6 +42,18 @@ langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic
 
 This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
 
+### Summarizing changes
+
+After a refresh, generate a plain-English Markdown summary of what changed
+relative to a git ref. This is used to populate the body of the automated
+refresh PR so reviewers can skim added/removed models and field changes without
+reading the raw data diff:
+
+```bash
+langchain-profiles summarize \
+  --providers '[{"provider":"openai","data_dir":"libs/partners/openai/langchain_openai/data"}]'
+```
+
 ## Resources
 
 - [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
