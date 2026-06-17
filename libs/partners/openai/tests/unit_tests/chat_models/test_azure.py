@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 
+import httpx
 import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import SecretStr
@@ -282,3 +283,64 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-openai" in versions
+
+
+@mock.patch("langchain_openai.chat_models.azure._get_default_httpx_client")
+@mock.patch("langchain_openai.chat_models.azure._get_default_async_httpx_client")
+def test_azure_chat_uses_default_httpx_client(
+    mock_async: mock.MagicMock, mock_sync: mock.MagicMock
+) -> None:
+    """AzureChatOpenAI should use the cached default httpx client when none is provided."""
+    mock_sync.return_value = httpx.Client()
+    mock_async.return_value = httpx.AsyncClient()
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2024-02-01",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_key=SecretStr("test"),
+    )
+    mock_sync.assert_called_once_with(llm.openai_api_base, llm.request_timeout)
+    mock_async.assert_called_once_with(llm.openai_api_base, llm.request_timeout)
+
+
+def test_azure_chat_custom_http_client_not_overridden() -> None:
+    """A user-provided http_client must not be replaced by the default."""
+    custom_client = httpx.Client()
+    custom_async_client = httpx.AsyncClient()
+
+    with mock.patch(
+        "langchain_openai.chat_models.azure._get_default_httpx_client"
+    ) as mock_sync, mock.patch(
+        "langchain_openai.chat_models.azure._get_default_async_httpx_client"
+    ) as mock_async:
+        AzureChatOpenAI(  # type: ignore[call-arg]
+            azure_deployment="gpt-4",
+            openai_api_version="2024-02-01",
+            azure_endpoint="https://test.openai.azure.com/",
+            api_key=SecretStr("test"),
+            http_client=custom_client,
+            http_async_client=custom_async_client,
+        )
+        mock_sync.assert_not_called()
+        mock_async.assert_not_called()
+
+
+def test_azure_chat_httpx_client_is_reused() -> None:
+    """Two instances with identical config should share the same cached httpx client."""
+    from langchain_openai.chat_models._client_utils import _get_default_httpx_client
+
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2024-02-01",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_key=SecretStr("test"),
+    )
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="gpt-4",
+        openai_api_version="2024-02-01",
+        azure_endpoint="https://test.openai.azure.com/",
+        api_key=SecretStr("test"),
+    )
+    client1 = _get_default_httpx_client(llm1.openai_api_base, llm1.request_timeout)
+    client2 = _get_default_httpx_client(llm2.openai_api_base, llm2.request_timeout)
+    assert client1 is client2
