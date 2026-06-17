@@ -26,6 +26,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
         `right = {"function_call": {"arguments": "{\n"}}`, then, after merging, for the
         key `'function_call'`, the value from `'right'` is used, resulting in
         `merged = {"function_call": {"arguments": "{\n"}}`.
+
+        Float values are summed, mirroring the behaviour for int values::
+
+            >>> merge_dicts({"cost": 0.002}, {"cost": 0.003})
+            {'cost': 0.005}
     """
     merged = left.copy()
     for right in others:
@@ -68,11 +73,28 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], bool):
+                # bool is a subclass of int in Python, so it would silently fall
+                # through to the int branch and produce e.g. True + False = 1.
+                # Booleans with different values cannot be meaningfully merged.
+                msg = (
+                    f'additional_kwargs["{right_k}"] already exists in this message,'
+                    " but with a different type."
+                )
+                raise TypeError(msg)
             elif isinstance(merged[right_k], int):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to
                 # - created/timestamp: temporal values that shouldn't be accumulated
+                if right_k in {"index", "created", "timestamp"}:
+                    merged[right_k] = right_v
+                else:
+                    merged[right_k] += right_v
+            elif isinstance(merged[right_k], float):
+                # Float values are summed (e.g., cost, probability scores).
+                # Preserve temporal fields using last-wins strategy, consistent
+                # with the int handling above.
                 if right_k in {"index", "created", "timestamp"}:
                     merged[right_k] = right_v
                 else:
@@ -174,6 +196,14 @@ def merge_obj(left: Any, right: Any) -> Any:
     value of `None` in `'left'`. In such cases, the method uses the value from `'right'`
     for that key in the merged dictionary.
 
+    Numeric types (``int`` and ``float``) are summed, mirroring the behaviour of
+    :func:`merge_dicts`::
+
+        >>> merge_obj(1, 2)
+        3
+        >>> merge_obj(0.002, 0.003)
+        0.005
+
     Args:
         left: The first object to merge.
         right: The other object to merge.
@@ -201,8 +231,10 @@ def merge_obj(left: Any, right: Any) -> Any:
         return merge_lists(left, right)
     if left == right:
         return left
+    if isinstance(left, (int, float)) and not isinstance(left, bool):
+        return left + right
     msg = (
-        f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
-        f"list, or else be two equal objects."
+        f"Unable to merge {left=} and {right=}. Both must be of type str, dict, list, "
+        f"int, or float, or else be two equal objects."
     )
     raise ValueError(msg)

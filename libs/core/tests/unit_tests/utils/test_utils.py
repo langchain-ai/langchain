@@ -129,6 +129,46 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Float values should be summed (e.g., cost, probability scores).
+        ({"cost": 0.002}, {"cost": 0.003}, {"cost": 0.005}),
+        ({"score": 0.1}, {"score": 0.9}, {"score": 1.0}),
+        # Float + None should use the non-None value.
+        ({"cost": None}, {"cost": 0.005}, {"cost": 0.005}),
+        ({"cost": 0.005}, {"cost": None}, {"cost": 0.005}),
+        # Float temporal fields should use last-wins strategy.
+        ({"timestamp": 1.0}, {"timestamp": 2.0}, {"timestamp": 2.0}),
+        # Mixed dict with both int and float fields.
+        (
+            {"tokens": 10, "cost": 0.002},
+            {"tokens": 5, "cost": 0.003},
+            {"tokens": 15, "cost": 0.005},
+        ),
+        # Bool values that are equal are handled by the equals-continue branch
+        # (already covered above by {"a": True} + {"a": True} case).
+        # Bool values that differ must raise TypeError — merging True+False=1 (int)
+        # would silently change the type from bool to int.
+        (
+            {"flag": True},
+            {"flag": False},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    'additional_kwargs["flag"] already exists in this message,'
+                    " but with a different type."
+                ),
+            ),
+        ),
+        (
+            {"flag": False},
+            {"flag": True},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    'additional_kwargs["flag"] already exists in this message,'
+                    " but with a different type."
+                ),
+            ),
+        ),
     ],
 )
 def test_merge_dicts(
@@ -482,6 +522,15 @@ def test_merge_lists_all_none() -> None:
         (42, 42, 42),
         (3.14, 3.14, 3.14),
         (True, True, True),
+        # Different int values are summed
+        (1, 2, 3),
+        (10, 5, 15),
+        # Different float values are summed
+        (0.002, 0.003, 0.005),
+        (0.1, 0.9, 1.0),
+        # int + None and None + int
+        (None, 5, 5),
+        (5, None, 5),
     ],
 )
 def test_merge_obj(left: Any, right: Any, expected: Any) -> None:
@@ -496,12 +545,45 @@ def test_merge_obj_type_mismatch() -> None:
 
 
 def test_merge_obj_unmergeable_values() -> None:
-    """Test `merge_obj` raises `ValueError` on unmergeable values."""
+    """Test `merge_obj` raises `ValueError` for unsupported types like tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
-        merge_obj(1, 2)  # Different integers
+        merge_obj((1, 2), (3, 4))
+
+
+def test_merge_obj_bool_different_raises() -> None:
+    """Test `merge_obj` raises `ValueError` for different bool values.
+
+    Booleans cannot be meaningfully summed (True + False would yield 1, an int).
+    """
+    with pytest.raises(ValueError, match="Unable to merge"):
+        merge_obj(True, False)
 
 
 def test_merge_obj_tuple_raises() -> None:
     """Test `merge_obj` raises `ValueError` for tuples."""
     with pytest.raises(ValueError, match="Unable to merge"):
         merge_obj((1, 2), (3, 4))
+
+
+def test_tool_message_chunk_numeric_artifact_concatenation() -> None:
+    """Test that ToolMessageChunk concatenation works with numeric artifacts.
+
+    merge_obj is used internally to merge the `artifact` field when two
+    ToolMessageChunks are added together. Before the fix, numeric artifacts
+    (int or float) raised ValueError during streaming chunk aggregation.
+    """
+    from langchain_core.messages.tool import ToolMessageChunk
+
+    # float artifact
+    chunk1 = ToolMessageChunk(content="partial", tool_call_id="x", artifact=0.7)
+    chunk2 = ToolMessageChunk(content=" result", tool_call_id="x", artifact=0.3)
+    combined = chunk1 + chunk2
+    assert combined.content == "partial result"
+    assert pytest.approx(combined.artifact) == 1.0  # type: ignore[arg-type]
+
+    # int artifact
+    chunk3 = ToolMessageChunk(content="a", tool_call_id="y", artifact=10)
+    chunk4 = ToolMessageChunk(content="b", tool_call_id="y", artifact=5)
+    combined2 = chunk3 + chunk4
+    assert combined2.content == "ab"
+    assert combined2.artifact == 15
