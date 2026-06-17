@@ -82,11 +82,17 @@ class VectorStore(ABC):
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
                 raise ValueError(msg)
+            if ids is not None and len(ids) != len(texts_):
+                msg = (
+                    "The number of ids must match the number of texts."
+                    f"Got {len(ids)} ids and {len(texts_)} texts."
+                )
+                raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                for text, metadata_, id_ in zip(texts_, metadatas_, ids_, strict=False)
             ]
             if ids is not None:
                 # For backward compatibility
@@ -221,12 +227,18 @@ class VectorStore(ABC):
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
                 raise ValueError(msg)
+            if ids is not None and len(ids) != len(texts_):
+                msg = (
+                    "The number of ids must match the number of texts."
+                    f"Got {len(ids)} ids and {len(texts_)} texts."
+                )
+                raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
 
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
+                for text, metadata_, id_ in zip(texts_, metadatas_, ids_, strict=False)
             ]
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)

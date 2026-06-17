@@ -178,6 +178,14 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
     ]
 
 
+@pytest.mark.parametrize("ids", [[], ["only-one"], ["1", "2", "3"]])
+def test_default_add_texts_raises_for_mismatched_ids(ids: list[str]) -> None:
+    store = CustomAddDocumentsVectorstore()
+
+    with pytest.raises(ValueError, match="number of ids must match"):
+        store.add_texts(["hello", "world"], ids=ids)
+
+
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
@@ -234,6 +242,14 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
+
+
+@pytest.mark.parametrize("ids", [[], ["only-one"], ["1", "2", "3"]])
+async def test_default_aadd_texts_raises_for_mismatched_ids(ids: list[str]) -> None:
+    store = CustomAddDocumentsVectorstore()
+
+    with pytest.raises(ValueError, match="number of ids must match"):
+        await store.aadd_texts(["hello", "world"], ids=ids)
 
 
 @pytest.mark.parametrize(
