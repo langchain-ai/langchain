@@ -91,7 +91,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
-from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
@@ -453,7 +453,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return StringPromptValue(text=model_input)
         if isinstance(model_input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(model_input))
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
@@ -1223,7 +1223,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             async with start_lock:
                 if stream._producer_task is not None:  # noqa: SLF001
-                    return
+                    return  # type: ignore[unreachable]
 
                 (run_manager,) = await callback_manager.on_chat_model_start(
                     self._serialized,
@@ -2519,9 +2519,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
         output_parser: JsonOutputToolsParser
         if isinstance(schema, type) and is_basemodel_subclass(schema):
-            output_parser = PydanticToolsParser(
-                tools=[cast("TypeBaseModel", schema)], first_tool_only=True
-            )
+            output_parser = PydanticToolsParser(tools=[schema], first_tool_only=True)
         else:
             key_name = convert_to_openai_tool(schema)["function"]["name"]
             output_parser = JsonOutputKeyToolsParser(

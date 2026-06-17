@@ -5,14 +5,14 @@ including the scenario where no AIMessage exists in the message list
 (fixes issue #34792).
 """
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
 
 from langchain.agents.factory import _fetch_last_ai_and_tool_messages
 
 
 def test_fetch_last_ai_and_tool_messages_normal() -> None:
     """Test normal case with AIMessage and subsequent ToolMessages."""
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="Hello"),
         AIMessage(content="Hi there!", tool_calls=[{"name": "test", "id": "1", "args": {}}]),
         ToolMessage(content="Tool result", tool_call_id="1"),
@@ -29,7 +29,7 @@ def test_fetch_last_ai_and_tool_messages_normal() -> None:
 
 def test_fetch_last_ai_and_tool_messages_multiple_ai() -> None:
     """Test that the last AIMessage is returned when multiple exist."""
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="First question"),
         AIMessage(content="First answer", id="ai1"),
         HumanMessage(content="Second question"),
@@ -53,7 +53,7 @@ def test_fetch_last_ai_and_tool_messages_no_ai_message() -> None:
     The function now returns None for the AIMessage, allowing callers to
     handle this edge case explicitly.
     """
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="Hello"),
         SystemMessage(content="You are a helpful assistant"),
     ]
@@ -70,7 +70,7 @@ def test_fetch_last_ai_and_tool_messages_empty_list() -> None:
 
     This can occur after RemoveMessage(id=REMOVE_ALL_MESSAGES) clears all messages.
     """
-    messages: list = []
+    messages: list[AnyMessage] = []
 
     ai_msg, tool_msgs = _fetch_last_ai_and_tool_messages(messages)
 
@@ -81,7 +81,7 @@ def test_fetch_last_ai_and_tool_messages_empty_list() -> None:
 
 def test_fetch_last_ai_and_tool_messages_only_human_messages() -> None:
     """Test handling when only HumanMessages exist."""
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="Hello"),
         HumanMessage(content="Are you there?"),
     ]
@@ -94,7 +94,7 @@ def test_fetch_last_ai_and_tool_messages_only_human_messages() -> None:
 
 def test_fetch_last_ai_and_tool_messages_ai_without_tool_calls() -> None:
     """Test AIMessage without tool_calls returns empty tool messages list."""
-    messages = [
+    messages: list[AnyMessage] = [
         HumanMessage(content="Hello"),
         AIMessage(content="Hi! How can I help you today?"),
     ]

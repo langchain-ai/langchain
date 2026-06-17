@@ -66,6 +66,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
+    model_json_schema,
 )
 
 if TYPE_CHECKING:
@@ -268,7 +269,7 @@ def create_schema_from_function(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create a Pydantic schema from a function's signature.
 
     Args:
@@ -577,14 +578,12 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
         else:
             input_schema = self.tool_call_schema
             if isinstance(input_schema, dict):
                 json_schema = input_schema
             else:
-                json_schema = input_schema.model_json_schema()
+                json_schema = model_json_schema(input_schema)
         return cast("dict[str, Any]", json_schema["properties"])
 
     _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
@@ -678,7 +677,7 @@ class ChildTool(BaseTool):
     # --- Runnable ---
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """The tool's input schema.
 
         Args:
@@ -749,13 +748,14 @@ class ChildTool(BaseTool):
                 elif issubclass(input_args, BaseModelV1):
                     input_args.parse_obj({key_: tool_input})
                 else:
-                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"  # type: ignore[unreachable]
                     raise TypeError(msg)
             return tool_input
 
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -770,8 +770,9 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
-                result_dict = result.model_dump()
+                result_v2 = input_args.model_validate(tool_input)
+                result_dict = result_v2.model_dump()
+                result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -786,10 +787,11 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
+                result_v1 = input_args.parse_obj(tool_input)
+                result_dict = result_v1.dict()
+                result = result_v1
             else:
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
@@ -934,7 +936,7 @@ class ChildTool(BaseTool):
             # the callback manager.
             return (), tool_input.copy()
         # This code path is not expected to be reachable.
-        msg = f"Invalid tool input type: {type(tool_input)}"
+        msg = f"Invalid tool input type: {type(tool_input)}"  # type: ignore[unreachable]
         raise TypeError(msg)
 
     def run(
@@ -1233,7 +1235,7 @@ def _handle_validation_error(
     elif callable(flag):
         content = flag(e)
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )

@@ -56,6 +56,14 @@ from tests.unit_tests.runnables.test_runnable_events_v1 import (
 )
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
+# The v2 event tests include a compatibility case for `RunnableWithMessageHistory`,
+# so constructing that deprecated wrapper is expected in this module.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:RunnableWithMessageHistory is deprecated. Use LangGraph's built-in "
+    "persistence instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
+
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     """Removes the run IDs from events."""
@@ -621,9 +629,7 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        if sys.version_info >= (3, 11):
-            return model.invoke(value)
-        return model.invoke(value, config)
+        return model.invoke(value, config if sys.version_info >= (3, 11) else None)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -737,9 +743,9 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        if sys.version_info >= (3, 11):
-            return await model.ainvoke(value)
-        return await model.ainvoke(value, config)
+        return await model.ainvoke(
+            value, config if sys.version_info >= (3, 11) else None
+        )
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -2845,7 +2851,7 @@ async def test_tool_error_event_includes_tool_call_id() -> None:
     """Test that on_tool_error event includes tool_call_id when provided."""
 
     @tool
-    def failing_tool(x: int) -> str:
+    def failing_tool(x: int) -> str:  # noqa: ARG001
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)
@@ -2885,7 +2891,7 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     """Test that on_tool_error event has tool_call_id=None when not provided."""
 
     @tool
-    def failing_tool_no_id(x: int) -> str:
+    def failing_tool_no_id(x: int) -> str:  # noqa: ARG001
         """A tool that always fails."""
         msg = "Tool execution failed"
         raise ValueError(msg)

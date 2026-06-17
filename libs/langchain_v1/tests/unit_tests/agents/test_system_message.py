@@ -765,7 +765,7 @@ class TestDynamicSystemPromptMiddleware:
     def test_middleware_can_return_system_message(self) -> None:
         """Test that middleware can return a SystemMessage with dynamic content."""
 
-        def dynamic_system_prompt_middleware(request: ModelRequest) -> SystemMessage:
+        def dynamic_system_prompt_middleware(request: ModelRequest[Any]) -> SystemMessage:
             """Return a SystemMessage with dynamic content."""
             region = getattr(request.runtime.context, "region", "n/a")
             return SystemMessage(content=f"You are a helpful assistant. Region: {region}")
@@ -786,7 +786,6 @@ class TestDynamicSystemPromptMiddleware:
             runtime=runtime,
             model_settings={},
         )
-
         new_system_message = dynamic_system_prompt_middleware(request)
 
         assert isinstance(new_system_message, SystemMessage)

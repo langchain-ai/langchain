@@ -15,6 +15,7 @@ def test_image_prompt_template_deserializable() -> None:
                 [("system", [{"type": "image", "image_url": "{img}"}])]
             )
         ),
+        allowed_objects="core",
     )
 
 
@@ -109,6 +110,7 @@ def test_image_prompt_template_deserializable_old() -> None:
                 },
             }
         ),
+        allowed_objects="core",
     )
 
 
@@ -137,4 +139,4 @@ def test_image_prompt_template_deserialization_rejects_attribute_access() -> Non
     )
 
     with pytest.raises(ValueError, match="Variable names cannot contain attribute"):
-        loads(payload)
+        loads(payload, allowed_objects=[ImagePromptTemplate])

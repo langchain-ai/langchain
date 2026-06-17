@@ -193,7 +193,7 @@ class LangChainTracer(BaseTracer):
             merged_metadata = dict(base_metadata)
             for key, value in metadata.items():
                 # For allowlisted LangSmith-only inheritable metadata keys
-                # (e.g. ``ls_agent_type``), nested callers are allowed to
+                # (e.g. `ls_agent_type`), nested callers are allowed to
                 # OVERRIDE the value inherited from an ancestor. For all
                 # other keys we keep the existing "first wins" behavior so
                 # that ancestor-provided tracing metadata is not accidentally
@@ -473,14 +473,14 @@ def _patch_missing_metadata(self: LangChainTracer, run: Run) -> None:
     metadata = run.metadata
     patched = None
     for k, v in self.tracing_metadata.items():
-        # ``OVERRIDABLE_LANGSMITH_INHERITABLE_METADATA_KEYS`` are a small,
+        # `OVERRIDABLE_LANGSMITH_INHERITABLE_METADATA_KEYS` are a small,
         # LangSmith-only allowlist that bypasses the "first wins" merge
         # so a nested caller (e.g. a subagent) can override a parent-set value.
         if k not in metadata or k in OVERRIDABLE_LANGSMITH_INHERITABLE_METADATA_KEYS:
             # Skip the copy when the value already matches (avoids cloning
             # the shared dict in the common "already set" case). Use a
-            # ``k in metadata`` guard so a legitimate missing key whose
-            # tracer value happens to be ``None`` is still patched in.
+            # `k in metadata` guard so a legitimate missing key whose
+            # tracer value happens to be `None` is still patched in.
             if k in metadata and metadata[k] == v:
                 continue
             if patched is None:

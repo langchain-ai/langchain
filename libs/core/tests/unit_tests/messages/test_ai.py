@@ -542,7 +542,7 @@ def test_content_blocks_v1_list_content_short_circuits() -> None:
     returns it verbatim (the same object) without routing through the
     translator. Covers both `AIMessage` and `AIMessageChunk`.
     """
-    content: list = [
+    content: list[str | dict[str, Any]] = [
         {"type": "text", "text": "Hello"},
         {"type": "tool_call", "name": "foo", "args": {"a": 1}, "id": "tc_1"},
     ]

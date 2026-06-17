@@ -11,6 +11,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+from langchain_core.utils.pydantic import TypeBaseModel
 
 
 @overload
@@ -275,7 +276,7 @@ def tool(
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
-                if runnable.input_schema.model_json_schema().get("type") != "object":
+                if runnable.get_input_jsonschema().get("type") != "object":
                     msg = "Runnable must have an object schema."
                     raise ValueError(msg)
 
@@ -394,7 +395,7 @@ def tool(
 
 def _get_description_from_runnable(runnable: Runnable[Any, Any]) -> str:
     """Generate a placeholder description of a `Runnable`."""
-    input_schema = runnable.input_schema.model_json_schema()
+    input_schema = runnable.get_input_jsonschema()
     return f"Takes {input_schema}."
 
 
@@ -420,7 +421,7 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable[Any, Any],
-    args_schema: type[BaseModel] | None = None,
+    args_schema: TypeBaseModel | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -443,7 +444,7 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    schema = runnable.input_schema.model_json_schema()
+    schema = runnable.get_input_jsonschema()
     if schema.get("type") == "string":
         return Tool(
             name=name,

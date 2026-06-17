@@ -10,7 +10,7 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langc
 ## Quick Install
 
 ```bash
-pip install langchain-tests
+uv add langchain-tests
 ```
 
 ## 🤔 What is this?

@@ -1475,7 +1475,7 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
 
 
 def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict[str, Any]:
-    """Convert a LangChain ``ToolCall`` to an OpenRouter tool call dict.
+    """Convert a LangChain `ToolCall` to an OpenRouter tool call dict.
 
     Serializes `args` (a dict) via `json.dumps`.
     """

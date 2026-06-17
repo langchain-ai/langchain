@@ -147,16 +147,15 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task.
+        create_task: Kept for compatibility; this helper always creates a task.
 
     Returns:
         The coroutine with the context.
     """
     if asyncio_accepts_context():
         return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
-    if create_task:
-        return asyncio.create_task(coro)  # type: ignore[arg-type]
-    return coro
+    del create_task
+    return context.run(asyncio.create_task, coro)  # type: ignore[arg-type]
 
 
 class IsLocalDict(ast.NodeVisitor):
