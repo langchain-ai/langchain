@@ -12,6 +12,7 @@ from pydantic.v1 import BaseModel as PydanticV1BaseModel
 from pydantic.v1 import Field as PydanticV1Field
 
 from langchain_core import utils
+from langchain_core.messages.tool import ToolMessageChunk
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
@@ -555,8 +556,9 @@ def test_merge_obj_bool_different_raises() -> None:
 
     Booleans cannot be meaningfully summed (True + False would yield 1, an int).
     """
+    args = (True, False)
     with pytest.raises(ValueError, match="Unable to merge"):
-        merge_obj(True, False)
+        merge_obj(*args)
 
 
 def test_merge_obj_tuple_raises() -> None:
@@ -572,18 +574,18 @@ def test_tool_message_chunk_numeric_artifact_concatenation() -> None:
     ToolMessageChunks are added together. Before the fix, numeric artifacts
     (int or float) raised ValueError during streaming chunk aggregation.
     """
-    from langchain_core.messages.tool import ToolMessageChunk
-
     # float artifact
     chunk1 = ToolMessageChunk(content="partial", tool_call_id="x", artifact=0.7)
     chunk2 = ToolMessageChunk(content=" result", tool_call_id="x", artifact=0.3)
     combined = chunk1 + chunk2
+    assert isinstance(combined, ToolMessageChunk)
     assert combined.content == "partial result"
-    assert pytest.approx(combined.artifact) == 1.0  # type: ignore[arg-type]
+    assert pytest.approx(combined.artifact) == 1.0
 
     # int artifact
     chunk3 = ToolMessageChunk(content="a", tool_call_id="y", artifact=10)
     chunk4 = ToolMessageChunk(content="b", tool_call_id="y", artifact=5)
     combined2 = chunk3 + chunk4
+    assert isinstance(combined2, ToolMessageChunk)
     assert combined2.content == "ab"
     assert combined2.artifact == 15
