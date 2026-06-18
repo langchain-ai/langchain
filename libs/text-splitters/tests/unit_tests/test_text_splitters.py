@@ -3205,6 +3205,47 @@ def test_happy_path_splitting_with_duplicate_header_tag() -> None:
     assert docs[3].metadata["Header 1"] == "Foo"
 
 
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_html_section_splitter_no_title_sentinel_leak() -> None:
+    """Test that #TITLE# sentinel is not exposed in metadata for pre-header content.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38142
+    """
+    html = """
+    <html>
+      <body>
+        <p>Intro before header.</p>
+        <h1>Header</h1>
+        <p>Body.</p>
+      </body>
+    </html>
+    """
+
+    splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    # split_text should not expose #TITLE# in metadata
+    docs = splitter.split_text(html)
+    assert len(docs) == 2
+    assert "#TITLE#" not in str(docs[0].metadata)
+    assert docs[0].metadata == {}
+
+    # split_documents should not raise KeyError when parent metadata has no Title
+    parent_doc = Document(page_content=html, metadata={"source": "example"})
+    result = splitter.split_documents([parent_doc])
+    assert len(result) >= 2
+    for doc in result:
+        assert "#TITLE#" not in str(doc.metadata)
+        assert doc.metadata.get("source") == "example"
+
+    # split_documents with Title in parent metadata should still work
+    parent_doc_with_title = Document(
+        page_content=html, metadata={"source": "example", "Title": "My Page"}
+    )
+    result_with_title = splitter.split_documents([parent_doc_with_title])
+    assert len(result_with_title) >= 2
+
+
 def test_split_json() -> None:
     """Test json text splitter."""
     max_chunk = 800
