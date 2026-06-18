@@ -1,0 +1,57 @@
+libs/partners/perplexity/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/deepseek/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/nomic/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 25
+libs/partners/exa/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 25
+libs/text-splitters/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 28
+libs/model-profiles/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 58,61
+libs/langchain_v1/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/partners/fireworks/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/mistralai/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/qdrant/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/langchain/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/anthropic/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/partners/openai/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/standard-tests/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/partners/ollama/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/partners/openrouter/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/xai/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 27
+libs/partners/huggingface/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/groq/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 26
+libs/partners/chroma/pyproject.toml
+  s_d71e0834d0650f::t_b39cc932d9333c 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "e106413259522956a6a04242938b1a162717f4a1",
+  "prompts": {},
+  "sessions": {
+    "s_d71e0834d0650f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd4954ff-c2bb-42c9-b98d-8d80b1979511",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Nick Hollon <nick.hollon@langchain.dev>"
+    }
+  }
+}
