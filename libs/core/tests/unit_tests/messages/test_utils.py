@@ -2864,6 +2864,95 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     assert mixed > text_only
 
 
+def test_count_tokens_approximately_with_data_blocks() -> None:
+    """Audio/video/file blocks get the fixed penalty, not their base64 char count."""
+    big_payload = "A" * 10000
+    for block_type, mime_type in (
+        ("audio", "audio/wav"),
+        ("video", "video/mp4"),
+        ("file", "application/pdf"),
+    ):
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this."},
+                {"type": block_type, "base64": big_payload, "mime_type": mime_type},
+            ]
+        )
+
+        token_count = count_tokens_approximately([message])
+
+        # ~85 (data block) + a few (text/role) + 3 (extra), NOT ~2,500 from the
+        # base64 payload being char-counted.
+        assert token_count < 200, f"{block_type}: expected <200, got {token_count}"
+        assert token_count > 80, f"{block_type}: expected >80, got {token_count}"
+
+
+def test_count_tokens_approximately_with_v1_image_block() -> None:
+    """A v1 image block with a large base64 payload still gets the fixed penalty."""
+    message = HumanMessage(
+        content=[{"type": "image", "base64": "A" * 10000, "mime_type": "image/png"}]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    assert 80 < token_count < 200
+
+
+def test_count_tokens_approximately_text_plain_inline_text_counted() -> None:
+    """A text-plain block that inlines its text is counted by length, not flattened."""
+    long_text = "word " * 1000  # 5,000 characters
+    message = HumanMessage(content=[{"type": "text-plain", "text": long_text}])
+
+    token_count = count_tokens_approximately([message])
+
+    # ~5,000 chars / 4 = ~1,250 tokens; must NOT collapse to the ~85 flat penalty.
+    assert token_count > 1000
+
+
+def test_count_tokens_approximately_text_plain_base64_penalized() -> None:
+    """A text-plain block carrying base64 gets the fixed penalty, not its char count."""
+    message = HumanMessage(
+        content=[
+            {"type": "text-plain", "base64": "A" * 10000, "mime_type": "text/plain"}
+        ]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    assert token_count < 200
+
+
+def test_count_tokens_approximately_data_block_custom_penalty() -> None:
+    """tokens_per_image governs all data blocks, not just images."""
+    message = HumanMessage(
+        content=[{"type": "audio", "base64": "A" * 10000, "mime_type": "audio/wav"}]
+    )
+
+    token_count = count_tokens_approximately([message], tokens_per_image=1600)
+
+    assert 1600 < token_count < 1650
+
+
+def test_count_tokens_approximately_data_blocks_sum_invariant() -> None:
+    """Per-message counts sum to the total for mixed text + data-block content."""
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "hello"},
+                {"type": "audio", "base64": "A" * 5000, "mime_type": "audio/wav"},
+            ]
+        ),
+        AIMessage(content="ok"),
+        HumanMessage(
+            content=[{"type": "video", "base64": "B" * 5000, "mime_type": "video/mp4"}]
+        ),
+    ]
+
+    total = count_tokens_approximately(messages)
+
+    assert sum(count_tokens_approximately([m]) for m in messages) == total
+
+
 def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
     """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
     tool_calls = [

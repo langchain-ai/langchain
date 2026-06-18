@@ -2252,8 +2252,9 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
-    - For multimodal messages with images, applies a fixed token penalty per image
-        instead of counting base64-encoded characters.
+    - For multimodal messages with data blocks (images, audio, video, files),
+        applies a fixed token penalty per block instead of counting the
+        base64-encoded payload.
     - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
@@ -2285,9 +2286,9 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-        For multimodal messages containing images, a fixed token penalty is applied
-        per image instead of counting base64-encoded characters, which provides a
-        more realistic approximation.
+        For multimodal messages containing data blocks (images, audio, video,
+        files), a fixed token penalty is applied per block instead of counting the
+        base64-encoded payload, which provides a more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
@@ -2329,6 +2330,17 @@ def count_tokens_approximately(
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
+                    # Data content blocks (audio, video, file, text-plain) can
+                    # carry large base64 payloads. Apply the fixed per-block
+                    # penalty instead of counting the encoded characters. Inline
+                    # text (e.g. a text-plain block) is counted as text so large
+                    # inline documents aren't undercounted.
+                    elif is_data_content_block(block):
+                        inline_text = block.get("text")
+                        if isinstance(inline_text, str):
+                            message_chars += len(inline_text)
+                        else:
+                            token_count += tokens_per_image
                     # Conservative estimate for unknown block types
                     else:
                         message_chars += len(repr(block))
