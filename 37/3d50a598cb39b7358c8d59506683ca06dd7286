@@ -1,0 +1,20 @@
+libs/langchain_v1/langchain/agents/middleware/summarization.py
+  s_5d3c5e8d813dfc::t_4430c3dbfa8451 81,84-88
+  s_5d3c5e8d813dfc::t_f836f6769c9fa0 79-80,82-83,89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "373d50a598cb39b7358c8d59506683ca06dd7286",
+  "prompts": {},
+  "sessions": {
+    "s_5d3c5e8d813dfc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00f06a96-6c41-4992-b7b1-9067ecd1686a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
