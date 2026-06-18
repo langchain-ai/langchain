@@ -797,9 +797,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
             response = self.model.invoke(
@@ -823,9 +823,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
             response = await self.model.ainvoke(
