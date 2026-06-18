@@ -500,6 +500,28 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+def test_convert_to_openai_function_dict_with_defs_strict() -> None:
+    """Nested models referenced via `$defs` must get `additionalProperties: False`.
+
+    When a raw JSON schema produced by `model_json_schema()` is passed in directly
+    (as happens on the streaming Responses API path), nested models live under
+    `$defs` rather than being inlined. Strict mode requires those nested objects to
+    also set `additionalProperties: False`, otherwise OpenAI rejects the schema.
+    """
+
+    class Step(BaseModel):
+        explanation: str
+        output: str
+
+    class Plan(BaseModel):
+        steps: list[Step]
+
+    actual = convert_to_openai_function(Plan.model_json_schema(), strict=True)
+
+    assert actual["parameters"]["additionalProperties"] is False
+    assert actual["parameters"]["$defs"]["Step"]["additionalProperties"] is False
+
+
 def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
     class NestedA(BaseModel):
         foo: str

@@ -4262,3 +4262,32 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_responses_api_payload_nested_structured_output_streaming() -> None:
+    """Streaming structured output with nested schema must be valid strict JSON.
+
+    Regression test for the Responses API streaming path: nested Pydantic models
+    are emitted under `$defs` and OpenAI's strict mode requires every nested object
+    to set `additionalProperties: False`. See issue #38223.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    class Step(BaseModel):
+        explanation: str
+        output: str
+
+    class Plan(BaseModel):
+        steps: list[Step]
+
+    payload = {
+        "model": OPENAI_TEST_MODEL,
+        "response_format": Plan,
+        "stream": True,
+    }
+    result = _construct_responses_api_payload([], payload)
+
+    schema = result["text"]["format"]["schema"]
+    assert result["text"]["format"]["type"] == "json_schema"
+    assert schema["additionalProperties"] is False
+    assert schema["$defs"]["Step"]["additionalProperties"] is False

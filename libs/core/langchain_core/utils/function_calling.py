@@ -820,7 +820,10 @@ def _recursive_set_additional_properties_false(
         ):
             schema["additionalProperties"] = False
 
-        # Recursively check 'properties' and 'items' if they exist
+        # Recursively check 'properties', 'items', and nested definitions if they
+        # exist. Nested models live under '$defs' (or the older 'definitions') and are
+        # referenced via '$ref', so they must be visited here too — otherwise OpenAI's
+        # strict mode rejects the schema for missing 'additionalProperties'.
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
@@ -829,5 +832,9 @@ def _recursive_set_additional_properties_false(
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        for defs_key in ("$defs", "definitions"):
+            if defs_key in schema and isinstance(schema[defs_key], dict):
+                for sub_schema in schema[defs_key].values():
+                    _recursive_set_additional_properties_false(sub_schema)
 
     return schema
