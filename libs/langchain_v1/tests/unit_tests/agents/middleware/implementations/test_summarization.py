@@ -1809,12 +1809,7 @@ class PromptCapturingModel(BaseChatModel):
 
 @pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
 async def test_create_summary_preserves_image_urls(use_async: bool) -> None:  # noqa: FBT001
-    """Test that image URLs survive into the summary prompt.
-
-    `get_buffer_string` with `format='xml'` preserves URL-based image blocks.
-    The URL must appear in the summary prompt so the downstream agent can use
-    file tools to retrieve the image if needed.
-    """
+    """Test that URL-backed image content is serialized into the summary prompt."""
     model = PromptCapturingModel()
     middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
     image_url = "https://example.com/shared-image.png"
@@ -1836,7 +1831,7 @@ async def test_create_summary_preserves_image_urls(use_async: bool) -> None:  # 
     assert summary == "Summary"
     prompt = model.captured_inputs[0]
     assert isinstance(prompt, str)
-    # The image URL must be present so the agent can retrieve it with file tools.
+    # Preserve the URL in the serialized history passed to the summarizer.
     assert image_url in prompt
 
 
