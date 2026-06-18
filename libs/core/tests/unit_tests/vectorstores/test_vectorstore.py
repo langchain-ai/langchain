@@ -177,6 +177,18 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
 
+    # Add texts with mismatched ids length
+    if vs_class == CustomAddDocumentsVectorstore:
+        with pytest.raises(
+            ValueError, match=r"The number of ids must match the number of texts\."
+        ):
+            store.add_texts(["foo", "bar"], ids=["1"])
+
+        with pytest.raises(
+            ValueError, match=r"The number of ids must match the number of texts\."
+        ):
+            store.add_texts(["foo", "bar"], ids=["1", "2", "3"])
+
 
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
@@ -234,6 +246,18 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
+
+    # Add texts with mismatched ids length
+    if vs_class == CustomAddDocumentsVectorstore:
+        with pytest.raises(
+            ValueError, match=r"The number of ids must match the number of texts\."
+        ):
+            await store.aadd_texts(["foo", "bar"], ids=["1"])
+
+        with pytest.raises(
+            ValueError, match=r"The number of ids must match the number of texts\."
+        ):
+            await store.aadd_texts(["foo", "bar"], ids=["1", "2", "3"])
 
 
 @pytest.mark.parametrize(

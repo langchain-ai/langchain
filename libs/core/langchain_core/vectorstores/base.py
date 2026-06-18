@@ -83,6 +83,12 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
+            if ids is not None and len(ids) != len(texts_):
+                msg = (
+                    "The number of ids must match the number of texts."
+                    f"Got {len(ids)} ids and {len(texts_)} texts."
+                )
+                raise ValueError(msg)
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
@@ -222,6 +228,12 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
+            if ids is not None and len(ids) != len(texts_):
+                msg = (
+                    "The number of ids must match the number of texts."
+                    f"Got {len(ids)} ids and {len(texts_)} texts."
+                )
+                raise ValueError(msg)
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
 
             docs = [
