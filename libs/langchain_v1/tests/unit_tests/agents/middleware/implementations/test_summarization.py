@@ -1808,23 +1808,24 @@ class PromptCapturingModel(BaseChatModel):
 
 
 @pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
-async def test_create_summary_formats_messages_as_xml(use_async: bool) -> None:  # noqa: FBT001
-    """Test that summary creation formats messages with `get_buffer_string` XML format.
+async def test_create_summary_preserves_image_urls(use_async: bool) -> None:  # noqa: FBT001
+    """Test that image URLs survive into the summary prompt.
 
-    XML formatting disambiguates message boundaries when content itself contains
-    role-like prefixes, so the summary prompt should receive the `format='xml'`
-    representation rather than the default `Role: content` prefix format.
+    `get_buffer_string` with `format='xml'` preserves URL-based image blocks.
+    The URL must appear in the summary prompt so the downstream agent can use
+    file tools to retrieve the image if needed.
     """
     model = PromptCapturingModel()
-    model.captured_inputs = []  # Reset for this test
     middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    image_url = "https://example.com/shared-image.png"
     messages: list[AnyMessage] = [
-        HumanMessage(content="What is the weather in NYC?"),
-        AIMessage(
-            content="Let me check.",
-            tool_calls=[{"name": "get_weather", "args": {"city": "NYC"}, "id": "call_123"}],
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]
         ),
-        ToolMessage(content="72F and sunny", tool_call_id="call_123", name="get_weather"),
+        AIMessage(content="The image shows a cat."),
     ]
 
     if use_async:
@@ -1833,18 +1834,10 @@ async def test_create_summary_formats_messages_as_xml(use_async: bool) -> None: 
         summary = middleware._create_summary(messages)
 
     assert summary == "Summary"
-    assert len(model.captured_inputs) == 1
     prompt = model.captured_inputs[0]
     assert isinstance(prompt, str)
-
-    # The prompt embeds the XML-formatted message buffer, not the default prefix format.
-    expected_xml = get_buffer_string(messages, format="xml")
-    assert expected_xml in prompt
-    assert '<message type="human">' in prompt
-    assert '<message type="ai">' in prompt
-    assert '<message type="tool">' in prompt
-    # The default prefix format ("Human: ...") should not be used.
-    assert "Human: What is the weather" not in prompt
+    # The image URL must be present so the agent can retrieve it with file tools.
+    assert image_url in prompt
 
 
 @pytest.mark.requires("langchain_anthropic")

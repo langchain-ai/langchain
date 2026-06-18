@@ -797,8 +797,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
+        # Use XML format so URL-based multimodal blocks (image, audio, video) are
+        # preserved in the summary prompt; the default prefix format drops them.
+        # Also avoids token inflation from metadata when str() is called on message objects.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
@@ -823,8 +824,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
+        # Use XML format so URL-based multimodal blocks (image, audio, video) are
+        # preserved in the summary prompt; the default prefix format drops them.
+        # Also avoids token inflation from metadata when str() is called on message objects.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
