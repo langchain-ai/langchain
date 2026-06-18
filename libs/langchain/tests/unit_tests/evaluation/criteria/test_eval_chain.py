@@ -59,6 +59,59 @@ def test_criteria_result_output_parser_parse(text: str, want: dict) -> None:
     assert got.get("score") == want["score"]
 
 
+@pytest.mark.parametrize(
+    ("text", "want"),
+    [
+        # Reasoning says "does not meet" but verdict is Y -> should flip to N
+        (
+            "The submission does not set the departure date at all, so it is"
+            " incomplete. The submission does not meet the criteria of"
+            " correctness because it fails to perform all required actions.\n\nY",
+            {"reasoning_contains": "does not meet", "value": "N", "score": 0},
+        ),
+        # Reasoning says "doesn't meet" but verdict is Y -> should flip to N
+        (
+            "The answer is factually wrong. It doesn't meet the criteria.\n\nY",
+            {"reasoning_contains": "doesn't meet", "value": "N", "score": 0},
+        ),
+        # Reasoning says "does not fulfill" but verdict is Y -> should flip to N
+        (
+            "The submission does not fulfill the objective as specified.\n\nY",
+            {"reasoning_contains": "does not fulfill", "value": "N", "score": 0},
+        ),
+        # Reasoning says "meets the criteria" but verdict is N -> should flip to Y
+        (
+            "The submission is accurate and complete. It meets the criteria.\n\nN",
+            {"reasoning_contains": "meets the criteria", "value": "Y", "score": 1},
+        ),
+        # No contradiction — verdict should stay as-is
+        (
+            "The submission is accurate and complete. It meets the criteria.\n\nY",
+            {"reasoning_contains": "meets the criteria", "value": "Y", "score": 1},
+        ),
+        # Both positive and negative signals — ambiguous, don't flip
+        (
+            "The submission meets the criteria for relevance but does not meet"
+            " the criteria for correctness.\n\nY",
+            {
+                "reasoning_contains": "does not meet",
+                "value": "Y",
+                "score": 1,
+            },
+        ),
+    ],
+)
+def test_criteria_result_output_parser_consistency_check(
+    text: str, want: dict
+) -> None:
+    """Test that the parser corrects verdict-reasoning inconsistencies."""
+    output_parser = CriteriaResultOutputParser()
+    got = output_parser.parse(text)
+    assert want["reasoning_contains"] in got["reasoning"]
+    assert got["value"] == want["value"]
+    assert got["score"] == want["score"]
+
+
 @pytest.mark.parametrize("criterion", list(Criteria))
 def test_resolve_criteria_enum(criterion: Criteria) -> None:
     assert CriteriaEvalChain.resolve_criteria(criterion) == {

@@ -70,6 +70,71 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
+    @staticmethod
+    def _resolve_verdict_from_reasoning(reasoning: str, verdict: str) -> str:
+        """Check if the reasoning contradicts the verdict and correct it.
+
+        LLMs sometimes produce reasoning that clearly concludes the submission
+        does or does not meet the criteria, but then output the wrong verdict
+        letter. This method detects such inconsistencies by inspecting the
+        conclusion of the reasoning and flips the verdict when there is a clear
+        contradiction.
+
+        Args:
+            reasoning: The step-by-step reasoning text.
+            verdict: The extracted verdict letter (``"Y"`` or ``"N"``).
+
+        Returns:
+            The corrected verdict letter.
+        """
+        # Inspect the tail of the reasoning where the conclusion typically is.
+        conclusion = reasoning[-500:].lower()
+
+        # Patterns indicating the submission does NOT meet criteria.
+        negative_patterns = [
+            r"does not meet",
+            r"doesn't meet",
+            r"does not fulfill",
+            r"doesn't fulfill",
+            r"does not satisfy",
+            r"doesn't satisfy",
+            r"fails to meet",
+            r"failed to meet",
+            r"is not met\b",
+            r"are not met\b",
+            r"not meeting the criteria",
+            r"incomplete and does not",
+            r"does not align",
+            r"doesn't align",
+            r"submission is incorrect",
+            r"not correct",
+        ]
+
+        # Patterns indicating the submission DOES meet criteria.
+        positive_patterns = [
+            r"meets the criteria",
+            r"meets all criteria",
+            r"fulfills the criteria",
+            r"satisfies the criteria",
+            r"submission is correct",
+            r"criteria (?:is|are) met\b",
+        ]
+
+        has_negative = any(
+            re.search(p, conclusion) for p in negative_patterns
+        )
+        has_positive = any(
+            re.search(p, conclusion) for p in positive_patterns
+        )
+
+        # Only flip when there is an unambiguous contradiction.
+        if has_negative and not has_positive and verdict.upper() == "Y":
+            return "N"
+        if has_positive and not has_negative and verdict.upper() == "N":
+            return "Y"
+
+        return verdict
+
     def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
@@ -98,13 +163,18 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
             splits = text.strip().rsplit("\n", maxsplit=1)
             verdict = splits[-1]
 
+        reasoning = text.strip()
+
+        if verdict and verdict.upper() in ("Y", "N") and reasoning:
+            verdict = self._resolve_verdict_from_reasoning(reasoning, verdict)
+
         if verdict:
             score = (
                 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
             )
 
         return {
-            "reasoning": text.strip(),
+            "reasoning": reasoning,
             "value": verdict,
             "score": score,
         }
