@@ -734,3 +734,25 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_pretty_repr_renders_partial_variables_as_placeholders() -> None:
+    """Partial variables should be shown as placeholders, not their bound values."""
+    # partial applied via `.partial()`
+    prompt = PromptTemplate.from_template("Hello {user}, how is {input}?").partial(
+        user="Lucy",
+    )
+    assert prompt.pretty_repr() == "Hello {user}, how is {input}?"
+
+    # partial supplied through the constructor behaves the same way
+    prompt = PromptTemplate.from_template(
+        "Hello {user}, how is {input}?",
+        partial_variables={"user": "Lucy"},
+    )
+    assert prompt.pretty_repr() == "Hello {user}, how is {input}?"
+
+
+def test_pretty_repr_renders_callable_partial_as_placeholder() -> None:
+    """Callable partials should render as placeholders, not their returned value."""
+    prompt = PromptTemplate.from_template("Now: {now}").partial(now=lambda: "12:00")
+    assert prompt.pretty_repr() == "Now: {now}"

@@ -375,10 +375,13 @@ class StringPromptTemplate(BasePromptTemplate[str], ABC):
         Returns:
             A pretty representation of the prompt.
         """
-        # TODO: handle partials
         dummy_vars = {
             input_var: "{" + f"{input_var}" + "}" for input_var in self.input_variables
         }
+        # Render partial variables as placeholders too, so the template structure
+        # is shown instead of their bound values (or the return values of callable
+        # partials).
+        dummy_vars.update({var: "{" + f"{var}" + "}" for var in self.partial_variables})
         if html:
             dummy_vars = {
                 k: get_colored_text(v, "yellow") for k, v in dummy_vars.items()
