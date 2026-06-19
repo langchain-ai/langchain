@@ -819,11 +819,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
                 if chat_generation_chunk:
                     generations = [
-                        [chat_generation_chunk],
-                        generations_with_error_metadata,
+                        [chat_generation_chunk] + generations_with_error_metadata
                     ]
                 else:
-                    generations = [generations_with_error_metadata]
+                    generations = (
+                        [generations_with_error_metadata]
+                        if generations_with_error_metadata
+                        else []
+                    )
                 run_manager.on_llm_error(
                     e,
                     response=LLMResult(generations=generations),
@@ -950,9 +953,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
             if chat_generation_chunk:
-                generations = [[chat_generation_chunk], generations_with_error_metadata]
+                generations = [
+                    [chat_generation_chunk] + generations_with_error_metadata
+                ]
             else:
-                generations = [generations_with_error_metadata]
+                generations = (
+                    [generations_with_error_metadata]
+                    if generations_with_error_metadata
+                    else []
+                )
             await run_manager.on_llm_error(
                 e,
                 response=LLMResult(generations=generations),
@@ -1666,7 +1675,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_managers[i].on_llm_error(
                         e,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]
+                            generations=(
+                                [generations_with_error_metadata]
+                                if generations_with_error_metadata
+                                else []
+                            )
                         ),
                     )
                 raise
@@ -1797,7 +1810,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     await run_managers[i].on_llm_error(
                         res,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]
+                            generations=(
+                                [generations_with_error_metadata]
+                                if generations_with_error_metadata
+                                else []
+                            )
                         ),
                     )
                 exceptions.append(res)
