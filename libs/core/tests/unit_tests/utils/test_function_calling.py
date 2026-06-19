@@ -409,7 +409,6 @@ def test_convert_to_openai_function(
     assert actual == expected
 
 
-@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
 def test_convert_to_openai_function_nested_v2() -> None:
     class NestedV2(BaseModelV2Maybe):
         nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
