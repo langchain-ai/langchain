@@ -2243,6 +2243,9 @@ def count_tokens_approximately(
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
     tokens_per_image: int = 85,
+    tokens_per_audio: int = 85,
+    tokens_per_video: int = 85,
+    tokens_per_file: int = 85,
     use_usage_metadata_scaling: bool = False,
     tools: list[BaseTool | dict[str, Any]] | None = None,
 ) -> int:
@@ -2252,8 +2255,8 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
-    - For multimodal messages with images, applies a fixed token penalty per image
-        instead of counting base64-encoded characters.
+    - For multimodal messages with images, audio, video, or files, applies a fixed
+        token penalty per block instead of counting base64-encoded characters.
     - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
@@ -2269,6 +2272,13 @@ def count_tokens_approximately(
         count_name: Whether to include message names in the count.
         tokens_per_image: Fixed token cost per image (default: 85, aligned with
             OpenAI's low-resolution image token cost).
+        tokens_per_audio: Fixed token cost per audio block (default: 85). Audio token
+            usage is highly model- and duration-dependent; adjust for your provider.
+        tokens_per_video: Fixed token cost per video block (default: 85). Video token
+            usage is highly model- and duration-dependent; adjust for your provider.
+        tokens_per_file: Fixed token cost per file block, e.g. a PDF document
+            (default: 85). File token usage is highly model- and size-dependent;
+            adjust for your provider.
         use_usage_metadata_scaling: If True, and all AI messages have consistent
             `response_metadata['model_provider']`, scale the approximate token count
             using the **most recent** AI message that has
@@ -2285,9 +2295,9 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-        For multimodal messages containing images, a fixed token penalty is applied
-        per image instead of counting base64-encoded characters, which provides a
-        more realistic approximation.
+        For multimodal messages containing images, audio, video, or files, a fixed
+        token penalty is applied per block instead of counting base64-encoded
+        characters, which provides a more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
@@ -2322,9 +2332,16 @@ def count_tokens_approximately(
                 elif isinstance(block, dict):
                     block_type = block.get("type", "")
 
-                    # Apply fixed penalty for image blocks
+                    # Apply a fixed penalty for media blocks instead of counting
+                    # their (potentially very large) base64-encoded payloads.
                     if block_type in {"image", "image_url"}:
                         token_count += tokens_per_image
+                    elif block_type in {"audio", "input_audio"}:
+                        token_count += tokens_per_audio
+                    elif block_type == "video":
+                        token_count += tokens_per_video
+                    elif block_type == "file":
+                        token_count += tokens_per_file
                     # Count text blocks normally
                     elif block_type == "text":
                         text = block.get("text", "")

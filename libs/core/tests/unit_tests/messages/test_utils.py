@@ -2864,6 +2864,56 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     assert mixed > text_only
 
 
+def test_count_tokens_approximately_with_audio_video_file_content() -> None:
+    """Test approximate token counting with audio, video, and file content blocks.
+
+    Each carries a large base64 payload that must NOT be counted character by
+    character; a fixed per-block penalty is applied instead (mirroring images).
+    """
+    large_payload = "A" * 100000
+
+    for block in (
+        {"type": "audio", "mime_type": "audio/wav", "base64": large_payload},
+        # OpenAI Chat Completions audio format
+        {
+            "type": "input_audio",
+            "input_audio": {"data": large_payload, "format": "wav"},
+        },
+        {"type": "video", "mime_type": "video/mp4", "base64": large_payload},
+        {"type": "file", "mime_type": "application/pdf", "base64": large_payload},
+    ):
+        message = HumanMessage(content=[{"type": "text", "text": "describe"}, block])
+
+        token_count = count_tokens_approximately([message])
+
+        # Should be ~85 (media) + a few (text/role/extra), NOT 25,000+ from the
+        # base64 payload.
+        assert token_count < 200, (
+            f"Expected <200 tokens for {block['type']} block, got {token_count}"
+        )
+        assert token_count > 80, (
+            f"Expected >80 tokens for {block['type']} block, got {token_count}"
+        )
+
+
+def test_count_tokens_approximately_with_custom_media_penalties() -> None:
+    """Test custom tokens_per_audio/video/file parameters."""
+    audio = HumanMessage(
+        content=[{"type": "audio", "mime_type": "audio/wav", "base64": "AAA"}]
+    )
+    video = HumanMessage(
+        content=[{"type": "video", "mime_type": "video/mp4", "base64": "AAA"}]
+    )
+    file = HumanMessage(
+        content=[{"type": "file", "mime_type": "application/pdf", "base64": "AAA"}]
+    )
+
+    # The custom penalty should dominate the (tiny) role/extra overhead.
+    assert 1600 < count_tokens_approximately([audio], tokens_per_audio=1600) < 1620
+    assert 500 < count_tokens_approximately([video], tokens_per_video=500) < 520
+    assert 2000 < count_tokens_approximately([file], tokens_per_file=2000) < 2020
+
+
 def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
     """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
     tool_calls = [
