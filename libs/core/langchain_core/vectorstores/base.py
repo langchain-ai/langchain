@@ -82,6 +82,12 @@ class VectorStore(ABC):
                     f"Got {len(metadatas)} metadatas and {len(texts_)} texts."
                 )
                 raise ValueError(msg)
+            if ids and len(ids) != len(texts_):
+                msg = (
+                    "The number of ids must match the number of texts."
+                    f"Got {len(ids)} ids and {len(texts_)} texts."
+                )
+                raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
             ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [

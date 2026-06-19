@@ -178,6 +178,17 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
     ]
 
 
+def test_default_add_texts_raises_for_mismatched_ids() -> None:
+    """Test that add_texts raises ValueError when ids count doesn't match texts."""
+    store = CustomAddDocumentsVectorstore()
+
+    with pytest.raises(ValueError, match="The number of ids must match"):
+        store.add_texts(["a", "b"], ids=["only-one"])
+
+    with pytest.raises(ValueError, match="The number of ids must match"):
+        store.add_texts(["a"], ids=["one", "two"])
+
+
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
