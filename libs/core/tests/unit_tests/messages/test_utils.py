@@ -2846,6 +2846,29 @@ def test_count_tokens_approximately_with_image_only_message() -> None:
     assert 80 < token_count < 120
 
 
+def test_count_tokens_approximately_with_audio_video_file_blocks() -> None:
+    """Test that audio/video/file blocks use fixed penalty, not char-counting."""
+    payload = "A" * 10000
+
+    msg_audio = HumanMessage(
+        content=[{"type": "audio", "base64": payload, "mime_type": "audio/wav"}]
+    )
+    msg_video = HumanMessage(
+        content=[{"type": "video", "base64": payload, "mime_type": "video/mp4"}]
+    )
+    msg_file = HumanMessage(
+        content=[
+            {"type": "file", "base64": payload, "mime_type": "application/pdf"}
+        ]
+    )
+
+    for msg in [msg_audio, msg_video, msg_file]:
+        token_count = count_tokens_approximately([msg])
+        # Should be ~85 (fixed penalty) + role + extra, NOT 2500+ from char-counting
+        assert token_count < 200, f"Expected <200 tokens, got {token_count}"
+        assert token_count > 80, f"Expected >80 tokens, got {token_count}"
+
+
 def test_count_tokens_approximately_with_unknown_block_type() -> None:
     """Test that unknown multimodal block types still contribute to token count."""
     text_only = count_tokens_approximately([HumanMessage(content="hello")])
