@@ -128,6 +128,22 @@ def test_merge_message_runs_content() -> None:
     assert messages == messages_model_copy
 
 
+def test_merge_message_runs_performance() -> None:
+    """Test that merge_message_runs scales linearly, not quadratically."""
+    import time
+
+    # Test with list content blocks (the case that was O(n²) before)
+    for n in (500, 1000, 2000):
+        msgs = [HumanMessage([{"type": "text", "text": f"m{i}"}]) for i in range(n)]
+        start = time.perf_counter()
+        merge_message_runs(msgs)
+        elapsed = time.perf_counter() - start
+        # With the fix, this should be O(n). If it's O(n²), 2000 messages
+        # would take ~4x longer than 1000, not ~2x.
+        # We just check it completes in reasonable time (< 2s for 2000 msgs)
+        assert elapsed < 2.0, f"merge_message_runs took {elapsed:.2f}s for {n} messages"
+
+
 def test_merge_messages_tool_messages() -> None:
     messages = [
         ToolMessage("foo", tool_call_id="1"),

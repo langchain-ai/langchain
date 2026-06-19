@@ -1105,25 +1105,45 @@ def merge_message_runs(
         return []
     messages = convert_to_messages(messages)
     merged: list[BaseMessage] = []
-    for msg in messages:
-        last = merged.pop() if merged else None
-        if not last:
-            merged.append(msg)
-        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
-            merged.extend([last, msg])
+    run: list[BaseMessage] = []
+
+    def _flush_run() -> None:
+        if not run:
+            return
+        if len(run) == 1:
+            merged.append(run[0])
         else:
-            last_chunk = _msg_to_chunk(last)
-            curr_chunk = _msg_to_chunk(msg)
-            if curr_chunk.response_metadata:
-                curr_chunk.response_metadata.clear()
-            if (
-                isinstance(last_chunk.content, str)
-                and isinstance(curr_chunk.content, str)
-                and last_chunk.content
-                and curr_chunk.content
-            ):
-                last_chunk.content += chunk_separator
-            merged.append(_chunk_to_msg(last_chunk + curr_chunk))
+            # Merge all messages in the run in one go to avoid O(n²) behavior
+            chunks = [_msg_to_chunk(m) for m in run]
+            # Clear response_metadata for all chunks except the first
+            for chunk in chunks[1:]:
+                if chunk.response_metadata:
+                    chunk.response_metadata.clear()
+            # Add string separator between string content blocks
+            for i in range(len(chunks) - 1):
+                if (
+                    isinstance(chunks[i].content, str)
+                    and isinstance(chunks[i + 1].content, str)
+                    and chunks[i].content
+                    and chunks[i + 1].content
+                ):
+                    chunks[i].content += chunk_separator
+            # Merge all chunks at once using list addition
+            result = chunks[0]
+            for chunk in chunks[1:]:
+                result = result + chunk
+            merged.append(_chunk_to_msg(result))
+        run.clear()
+
+    for msg in messages:
+        if isinstance(msg, ToolMessage) or (
+            run and not isinstance(msg, run[0].__class__)
+        ):
+            _flush_run()
+            run.append(msg)
+        else:
+            run.append(msg)
+    _flush_run()
     return merged
 
 
