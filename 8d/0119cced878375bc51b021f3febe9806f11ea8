@@ -1,0 +1,23 @@
+libs/partners/xai/langchain_xai/chat_models.py
+  s_c0175784881a9e::t_8a2baaa982c5d3 574-587
+  s_c0175784881a9e::t_9836cc7e478c59 58
+  s_c0175784881a9e::t_eea3d6f246087f 44-57
+libs/partners/xai/tests/unit_tests/test_chat_models.py
+  s_c0175784881a9e::t_8196f0a14d0aae 87-104,118-121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8d0119cced878375bc51b021f3febe9806f11ea8",
+  "prompts": {},
+  "sessions": {
+    "s_c0175784881a9e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3628113c-02ba-4d69-b163-d80c79f0ca9b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
