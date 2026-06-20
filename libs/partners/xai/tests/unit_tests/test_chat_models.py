@@ -84,6 +84,31 @@ def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.xai_api_base == "http://env.example.test/v1"
 
 
+@pytest.mark.parametrize("model", ["grok-3", "grok-4.3"])
+def test_reasoning_model_payload_drops_stop(model: str) -> None:
+    llm = ChatXAI(
+        model=model,
+        api_key=SecretStr("test-api-key"),
+        stop=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "stop" not in payload
+
+
+def test_non_reasoning_model_payload_keeps_stop() -> None:
+    llm = ChatXAI(
+        model="grok-4.20-0309-non-reasoning",
+        api_key=SecretStr("test-api-key"),
+        stop=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["stop"] == ["END"]
+
+
 def test_function_dict_to_message_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"

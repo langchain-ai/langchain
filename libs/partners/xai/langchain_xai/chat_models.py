@@ -546,6 +546,25 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        model_profile = self._resolve_model_profile() or {}
+        # xAI rejects `stop` for reasoning models. Keep the explicit `grok-3`
+        # prefix check because older Grok 3 aliases are not in the generated
+        # model profiles, but the API still reports them as incompatible.
+        if (
+            self.model_name.startswith("grok-3")
+            or model_profile.get("reasoning_output")
+        ):
+            payload.pop("stop", None)
+        return payload
+
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
