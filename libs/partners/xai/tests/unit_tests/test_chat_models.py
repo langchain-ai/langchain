@@ -84,7 +84,7 @@ def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.xai_api_base == "http://env.example.test/v1"
 
 
-@pytest.mark.parametrize("model", ["grok-3", "grok-4.3"])
+@pytest.mark.parametrize("model", ["grok-3", "grok-4.3", "grok-4-fast-reasoning"])
 def test_reasoning_model_payload_drops_stop(model: str) -> None:
     llm = ChatXAI(
         model=model,

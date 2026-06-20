@@ -41,6 +41,14 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _is_reasoning_model_alias(model_name: str) -> bool:
+    return model_name.startswith("grok-3") or (
+        model_name.startswith("grok-4")
+        and "reasoning" in model_name
+        and "non-reasoning" not in model_name
+    )
+
+
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
@@ -555,12 +563,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         model_profile = self._resolve_model_profile() or {}
-        # xAI rejects `stop` for reasoning models. Keep the explicit `grok-3`
-        # prefix check because older Grok 3 aliases are not in the generated
-        # model profiles, but the API still reports them as incompatible.
-        if (
-            self.model_name.startswith("grok-3")
-            or model_profile.get("reasoning_output")
+        # xAI rejects `stop` for reasoning models. Keep the alias fallback
+        # because some reasoning aliases are not in the generated profiles, but
+        # the API still reports them as incompatible.
+        if _is_reasoning_model_alias(self.model_name) or model_profile.get(
+            "reasoning_output"
         ):
             payload.pop("stop", None)
         return payload
