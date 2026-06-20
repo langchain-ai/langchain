@@ -49,6 +49,21 @@ def parse_tool_call(
 
     arguments = raw_tool_call["function"]["arguments"]
 
+    if isinstance(arguments, str):
+        # If there is an unclosed <think> block during streaming, we haven't reached the JSON yet.
+        if "<think>" in arguments and "</think>" not in arguments:
+            if partial:
+                return None
+
+        import re
+        # Strip <think>...</think> blocks
+        arguments = re.sub(r"<think>.*?</think>\n*", "", arguments, flags=re.DOTALL)
+
+        # Safely extract everything from the first '{' to discard any leading garbage (like <tool_call>)
+        idx = arguments.find("{")
+        if idx != -1:
+            arguments = arguments[idx:]
+
     if partial:
         try:
             function_args = parse_partial_json(arguments, strict=strict)
