@@ -156,7 +156,11 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_openai import ChatOpenAI
         >>> from langchain_classic.evaluation.scoring import ScoreStringEvalChain
-        >>> model = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> # gpt-4o-mini is recommended: it matches gpt-4 quality on most scoring
+        >>> # tasks at a fraction of the cost. Any model whose name starts with
+        >>> # "gpt-4" (e.g. gpt-4o, gpt-4o-mini, gpt-4-turbo) will skip the
+        >>> # "untested model" warning emitted by from_llm().
+        >>> model = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")
         >>> chain = ScoreStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_strings(
         ...     input="What is the chemical formula for water?",

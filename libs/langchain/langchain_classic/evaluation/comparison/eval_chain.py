@@ -165,8 +165,14 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_openai import ChatOpenAI
         >>> from langchain_classic.evaluation.comparison import PairwiseStringEvalChain
+        >>> # gpt-4o-mini is recommended: it matches gpt-4 on most pairwise
+        >>> # comparison tasks at a fraction of the cost. Any model whose name
+        >>> # starts with "gpt-4" (gpt-4o, gpt-4o-mini, gpt-4-turbo, ...) will
+        >>> # skip the "untested model" warning emitted by from_llm().
         >>> model = ChatOpenAI(
-        ...     temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42}
+        ...     temperature=0,
+        ...     model_name="gpt-4o-mini",
+        ...     model_kwargs={"random_seed": 42},
         ... )
         >>> chain = PairwiseStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_string_pairs(
