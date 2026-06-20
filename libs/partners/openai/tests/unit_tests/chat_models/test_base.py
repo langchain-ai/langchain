@@ -1382,6 +1382,39 @@ def test_minimal_reasoning_effort_payload(
             assert payload["max_completion_tokens"] == 100
 
 
+@pytest.mark.parametrize("via_invoke", [False, True])
+def test_responses_api_payload_excludes_stop(via_invoke: bool) -> None:
+    """The Responses API rejects `stop`, so it must be dropped from the payload.
+
+    Covers `stop` supplied both at construction time and at invoke time, since
+    they reach the payload through different code paths.
+    """
+    if via_invoke:
+        llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+        payload = llm._get_request_payload(
+            [HumanMessage(content="Hello")], stop=["END"]
+        )
+    else:
+        llm = ChatOpenAI(  # type: ignore[call-arg]
+            model=OPENAI_TEST_MODEL, stop=["END"], use_responses_api=True
+        )
+        payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "stop" not in payload
+
+
+def test_chat_completions_payload_includes_stop() -> None:
+    """`stop` must be preserved for the Chat Completions API, which supports it.
+
+    Guards against an over-broad change dropping `stop` outside the Responses API.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stop=["END"])  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert payload["stop"] == ["END"]
+
+
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True
