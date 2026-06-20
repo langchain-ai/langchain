@@ -443,6 +443,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """
 
     openai_api_key: SecretStr | None = None
+
     openai_api_base: str | None = None
 
     model_config = ConfigDict(

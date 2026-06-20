@@ -106,7 +106,7 @@ def test_reasoning_model_payload_drops_stop(model: str) -> None:
     llm = ChatXAI(
         model=model,
         api_key=SecretStr("test-api-key"),
-        stop=["END"],
+        stop_sequences=["END"],
     )
 
     payload = llm._get_request_payload("hello")
@@ -122,7 +122,7 @@ def test_non_reasoning_model_payload_keeps_stop() -> None:
     llm = ChatXAI(
         model="grok-4.20-0309-non-reasoning",
         api_key=SecretStr("test-api-key"),
-        stop=["END"],
+        stop_sequences=["END"],
     )
 
     payload = llm._get_request_payload("hello")
