@@ -4162,6 +4162,9 @@ def _construct_responses_api_payload(
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+    # Responses API has no `stop` parameter (Chat Completions does); drop it to
+    # avoid request rejection.
+    payload.pop("stop", None)
 
     # Remove temperature parameter for models that don't support it in responses API
     # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
