@@ -1,0 +1,14 @@
+libs/partners/xai/langchain_xai/chat_models.py
+  h_9f69767fa5fabf 446
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "e21e136b6e680b35b5fd6697080b1d31d20161e1",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
